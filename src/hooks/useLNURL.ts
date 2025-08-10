@@ -27,7 +27,7 @@ function lightningAddressToLNURL(address: string): string {
   if (!username || !domain) {
     throw new Error('Invalid lightning address format');
   }
-  
+
   const url = `https://${domain}/.well-known/lnurlp/${username}`;
   return url;
 }
@@ -35,10 +35,11 @@ function lightningAddressToLNURL(address: string): string {
 // Fetch LNURL pay data
 async function fetchLNURLPay(lnurlOrAddress: string): Promise<LNURLPayResponse> {
   let url: string;
-  
+
   if (lnurlOrAddress.includes('@')) {
     // Lightning address
     url = lightningAddressToLNURL(lnurlOrAddress);
+    console.log('Resolved Lightning address to LNURL:', url);
   } else if (lnurlOrAddress.startsWith('lnurl')) {
     // LNURL (would need to decode bech32, but for simplicity we'll handle addresses)
     throw new Error('LNURL bech32 format not implemented. Please use lightning address.');
@@ -47,15 +48,32 @@ async function fetchLNURLPay(lnurlOrAddress: string): Promise<LNURLPayResponse> 
     url = lnurlOrAddress;
   }
 
+  console.log('Fetching LNURL data from:', url);
+
   const response = await fetch(url);
+  console.log('LNURL response status:', response.status, response.statusText);
+
   if (!response.ok) {
-    throw new Error(`Failed to fetch LNURL data: ${response.statusText}`);
+    const errorText = await response.text();
+    console.error('LNURL fetch failed:', response.status, response.statusText, errorText);
+    throw new Error(`Failed to fetch LNURL data: ${response.status} ${response.statusText}`);
   }
 
-  const data = await response.json();
-  
+  const responseText = await response.text();
+  console.log('LNURL response text:', responseText);
+
+  let data;
+  try {
+    data = JSON.parse(responseText);
+  } catch (parseError) {
+    console.error('Failed to parse LNURL response as JSON:', parseError);
+    throw new Error(`Invalid JSON response from LNURL endpoint: ${responseText}`);
+  }
+
+  console.log('Parsed LNURL data:', data);
+
   if (data.tag !== 'payRequest') {
-    throw new Error('Invalid LNURL response: not a pay request');
+    throw new Error(`Invalid LNURL response: expected tag 'payRequest', got '${data.tag}'`);
   }
 
   return data;
@@ -70,24 +88,45 @@ async function requestInvoice(
 ): Promise<LNURLInvoiceResponse> {
   const url = new URL(callback);
   url.searchParams.set('amount', amount.toString());
-  
+
   if (nostrEvent) {
     url.searchParams.set('nostr', encodeURIComponent(nostrEvent));
   }
-  
+
   if (lnurl) {
     url.searchParams.set('lnurl', lnurl);
   }
 
+  console.log('Requesting invoice from callback:', url.toString());
+
   const response = await fetch(url.toString());
+  console.log('Invoice response status:', response.status, response.statusText);
+
   if (!response.ok) {
-    throw new Error(`Failed to request invoice: ${response.statusText}`);
+    const errorText = await response.text();
+    console.error('Invoice request failed:', response.status, response.statusText, errorText);
+    throw new Error(`Failed to request invoice: ${response.status} ${response.statusText}`);
   }
 
-  const data = await response.json();
-  
+  const responseText = await response.text();
+  console.log('Invoice response text:', responseText);
+
+  let data;
+  try {
+    data = JSON.parse(responseText);
+  } catch (parseError) {
+    console.error('Failed to parse invoice response as JSON:', parseError);
+    throw new Error(`Invalid JSON response from invoice callback: ${responseText}`);
+  }
+
+  console.log('Parsed invoice data:', data);
+
   if (data.status === 'ERROR') {
     throw new Error(data.reason || 'Unknown error from LNURL service');
+  }
+
+  if (!data.pr) {
+    throw new Error('No payment request (pr) field in invoice response');
   }
 
   return data;
@@ -173,23 +212,23 @@ export function useLNURL(lightningAddress?: string) {
       if (window.webln) {
         await window.webln.enable();
         const result = await window.webln.sendPayment(invoice);
-        
+
         toast({
           title: "Payment Sent! ⚡",
           description: "Zap sent successfully via WebLN.",
         });
-        
+
         return result;
       } else {
         // Fallback to lightning: URI
         const lightningUri = `lightning:${invoice}`;
         window.open(lightningUri, '_blank');
-        
+
         toast({
           title: "Wallet Opened",
           description: "Please complete the payment in your lightning wallet.",
         });
-        
+
         return null;
       }
     } catch (error) {

@@ -19,14 +19,15 @@ interface CardData {
 
 interface CardListProps {
   showMyCards?: boolean;
+  selectedCategory?: string;
 }
 
-export function CardList({ showMyCards = false }: CardListProps) {
+export function CardList({ showMyCards = false, selectedCategory }: CardListProps) {
   const { user } = useCurrentUser();
   const { nostr } = useNostr();
 
   const { data: allCards, isLoading, refetch } = useQuery({
-    queryKey: ['all-cards'],
+    queryKey: ['all-cards', selectedCategory],
     queryFn: async (c) => {
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(1500)]);
       const events = await nostr.query([
@@ -57,10 +58,19 @@ export function CardList({ showMyCards = false }: CardListProps) {
     },
   });
 
-  // Filter cards based on the view mode
-  const cards = showMyCards && user
-    ? allCards?.filter(card => card?.event.pubkey === user.pubkey)
-    : allCards;
+  // Filter cards based on the view mode and category
+  const cards = (() => {
+    let filtered = showMyCards && user
+      ? allCards?.filter(card => card?.event.pubkey === user.pubkey)
+      : allCards;
+
+    // Apply category filter if specified
+    if (selectedCategory && filtered) {
+      filtered = filtered.filter(card => card?.category === selectedCategory);
+    }
+
+    return filtered;
+  })();
 
 
 
@@ -152,7 +162,12 @@ export function CardList({ showMyCards = false }: CardListProps) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">
-          {showMyCards ? `My Cards (${cards.length})` : `All Cards (${cards.length})`}
+          {showMyCards
+            ? `My Cards (${cards.length})`
+            : selectedCategory
+              ? `${selectedCategory} Cards (${cards.length})`
+              : `All Cards (${cards.length})`
+          }
         </h2>
         {!showMyCards && (
           <RelaySelector />

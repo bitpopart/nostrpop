@@ -7,16 +7,19 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
 import { FileUpload } from './FileUpload';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useToast } from '@/hooks/useToast';
+import { useCardCategories } from '@/hooks/useCardCategories';
 import { LoginArea } from '@/components/auth/LoginArea';
 import { isAllowedCreator } from '@/config/creators';
 import { Loader2, Sparkles, Lock, Share2 } from 'lucide-react';
 import { nip19 } from 'nostr-tools';
 
-const CARD_CATEGORIES = [
+// Legacy categories for fallback
+const LEGACY_CATEGORIES = [
   'GM/GN',
   'Fun',
   'Birthday',
@@ -54,8 +57,14 @@ export function CreateCardForm() {
   const { user } = useCurrentUser();
   const { mutate: createEvent, isPending } = useNostrPublish();
   const { toast } = useToast();
+  const { allCategories, getCategoryByName } = useCardCategories();
   const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
   const [isSharing, setIsSharing] = useState(false);
+
+  // Get available categories (all categories for creation, not just visible ones)
+  const availableCategories = allCategories.length > 0
+    ? allCategories.map(cat => cat.name)
+    : LEGACY_CATEGORIES;
 
   const {
     register,
@@ -181,22 +190,57 @@ export function CreateCardForm() {
       // Create the card URL
       const cardUrl = `${window.location.origin}/card/${naddr}`;
 
-      // Create share message
+      // Create share message with image link after text, before hashtags
       const customMessage = formData.shareMessage.trim();
-      const shareContent = customMessage
-        ? `${customMessage}\n\n🎨 "${formData.title}"\n${cardUrl}\n\n#ecard #${formData.category.toLowerCase().replace(/[^a-z0-9]/g, '')}`
-        : `Just created a beautiful new ${formData.category} ecard! 🎨\n\n"${formData.title}"\n\n${cardUrl}\n\n#ecard #${formData.category.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+      let shareContent = customMessage
+        ? `${customMessage}\n\n🎨 "${formData.title}"\n${cardUrl}`
+        : `Just created a beautiful new ${formData.category} ecard! 🎨\n\n"${formData.title}"\n\n${cardUrl}`;
+
+      // Add the blossom image link after the text content, before hashtags
+      if (uploadedFiles && uploadedFiles.length > 0) {
+        shareContent += `\n\n${uploadedFiles[0]}`;
+      }
+
+      // Add hashtags at the end
+      const categoryTag = formData.category.toLowerCase().replace(/[^a-z0-9]/g, '');
+      shareContent += `\n\n#ecard #${categoryTag}`;
+
+      // Prepare tags array
+      const tags = [
+        ['t', 'ecard'],
+        ['t', categoryTag],
+        ['e', cardEvent.id, '', 'mention'], // Reference the card event
+        ['a', `30402:${user.pubkey}:${cardId}`, '', 'mention'], // Reference the addressable event
+      ];
+
+      // Add image-related tags for maximum compatibility
+      if (uploadedFiles && uploadedFiles.length > 0) {
+        const imageUrl = uploadedFiles[0];
+
+        // Method 1: Simple image tag (widely supported)
+        tags.push(['image', imageUrl]);
+
+        // Method 2: NIP-92 imeta tag (newer clients)
+        tags.push([
+          'imeta',
+          `url ${imageUrl}`,
+          'm image/jpeg',
+          `alt Preview image for "${formData.title}" ecard`,
+          `fallback ${cardUrl}`
+        ]);
+
+        // Method 3: Add r tag for reference (some clients use this)
+        tags.push(['r', imageUrl]);
+
+        // Method 4: Add url tag (alternative approach some clients check)
+        tags.push(['url', imageUrl]);
+      }
 
       // Create kind 1 note to share the card
       createEvent({
         kind: 1,
         content: shareContent,
-        tags: [
-          ['t', 'ecard'],
-          ['t', formData.category.toLowerCase().replace(/[^a-z0-9]/g, '')],
-          ['e', cardEvent.id, '', 'mention'], // Reference the card event
-          ['a', `30402:${user.pubkey}:${cardId}`, '', 'mention'], // Reference the addressable event
-        ]
+        tags
       }, {
         onSuccess: () => {
           console.log('✅ Successfully shared to Nostr');
@@ -234,7 +278,7 @@ export function CreateCardForm() {
           <div className="max-w-sm mx-auto space-y-6">
             <Sparkles className="h-12 w-12 mx-auto text-purple-500" />
             <div>
-              <h3 className="text-lg font-semibold mb-2">Create Amazing POP Cards</h3>
+              <h3 className="text-lg font-semibold mb-2">Create Amazing BitPop Cards</h3>
               <p className="text-muted-foreground">
                 Log in to start creating beautiful digital cards for any occasion.
               </p>
@@ -255,7 +299,7 @@ export function CreateCardForm() {
             <div>
               <h3 className="text-lg font-semibold mb-2 text-red-700 dark:text-red-400">Access Restricted</h3>
               <p className="text-red-600 dark:text-red-300">
-                POP Card creation is currently limited to authorized users only. You can still browse and enjoy all the beautiful cards created by others!
+                BitPop Card creation is currently limited to authorized users only. You can still browse and enjoy all the beautiful cards created by others!
               </p>
             </div>
           </div>
@@ -315,14 +359,48 @@ export function CreateCardForm() {
           onValueChange={(value) => setValue('category', value, { shouldValidate: true })}
         >
           <SelectTrigger className="text-base">
-            <SelectValue placeholder="Select a category for your card..." />
+            <SelectValue placeholder="Select a category for your card...">
+              {watchedCategory && (() => {
+                const category = getCategoryByName(watchedCategory);
+                return category ? (
+                  <div className="flex items-center space-x-2">
+                    <span>{category.icon}</span>
+                    <span>{category.name}</span>
+                  </div>
+                ) : (
+                  <span>{watchedCategory}</span>
+                );
+              })()}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
-            {CARD_CATEGORIES.map((category) => (
-              <SelectItem key={category} value={category}>
-                {category}
-              </SelectItem>
-            ))}
+            {availableCategories.map((categoryName) => {
+              const category = getCategoryByName(categoryName);
+              return (
+                <SelectItem key={categoryName} value={categoryName}>
+                  <div className="flex items-center justify-between w-full">
+                    <div className="flex items-center space-x-2">
+                      {category ? (
+                        <>
+                          <span className="text-lg">{category.icon}</span>
+                          <span>{category.name}</span>
+                        </>
+                      ) : (
+                        <span>{categoryName}</span>
+                      )}
+                    </div>
+                    {category && (
+                      <Badge
+                        style={{ backgroundColor: category.color, color: '#fff' }}
+                        className="text-xs ml-2"
+                      >
+                        {category.name}
+                      </Badge>
+                    )}
+                  </div>
+                </SelectItem>
+              );
+            })}
           </SelectContent>
         </Select>
         <input
@@ -332,6 +410,28 @@ export function CreateCardForm() {
         {errors.category && (
           <p className="text-sm text-red-500">{errors.category.message}</p>
         )}
+
+        {/* Category Preview */}
+        {watchedCategory && (() => {
+          const category = getCategoryByName(watchedCategory);
+          return category ? (
+            <div className="flex items-center space-x-3 p-3 border rounded-lg bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700">
+              <span className="text-2xl">{category.icon}</span>
+              <div className="flex-1">
+                <div className="flex items-center space-x-2 mb-1">
+                  <span className="font-medium">{category.name}</span>
+                  <Badge
+                    style={{ backgroundColor: category.color, color: '#fff' }}
+                    className="text-xs"
+                  >
+                    {category.name}
+                  </Badge>
+                </div>
+                <p className="text-sm text-muted-foreground">{category.description}</p>
+              </div>
+            </div>
+          ) : null;
+        })()}
       </div>
 
       {/* File Upload */}
@@ -406,7 +506,7 @@ export function CreateCardForm() {
           ) : (
             <>
               <Sparkles className="mr-2 h-4 w-4" />
-              Create Beautiful POP Card
+              Create Beautiful BitPop Card
             </>
           )}
         </Button>

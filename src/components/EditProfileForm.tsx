@@ -18,7 +18,19 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Loader2, Upload } from 'lucide-react';
-import { NSchema as n, type NostrMetadata } from '@nostrify/nostrify';
+import { type NostrMetadata } from '@nostrify/nostrify';
+import { z } from 'zod';
+
+const metadataSchema = z.object({
+  name: z.string().optional(),
+  about: z.string().optional(),
+  picture: z.string().optional(),
+  banner: z.string().optional(),
+  website: z.string().optional(),
+  nip05: z.string().optional(),
+  lud16: z.string().optional(),
+  display_name: z.string().optional()
+});
 import { useQueryClient } from '@tanstack/react-query';
 import { useUploadFile } from '@/hooks/useUploadFile';
 
@@ -32,7 +44,7 @@ export const EditProfileForm: React.FC = () => {
 
   // Initialize the form with default values
   const form = useForm<NostrMetadata>({
-    resolver: zodResolver(n.metadata()),
+    resolver: zodResolver(metadataSchema),
     defaultValues: {
       name: '',
       about: '',
@@ -151,10 +163,10 @@ export const EditProfileForm: React.FC = () => {
             <FormItem>
               <FormLabel>Bio</FormLabel>
               <FormControl>
-                <Textarea 
-                  placeholder="Tell others about yourself" 
-                  className="resize-none" 
-                  {...field} 
+                <Textarea
+                  placeholder="Tell others about yourself"
+                  className="resize-none"
+                  {...field}
                 />
               </FormControl>
               <FormDescription>
@@ -254,9 +266,9 @@ export const EditProfileForm: React.FC = () => {
           )}
         />
 
-        <Button 
-          type="submit" 
-          className="w-full md:w-auto" 
+        <Button
+          type="submit"
+          className="w-full md:w-auto"
           disabled={isPending || isUploading}
         >
           {(isPending || isUploading) && (
@@ -308,8 +320,8 @@ const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
           />
         </FormControl>
         <div className="flex items-center gap-2">
-          <input 
-            type="file" 
+          <input
+            type="file"
             ref={fileInputRef}
             accept="image/*"
             className="hidden"
@@ -331,9 +343,9 @@ const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
           </Button>
           {field.value && (
             <div className={`h-10 ${previewType === 'square' ? 'w-10' : 'w-24'} rounded overflow-hidden`}>
-              <img 
-                src={field.value} 
-                alt={`${label} preview`} 
+              <img
+                src={field.value}
+                alt={`${label} preview`}
                 className="h-full w-full object-cover"
               />
             </div>

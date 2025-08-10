@@ -12,7 +12,7 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useAuthor } from '@/hooks/useAuthor';
 import { genUserName } from '@/lib/genUserName';
 import { useToast } from '@/hooks/useToast';
-import { Heart, Download, Calendar, Sparkles, Zap, ExternalLink, Edit, Trash2, MoreVertical, User, Share2 } from 'lucide-react';
+import { Heart, Download, Calendar, Sparkles, Zap, ExternalLink, Edit, Trash2, MoreVertical, User, Share2, Loader2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import type { NostrEvent } from '@nostrify/nostrify';
 
@@ -40,6 +40,7 @@ export function CardItem({ card, showAuthor = false, onRefetch }: CardItemProps)
   const navigate = useNavigate();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const author = useAuthor(card.event.pubkey);
   const authorName = author.data?.metadata?.name ?? genUserName(card.event.pubkey);
@@ -80,37 +81,108 @@ export function CardItem({ card, showAuthor = false, onRefetch }: CardItemProps)
     });
   };
 
-  const downloadCard = async (cardId: string, images: string[]) => {
-    if (images && images.length > 0) {
-      try {
-        const response = await fetch(images[0]);
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `ecard-${cardId}.jpg`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
+  // Helper function to get file extension from URL or content type
+  const getFileExtension = (url: string, contentType?: string): string => {
+    // Try to get extension from URL first
+    const urlExtension = url.split('.').pop()?.toLowerCase();
+    if (urlExtension && ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(urlExtension)) {
+      return urlExtension === 'jpeg' ? 'jpg' : urlExtension;
+    }
 
-        toast({
-          title: "Downloaded! 📥",
-          description: "Card image downloaded successfully.",
-        });
-      } catch {
-        toast({
-          title: "Download Failed",
-          description: "Failed to download card image.",
-          variant: "destructive"
-        });
-      }
-    } else {
+    // Fallback to content type
+    if (contentType) {
+      const typeMap: Record<string, string> = {
+        'image/jpeg': 'jpg',
+        'image/jpg': 'jpg',
+        'image/png': 'png',
+        'image/gif': 'gif',
+        'image/webp': 'webp',
+        'image/svg+xml': 'svg'
+      };
+      return typeMap[contentType.toLowerCase()] || 'jpg';
+    }
+
+    return 'jpg'; // Default fallback
+  };
+
+  const downloadCard = async (cardId: string, images: string[]) => {
+    if (!images || images.length === 0) {
       toast({
         title: "No Image",
         description: "This card doesn't have any images to download.",
         variant: "destructive"
       });
+      return;
+    }
+
+    setIsDownloading(true);
+
+    try {
+      const imageUrl = images[0];
+
+      // Try direct download first (for same-origin or CORS-enabled images)
+      try {
+        const response = await fetch(imageUrl, {
+          mode: 'cors',
+          credentials: 'omit'
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const blob = await response.blob();
+        const contentType = response.headers.get('content-type') || blob.type;
+        const extension = getFileExtension(imageUrl, contentType);
+
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `ecard-${cardId}.${extension}`;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+
+        // Cleanup
+        setTimeout(() => {
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+        }, 100);
+
+        toast({
+          title: "Downloaded! 📥",
+          description: "Card image downloaded successfully.",
+        });
+
+      } catch (fetchError) {
+        // If fetch fails (likely due to CORS), try opening in new tab as fallback
+        console.warn('Direct download failed, trying fallback method:', fetchError);
+
+        // Create a temporary link to open the image in a new tab
+        const link = document.createElement('a');
+        link.href = imageUrl;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.download = `ecard-${cardId}.${getFileExtension(imageUrl)}`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        toast({
+          title: "Download Initiated 📥",
+          description: "Image opened in new tab. Right-click and 'Save As' to download.",
+        });
+      }
+
+    } catch (error) {
+      console.error('Download error:', error);
+      toast({
+        title: "Download Failed",
+        description: "Failed to download card image. Please try right-clicking the image and selecting 'Save As'.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -231,8 +303,13 @@ export function CardItem({ card, showAuthor = false, onRefetch }: CardItemProps)
             variant="outline"
             size="sm"
             onClick={() => downloadCard(card.id, card.images)}
+            disabled={isDownloading}
           >
-            <Download className="h-3 w-3" />
+            {isDownloading ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <Download className="h-3 w-3" />
+            )}
           </Button>
 
           <ZapButton

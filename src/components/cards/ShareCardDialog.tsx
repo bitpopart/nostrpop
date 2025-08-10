@@ -135,7 +135,7 @@ export function ShareCardDialog({ cardId, cardTitle, cardAuthor, cardUrl, childr
       `${emailMessage.trim() || 'I wanted to share this beautiful POP card with you!'}\n\n` +
       `🎨 Card: "${cardTitle}"\n` +
       `🔗 View it here: ${shareUrl}\n\n` +
-      `Created with POP Cards`
+      `Created with BitPop Cards`
     );
 
     const mailtoUrl = `mailto:${emailRecipient}?subject=${subject}&body=${body}`;

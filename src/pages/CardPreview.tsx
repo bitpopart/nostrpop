@@ -193,8 +193,8 @@ const CardPreview = () => {
   // const { sendZap, isZapping, supportsZaps, canZap } = useZap(lightningAddress);
 
   useSeoMeta({
-    title: cardData ? `${cardData.title} - Share POP Card` : 'Share Card - POP Cards',
-    description: cardData?.description || 'Share this beautiful digital card created with POP Cards by BitPopArt',
+    title: cardData ? `${cardData.title} - Share BitPop Card` : 'Share Card - BitPop Cards',
+    description: cardData?.description || 'Share this beautiful digital card created with BitPop Cards by BitPopArt',
   });
 
   const shareUrl = `${window.location.origin}/card/${nip19Param}`;
@@ -349,7 +349,7 @@ const CardPreview = () => {
                             const target = e.target as HTMLImageElement;
                             target.style.display = 'none';
                             target.parentElement?.classList.add('bg-gradient-to-br', 'from-purple-100', 'via-pink-100', 'to-indigo-100', 'dark:from-purple-900/30', 'dark:via-pink-900/30', 'dark:to-indigo-900/30', 'flex', 'items-center', 'justify-center');
-                            target.parentElement!.innerHTML = '<div class="text-center"><div class="text-8xl mb-6">🎨</div><h3 class="text-2xl font-semibold text-muted-foreground mb-2">Beautiful POP Card</h3><p class="text-muted-foreground">Created with love by BitPopArt</p></div>';
+                            target.parentElement!.innerHTML = '<div class="text-center"><div class="text-8xl mb-6">🎨</div><h3 class="text-2xl font-semibold text-muted-foreground mb-2">Beautiful BitPop Card</h3><p class="text-muted-foreground">Created with love by BitPopArt</p></div>';
                           }}
                         />
                       </div>
@@ -364,7 +364,7 @@ const CardPreview = () => {
                     <div className="aspect-[4/3] bg-gradient-to-br from-purple-100 via-pink-100 to-indigo-100 dark:from-purple-900/30 dark:via-pink-900/30 dark:to-indigo-900/30 flex items-center justify-center">
                       <div className="text-center">
                         <div className="text-8xl mb-6">🎨</div>
-                        <h3 className="text-2xl font-semibold text-muted-foreground mb-2">Beautiful POP Card</h3>
+                        <h3 className="text-2xl font-semibold text-muted-foreground mb-2">Beautiful BitPop Card</h3>
                         <p className="text-muted-foreground">Created with love by BitPopArt</p>
                       </div>
                     </div>
@@ -477,7 +477,7 @@ const CardPreview = () => {
                           if (navigator.share) {
                             try {
                               await navigator.share({
-                                title: `Beautiful POP Card: ${cardData.title}`,
+                                title: `Beautiful BitPop Card: ${cardData.title}`,
                                 text: fullMessage,
                                 url: shareUrl
                               });

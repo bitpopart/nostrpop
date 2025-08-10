@@ -1,231 +1,209 @@
-# NIP-XX: Digital Cards (POP Cards)
+# BitPop Cards Marketplace NIP
 
-`draft` `optional`
+## Summary
 
-This NIP defines a standard for creating and sharing digital cards (POP Cards) on Nostr. All cards are publicly visible and can be viewed by anyone without authentication. Card creation is restricted to authorized creators only.
+This document describes the custom Nostr marketplace implementation for BitPop Cards, built on top of existing Nostr standards (NIP-15 and NIP-99) with additional features for physical and digital product management.
 
-## Event Kind
+## Motivation
 
-- `30402`: Digital Card
+The BitPop Cards platform requires a marketplace system that can handle both physical and digital products with admin-only access control. This implementation extends the standard NIP-15 marketplace specification to include enhanced metadata and file management capabilities.
 
-## Event Structure
+## Specification
 
-Digital cards are addressable events (kind 30402) that contain card metadata and content.
+### Admin Access Control
 
-### Tags
+The marketplace is restricted to a specific admin NPUB:
+- **Admin NPUB**: `npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz`
+- Only this pubkey can create, update, and manage marketplace products
+- Public users can browse the marketplace (when implemented)
 
-- `d` (required): Unique identifier for the card
-- `title` (required): The card's title
-- `category` (required): Card category (e.g., "Birthday", "Thank You", "Holiday")
-- `pricing` (required): Pricing model (always "free")
-- `image` (optional): URLs of images attached to the card
-- `t` (required): "ecard" for filtering
-- `t` (optional): Category-specific tag for filtering (e.g., "birthday", "thankyou")
+### Product Types
 
-### Content
+The marketplace supports two distinct product types:
 
-The content field contains a JSON object with the following structure:
+#### 1. Physical Products (Kind 30018)
 
-```json
-{
-  "title": "Happy Birthday!",
-  "description": "Wishing you a wonderful day filled with happiness and joy!",
-  "category": "Birthday",
-  "pricing": "free",
-  "images": ["https://example.com/image1.jpg", "https://example.com/image2.jpg"],
-  "created_at": "2025-07-13T13:38:47.000Z"
-}
-```
-
-## Example Event
+Physical products follow the NIP-15 specification with additional metadata:
 
 ```json
 {
-  "kind": 30402,
-  "content": "{\"title\":\"Happy Birthday!\",\"description\":\"Wishing you a wonderful day filled with happiness and joy!\",\"category\":\"Birthday\",\"pricing\":\"free\",\"images\":[\"https://example.com/birthday-card.jpg\"],\"created_at\":\"2025-07-13T13:38:47.000Z\"}",
+  "kind": 30018,
+  "content": {
+    "id": "<uuid>",
+    "stall_id": "bitpop-main-stall",
+    "name": "<product title>",
+    "description": "<product description>",
+    "images": ["<image_url>", ...],
+    "currency": "<currency_code>",
+    "price": <float>,
+    "quantity": <int|null>,
+    "specs": [
+      ["type", "physical"],
+      ["weight", "<weight>"],
+      ["dimensions", "<dimensions>"]
+    ],
+    "shipping": [{
+      "id": "default",
+      "cost": <float>
+    }]
+  },
   "tags": [
-    ["d", "card-1720875527000"],
-    ["title", "Happy Birthday!"],
-    ["category", "Birthday"],
-    ["pricing", "free"],
-    ["image", "https://example.com/birthday-card.jpg"],
-    ["t", "ecard"],
-    ["t", "birthday"],
-    ["alt", "Digital birthday POP card: Happy Birthday!"]
-  ],
-  "pubkey": "...",
-  "created_at": 1720875527,
-  "id": "...",
-  "sig": "..."
-}
-```
-
-## Categories
-
-Supported card categories include:
-
-- GM/GN (Good Morning/Good Night)
-- Fun
-- Birthday
-- Thank You
-- Holiday (e.g., Christmas, Easter, New Year)
-- Get Well Soon
-- Congratulations
-- Sympathy
-- Anniversary
-- Wedding
-- Engagement
-- Baby/New Baby
-- Love/Romance
-- Friendship
-- Thinking of You
-- Farewell/Goodbye
-- Graduation
-- Humor/Funny
-- Inspiration/Motivation
-- Mother's & Father's Day
-- Others
-
-## Querying Cards
-
-### Public Card Discovery
-
-All cards are publicly visible and can be queried without authentication:
-
-To query all cards:
-```
-{
-  "kinds": [30402],
-  "#t": ["ecard"],
-  "limit": 100
-}
-```
-
-To query cards by category:
-```
-{
-  "kinds": [30402],
-  "#t": ["ecard", "birthday"],
-  "limit": 50
-}
-```
-
-To query cards by a specific author:
-```
-{
-  "kinds": [30402],
-  "authors": ["<pubkey>"],
-  "#t": ["ecard"],
-  "limit": 50
-}
-```
-
-### Card Display
-
-Cards include author information for public discovery:
-- Author name (from kind 0 metadata)
-- Author profile picture (if available)
-- Creation timestamp
-- Card category and content
-
-### Access Control
-
-Card creation, editing, and deletion is restricted to authorized creators:
-- Only specific npubs/pubkeys can create new cards
-- Only card creators can edit or delete their own cards
-- All users can view, share, like, download, and zap cards
-- Access control is enforced both client-side and server-side
-
-## Sharing and Interactions
-
-### Direct Message Sharing
-
-Cards can be shared via Nostr direct messages using NIP-04 encrypted DMs (or NIP-17 for enhanced privacy). The message includes:
-- Personal message (optional)
-- Card title
-- Direct link to the card
-
-### Email Sharing
-
-Cards can be shared via email using the `mailto:` protocol with:
-- Card title in subject
-- Personal message and card link in body
-- Fallback to system email client
-
-### Zap Support
-
-Card creators can receive real lightning payments through LNURL integration. The application supports:
-
-#### LNURL Integration
-- **Lightning Address**: `bitpopart@getalby.com`
-- **LNURL-pay**: Automatic invoice generation
-- **WebLN Support**: Browser wallet integration
-- **Fallback**: Lightning URI for external wallets
-
-#### Zap Flow
-1. User clicks "Zap" button
-2. Application fetches LNURL-pay data from lightning address
-3. Creates NIP-57 zap request (if supported)
-4. Requests invoice from LNURL callback
-5. Opens payment in WebLN or external wallet
-6. Lightning service publishes zap receipt (if Nostr-enabled)
-
-#### Zap Request Format
-```json
-{
-  "kind": 9734,
-  "content": "Amazing POP card! ⚡",
-  "tags": [
-    ["relays", "wss://relay.nostr.band"],
-    ["amount", "1000000"],
-    ["lnurl", "bitpopart@getalby.com"],
-    ["p", "<creator-pubkey>"],
-    ["e", "<card-event-id>"]
+    ["d", "<product_id>"],
+    ["t", "<category>"],
+    ["t", "physical"],
+    ["title", "<product_title>"],
+    ["price", "<price>", "<currency>"],
+    ["alt", "Physical product: <title>"]
   ]
 }
 ```
 
-#### Payment Methods
-- **WebLN**: Direct browser wallet payment
-- **Lightning URI**: Opens external wallet apps
-- **QR Code**: Manual payment (future enhancement)
+**Additional Physical Product Fields:**
+- `weight`: Product weight for shipping calculations
+- `dimensions`: Product dimensions (e.g., "20x15x5 cm")
+- `shipping.cost`: Base shipping cost for the product
 
-#### Supported Amounts
-- Minimum: 1 sat
-- Maximum: Based on LNURL service limits
-- Quick amounts: 100, 1000, 5000, 10000 sats
+#### 2. Digital Products (Kind 30018)
 
-### Card Management
+Digital products extend NIP-15 with file management capabilities:
 
-#### Editing Cards
-
-Cards can be edited by their creators. When a card is updated:
-- The same `d` tag identifier is maintained to preserve the addressable event coordinate
-- An `updated_at` timestamp is added to the content JSON
-- The original `created_at` timestamp is preserved
-- All tags and content can be modified
-
-#### Deleting Cards
-
-Cards can be deleted by their creators using NIP-09 deletion events (kind 5):
-- References the original card event with an `e` tag
-- References the addressable event coordinate with an `a` tag
-- Format: `["a", "30402:<pubkey>:<d-tag-value>"]`
-
-Example deletion event:
 ```json
 {
-  "kind": 5,
-  "content": "Card deleted by user",
+  "kind": 30018,
+  "content": {
+    "id": "<uuid>",
+    "stall_id": "bitpop-digital-stall",
+    "name": "<product title>",
+    "description": "<product description>",
+    "images": ["<preview_image_url>", ...],
+    "currency": "<currency_code>",
+    "price": <float>,
+    "quantity": null,
+    "specs": [
+      ["type", "digital"],
+      ["download_limit", "<limit>"],
+      ["license_type", "<license>"],
+      ["file_count", "<count>"]
+    ],
+    "digital_files": ["<file_url>", ...]
+  },
   "tags": [
-    ["e", "<card-event-id>"],
-    ["a", "30402:<creator-pubkey>:<d-tag-value>"]
+    ["d", "<product_id>"],
+    ["t", "<category>"],
+    ["t", "digital"],
+    ["title", "<product_title>"],
+    ["price", "<price>", "<currency>"],
+    ["alt", "Digital product: <title>"],
+    ["file", "<file_url>"],
+    ...
   ]
 }
 ```
 
-### Social Interactions
+**Additional Digital Product Fields:**
+- `digital_files`: Array of downloadable file URLs
+- `download_limit`: Maximum number of downloads per purchase
+- `license_type`: License terms (personal, commercial, extended, royalty-free)
+- `file` tags: Each downloadable file is also tagged for discoverability
 
-- **Likes**: Can be implemented using NIP-25 reactions (kind 7)
-- **Comments**: Can be implemented using kind 1 notes with `e` tags referencing the card
-- **Reposts**: Can be implemented using NIP-18 reposts (kind 6)
+### File Storage
+
+All files (images and digital products) are uploaded using:
+- **Blossom servers** (NIP-B7) for decentralized file storage
+- **NIP-94 compatible tags** for file metadata
+- **Maximum file size**: 10MB per file
+- **Supported formats**: Any file type for digital products, images for previews
+
+### Categories
+
+The marketplace supports a comprehensive category system including:
+- Physical goods (Clothing, Electronics, Home & Garden, etc.)
+- Digital products (Software, Media, Services, etc.)
+- Professional services
+- Subscription services
+
+### Currency Support
+
+Supported currencies:
+- **USD** - US Dollar ($)
+- **EUR** - Euro (€)
+- **GBP** - British Pound (£)
+- **BTC** - Bitcoin (₿)
+- **SAT** - Satoshis (sats)
+
+### Stall Configuration
+
+The marketplace uses predefined stalls:
+- **Physical Products**: `bitpop-main-stall`
+- **Digital Products**: `bitpop-digital-stall`
+
+### Event Publishing
+
+All marketplace events include:
+- **NIP-31 alt tags** for human-readable descriptions
+- **Proper categorization** using `t` tags for relay-level filtering
+- **Structured metadata** following NIP-15 standards
+- **File references** using both content fields and tags
+
+## Implementation Notes
+
+### Admin Interface
+
+The admin interface provides:
+- **Tabbed product creation** (Physical/Digital)
+- **File upload with drag-and-drop** support
+- **Category selection** from predefined list
+- **Currency selection** with symbol display
+- **Form validation** and error handling
+- **Upload progress** indicators
+
+### Security
+
+- **Admin-only access** enforced at the UI level
+- **File size limits** to prevent abuse
+- **Input validation** on all form fields
+- **Secure file upload** through Blossom servers
+
+### Future Enhancements
+
+Planned features:
+- **Public marketplace browsing** for non-admin users
+- **Shopping cart** functionality
+- **Order management** system
+- **Payment integration** with Lightning Network
+- **Customer support** messaging
+
+## Compatibility
+
+This implementation is compatible with:
+- **NIP-15**: Nostr Marketplace standard
+- **NIP-94**: File Metadata standard
+- **NIP-B7**: Blossom file storage
+- **NIP-31**: Alt tags for accessibility
+
+## Example Usage
+
+### Creating a Physical Product
+
+1. Admin logs in with the specified NPUB
+2. Navigates to Shop → Admin Panel → Physical tab
+3. Fills in product details (title, description, category)
+4. Uploads product images
+5. Sets pricing and shipping information
+6. Submits form to publish to Nostr network
+
+### Creating a Digital Product
+
+1. Admin logs in with the specified NPUB
+2. Navigates to Shop → Admin Panel → Digital tab
+3. Fills in product details
+4. Uploads downloadable files and preview images
+5. Sets pricing and license terms
+6. Submits form to publish to Nostr network
+
+## References
+
+- [NIP-15: Nostr Marketplace](https://github.com/nostr-protocol/nips/blob/master/15.md)
+- [NIP-94: File Metadata](https://github.com/nostr-protocol/nips/blob/master/94.md)
+- [NIP-99: Classified Listings](https://github.com/nostr-protocol/nips/blob/master/99.md)
+- [NIP-B7: Blossom](https://github.com/hzrd149/blossom)

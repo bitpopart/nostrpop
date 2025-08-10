@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useNostr } from '@nostrify/react';
@@ -10,6 +11,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 import { ZapButton } from '@/components/cards/ZapButton';
+import { ShareCardDialog } from '@/components/cards/ShareCardDialog';
+import { ShareToNostrDialog } from '@/components/cards/ShareToNostrDialog';
 import { useAuthor } from '@/hooks/useAuthor';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useAppContext } from '@/hooks/useAppContext';
@@ -29,7 +32,8 @@ import {
   Gift,
   Eye,
   RefreshCw,
-  AlertCircle
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
 import { useToast } from '@/hooks/useToast';
 import type { NostrEvent, NostrFilter } from '@nostrify/nostrify';
@@ -51,6 +55,7 @@ const CardView = () => {
   const { toast } = useToast();
   const { user } = useCurrentUser();
   const { config } = useAppContext();
+  const [isDownloading, setIsDownloading] = useState(false);
 
   // Debug: Always log when component renders
   console.log('🎯 CardView component rendered with param:', nip19Param);
@@ -192,9 +197,33 @@ const CardView = () => {
   const authorAvatar = author.data?.metadata?.picture;
 
   useSeoMeta({
-    title: cardData ? `${cardData.title} - POP Cards by BitPopArt` : 'Card - POP Cards',
-    description: cardData?.description || 'Beautiful digital card created with POP Cards by BitPopArt',
+    title: cardData ? `${cardData.title} - BitPop Cards by BitPopArt` : 'Card - BitPop Cards',
+    description: cardData?.description || 'Beautiful digital card created with BitPop Cards by BitPopArt',
   });
+
+  // Helper function to get file extension from URL or content type
+  const getFileExtension = (url: string, contentType?: string): string => {
+    // Try to get extension from URL first
+    const urlExtension = url.split('.').pop()?.toLowerCase();
+    if (urlExtension && ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(urlExtension)) {
+      return urlExtension === 'jpeg' ? 'jpg' : urlExtension;
+    }
+
+    // Fallback to content type
+    if (contentType) {
+      const typeMap: Record<string, string> = {
+        'image/jpeg': 'jpg',
+        'image/jpg': 'jpg',
+        'image/png': 'png',
+        'image/gif': 'gif',
+        'image/webp': 'webp',
+        'image/svg+xml': 'svg'
+      };
+      return typeMap[contentType.toLowerCase()] || 'jpg';
+    }
+
+    return 'jpg'; // Default fallback
+  };
 
   const downloadCard = async () => {
     if (!cardData?.images || cardData.images.length === 0) {
@@ -206,30 +235,75 @@ const CardView = () => {
       return;
     }
 
+    setIsDownloading(true);
+
     try {
-      const response = await fetch(cardData.images[0]);
-      if (!response.ok) throw new Error('Failed to fetch image');
+      const imageUrl = cardData.images[0];
+      const fileName = cardData.title.replace(/[^a-z0-9]/gi, '-').toLowerCase();
 
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `ecard-${cardData.title.replace(/[^a-z0-9]/gi, '-').toLowerCase()}.jpg`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      // Try direct download first (for same-origin or CORS-enabled images)
+      try {
+        const response = await fetch(imageUrl, {
+          mode: 'cors',
+          credentials: 'omit'
+        });
 
-      toast({
-        title: "Downloaded! 📥",
-        description: "Card image downloaded successfully.",
-      });
-    } catch {
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const blob = await response.blob();
+        const contentType = response.headers.get('content-type') || blob.type;
+        const extension = getFileExtension(imageUrl, contentType);
+
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `ecard-${fileName}.${extension}`;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+
+        // Cleanup
+        setTimeout(() => {
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+        }, 100);
+
+        toast({
+          title: "Downloaded! 📥",
+          description: "Card image downloaded successfully.",
+        });
+
+      } catch (fetchError) {
+        // If fetch fails (likely due to CORS), try opening in new tab as fallback
+        console.warn('Direct download failed, trying fallback method:', fetchError);
+
+        // Create a temporary link to open the image in a new tab
+        const link = document.createElement('a');
+        link.href = imageUrl;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.download = `ecard-${fileName}.${getFileExtension(imageUrl)}`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        toast({
+          title: "Download Initiated 📥",
+          description: "Image opened in new tab. Right-click and 'Save As' to download.",
+        });
+      }
+
+    } catch (error) {
+      console.error('Download error:', error);
       toast({
         title: "Download Failed",
-        description: "Failed to download card image. Please try again.",
+        description: "Failed to download card image. Please try right-clicking the image and selecting 'Save As'.",
         variant: "destructive"
       });
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -511,7 +585,7 @@ const CardView = () => {
                           const target = e.target as HTMLImageElement;
                           target.style.display = 'none';
                           target.parentElement?.classList.add('bg-gradient-to-br', 'from-purple-100', 'via-pink-100', 'to-indigo-100', 'dark:from-purple-900/30', 'dark:via-pink-900/30', 'dark:to-indigo-900/30', 'flex', 'items-center', 'justify-center');
-                          target.parentElement!.innerHTML = '<div class="text-center"><div class="text-8xl mb-6">🎨</div><h3 class="text-2xl font-semibold text-muted-foreground mb-2">Beautiful POP Card</h3><p class="text-muted-foreground">Created with love by BitPopArt</p></div>';
+                          target.parentElement!.innerHTML = '<div class="text-center"><div class="text-8xl mb-6">🎨</div><h3 class="text-2xl font-semibold text-muted-foreground mb-2">Beautiful BitPop Card</h3><p class="text-muted-foreground">Created with love by BitPopArt</p></div>';
                         }}
                       />
                     </div>
@@ -527,7 +601,7 @@ const CardView = () => {
                   <div className="aspect-[4/3] bg-gradient-to-br from-purple-100 via-pink-100 to-indigo-100 dark:from-purple-900/30 dark:via-pink-900/30 dark:to-indigo-900/30 flex items-center justify-center">
                     <div className="text-center">
                       <div className="text-8xl mb-6">🎨</div>
-                      <h3 className="text-2xl font-semibold text-muted-foreground mb-2">Beautiful POP Card</h3>
+                      <h3 className="text-2xl font-semibold text-muted-foreground mb-2">Beautiful BitPop Card</h3>
                       <p className="text-muted-foreground">Created with love by BitPopArt</p>
                     </div>
                   </div>
@@ -635,42 +709,46 @@ const CardView = () => {
 
                     {/* Public Actions */}
                     <div className="space-y-2">
-                      <Button className="w-full bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 hover:from-pink-600 hover:via-purple-600 hover:to-indigo-600">
-                        <Share2 className="mr-2 h-4 w-4" />
-                        Share Card
-                      </Button>
-
-                      <Button
-                        variant="outline"
-                        className="w-full bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 border-purple-200 dark:border-purple-800"
-                        onClick={() => {
-                          // Share to Nostr functionality
+                      <ShareCardDialog
+                        cardId={cardEvent.id}
+                        cardTitle={cardData.title}
+                        cardAuthor={cardEvent.pubkey}
+                        cardUrl={(() => {
                           const dTag = cardEvent.tags.find(([name]) => name === 'd')?.[1];
                           if (dTag) {
-                            const naddr = nip19.naddrEncode({
-                              identifier: dTag,
-                              pubkey: cardEvent.pubkey,
-                              kind: cardEvent.kind,
-                            });
-                            const shareUrl = `${window.location.origin}/card/${naddr}`;
-                            const shareText = `Check out this beautiful ${cardData.category} ecard: "${cardData.title}"\n\n${shareUrl}\n\n#ecard #${cardData.category.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
-
-                            if (navigator.share) {
-                              navigator.share({
-                                title: `Beautiful Ecard: ${cardData.title}`,
-                                text: shareText,
-                                url: shareUrl
+                            try {
+                              const naddr = nip19.naddrEncode({
+                                identifier: dTag,
+                                pubkey: cardEvent.pubkey,
+                                kind: cardEvent.kind,
                               });
-                            } else {
-                              navigator.clipboard.writeText(shareText);
-                              alert('Share text copied to clipboard!');
+                              return `${window.location.origin}/card/${naddr}`;
+                            } catch (error) {
+                              console.error('Error generating naddr:', error);
+                              return `${window.location.origin}/card/${dTag}`;
                             }
                           }
-                        }}
+                          return `${window.location.origin}/card/${cardEvent.id}`;
+                        })()}
                       >
-                        <Share2 className="mr-2 h-4 w-4 text-purple-600 dark:text-purple-400" />
-                        Share to Nostr
-                      </Button>
+                        <Button className="w-full bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 hover:from-pink-600 hover:via-purple-600 hover:to-indigo-600">
+                          <Share2 className="mr-2 h-4 w-4" />
+                          Share Card
+                        </Button>
+                      </ShareCardDialog>
+
+                      <ShareToNostrDialog
+                        cardEvent={cardEvent}
+                        cardData={cardData}
+                      >
+                        <Button
+                          variant="outline"
+                          className="w-full bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 border-purple-200 dark:border-purple-800"
+                        >
+                          <Share2 className="mr-2 h-4 w-4 text-purple-600 dark:text-purple-400" />
+                          Share to Nostr
+                        </Button>
+                      </ShareToNostrDialog>
 
                       <div className="grid grid-cols-2 gap-2">
                         <Button
@@ -685,10 +763,15 @@ const CardView = () => {
                         <Button
                           variant="outline"
                           onClick={downloadCard}
+                          disabled={isDownloading}
                           className="bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/30 border-green-200 dark:border-green-800"
                         >
-                          <Download className="mr-2 h-4 w-4 text-green-600 dark:text-green-400" />
-                          Download
+                          {isDownloading ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin text-green-600 dark:text-green-400" />
+                          ) : (
+                            <Download className="mr-2 h-4 w-4 text-green-600 dark:text-green-400" />
+                          )}
+                          {isDownloading ? 'Downloading...' : 'Download'}
                         </Button>
                       </div>
 
