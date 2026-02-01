@@ -45,6 +45,7 @@ interface PixelData {
   color: string;
   author: string;
   timestamp: number;
+  blockHeight?: number;
 }
 
 interface PendingPixel extends PixelData {
@@ -71,6 +72,27 @@ function Canvas100M() {
   const [uploadedImage, setUploadedImage] = useState<HTMLImageElement | null>(null);
   const [imageScale, setImageScale] = useState(100);
   const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
+  const [currentBlockHeight, setCurrentBlockHeight] = useState<number | null>(null);
+
+  // Fetch current Bitcoin block height
+  useEffect(() => {
+    const fetchBlockHeight = async () => {
+      try {
+        const response = await fetch('https://blockchain.info/q/getblockcount');
+        const blockHeight = await response.json();
+        setCurrentBlockHeight(blockHeight);
+      } catch (error) {
+        console.error('Failed to fetch block height:', error);
+        // Fallback to a reasonable estimate if API fails
+        setCurrentBlockHeight(null);
+      }
+    };
+
+    fetchBlockHeight();
+    // Refresh every 10 minutes (average block time is ~10 min)
+    const interval = setInterval(fetchBlockHeight, 600000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Fetch all painted pixels from Nostr
   const { data: pixels, isLoading: pixelsLoading, refetch: refetchPixels } = useQuery({
@@ -92,6 +114,7 @@ function Canvas100M() {
             const xTag = event.tags.find(([name]) => name === 'x')?.[1];
             const yTag = event.tags.find(([name]) => name === 'y')?.[1];
             const colorTag = event.tags.find(([name]) => name === 'color')?.[1];
+            const blockTag = event.tags.find(([name]) => name === 'block')?.[1];
 
             if (!xTag || !yTag || !colorTag) return null;
 
@@ -100,7 +123,8 @@ function Canvas100M() {
               y: parseInt(yTag),
               color: colorTag,
               author: event.pubkey,
-              timestamp: event.created_at
+              timestamp: event.created_at,
+              blockHeight: blockTag ? parseInt(blockTag) : undefined
             };
           } catch (error) {
             console.warn('Failed to parse pixel event:', error);
@@ -275,14 +299,15 @@ function Canvas100M() {
       y,
       color: selectedColor,
       author: user.pubkey,
-      timestamp: Math.floor(Date.now() / 1000)
+      timestamp: Math.floor(Date.now() / 1000),
+      blockHeight: currentBlockHeight || undefined
     };
 
     setPendingPixels(prev => [...prev, newPixel]);
     
     // Show a subtle toast (less intrusive)
-    console.log(`Pixel painted at (${x}, ${y})`);
-  }, [user, selectedColor, pixels, pendingPixels, pan, zoom, toast]);
+    console.log(`Pixel painted at (${x}, ${y}) at Bitcoin block ${currentBlockHeight || 'unknown'}`);
+  }, [user, selectedColor, pixels, pendingPixels, pan, zoom, toast, currentBlockHeight]);
 
   // Undo last pixel
   const handleUndo = () => {
@@ -306,7 +331,8 @@ function Canvas100M() {
         content: JSON.stringify({
           x: pixel.x,
           y: pixel.y,
-          color: pixel.color
+          color: pixel.color,
+          block_height: pixel.blockHeight
         }),
         tags: [
           ['d', `${pixel.x}-${pixel.y}`], // Unique identifier for this pixel
@@ -314,7 +340,8 @@ function Canvas100M() {
           ['y', pixel.y.toString()],
           ['color', pixel.color],
           ['t', '100m-canvas'],
-          ['alt', `Painted pixel at (${pixel.x}, ${pixel.y}) on the 100M Canvas`]
+          ...(pixel.blockHeight ? [['block', pixel.blockHeight.toString()]] : []),
+          ['alt', `Painted pixel at (${pixel.x}, ${pixel.y}) on the 100M Canvas at Bitcoin block ${pixel.blockHeight || 'unknown'}`]
         ],
         created_at: pixel.timestamp,
       }));
@@ -499,7 +526,8 @@ function Canvas100M() {
             y: canvasY,
             color,
             author: user.pubkey,
-            timestamp: Math.floor(Date.now() / 1000)
+            timestamp: Math.floor(Date.now() / 1000),
+            blockHeight: currentBlockHeight || undefined
           });
         }
       }
@@ -559,6 +587,12 @@ function Canvas100M() {
               <Users className="w-4 h-4 mr-2" />
               {contributors.length} artists
             </Badge>
+            {currentBlockHeight && (
+              <Badge variant="secondary" className="text-base px-4 py-2 bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-300">
+                <div className="w-2 h-2 rounded-full bg-orange-500 mr-2 animate-pulse" />
+                Block: {currentBlockHeight.toLocaleString()}
+              </Badge>
+            )}
           </div>
 
           {/* Info Card */}
@@ -576,7 +610,7 @@ function Canvas100M() {
                       Why 100 Million Pixels?
                     </h3>
                     <p className="text-sm text-orange-600 dark:text-orange-400">
-                      <strong>100 million satoshis = 1 Bitcoin.</strong> This canvas is a living demonstration of Bitcoin's divisibility and the power of micropayments. Each pixel represents one satoshi, making this a 1 BTC artwork when complete!
+                      <strong>100 million satoshis = 1 Bitcoin.</strong> This canvas is a living demonstration of Bitcoin's divisibility and the power of micropayments. Each pixel represents one satoshi, making this a 1 BTC artwork when complete! Every pixel is timestamped with the Bitcoin block height for eternal proof of creation.
                     </p>
                   </div>
                 </div>
@@ -783,8 +817,15 @@ function Canvas100M() {
                     </Button>
                   </div>
                   {showPreview && (
-                    <div className="mt-4 p-4 bg-white dark:bg-gray-800 rounded-lg">
-                      <h4 className="font-semibold mb-2">Your Pixels:</h4>
+                    <div className="mt-4 p-4 bg-white dark:bg-gray-800 rounded-lg space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-semibold">Your Pixels:</h4>
+                        {pendingPixels[0]?.blockHeight && (
+                          <Badge variant="secondary" className="text-xs">
+                            Block: {pendingPixels[0].blockHeight.toLocaleString()}
+                          </Badge>
+                        )}
+                      </div>
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-40 overflow-y-auto">
                         {pendingPixels.map((pixel, idx) => (
                           <div key={pixel.id} className="flex items-center space-x-2 text-xs">
