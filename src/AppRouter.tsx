@@ -17,8 +17,11 @@ import OrderConfirmation from "./pages/OrderConfirmation";
 import NotFound from "./pages/NotFound";
 
 export function AppRouter() {
+  // Use basename for production (GitHub Pages), but not for local development/preview
+  const basename = import.meta.env.MODE === 'production' ? '/nostrpop' : undefined;
+  
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={basename}>
       <ScrollToTop />
       <Layout>
         <Routes>
