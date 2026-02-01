@@ -26,11 +26,7 @@ export const sampleProducts: MarketplaceProduct[] = [
     id: 'vintage-camera-001',
     name: 'Vintage Film Camera',
     description: 'Beautiful vintage 35mm film camera in excellent working condition. Perfect for photography enthusiasts who love the analog experience. Includes original leather case and manual.',
-    images: [
-      'https://images.unsplash.com/photo-1606983340126-99ab4feaa64a?w=500&h=500&fit=crop',
-      'https://images.unsplash.com/photo-1502920917128-1aa500764cbd?w=500&h=500&fit=crop',
-      'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=500&h=500&fit=crop'
-    ],
+    images: [],
     currency: 'USD',
     price: 250,
     quantity: 1,
@@ -52,10 +48,7 @@ export const sampleProducts: MarketplaceProduct[] = [
     id: 'bitcoin-ebook-001',
     name: 'The Bitcoin Standard - Digital Edition',
     description: 'Comprehensive guide to understanding Bitcoin and its economic implications. This digital edition includes bonus chapters and updated content for 2024.',
-    images: [
-      'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=500&h=500&fit=crop',
-      'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=500&h=500&fit=crop'
-    ],
+    images: [],
     currency: 'USD',
     price: 19.99,
     category: 'Books',
@@ -75,11 +68,7 @@ export const sampleProducts: MarketplaceProduct[] = [
     id: 'handmade-wallet-001',
     name: 'Handcrafted Leather Bitcoin Wallet',
     description: 'Premium handcrafted leather wallet designed specifically for Bitcoin enthusiasts. Features RFID blocking technology and a hidden compartment for seed phrase storage.',
-    images: [
-      'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500&h=500&fit=crop',
-      'https://images.unsplash.com/photo-1627123424574-724758594e93?w=500&h=500&fit=crop',
-      'https://images.unsplash.com/photo-1608070740394-6d7b8b6e7b8f?w=500&h=500&fit=crop'
-    ],
+    images: [],
     currency: 'USD',
     price: 89.99,
     quantity: 5,
@@ -101,10 +90,7 @@ export const sampleProducts: MarketplaceProduct[] = [
     id: 'nostr-stickers-001',
     name: 'Nostr Protocol Sticker Pack',
     description: 'Show your support for the Nostr protocol with this awesome sticker pack! Includes 10 unique designs featuring Nostr logos, memes, and slogans.',
-    images: [
-      'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=500&h=500&fit=crop',
-      'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=500&h=500&fit=crop'
-    ],
+    images: [],
     currency: 'USD',
     price: 12.99,
     quantity: 50,
@@ -126,10 +112,7 @@ export const sampleProducts: MarketplaceProduct[] = [
     id: 'lightning-course-001',
     name: 'Lightning Network Development Course',
     description: 'Complete video course on Lightning Network development. Learn to build Lightning applications from scratch with hands-on projects and real-world examples.',
-    images: [
-      'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=500&h=500&fit=crop',
-      'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=500&h=500&fit=crop'
-    ],
+    images: [],
     currency: 'USD',
     price: 149.99,
     category: 'Software',
@@ -150,10 +133,7 @@ export const sampleProducts: MarketplaceProduct[] = [
     id: 'bitcoin-art-001',
     name: 'Bitcoin Digital Art Collection',
     description: 'Exclusive collection of 5 high-resolution Bitcoin-themed digital artworks. Perfect for printing or using as desktop wallpapers.',
-    images: [
-      'https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=500&h=500&fit=crop',
-      'https://images.unsplash.com/photo-1621761191319-c6fb62004040?w=500&h=500&fit=crop'
-    ],
+    images: [],
     currency: 'USD',
     price: 29.99,
     category: 'Art',
@@ -174,10 +154,7 @@ export const sampleProducts: MarketplaceProduct[] = [
     id: 'hardware-wallet-001',
     name: 'Secure Hardware Wallet',
     description: 'State-of-the-art hardware wallet for secure Bitcoin storage. Features air-gapped signing, secure element chip, and open-source firmware.',
-    images: [
-      'https://images.unsplash.com/photo-1621761191319-c6fb62004040?w=500&h=500&fit=crop',
-      'https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=500&h=500&fit=crop'
-    ],
+    images: [],
     currency: 'USD',
     price: 199.99,
     quantity: 3,
@@ -199,10 +176,7 @@ export const sampleProducts: MarketplaceProduct[] = [
     id: 'coffee-beans-001',
     name: 'Bitcoin Coffee - Premium Blend',
     description: 'Ethically sourced premium coffee beans roasted to perfection. Each bag sold helps support Bitcoin education in developing countries.',
-    images: [
-      'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=500&h=500&fit=crop',
-      'https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=500&h=500&fit=crop'
-    ],
+    images: [],
     currency: 'USD',
     price: 24.99,
     quantity: 20,
