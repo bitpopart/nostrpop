@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency } from '@/hooks/usePayment';
+import { useLivePrice } from '@/hooks/useLivePrice';
 import { PaymentDialog } from './PaymentDialog';
 import { ProductDetailsDialog } from './ProductDetailsDialog';
 import { ImageGallery } from './ImageGallery';
@@ -12,7 +14,8 @@ import {
   Package,
   Download,
   Eye,
-  Truck
+  Truck,
+  Zap
 } from 'lucide-react';
 
 interface MarketplaceProduct {
@@ -43,6 +46,17 @@ export function ProductCard({ product, onViewDetails }: ProductCardProps) {
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const navigate = useNavigate();
+
+  // Fetch live price from source URL if available
+  const { data: livePrice, isLoading: priceLoading } = useLivePrice(
+    product.contact_url || product.product_url,
+    product.price,
+    product.currency
+  );
+
+  const displayPrice = livePrice?.price ?? product.price;
+  const displayCurrency = livePrice?.currency ?? product.currency;
+  const displayPriceInSats = livePrice?.priceInSats;
 
   const isOutOfStock = product.quantity !== undefined && product.quantity <= 0;
   const hasShipping = product.shipping && product.shipping.length > 0;
@@ -152,8 +166,22 @@ export function ProductCard({ product, onViewDetails }: ProductCardProps) {
 
           {/* Price and actions */}
           <div className="flex items-center justify-between">
-            <div className="text-xl font-bold text-green-600 dark:text-green-400">
-              {formatCurrency(product.price, product.currency)}
+            <div>
+              {priceLoading ? (
+                <Skeleton className="h-6 w-20" />
+              ) : (
+                <>
+                  <div className="text-xl font-bold text-green-600 dark:text-green-400">
+                    {formatCurrency(displayPrice, displayCurrency)}
+                  </div>
+                  {displayPriceInSats && (
+                    <div className="flex items-center text-xs text-orange-600 dark:text-orange-400 mt-1">
+                      <Zap className="w-3 h-3 mr-1" />
+                      <span>{displayPriceInSats.toLocaleString()} sats</span>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
 
             <div className="flex space-x-2">
