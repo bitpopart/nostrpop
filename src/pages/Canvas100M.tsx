@@ -22,12 +22,10 @@ import {
   Palette,
   Eye,
   Undo,
-  Redo,
   Check,
   X,
   ZoomIn,
   ZoomOut,
-  Move,
   Sparkles
 } from 'lucide-react';
 import type { NostrEvent, NostrMetadata } from '@nostrify/nostrify';
