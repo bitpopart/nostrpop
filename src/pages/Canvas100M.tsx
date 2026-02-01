@@ -146,7 +146,7 @@ function Canvas100M() {
   const paintedPixels = (pixels?.length || 0) + pendingPixels.length;
   const percentPainted = ((paintedPixels / TOTAL_PIXELS) * 100).toFixed(4);
 
-  // Draw canvas (base pixels)
+  // Draw canvas (base pixels with grid background)
   useEffect(() => {
     if (!canvasRef.current) return;
     
@@ -155,21 +155,32 @@ function Canvas100M() {
     
     if (!ctx) return;
 
-    // Draw checkerboard background pattern
-    const gridSize = 50; // Smaller grid for better visibility
-    const lightColor = '#FFFFFF';
-    const darkColor = '#E5E7EB'; // More visible gray
-    
-    for (let y = 0; y < CANVAS_HEIGHT; y += gridSize) {
-      for (let x = 0; x < CANVAS_WIDTH; x += gridSize) {
-        // Alternate colors in checkerboard pattern
-        const isDark = ((x / gridSize) + (y / gridSize)) % 2 === 0;
-        ctx.fillStyle = isDark ? darkColor : lightColor;
-        ctx.fillRect(x, y, gridSize, gridSize);
-      }
+    // First, fill with white background
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+    // Draw grid lines for better visibility
+    const gridSize = 100; // Grid every 100 pixels
+    ctx.strokeStyle = '#E5E7EB';
+    ctx.lineWidth = 1;
+
+    // Vertical lines
+    for (let x = 0; x <= CANVAS_WIDTH; x += gridSize) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, CANVAS_HEIGHT);
+      ctx.stroke();
     }
 
-    // Draw existing pixels
+    // Horizontal lines
+    for (let y = 0; y <= CANVAS_HEIGHT; y += gridSize) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(CANVAS_WIDTH, y);
+      ctx.stroke();
+    }
+
+    // Draw existing pixels on top of the grid
     if (pixels) {
       pixels.forEach(pixel => {
         ctx.fillStyle = pixel.color;
@@ -863,7 +874,7 @@ function Canvas100M() {
                   <Skeleton className="w-full aspect-square" />
                 ) : (
                   <>
-                    <div className="relative overflow-hidden border-2 border-purple-200 dark:border-purple-800 rounded-lg bg-white">
+                    <div className="relative overflow-hidden border-2 border-purple-200 dark:border-purple-800 rounded-lg bg-white dark:bg-gray-800">
                       <div
                         className="relative cursor-crosshair"
                         style={{
@@ -874,13 +885,13 @@ function Canvas100M() {
                           transition: 'none'
                         }}
                       >
-                        {/* Base canvas - permanent pixels */}
+                        {/* Base canvas - permanent pixels with grid background */}
                         <canvas
                           ref={canvasRef}
                           width={CANVAS_WIDTH}
                           height={CANVAS_HEIGHT}
                           className="absolute top-0 left-0 w-full h-full pointer-events-none"
-                          style={{ imageRendering: 'pixelated' }}
+                          style={{ imageRendering: 'pixelated', backgroundColor: 'transparent' }}
                         />
                         
                         {/* Grid canvas - grid overlay */}
