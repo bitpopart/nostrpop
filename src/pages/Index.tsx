@@ -11,7 +11,6 @@ import { useLatestCards } from '@/hooks/useLatestCards';
 import { useArtworks } from '@/hooks/useArtworks';
 import { genUserName } from '@/lib/genUserName';
 import { RelaySelector } from '@/components/RelaySelector';
-import { getFeaturedCategories } from '@/config/categories';
 import { getFirstImage, stripImagesFromContent } from '@/lib/extractImages';
 import { formatPrice } from '@/lib/artTypes';
 import {
@@ -22,8 +21,6 @@ import {
   Gift,
   Rss,
   CreditCard,
-  ShoppingBag,
-  Tag,
   Palette,
   ShoppingCart,
   Eye
@@ -308,38 +305,7 @@ function ThumbnailSkeleton() {
   );
 }
 
-function CategoryCard({ category }: { category: { id: string; name: string; description?: string; icon?: string } }) {
-  return (
-    <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm group overflow-hidden">
-      <CardHeader className="pb-3">
-        <div className="flex items-center space-x-3">
-          <div className="flex-shrink-0">
-            <div className="h-12 w-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-2xl">
-              {category.icon || '📦'}
-            </div>
-          </div>
-          <div className="flex-1 min-w-0">
-            <CardTitle className="text-lg font-semibold truncate">
-              {category.name}
-            </CardTitle>
-            {category.description && (
-              <CardDescription className="text-sm">
-                {category.description}
-              </CardDescription>
-            )}
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="pt-0">
-        <div className="flex items-center text-blue-600 group-hover:text-blue-700 transition-colors">
-          <ShoppingBag className="h-4 w-4 mr-2" />
-          <span className="text-sm font-medium">Browse products</span>
-          <ArrowRight className="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform" />
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
+
 
 const Index = () => {
   const { data: adminNotes, isLoading: notesLoading, error: notesError } = useLatestAdminNotes(3);
@@ -349,7 +315,6 @@ const Index = () => {
   const metadata: NostrMetadata | undefined = author.data?.metadata;
 
   const displayName = metadata?.name ?? genUserName(ADMIN_HEX);
-  const featuredCategories = getFeaturedCategories();
 
   // Get first 3 artworks for featured section
   const featuredArtworksList = featuredArtworks?.slice(0, 3) || [];
@@ -651,56 +616,7 @@ const Index = () => {
           )}
         </div>
 
-        {/* Featured Categories Section */}
-        <div className="mb-16">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h2 className="text-3xl font-bold mb-2">Featured Categories</h2>
-              <p className="text-gray-600 dark:text-gray-300">
-                Explore popular marketplace categories
-              </p>
-            </div>
-            <Button variant="outline" asChild>
-              <Link to="/shop" className="flex items-center space-x-2">
-                <Tag className="h-4 w-4" />
-                <span>Browse All</span>
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
 
-          {featuredCategories.length > 0 ? (
-            <div className="grid md:grid-cols-3 gap-6">
-              {featuredCategories.map((category, index) => (
-                <Link
-                  key={category.id}
-                  to={`/shop?category=${encodeURIComponent(category.name)}`}
-                  className="block animate-in fade-in slide-in-from-bottom-4"
-                  style={{ animationDelay: `${index * 100}ms` }}
-                >
-                  <CategoryCard category={category} />
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <Card className="border-dashed">
-              <CardContent className="py-8 px-6 text-center">
-                <div className="max-w-sm mx-auto space-y-4">
-                  <ShoppingBag className="h-8 w-8 mx-auto text-gray-400" />
-                  <div>
-                    <CardTitle className="mb-2">No Featured Categories</CardTitle>
-                    <CardDescription>
-                      Categories will appear here once they are marked as featured.
-                    </CardDescription>
-                  </div>
-                  <Button size="sm" asChild>
-                    <Link to="/shop">Browse Shop</Link>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
 
         {/* Footer */}
         <div className="text-center mt-16 text-sm text-gray-500 dark:text-gray-400">
