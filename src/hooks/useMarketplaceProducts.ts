@@ -205,7 +205,22 @@ export function useDeleteProduct() {
         description: "The product has been successfully deleted from the marketplace.",
       });
 
-      // Invalidate and refetch marketplace products
+      // Optimistically remove from cache immediately
+      queryClient.setQueryData(['marketplace-products'], (oldData: any) => {
+        if (!oldData) return oldData;
+        return oldData.filter((product: any) => product.id !== data.productId);
+      });
+
+      // Also remove from all category queries
+      queryClient.setQueriesData(
+        { queryKey: ['marketplace-products'] }, 
+        (oldData: any) => {
+          if (!oldData) return oldData;
+          return oldData.filter((product: any) => product.id !== data.productId);
+        }
+      );
+
+      // Invalidate to refetch in background
       queryClient.invalidateQueries({ queryKey: ['marketplace-products'] });
       queryClient.invalidateQueries({ queryKey: ['marketplace-product', data.productId] });
     },
