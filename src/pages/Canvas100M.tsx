@@ -702,7 +702,7 @@ function Canvas100M() {
                     <Button variant="outline" size="sm" onClick={handleZoomOut}>
                       <ZoomOut className="h-4 w-4" />
                     </Button>
-                    <span className="text-sm text-muted-foreground min-w-16 text-center">{Math.round(zoom * 10)}x</span>
+                    <span className="text-sm text-muted-foreground min-w-16 text-center">{Math.round(zoom * 100)}%</span>
                     <Button variant="outline" size="sm" onClick={handleZoomIn}>
                       <ZoomIn className="h-4 w-4" />
                     </Button>
