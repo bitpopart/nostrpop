@@ -371,7 +371,9 @@ const Index = () => {
             </h1>
           </div>
           <p className="text-2xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto mb-8">
-            Good Vibes cards by BitPopArt to share with everyone!
+            <Link to="/canvas" className="hover:text-purple-600 transition-colors underline decoration-purple-400 decoration-2 underline-offset-4">
+              100M Canvas
+            </Link>
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button size="lg" asChild className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600">
@@ -393,9 +395,9 @@ const Index = () => {
         <div className="mb-16">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h2 className="text-3xl font-bold mb-2">Featured Art</h2>
+              <h2 className="text-3xl font-bold mb-2">Art</h2>
               <p className="text-gray-600 dark:text-gray-300">
-                Discover unique digital artworks from talented artists
+                By BitPopArt
               </p>
             </div>
             <Button variant="outline" asChild>
@@ -484,9 +486,9 @@ const Index = () => {
         <div className="mb-16">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h2 className="text-3xl font-bold mb-2">Featured Cards</h2>
+              <h2 className="text-3xl font-bold mb-2">Cards</h2>
               <p className="text-gray-600 dark:text-gray-300">
-                Latest card creations from our community
+                Send a positive vibe to someone
               </p>
             </div>
             <Button variant="outline" asChild>
@@ -575,9 +577,9 @@ const Index = () => {
         <div className="mb-16">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h2 className="text-3xl font-bold mb-2">Latest Updates</h2>
+              <h2 className="text-3xl font-bold mb-2">Nostr News</h2>
               <p className="text-gray-600 dark:text-gray-300">
-                Recent announcements from {displayName}
+                From BitPopArt
               </p>
             </div>
             <Button variant="outline" asChild>
