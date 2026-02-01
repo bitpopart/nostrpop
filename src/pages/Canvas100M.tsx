@@ -153,9 +153,19 @@ function Canvas100M() {
     
     if (!ctx) return;
 
-    // Clear canvas
-    ctx.fillStyle = '#FFFFFF';
-    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    // Draw checkerboard background pattern
+    const gridSize = 100; // Size of each checkerboard square
+    const lightColor = '#FFFFFF';
+    const darkColor = '#F3F4F6'; // Light gray
+    
+    for (let y = 0; y < CANVAS_HEIGHT; y += gridSize) {
+      for (let x = 0; x < CANVAS_WIDTH; x += gridSize) {
+        // Alternate colors in checkerboard pattern
+        const isDark = ((x / gridSize) + (y / gridSize)) % 2 === 0;
+        ctx.fillStyle = isDark ? darkColor : lightColor;
+        ctx.fillRect(x, y, gridSize, gridSize);
+      }
+    }
 
     // Draw existing pixels
     if (pixels) {
@@ -259,20 +269,14 @@ function Canvas100M() {
     const canvas = e.currentTarget;
     const rect = canvas.getBoundingClientRect();
     
-    // Calculate pixel coordinates accounting for zoom and pan
-    const viewportX = e.clientX - rect.left;
-    const viewportY = e.clientY - rect.top;
+    // Get click position relative to the canvas element
+    const clickX = e.clientX - rect.left;
+    const clickY = e.clientY - rect.top;
     
-    // Convert viewport coordinates to canvas coordinates
-    const canvasX = (viewportX / zoom) - (pan.x / zoom);
-    const canvasY = (viewportY / zoom) - (pan.y / zoom);
-    
-    // Scale to actual canvas size
-    const scaleX = CANVAS_WIDTH / rect.width;
-    const scaleY = CANVAS_HEIGHT / rect.height;
-    
-    const x = Math.floor(canvasX * scaleX);
-    const y = Math.floor(canvasY * scaleY);
+    // Convert to canvas pixel coordinates
+    // The canvas is scaled to fit the container, so we need to account for that
+    const x = Math.floor((clickX / rect.width) * CANVAS_WIDTH);
+    const y = Math.floor((clickY / rect.height) * CANVAS_HEIGHT);
 
     // Bounds check
     if (x < 0 || x >= CANVAS_WIDTH || y < 0 || y >= CANVAS_HEIGHT) {
