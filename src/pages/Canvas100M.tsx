@@ -408,7 +408,7 @@ function Canvas100M() {
           <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto mb-4">
             A collaborative art project on Nostr. Paint pixel by pixel on a 100 million pixel canvas!
           </p>
-          <div className="flex flex-wrap items-center justify-center gap-4 text-sm">
+          <div className="flex flex-wrap items-center justify-center gap-4 text-sm mb-6">
             <Badge variant="secondary" className="text-base px-4 py-2">
               <Zap className="w-4 h-4 mr-2 text-yellow-500" />
               {SAT_PER_PIXEL} sat per pixel
@@ -426,6 +426,61 @@ function Canvas100M() {
               {contributors.length} artists
             </Badge>
           </div>
+
+          {/* Info Card */}
+          <Card className="max-w-4xl mx-auto bg-gradient-to-r from-orange-50 via-yellow-50 to-orange-50 dark:from-orange-900/10 dark:via-yellow-900/10 dark:to-orange-900/10 border-orange-200 dark:border-orange-800">
+            <CardContent className="pt-6">
+              <div className="space-y-4 text-left">
+                <div className="flex items-start space-x-3">
+                  <div className="flex-shrink-0 mt-1">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-orange-500 to-yellow-500 flex items-center justify-center">
+                      <Zap className="w-4 h-4 text-white" />
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-orange-700 dark:text-orange-300 mb-1">
+                      Why 100 Million Pixels?
+                    </h3>
+                    <p className="text-sm text-orange-600 dark:text-orange-400">
+                      <strong>100 million satoshis = 1 Bitcoin.</strong> This canvas is a living demonstration of Bitcoin's divisibility and the power of micropayments. Each pixel represents one satoshi, making this a 1 BTC artwork when complete!
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start space-x-3">
+                  <div className="flex-shrink-0 mt-1">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center">
+                      <Sparkles className="w-4 h-4 text-white" />
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-purple-700 dark:text-purple-300 mb-1">
+                      The Power of Decentralization
+                    </h3>
+                    <p className="text-sm text-purple-600 dark:text-purple-400">
+                      This project showcases the power of <strong>Nostr</strong> (decentralized social protocol), <strong>Lightning Network</strong> (instant Bitcoin payments), and <strong>collaborative art</strong>—all without centralized control. Your pixels are stored on Nostr relays, owned by you forever.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start space-x-3">
+                  <div className="flex-shrink-0 mt-1">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-pink-500 to-red-500 flex items-center justify-center">
+                      <Palette className="w-4 h-4 text-white" />
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-pink-700 dark:text-pink-300 mb-1">
+                      Art Meets Technology
+                    </h3>
+                    <p className="text-sm text-pink-600 dark:text-pink-400">
+                      Every pixel you paint is a Nostr event, timestamped and cryptographically signed. No one can paint over your pixels—they're protected by the protocol. This is digital art with true ownership and permanence.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Login Prompt */}
