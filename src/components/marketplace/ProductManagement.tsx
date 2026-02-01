@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { CreateProductForm } from './CreateProductForm';
 import { EditProductForm } from './EditProductForm';
+import { AddProductByUrl } from './AddProductByUrl';
 import { LightningAddressDebugger } from './LightningAddressDebugger';
 import { CategoryManagement } from './CategoryManagement';
 import { formatCurrency } from '@/hooks/usePayment';
@@ -26,7 +27,8 @@ import {
   TrendingUp,
   DollarSign,
   ShoppingCart,
-  AlertTriangle
+  AlertTriangle,
+  Link2
 } from 'lucide-react';
 
 import { useCategories } from '@/hooks/useCategories';
@@ -36,6 +38,7 @@ export function ProductManagement() {
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
   const [searchQuery, setSearchQuery] = useState('');
   const [editingProduct, setEditingProduct] = useState<MarketplaceProduct | null>(null);
+  const [importedProductData, setImportedProductData] = useState<any>(null);
 
   const { user } = useCurrentUser();
   const { categoryNames } = useCategories();
@@ -157,9 +160,10 @@ export function ProductManagement() {
 
       {/* Main Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4 max-w-3xl">
-          <TabsTrigger value="products">My Products</TabsTrigger>
-          <TabsTrigger value="create">Create Product</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-5 max-w-4xl">
+          <TabsTrigger value="products">Products</TabsTrigger>
+          <TabsTrigger value="create">Create</TabsTrigger>
+          <TabsTrigger value="import">Import URL</TabsTrigger>
           <TabsTrigger value="categories">Categories</TabsTrigger>
           <TabsTrigger value="debug">Debug</TabsTrigger>
         </TabsList>
