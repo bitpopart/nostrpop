@@ -12,8 +12,10 @@ interface ScrapedProductData {
   description: string;
   price: number;
   currency: string;
+  priceInSats?: number;
   images: string[];
   url: string;
+  category?: string;
 }
 
 interface AddProductByUrlProps {
@@ -85,6 +87,24 @@ export function AddProductByUrl({ onProductScraped }: AddProductByUrlProps) {
       // Parse price
       const price = parseFloat(priceAmount) || 0;
 
+      // Convert price to Sats if it's in fiat currency
+      let priceInSats: number | undefined;
+      if (price > 0 && ['USD', 'EUR', 'GBP', 'SGD'].includes(priceCurrency)) {
+        try {
+          // Fetch BTC price in the currency
+          const btcPriceResponse = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=${priceCurrency.toLowerCase()}`);
+          const btcPriceData = await btcPriceResponse.json();
+          const btcPrice = btcPriceData?.bitcoin?.[priceCurrency.toLowerCase()];
+          
+          if (btcPrice && btcPrice > 0) {
+            const priceInBTC = price / btcPrice;
+            priceInSats = Math.round(priceInBTC * 100000000); // Convert to satoshis
+          }
+        } catch (error) {
+          console.warn('Failed to fetch BTC price for conversion:', error);
+        }
+      }
+
       // Collect images
       const images: string[] = [];
       if (imageUrl) {
@@ -94,6 +114,18 @@ export function AddProductByUrl({ onProductScraped }: AddProductByUrlProps) {
           : new URL(imageUrl, url).href;
         images.push(absoluteImageUrl);
       }
+
+      // Auto-detect category from product name
+      const detectCategory = (productName: string): string | undefined => {
+        const lowerName = productName.toLowerCase();
+        if (lowerName.includes('coaster') || lowerName.includes('keychain')) return 'Keychains';
+        if (lowerName.includes('t-shirt') || lowerName.includes('tshirt') || lowerName.includes('shirt')) return 'T-shirts';
+        if (lowerName.includes('art') || lowerName.includes('print') || lowerName.includes('poster')) return 'Art';
+        if (lowerName.includes('digital') || lowerName.includes('ebook') || lowerName.includes('download') || lowerName.includes('pdf')) return 'Digital Downloads';
+        return undefined;
+      };
+
+      const detectedCategory = detectCategory(cleanTitle);
 
       // Validate scraped data
       if (!cleanTitle || !description) {
@@ -105,8 +137,10 @@ export function AddProductByUrl({ onProductScraped }: AddProductByUrlProps) {
         description: description,
         price: price,
         currency: priceCurrency,
+        priceInSats: priceInSats,
         images: images,
-        url: url
+        url: url,
+        category: detectedCategory
       };
 
       // Pass data to parent component
@@ -114,7 +148,9 @@ export function AddProductByUrl({ onProductScraped }: AddProductByUrlProps) {
 
       toast({
         title: "Product Data Loaded!",
-        description: `Successfully loaded "${cleanTitle}" from URL.`,
+        description: priceInSats 
+          ? `Successfully loaded "${cleanTitle}". Price: ${price} ${priceCurrency} (≈${priceInSats.toLocaleString()} sats)`
+          : `Successfully loaded "${cleanTitle}" from URL.`,
       });
 
       // Clear form

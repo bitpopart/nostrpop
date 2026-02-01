@@ -26,7 +26,9 @@ import {
   FileText,
   Truck,
   Loader2,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Zap,
+  Check
 } from 'lucide-react';
 
 import { useCategories } from '@/hooks/useCategories';
@@ -66,8 +68,10 @@ interface CreateProductFormProps {
     description?: string;
     price?: number;
     currency?: string;
+    priceInSats?: number;
     images?: string[];
     url?: string;
+    category?: string;
   };
 }
 
@@ -78,6 +82,7 @@ export function CreateProductForm({ onSuccess, onCancel, initialData }: CreatePr
   const [isUploadingFiles, setIsUploadingFiles] = useState(false);
   const [specs, setSpecs] = useState<Array<{ key: string; value: string }>>([]);
   const [contactUrl, setContactUrl] = useState<string>(initialData?.url || '');
+  const [satsPrice, setSatsPrice] = useState<number | undefined>(initialData?.priceInSats);
 
   const { user } = useCurrentUser();
   const { mutate: createEvent, isPending: isPublishing } = useNostrPublish();
@@ -99,7 +104,7 @@ export function CreateProductForm({ onSuccess, onCancel, initialData }: CreatePr
       price: initialData?.price || 0,
       currency: initialData?.currency || 'USD',
       type: 'physical',
-      category: categoryNames[0] || '',
+      category: initialData?.category || categoryNames[0] || '',
       stallId: 'default',
       quantity: 1,
       shippingCost: 0,
@@ -117,11 +122,13 @@ export function CreateProductForm({ onSuccess, onCancel, initialData }: CreatePr
       if (initialData.description) setValue('description', initialData.description);
       if (initialData.price) setValue('price', initialData.price);
       if (initialData.currency) setValue('currency', initialData.currency);
+      if (initialData.category) setValue('category', initialData.category);
       if (initialData.url) {
         setValue('contactUrl', initialData.url);
         setContactUrl(initialData.url);
       }
       if (initialData.images) setImages(initialData.images);
+      if (initialData.priceInSats) setSatsPrice(initialData.priceInSats);
     }
   }, [initialData, setValue]);
 
@@ -328,7 +335,10 @@ export function CreateProductForm({ onSuccess, onCancel, initialData }: CreatePr
 
               <div className="space-y-2">
                 <Label htmlFor="category">Category *</Label>
-                <Select onValueChange={(value) => setValue('category', value)}>
+                <Select 
+                  defaultValue={initialData?.category || categoryNames[0]}
+                  onValueChange={(value) => setValue('category', value)}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
@@ -342,6 +352,12 @@ export function CreateProductForm({ onSuccess, onCancel, initialData }: CreatePr
                 </Select>
                 {errors.category && (
                   <p className="text-sm text-red-500">{errors.category.message}</p>
+                )}
+                {initialData?.category && (
+                  <p className="text-xs text-green-600 dark:text-green-400 flex items-center">
+                    <Check className="w-3 h-3 mr-1" />
+                    Auto-detected: {initialData.category}
+                  </p>
                 )}
               </div>
             </div>
@@ -523,6 +539,34 @@ export function CreateProductForm({ onSuccess, onCancel, initialData }: CreatePr
                 />
                 {errors.price && (
                   <p className="text-sm text-red-500">{errors.price.message}</p>
+                )}
+                {satsPrice && (
+                  <div className="flex items-center space-x-2 text-sm text-muted-foreground bg-orange-50 dark:bg-orange-900/10 p-2 rounded border border-orange-200 dark:border-orange-800">
+                    <Zap className="w-4 h-4 text-orange-500" />
+                    <span>≈ {satsPrice.toLocaleString()} sats</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="currency">Currency *</Label>
+                <Select 
+                  defaultValue={initialData?.currency || 'USD'}
+                  onValueChange={(value) => setValue('currency', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select currency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CURRENCIES.map((currency) => (
+                      <SelectItem key={currency.value} value={currency.value}>
+                        {currency.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.currency && (
+                  <p className="text-sm text-red-500">{errors.currency.message}</p>
                 )}
               </div>
 
