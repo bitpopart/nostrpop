@@ -72,6 +72,8 @@ function Canvas100M() {
   const [uploadedImage, setUploadedImage] = useState<HTMLImageElement | null>(null);
   const [imageScale, setImageScale] = useState(100);
   const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
+  const [isDraggingImage, setIsDraggingImage] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [currentBlockHeight, setCurrentBlockHeight] = useState<number | null>(null);
 
   // Fetch current Bitcoin block height
@@ -154,9 +156,9 @@ function Canvas100M() {
     if (!ctx) return;
 
     // Draw checkerboard background pattern
-    const gridSize = 100; // Size of each checkerboard square
+    const gridSize = 50; // Smaller grid for better visibility
     const lightColor = '#FFFFFF';
-    const darkColor = '#F3F4F6'; // Light gray
+    const darkColor = '#E5E7EB'; // More visible gray
     
     for (let y = 0; y < CANVAS_HEIGHT; y += gridSize) {
       for (let x = 0; x < CANVAS_WIDTH; x += gridSize) {
@@ -176,7 +178,7 @@ function Canvas100M() {
     }
   }, [pixels]);
 
-  // Draw overlay (pending pixels) - updates independently for live preview
+  // Draw overlay (pending pixels + image preview) - updates independently for live preview
   useEffect(() => {
     if (!overlayCanvasRef.current) return;
     
@@ -200,7 +202,47 @@ function Canvas100M() {
         overlayCtx.strokeRect(pixel.x, pixel.y, 1, 1);
       }
     });
-  }, [pendingPixels, zoom]);
+
+    // Draw image preview overlay if image is loaded
+    if (uploadedImage) {
+      const scaledWidth = Math.floor((uploadedImage.width * imageScale) / 100);
+      const scaledHeight = Math.floor((uploadedImage.height * imageScale) / 100);
+      
+      // Limit size
+      const maxDimension = 100;
+      const scale = Math.min(1, maxDimension / Math.max(scaledWidth, scaledHeight));
+      const finalWidth = Math.floor(scaledWidth * scale);
+      const finalHeight = Math.floor(scaledHeight * scale);
+      
+      // Draw semi-transparent image preview
+      overlayCtx.globalAlpha = 0.7;
+      overlayCtx.drawImage(
+        uploadedImage,
+        imagePosition.x,
+        imagePosition.y,
+        finalWidth,
+        finalHeight
+      );
+      overlayCtx.globalAlpha = 1.0;
+      
+      // Draw border around image preview
+      overlayCtx.strokeStyle = '#8B5CF6'; // Purple border
+      overlayCtx.lineWidth = 2;
+      overlayCtx.strokeRect(imagePosition.x, imagePosition.y, finalWidth, finalHeight);
+      
+      // Draw corner handles for resizing
+      const handleSize = 10;
+      overlayCtx.fillStyle = '#8B5CF6';
+      // Top-left
+      overlayCtx.fillRect(imagePosition.x - handleSize/2, imagePosition.y - handleSize/2, handleSize, handleSize);
+      // Top-right
+      overlayCtx.fillRect(imagePosition.x + finalWidth - handleSize/2, imagePosition.y - handleSize/2, handleSize, handleSize);
+      // Bottom-left
+      overlayCtx.fillRect(imagePosition.x - handleSize/2, imagePosition.y + finalHeight - handleSize/2, handleSize, handleSize);
+      // Bottom-right
+      overlayCtx.fillRect(imagePosition.x + finalWidth - handleSize/2, imagePosition.y + finalHeight - handleSize/2, handleSize, handleSize);
+    }
+  }, [pendingPixels, zoom, uploadedImage, imageScale, imagePosition]);
 
   // Update view canvas for better preview
   useEffect(() => {
@@ -255,8 +297,71 @@ function Canvas100M() {
     }
   }, [showGrid, zoom]);
 
+  // Handle canvas mouse down for image dragging or pixel painting
+  const handleCanvasMouseDown = useCallback((e: React.MouseEvent<HTMLElement>) => {
+    const canvas = e.currentTarget;
+    const rect = canvas.getBoundingClientRect();
+    
+    // Get click position relative to the canvas element
+    const clickX = e.clientX - rect.left;
+    const clickY = e.clientY - rect.top;
+    
+    // Convert to canvas pixel coordinates
+    const x = Math.floor((clickX / rect.width) * CANVAS_WIDTH);
+    const y = Math.floor((clickY / rect.height) * CANVAS_HEIGHT);
+
+    // If image is loaded, check if click is on the image to start dragging
+    if (uploadedImage) {
+      const scaledWidth = Math.floor((uploadedImage.width * imageScale) / 100);
+      const scaledHeight = Math.floor((uploadedImage.height * imageScale) / 100);
+      const maxDimension = 100;
+      const scale = Math.min(1, maxDimension / Math.max(scaledWidth, scaledHeight));
+      const finalWidth = Math.floor(scaledWidth * scale);
+      const finalHeight = Math.floor(scaledHeight * scale);
+      
+      // Check if click is within image bounds
+      if (x >= imagePosition.x && x <= imagePosition.x + finalWidth &&
+          y >= imagePosition.y && y <= imagePosition.y + finalHeight) {
+        setIsDraggingImage(true);
+        setDragStart({ x: x - imagePosition.x, y: y - imagePosition.y });
+        return;
+      }
+    }
+  }, [uploadedImage, imageScale, imagePosition]);
+
+  // Handle canvas mouse move for image dragging
+  const handleCanvasMouseMove = useCallback((e: React.MouseEvent<HTMLElement>) => {
+    if (!isDraggingImage || !uploadedImage) return;
+
+    const canvas = e.currentTarget;
+    const rect = canvas.getBoundingClientRect();
+    
+    const clickX = e.clientX - rect.left;
+    const clickY = e.clientY - rect.top;
+    
+    const x = Math.floor((clickX / rect.width) * CANVAS_WIDTH);
+    const y = Math.floor((clickY / rect.height) * CANVAS_HEIGHT);
+
+    // Update image position
+    setImagePosition({
+      x: Math.max(0, Math.min(x - dragStart.x, CANVAS_WIDTH - 100)),
+      y: Math.max(0, Math.min(y - dragStart.y, CANVAS_HEIGHT - 100))
+    });
+  }, [isDraggingImage, uploadedImage, dragStart]);
+
+  // Handle canvas mouse up
+  const handleCanvasMouseUp = useCallback(() => {
+    setIsDraggingImage(false);
+  }, []);
+
   // Handle canvas click to paint pixel
   const handleCanvasClick = useCallback((e: React.MouseEvent<HTMLElement>) => {
+    // Don't paint if we were dragging an image
+    if (isDraggingImage) return;
+    
+    // Don't paint if image is loaded (use Apply button instead)
+    if (uploadedImage) return;
+
     if (!user) {
       toast({
         title: "Login Required",
@@ -323,7 +428,7 @@ function Canvas100M() {
       setPendingPixels(prev => [...prev, newPixel]);
       console.log(`Pixel painted at (${x}, ${y}) at Bitcoin block ${currentBlockHeight || 'unknown'}`);
     }
-  }, [user, selectedColor, pixels, pendingPixels, pan, zoom, toast, currentBlockHeight]);
+  }, [user, selectedColor, pixels, pendingPixels, toast, currentBlockHeight, isDraggingImage, uploadedImage]);
 
   // Undo last pixel
   const handleUndo = () => {
@@ -453,6 +558,37 @@ function Canvas100M() {
   const handleZoomIn = () => setZoom(prev => Math.min(prev * 1.5, 50));
   const handleZoomOut = () => setZoom(prev => Math.max(prev / 1.5, 0.1));
 
+  // Arrow key controls for image position
+  useEffect(() => {
+    if (!uploadedImage) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const step = e.shiftKey ? 10 : 1; // Shift for faster movement
+      
+      switch (e.key) {
+        case 'ArrowUp':
+          e.preventDefault();
+          setImagePosition(prev => ({ ...prev, y: Math.max(0, prev.y - step) }));
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          setImagePosition(prev => ({ ...prev, y: Math.min(CANVAS_HEIGHT - 100, prev.y + step) }));
+          break;
+        case 'ArrowLeft':
+          e.preventDefault();
+          setImagePosition(prev => ({ ...prev, x: Math.max(0, prev.x - step) }));
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          setImagePosition(prev => ({ ...prev, x: Math.min(CANVAS_WIDTH - 100, prev.x + step) }));
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [uploadedImage]);
+
   // Image upload handler
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -472,9 +608,10 @@ function Canvas100M() {
       const img = new Image();
       img.onload = () => {
         setUploadedImage(img);
+        setImagePosition({ x: 100, y: 100 }); // Start at a visible position
         toast({
           title: "Image Loaded",
-          description: "Adjust the scale and position, then click 'Apply to Canvas'.",
+          description: "Drag the image on canvas or use arrow keys to position it. Then click 'Apply to Canvas'.",
         });
       };
       img.src = event.target?.result as string;
@@ -769,8 +906,15 @@ function Canvas100M() {
                         {/* Click target - transparent layer on top */}
                         <div
                           onClick={handleCanvasClick}
-                          className="absolute top-0 left-0 w-full h-full cursor-crosshair"
-                          style={{ touchAction: 'none' }}
+                          onMouseDown={handleCanvasMouseDown}
+                          onMouseMove={handleCanvasMouseMove}
+                          onMouseUp={handleCanvasMouseUp}
+                          onMouseLeave={handleCanvasMouseUp}
+                          className="absolute top-0 left-0 w-full h-full"
+                          style={{ 
+                            touchAction: 'none',
+                            cursor: uploadedImage ? (isDraggingImage ? 'grabbing' : 'grab') : 'crosshair'
+                          }}
                         />
                       </div>
                     </div>
@@ -874,26 +1018,35 @@ function Canvas100M() {
                   Upload Image
                 </CardTitle>
                 <CardDescription>
-                  Upload an image and convert it to pixels
+                  {uploadedImage ? 'Position your image on canvas' : 'Upload an image and convert it to pixels'}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 dark:file:bg-purple-900/20 dark:file:text-purple-300"
-                  disabled={!user}
-                />
+                {!uploadedImage && (
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 dark:file:bg-purple-900/20 dark:file:text-purple-300"
+                    disabled={!user}
+                  />
+                )}
                 
                 {uploadedImage && (
                   <div className="space-y-3">
-                    <div className="aspect-square border rounded-lg overflow-hidden bg-white">
+                    <div className="aspect-square border-2 border-purple-200 rounded-lg overflow-hidden bg-white">
                       <img 
                         src={uploadedImage.src} 
                         alt="Preview" 
                         className="w-full h-full object-contain"
                       />
+                    </div>
+                    
+                    <div className="p-3 bg-purple-50 dark:bg-purple-900/10 rounded-lg text-xs space-y-1">
+                      <p className="font-semibold text-purple-700 dark:text-purple-300">💡 Position Controls:</p>
+                      <p>• <strong>Drag</strong> on canvas to move</p>
+                      <p>• <strong>Arrow keys</strong> for precise position</p>
+                      <p>• Hold <strong>Shift</strong> for faster movement</p>
                     </div>
                     
                     <div>
@@ -910,40 +1063,63 @@ function Canvas100M() {
                     
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <label className="text-xs font-medium mb-1 block">X Position</label>
-                        <input
-                          type="number"
-                          min="0"
-                          max={CANVAS_WIDTH}
-                          value={imagePosition.x}
-                          onChange={(e) => setImagePosition(prev => ({ ...prev, x: parseInt(e.target.value) || 0 }))}
-                          className="w-full px-2 py-1 border rounded text-sm"
-                        />
+                        <label className="text-xs font-medium mb-1 block">X: {imagePosition.x}</label>
+                        <div className="flex space-x-1">
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={() => setImagePosition(prev => ({ ...prev, x: Math.max(0, prev.x - 10) }))}
+                            className="flex-1"
+                          >
+                            ←
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={() => setImagePosition(prev => ({ ...prev, x: Math.min(CANVAS_WIDTH - 100, prev.x + 10) }))}
+                            className="flex-1"
+                          >
+                            →
+                          </Button>
+                        </div>
                       </div>
                       <div>
-                        <label className="text-xs font-medium mb-1 block">Y Position</label>
-                        <input
-                          type="number"
-                          min="0"
-                          max={CANVAS_HEIGHT}
-                          value={imagePosition.y}
-                          onChange={(e) => setImagePosition(prev => ({ ...prev, y: parseInt(e.target.value) || 0 }))}
-                          className="w-full px-2 py-1 border rounded text-sm"
-                        />
+                        <label className="text-xs font-medium mb-1 block">Y: {imagePosition.y}</label>
+                        <div className="flex space-x-1">
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={() => setImagePosition(prev => ({ ...prev, y: Math.max(0, prev.y - 10) }))}
+                            className="flex-1"
+                          >
+                            ↑
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={() => setImagePosition(prev => ({ ...prev, y: Math.min(CANVAS_HEIGHT - 100, prev.y + 10) }))}
+                            className="flex-1"
+                          >
+                            ↓
+                          </Button>
+                        </div>
                       </div>
                     </div>
                     
                     <div className="flex space-x-2">
                       <Button 
                         onClick={handleApplyImage} 
-                        className="flex-1"
+                        className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
                         size="sm"
                       >
                         <Check className="h-4 w-4 mr-2" />
                         Apply to Canvas
                       </Button>
                       <Button 
-                        onClick={() => setUploadedImage(null)} 
+                        onClick={() => {
+                          setUploadedImage(null);
+                          setImagePosition({ x: 0, y: 0 });
+                        }} 
                         variant="outline"
                         size="sm"
                       >
