@@ -62,7 +62,7 @@ function Canvas100M() {
   const gridCanvasRef = useRef<HTMLCanvasElement>(null);
   const viewCanvasRef = useRef<HTMLCanvasElement>(null);
   const [selectedColor, setSelectedColor] = useState('#FF00FF');
-  const [zoom, setZoom] = useState(10); // Start more zoomed in to see pixels better
+  const [zoom, setZoom] = useState(33.3); // Start at 333% (33.3x) to clearly see pixels
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
@@ -246,7 +246,7 @@ function Canvas100M() {
   }, [showGrid, zoom]);
 
   // Handle canvas click to paint pixel
-  const handleCanvasClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+  const handleCanvasClick = useCallback((e: React.MouseEvent<HTMLElement>) => {
     if (!user) {
       toast({
         title: "Login Required",
@@ -276,12 +276,12 @@ function Canvas100M() {
 
     // Bounds check
     if (x < 0 || x >= CANVAS_WIDTH || y < 0 || y >= CANVAS_HEIGHT) {
+      console.log(`Out of bounds: (${x}, ${y})`);
       return;
     }
 
-    // Check if pixel is already painted
-    const isAlreadyPainted = pixels?.some(p => p.x === x && p.y === y) || 
-                             pendingPixels.some(p => p.x === x && p.y === y);
+    // Check if pixel is already painted (more lenient check)
+    const isAlreadyPainted = pixels?.some(p => p.x === x && p.y === y);
 
     if (isAlreadyPainted) {
       toast({
@@ -292,6 +292,9 @@ function Canvas100M() {
       return;
     }
 
+    // Check if already in pending pixels (allow re-painting your own pending pixels with new color)
+    const existingPendingIndex = pendingPixels.findIndex(p => p.x === x && p.y === y);
+    
     // Add to pending pixels
     const newPixel: PendingPixel = {
       id: `${Date.now()}-${Math.random()}`,
@@ -303,10 +306,19 @@ function Canvas100M() {
       blockHeight: currentBlockHeight || undefined
     };
 
-    setPendingPixels(prev => [...prev, newPixel]);
-    
-    // Show a subtle toast (less intrusive)
-    console.log(`Pixel painted at (${x}, ${y}) at Bitcoin block ${currentBlockHeight || 'unknown'}`);
+    if (existingPendingIndex >= 0) {
+      // Replace existing pending pixel with new color
+      setPendingPixels(prev => {
+        const updated = [...prev];
+        updated[existingPendingIndex] = newPixel;
+        return updated;
+      });
+      console.log(`Pixel updated at (${x}, ${y}) with color ${selectedColor}`);
+    } else {
+      // Add new pending pixel
+      setPendingPixels(prev => [...prev, newPixel]);
+      console.log(`Pixel painted at (${x}, ${y}) at Bitcoin block ${currentBlockHeight || 'unknown'}`);
+    }
   }, [user, selectedColor, pixels, pendingPixels, pan, zoom, toast, currentBlockHeight]);
 
   // Undo last pixel
@@ -513,7 +525,11 @@ function Canvas100M() {
           // Skip if out of bounds
           if (canvasX < 0 || canvasX >= CANVAS_WIDTH || canvasY < 0 || canvasY >= CANVAS_HEIGHT) continue;
           
-          // Skip if already painted
+          // Check if already painted (don't skip, just don't add duplicates in this batch)
+          const isInNewPixels = newPixels.some(p => p.x === canvasX && p.y === canvasY);
+          if (isInNewPixels) continue;
+          
+          // Check if already on canvas or pending
           const isAlreadyPainted = pixels?.some(p => p.x === canvasX && p.y === canvasY) || 
                                    pendingPixels.some(p => p.x === canvasX && p.y === canvasY);
           if (isAlreadyPainted) continue;
