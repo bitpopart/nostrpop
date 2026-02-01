@@ -19,7 +19,6 @@ import {
   Calendar,
   ArrowRight,
   Sparkles,
-  Heart,
   Gift,
   Rss,
   CreditCard,
@@ -376,9 +375,9 @@ const Index = () => {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button size="lg" asChild className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600">
-              <Link to="/cards">
-                <Heart className="mr-2 h-5 w-5" />
-                Send Cards
+              <Link to="/canvas">
+                <Sparkles className="mr-2 h-5 w-5" />
+                Start Painting
               </Link>
             </Button>
             <Button size="lg" variant="outline" asChild>

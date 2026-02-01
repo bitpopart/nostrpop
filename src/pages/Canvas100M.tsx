@@ -115,21 +115,18 @@ function Canvas100M() {
   const paintedPixels = (pixels?.length || 0) + pendingPixels.length;
   const percentPainted = ((paintedPixels / TOTAL_PIXELS) * 100).toFixed(4);
 
-  // Draw canvas
+  // Draw canvas (base pixels)
   useEffect(() => {
-    if (!canvasRef.current || !overlayCanvasRef.current) return;
+    if (!canvasRef.current) return;
     
     const canvas = canvasRef.current;
-    const overlayCanvas = overlayCanvasRef.current;
     const ctx = canvas.getContext('2d');
-    const overlayCtx = overlayCanvas.getContext('2d');
     
-    if (!ctx || !overlayCtx) return;
+    if (!ctx) return;
 
-    // Clear canvases
+    // Clear canvas
     ctx.fillStyle = '#FFFFFF';
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-    overlayCtx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
     // Draw existing pixels
     if (pixels) {
@@ -138,15 +135,28 @@ function Canvas100M() {
         ctx.fillRect(pixel.x, pixel.y, 1, 1);
       });
     }
+  }, [pixels]);
 
-    // Draw pending pixels on overlay
+  // Draw overlay (pending pixels) - updates independently for live preview
+  useEffect(() => {
+    if (!overlayCanvasRef.current) return;
+    
+    const overlayCanvas = overlayCanvasRef.current;
+    const overlayCtx = overlayCanvas.getContext('2d');
+    
+    if (!overlayCtx) return;
+
+    // Clear overlay
+    overlayCtx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+    // Draw pending pixels with semi-transparency for live preview
     pendingPixels.forEach(pixel => {
       overlayCtx.fillStyle = pixel.color;
-      overlayCtx.globalAlpha = 0.7;
+      overlayCtx.globalAlpha = 0.8;
       overlayCtx.fillRect(pixel.x, pixel.y, 1, 1);
       overlayCtx.globalAlpha = 1.0;
     });
-  }, [pixels, pendingPixels]);
+  }, [pendingPixels]);
 
   // Handle canvas click to paint pixel
   const handleCanvasClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
