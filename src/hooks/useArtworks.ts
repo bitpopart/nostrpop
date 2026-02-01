@@ -100,11 +100,6 @@ export function useArtworks(filter: ArtworkFilter = 'all') {
       // Sort by creation date (newest first)
       const sortedArtworks = artworks.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-      // If no artworks found from Nostr events, return sample data for demonstration
-      if (sortedArtworks.length === 0) {
-        return getArtworksByFilter(filter);
-      }
-
       // Apply filter to Nostr data
       if (filter === 'all') {
         return sortedArtworks;
@@ -146,12 +141,7 @@ export function useArtwork(artworkId: string) {
       ], { signal });
 
       if (events.length === 0) {
-        // If no Nostr event found, try sample data
-        const sampleArtwork = getArtworkById(artworkId);
-        if (!sampleArtwork) {
-          throw new Error('Artwork not found');
-        }
-        return sampleArtwork;
+        throw new Error('Artwork not found');
       }
 
       const event = events[0];

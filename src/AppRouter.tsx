@@ -18,7 +18,7 @@ import NotFound from "./pages/NotFound";
 
 export function AppRouter() {
   return (
-    <BrowserRouter basename="/nostrpop">
+    <BrowserRouter>
       <ScrollToTop />
       <Layout>
         <Routes>

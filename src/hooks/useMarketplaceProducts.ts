@@ -99,11 +99,6 @@ export function useMarketplaceProducts(category?: string) {
       // Sort by creation date (newest first)
       const sortedProducts = products.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-      // If no products found from Nostr events, return sample data for demonstration
-      if (sortedProducts.length === 0) {
-        return getProductsByCategory(category);
-      }
-
       return sortedProducts;
     },
     staleTime: 30000, // 30 seconds
@@ -128,12 +123,7 @@ export function useMarketplaceProduct(productId: string) {
       ], { signal });
 
       if (events.length === 0) {
-        // If no Nostr event found, try sample data
-        const sampleProduct = getProductById(productId);
-        if (!sampleProduct) {
-          throw new Error('Product not found');
-        }
-        return sampleProduct;
+        throw new Error('Product not found');
       }
 
       const event = events[0];
