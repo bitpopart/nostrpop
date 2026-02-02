@@ -119,17 +119,18 @@ export function ProductPage() {
               )}
             </div>
             <h1 className="text-4xl font-bold mb-4">{product.name}</h1>
-            <p className="text-xl text-muted-foreground">{product.description}</p>
-          </div>
-
-            <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-              {product.name}
-            </h1>
+            <p className="text-xl text-muted-foreground mb-4">{product.description}</p>
 
             <div className="flex items-center space-x-4 mb-4">
               <div className="text-3xl font-bold text-green-600">
-                {formatCurrency(product.price, product.currency)}
+                {formatCurrency(displayPrice, displayCurrency)}
               </div>
+              {displayPriceInSats && (
+                <div className="flex items-center text-lg text-orange-600">
+                  <Zap className="w-4 h-4 mr-1" />
+                  <span>{displayPriceInSats.toLocaleString()} sats</span>
+                </div>
+              )}
               {hasShipping && (
                 <div className="flex items-center text-sm text-muted-foreground">
                   <Truck className="w-4 h-4 mr-1" />
@@ -200,18 +201,18 @@ export function ProductPage() {
                   <Button
                     size="lg"
                     disabled={isOutOfStock}
-                    onClick={handleContactSeller}
+                    onClick={handleBuyProduct}
                     className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0"
                   >
-                    {hasContactUrl ? (
+                    {hasBuyUrl ? (
                       <>
                         <ExternalLink className="w-5 h-5 mr-2" />
-                        {isOutOfStock ? 'Out of Stock' : 'Contact Seller'}
+                        {isOutOfStock ? 'Out of Stock' : 'Buy Now'}
                       </>
                     ) : (
                       <>
-                        <Package className="w-5 h-5 mr-2" />
-                        {isOutOfStock ? 'Out of Stock' : 'Contact Seller'}
+                        <ShoppingCart className="w-5 h-5 mr-2" />
+                        {isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
                       </>
                     )}
                   </Button>
