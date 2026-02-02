@@ -28,27 +28,41 @@ interface MarketplaceProduct {
 
 export function useMarketplaceProducts(category?: string) {
   const { nostr } = useNostr();
+  const { user } = useCurrentUser();
 
   return useQuery({
     queryKey: ['marketplace-products', category],
     queryFn: async (c) => {
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(5000)]);
 
-      // Query for NIP-15 product events (kind 30018)
-      const filters = [
-        {
-          kinds: [30018], // NIP-15 product events
-          limit: 100,
-          ...(category && { '#t': [category.toLowerCase()] })
-        }
-      ];
+      // Query for NIP-15 product events (kind 30018) and deletion events (kind 5)
+      const [productEvents, deletionEvents] = await Promise.all([
+        nostr.query([
+          {
+            kinds: [30018], // NIP-15 product events
+            limit: 100,
+            ...(category && { '#t': [category.toLowerCase()] })
+          }
+        ], { signal }),
+        nostr.query([
+          {
+            kinds: [5], // Deletion events
+            limit: 500,
+          }
+        ], { signal })
+      ]);
 
+      // Build set of deleted product addresses
+      const deletedAddresses = new Set<string>();
+      deletionEvents.forEach(delEvent => {
+        const aTags = delEvent.tags.filter(([name]) => name === 'a');
+        aTags.forEach(([, address]) => {
+          if (address) deletedAddresses.add(address);
+        });
+      });
 
-
-      const events = await nostr.query(filters, { signal });
-
-      // Process and validate product events
-      const products = events
+      // Process and validate product events, filtering out deleted ones
+      const products = productEvents
         .map(event => {
           try {
             const content = JSON.parse(event.content);
@@ -58,6 +72,13 @@ export function useMarketplaceProducts(category?: string) {
 
             // Basic validation
             if (!dTag || !titleTag || !content.name || !content.price) {
+              return null;
+            }
+
+            // Check if this product has been deleted
+            const productAddress = `30018:${event.pubkey}:${dTag}`;
+            if (deletedAddresses.has(productAddress)) {
+              console.log(`Filtering out deleted product: ${productAddress}`);
               return null;
             }
 
@@ -119,13 +140,21 @@ export function useMarketplaceProduct(productId: string) {
     queryFn: async (c) => {
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(5000)]);
 
-      const events = await nostr.query([
-        {
-          kinds: [30018],
-          '#d': [productId],
-          limit: 1
-        }
-      ], { signal });
+      const [events, deletionEvents] = await Promise.all([
+        nostr.query([
+          {
+            kinds: [30018],
+            '#d': [productId],
+            limit: 1
+          }
+        ], { signal }),
+        nostr.query([
+          {
+            kinds: [5], // Deletion events
+            limit: 500,
+          }
+        ], { signal })
+      ]);
 
       if (events.length === 0) {
         // If no Nostr event found, try sample data
@@ -137,6 +166,17 @@ export function useMarketplaceProduct(productId: string) {
       }
 
       const event = events[0];
+      
+      // Check if this product has been deleted
+      const productAddress = `30018:${event.pubkey}:${productId}`;
+      const isDeleted = deletionEvents.some(delEvent => 
+        delEvent.tags.some(([name, value]) => name === 'a' && value === productAddress)
+      );
+
+      if (isDeleted) {
+        throw new Error('Product has been deleted');
+      }
+
       const content = JSON.parse(event.content);
       const categoryTags = event.tags.filter(([name]) => name === 't').map(([, value]) => value);
 
