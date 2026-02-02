@@ -473,6 +473,22 @@ function Canvas100M() {
     setShowPreview(false);
   };
 
+  // Start fresh - clear pending pixels and move to empty area
+  const handleStartFresh = () => {
+    setPendingPixels([]);
+    setShowPreview(false);
+    setUploadedImage(null);
+    // Move to a random empty area of the canvas
+    const randomX = Math.floor(Math.random() * (CANVAS_WIDTH - viewSize));
+    const randomY = Math.floor(Math.random() * (CANVAS_HEIGHT - viewSize));
+    setViewX(randomX);
+    setViewY(randomY);
+    toast({
+      title: "Canvas Reset",
+      description: "Moved to a fresh area. Start painting!",
+    });
+  };
+
   // Publish pixels to Nostr
   const handlePublish = async () => {
     if (!user || pendingPixels.length === 0) return;
@@ -757,6 +773,15 @@ function Canvas100M() {
                         →
                       </Button>
                     </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleStartFresh}
+                      className="ml-4"
+                    >
+                      <Sparkles className="h-4 w-4 mr-2" />
+                      New Canvas
+                    </Button>
                   </div>
                 </div>
               </CardHeader>
