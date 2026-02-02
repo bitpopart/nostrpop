@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useSeoMeta } from '@unhead/react';
+import QRCode from 'qrcode';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -61,11 +62,13 @@ function Canvas100M() {
   const { createInvoice, invoice, isLoading: paymentLoading, clearInvoice } = useLightningPayment();
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const qrCanvasRef = useRef<HTMLCanvasElement>(null);
   const [selectedColor, setSelectedColor] = useState('#FF00FF');
   const [pendingPixels, setPendingPixels] = useState<PendingPixel[]>([]);
   const [showPreview, setShowPreview] = useState(false);
   const [currentBlockHeight, setCurrentBlockHeight] = useState<number | null>(null);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [payingWithAlby, setPayingWithAlby] = useState(false);
   
   // Display settings
   const DISPLAY_SIZE = 500; // Canvas element size in pixels
@@ -97,6 +100,27 @@ function Canvas100M() {
     const interval = setInterval(fetchBlockHeight, 600000);
     return () => clearInterval(interval);
   }, []);
+
+  // Generate QR code when invoice is created
+  useEffect(() => {
+    if (invoice && qrCanvasRef.current) {
+      QRCode.toCanvas(
+        qrCanvasRef.current,
+        invoice.payment_request,
+        {
+          width: 256,
+          margin: 2,
+          color: {
+            dark: '#000000',
+            light: '#FFFFFF',
+          },
+        },
+        (error) => {
+          if (error) console.error('QR code generation error:', error);
+        }
+      );
+    }
+  }, [invoice]);
 
   // Fetch all painted pixels from Nostr
   const { data: pixels, isLoading: pixelsLoading, refetch: refetchPixels } = useQuery({
@@ -472,6 +496,43 @@ function Canvas100M() {
         description: "Failed to create Lightning invoice. Please try again.",
         variant: "destructive"
       });
+    }
+  };
+
+  // Pay with Alby extension
+  const handlePayWithAlby = async () => {
+    if (!invoice) return;
+
+    setPayingWithAlby(true);
+    try {
+      // Check if WebLN is available (Alby extension)
+      if (typeof window.webln !== 'undefined') {
+        await window.webln.enable();
+        const result = await window.webln.sendPayment(invoice.payment_request);
+        
+        if (result.preimage) {
+          toast({
+            title: "Payment Successful! ⚡",
+            description: "Publishing your pixels to Nostr...",
+          });
+          await publishPixelsToNostr();
+        }
+      } else {
+        toast({
+          title: "Alby Not Found",
+          description: "Please install the Alby browser extension to use this feature.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Alby payment error:', error);
+      toast({
+        title: "Payment Failed",
+        description: error instanceof Error ? error.message : "Failed to process payment with Alby.",
+        variant: "destructive"
+      });
+    } finally {
+      setPayingWithAlby(false);
     }
   };
 
@@ -1089,14 +1150,12 @@ function Canvas100M() {
                   </div>
                 </div>
 
-                {/* QR Code placeholder - in production, use a QR code library */}
-                <div className="bg-gray-100 aspect-square rounded-lg flex items-center justify-center mb-4">
-                  <div className="text-center p-4">
-                    <p className="text-xs text-muted-foreground mb-2">Lightning Invoice</p>
-                    <div className="max-w-full break-all text-xs font-mono bg-white p-2 rounded border">
-                      {invoice.payment_request.substring(0, 50)}...
-                    </div>
-                  </div>
+                {/* QR Code */}
+                <div className="bg-white rounded-lg flex items-center justify-center mb-4 p-4">
+                  <canvas
+                    ref={qrCanvasRef}
+                    className="max-w-full h-auto"
+                  />
                 </div>
 
                 <Button
@@ -1112,6 +1171,34 @@ function Canvas100M() {
                 >
                   Copy Invoice
                 </Button>
+              </div>
+
+              {/* Alby Payment Button */}
+              <Button
+                className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white font-semibold"
+                onClick={handlePayWithAlby}
+                disabled={payingWithAlby}
+              >
+                {payingWithAlby ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <Zap className="h-4 w-4 mr-2" />
+                    Pay with Alby
+                  </>
+                )}
+              </Button>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">Or</span>
+                </div>
               </div>
 
               <div className="flex space-x-2">
@@ -1135,7 +1222,7 @@ function Canvas100M() {
               </div>
 
               <p className="text-xs text-center text-muted-foreground">
-                Click "I've Paid" after sending the payment
+                Scan QR code or click "I've Paid" after sending payment
               </p>
             </div>
           ) : (
