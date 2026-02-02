@@ -7,6 +7,10 @@ export interface Category {
   icon?: string;
 }
 
+export interface ProductCategory extends Category {
+  featured?: boolean;
+}
+
 export const CATEGORIES: Category[] = [
   {
     id: 'art',
