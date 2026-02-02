@@ -244,7 +244,7 @@ export function Navigation() {
                   {/* Footer */}
                   <div className="border-t pt-6 px-4">
                     <p className="text-xs text-muted-foreground text-center">
-                      Good Vibes cards by BitPopArt
+                      Nostr & BitPopArt {new Date().getFullYear()}
                     </p>
                   </div>
                 </div>

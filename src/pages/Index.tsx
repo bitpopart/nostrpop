@@ -609,10 +609,7 @@ const Index = () => {
 
         {/* Footer */}
         <div className="text-center mt-16 text-sm text-gray-500 dark:text-gray-400">
-          <p>Good Vibes cards by BitPopArt</p>
-          <p className="mt-2">
-            Vibed with <a href="https://soapbox.pub/mkstack" className="text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300">MKStack</a>
-          </p>
+          <p>Nostr & BitPopArt {new Date().getFullYear()}</p>
         </div>
       </div>
     </div>

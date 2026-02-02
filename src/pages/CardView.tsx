@@ -795,10 +795,10 @@ const CardView = () => {
                 <CardContent className="p-6 text-center">
                   <div className="text-4xl mb-3">✨</div>
                   <h3 className="font-semibold mb-2 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                    Good Vibes cards by BitPopArt
+                    Create your own card
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    Spreading joy, one card at a time
+                    Nostr & BitPopArt {new Date().getFullYear()}
                   </p>
                 </CardContent>
               </Card>
