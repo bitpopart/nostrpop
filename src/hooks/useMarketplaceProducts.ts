@@ -120,11 +120,6 @@ export function useMarketplaceProducts(category?: string) {
       // Sort by creation date (newest first)
       const sortedProducts = products.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-      // If no products found from Nostr events, return sample data for demonstration
-      if (sortedProducts.length === 0) {
-        return getProductsByCategory(category);
-      }
-
       return sortedProducts;
     },
     staleTime: 30000, // 30 seconds
@@ -157,12 +152,7 @@ export function useMarketplaceProduct(productId: string) {
       ]);
 
       if (events.length === 0) {
-        // If no Nostr event found, try sample data
-        const sampleProduct = getProductById(productId);
-        if (!sampleProduct) {
-          throw new Error('Product not found');
-        }
-        return sampleProduct;
+        throw new Error('Product not found');
       }
 
       const event = events[0];
@@ -245,24 +235,20 @@ export function useDeleteProduct() {
         description: "The product has been successfully deleted from the marketplace.",
       });
 
-      // Optimistically remove from cache immediately
-      queryClient.setQueryData(['marketplace-products'], (oldData: any) => {
-        if (!oldData) return oldData;
-        return oldData.filter((product: any) => product.id !== data.productId);
-      });
-
-      // Also remove from all category queries
+      // Remove from ALL marketplace-products queries (all categories)
       queryClient.setQueriesData(
         { queryKey: ['marketplace-products'] }, 
         (oldData: any) => {
-          if (!oldData) return oldData;
+          if (!oldData || !Array.isArray(oldData)) return oldData;
           return oldData.filter((product: any) => product.id !== data.productId);
         }
       );
 
-      // Invalidate to refetch in background
-      queryClient.invalidateQueries({ queryKey: ['marketplace-products'] });
-      queryClient.invalidateQueries({ queryKey: ['marketplace-product', data.productId] });
+      // Remove specific product from cache
+      queryClient.removeQueries({ queryKey: ['marketplace-product', data.productId] });
+
+      // Force immediate refetch of all product queries to get deletion events
+      queryClient.invalidateQueries({ queryKey: ['marketplace-products'], refetchType: 'all' });
     },
     onError: (error) => {
       console.error('Failed to delete product:', error);
