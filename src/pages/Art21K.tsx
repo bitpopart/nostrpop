@@ -239,21 +239,6 @@ function Art21K() {
           </Badge>
         </div>
 
-        {/* Info Card */}
-        <Card className="max-w-4xl mx-auto mb-8 border-orange-200 dark:border-orange-800 bg-gradient-to-r from-orange-50/50 to-yellow-50/50 dark:from-orange-900/10 dark:to-yellow-900/10">
-          <CardHeader>
-            <CardTitle className="flex items-center text-orange-700 dark:text-orange-300">
-              <Info className="w-5 h-5 mr-2" />
-              About This Project
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-orange-600 dark:text-orange-400 leading-relaxed">
-              This project explores the value of art in a new way. I will sell my unique small artworks for 21,000 Satoshis, a fraction of a Bitcoin. If you prefer to pay in your local currency, the price will equal the value of 21,000 sats on the day of purchase. I believe that over time, these artworks will grow in value compared to dollars, euros, or other fiat currencies, and that's the idea I want to highlight through this project. Each artwork will be a 1/1 digital print, framed with a one-of-a-kind painted frame. The pieces will be numbered, so you'll know exactly which one you own in the collection.
-            </p>
-          </CardContent>
-        </Card>
-
         {/* Login Prompt */}
         {!user && (
           <Card className="mb-6 bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-900/20 dark:to-yellow-900/20 border-orange-200 dark:border-orange-800">
@@ -565,6 +550,21 @@ function Art21K() {
             )}
           </div>
         </div>
+
+        {/* About Section */}
+        <Card className="max-w-4xl mx-auto mt-16 border-orange-200 dark:border-orange-800 bg-gradient-to-r from-orange-50/50 to-yellow-50/50 dark:from-orange-900/10 dark:to-yellow-900/10">
+          <CardHeader>
+            <CardTitle className="flex items-center text-orange-700 dark:text-orange-300">
+              <Info className="w-5 h-5 mr-2" />
+              About This Project
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-orange-600 dark:text-orange-400 leading-relaxed">
+              This project explores the value of art in a new way. I will sell my unique small artworks for 21,000 Satoshis, a fraction of a Bitcoin. If you prefer to pay in your local currency, the price will equal the value of 21,000 sats on the day of purchase. I believe that over time, these artworks will grow in value compared to dollars, euros, or other fiat currencies, and that's the idea I want to highlight through this project. Each artwork will be a 1/1 digital print, framed with a one-of-a-kind painted frame. The pieces will be numbered, so you'll know exactly which one you own in the collection.
+            </p>
+          </CardContent>
+        </Card>
 
         {/* Footer */}
         <div className="text-center mt-16 text-sm text-gray-500 dark:text-gray-400">
