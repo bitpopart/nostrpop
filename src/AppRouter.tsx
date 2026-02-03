@@ -8,6 +8,7 @@ import CardView from "./pages/CardView";
 import CardPreview from "./pages/CardPreview";
 import Art from "./pages/Art";
 import ArtworkView from "./pages/ArtworkView";
+import Art21K from "./pages/Art21K";
 import Shop from "./pages/Shop";
 import Admin from "./pages/Admin";
 import Feed from "./pages/Feed";
@@ -34,6 +35,7 @@ export function AppRouter() {
           <Route path="/share/:nip19" element={<CardPreview />} />
           <Route path="/art" element={<Art />} />
           <Route path="/art/:naddr" element={<ArtworkView />} />
+          <Route path="/21k-art" element={<Art21K />} />
           <Route path="/canvas" element={<Canvas100M />} />
           <Route path="/shop" element={<Shop />} />
           <Route path="/admin" element={<Admin />} />

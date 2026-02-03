@@ -15,7 +15,7 @@ const navigationItems = [
   { name: 'Cards', href: '/cards', icon: '🎨' },
   { name: 'Art', href: '/art', icon: '🖼️' },
   { name: 'Canvas', href: '/canvas', icon: '🎨' },
-  { name: 'Feed', href: '/feed', icon: '📰' },
+  { name: '21K Art', href: '/21k-art', icon: '⚡' },
   { name: 'Shop', href: '/shop', icon: '🛍️' },
 ];
 
