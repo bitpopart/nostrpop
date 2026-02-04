@@ -11,11 +11,11 @@ const cspPlugin = () => ({
     handler(html: string, context: { server?: unknown }) {
       const isDev = context.server; // Development mode has server context
 
-      // More restrictive CSP for production
-      const prodCSP = "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; base-uri 'self'; manifest-src 'self'; connect-src 'self' blob: https: wss:; img-src 'self' data: blob: https:; media-src 'self' https:; object-src 'none'; worker-src 'self' blob:; frame-ancestors 'none'";
+      // More restrictive CSP for production (frame-ancestors removed - not supported in meta tags)
+      const prodCSP = "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; base-uri 'self'; manifest-src 'self'; connect-src 'self' blob: https: wss:; img-src 'self' data: blob: https:; media-src 'self' https:; object-src 'none'; worker-src 'self' blob:";
 
-      // More permissive CSP for development (allows Vite HMR)
-      const devCSP = "default-src 'none'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; base-uri 'self'; manifest-src 'self'; connect-src 'self' blob: https: wss:; img-src 'self' data: blob: https:; media-src 'self' https:; object-src 'none'; worker-src 'self' blob:; frame-ancestors 'none'";
+      // More permissive CSP for development (allows Vite HMR, frame-ancestors removed - not supported in meta tags)
+      const devCSP = "default-src 'none'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; base-uri 'self'; manifest-src 'self'; connect-src 'self' blob: https: wss:; img-src 'self' data: blob: https:; media-src 'self' https:; object-src 'none'; worker-src 'self' blob:";
 
       const csp = isDev ? devCSP : prodCSP;
       const comment = isDev
