@@ -13,122 +13,137 @@ export function WorldMap({ events }: WorldMapProps) {
   const [hoveredEvent, setHoveredEvent] = useState<PopUpEventData | null>(null);
 
   // Convert lat/lon to SVG coordinates using Mercator projection
-  // SVG viewBox: 0 0 1000 500
+  // SVG viewBox: 0 0 2000 1000
   const latLonToSVG = (lat: number, lon: number) => {
-    // Mercator projection formulas
-    const x = ((lon + 180) / 360) * 1000;
+    const x = ((lon + 180) / 360) * 2000;
     
-    // Convert latitude to radians and apply Mercator projection
+    // Mercator projection for latitude
     const latRad = (lat * Math.PI) / 180;
     const mercN = Math.log(Math.tan((Math.PI / 4) + (latRad / 2)));
-    const y = (500 / 2) - (500 * mercN / (2 * Math.PI));
+    const y = (1000 / 2) - (1000 * mercN / (2 * Math.PI));
     
     return { x, y };
   };
 
   return (
-    <div className="relative w-full h-full bg-gradient-to-br from-blue-100 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <div className="relative w-full h-full bg-gradient-to-br from-blue-100 via-indigo-50 to-purple-100 dark:from-gray-900 dark:via-indigo-950 dark:to-purple-950">
       <svg
-        viewBox="0 0 1000 500"
+        viewBox="0 0 2000 1000"
         className="w-full h-full"
         preserveAspectRatio="xMidYMid meet"
       >
-        {/* Ocean background */}
-        <rect width="1000" height="500" fill="url(#ocean-gradient)" />
-        
         <defs>
-          <linearGradient id="ocean-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#dbeafe" />
-            <stop offset="100%" stopColor="#bfdbfe" />
+          {/* Ocean gradient */}
+          <linearGradient id="ocean" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#dbeafe" className="dark:stop-color-[#1e293b]" />
+            <stop offset="100%" stopColor="#bfdbfe" className="dark:stop-color-[#0f172a]" />
           </linearGradient>
-          
-          {/* Grid pattern */}
-          <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-            <path
-              d="M 20 0 L 0 0 0 20"
-              fill="none"
-              stroke="rgba(99, 102, 241, 0.08)"
-              strokeWidth="0.5"
-            />
-          </pattern>
         </defs>
 
-        {/* Grid overlay */}
-        <rect width="1000" height="500" fill="url(#grid)" opacity="0.5" />
+        {/* Ocean background */}
+        <rect width="2000" height="1000" fill="url(#ocean)" />
 
-        {/* Simplified continents using approximate Mercator projection coordinates */}
+        {/* Equator line */}
+        <line 
+          x1="0" 
+          y1="500" 
+          x2="2000" 
+          y2="500" 
+          stroke="#a5b4fc" 
+          strokeWidth="2" 
+          strokeDasharray="10,10" 
+          opacity="0.4"
+        />
+        <text x="20" y="495" fill="#6366f1" fontSize="18" opacity="0.5" fontWeight="500">Equator</text>
+
+        {/* Prime Meridian line */}
+        <line 
+          x1="1000" 
+          y1="0" 
+          x2="1000" 
+          y2="1000" 
+          stroke="#a5b4fc" 
+          strokeWidth="2" 
+          strokeDasharray="10,10" 
+          opacity="0.4"
+        />
+        <text x="1010" y="30" fill="#6366f1" fontSize="18" opacity="0.5" fontWeight="500">Prime Meridian</text>
+
+        {/* CONTINENTS - More accurate shapes */}
+        
         {/* North America */}
         <path
-          d="M 100 100 L 150 80 L 200 90 L 250 100 L 280 120 L 300 140 L 280 180 L 250 200 L 200 220 L 180 240 L 160 230 L 140 220 L 120 200 L 100 180 L 90 150 L 100 120 Z"
+          d="M 180 200 L 200 180 L 230 170 L 270 165 L 310 170 L 350 180 L 380 200 L 400 230 L 410 270 L 405 310 L 390 350 L 370 380 L 340 400 L 310 410 L 280 415 L 250 410 L 220 395 L 200 370 L 185 340 L 175 300 L 170 260 L 175 230 Z M 340 160 L 360 150 L 380 155 L 390 170 L 385 190 L 370 200 L 350 195 L 335 180 L 340 160 Z"
           fill="#86efac"
-          stroke="#059669"
-          strokeWidth="1"
-          opacity="0.9"
+          stroke="#22c55e"
+          strokeWidth="2"
+          opacity="0.85"
         />
-        
+
         {/* South America */}
         <path
-          d="M 240 250 L 260 240 L 280 250 L 290 280 L 285 320 L 275 350 L 260 370 L 240 360 L 230 340 L 225 310 L 230 280 L 235 260 Z"
+          d="M 320 450 L 340 440 L 360 445 L 375 465 L 385 500 L 390 540 L 385 580 L 375 620 L 360 660 L 340 690 L 315 710 L 290 715 L 270 710 L 255 690 L 245 660 L 240 620 L 245 580 L 255 540 L 270 500 L 290 470 L 310 455 Z"
           fill="#86efac"
-          stroke="#059669"
-          strokeWidth="1"
-          opacity="0.9"
+          stroke="#22c55e"
+          strokeWidth="2"
+          opacity="0.85"
         />
 
         {/* Europe */}
         <path
-          d="M 480 100 L 520 90 L 560 100 L 580 120 L 570 140 L 550 150 L 520 145 L 500 135 L 480 120 Z"
+          d="M 950 200 L 980 190 L 1010 185 L 1040 190 L 1070 200 L 1090 220 L 1100 245 L 1095 270 L 1080 290 L 1050 300 L 1020 295 L 990 285 L 965 270 L 950 250 L 945 225 Z"
           fill="#86efac"
-          stroke="#059669"
-          strokeWidth="1"
-          opacity="0.9"
+          stroke="#22c55e"
+          strokeWidth="2"
+          opacity="0.85"
         />
 
         {/* Africa */}
         <path
-          d="M 480 160 L 520 155 L 560 165 L 580 180 L 590 210 L 585 250 L 575 290 L 560 320 L 540 340 L 515 350 L 490 345 L 475 320 L 470 285 L 475 240 L 480 200 L 485 175 Z"
+          d="M 980 330 L 1010 325 L 1040 330 L 1070 345 L 1095 370 L 1110 400 L 1120 440 L 1125 480 L 1120 520 L 1110 560 L 1090 600 L 1065 630 L 1035 655 L 1005 670 L 975 675 L 945 670 L 920 650 L 905 620 L 895 580 L 890 540 L 895 500 L 905 460 L 920 420 L 940 385 L 960 355 Z"
           fill="#86efac"
-          stroke="#059669"
-          strokeWidth="1"
-          opacity="0.9"
+          stroke="#22c55e"
+          strokeWidth="2"
+          opacity="0.85"
         />
 
         {/* Asia */}
         <path
-          d="M 600 80 L 680 70 L 760 85 L 820 100 L 850 120 L 860 145 L 850 170 L 830 185 L 800 195 L 760 200 L 720 195 L 680 185 L 650 170 L 620 150 L 605 125 L 600 100 Z"
+          d="M 1150 180 L 1200 170 L 1260 165 L 1320 170 L 1380 180 L 1440 195 L 1490 215 L 1530 240 L 1560 270 L 1580 305 L 1590 340 L 1585 375 L 1570 405 L 1545 430 L 1510 445 L 1470 450 L 1430 445 L 1390 435 L 1350 420 L 1310 400 L 1275 375 L 1245 345 L 1220 310 L 1200 270 L 1185 230 L 1175 200 Z"
           fill="#86efac"
-          stroke="#059669"
-          strokeWidth="1"
-          opacity="0.9"
+          stroke="#22c55e"
+          strokeWidth="2"
+          opacity="0.85"
         />
+
+        {/* Southeast Asia islands */}
+        <ellipse cx="1450" cy="520" rx="60" ry="35" fill="#86efac" stroke="#22c55e" strokeWidth="2" opacity="0.85" />
+        <ellipse cx="1520" cy="550" rx="40" ry="25" fill="#86efac" stroke="#22c55e" strokeWidth="2" opacity="0.85" />
 
         {/* Australia */}
         <path
-          d="M 750 320 L 800 315 L 850 325 L 870 345 L 865 370 L 840 385 L 800 390 L 760 385 L 740 365 L 735 340 Z"
+          d="M 1480 630 L 1520 625 L 1560 630 L 1595 645 L 1620 670 L 1635 700 L 1640 730 L 1635 760 L 1620 785 L 1595 805 L 1560 815 L 1520 820 L 1480 815 L 1445 800 L 1420 775 L 1405 745 L 1400 715 L 1405 685 L 1420 660 L 1445 640 Z"
           fill="#86efac"
-          stroke="#059669"
-          strokeWidth="1"
-          opacity="0.9"
+          stroke="#22c55e"
+          strokeWidth="2"
+          opacity="0.85"
         />
 
-        {/* Latitude lines */}
-        <line x1="0" y1="125" x2="1000" y2="125" stroke="rgba(99, 102, 241, 0.15)" strokeWidth="1" strokeDasharray="3,3" />
-        <line x1="0" y1="250" x2="1000" y2="250" stroke="rgba(99, 102, 241, 0.25)" strokeWidth="1.5" strokeDasharray="5,5" />
-        <line x1="0" y1="375" x2="1000" y2="375" stroke="rgba(99, 102, 241, 0.15)" strokeWidth="1" strokeDasharray="3,3" />
-
-        {/* Longitude lines */}
-        <line x1="250" y1="0" x2="250" y2="500" stroke="rgba(99, 102, 241, 0.15)" strokeWidth="1" strokeDasharray="3,3" />
-        <line x1="500" y1="0" x2="500" y2="500" stroke="rgba(99, 102, 241, 0.25)" strokeWidth="1.5" strokeDasharray="5,5" />
-        <line x1="750" y1="0" x2="750" y2="500" stroke="rgba(99, 102, 241, 0.15)" strokeWidth="1" strokeDasharray="3,3" />
-
-        {/* Labels */}
-        <text x="20" y="255" fill="rgba(99, 102, 241, 0.4)" fontSize="12" fontWeight="bold">Equator</text>
-        <text x="505" y="20" fill="rgba(99, 102, 241, 0.4)" fontSize="12" fontWeight="bold">Prime Meridian</text>
+        {/* Antarctica (bottom) */}
+        <ellipse 
+          cx="1000" 
+          cy="930" 
+          rx="700" 
+          ry="60" 
+          fill="#86efac" 
+          stroke="#22c55e" 
+          strokeWidth="2" 
+          opacity="0.7"
+        />
 
         {/* Event markers */}
         {events.map((event) => {
           const { x, y } = latLonToSVG(event.latitude, event.longitude);
-          const typeConfig = POPUP_TYPE_CONFIG[event.type];
           
           // Determine marker color based on type
           const markerColor = event.type === 'art' 
@@ -144,57 +159,26 @@ export function WorldMap({ events }: WorldMapProps) {
               key={event.id}
               onMouseEnter={() => setHoveredEvent(event)}
               onMouseLeave={() => setHoveredEvent(null)}
-              className="cursor-pointer transition-transform duration-200"
+              className="cursor-pointer transition-all duration-200"
               style={{
                 transformOrigin: `${x}px ${y}px`,
               }}
             >
-              {/* Marker shadow */}
-              <ellipse
-                cx={x}
-                cy={y + 12}
-                rx={isHovered ? 8 : 6}
-                ry={isHovered ? 3 : 2}
-                fill="rgba(0,0,0,0.2)"
-                className="transition-all duration-200"
-              />
-              
-              {/* Marker pin */}
-              <path
-                d={`M ${x} ${y} Q ${x - 8} ${y - 8} ${x} ${y - 16} Q ${x + 8} ${y - 8} ${x} ${y} Z`}
-                fill={markerColor}
-                stroke="white"
-                strokeWidth="2"
-                className="transition-all duration-200"
-                style={{
-                  filter: isHovered ? 'drop-shadow(0 4px 8px rgba(0,0,0,0.3))' : 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))',
-                  transform: isHovered ? 'scale(1.3)' : 'scale(1)',
-                }}
-              />
-              
-              {/* Marker dot */}
-              <circle
-                cx={x}
-                cy={y - 16}
-                r="3"
-                fill="white"
-              />
-
-              {/* Pulse animation for hovered marker */}
+              {/* Pulse animation ring for hovered marker */}
               {isHovered && (
                 <circle
                   cx={x}
                   cy={y}
-                  r="10"
+                  r="15"
                   fill="none"
                   stroke={markerColor}
-                  strokeWidth="2"
+                  strokeWidth="3"
                   opacity="0.6"
                 >
                   <animate
                     attributeName="r"
-                    from="10"
-                    to="25"
+                    from="15"
+                    to="35"
                     dur="1.5s"
                     repeatCount="indefinite"
                   />
@@ -207,6 +191,31 @@ export function WorldMap({ events }: WorldMapProps) {
                   />
                 </circle>
               )}
+
+              {/* Main marker circle */}
+              <circle
+                cx={x}
+                cy={y}
+                r={isHovered ? 16 : 12}
+                fill={markerColor}
+                stroke="white"
+                strokeWidth="4"
+                className="transition-all duration-200"
+                style={{
+                  filter: isHovered 
+                    ? 'drop-shadow(0 6px 12px rgba(0,0,0,0.4))' 
+                    : 'drop-shadow(0 3px 6px rgba(0,0,0,0.3))',
+                }}
+              />
+
+              {/* Inner white dot */}
+              <circle
+                cx={x}
+                cy={y}
+                r={isHovered ? 6 : 4}
+                fill="white"
+                className="transition-all duration-200"
+              />
             </g>
           );
         })}
@@ -237,32 +246,29 @@ export function WorldMap({ events }: WorldMapProps) {
       )}
 
       {/* Map Legend */}
-      <div className="absolute top-4 left-4 bg-white/95 dark:bg-gray-800/95 rounded-lg shadow-lg p-4 space-y-2 backdrop-blur-sm">
-        <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
-          <MapPin className="h-4 w-4" />
+      <div className="absolute top-4 left-4 bg-white/95 dark:bg-gray-800/95 rounded-xl shadow-xl p-4 space-y-3 backdrop-blur-sm border-2 border-gray-200 dark:border-gray-700">
+        <h3 className="font-bold text-base mb-2 flex items-center gap-2">
+          <MapPin className="h-5 w-5" />
           Event Types
         </h3>
         {Object.entries(POPUP_TYPE_CONFIG).map(([key, config]) => (
-          <div key={key} className="flex items-center gap-2 text-xs">
-            <svg width="16" height="20" viewBox="0 0 16 20">
-              <path
-                d="M 8 0 Q 2 4 8 12 Q 14 4 8 0 Z"
-                fill={key === 'art' ? '#a855f7' : key === 'shop' ? '#ec4899' : '#6366f1'}
-                stroke="white"
-                strokeWidth="1.5"
-              />
-              <circle cx="8" cy="4" r="2" fill="white" />
-            </svg>
+          <div key={key} className="flex items-center gap-3 text-sm">
+            <div 
+              className="w-5 h-5 rounded-full border-2 border-white shadow-md"
+              style={{ 
+                backgroundColor: key === 'art' ? '#a855f7' : key === 'shop' ? '#ec4899' : '#6366f1' 
+              }}
+            />
             <span className="font-medium">{config.icon} {config.label}</span>
           </div>
         ))}
       </div>
 
-      {/* Coordinates info */}
-      <div className="absolute bottom-4 right-4 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm rounded-lg px-4 py-2 text-sm font-medium shadow-lg">
+      {/* Event counter */}
+      <div className="absolute bottom-4 right-4 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm rounded-xl px-4 py-3 text-sm font-semibold shadow-xl border-2 border-gray-200 dark:border-gray-700">
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-          {events.length} event{events.length !== 1 ? 's' : ''} worldwide
+          <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
+          <span className="text-base">{events.length} event{events.length !== 1 ? 's' : ''} worldwide</span>
         </div>
       </div>
     </div>
