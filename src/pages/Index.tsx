@@ -335,9 +335,9 @@ const Index = () => {
         <div className="text-center mb-16 pt-8">
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button size="lg" asChild className="rounded-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600">
-              <Link to="/projects">
-                <FolderKanban className="mr-2 h-5 w-5" />
-                Explore Projects
+              <Link to="/canvas">
+                <Sparkles className="mr-2 h-5 w-5" />
+                Start Painting
               </Link>
             </Button>
             <Button size="lg" variant="outline" asChild className="rounded-full">
@@ -354,84 +354,78 @@ const Index = () => {
           <div className="mb-16">
             <div className="flex items-center justify-between mb-8">
               <div>
-                <h2 className="text-3xl font-bold mb-2">Featured Projects</h2>
+                <h2 className="text-3xl font-bold mb-2">Projects</h2>
                 <p className="text-gray-600 dark:text-gray-300">
-                  Explore our creative endeavors
+                  By BitPopArt
                 </p>
               </div>
               <Button variant="outline" asChild>
                 <Link to="/projects" className="flex items-center space-x-2">
                   <FolderKanban className="h-4 w-4" />
-                  <span>All Projects</span>
+                  <span>View All</span>
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
             </div>
 
             <div className="grid md:grid-cols-3 gap-6">
-              {featuredProjects.map((project, index) => (
-                <Card
-                  key={project.id}
-                  className="group hover:shadow-xl transition-all duration-300 cursor-pointer bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4"
-                  style={{ animationDelay: `${index * 100}ms` }}
-                  onClick={() => {
-                    if (project.url) {
-                      if (project.url.startsWith('http')) {
-                        window.open(project.url, '_blank');
-                      } else {
-                        window.location.href = project.url;
-                      }
+              {featuredProjects.map((project, index) => {
+                const handleClick = () => {
+                  if (project.url) {
+                    if (project.url.startsWith('http')) {
+                      window.open(project.url, '_blank');
+                    } else {
+                      window.location.href = project.url;
                     }
-                  }}
-                >
-                  {/* Project Thumbnail */}
-                  <div className="aspect-video relative overflow-hidden">
+                  }
+                };
+
+                return (
+                  <Card
+                    key={project.id}
+                    className="hover:shadow-lg transition-all duration-300 cursor-pointer bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm group overflow-hidden animate-in fade-in slide-in-from-bottom-4"
+                    style={{ animationDelay: `${index * 100}ms` }}
+                    onClick={handleClick}
+                  >
+                    {/* Project Image */}
                     {project.thumbnail ? (
-                      <img
-                        src={project.thumbnail}
-                        alt={project.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
+                      <div className="aspect-square relative overflow-hidden">
+                        <img
+                          src={project.thumbnail}
+                          alt={project.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      </div>
                     ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-purple-400 via-pink-400 to-indigo-400 dark:from-purple-600 dark:via-pink-600 dark:to-indigo-600 flex items-center justify-center">
-                        <FolderKanban className="h-16 w-16 text-white opacity-80" />
+                      <div className="aspect-square relative overflow-hidden bg-gradient-to-br from-purple-100 via-pink-100 to-indigo-100 dark:from-purple-900/20 dark:via-pink-900/20 dark:to-indigo-900/20 flex items-center justify-center">
+                        <FolderKanban className="h-12 w-12 text-purple-400 dark:text-purple-500" />
                       </div>
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                    
-                    {/* Hover Button */}
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        className="gap-2"
-                      >
-                        Explore
-                        {project.url?.startsWith('http') ? (
-                          <ExternalLink className="h-3 w-3" />
-                        ) : (
-                          <ArrowRight className="h-3 w-3" />
-                        )}
-                      </Button>
-                    </div>
-                  </div>
 
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-lg font-semibold group-hover:text-purple-600 transition-colors line-clamp-1">
-                      {project.name}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-3 line-clamp-2">
-                      {project.description}
-                    </p>
-                    <div className="flex items-center text-purple-600 group-hover:text-purple-700 transition-colors">
-                      <span className="text-xs font-medium">View project</span>
-                      <ArrowRight className="h-3 w-3 ml-1 group-hover:translate-x-1 transition-transform" />
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center space-x-2">
+                        <FolderKanban className="h-4 w-4 text-purple-600" />
+                        <CardTitle className="text-sm font-semibold truncate">
+                          {project.name}
+                        </CardTitle>
+                      </div>
+                      <div className="flex items-center space-x-1 text-xs text-muted-foreground">
+                        <span>by BitPopArt</span>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div className="text-sm text-gray-600 dark:text-gray-300 mb-3 line-clamp-2">
+                        {project.description.substring(0, 80)}...
+                      </div>
+                      <div className="flex items-center text-purple-600 group-hover:text-purple-700 transition-colors">
+                        <span className="text-xs font-medium">View project</span>
+                        <ArrowRight className="h-3 w-3 ml-1 group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           </div>
         )}
