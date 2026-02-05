@@ -49,8 +49,8 @@ const Admin = () => {
   const isAdmin = useIsAdmin();
 
   useSeoMeta({
-    title: 'Admin Dashboard - BitPop Cards',
-    description: 'Administrative dashboard for managing BitPop Cards platform.',
+    title: 'Admin Dashboard - BitPopArt',
+    description: 'Administrative dashboard for managing BitPopArt platform.',
   });
 
   useEffect(() => {
@@ -106,92 +106,97 @@ const Admin = () => {
     );
   }
 
-  const cardActions = [
+  const contentActions = [
     {
-      title: 'Create New Card',
-      description: 'Design and publish a new BitPop card',
-      icon: Plus,
-      color: 'from-green-500 to-emerald-500',
-      action: () => navigate('/cards/create'),
-      badge: 'Create'
-    },
-    {
-      title: 'Card Management',
-      description: 'View and manage all your created cards',
-      icon: FolderOpen,
+      title: 'News Articles',
+      description: 'Publish news and blog posts',
+      icon: FileText,
       color: 'from-blue-500 to-cyan-500',
-      action: () => navigate('/cards?tab=my-cards'),
-      badge: 'Manage'
+      action: () => setActiveTab('blog'),
+      badge: 'News'
     },
     {
-      title: 'Browse All Cards',
-      description: 'View all cards in the platform (admin view)',
-      icon: Eye,
+      title: 'Artist Page',
+      description: 'Update your artist bio and story',
+      icon: User,
       color: 'from-purple-500 to-pink-500',
-      action: () => navigate('/cards?tab=browse'),
-      badge: 'Browse'
-    }
-  ];
-
-  const shopActions = [
-    {
-      title: 'Product Management',
-      description: 'Create and manage marketplace products',
-      icon: ShoppingBag,
-      color: 'from-orange-500 to-red-500',
-      action: () => setActiveTab('shop'),
-      badge: 'Products'
+      action: () => setActiveTab('artist'),
+      badge: 'Bio'
     },
     {
-      title: 'Category Management',
-      description: 'Add, edit, or remove product categories',
-      icon: Tags,
-      color: 'from-indigo-500 to-purple-500',
-      action: () => setActiveTab('categories'),
-      badge: 'Categories'
-    }
+      title: 'PopUp Events',
+      description: 'Manage worldwide event schedule',
+      icon: MapPin,
+      color: 'from-green-500 to-emerald-500',
+      action: () => setActiveTab('popup'),
+      badge: 'Events'
+    },
+    {
+      title: 'Projects Portfolio',
+      description: 'Showcase creative projects',
+      icon: FolderKanban,
+      color: 'from-orange-500 to-red-500',
+      action: () => setActiveTab('projects'),
+      badge: 'Projects'
+    },
   ];
 
-  const artActions = [
+  const marketplaceActions = [
     {
-      title: 'Artwork Gallery',
-      description: 'View and manage your art portfolio',
+      title: 'Art Gallery',
+      description: 'Manage artwork sales and auctions',
       icon: Palette,
       color: 'from-pink-500 to-rose-500',
       action: () => navigate('/art'),
       badge: 'Gallery'
     },
     {
-      title: '100M Canvas',
-      description: 'Collaborative pixel art project',
-      icon: Grid3X3,
-      color: 'from-purple-500 to-indigo-500',
-      action: () => navigate('/canvas'),
-      badge: 'Canvas'
+      title: 'POP Cards',
+      description: 'Create and share digital cards',
+      icon: CreditCard,
+      color: 'from-violet-500 to-purple-500',
+      action: () => setActiveTab('cards'),
+      badge: 'Cards'
+    },
+    {
+      title: 'Shop Products',
+      description: 'Marketplace product management',
+      icon: ShoppingBag,
+      color: 'from-amber-500 to-orange-500',
+      action: () => setActiveTab('shop'),
+      badge: 'Shop'
+    },
+    {
+      title: 'Categories',
+      description: 'Organize shop categories',
+      icon: Tags,
+      color: 'from-indigo-500 to-blue-500',
+      action: () => setActiveTab('categories'),
+      badge: 'Tags'
     }
   ];
 
   const statsCards = [
     {
-      title: 'Total Cards',
-      value: '∞',
-      description: 'Cards created on platform',
-      icon: Database,
+      title: 'Platform',
+      value: 'BitPopArt',
+      description: 'On Nostr Network',
+      icon: Sparkles,
+      color: 'text-purple-600'
+    },
+    {
+      title: 'Sections',
+      value: '8',
+      description: 'Content areas',
+      icon: Grid3X3,
       color: 'text-blue-600'
     },
     {
-      title: 'Active Users',
-      value: '∞',
-      description: 'Registered users',
-      icon: Users,
-      color: 'text-green-600'
-    },
-    {
-      title: 'Growth',
-      value: '+∞%',
-      description: 'This month',
+      title: 'Decentralized',
+      value: '100%',
+      description: 'On Nostr',
       icon: TrendingUp,
-      color: 'text-purple-600'
+      color: 'text-green-600'
     }
   ];
 
@@ -207,7 +212,7 @@ const Admin = () => {
             </h1>
           </div>
           <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            Welcome back! Manage your BitPop Cards platform from here.
+            Welcome back! Manage your BitPopArt platform from here.
           </p>
           <Badge className="mt-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0">
             Administrator Access
@@ -273,11 +278,11 @@ const Admin = () => {
           <TabsContent value="overview" className="space-y-8">
             {/* Quick Actions Overview */}
             <div className="space-y-8">
-              {/* Card Management Section */}
+              {/* Content Management Section */}
               <div>
-                <h2 className="text-2xl font-semibold mb-6 text-center">Card Administration</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-                  {cardActions.map((action, index) => (
+                <h2 className="text-2xl font-semibold mb-6 text-center">Content Management</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+                  {contentActions.map((action, index) => (
                     <Card
                       key={index}
                       className="group hover:shadow-xl transition-all duration-300 cursor-pointer bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-0 shadow-lg"
@@ -292,16 +297,16 @@ const Admin = () => {
                             {action.badge}
                           </Badge>
                         </div>
-                        <CardTitle className="text-xl group-hover:text-purple-600 transition-colors">
+                        <CardTitle className="text-lg group-hover:text-purple-600 transition-colors">
                           {action.title}
                         </CardTitle>
-                        <CardDescription className="text-base">
+                        <CardDescription className="text-sm">
                           {action.description}
                         </CardDescription>
                       </CardHeader>
                       <CardContent className="pt-0">
                         <div className="flex items-center text-purple-600 group-hover:text-purple-700 transition-colors">
-                          <span className="text-sm font-medium">Access</span>
+                          <span className="text-sm font-medium">Manage</span>
                           <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
                         </div>
                       </CardContent>
@@ -310,11 +315,11 @@ const Admin = () => {
                 </div>
               </div>
 
-              {/* Shop Management Section */}
+              {/* Commerce & Marketplace Section */}
               <div>
-                <h2 className="text-2xl font-semibold mb-6 text-center">Shop Administration</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-                  {shopActions.map((action, index) => (
+                <h2 className="text-2xl font-semibold mb-6 text-center">Commerce & Marketplace</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+                  {marketplaceActions.map((action, index) => (
                     <Card
                       key={index}
                       className="group hover:shadow-xl transition-all duration-300 cursor-pointer bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-0 shadow-lg"
@@ -329,16 +334,16 @@ const Admin = () => {
                             {action.badge}
                           </Badge>
                         </div>
-                        <CardTitle className="text-xl group-hover:text-purple-600 transition-colors">
+                        <CardTitle className="text-lg group-hover:text-purple-600 transition-colors">
                           {action.title}
                         </CardTitle>
-                        <CardDescription className="text-base">
+                        <CardDescription className="text-sm">
                           {action.description}
                         </CardDescription>
                       </CardHeader>
                       <CardContent className="pt-0">
                         <div className="flex items-center text-purple-600 group-hover:text-purple-700 transition-colors">
-                          <span className="text-sm font-medium">Access</span>
+                          <span className="text-sm font-medium">Manage</span>
                           <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
                         </div>
                       </CardContent>
@@ -347,40 +352,42 @@ const Admin = () => {
                 </div>
               </div>
 
-              {/* Art & Canvas Section */}
+              {/* Quick Links Section */}
               <div>
-                <h2 className="text-2xl font-semibold mb-6 text-center">Art & Creative Projects</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-                  {artActions.map((action, index) => (
-                    <Card
-                      key={index}
-                      className="group hover:shadow-xl transition-all duration-300 cursor-pointer bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-0 shadow-lg"
-                      onClick={action.action}
-                    >
-                      <CardHeader className="pb-4">
-                        <div className="flex items-center justify-between">
-                          <div className={`p-3 rounded-lg bg-gradient-to-r ${action.color} text-white`}>
-                            <action.icon className="h-6 w-6" />
-                          </div>
-                          <Badge variant="secondary" className="text-xs">
-                            {action.badge}
-                          </Badge>
-                        </div>
-                        <CardTitle className="text-xl group-hover:text-purple-600 transition-colors">
-                          {action.title}
-                        </CardTitle>
-                        <CardDescription className="text-base">
-                          {action.description}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="pt-0">
-                        <div className="flex items-center text-purple-600 group-hover:text-purple-700 transition-colors">
-                          <span className="text-sm font-medium">Access</span>
-                          <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                <h2 className="text-2xl font-semibold mb-6 text-center">Quick Access</h2>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
+                  <Button
+                    variant="outline"
+                    className="h-24 flex flex-col items-center justify-center gap-2 hover:bg-purple-50 dark:hover:bg-purple-900/20"
+                    onClick={() => navigate('/art')}
+                  >
+                    <Palette className="h-6 w-6 text-purple-600" />
+                    <span className="text-sm font-medium">View Gallery</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-24 flex flex-col items-center justify-center gap-2 hover:bg-pink-50 dark:hover:bg-pink-900/20"
+                    onClick={() => navigate('/projects')}
+                  >
+                    <FolderKanban className="h-6 w-6 text-pink-600" />
+                    <span className="text-sm font-medium">View Projects</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-24 flex flex-col items-center justify-center gap-2 hover:bg-green-50 dark:hover:bg-green-900/20"
+                    onClick={() => navigate('/popup')}
+                  >
+                    <MapPin className="h-6 w-6 text-green-600" />
+                    <span className="text-sm font-medium">View Events</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-24 flex flex-col items-center justify-center gap-2 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                    onClick={() => navigate('/blog')}
+                  >
+                    <FileText className="h-6 w-6 text-blue-600" />
+                    <span className="text-sm font-medium">View News</span>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -501,31 +508,90 @@ const Admin = () => {
         </Tabs>
 
         {/* Platform Info */}
-        <Card className="max-w-4xl mx-auto bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 border-0">
-          <CardContent className="p-8 text-center">
-            <div className="flex items-center justify-center mb-4">
-              <Sparkles className="h-8 w-8 text-purple-600 mr-2" />
-              <h2 className="text-2xl font-bold">BitPop Cards Platform</h2>
+        <Card className="max-w-6xl mx-auto bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 border-0">
+          <CardContent className="p-8">
+            <div className="text-center mb-6">
+              <div className="flex items-center justify-center mb-4">
+                <Sparkles className="h-8 w-8 text-purple-600 mr-2" />
+                <h2 className="text-2xl font-bold">BitPopArt Platform</h2>
+              </div>
+              <p className="text-lg mb-6 text-muted-foreground">
+                Bitcoin PopArt meets Nostr - Decentralized creativity and commerce
+              </p>
             </div>
-            <p className="text-lg mb-6 text-muted-foreground">
-              Spreading joy through beautiful digital cards on the Nostr network
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               <Button
-                onClick={() => navigate('/cards/create')}
+                onClick={() => navigate('/art')}
                 size="lg"
-                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                variant="outline"
+                className="h-auto py-4 flex-col gap-2"
               >
-                <Edit className="mr-2 h-4 w-4" />
-                Start Creating
+                <Palette className="h-6 w-6 text-purple-600" />
+                <div className="text-center">
+                  <div className="font-semibold">Art Gallery</div>
+                  <div className="text-xs text-muted-foreground">Browse & Sell</div>
+                </div>
+              </Button>
+              <Button
+                onClick={() => navigate('/projects')}
+                size="lg"
+                variant="outline"
+                className="h-auto py-4 flex-col gap-2"
+              >
+                <FolderKanban className="h-6 w-6 text-pink-600" />
+                <div className="text-center">
+                  <div className="font-semibold">Projects</div>
+                  <div className="text-xs text-muted-foreground">Portfolio</div>
+                </div>
+              </Button>
+              <Button
+                onClick={() => navigate('/popup')}
+                size="lg"
+                variant="outline"
+                className="h-auto py-4 flex-col gap-2"
+              >
+                <MapPin className="h-6 w-6 text-green-600" />
+                <div className="text-center">
+                  <div className="font-semibold">PopUp Events</div>
+                  <div className="text-xs text-muted-foreground">Worldwide</div>
+                </div>
               </Button>
               <Button
                 onClick={() => navigate('/shop')}
                 size="lg"
                 variant="outline"
+                className="h-auto py-4 flex-col gap-2"
               >
-                <BarChart3 className="mr-2 h-4 w-4" />
-                View Shop
+                <ShoppingBag className="h-6 w-6 text-orange-600" />
+                <div className="text-center">
+                  <div className="font-semibold">Shop</div>
+                  <div className="text-xs text-muted-foreground">Marketplace</div>
+                </div>
+              </Button>
+              <Button
+                onClick={() => navigate('/cards')}
+                size="lg"
+                variant="outline"
+                className="h-auto py-4 flex-col gap-2"
+              >
+                <CreditCard className="h-6 w-6 text-violet-600" />
+                <div className="text-center">
+                  <div className="font-semibold">POP Cards</div>
+                  <div className="text-xs text-muted-foreground">Good Vibes</div>
+                </div>
+              </Button>
+              <Button
+                onClick={() => navigate('/artist')}
+                size="lg"
+                variant="outline"
+                className="h-auto py-4 flex-col gap-2"
+              >
+                <User className="h-6 w-6 text-blue-600" />
+                <div className="text-center">
+                  <div className="font-semibold">Artist Page</div>
+                  <div className="text-xs text-muted-foreground">Your Story</div>
+                </div>
               </Button>
             </div>
           </CardContent>
