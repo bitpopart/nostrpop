@@ -2,7 +2,7 @@
   "name": "POP Cards by BitPopArt",
   "short_name": "POP Cards",
   "description": "Good Vibes cards by BitPopArt to share with everyone!",
-  "start_url": "/",
+  "start_url": "/nostrpop/",
   "display": "standalone",
   "background_color": "#fdf2f8",
   "theme_color": "#ec4899",
