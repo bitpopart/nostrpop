@@ -25,7 +25,7 @@ import OrderConfirmation from "./pages/OrderConfirmation";
 import NotFound from "./pages/NotFound";
 
 export function AppRouter() {
-  // Use Vite's base URL from import.meta.env
+  // Use the base URL that Vite injects based on build config
   const basename = import.meta.env.BASE_URL;
   
   return (

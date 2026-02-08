@@ -3,6 +3,22 @@ import path from "node:path";
 import react from "@vitejs/plugin-react-swc";
 import { defineConfig } from "vitest/config";
 
+// HTML Base Path Plugin - updates the base tag
+function basePathPlugin(base: string) {
+  return {
+    name: 'base-path-plugin',
+    transformIndexHtml: {
+      order: 'post',
+      handler(html: string) {
+        // Replace the base tag href with the correct base path  
+        console.log(`[basePathPlugin] Running for base: ${base}`);
+        const result = html.replace(/<base href="\/"\s*\/?>/, `<base href="${base}" />`);
+        return result;
+      }
+    }
+  };
+}
+
 // CSP Plugin to handle environment-specific Content Security Policy
 const cspPlugin = () => ({
   name: 'csp-plugin',
@@ -32,20 +48,25 @@ const cspPlugin = () => ({
 });
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
-  base: "/nostrpop/",
-  server: {
-    host: "::",
-    port: 8080,
-  },
-  plugins: [
-    react(),
-    cspPlugin(),
-  ],
+export default defineConfig(({ mode, command }) => {
+  // Use root path in dev mode (Shakespeare preview), /nostrpop/ in build mode (GitHub Pages)
+  const base = command === 'serve' ? '/' : '/nostrpop/';
+  
+  return {
+    base,
+    server: {
+      host: "::",
+      port: 8080,
+    },
+    plugins: [
+      react(),
+      basePathPlugin(base),
+      cspPlugin(),
+    ],
   define: {
-    'import.meta.env.VITE_BUILD_MODE': JSON.stringify(mode),
-  },
-  test: {
+      'import.meta.env.VITE_BUILD_MODE': JSON.stringify(mode),
+    },
+    test: {
     globals: true,
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
@@ -56,9 +77,10 @@ export default defineConfig(({ mode }) => ({
       DEBUG_PRINT_LIMIT: '0', // Suppress DOM output that exceeds AI context windows
     },
   },
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
+    resolve: {
+      alias: {
+        "@": path.resolve(__dirname, "./src"),
+      },
     },
-  },
-}));
+  };
+});
