@@ -9,7 +9,7 @@ import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useTheme } from '@/hooks/useTheme';
 import { Menu, Moon, Sun, Sparkles, Shield, Search as SearchIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import BitPopArtLogo from '@/assets/bitpopart-logo.svg';
+import BitPopArtLogo from '@/assets/bitpopart-logo.png';
 
 const navigationItems = [
   { name: 'News', href: '/blog', icon: '📰' },

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Mail, Send } from 'lucide-react';
-import BitPopArtLogo from '@/assets/bitpopart-logo.svg';
+import BitPopArtLogo from '@/assets/bitpopart-logo.png';
 
 export function Footer() {
   const { data: footerPages = [] } = useFooterPages();
