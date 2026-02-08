@@ -8,7 +8,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
-import { FolderKanban, ExternalLink, Sparkles, ArrowRight } from 'lucide-react';
+import { FolderKanban, ExternalLink, Sparkles, ArrowRight, Users, Zap } from 'lucide-react';
+import { useNostrProjects } from '@/hooks/useNostrProjects';
 import type { ProjectData } from '@/lib/projectTypes';
 import type { NostrEvent } from '@nostrify/nostrify';
 
@@ -51,6 +52,9 @@ export default function Projects() {
     title: 'Projects - BitPopArt',
     description: 'Explore creative projects by BitPopArt including 21K Art, 100M Canvas, POP Cards and more',
   });
+
+  // Fetch Nostr Projects (collaborative art)
+  const { data: nostrProjects = [], isLoading: nostrLoading } = useNostrProjects();
 
   // Fetch custom projects from Nostr
   const { data: customProjects = [], isLoading } = useQuery({
@@ -130,7 +134,7 @@ export default function Projects() {
           </p>
         </div>
 
-        {/* Projects Grid */}
+        {/* Regular Projects Grid */}
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
             {[...Array(6)].map((_, i) => (
@@ -145,7 +149,8 @@ export default function Projects() {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
             {allProjects.map((project, index) => (
               <Card
                 key={project.id}
@@ -211,6 +216,87 @@ export default function Projects() {
               </Card>
             ))}
           </div>
+
+          {/* Nostr Projects Section */}
+          {nostrProjects.length > 0 && (
+            <div className="mt-16 max-w-6xl mx-auto">
+              <div className="text-center mb-8">
+                <div className="flex items-center justify-center mb-4">
+                  <Users className="h-8 w-8 text-purple-600 mr-3" />
+                  <h2 className="text-4xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent">
+                    Nostr Projects
+                  </h2>
+                </div>
+                <p className="text-lg text-gray-600 dark:text-gray-300">
+                  Collaborative art projects - Join by selecting an image and paying in sats
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {nostrProjects.map((project) => (
+                  <Card
+                    key={project.id}
+                    className="group overflow-hidden cursor-pointer hover:shadow-2xl transition-all duration-300 bg-white dark:bg-gray-800"
+                    onClick={() => navigate(`/nostr-projects/${project.id}`)}
+                  >
+                    {/* Image Grid Preview */}
+                    <div className="relative h-56 overflow-hidden bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/20 dark:to-pink-900/20">
+                      <div className="grid grid-cols-2 gap-1 h-full p-2">
+                        {project.images.slice(0, 4).map((img, index) => (
+                          <div key={index} className="relative overflow-hidden rounded-lg">
+                            <img
+                              src={img}
+                              alt=""
+                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      
+                      {/* Hover overlay */}
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <Button
+                          variant="secondary"
+                          size="lg"
+                          className="gap-2"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/nostr-projects/${project.id}`);
+                          }}
+                        >
+                          Join Project
+                          <ArrowRight className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Content */}
+                    <CardHeader>
+                      <CardTitle className="text-2xl group-hover:text-purple-600 transition-colors flex items-center justify-between">
+                        {project.title}
+                        <Badge variant="default" className="gap-1">
+                          <Zap className="h-3 w-3" />
+                          {project.price_sats.toLocaleString()}
+                        </Badge>
+                      </CardTitle>
+                      <CardDescription className="line-clamp-3 text-base">
+                        {project.description}
+                      </CardDescription>
+                      <div className="flex items-center gap-2 pt-2">
+                        <Badge variant="outline" className="gap-1">
+                          <Sparkles className="h-3 w-3" />
+                          {project.images.length} images
+                        </Badge>
+                        <Badge variant="secondary">Collaborative</Badge>
+                      </div>
+                    </CardHeader>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
         )}
 
         {/* Footer */}

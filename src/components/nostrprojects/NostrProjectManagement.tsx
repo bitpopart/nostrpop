@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -38,6 +39,7 @@ export function NostrProjectManagement() {
   const [priceSats, setPriceSats] = useState('');
   const [authorHandle, setAuthorHandle] = useState('');
   const [status, setStatus] = useState<'active' | 'completed' | 'archived'>('active');
+  const [featured, setFeatured] = useState(false);
   
   const resetForm = () => {
     setTitle('');
@@ -46,6 +48,7 @@ export function NostrProjectManagement() {
     setPriceSats('');
     setAuthorHandle('');
     setStatus('active');
+    setFeatured(false);
     setEditingProject(null);
     setIsCreating(false);
   };
@@ -58,6 +61,7 @@ export function NostrProjectManagement() {
     setPriceSats(project.price_sats.toString());
     setAuthorHandle(project.author_handle || '');
     setStatus(project.status);
+    setFeatured(project.featured || false);
     setIsCreating(true);
   };
 
@@ -98,6 +102,7 @@ export function NostrProjectManagement() {
         ['price', priceSats],
         ['status', status],
         ['t', 'nostr-project'],
+        ...(featured ? [['featured', 'true']] : []),
         ...(authorHandle ? [['author-handle', authorHandle.trim()]] : []),
         ...images.map((img, i) => ['image', img, i.toString()]),
       ],
@@ -258,6 +263,21 @@ export function NostrProjectManagement() {
                   <SelectItem value="archived">Archived</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            {/* Featured */}
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="featured"
+                checked={featured}
+                onCheckedChange={(checked) => setFeatured(checked as boolean)}
+              />
+              <Label
+                htmlFor="featured"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                Feature on homepage and projects page
+              </Label>
             </div>
 
             {/* Actions */}

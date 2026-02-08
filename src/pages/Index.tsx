@@ -10,6 +10,7 @@ import { useLatestAdminNotes } from '@/hooks/useAdminNotes';
 import { useLatestCards } from '@/hooks/useLatestCards';
 import { useArtworks } from '@/hooks/useArtworks';
 import { useFeaturedProjects } from '@/hooks/useProjects';
+import { useFeaturedNostrProjects } from '@/hooks/useNostrProjects';
 import { genUserName } from '@/lib/genUserName';
 import { RelaySelector } from '@/components/RelaySelector';
 import { getFirstImage, stripImagesFromContent } from '@/lib/extractImages';
@@ -26,7 +27,9 @@ import {
   ShoppingCart,
   Eye,
   FolderKanban,
-  ExternalLink
+  ExternalLink,
+  Users,
+  Zap
 } from 'lucide-react';
 import type { NostrEvent, NostrMetadata } from '@nostrify/nostrify';
 import type { ArtworkData } from '@/lib/artTypes';
@@ -315,6 +318,7 @@ const Index = () => {
   const { data: latestCards, isLoading: cardsLoading, error: cardsError } = useLatestCards(3);
   const { data: featuredArtworks, isLoading: artworksLoading, error: artworksError } = useArtworks('all');
   const { data: featuredProjects, isLoading: projectsLoading } = useFeaturedProjects();
+  const { data: featuredNostrProjects, isLoading: nostrProjectsLoading } = useFeaturedNostrProjects();
   const author = useAuthor(ADMIN_HEX);
   const metadata: NostrMetadata | undefined = author.data?.metadata;
 
@@ -322,6 +326,8 @@ const Index = () => {
 
   // Get first 3 artworks for featured section
   const featuredArtworksList = featuredArtworks?.slice(0, 3) || [];
+  // Get first 3 featured Nostr projects
+  const featuredNostrProjectsList = featuredNostrProjects?.slice(0, 3) || [];
 
   useSeoMeta({
     title: 'BitPopArt - Good Vibes Digital Cards',
@@ -348,6 +354,74 @@ const Index = () => {
             </Button>
           </div>
         </div>
+
+        {/* Featured Nostr Projects Section */}
+        {featuredNostrProjectsList.length > 0 && (
+          <div className="mb-16">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h2 className="text-3xl font-bold mb-2">Nostr Projects</h2>
+                <p className="text-gray-600 dark:text-gray-300">
+                  Join collaborative art - Select an image & pay in sats
+                </p>
+              </div>
+              <Button variant="outline" asChild>
+                <Link to="/nostr-projects" className="flex items-center space-x-2">
+                  <Users className="h-4 w-4" />
+                  <span>View All</span>
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-6">
+              {featuredNostrProjectsList.map((project, index) => (
+                <Card
+                  key={project.id}
+                  className="group overflow-hidden cursor-pointer hover:shadow-2xl transition-all duration-300 bg-white dark:bg-gray-800 animate-in fade-in slide-in-from-bottom-4"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                  onClick={() => window.location.href = `/nostr-projects/${project.id}`}
+                >
+                  {/* Image Grid Preview */}
+                  <div className="relative h-56 overflow-hidden bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/20 dark:to-pink-900/20">
+                    <div className="grid grid-cols-2 gap-1 h-full p-2">
+                      {project.images.slice(0, 4).map((img, imgIndex) => (
+                        <div key={imgIndex} className="relative overflow-hidden rounded-lg">
+                          <img
+                            src={img}
+                            alt=""
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  </div>
+
+                  {/* Content */}
+                  <CardHeader>
+                    <CardTitle className="text-xl group-hover:text-purple-600 transition-colors flex items-center justify-between">
+                      <span className="truncate">{project.title}</span>
+                      <Badge variant="default" className="gap-1 shrink-0">
+                        <Zap className="h-3 w-3" />
+                        {project.price_sats.toLocaleString()}
+                      </Badge>
+                    </CardTitle>
+                    <CardDescription className="line-clamp-2">
+                      {project.description}
+                    </CardDescription>
+                    <div className="flex items-center gap-2 pt-2">
+                      <Badge variant="outline" className="gap-1 text-xs">
+                        <Sparkles className="h-3 w-3" />
+                        {project.images.length} images
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Featured Projects Section */}
         {featuredProjects && featuredProjects.length > 0 && (

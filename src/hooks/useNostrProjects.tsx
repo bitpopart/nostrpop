@@ -29,6 +29,7 @@ export function useNostrProjects() {
             const status = event.tags.find(t => t[0] === 'status')?.[1] as 'active' | 'completed' | 'archived' || 'active';
             const price = event.tags.find(t => t[0] === 'price')?.[1];
             const authorHandle = event.tags.find(t => t[0] === 'author-handle')?.[1];
+            const featured = event.tags.find(t => t[0] === 'featured')?.[1] === 'true';
             
             if (!id || !title) return null;
 
@@ -43,12 +44,66 @@ export function useNostrProjects() {
               author_handle: authorHandle,
               created_at: new Date(event.created_at * 1000).toISOString(),
               status,
+              featured,
             };
           } catch {
             return null;
           }
         })
         .filter((p): p is NostrProjectData => p !== null && p.status === 'active')
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+      return projects;
+    },
+  });
+}
+
+/**
+ * Fetch featured Nostr projects for homepage
+ */
+export function useFeaturedNostrProjects() {
+  const { nostr } = useNostr();
+
+  return useQuery({
+    queryKey: ['featured-nostr-projects'],
+    queryFn: async (c) => {
+      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(3000)]);
+      
+      const events = await nostr.query(
+        [{ kinds: [38171], authors: [ADMIN_PUBKEY], '#featured': ['true'], limit: 10 }],
+        { signal }
+      );
+
+      const projects: NostrProjectData[] = events
+        .map((event): NostrProjectData | null => {
+          try {
+            const content = JSON.parse(event.content);
+            const id = event.tags.find(t => t[0] === 'd')?.[1];
+            const title = event.tags.find(t => t[0] === 'title')?.[1];
+            const status = event.tags.find(t => t[0] === 'status')?.[1] as 'active' | 'completed' | 'archived' || 'active';
+            const price = event.tags.find(t => t[0] === 'price')?.[1];
+            const authorHandle = event.tags.find(t => t[0] === 'author-handle')?.[1];
+            
+            if (!id || !title || status !== 'active') return null;
+
+            return {
+              id,
+              event,
+              title,
+              description: content.description || '',
+              images: content.images || [],
+              price_sats: price ? parseInt(price) : 0,
+              author_pubkey: event.pubkey,
+              author_handle: authorHandle,
+              created_at: new Date(event.created_at * 1000).toISOString(),
+              status,
+              featured: true,
+            };
+          } catch {
+            return null;
+          }
+        })
+        .filter((p): p is NostrProjectData => p !== null)
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
       return projects;

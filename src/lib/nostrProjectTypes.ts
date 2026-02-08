@@ -16,6 +16,7 @@ export interface NostrProjectData {
   created_at: string;
   participant_count?: number; // How many people joined
   status: 'active' | 'completed' | 'archived';
+  featured?: boolean; // Show on homepage
 }
 
 /**
