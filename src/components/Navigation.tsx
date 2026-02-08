@@ -4,9 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { LoginArea } from '@/components/auth/LoginArea';
 import { RelaySelector } from '@/components/RelaySelector';
+import { Search } from '@/components/Search';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useTheme } from '@/hooks/useTheme';
-import { Menu, Moon, Sun, Sparkles, Shield } from 'lucide-react';
+import { Menu, Moon, Sun, Sparkles, Shield, Search as SearchIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import BitPopArtLogo from '@/assets/bitpopart-logo.svg';
 
@@ -22,6 +23,7 @@ const navigationItems = [
 
 export function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const location = useLocation();
   const { theme, setTheme } = useTheme();
   // Check if current user is admin
@@ -92,6 +94,14 @@ export function Navigation() {
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center space-x-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSearchOpen(true)}
+              className="h-9 w-9 p-0"
+            >
+              <SearchIcon className="h-4 w-4" />
+            </Button>
             <RelaySelector className="max-w-40" />
             <Button
               variant="ghost"
@@ -182,42 +192,37 @@ export function Navigation() {
                     )}
                   </div>
 
-                  <div className="border-t pt-6 space-y-4">
-                    {/* Theme Toggle */}
-                    <div className="flex items-center justify-between px-4">
-                      <span className="text-sm font-medium">Theme</span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={toggleTheme}
-                        className="h-9 w-9 p-0"
-                      >
-                        {theme === 'light' ? (
-                          <Moon className="h-4 w-4" />
-                        ) : (
-                          <Sun className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
-
-                    {/* Relay Selector */}
-                    <div className="px-4">
-                      <label className="text-sm font-medium mb-2 block">Relay</label>
-                      <RelaySelector className="w-full" />
-                    </div>
-
-                    {/* Login Area */}
-                    <div className="px-4">
-                      <label className="text-sm font-medium mb-2 block">Account</label>
-                      <LoginArea className="w-full" />
-                    </div>
-                  </div>
-
-                  {/* Footer */}
-                  <div className="border-t pt-6 px-4">
-                    <p className="text-xs text-muted-foreground text-center">
-                      Nostr & BitPopArt {new Date().getFullYear()}
-                    </p>
+                  <div className="border-t pt-6 space-y-4 px-4">
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => {
+                        setIsOpen(false);
+                        setSearchOpen(true);
+                      }}
+                    >
+                      <SearchIcon className="mr-2 h-4 w-4" />
+                      Search
+                    </Button>
+                    <RelaySelector className="w-full" />
+                    <LoginArea className="w-full" />
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={toggleTheme}
+                    >
+                      {theme === 'light' ? (
+                        <>
+                          <Moon className="mr-2 h-4 w-4" />
+                          Dark Mode
+                        </>
+                      ) : (
+                        <>
+                          <Sun className="mr-2 h-4 w-4" />
+                          Light Mode
+                        </>
+                      )}
+                    </Button>
                   </div>
                 </div>
               </SheetContent>
@@ -225,6 +230,9 @@ export function Navigation() {
           </div>
         </div>
       </div>
+
+      {/* Search Dialog */}
+      <Search open={searchOpen} onOpenChange={setSearchOpen} />
     </nav>
   );
 }

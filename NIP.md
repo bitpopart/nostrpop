@@ -408,6 +408,138 @@ When someone purchases a badge:
 - Badge is recorded on Nostr
 - Can be added to Nostr profile badges (NIP-58)
 
+## Custom Pages (Kind 38175)
+
+General-purpose pages with optional header images, photo galleries, and external links.
+
+### Event Structure
+
+```json
+{
+  "kind": 38175,
+  "content": {
+    "description": "<page content>",
+    "gallery_images": ["<image_url_1>", "<image_url_2>", ...]
+  },
+  "tags": [
+    ["d", "<page-slug>"],
+    ["title", "<page title>"],
+    ["header", "<header_image_url>"],
+    ["r", "<external_url>"],
+    ["footer", "true"],
+    ["order", "<display_order>"],
+    ["image", "<gallery_image_url>", "<index>"],
+    ["t", "custom-page"],
+    ["alt", "Page: <title>"]
+  ]
+}
+```
+
+### Fields
+
+- **d tag**: URL slug (auto-generated from title)
+- **title tag**: Page title
+- **header tag**: Optional hero/header image
+- **r tag**: Optional external URL link
+- **footer tag**: If "true", shows link in footer
+- **order tag**: Display order in footer
+- **image tags**: Gallery images with index
+- **t tag**: Always includes `custom-page` for filtering
+
+### Usage
+
+- Admin creates custom pages (About, Contact, Privacy, etc.)
+- Pages accessible at `/page/<slug>`
+- Optional header image for hero section
+- Multi-image gallery support
+- Can link to external resources
+- Footer links for important pages
+
+## Social Media Links (Kind 38176)
+
+Social media profile links displayed in the footer.
+
+### Event Structure
+
+```json
+{
+  "kind": 38176,
+  "content": {},
+  "tags": [
+    ["d", "<platform-id>"],
+    ["platform", "<platform_name>"],
+    ["icon", "<emoji_or_icon>"],
+    ["r", "<profile_url>"],
+    ["order", "<display_order>"],
+    ["t", "social-media"],
+    ["alt", "Social: <platform>"]
+  ]
+}
+```
+
+### Fields
+
+- **d tag**: Platform identifier (e.g., "twitter", "instagram")
+- **platform tag**: Platform name (Twitter/X, Instagram, etc.)
+- **icon tag**: Emoji or icon for display (𝕏, 📷, ⚡, etc.)
+- **r tag**: Full URL to social profile
+- **order tag**: Display order in footer
+- **t tag**: Always includes `social-media` for filtering
+
+### Supported Platforms
+
+- Twitter/X (𝕏)
+- Instagram (📷)
+- Facebook (📘)
+- YouTube (▶️)
+- Nostr (⚡)
+- GitHub (💻)
+- LinkedIn (💼)
+- TikTok (🎵)
+- Pinterest (📌)
+- Custom (🔗)
+
+### Usage
+
+- Admin manages social links in Admin panel
+- Links appear as icons in footer
+- Customizable icons and order
+- Can add/edit/delete links
+
+## Newsletter Subscriptions (Kind 38177)
+
+Email newsletter subscriptions with optional Nostr integration.
+
+### Event Structure
+
+```json
+{
+  "kind": 38177,
+  "content": {
+    "email": "<subscriber_email>"
+  },
+  "tags": [
+    ["email", "<subscriber_email>"],
+    ["npub", "<subscriber_npub>"],
+    ["t", "newsletter-subscription"],
+    ["alt", "Newsletter subscription: <email>"]
+  ]
+}
+```
+
+### Fields
+
+- **email tag**: Subscriber email address
+- **npub tag**: Optional Nostr npub for dual identity
+- **t tag**: Always includes `newsletter-subscription`
+
+### Usage
+
+- Newsletter signup form in footer
+- Optional npub field for Nostr users
+- Dual identity tracking (email + Nostr)
+- Subscription events published to Nostr
+
 ## References
 
 - [NIP-15: Nostr Marketplace](https://github.com/nostr-protocol/nips/blob/master/15.md)

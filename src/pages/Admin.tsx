@@ -17,6 +17,8 @@ import { ArtistContentManagement } from '@/components/artist/ArtistContentManage
 import { ProjectManagement } from '@/components/projects/ProjectManagement';
 import { NostrProjectManagement } from '@/components/nostrprojects/NostrProjectManagement';
 import { BadgeManagement } from '@/components/badges/BadgeManagement';
+import { PageManagement } from '@/components/pages/PageManagement';
+import { SocialMediaManagement } from '@/components/social/SocialMediaManagement';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import {
   Plus,
@@ -40,7 +42,8 @@ import {
   MapPin,
   User,
   FolderKanban,
-  Award
+  Award,
+  Share2
 } from 'lucide-react';
 
 const Admin = () => {
@@ -188,6 +191,22 @@ const Admin = () => {
       action: () => setActiveTab('popup'),
       badge: 'Events'
     },
+    {
+      title: 'Custom Pages',
+      description: 'Create general pages with galleries',
+      icon: FileText,
+      color: 'from-teal-500 to-cyan-500',
+      action: () => setActiveTab('pages'),
+      badge: 'Pages'
+    },
+    {
+      title: 'Social Media',
+      description: 'Manage footer social links',
+      icon: Share2,
+      color: 'from-blue-500 to-indigo-500',
+      action: () => setActiveTab('social'),
+      badge: 'Social'
+    },
   ];
 
   const statsCards = [
@@ -253,7 +272,7 @@ const Admin = () => {
 
         {/* Admin Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 lg:grid-cols-10 max-w-7xl mx-auto mb-8">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-6 lg:grid-cols-12 max-w-7xl mx-auto mb-8">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="blog">
               <FileText className="h-4 w-4 mr-2" />
@@ -266,6 +285,14 @@ const Admin = () => {
             <TabsTrigger value="popup">
               <MapPin className="h-4 w-4 mr-2" />
               PopUp
+            </TabsTrigger>
+            <TabsTrigger value="pages">
+              <FileText className="h-4 w-4 mr-2" />
+              Pages
+            </TabsTrigger>
+            <TabsTrigger value="social">
+              <Share2 className="h-4 w-4 mr-2" />
+              Social
             </TabsTrigger>
             <TabsTrigger value="projects">
               <FolderKanban className="h-4 w-4 mr-2" />
@@ -373,7 +400,7 @@ const Admin = () => {
               {/* Content Management Section */}
               <div>
                 <h2 className="text-2xl font-semibold mb-6 text-center">Content Management</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 max-w-7xl mx-auto">
                   {contentActions.map((action, index) => (
                     <Card
                       key={index}
@@ -492,6 +519,14 @@ const Admin = () => {
 
           <TabsContent value="badges">
             <BadgeManagement />
+          </TabsContent>
+
+          <TabsContent value="pages">
+            <PageManagement />
+          </TabsContent>
+
+          <TabsContent value="social">
+            <SocialMediaManagement />
           </TabsContent>
 
           <TabsContent value="popup">
