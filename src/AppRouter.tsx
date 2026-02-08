@@ -25,8 +25,11 @@ import OrderConfirmation from "./pages/OrderConfirmation";
 import NotFound from "./pages/NotFound";
 
 export function AppRouter() {
+  // Use Vite's base URL from import.meta.env
+  const basename = import.meta.env.BASE_URL;
+  
   return (
-    <BrowserRouter basename="/nostrpop">
+    <BrowserRouter basename={basename}>
       <ScrollToTop />
       <Layout>
         <Routes>
