@@ -35,6 +35,7 @@ interface ProjectFormData {
   url: string;
   order: string;
   featured: boolean;
+  coming_soon: boolean;
 }
 
 export function ProjectManagement() {
@@ -55,6 +56,7 @@ export function ProjectManagement() {
     url: '',
     order: '',
     featured: false,
+    coming_soon: false,
   });
 
   // Fetch user's projects (kind 36171)
@@ -145,6 +147,9 @@ export function ProjectManagement() {
     if (formData.featured) {
       tags.push(['featured', 'true']);
     }
+    if (formData.coming_soon) {
+      tags.push(['coming-soon', 'true']);
+    }
 
     const contentData = {
       name: formData.name,
@@ -171,6 +176,7 @@ export function ProjectManagement() {
             url: '',
             order: '',
             featured: false,
+            coming_soon: false,
           });
           queryClient.invalidateQueries({ queryKey: ['projects'] });
           queryClient.invalidateQueries({ queryKey: ['projects-admin'] });
@@ -185,19 +191,21 @@ export function ProjectManagement() {
 
   const handleEdit = (event: NostrEvent) => {
     const content = JSON.parse(event.content);
-    const name = event.tags.find(t => t[0] === 'name')?.[1] || content.name || '';
-    const thumbnail = event.tags.find(t => t[0] === 'image')?.[1] || content.thumbnail || '';
-    const url = event.tags.find(t => t[0] === 'r')?.[1] || content.url || '';
-    const order = event.tags.find(t => t[0] === 'order')?.[1] || '';
-    const featured = event.tags.find(t => t[0] === 'featured')?.[1] === 'true';
+    const nameTag = event.tags.find(t => t[0] === 'name')?.[1];
+    const imageTag = event.tags.find(t => t[0] === 'image')?.[1];
+    const urlTag = event.tags.find(t => t[0] === 'r')?.[1];
+    const orderTag = event.tags.find(t => t[0] === 'order')?.[1];
+    const featuredTag = event.tags.find(t => t[0] === 'featured')?.[1] === 'true';
+    const comingSoonTag = event.tags.find(t => t[0] === 'coming-soon')?.[1] === 'true';
 
     setFormData({
-      name,
+      name: nameTag || content.name || '',
       description: content.description || '',
-      thumbnail,
-      url,
-      order,
-      featured,
+      thumbnail: imageTag || content.thumbnail || '',
+      url: urlTag || content.url || '',
+      order: orderTag || '',
+      featured: featuredTag,
+      coming_soon: comingSoonTag,
     });
     setEditingProject(event);
     setIsCreating(true);
@@ -235,6 +243,7 @@ export function ProjectManagement() {
       url: '',
       order: '',
       featured: false,
+      coming_soon: false,
     });
   };
 
@@ -392,6 +401,22 @@ export function ProjectManagement() {
                 </p>
               </div>
 
+              <div className="space-y-2 p-4 border rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="coming_soon"
+                    checked={formData.coming_soon}
+                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, coming_soon: !!checked }))}
+                  />
+                  <Label htmlFor="coming_soon" className="text-base font-medium">
+                    Coming Soon
+                  </Label>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Mark this project as "Coming Soon" - it will be displayed with a special badge
+                </p>
+              </div>
+
               <div className="flex gap-2">
                 <Button type="submit" className="flex-1">
                   <Plus className="h-4 w-4 mr-2" />
@@ -445,6 +470,7 @@ export function ProjectManagement() {
                 const url = event.tags.find(t => t[0] === 'r')?.[1] || content.url;
                 const order = event.tags.find(t => t[0] === 'order')?.[1];
                 const featured = event.tags.find(t => t[0] === 'featured')?.[1] === 'true';
+                const comingSoon = event.tags.find(t => t[0] === 'coming-soon')?.[1] === 'true';
 
                 return (
                   <Card key={event.id} className="overflow-hidden">
@@ -471,6 +497,11 @@ export function ProjectManagement() {
                                 <Badge className="bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700 text-xs">
                                   <Star className="h-3 w-3 mr-1" />
                                   Featured
+                                </Badge>
+                              )}
+                              {comingSoon && (
+                                <Badge className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700 text-xs">
+                                  Coming Soon
                                 </Badge>
                               )}
                               {order && (

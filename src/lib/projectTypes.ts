@@ -11,6 +11,7 @@ export interface ProjectData {
   created_at: string;
   order?: number; // Display order
   featured?: boolean; // Show on homepage
+  coming_soon?: boolean; // Shows thumbnail only, no link
 }
 
 /**
