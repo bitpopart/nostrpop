@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { useSeoMeta } from '@unhead/react';
 import { useNostr } from '@nostrify/react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import { User } from 'lucide-react';
+import { User, Image as ImageIcon } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import type { NostrEvent } from '@nostrify/nostrify';
 
@@ -11,6 +13,7 @@ const ARTIST_PUBKEY = '7d33ba57d8a6e8869a1f1d5215254597594ac0dbfeb01b690def8c461
 
 export default function Artist() {
   const { nostr } = useNostr();
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   useSeoMeta({
     title: 'Artist - BitPopArt',
@@ -78,8 +81,36 @@ Follow me at BitPopArt:
     return 'My Story';
   };
 
+  const getHeaderImage = (): string | null => {
+    if (artistContent) {
+      return artistContent.tags.find(t => t[0] === 'image')?.[1] || null;
+    }
+    return null;
+  };
+
+  const getGalleryImages = (): string[] => {
+    if (artistContent) {
+      return artistContent.tags.filter(t => t[0] === 'gallery').map(t => t[1]);
+    }
+    return [];
+  };
+
+  const headerImage = getHeaderImage();
+  const galleryImages = getGalleryImages();
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20">
+      {/* Header Image */}
+      {headerImage && (
+        <div className="w-full h-64 md:h-96 overflow-hidden">
+          <img
+            src={headerImage}
+            alt="Artist Header"
+            className="w-full h-full object-cover"
+          />
+        </div>
+      )}
+
       <div className="container mx-auto px-4 py-12">
         {/* Header */}
         <div className="text-center mb-12">
@@ -110,17 +141,64 @@ Follow me at BitPopArt:
             </CardContent>
           </Card>
         ) : (
-          <Card className="max-w-4xl mx-auto">
-            <CardHeader>
-              <CardTitle className="text-3xl">{getTitle()}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="prose prose-lg dark:prose-invert max-w-none">
-                <ReactMarkdown>{getContent()}</ReactMarkdown>
-              </div>
-            </CardContent>
-          </Card>
+          <>
+            <Card className="max-w-4xl mx-auto">
+              <CardHeader>
+                <CardTitle className="text-3xl">{getTitle()}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="prose prose-lg dark:prose-invert max-w-none">
+                  <ReactMarkdown>{getContent()}</ReactMarkdown>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Gallery */}
+            {galleryImages.length > 0 && (
+              <Card className="max-w-4xl mx-auto mt-8">
+                <CardHeader>
+                  <CardTitle className="text-2xl flex items-center">
+                    <ImageIcon className="h-6 w-6 mr-2" />
+                    Gallery
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {galleryImages.map((imgUrl, index) => (
+                      <div
+                        key={index}
+                        className="relative aspect-square overflow-hidden rounded-lg cursor-pointer group"
+                        onClick={() => setSelectedImage(imgUrl)}
+                      >
+                        <img
+                          src={imgUrl}
+                          alt={`Gallery ${index + 1}`}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                        />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                          <ImageIcon className="h-8 w-8 text-white" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </>
         )}
+
+        {/* Image Lightbox */}
+        <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
+          <DialogContent className="max-w-4xl p-0">
+            {selectedImage && (
+              <img
+                src={selectedImage}
+                alt="Gallery"
+                className="w-full h-auto"
+              />
+            )}
+          </DialogContent>
+        </Dialog>
 
         {/* Footer */}
         <div className="text-center mt-16 text-sm text-gray-500 dark:text-gray-400">
