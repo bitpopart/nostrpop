@@ -78,20 +78,6 @@ export function Navigation() {
                 <span>{item.name}</span>
               </Link>
             ))}
-            {isAdmin && (
-              <Link
-                to="/admin"
-                className={cn(
-                  "flex items-center space-x-1 px-4 py-2 rounded-full text-sm font-medium transition-colors",
-                  isActive('/admin')
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                )}
-              >
-                <Shield className="h-4 w-4" />
-                <span>Admin</span>
-              </Link>
-            )}
           </div>
 
           {/* Desktop Actions */}
@@ -177,21 +163,6 @@ export function Navigation() {
                         <span>{item.name}</span>
                       </Link>
                     ))}
-                    {isAdmin && (
-                      <Link
-                        to="/admin"
-                        onClick={() => setIsOpen(false)}
-                        className={cn(
-                          "flex items-center space-x-3 px-4 py-3 rounded-full text-base font-medium transition-colors",
-                          isActive('/admin')
-                            ? "bg-primary/10 text-primary"
-                            : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                        )}
-                      >
-                        <Shield className="h-5 w-5" />
-                        <span>Admin</span>
-                      </Link>
-                    )}
                   </div>
 
                   <div className="border-t pt-6 space-y-4 px-4">
