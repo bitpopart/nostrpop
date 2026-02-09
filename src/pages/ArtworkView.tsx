@@ -64,7 +64,7 @@ const ArtworkView = () => {
     }
   }, [naddr]);
 
-  const { data: artwork, isLoading, error } = useArtwork(artworkId);
+  const { data: artwork, isLoading, error } = useArtwork(artworkId, artistPubkey);
   const author = useAuthor(artistPubkey);
   const metadata: NostrMetadata | undefined = author.data?.metadata;
 

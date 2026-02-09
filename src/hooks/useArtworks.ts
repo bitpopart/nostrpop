@@ -130,11 +130,11 @@ export function useArtworks(filter: ArtworkFilter = 'all') {
   });
 }
 
-export function useArtwork(artworkId: string) {
+export function useArtwork(artworkId: string, authorPubkey?: string) {
   const { nostr } = useNostr();
 
   return useQuery({
-    queryKey: ['artwork', artworkId],
+    queryKey: ['artwork', artworkId, authorPubkey],
     queryFn: async (c) => {
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(5000)]);
 
@@ -143,6 +143,7 @@ export function useArtwork(artworkId: string) {
           kinds: [30023],
           '#d': [artworkId],
           '#t': ['artwork'],
+          ...(authorPubkey && { authors: [authorPubkey] }),
           limit: 1
         }
       ], { signal });
