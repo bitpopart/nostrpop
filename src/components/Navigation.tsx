@@ -10,15 +10,22 @@ import { useTheme } from '@/hooks/useTheme';
 import { Menu, Moon, Sun, Sparkles, Shield, Search as SearchIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import BitPopArtLogo from '@/assets/bitpopart-logo.png';
+import NewsIcon from '@/assets/News_button_1.svg';
+import ArtistIcon from '@/assets/artist_button_1.svg';
+import PopUpIcon from '@/assets/PopUP_button_1.svg';
+import ArtIcon from '@/assets/Art_button_1.svg';
+import ProjectsIcon from '@/assets/projects_button_1.svg';
+import FundraisingIcon from '@/assets/fundrasing_button_1.svg';
+import ShopIcon from '@/assets/Shop_button_1.svg';
 
 const navigationItems = [
-  { name: 'News', href: '/blog', icon: '📰' },
-  { name: 'Artist', href: '/artist', icon: '👨‍🎨' },
-  { name: 'PopUp', href: '/popup', icon: '🗺️' },
-  { name: 'Art', href: '/art', icon: '🖼️' },
-  { name: 'Projects', href: '/projects', icon: '🎨' },
-  { name: 'Fundraising', href: '/fundraising', icon: '🏆' },
-  { name: 'Shop', href: '/shop', icon: '🛍️' },
+  { name: 'News', href: '/blog', icon: NewsIcon },
+  { name: 'Artist', href: '/artist', icon: ArtistIcon },
+  { name: 'PopUp', href: '/popup', icon: PopUpIcon },
+  { name: 'Art', href: '/art', icon: ArtIcon },
+  { name: 'Projects', href: '/projects', icon: ProjectsIcon },
+  { name: 'Fundraising', href: '/fundraising', icon: FundraisingIcon },
+  { name: 'Shop', href: '/shop', icon: ShopIcon },
 ];
 
 export function Navigation() {
@@ -66,13 +73,13 @@ export function Navigation() {
                 key={item.name}
                 to={item.href}
                 className={cn(
-                  "flex items-center space-x-1 px-4 py-2 rounded-full text-sm font-medium transition-colors",
+                  "flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-medium transition-colors",
                   isActive(item.href)
                     ? "bg-primary/10 text-primary"
                     : "text-muted-foreground hover:text-foreground hover:bg-accent"
                 )}
               >
-                <span className="text-base">{item.icon}</span>
+                <img src={item.icon} alt={item.name} className="h-5 w-5" />
                 <span>{item.name}</span>
               </Link>
             ))}
@@ -171,7 +178,7 @@ export function Navigation() {
                             : "text-muted-foreground hover:text-foreground hover:bg-accent"
                         )}
                       >
-                        <span className="text-xl">{item.icon}</span>
+                        <img src={item.icon} alt={item.name} className="h-6 w-6" />
                         <span>{item.name}</span>
                       </Link>
                     ))}
