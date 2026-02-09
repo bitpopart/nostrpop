@@ -15,6 +15,7 @@ import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useFundraiserContributions } from '@/hooks/useFundraisers';
 import { ShareToNostrButton } from '@/components/ShareToNostrButton';
 import { ClawstrShare } from '@/components/ClawstrShare';
+import { ZapButton } from '@/components/ZapButton';
 import { toast } from 'sonner';
 import { 
   Target, 
@@ -113,12 +114,24 @@ export function FundraiserCard({ fundraiser }: FundraiserCardProps) {
     <Card className="overflow-hidden hover:shadow-xl transition-shadow">
       {/* Fundraiser Image */}
       {fundraiser.thumbnail && (
-        <div className="aspect-video w-full overflow-hidden">
+        <div className="aspect-video w-full overflow-hidden relative group">
           <img
             src={fundraiser.thumbnail}
             alt={fundraiser.title}
-            className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
+          {/* Zap button overlay */}
+          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+            <ZapButton
+              authorPubkey={fundraiser.author_pubkey}
+              event={fundraiser.event}
+              eventTitle={fundraiser.title}
+              size="sm"
+              variant="default"
+              className="bg-orange-600 hover:bg-orange-700 text-white border-0 shadow-lg h-8 w-8 p-0"
+              showLabel={false}
+            />
+          </div>
         </div>
       )}
 

@@ -1,6 +1,7 @@
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { ZapButton } from '@/components/ZapButton';
 import type { ArtworkData } from '@/lib/artTypes';
 import { Eye, ShoppingCart, Gavel } from 'lucide-react';
 import { POPUP_TYPE_CONFIG } from '@/lib/popupTypes';
@@ -67,6 +68,19 @@ export function TileGallery({ artworks, onViewDetails, onBuy, onBid }: TileGalle
                   )}
                   
                   <div className="flex gap-1">
+                    {artwork.event && artwork.author_pubkey && (
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <ZapButton
+                          authorPubkey={artwork.author_pubkey}
+                          event={artwork.event}
+                          eventTitle={artwork.title}
+                          size="sm"
+                          variant="secondary"
+                          className="h-7 w-7 p-0"
+                          showLabel={false}
+                        />
+                      </div>
+                    )}
                     {artwork.sale_type === 'fixed' && onBuy && (
                       <Button
                         size="sm"

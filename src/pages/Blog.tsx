@@ -5,6 +5,7 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ZapButton } from '@/components/ZapButton';
 import { Calendar, Tag, ArrowRight, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
@@ -117,6 +118,20 @@ export default function Blog() {
                           alt={title}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
+                        {/* Zap button overlay */}
+                        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                          <div onClick={(e) => e.stopPropagation()}>
+                            <ZapButton
+                              authorPubkey={post.pubkey}
+                              event={post}
+                              eventTitle={title}
+                              size="sm"
+                              variant="default"
+                              className="bg-orange-600 hover:bg-orange-700 text-white border-0 shadow-lg"
+                              showLabel={false}
+                            />
+                          </div>
+                        </div>
                       </div>
                     )}
                     <CardHeader className="space-y-3">

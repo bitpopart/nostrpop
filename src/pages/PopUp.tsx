@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ShareToNostrButton } from '@/components/ShareToNostrButton';
 import { ClawstrShare } from '@/components/ClawstrShare';
+import { ZapButton } from '@/components/ZapButton';
 import { MapPin, Calendar, ExternalLink, Globe, Share2 } from 'lucide-react';
 import { format } from 'date-fns';
 import type { NostrEvent } from '@nostrify/nostrify';
@@ -173,7 +174,7 @@ export default function PopUp() {
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-                        <div className="absolute top-3 right-3 flex gap-2">
+                        <div className="absolute top-3 left-3 flex gap-2">
                           <Badge className={`${typeConfig.bgColor} ${typeConfig.color} border shadow-lg`}>
                             {typeConfig.icon} {typeConfig.label}
                           </Badge>
@@ -183,6 +184,20 @@ export default function PopUp() {
                             </Badge>
                           )}
                         </div>
+                        {/* Zap button */}
+                        {event.event && (
+                          <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                            <ZapButton
+                              authorPubkey={event.event.pubkey}
+                              event={event.event}
+                              eventTitle={event.title}
+                              size="sm"
+                              variant="default"
+                              className="bg-orange-600 hover:bg-orange-700 text-white border-0 shadow-lg h-8 w-8 p-0"
+                              showLabel={false}
+                            />
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <div className="relative h-56 bg-gradient-to-br from-purple-100 via-pink-100 to-indigo-100 dark:from-purple-900/20 dark:via-pink-900/20 dark:to-indigo-900/20 flex items-center justify-center">

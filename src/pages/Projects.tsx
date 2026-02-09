@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { ShareToNostrButton } from '@/components/ShareToNostrButton';
 import { ClawstrShare } from '@/components/ClawstrShare';
+import { ZapButton } from '@/components/ZapButton';
 import { FolderKanban, ExternalLink, Sparkles, ArrowRight, Users, Zap, Award, Share2 } from 'lucide-react';
 import { useNostrProjects } from '@/hooks/useNostrProjects';
 import { useBadges } from '@/hooks/useBadges';
@@ -261,6 +262,23 @@ export default function Projects() {
                         ))}
                       </div>
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      
+                      {/* Zap button overlay */}
+                      {project.event && (
+                        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                          <div onClick={(e) => e.stopPropagation()}>
+                            <ZapButton
+                              authorPubkey={project.event.pubkey}
+                              event={project.event}
+                              eventTitle={project.title}
+                              size="sm"
+                              variant="default"
+                              className="bg-orange-600 hover:bg-orange-700 text-white border-0 shadow-lg h-8 w-8 p-0"
+                              showLabel={false}
+                            />
+                          </div>
+                        </div>
+                      )}
                       
                       {/* Hover overlay */}
                       <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
