@@ -301,14 +301,14 @@ export default function Projects() {
             </div>
           )}
 
-          {/* POP Badges Section */}
+          {/* Badges Section */}
           {badges.length > 0 && (
             <div className="mt-16 max-w-6xl mx-auto">
               <div className="text-center mb-8">
                 <div className="flex items-center justify-center mb-4">
                   <Award className="h-8 w-8 text-yellow-600 mr-3" />
                   <h2 className="text-4xl font-bold bg-gradient-to-r from-yellow-600 via-orange-600 to-red-600 bg-clip-text text-transparent">
-                    POP Badges
+                    Badges
                   </h2>
                 </div>
                 <p className="text-lg text-gray-600 dark:text-gray-300">

@@ -26,8 +26,8 @@ export default function Badges() {
   const { data: purchases = [] } = useBadgePurchases(selectedBadgeId || '');
 
   useSeoMeta({
-    title: 'POP Badges - BitPopArt',
-    description: 'Collect exclusive POP badges by BitPopArt. Purchase badges with Bitcoin Lightning.',
+    title: 'Badges - BitPopArt',
+    description: 'Collect exclusive badges by BitPopArt. Purchase badges with Bitcoin Lightning.',
   });
 
   const handlePurchase = () => {
@@ -76,7 +76,7 @@ export default function Badges() {
           <div className="flex items-center justify-center mb-4">
             <Award className="h-10 w-10 text-purple-600 mr-3" />
             <h1 className="text-5xl font-bold bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
-              POP Badges
+              Badges
             </h1>
           </div>
           <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">

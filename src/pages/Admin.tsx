@@ -17,7 +17,6 @@ import { PopUpManagement } from '@/components/popup/PopUpManagement';
 import { ArtistContentManagement } from '@/components/artist/ArtistContentManagement';
 import { ProjectManagement } from '@/components/projects/ProjectManagement';
 import { NostrProjectManagement } from '@/components/nostrprojects/NostrProjectManagement';
-import { BadgeManagement } from '@/components/badges/BadgeManagement';
 import { PageManagement } from '@/components/pages/PageManagement';
 import { SocialMediaManagement } from '@/components/social/SocialMediaManagement';
 import { NewsletterManager } from '@/components/newsletter/NewsletterManager';
@@ -135,12 +134,12 @@ const Admin = () => {
       badge: 'Collab'
     },
     {
-      title: 'POP Badges',
-      description: 'Create purchasable badges',
-      icon: Award,
-      color: 'from-yellow-500 to-orange-500',
-      action: () => setActiveTab('badges'),
-      badge: 'Badges'
+      title: 'Fundraising',
+      description: 'Crowdfunding campaigns',
+      icon: Target,
+      color: 'from-green-500 to-teal-500',
+      action: () => setActiveTab('fundraisers'),
+      badge: 'Fundraising'
     },
   ];
 
@@ -168,14 +167,6 @@ const Admin = () => {
       color: 'from-amber-500 to-orange-500',
       action: () => setActiveTab('shop'),
       badge: 'Shop'
-    },
-    {
-      title: 'Fundraisers',
-      description: 'Crowdfunding campaigns',
-      icon: Target,
-      color: 'from-green-500 to-teal-500',
-      action: () => setActiveTab('fundraisers'),
-      badge: 'Fund'
     },
   ];
 
@@ -301,7 +292,7 @@ const Admin = () => {
 
         {/* Admin Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 md:grid-cols-5 lg:grid-cols-15 max-w-7xl mx-auto mb-8 text-xs">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-7 lg:grid-cols-14 max-w-7xl mx-auto mb-8 text-xs">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="blog">News</TabsTrigger>
             <TabsTrigger value="artist">Artist</TabsTrigger>
@@ -312,10 +303,9 @@ const Admin = () => {
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
             <TabsTrigger value="projects">Projects</TabsTrigger>
             <TabsTrigger value="nostr-projects">Nostr</TabsTrigger>
-            <TabsTrigger value="badges">Badges</TabsTrigger>
+            <TabsTrigger value="fundraisers">Fundraisers</TabsTrigger>
             <TabsTrigger value="cards">Cards</TabsTrigger>
             <TabsTrigger value="shop">Shop</TabsTrigger>
-            <TabsTrigger value="fundraisers">Fundraisers</TabsTrigger>
             <TabsTrigger value="art">Art</TabsTrigger>
           </TabsList>
 
@@ -514,10 +504,6 @@ const Admin = () => {
 
           <TabsContent value="nostr-projects">
             <NostrProjectManagement />
-          </TabsContent>
-
-          <TabsContent value="badges">
-            <BadgeManagement />
           </TabsContent>
 
           <TabsContent value="pages">

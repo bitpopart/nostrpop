@@ -5,6 +5,7 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useNostrProjects } from '@/hooks/useNostrProjects';
 import { useUploadFile } from '@/hooks/useUploadFile';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,6 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
+import { BadgeManagement } from '@/components/badges/BadgeManagement';
 import {
   Select,
   SelectContent,
@@ -19,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, X, Upload, Image as ImageIcon, Trash2, Edit, Eye } from 'lucide-react';
+import { Plus, X, Upload, Image as ImageIcon, Trash2, Edit, Eye, Award } from 'lucide-react';
 import { generateNostrProjectUUID } from '@/lib/nostrProjectTypes';
 import type { NostrProjectData } from '@/lib/nostrProjectTypes';
 
@@ -123,31 +125,37 @@ export function NostrProjectManagement() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Nostr Project Management</CardTitle>
-              <CardDescription>Create collaborative art projects where people can join by selecting images</CardDescription>
+    <Tabs defaultValue="nostr-projects" className="space-y-6">
+      <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto">
+        <TabsTrigger value="nostr-projects">Nostr Projects</TabsTrigger>
+        <TabsTrigger value="badges">Badges</TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="nostr-projects" className="space-y-6">
+        {/* Header */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Nostr Project Management</CardTitle>
+                <CardDescription>Create collaborative art projects where people can join by selecting images</CardDescription>
+              </div>
+              <Button onClick={() => setIsCreating(!isCreating)} variant={isCreating ? "outline" : "default"}>
+                {isCreating ? (
+                  <>
+                    <X className="h-4 w-4 mr-2" />
+                    Cancel
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Project
+                  </>
+                )}
+              </Button>
             </div>
-            <Button onClick={() => setIsCreating(!isCreating)} variant={isCreating ? "outline" : "default"}>
-              {isCreating ? (
-                <>
-                  <X className="h-4 w-4 mr-2" />
-                  Cancel
-                </>
-              ) : (
-                <>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Project
-                </>
-              )}
-            </Button>
-          </div>
-        </CardHeader>
-      </Card>
+          </CardHeader>
+        </Card>
 
       {/* Create/Edit Form */}
       {isCreating && (
@@ -369,6 +377,24 @@ export function NostrProjectManagement() {
           )}
         </CardContent>
       </Card>
-    </div>
+      </TabsContent>
+
+      <TabsContent value="badges">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Award className="h-6 w-6 mr-2" />
+              Badge Management
+            </CardTitle>
+            <CardDescription>
+              Create purchasable badges that users can add to their Nostr profiles
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <BadgeManagement />
+          </CardContent>
+        </Card>
+      </TabsContent>
+    </Tabs>
   );
 }
