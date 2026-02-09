@@ -171,23 +171,13 @@ export function Footer() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="border-t pt-8 mt-8">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} BitPopArt. All rights reserved.
-            </p>
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <span>Powered by Nostr & Bitcoin ⚡</span>
-              <a
-                href="https://shakespeare.diy"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-foreground transition-colors"
-              >
-                Vibed with Shakespeare
-              </a>
-            </div>
-          </div>
+        <div className="border-t pt-8 mt-8 text-center">
+          <p className="text-sm text-muted-foreground mb-2">
+            © {new Date().getFullYear()} BitPopArt by Johannes Oppewal. All rights reserved.
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Powered by <a href="https://nostr.com" target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:underline">Nostr Protocol</a> & Bitcoin Lightning ⚡
+          </p>
         </div>
       </div>
     </footer>

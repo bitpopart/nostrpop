@@ -540,6 +540,30 @@ Email newsletter subscriptions with optional Nostr integration.
 - Dual identity tracking (email + Nostr)
 - Subscription events published to Nostr
 
+## SEO & Analytics
+
+### Meta Tags
+
+The platform includes comprehensive SEO optimization:
+- Primary meta tags (title, description, keywords)
+- Open Graph tags for social sharing
+- Twitter Card tags
+- Structured Data (JSON-LD) for search engines
+- Canonical URLs
+- Preconnect hints for image CDNs
+
+### Keywords
+
+Primary keywords: bitcoin art, pop art, nostr, satoshi, digital art, good vibes, love, freedom, joy, happiness, artist, johannes oppewal, world traveler, 88 countries, collaborative art, digital cards, greeting cards, badges, bitcoin lightning, cryptocurrency art, decentralized art, bitcoin culture, pop cards, digital collectibles, nostr badges, bitcoin community
+
+### Google Analytics
+
+Analytics can be configured in Admin → Analytics tab:
+- Supports Google Analytics 4 (GA4)
+- Measurement ID format: G-XXXXXXXXXX
+- Manual integration via index.html
+- Code generator provided in admin panel
+
 ## References
 
 - [NIP-15: Nostr Marketplace](https://github.com/nostr-protocol/nips/blob/master/15.md)
