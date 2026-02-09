@@ -14,6 +14,9 @@ import { RelaySelector } from '@/components/RelaySelector';
 import { ProductCard } from '@/components/marketplace/ProductCard';
 import { ProductManagement } from '@/components/marketplace/ProductManagement';
 import { LightningStatusIndicator } from '@/components/marketplace/LightningStatusIndicator';
+import { FundraiserCard } from '@/components/fundraiser/FundraiserCard';
+import { FundraiserManagement } from '@/components/fundraiser/FundraiserManagement';
+import { useFundraisers } from '@/hooks/useFundraisers';
 import { Label } from '@/components/ui/label';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import {
@@ -22,7 +25,8 @@ import {
   Filter,
   Grid3X3,
   List,
-  Zap
+  Zap,
+  Target
 } from 'lucide-react';
 
 import { useCategories } from '@/hooks/useCategories';
@@ -69,6 +73,9 @@ const Shop = () => {
   // Fetch marketplace products
   const { data: products, isLoading: productsLoading, error: productsError } = useMarketplaceProducts(selectedCategory === 'all' ? undefined : selectedCategory);
 
+  // Fetch fundraisers
+  const { data: fundraisers = [], isLoading: fundraisersLoading } = useFundraisers();
+
   useSeoMeta({
     title: 'Shop - BitPop Cards Marketplace',
     description: 'Nostr-powered marketplace for physical and digital products. Create listings, manage inventory, and trade with Bitcoin.',
@@ -106,12 +113,17 @@ const Shop = () => {
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full max-w-6xl mx-auto">
           {isAdmin ? (
-            <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto mb-8">
+            <TabsList className="grid w-full grid-cols-4 max-w-3xl mx-auto mb-8">
               <TabsTrigger value="marketplace">Marketplace</TabsTrigger>
-              <TabsTrigger value="admin">Product Management</TabsTrigger>
+              <TabsTrigger value="fundraisers">Fundraisers</TabsTrigger>
+              <TabsTrigger value="admin">Products</TabsTrigger>
+              <TabsTrigger value="fundraiser-admin">Fundraiser Admin</TabsTrigger>
             </TabsList>
           ) : (
-            <div className="mb-8" />
+            <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto mb-8">
+              <TabsTrigger value="marketplace">Marketplace</TabsTrigger>
+              <TabsTrigger value="fundraisers">Fundraisers</TabsTrigger>
+            </TabsList>
           )}
 
           <TabsContent value="marketplace">
@@ -298,10 +310,86 @@ const Shop = () => {
             </div>
           </TabsContent>
 
+          <TabsContent value="fundraisers">
+            <div className="space-y-6">
+              {/* Header */}
+              <div className="text-center">
+                <div className="flex items-center justify-center mb-4">
+                  <Target className="h-8 w-8 text-purple-600 mr-3" />
+                  <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                    Fundraising Campaigns
+                  </h2>
+                </div>
+                <p className="text-muted-foreground max-w-2xl mx-auto">
+                  Support new art projects and creative ventures with Bitcoin
+                </p>
+              </div>
+
+              {/* Fundraisers Display */}
+              {fundraisersLoading && (
+                <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <Card key={i} className="overflow-hidden">
+                      <div className="aspect-video">
+                        <Skeleton className="w-full h-full" />
+                      </div>
+                      <CardHeader>
+                        <Skeleton className="h-6 w-3/4" />
+                        <Skeleton className="h-4 w-1/2" />
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2">
+                          <Skeleton className="h-4 w-full" />
+                          <Skeleton className="h-4 w-2/3" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+
+              {fundraisers.length === 0 && !fundraisersLoading && (
+                <Card className="border-dashed">
+                  <CardContent className="py-12 px-8 text-center">
+                    <div className="max-w-sm mx-auto space-y-6">
+                      <Target className="h-12 w-12 mx-auto text-gray-400" />
+                      <div>
+                        <CardTitle className="mb-2">No Fundraisers Yet</CardTitle>
+                        <CardDescription>
+                          Check back soon for new crowdfunding campaigns, or try a different relay.
+                        </CardDescription>
+                      </div>
+                      <RelaySelector className="w-full" />
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {fundraisers.length > 0 && (
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground text-center">
+                    {fundraisers.length} active campaign{fundraisers.length !== 1 ? 's' : ''}
+                  </p>
+                  <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
+                    {fundraisers.map((fundraiser) => (
+                      <FundraiserCard key={fundraiser.id} fundraiser={fundraiser} />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
           {user && isAdmin && (
-            <TabsContent value="admin">
-              <ProductManagement />
-            </TabsContent>
+            <>
+              <TabsContent value="admin">
+                <ProductManagement />
+              </TabsContent>
+
+              <TabsContent value="fundraiser-admin">
+                <FundraiserManagement />
+              </TabsContent>
+            </>
           )}
         </Tabs>
 

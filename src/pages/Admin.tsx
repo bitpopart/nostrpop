@@ -11,6 +11,7 @@ import { LoginArea } from '@/components/auth/LoginArea';
 import { CardManagement } from '@/components/cards/CardManagement';
 import { ProductManagement } from '@/components/marketplace/ProductManagement';
 import { CategoryManagement } from '@/components/marketplace/CategoryManagement';
+import { FundraiserManagement } from '@/components/fundraiser/FundraiserManagement';
 import { BlogPostManagement } from '@/components/blog/BlogPostManagement';
 import { PopUpManagement } from '@/components/popup/PopUpManagement';
 import { ArtistContentManagement } from '@/components/artist/ArtistContentManagement';
@@ -46,7 +47,8 @@ import {
   FolderKanban,
   Award,
   Share2,
-  Mail
+  Mail,
+  Target
 } from 'lucide-react';
 
 const Admin = () => {
@@ -166,6 +168,14 @@ const Admin = () => {
       color: 'from-amber-500 to-orange-500',
       action: () => setActiveTab('shop'),
       badge: 'Shop'
+    },
+    {
+      title: 'Fundraisers',
+      description: 'Crowdfunding campaigns',
+      icon: Target,
+      color: 'from-green-500 to-teal-500',
+      action: () => setActiveTab('fundraisers'),
+      badge: 'Fund'
     },
   ];
 
@@ -291,7 +301,7 @@ const Admin = () => {
 
         {/* Admin Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-7 lg:grid-cols-14 max-w-7xl mx-auto mb-8 text-xs">
+          <TabsList className="grid w-full grid-cols-3 md:grid-cols-5 lg:grid-cols-15 max-w-7xl mx-auto mb-8 text-xs">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="blog">News</TabsTrigger>
             <TabsTrigger value="artist">Artist</TabsTrigger>
@@ -305,6 +315,7 @@ const Admin = () => {
             <TabsTrigger value="badges">Badges</TabsTrigger>
             <TabsTrigger value="cards">Cards</TabsTrigger>
             <TabsTrigger value="shop">Shop</TabsTrigger>
+            <TabsTrigger value="fundraisers">Fundraisers</TabsTrigger>
             <TabsTrigger value="art">Art</TabsTrigger>
           </TabsList>
 
@@ -351,7 +362,7 @@ const Admin = () => {
               {/* BitPopCards Section */}
               <div>
                 <h2 className="text-2xl font-semibold mb-6 text-center">BitPopCards</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
                   {bitpopcardsActions.map((action, index) => (
                     <Card
                       key={index}
@@ -548,6 +559,23 @@ const Admin = () => {
 
           <TabsContent value="shop">
             <ProductManagement />
+          </TabsContent>
+
+          <TabsContent value="fundraisers">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Target className="h-6 w-6 mr-2" />
+                  Fundraiser Management
+                </CardTitle>
+                <CardDescription>
+                  Create and manage crowdfunding campaigns for art projects
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <FundraiserManagement />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="art">
