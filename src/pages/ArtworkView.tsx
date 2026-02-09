@@ -18,6 +18,7 @@ import { ImageGallery } from '@/components/marketplace/ImageGallery';
 import { EditArtworkForm } from '@/components/art/EditArtworkForm';
 import { PaymentDialog } from '@/components/marketplace/PaymentDialog';
 import { ShareArtworkToNostrDialog } from '@/components/art/ShareArtworkToNostrDialog';
+import { ClawstrShare } from '@/components/ClawstrShare';
 import {
   ArrowLeft,
   Calendar,
@@ -439,12 +440,12 @@ const ArtworkView = () => {
               )}
 
               {/* Share to Nostr */}
-              {artwork.event && (
+              {artwork.event && isAdmin && (
                 <Card className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
                   <CardHeader>
                     <CardTitle className="text-lg">Share Artwork</CardTitle>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="space-y-2">
                     <ShareArtworkToNostrDialog
                       artworkEvent={artwork.event}
                       artworkData={artwork}
@@ -454,11 +455,24 @@ const ArtworkView = () => {
                         className="w-full bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 border-purple-200 dark:border-purple-800"
                       >
                         <Share2 className="mr-2 h-4 w-4 text-purple-600 dark:text-purple-400" />
-                        Share to Nostr Community
+                        Share to Nostr
                       </Button>
                     </ShareArtworkToNostrDialog>
+                    <ClawstrShare
+                      event={artwork.event}
+                      contentType="artwork"
+                      trigger={
+                        <Button
+                          variant="outline"
+                          className="w-full bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 border-purple-200 dark:border-purple-800"
+                        >
+                          <Share2 className="mr-2 h-4 w-4 text-purple-600 dark:text-purple-400" />
+                          Share to Clawstr
+                        </Button>
+                      }
+                    />
                     <p className="text-xs text-center text-muted-foreground mt-2">
-                      Share this artwork with the Nostr community
+                      Share this artwork with the Nostr and Clawstr communities
                     </p>
                   </CardContent>
                 </Card>

@@ -10,8 +10,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuthor } from '@/hooks/useAuthor';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useFundraiserContributions } from '@/hooks/useFundraisers';
+import { ShareToNostrButton } from '@/components/ShareToNostrButton';
+import { ClawstrShare } from '@/components/ClawstrShare';
 import { toast } from 'sonner';
 import { 
   Target, 
@@ -30,6 +33,7 @@ interface FundraiserCardProps {
 
 export function FundraiserCard({ fundraiser }: FundraiserCardProps) {
   const { user } = useCurrentUser();
+  const isAdmin = useIsAdmin();
   const { mutate: createEvent } = useNostrPublish();
   const author = useAuthor(fundraiser.author_pubkey);
   const authorMetadata = author.data?.metadata;
@@ -132,9 +136,32 @@ export function FundraiserCard({ fundraiser }: FundraiserCardProps) {
               </span>
             </div>
           </div>
-          <Badge variant={fundraiser.status === 'active' ? 'default' : fundraiser.status === 'completed' ? 'secondary' : 'destructive'}>
-            {fundraiser.status}
-          </Badge>
+          <div className="flex flex-col gap-2 items-end">
+            <Badge variant={fundraiser.status === 'active' ? 'default' : fundraiser.status === 'completed' ? 'secondary' : 'destructive'}>
+              {fundraiser.status}
+            </Badge>
+            {isAdmin && (
+              <div className="flex gap-1">
+                <ShareToNostrButton
+                  url={`/fundraising/${fundraiser.id}`}
+                  title={fundraiser.title}
+                  description={fundraiser.description}
+                  image={fundraiser.thumbnail}
+                  variant="ghost"
+                  size="sm"
+                />
+                <ClawstrShare
+                  event={fundraiser.event}
+                  contentType="fundraiser"
+                  trigger={
+                    <Button variant="ghost" size="sm">
+                      <Target className="h-4 w-4" />
+                    </Button>
+                  }
+                />
+              </div>
+            )}
+          </div>
         </div>
       </CardHeader>
 

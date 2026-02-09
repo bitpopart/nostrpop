@@ -6,6 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency } from '@/hooks/usePayment';
 import { useLivePrice } from '@/hooks/useLivePrice';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
+import { ShareToNostrButton } from '@/components/ShareToNostrButton';
+import { ClawstrShare } from '@/components/ClawstrShare';
 import { PaymentDialog } from './PaymentDialog';
 import { ProductDetailsDialog } from './ProductDetailsDialog';
 import { ImageGallery } from './ImageGallery';
@@ -15,7 +18,8 @@ import {
   Download,
   Eye,
   Truck,
-  Zap
+  Zap,
+  Share2
 } from 'lucide-react';
 
 interface MarketplaceProduct {
@@ -45,6 +49,7 @@ interface ProductCardProps {
 export function ProductCard({ product, onViewDetails }: ProductCardProps) {
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const isAdmin = useIsAdmin();
   const navigate = useNavigate();
 
   // Fetch live price from source URL if available
@@ -132,7 +137,7 @@ export function ProductCard({ product, onViewDetails }: ProductCardProps) {
         </div>
 
         <CardHeader className="pb-2">
-          <div className="flex items-start justify-between">
+          <div className="flex items-start justify-between gap-2">
             <div className="flex-1 min-w-0">
               <CardTitle className="text-lg font-semibold truncate group-hover:text-purple-600 transition-colors">
                 {product.name}
@@ -148,6 +153,27 @@ export function ProductCard({ product, onViewDetails }: ProductCardProps) {
                 )}
               </div>
             </div>
+            {isAdmin && product.event && (
+              <div className="flex gap-1">
+                <ShareToNostrButton
+                  url={`/shop/${product.id}`}
+                  title={product.name}
+                  description={product.description}
+                  image={product.images[0]}
+                  variant="ghost"
+                  size="icon"
+                />
+                <ClawstrShare
+                  event={product.event}
+                  contentType="product"
+                  trigger={
+                    <Button variant="ghost" size="icon">
+                      <Share2 className="h-4 w-4" />
+                    </Button>
+                  }
+                />
+              </div>
+            )}
           </div>
         </CardHeader>
 

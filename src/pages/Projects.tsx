@@ -8,7 +8,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
-import { FolderKanban, ExternalLink, Sparkles, ArrowRight, Users, Zap, Award } from 'lucide-react';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
+import { ShareToNostrButton } from '@/components/ShareToNostrButton';
+import { ClawstrShare } from '@/components/ClawstrShare';
+import { FolderKanban, ExternalLink, Sparkles, ArrowRight, Users, Zap, Award, Share2 } from 'lucide-react';
 import { useNostrProjects } from '@/hooks/useNostrProjects';
 import { useBadges } from '@/hooks/useBadges';
 import type { ProjectData } from '@/lib/projectTypes';
@@ -47,6 +50,7 @@ const BUILTIN_PROJECTS = [
 export default function Projects() {
   const { nostr } = useNostr();
   const navigate = useNavigate();
+  const isAdmin = useIsAdmin();
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
 
   useSeoMeta({
@@ -277,13 +281,38 @@ export default function Projects() {
 
                     {/* Content */}
                     <CardHeader>
-                      <CardTitle className="text-2xl group-hover:text-purple-600 transition-colors flex items-center justify-between">
-                        {project.title}
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <CardTitle className="text-2xl group-hover:text-purple-600 transition-colors flex-1">
+                          {project.title}
+                        </CardTitle>
+                        {isAdmin && project.event && (
+                          <div className="flex gap-1">
+                            <ShareToNostrButton
+                              url={`/nostr-projects/${project.id}`}
+                              title={project.title}
+                              description={project.description}
+                              image={project.images[0]}
+                              variant="ghost"
+                              size="icon"
+                            />
+                            <ClawstrShare
+                              event={project.event}
+                              contentType="project"
+                              trigger={
+                                <Button variant="ghost" size="icon">
+                                  <Share2 className="h-4 w-4" />
+                                </Button>
+                              }
+                            />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 mb-2">
                         <Badge variant="default" className="gap-1">
                           <Zap className="h-3 w-3" />
                           {project.price_sats.toLocaleString()}
                         </Badge>
-                      </CardTitle>
+                      </div>
                       <CardDescription className="line-clamp-3 text-base">
                         {project.description}
                       </CardDescription>
