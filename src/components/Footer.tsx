@@ -49,14 +49,16 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           {/* Brand Column */}
           <div className="md:col-span-1">
-            <Link to="/" className="flex items-center space-x-2 mb-4">
+            <Link to="/" className="flex items-center space-x-3 mb-4 hover:opacity-80 transition-opacity">
               <img src={BitPopArtLogo} alt="BitPopArt" className="h-10 w-10 rounded-lg" />
-              <span className="font-bold text-xl bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
-                BitPopArt
-              </span>
+              <img 
+                src="/bitpopart-text-logo.svg"
+                alt="BitPopArt" 
+                className="h-6 dark:invert"
+              />
             </Link>
             <p className="text-sm text-muted-foreground mb-4">
-              Good Vibes Digital Cards & Art on Nostr
+              Good Vibes Digital Cards & Art on Nostr, in Love, Freedom & Joy
             </p>
             
             {/* Social Media Links */}

@@ -49,17 +49,12 @@ export function Navigation() {
           {/* Logo/Brand */}
           <Link
             to="/"
-            className="flex items-center space-x-3 hover:opacity-80 transition-opacity"
+            className="flex items-center hover:opacity-80 transition-opacity"
           >
             <img 
               src={`${basePath}B-Funny_avatar_orange.svg`}
               alt="BitPopArt Logo" 
               className="h-10 w-10"
-            />
-            <img 
-              src={`${basePath}bitpopart-text-logo.svg`}
-              alt="BitPopArt" 
-              className="h-6 dark:invert"
             />
           </Link>
 
