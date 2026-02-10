@@ -1,63 +1,73 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { toast } from 'sonner';
-import { Palette, RotateCcw } from 'lucide-react';
+import { Palette, RotateCcw, Zap, Star } from 'lucide-react';
 
 interface SiteColors {
-  comingSoonGradientFrom: string;
-  comingSoonGradientTo: string;
-  comingSoonTextColor: string;
+  comingSoonFrom: string;
+  comingSoonTo: string;
+  primaryFrom: string;
+  primaryTo: string;
+  secondaryFrom: string;
+  secondaryTo: string;
+  accentColor: string;
 }
 
 const DEFAULT_COLORS: SiteColors = {
-  comingSoonGradientFrom: '#f97316', // orange-500
-  comingSoonGradientTo: '#ec4899', // pink-500
-  comingSoonTextColor: '#ffffff',
+  comingSoonFrom: '#f97316',
+  comingSoonTo: '#ec4899',
+  primaryFrom: '#a855f7',
+  primaryTo: '#ec4899',
+  secondaryFrom: '#6366f1',
+  secondaryTo: '#8b5cf6',
+  accentColor: '#f97316',
 };
 
 const COLOR_PRESETS = [
   {
-    name: 'Orange & Pink (Default)',
+    name: 'Orange & Pink (BitPopArt)',
+    colors: DEFAULT_COLORS,
+  },
+  {
+    name: 'Purple Dream',
     colors: {
-      comingSoonGradientFrom: '#f97316',
-      comingSoonGradientTo: '#ec4899',
-      comingSoonTextColor: '#ffffff',
+      comingSoonFrom: '#a855f7',
+      comingSoonTo: '#ec4899',
+      primaryFrom: '#8b5cf6',
+      primaryTo: '#a855f7',
+      secondaryFrom: '#6366f1',
+      secondaryTo: '#8b5cf6',
+      accentColor: '#a855f7',
     }
   },
   {
-    name: 'Purple & Pink',
+    name: 'Ocean Blue',
     colors: {
-      comingSoonGradientFrom: '#a855f7',
-      comingSoonGradientTo: '#ec4899',
-      comingSoonTextColor: '#ffffff',
+      comingSoonFrom: '#3b82f6',
+      comingSoonTo: '#8b5cf6',
+      primaryFrom: '#0ea5e9',
+      primaryTo: '#3b82f6',
+      secondaryFrom: '#06b6d4',
+      secondaryTo: '#0ea5e9',
+      accentColor: '#3b82f6',
     }
   },
   {
-    name: 'Blue & Purple',
+    name: 'Sunset Glow',
     colors: {
-      comingSoonGradientFrom: '#3b82f6',
-      comingSoonGradientTo: '#8b5cf6',
-      comingSoonTextColor: '#ffffff',
-    }
-  },
-  {
-    name: 'Green & Teal',
-    colors: {
-      comingSoonGradientFrom: '#10b981',
-      comingSoonGradientTo: '#14b8a6',
-      comingSoonTextColor: '#ffffff',
-    }
-  },
-  {
-    name: 'Red & Orange',
-    colors: {
-      comingSoonGradientFrom: '#ef4444',
-      comingSoonGradientTo: '#f97316',
-      comingSoonTextColor: '#ffffff',
+      comingSoonFrom: '#ef4444',
+      comingSoonTo: '#f97316',
+      primaryFrom: '#f97316',
+      primaryTo: '#fbbf24',
+      secondaryFrom: '#ef4444',
+      secondaryTo: '#f97316',
+      accentColor: '#f97316',
     }
   },
 ];
@@ -66,25 +76,31 @@ export function SiteSettings() {
   const [siteColors, setSiteColors] = useLocalStorage<SiteColors>('site-colors', DEFAULT_COLORS);
   const [tempColors, setTempColors] = useState<SiteColors>(siteColors);
 
+  useEffect(() => {
+    applyColorsToDOM(siteColors);
+  }, [siteColors]);
+
+  const applyColorsToDOM = (colors: SiteColors) => {
+    const root = document.documentElement;
+    root.style.setProperty('--coming-soon-from', colors.comingSoonFrom);
+    root.style.setProperty('--coming-soon-to', colors.comingSoonTo);
+    root.style.setProperty('--primary-from', colors.primaryFrom);
+    root.style.setProperty('--primary-to', colors.primaryTo);
+    root.style.setProperty('--secondary-from', colors.secondaryFrom);
+    root.style.setProperty('--secondary-to', colors.secondaryTo);
+    root.style.setProperty('--accent-color', colors.accentColor);
+  };
+
   const handleSave = () => {
     setSiteColors(tempColors);
-    
-    // Apply colors to CSS variables
-    document.documentElement.style.setProperty('--coming-soon-from', tempColors.comingSoonGradientFrom);
-    document.documentElement.style.setProperty('--coming-soon-to', tempColors.comingSoonGradientTo);
-    document.documentElement.style.setProperty('--coming-soon-text', tempColors.comingSoonTextColor);
-    
-    toast.success('Site colors updated! Changes will apply after page refresh.');
+    applyColorsToDOM(tempColors);
+    toast.success('Site colors saved successfully!');
   };
 
   const handleReset = () => {
     setTempColors(DEFAULT_COLORS);
     setSiteColors(DEFAULT_COLORS);
-    
-    document.documentElement.style.setProperty('--coming-soon-from', DEFAULT_COLORS.comingSoonGradientFrom);
-    document.documentElement.style.setProperty('--coming-soon-to', DEFAULT_COLORS.comingSoonGradientTo);
-    document.documentElement.style.setProperty('--coming-soon-text', DEFAULT_COLORS.comingSoonTextColor);
-    
+    applyColorsToDOM(DEFAULT_COLORS);
     toast.success('Colors reset to default!');
   };
 
@@ -101,102 +117,156 @@ export function SiteSettings() {
             Site Look & Feel
           </CardTitle>
           <CardDescription>
-            Customize the appearance of your site's branding elements
+            Customize colors and branding for buttons, badges, and accents across your site
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Color Presets */}
-          <div className="space-y-3">
-            <Label className="text-base font-semibold">Color Presets</Label>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {COLOR_PRESETS.map((preset) => (
-                <Card
-                  key={preset.name}
-                  className="cursor-pointer hover:shadow-md transition-shadow"
-                  onClick={() => applyPreset(preset)}
+          <Tabs defaultValue="presets" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="presets">Quick Presets</TabsTrigger>
+              <TabsTrigger value="custom">Custom Colors</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="presets" className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {COLOR_PRESETS.map((preset) => (
+                  <Card
+                    key={preset.name}
+                    className="cursor-pointer hover:shadow-md transition-all border-2 hover:border-purple-300"
+                    onClick={() => applyPreset(preset)}
+                  >
+                    <CardContent className="p-4 space-y-3">
+                      <span className="font-semibold">{preset.name}</span>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-24 h-6 rounded text-xs flex items-center justify-center text-white font-medium" style={{ background: `linear-gradient(to right, ${preset.colors.comingSoonFrom}, ${preset.colors.comingSoonTo})` }}>
+                            Coming
+                          </div>
+                          <span className="text-xs text-muted-foreground">Coming Soon</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-24 h-6 rounded text-xs flex items-center justify-center text-white font-medium" style={{ background: `linear-gradient(to right, ${preset.colors.primaryFrom}, ${preset.colors.primaryTo})` }}>
+                            Primary
+                          </div>
+                          <span className="text-xs text-muted-foreground">Main Buttons</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-24 h-6 rounded text-xs flex items-center justify-center text-white font-medium" style={{ background: `linear-gradient(to right, ${preset.colors.secondaryFrom}, ${preset.colors.secondaryTo})` }}>
+                            Secondary
+                          </div>
+                          <span className="text-xs text-muted-foreground">Alt Buttons</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="custom" className="space-y-6">
+              <div className="space-y-6">
+                <div>
+                  <Label className="text-base font-semibold mb-3 block">Coming Soon Badges</Label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <ColorInput
+                      label="Start Color"
+                      value={tempColors.comingSoonFrom}
+                      onChange={(v) => setTempColors(prev => ({ ...prev, comingSoonFrom: v }))}
+                    />
+                    <ColorInput
+                      label="End Color"
+                      value={tempColors.comingSoonTo}
+                      onChange={(v) => setTempColors(prev => ({ ...prev, comingSoonTo: v }))}
+                    />
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <Label className="text-base font-semibold mb-3 block">Primary Buttons</Label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <ColorInput
+                      label="Start Color"
+                      value={tempColors.primaryFrom}
+                      onChange={(v) => setTempColors(prev => ({ ...prev, primaryFrom: v }))}
+                    />
+                    <ColorInput
+                      label="End Color"
+                      value={tempColors.primaryTo}
+                      onChange={(v) => setTempColors(prev => ({ ...prev, primaryTo: v }))}
+                    />
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <Label className="text-base font-semibold mb-3 block">Secondary Buttons</Label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <ColorInput
+                      label="Start Color"
+                      value={tempColors.secondaryFrom}
+                      onChange={(v) => setTempColors(prev => ({ ...prev, secondaryFrom: v }))}
+                    />
+                    <ColorInput
+                      label="End Color"
+                      value={tempColors.secondaryTo}
+                      onChange={(v) => setTempColors(prev => ({ ...prev, secondaryTo: v }))}
+                    />
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <Label className="text-base font-semibold mb-3 block">Accent Color</Label>
+                  <ColorInput
+                    label="Accent (Icons & Highlights)"
+                    value={tempColors.accentColor}
+                    onChange={(v) => setTempColors(prev => ({ ...prev, accentColor: v }))}
+                  />
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+
+          <Card className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20">
+            <CardHeader>
+              <CardTitle className="text-base">Live Preview</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-wrap items-center gap-3">
+                <Badge
+                  className="text-sm px-4 py-1.5 border-0 shadow-md"
+                  style={{ background: `linear-gradient(to right, ${tempColors.comingSoonFrom}, ${tempColors.comingSoonTo})`, color: '#ffffff' }}
                 >
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium text-sm">{preset.name}</span>
-                      <div
-                        className="h-8 w-20 rounded-md"
-                        style={{
-                          background: `linear-gradient(to right, ${preset.colors.comingSoonGradientFrom}, ${preset.colors.comingSoonGradientTo})`,
-                        }}
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-
-          {/* Current Preview */}
-          <div className="space-y-3">
-            <Label className="text-base font-semibold">Current Preview</Label>
-            <div className="p-6 border rounded-lg bg-gray-50 dark:bg-gray-800 flex items-center justify-center">
-              <Badge
-                className="text-lg px-6 py-2 border-0 shadow-lg"
-                style={{
-                  background: `linear-gradient(to right, ${tempColors.comingSoonGradientFrom}, ${tempColors.comingSoonGradientTo})`,
-                  color: tempColors.comingSoonTextColor,
-                }}
-              >
-                Coming Soon
-              </Badge>
-            </div>
-          </div>
-
-          {/* Custom Color Inputs */}
-          <div className="space-y-4">
-            <Label className="text-base font-semibold">Custom Colors</Label>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="color-from">Gradient Start Color</Label>
-                <div className="flex gap-2">
-                  <input
-                    id="color-from"
-                    type="color"
-                    value={tempColors.comingSoonGradientFrom}
-                    onChange={(e) => setTempColors(prev => ({ ...prev, comingSoonGradientFrom: e.target.value }))}
-                    className="h-10 w-20 rounded border cursor-pointer"
-                  />
-                  <input
-                    type="text"
-                    value={tempColors.comingSoonGradientFrom}
-                    onChange={(e) => setTempColors(prev => ({ ...prev, comingSoonGradientFrom: e.target.value }))}
-                    className="flex-1 h-10 px-3 rounded border bg-background"
-                    placeholder="#f97316"
-                  />
+                  Coming Soon
+                </Badge>
+                <Button
+                  size="sm"
+                  className="border-0 shadow-md"
+                  style={{ background: `linear-gradient(to right, ${tempColors.primaryFrom}, ${tempColors.primaryTo})`, color: '#ffffff' }}
+                >
+                  Primary Button
+                </Button>
+                <Button
+                  size="sm"
+                  className="border-0 shadow-md"
+                  style={{ background: `linear-gradient(to right, ${tempColors.secondaryFrom}, ${tempColors.secondaryTo})`, color: '#ffffff' }}
+                >
+                  Secondary
+                </Button>
+                <div className="flex items-center gap-2">
+                  <Zap className="h-5 w-5" style={{ color: tempColors.accentColor }} />
+                  <Star className="h-5 w-5" style={{ color: tempColors.accentColor }} />
                 </div>
               </div>
+            </CardContent>
+          </Card>
 
-              <div className="space-y-2">
-                <Label htmlFor="color-to">Gradient End Color</Label>
-                <div className="flex gap-2">
-                  <input
-                    id="color-to"
-                    type="color"
-                    value={tempColors.comingSoonGradientTo}
-                    onChange={(e) => setTempColors(prev => ({ ...prev, comingSoonGradientTo: e.target.value }))}
-                    className="h-10 w-20 rounded border cursor-pointer"
-                  />
-                  <input
-                    type="text"
-                    value={tempColors.comingSoonGradientTo}
-                    onChange={(e) => setTempColors(prev => ({ ...prev, comingSoonGradientTo: e.target.value }))}
-                    className="flex-1 h-10 px-3 rounded border bg-background"
-                    placeholder="#ec4899"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Actions */}
           <div className="flex gap-2">
-            <Button onClick={handleSave}>
+            <Button onClick={handleSave} size="lg">
               <Palette className="h-4 w-4 mr-2" />
               Save Colors
             </Button>
@@ -206,12 +276,46 @@ export function SiteSettings() {
             </Button>
           </div>
 
-          <div className="text-sm text-muted-foreground bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
-            <p className="font-semibold mb-1">Note:</p>
-            <p>Color changes will be applied to all "Coming Soon" badges across the site. For full effect, refresh the page after saving.</p>
+          <div className="text-sm bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 space-y-2">
+            <p className="font-semibold">Important Notes:</p>
+            <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+              <li>Colors are saved to your browser and persist across sessions</li>
+              <li>Coming Soon badges will update immediately</li>
+              <li>For full effect on all elements, refresh the page after saving</li>
+              <li>Custom colors apply site-wide to all matching elements</li>
+            </ul>
           </div>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+interface ColorInputProps {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}
+
+function ColorInput({ label, value, onChange }: ColorInputProps) {
+  return (
+    <div className="space-y-2">
+      <Label className="text-sm">{label}</Label>
+      <div className="flex gap-2">
+        <input
+          type="color"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="h-10 w-16 rounded border cursor-pointer"
+        />
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="flex-1 h-10 px-3 rounded border bg-background text-sm font-mono"
+          placeholder="#000000"
+        />
+      </div>
     </div>
   );
 }
