@@ -11,7 +11,7 @@ import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { ShareToNostrButton } from '@/components/ShareToNostrButton';
 import { ClawstrShare } from '@/components/ClawstrShare';
 import { ZapButton } from '@/components/ZapButton';
-import { FolderKanban, Sparkles, ArrowRight, Users, Zap, Award, Share2 } from 'lucide-react';
+import { FolderKanban, Sparkles, ArrowRight, Users, Zap, Award, Share2, Image as ImageIcon } from 'lucide-react';
 import { useNostrProjects } from '@/hooks/useNostrProjects';
 import { useBadges } from '@/hooks/useBadges';
 import type { ProjectData } from '@/lib/projectTypes';
@@ -299,7 +299,7 @@ export default function Projects() {
                             isComingSoon ? 'opacity-60' : 'group-hover:scale-110'
                           }`}
                         />
-                      ) : (
+                      ) : project.images.length > 0 ? (
                         <div className={`grid grid-cols-2 gap-1 h-full p-2 ${isComingSoon ? 'opacity-60' : ''}`}>
                           {project.images.slice(0, 4).map((img, index) => (
                             <div key={index} className="relative overflow-hidden rounded-lg">
@@ -312,6 +312,10 @@ export default function Projects() {
                               />
                             </div>
                           ))}
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-center h-full opacity-60">
+                          <ImageIcon className="h-16 w-16 text-purple-300" />
                         </div>
                       )}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />

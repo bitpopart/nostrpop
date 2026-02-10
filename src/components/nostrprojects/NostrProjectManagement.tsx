@@ -106,7 +106,9 @@ export function NostrProjectManagement() {
   };
 
   const handleSubmit = () => {
-    if (!user || !title.trim() || images.length === 0 || !priceSats) return;
+    // For coming soon projects, images are optional. For active projects, require at least one image.
+    const requiresImages = !comingSoon;
+    if (!user || !title.trim() || (requiresImages && images.length === 0) || !priceSats) return;
 
     const projectId = editingProject?.id || generateNostrProjectUUID();
 
@@ -280,7 +282,7 @@ export function NostrProjectManagement() {
 
             {/* Images */}
             <div className="space-y-2">
-              <Label>Artwork Images * (People will choose one)</Label>
+              <Label>Artwork Images {comingSoon ? '(optional for coming soon)' : '* (People will choose one)'}</Label>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {images.map((img, index) => (
                   <div key={index} className="relative group">
@@ -321,7 +323,10 @@ export function NostrProjectManagement() {
                 </label>
               </div>
               <p className="text-sm text-muted-foreground">
-                Upload multiple images. Participants will select one to join the project.
+                {comingSoon 
+                  ? 'Upload images for preview (optional). Participants will select one when the project launches.'
+                  : 'Upload multiple images. Participants will select one to join the project.'
+                }
               </p>
             </div>
 
@@ -408,7 +413,7 @@ export function NostrProjectManagement() {
             <div className="flex gap-2">
               <Button
                 onClick={handleSubmit}
-                disabled={!title.trim() || images.length === 0 || !priceSats}
+                disabled={!title.trim() || (!comingSoon && images.length === 0) || !priceSats}
               >
                 {editingProject ? 'Update' : 'Create'} Project
               </Button>
