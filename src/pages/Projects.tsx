@@ -84,6 +84,7 @@ export default function Projects() {
             const url = event.tags.find(t => t[0] === 'r')?.[1] || content.url;
             const order = event.tags.find(t => t[0] === 'order')?.[1];
             const featured = event.tags.find(t => t[0] === 'featured')?.[1] === 'true';
+            const comingSoon = event.tags.find(t => t[0] === 'coming-soon')?.[1] === 'true';
 
             if (!id || !name) return null;
 
@@ -98,6 +99,7 @@ export default function Projects() {
               created_at: new Date(event.created_at * 1000).toISOString(),
               order: order ? parseInt(order) : undefined,
               featured,
+              coming_soon: comingSoon,
             };
           } catch {
             return null;
@@ -114,6 +116,11 @@ export default function Projects() {
   const allProjects = [...BUILTIN_PROJECTS, ...customProjects];
 
   const handleProjectClick = (project: typeof BUILTIN_PROJECTS[0] | ProjectData) => {
+    // Prevent navigation for coming soon projects
+    if ('coming_soon' in project && project.coming_soon) {
+      return;
+    }
+    
     if ('isBuiltIn' in project && project.isBuiltIn) {
       navigate(project.url);
     } else if ('url' in project && project.url) {
@@ -158,10 +165,17 @@ export default function Projects() {
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-            {allProjects.map((project, index) => (
+            {allProjects.map((project, index) => {
+              const isComingSoon = 'coming_soon' in project && project.coming_soon;
+              
+              return (
               <Card
                 key={project.id}
-                className="group overflow-hidden cursor-pointer hover:shadow-2xl transition-all duration-300 bg-white dark:bg-gray-800"
+                className={`group overflow-hidden transition-all duration-300 bg-white dark:bg-gray-800 ${
+                  isComingSoon 
+                    ? 'cursor-default' 
+                    : 'cursor-pointer hover:shadow-2xl'
+                }`}
                 onClick={() => handleProjectClick(project)}
               >
                 {/* Thumbnail */}
@@ -170,7 +184,9 @@ export default function Projects() {
                     <img
                       src={project.thumbnail}
                       alt={project.name}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                      className={`w-full h-full object-cover transition-transform duration-500 ${
+                        isComingSoon ? 'opacity-60' : 'group-hover:scale-110'
+                      }`}
                     />
                   ) : (
                     <div 
@@ -178,7 +194,8 @@ export default function Projects() {
                       style={{
                         backgroundImage: `linear-gradient(135deg, 
                           ${['#a855f7', '#ec4899', '#6366f1', '#8b5cf6', '#f472b6'][index % 5]} 0%, 
-                          ${['#ec4899', '#6366f1', '#8b5cf6', '#f472b6', '#a855f7'][index % 5]} 100%)`
+                          ${['#ec4899', '#6366f1', '#8b5cf6', '#f472b6', '#a855f7'][index % 5]} 100%)`,
+                        opacity: isComingSoon ? 0.6 : 1
                       }}
                     >
                       <span className="text-6xl opacity-90">
@@ -188,40 +205,59 @@ export default function Projects() {
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   
-                  {/* Hover overlay */}
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <Button
-                      variant="secondary"
-                      size="lg"
-                      className="gap-2"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleProjectClick(project);
-                      }}
-                    >
-                      Explore Project
-                      <ArrowRight className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  {/* Coming Soon Badge Overlay */}
+                  {isComingSoon && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                      <Badge className="bg-blue-600 text-white text-lg px-4 py-2 border-0 shadow-lg">
+                        Coming Soon
+                      </Badge>
+                    </div>
+                  )}
+                  
+                  {/* Hover overlay (only for non-coming-soon projects) */}
+                  {!isComingSoon && (
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <Button
+                        variant="secondary"
+                        size="lg"
+                        className="gap-2"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleProjectClick(project);
+                        }}
+                      >
+                        Explore Project
+                        <ArrowRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Content */}
                 <CardHeader>
-                  <CardTitle className="text-2xl group-hover:text-purple-600 transition-colors flex items-center justify-between">
-                    {project.name}
-                    {('isBuiltIn' in project && project.isBuiltIn) && (
-                      <Badge variant="outline" className="text-xs">
-                        <Sparkles className="h-3 w-3 mr-1" />
-                        Core
-                      </Badge>
-                    )}
+                  <CardTitle className="text-2xl group-hover:text-purple-600 transition-colors flex items-center justify-between gap-2 flex-wrap">
+                    <span>{project.name}</span>
+                    <div className="flex items-center gap-2">
+                      {('isBuiltIn' in project && project.isBuiltIn) && (
+                        <Badge variant="outline" className="text-xs">
+                          <Sparkles className="h-3 w-3 mr-1" />
+                          Core
+                        </Badge>
+                      )}
+                      {isComingSoon && (
+                        <Badge className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700 text-xs">
+                          Coming Soon
+                        </Badge>
+                      )}
+                    </div>
                   </CardTitle>
                   <CardDescription className="line-clamp-3 text-base">
                     {project.description}
                   </CardDescription>
                 </CardHeader>
               </Card>
-            ))}
+              );
+            })}
           </div>
 
           {/* Nostr Projects Section */}
