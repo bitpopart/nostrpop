@@ -19,7 +19,7 @@ try {
   }
 
   let indexHtml = readFileSync(indexPath, 'utf-8');
-  indexHtml = indexHtml.replace(/%VITE_BASE%/g, '/nostrpop/');
+  indexHtml = indexHtml.replace(/%VITE_BASE%/g, '/');
   writeFileSync(indexPath, indexHtml);
   console.log('✅ Fixed base paths in index.html');
 } catch (e) {
@@ -31,7 +31,7 @@ try {
 try {
   if (existsSync(manifestPath)) {
     let manifest = readFileSync(manifestPath, 'utf-8');
-    manifest = manifest.replace(/%VITE_BASE%/g, '/nostrpop/');
+    manifest = manifest.replace(/%VITE_BASE%/g, '/');
     writeFileSync(manifestPath, manifest);
     console.log('✅ Fixed base paths in manifest.webmanifest');
   } else {

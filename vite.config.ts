@@ -49,8 +49,8 @@ const cspPlugin = () => ({
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode, command }) => {
-  // Use root path in dev mode (Shakespeare preview), /nostrpop/ in build mode (GitHub Pages)
-  const base = command === 'serve' ? '/' : '/nostrpop/';
+  // Use root path for custom domain (bitpopart.com)
+  const base = '/';
   
   return {
     base,
