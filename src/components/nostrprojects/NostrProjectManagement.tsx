@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, X, Upload, Image as ImageIcon, Edit, Award } from 'lucide-react';
+import { Plus, X, Upload, Image as ImageIcon, Edit, Award, Loader2 } from 'lucide-react';
 import { generateNostrProjectUUID } from '@/lib/nostrProjectTypes';
 import type { NostrProjectData } from '@/lib/nostrProjectTypes';
 
@@ -34,6 +34,7 @@ export function NostrProjectManagement() {
   const [editingProject, setEditingProject] = useState<NostrProjectData | null>(null);
   
   // Form state
+  const [headerImage, setHeaderImage] = useState('');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [images, setImages] = useState<string[]>([]);
@@ -44,6 +45,7 @@ export function NostrProjectManagement() {
   const [comingSoon, setComingSoon] = useState(false);
   
   const resetForm = () => {
+    setHeaderImage('');
     setTitle('');
     setDescription('');
     setImages([]);
@@ -58,6 +60,7 @@ export function NostrProjectManagement() {
 
   const handleEdit = (project: NostrProjectData) => {
     setEditingProject(project);
+    setHeaderImage(project.header_image || '');
     setTitle(project.title);
     setDescription(project.description);
     setImages(project.images);
@@ -67,6 +70,19 @@ export function NostrProjectManagement() {
     setFeatured(project.featured || false);
     setComingSoon(project.coming_soon || false);
     setIsCreating(true);
+  };
+
+  const handleHeaderImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const tags = await uploadFile(file);
+      const imageUrl = tags[0][1]; // First tag contains the URL
+      setHeaderImage(imageUrl);
+    } catch (error) {
+      console.error('Failed to upload header image:', error);
+    }
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -106,6 +122,7 @@ export function NostrProjectManagement() {
         ['price', priceSats],
         ['status', status],
         ['t', 'nostr-project'],
+        ...(headerImage ? [['header-image', headerImage]] : []),
         ...(featured ? [['featured', 'true']] : []),
         ...(comingSoon ? [['coming-soon', 'true']] : []),
         ...(authorHandle ? [['author-handle', authorHandle.trim()]] : []),
@@ -167,6 +184,77 @@ export function NostrProjectManagement() {
             <CardTitle>{editingProject ? 'Edit' : 'Create New'} Nostr Project</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Header Image */}
+            <div className="space-y-2">
+              <Label htmlFor="header-image">Header Image / Thumbnail</Label>
+              
+              {headerImage ? (
+                <div className="space-y-2">
+                  <div className="relative rounded-lg overflow-hidden border-2 border-gray-200 dark:border-gray-700">
+                    <img
+                      src={headerImage}
+                      alt="Header image"
+                      className="w-full h-64 object-cover"
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      className="absolute top-2 right-2"
+                      onClick={() => setHeaderImage('')}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <Input
+                    type="url"
+                    placeholder="Or paste image URL"
+                    value={headerImage}
+                    onChange={(e) => setHeaderImage(e.target.value)}
+                  />
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <input
+                    id="header-image-upload"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleHeaderImageUpload}
+                    disabled={isUploading}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => document.getElementById('header-image-upload')?.click()}
+                    disabled={isUploading}
+                  >
+                    {isUploading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="h-4 w-4 mr-2" />
+                        Upload Header Image
+                      </>
+                    )}
+                  </Button>
+                  <Input
+                    type="url"
+                    placeholder="Or paste image URL"
+                    value={headerImage}
+                    onChange={(e) => setHeaderImage(e.target.value)}
+                  />
+                </div>
+              )}
+              <p className="text-sm text-muted-foreground">
+                This image will be used as the project thumbnail on the projects page
+              </p>
+            </div>
+
             {/* Title */}
             <div className="space-y-2">
               <Label htmlFor="title">Project Title *</Label>

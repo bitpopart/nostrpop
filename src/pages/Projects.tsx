@@ -289,21 +289,31 @@ export default function Projects() {
                     }`}
                     onClick={() => !isComingSoon && navigate(`/nostr-projects/${project.id}`)}
                   >
-                    {/* Image Grid Preview */}
+                    {/* Thumbnail / Image Preview */}
                     <div className="relative h-56 overflow-hidden bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/20 dark:to-pink-900/20">
-                      <div className={`grid grid-cols-2 gap-1 h-full p-2 ${isComingSoon ? 'opacity-60' : ''}`}>
-                        {project.images.slice(0, 4).map((img, index) => (
-                          <div key={index} className="relative overflow-hidden rounded-lg">
-                            <img
-                              src={img}
-                              alt=""
-                              className={`w-full h-full object-cover transition-transform duration-500 ${
-                                isComingSoon ? '' : 'group-hover:scale-110'
-                              }`}
-                            />
-                          </div>
-                        ))}
-                      </div>
+                      {project.header_image ? (
+                        <img
+                          src={project.header_image}
+                          alt={project.title}
+                          className={`w-full h-full object-cover transition-transform duration-500 ${
+                            isComingSoon ? 'opacity-60' : 'group-hover:scale-110'
+                          }`}
+                        />
+                      ) : (
+                        <div className={`grid grid-cols-2 gap-1 h-full p-2 ${isComingSoon ? 'opacity-60' : ''}`}>
+                          {project.images.slice(0, 4).map((img, index) => (
+                            <div key={index} className="relative overflow-hidden rounded-lg">
+                              <img
+                                src={img}
+                                alt=""
+                                className={`w-full h-full object-cover transition-transform duration-500 ${
+                                  isComingSoon ? '' : 'group-hover:scale-110'
+                                }`}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      )}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                       
                       {/* Coming Soon Badge Overlay */}

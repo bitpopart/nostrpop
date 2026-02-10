@@ -29,6 +29,7 @@ export function useNostrProjects() {
             const status = event.tags.find(t => t[0] === 'status')?.[1] as 'active' | 'completed' | 'archived' || 'active';
             const price = event.tags.find(t => t[0] === 'price')?.[1];
             const authorHandle = event.tags.find(t => t[0] === 'author-handle')?.[1];
+            const headerImage = event.tags.find(t => t[0] === 'header-image')?.[1];
             const featured = event.tags.find(t => t[0] === 'featured')?.[1] === 'true';
             const comingSoon = event.tags.find(t => t[0] === 'coming-soon')?.[1] === 'true';
             
@@ -39,6 +40,7 @@ export function useNostrProjects() {
               event,
               title,
               description: content.description || '',
+              header_image: headerImage,
               images: content.images || [],
               price_sats: price ? parseInt(price) : 0,
               author_pubkey: event.pubkey,
@@ -85,6 +87,7 @@ export function useFeaturedNostrProjects() {
             const status = event.tags.find(t => t[0] === 'status')?.[1] as 'active' | 'completed' | 'archived' || 'active';
             const price = event.tags.find(t => t[0] === 'price')?.[1];
             const authorHandle = event.tags.find(t => t[0] === 'author-handle')?.[1];
+            const headerImage = event.tags.find(t => t[0] === 'header-image')?.[1];
             const comingSoon = event.tags.find(t => t[0] === 'coming-soon')?.[1] === 'true';
             
             if (!id || !title || status !== 'active') return null;
@@ -94,6 +97,7 @@ export function useFeaturedNostrProjects() {
               event,
               title,
               description: content.description || '',
+              header_image: headerImage,
               images: content.images || [],
               price_sats: price ? parseInt(price) : 0,
               author_pubkey: event.pubkey,
@@ -141,6 +145,7 @@ export function useNostrProject(projectId: string) {
         const status = event.tags.find(t => t[0] === 'status')?.[1] as 'active' | 'completed' | 'archived' || 'active';
         const price = event.tags.find(t => t[0] === 'price')?.[1];
         const authorHandle = event.tags.find(t => t[0] === 'author-handle')?.[1];
+        const headerImage = event.tags.find(t => t[0] === 'header-image')?.[1];
         const comingSoon = event.tags.find(t => t[0] === 'coming-soon')?.[1] === 'true';
 
         if (!id || !title) return null;
@@ -150,6 +155,7 @@ export function useNostrProject(projectId: string) {
           event,
           title,
           description: content.description || '',
+          header_image: headerImage,
           images: content.images || [],
           price_sats: price ? parseInt(price) : 0,
           author_pubkey: event.pubkey,

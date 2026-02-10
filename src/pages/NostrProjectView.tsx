@@ -120,6 +120,17 @@ export default function NostrProjectView() {
           </Button>
 
           <Card className="max-w-4xl mx-auto">
+            {/* Header Image */}
+            {project.header_image && (
+              <div className="relative h-64 md:h-96 overflow-hidden opacity-60">
+                <img
+                  src={project.header_image}
+                  alt={project.title}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+            
             <CardHeader>
               <div className="flex items-center justify-between gap-4 flex-wrap">
                 <CardTitle className="text-3xl">{project.title}</CardTitle>
@@ -132,18 +143,20 @@ export default function NostrProjectView() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Image Grid Preview */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {project.images.map((img, index) => (
-                  <div key={index} className="relative overflow-hidden rounded-lg aspect-square opacity-60">
-                    <img
-                      src={img}
-                      alt={`Artwork ${index + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                ))}
-              </div>
+              {/* Image Grid Preview (only show if no header image or show in addition) */}
+              {project.images.length > 0 && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {project.images.map((img, index) => (
+                    <div key={index} className="relative overflow-hidden rounded-lg aspect-square opacity-60">
+                      <img
+                        src={img}
+                        alt={`Artwork ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {/* Coming Soon Message */}
               <Alert className="bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700">
@@ -224,6 +237,17 @@ export default function NostrProjectView() {
           {/* Left: Project Info & Image Selection */}
           <div className="space-y-6">
             <Card>
+              {/* Header Image */}
+              {project.header_image && (
+                <div className="relative h-64 overflow-hidden">
+                  <img
+                    src={project.header_image}
+                    alt={project.title}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+              
               <CardHeader>
                 <CardTitle className="text-3xl">{project.title}</CardTitle>
                 <CardDescription className="text-base">

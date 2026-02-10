@@ -9,6 +9,7 @@ export interface NostrProjectData {
   event?: NostrEvent;
   title: string;
   description: string;
+  header_image?: string; // Header/thumbnail image for the project
   images: string[]; // Array of artwork image URLs
   price_sats: number; // Price in sats to join
   author_pubkey: string;
