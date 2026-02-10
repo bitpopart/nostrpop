@@ -54,7 +54,7 @@ export function Navigation() {
             <img 
               src={`${basePath}B-Funny_avatar_orange.svg`}
               alt="BitPopArt Logo" 
-              className="h-10 w-10"
+              className="h-10 w-10 flex-shrink-0"
             />
           </Link>
 
@@ -87,7 +87,6 @@ export function Navigation() {
             >
               <SearchIcon className="h-4 w-4" />
             </Button>
-            <RelaySelector className="max-w-40" />
             <Button
               variant="ghost"
               size="sm"

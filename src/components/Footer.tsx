@@ -5,6 +5,7 @@ import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
+import { RelaySelector } from '@/components/RelaySelector';
 import { Send } from 'lucide-react';
 import BitPopArtLogo from '@/assets/bitpopart-logo.png';
 
@@ -60,6 +61,11 @@ export function Footer() {
             <p className="text-sm text-muted-foreground mb-4">
               Love, Freedom & Joy
             </p>
+            
+            {/* Relay Selector - Desktop Only */}
+            <div className="hidden md:block mb-4">
+              <RelaySelector className="max-w-full" />
+            </div>
             
             {/* Social Media Links */}
             {socialLinks.length > 0 && (
