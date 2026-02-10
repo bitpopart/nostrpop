@@ -10,13 +10,17 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowLeft, Zap, Users, Check } from 'lucide-react';
+import { ArrowLeft, Zap, Users, Check, Share2 } from 'lucide-react';
+import { ShareToNostrButton } from '@/components/ShareToNostrButton';
+import { ClawstrShare } from '@/components/ClawstrShare';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { nip19 } from 'nostr-tools';
 
 export default function NostrProjectView() {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
   const { mutate: createEvent } = useNostrPublish();
+  const isAdmin = useIsAdmin();
   
   const { data: project, isLoading } = useNostrProject(projectId || '');
   const { data: participants = [] } = useNostrProjectParticipants(projectId || '');
@@ -122,21 +126,50 @@ export default function NostrProjectView() {
           <Card className="max-w-4xl mx-auto">
             {/* Header Image */}
             {project.header_image && (
-              <div className="relative h-64 md:h-96 overflow-hidden opacity-60">
+              <div className="relative h-64 md:h-96 overflow-hidden">
                 <img
                   src={project.header_image}
                   alt={project.title}
                   className="w-full h-full object-cover"
                 />
+                {/* Coming Soon Overlay Badge */}
+                <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                  <Badge className="bg-blue-600 text-white text-2xl px-6 py-3 border-0 shadow-2xl">
+                    Coming Soon
+                  </Badge>
+                </div>
               </div>
             )}
             
             <CardHeader>
               <div className="flex items-center justify-between gap-4 flex-wrap">
                 <CardTitle className="text-3xl">{project.title}</CardTitle>
-                <Badge className="bg-blue-600 text-white text-base px-4 py-1.5 border-0">
-                  Coming Soon
-                </Badge>
+                <div className="flex items-center gap-2">
+                  {isAdmin && project.event && (
+                    <>
+                      <ShareToNostrButton
+                        url={`/nostr-projects/${project.id}`}
+                        title={project.title}
+                        description={project.description}
+                        image={project.header_image || project.images[0]}
+                        variant="ghost"
+                        size="icon"
+                      />
+                      <ClawstrShare
+                        event={project.event}
+                        contentType="project"
+                        trigger={
+                          <Button variant="ghost" size="icon">
+                            <Share2 className="h-4 w-4" />
+                          </Button>
+                        }
+                      />
+                    </>
+                  )}
+                  <Badge className="bg-blue-600 text-white text-base px-4 py-1.5 border-0">
+                    Coming Soon
+                  </Badge>
+                </div>
               </div>
               <CardDescription className="text-base">
                 {project.description}
@@ -249,7 +282,30 @@ export default function NostrProjectView() {
               )}
               
               <CardHeader>
-                <CardTitle className="text-3xl">{project.title}</CardTitle>
+                <div className="flex items-start justify-between gap-4 mb-2">
+                  <CardTitle className="text-3xl flex-1">{project.title}</CardTitle>
+                  {isAdmin && project.event && (
+                    <div className="flex gap-1">
+                      <ShareToNostrButton
+                        url={`/nostr-projects/${project.id}`}
+                        title={project.title}
+                        description={project.description}
+                        image={project.header_image || project.images[0]}
+                        variant="ghost"
+                        size="icon"
+                      />
+                      <ClawstrShare
+                        event={project.event}
+                        contentType="project"
+                        trigger={
+                          <Button variant="ghost" size="icon">
+                            <Share2 className="h-4 w-4" />
+                          </Button>
+                        }
+                      />
+                    </div>
+                  )}
+                </div>
                 <CardDescription className="text-base">
                   {project.description}
                 </CardDescription>
