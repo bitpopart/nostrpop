@@ -41,6 +41,7 @@ export function NostrProjectManagement() {
   const [authorHandle, setAuthorHandle] = useState('');
   const [status, setStatus] = useState<'active' | 'completed' | 'archived'>('active');
   const [featured, setFeatured] = useState(false);
+  const [comingSoon, setComingSoon] = useState(false);
   
   const resetForm = () => {
     setTitle('');
@@ -50,6 +51,7 @@ export function NostrProjectManagement() {
     setAuthorHandle('');
     setStatus('active');
     setFeatured(false);
+    setComingSoon(false);
     setEditingProject(null);
     setIsCreating(false);
   };
@@ -63,6 +65,7 @@ export function NostrProjectManagement() {
     setAuthorHandle(project.author_handle || '');
     setStatus(project.status);
     setFeatured(project.featured || false);
+    setComingSoon(project.coming_soon || false);
     setIsCreating(true);
   };
 
@@ -104,6 +107,7 @@ export function NostrProjectManagement() {
         ['status', status],
         ['t', 'nostr-project'],
         ...(featured ? [['featured', 'true']] : []),
+        ...(comingSoon ? [['coming-soon', 'true']] : []),
         ...(authorHandle ? [['author-handle', authorHandle.trim()]] : []),
         ...images.map((img, i) => ['image', img, i.toString()]),
       ],
@@ -273,18 +277,43 @@ export function NostrProjectManagement() {
             </div>
 
             {/* Featured */}
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="featured"
-                checked={featured}
-                onCheckedChange={(checked) => setFeatured(checked as boolean)}
-              />
-              <Label
-                htmlFor="featured"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                Feature on homepage and projects page
-              </Label>
+            <div className="space-y-2 p-4 border rounded-lg bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="featured"
+                  checked={featured}
+                  onCheckedChange={(checked) => setFeatured(checked as boolean)}
+                />
+                <Label
+                  htmlFor="featured"
+                  className="text-base font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  Feature on homepage and projects page
+                </Label>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Display this project in the featured section on the homepage
+              </p>
+            </div>
+
+            {/* Coming Soon */}
+            <div className="space-y-2 p-4 border rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="coming_soon"
+                  checked={comingSoon}
+                  onCheckedChange={(checked) => setComingSoon(checked as boolean)}
+                />
+                <Label
+                  htmlFor="coming_soon"
+                  className="text-base font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  Coming Soon
+                </Label>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Mark this project as "Coming Soon" - it will be displayed with a special badge
+              </p>
             </div>
 
             {/* Actions */}

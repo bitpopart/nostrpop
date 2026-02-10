@@ -17,6 +17,7 @@ export interface NostrProjectData {
   participant_count?: number; // How many people joined
   status: 'active' | 'completed' | 'archived';
   featured?: boolean; // Show on homepage
+  coming_soon?: boolean; // Shows thumbnail only, no join functionality
 }
 
 /**

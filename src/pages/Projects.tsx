@@ -276,29 +276,47 @@ export default function Projects() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {nostrProjects.map((project) => (
+                {nostrProjects.map((project) => {
+                  const isComingSoon = project.coming_soon;
+                  
+                  return (
                   <Card
                     key={project.id}
-                    className="group overflow-hidden cursor-pointer hover:shadow-2xl transition-all duration-300 bg-white dark:bg-gray-800"
-                    onClick={() => navigate(`/nostr-projects/${project.id}`)}
+                    className={`group overflow-hidden transition-all duration-300 bg-white dark:bg-gray-800 ${
+                      isComingSoon 
+                        ? 'cursor-default' 
+                        : 'cursor-pointer hover:shadow-2xl'
+                    }`}
+                    onClick={() => !isComingSoon && navigate(`/nostr-projects/${project.id}`)}
                   >
                     {/* Image Grid Preview */}
                     <div className="relative h-56 overflow-hidden bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/20 dark:to-pink-900/20">
-                      <div className="grid grid-cols-2 gap-1 h-full p-2">
+                      <div className={`grid grid-cols-2 gap-1 h-full p-2 ${isComingSoon ? 'opacity-60' : ''}`}>
                         {project.images.slice(0, 4).map((img, index) => (
                           <div key={index} className="relative overflow-hidden rounded-lg">
                             <img
                               src={img}
                               alt=""
-                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                              className={`w-full h-full object-cover transition-transform duration-500 ${
+                                isComingSoon ? '' : 'group-hover:scale-110'
+                              }`}
                             />
                           </div>
                         ))}
                       </div>
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                       
-                      {/* Zap button overlay */}
-                      {project.event && (
+                      {/* Coming Soon Badge Overlay */}
+                      {isComingSoon && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                          <Badge className="bg-blue-600 text-white text-lg px-4 py-2 border-0 shadow-lg">
+                            Coming Soon
+                          </Badge>
+                        </div>
+                      )}
+                      
+                      {/* Zap button overlay (only for non-coming-soon projects) */}
+                      {!isComingSoon && project.event && (
                         <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                           <div onClick={(e) => e.stopPropagation()}>
                             <ZapButton
@@ -314,21 +332,23 @@ export default function Projects() {
                         </div>
                       )}
                       
-                      {/* Hover overlay */}
-                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <Button
-                          variant="secondary"
-                          size="lg"
-                          className="gap-2"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/nostr-projects/${project.id}`);
-                          }}
-                        >
-                          Join Project
-                          <ArrowRight className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      {/* Hover overlay (only for non-coming-soon projects) */}
+                      {!isComingSoon && (
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          <Button
+                            variant="secondary"
+                            size="lg"
+                            className="gap-2"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/nostr-projects/${project.id}`);
+                            }}
+                          >
+                            Join Project
+                            <ArrowRight className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
 
                     {/* Content */}
@@ -359,11 +379,16 @@ export default function Projects() {
                           </div>
                         )}
                       </div>
-                      <div className="flex items-center gap-2 mb-2">
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
                         <Badge variant="default" className="gap-1">
                           <Zap className="h-3 w-3" />
                           {project.price_sats.toLocaleString()}
                         </Badge>
+                        {isComingSoon && (
+                          <Badge className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700 text-xs">
+                            Coming Soon
+                          </Badge>
+                        )}
                       </div>
                       <CardDescription className="line-clamp-3 text-base">
                         {project.description}
@@ -377,7 +402,8 @@ export default function Projects() {
                       </div>
                     </CardHeader>
                   </Card>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}

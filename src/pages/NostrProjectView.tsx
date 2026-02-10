@@ -105,6 +105,69 @@ export default function NostrProjectView() {
     );
   }
 
+  // Coming Soon view
+  if (project.coming_soon) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20">
+        <div className="container mx-auto px-4 py-12">
+          <Button
+            variant="ghost"
+            className="mb-6"
+            onClick={() => navigate('/nostr-projects')}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Projects
+          </Button>
+
+          <Card className="max-w-4xl mx-auto">
+            <CardHeader>
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <CardTitle className="text-3xl">{project.title}</CardTitle>
+                <Badge className="bg-blue-600 text-white text-base px-4 py-1.5 border-0">
+                  Coming Soon
+                </Badge>
+              </div>
+              <CardDescription className="text-base">
+                {project.description}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Image Grid Preview */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {project.images.map((img, index) => (
+                  <div key={index} className="relative overflow-hidden rounded-lg aspect-square opacity-60">
+                    <img
+                      src={img}
+                      alt={`Artwork ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
+
+              {/* Coming Soon Message */}
+              <Alert className="bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700">
+                <AlertDescription className="text-center text-base">
+                  <p className="font-semibold mb-2">This project is coming soon!</p>
+                  <p className="text-sm text-muted-foreground">
+                    Check back later or follow @BitPopArt on Nostr for updates.
+                  </p>
+                </AlertDescription>
+              </Alert>
+
+              <div className="flex justify-center">
+                <Button onClick={() => navigate('/nostr-projects')}>
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to All Projects
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   if (showSuccess) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20">
