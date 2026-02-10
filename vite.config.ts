@@ -64,7 +64,8 @@ export default defineConfig(({ mode, command }) => {
         tsDecorators: true,
       }),
       basePathPlugin(base),
-      cspPlugin(),
+      // CSP plugin disabled - using CSP directly in index.html instead
+      // cspPlugin(),
     ],
   define: {
       'import.meta.env.VITE_BUILD_MODE': JSON.stringify(mode),
