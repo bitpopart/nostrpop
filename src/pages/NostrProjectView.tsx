@@ -134,7 +134,7 @@ export default function NostrProjectView() {
                 />
                 {/* Coming Soon Overlay Badge */}
                 <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                  <Badge className="bg-blue-600 text-white text-2xl px-6 py-3 border-0 shadow-2xl">
+                  <Badge className="bg-gradient-to-r from-orange-500 to-pink-500 text-white text-2xl px-6 py-3 border-0 shadow-2xl">
                     Coming Soon
                   </Badge>
                 </div>
@@ -166,7 +166,7 @@ export default function NostrProjectView() {
                       />
                     </>
                   )}
-                  <Badge className="bg-blue-600 text-white text-base px-4 py-1.5 border-0">
+                  <Badge className="bg-gradient-to-r from-orange-500 to-pink-500 text-white text-base px-4 py-1.5 border-0">
                     Coming Soon
                   </Badge>
                 </div>
@@ -192,7 +192,7 @@ export default function NostrProjectView() {
               )}
 
               {/* Coming Soon Message */}
-              <Alert className="bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700">
+              <Alert className="bg-gradient-to-r from-orange-50 to-pink-50 dark:from-orange-900/20 dark:to-pink-900/20 border-orange-300 dark:border-pink-700">
                 <AlertDescription className="text-center text-base">
                   <p className="font-semibold mb-2">This project is coming soon!</p>
                   <p className="text-sm text-muted-foreground">

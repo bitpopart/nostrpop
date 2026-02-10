@@ -208,7 +208,7 @@ export default function Projects() {
                   {/* Coming Soon Badge Overlay */}
                   {isComingSoon && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                      <Badge className="bg-blue-600 text-white text-lg px-4 py-2 border-0 shadow-lg">
+                      <Badge className="bg-gradient-to-r from-orange-500 to-pink-500 text-white text-lg px-4 py-2 border-0 shadow-lg">
                         Coming Soon
                       </Badge>
                     </div>
@@ -245,7 +245,7 @@ export default function Projects() {
                         </Badge>
                       )}
                       {isComingSoon && (
-                        <Badge className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700 text-xs">
+                        <Badge className="bg-gradient-to-r from-orange-100 to-pink-100 dark:from-orange-900/30 dark:to-pink-900/30 text-orange-700 dark:text-orange-300 border-orange-300 dark:border-pink-700 text-xs">
                           Coming Soon
                         </Badge>
                       )}
@@ -323,7 +323,7 @@ export default function Projects() {
                       {/* Coming Soon Badge Overlay */}
                       {isComingSoon && (
                         <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                          <Badge className="bg-blue-600 text-white text-lg px-4 py-2 border-0 shadow-lg">
+                          <Badge className="bg-gradient-to-r from-orange-500 to-pink-500 text-white text-lg px-4 py-2 border-0 shadow-lg">
                             Coming Soon
                           </Badge>
                         </div>
@@ -399,7 +399,7 @@ export default function Projects() {
                           {project.price_sats.toLocaleString()}
                         </Badge>
                         {isComingSoon && (
-                          <Badge className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700 text-xs">
+                          <Badge className="bg-gradient-to-r from-orange-100 to-pink-100 dark:from-orange-900/30 dark:to-pink-900/30 text-orange-700 dark:text-orange-300 border-orange-300 dark:border-pink-700 text-xs">
                             Coming Soon
                           </Badge>
                         )}

@@ -20,6 +20,7 @@ import { PageManagement } from '@/components/pages/PageManagement';
 import { SocialMediaManagement } from '@/components/social/SocialMediaManagement';
 import { NewsletterManager } from '@/components/newsletter/NewsletterManager';
 import { AnalyticsSettings } from '@/components/analytics/AnalyticsSettings';
+import { SiteSettings } from '@/components/settings/SiteSettings';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import {
   Plus,
@@ -39,7 +40,8 @@ import {
   FolderKanban,
   Share2,
   Mail,
-  Target
+  Target,
+  Settings
 } from 'lucide-react';
 
 const Admin = () => {
@@ -286,6 +288,7 @@ const Admin = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2 md:grid-cols-7 lg:grid-cols-14 max-w-7xl mx-auto mb-8 text-xs">
             <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="settings">Settings</TabsTrigger>
             <TabsTrigger value="blog">News</TabsTrigger>
             <TabsTrigger value="artist">Artist</TabsTrigger>
             <TabsTrigger value="popup">PopUp</TabsTrigger>
@@ -454,6 +457,10 @@ const Admin = () => {
                 </div>
               </div>
             </div>
+          </TabsContent>
+
+          <TabsContent value="settings">
+            <SiteSettings />
           </TabsContent>
 
           <TabsContent value="blog">

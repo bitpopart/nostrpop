@@ -450,7 +450,7 @@ export function NostrProjectManagement() {
             </div>
 
             {/* Coming Soon */}
-            <div className="space-y-2 p-4 border rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20">
+            <div className="space-y-2 p-4 border rounded-lg bg-gradient-to-r from-orange-50 to-pink-50 dark:from-orange-900/20 dark:to-pink-900/20">
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="coming_soon"
@@ -541,7 +541,7 @@ export function NostrProjectManagement() {
                     <div className="flex items-center gap-2">
                       <h3 className="font-semibold">{project.title}</h3>
                       {project.coming_soon && (
-                        <Badge className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700 text-xs">
+                        <Badge className="bg-gradient-to-r from-orange-100 to-pink-100 dark:from-orange-900/30 dark:to-pink-900/30 text-orange-700 dark:text-orange-300 border-orange-300 dark:border-pink-700 text-xs">
                           Coming Soon
                         </Badge>
                       )}
