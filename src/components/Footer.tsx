@@ -58,7 +58,7 @@ export function Footer() {
               />
             </Link>
             <p className="text-sm text-muted-foreground mb-4">
-              Good Vibes Digital Cards & Art on Nostr, in Love, Freedom & Joy
+              Love, Freedom & Joy
             </p>
             
             {/* Social Media Links */}
