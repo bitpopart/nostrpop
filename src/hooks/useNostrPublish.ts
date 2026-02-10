@@ -11,6 +11,8 @@ export function useNostrPublish(): UseMutationResult<NostrEvent> {
 
   return useMutation({
     mutationFn: async (t: Omit<NostrEvent, 'id' | 'pubkey' | 'sig'>) => {
+      console.log('[useNostrPublish] Publishing event, kind:', t.kind, 'tags:', t.tags?.slice(0, 5));
+      
       if (user) {
         const tags = t.tags ?? [];
 
@@ -19,6 +21,7 @@ export function useNostrPublish(): UseMutationResult<NostrEvent> {
           tags.push(["client", location.hostname]);
         }
 
+        console.log('[useNostrPublish] Signing event...');
         const event = await user.signer.signEvent({
           kind: t.kind,
           content: t.content ?? "",
@@ -26,17 +29,20 @@ export function useNostrPublish(): UseMutationResult<NostrEvent> {
           created_at: t.created_at ?? Math.floor(Date.now() / 1000),
         });
 
+        console.log('[useNostrPublish] Event signed, publishing to relay...', event.id);
         await nostr.event(event, { signal: AbortSignal.timeout(5000) });
+        console.log('[useNostrPublish] Event published successfully to relay');
         return event;
       } else {
+        console.error('[useNostrPublish] User is not logged in');
         throw new Error("User is not logged in");
       }
     },
     onError: (error) => {
-      console.error("Failed to publish event:", error);
+      console.error("[useNostrPublish] Failed to publish event:", error);
     },
     onSuccess: (data) => {
-      console.log("Event published successfully:", data);
+      console.log("[useNostrPublish] Event published successfully:", data.id, "kind:", data.kind);
     },
   });
 }
