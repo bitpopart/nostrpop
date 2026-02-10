@@ -1,0 +1,37 @@
+usage: git [--version] [--help] <command> [<args>]
+
+These are common Git commands used in various situations:
+
+start a working area (see also: git help tutorial)
+   clone      Clone a repository into a new directory
+   init       Create an empty Git repository or reinitialize an existing one
+
+work on the current change (see also: git help everyday)
+   add        Add file contents to the index
+   reset      Reset current HEAD to the specified state
+   stash      Stash the changes in a dirty working directory away
+
+examine the history and state (see also: git help revisions)
+   log        Show commit logs
+   show       Show various types of objects
+   status     Show the working tree status
+   diff       Show changes between commits, commit and working tree, etc
+
+grow, mark and tweak your common history
+   branch     List, create, or delete branches
+   checkout   Switch branches or restore working tree files
+   commit     Record changes to the repository
+   tag        Create, list, delete or verify a tag object
+
+collaborate (see also: git help workflows)
+   fetch      Download objects and refs from another repository
+   pull       Fetch from and integrate with another repository or a local branch
+   push       Update remote refs along with associated objects
+   remote     Manage set of tracked repositories
+
+configuration
+   config     Get and set repository or global options
+
+'git help -a' and 'git help -g' list available subcommands and some
+concept guides. See 'git help <command>' or 'git help <concept>'
+to read about a specific subcommand or concept.
