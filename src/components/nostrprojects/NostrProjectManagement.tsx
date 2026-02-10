@@ -3,6 +3,7 @@ import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useNostrProjects } from '@/hooks/useNostrProjects';
 import { useUploadFile } from '@/hooks/useUploadFile';
+import { useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, X, Upload, Image as ImageIcon, Edit, Award, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { generateNostrProjectUUID } from '@/lib/nostrProjectTypes';
 import type { NostrProjectData } from '@/lib/nostrProjectTypes';
 
@@ -29,6 +31,7 @@ export function NostrProjectManagement() {
   const { mutate: createEvent } = useNostrPublish();
   const { mutateAsync: uploadFile, isPending: isUploading } = useUploadFile();
   const { data: projects, isLoading } = useNostrProjects();
+  const queryClient = useQueryClient();
   
   const [isCreating, setIsCreating] = useState(false);
   const [editingProject, setEditingProject] = useState<NostrProjectData | null>(null);
@@ -112,27 +115,39 @@ export function NostrProjectManagement() {
 
     const projectId = editingProject?.id || generateNostrProjectUUID();
 
-    createEvent({
-      kind: 38171,
-      content: JSON.stringify({
-        description: description.trim(),
-        images: images,
-      }),
-      tags: [
-        ['d', projectId],
-        ['title', title.trim()],
-        ['price', priceSats],
-        ['status', status],
-        ['t', 'nostr-project'],
-        ...(headerImage ? [['header-image', headerImage]] : []),
-        ...(featured ? [['featured', 'true']] : []),
-        ...(comingSoon ? [['coming-soon', 'true']] : []),
-        ...(authorHandle ? [['author-handle', authorHandle.trim()]] : []),
-        ...images.map((img, i) => ['image', img, i.toString()]),
-      ],
-    });
-
-    resetForm();
+    createEvent(
+      {
+        kind: 38171,
+        content: JSON.stringify({
+          description: description.trim(),
+          images: images,
+        }),
+        tags: [
+          ['d', projectId],
+          ['title', title.trim()],
+          ['price', priceSats],
+          ['status', status],
+          ['t', 'nostr-project'],
+          ...(headerImage ? [['header-image', headerImage]] : []),
+          ...(featured ? [['featured', 'true']] : []),
+          ...(comingSoon ? [['coming-soon', 'true']] : []),
+          ...(authorHandle ? [['author-handle', authorHandle.trim()]] : []),
+          ...images.map((img, i) => ['image', img, i.toString()]),
+        ],
+      },
+      {
+        onSuccess: () => {
+          toast.success(editingProject ? 'Nostr project updated!' : 'Nostr project created!');
+          queryClient.invalidateQueries({ queryKey: ['nostr-projects'] });
+          queryClient.invalidateQueries({ queryKey: ['featured-nostr-projects'] });
+          resetForm();
+        },
+        onError: (error) => {
+          console.error('Failed to create Nostr project:', error);
+          toast.error('Failed to save Nostr project. Please try again.');
+        },
+      }
+    );
   };
 
   if (!user) {
@@ -451,18 +466,41 @@ export function NostrProjectManagement() {
                   key={project.id}
                   className="flex items-start gap-4 p-4 rounded-lg border hover:bg-accent/50 transition-colors"
                 >
-                  <div className="grid grid-cols-3 gap-2 w-32">
-                    {project.images.slice(0, 3).map((img, i) => (
+                  {/* Thumbnail */}
+                  <div className="w-32 h-20 flex-shrink-0">
+                    {project.header_image ? (
                       <img
-                        key={i}
-                        src={img}
-                        alt=""
-                        className="w-full h-10 object-cover rounded"
+                        src={project.header_image}
+                        alt={project.title}
+                        className="w-full h-full object-cover rounded"
                       />
-                    ))}
+                    ) : project.images.length > 0 ? (
+                      <div className="grid grid-cols-3 gap-2 h-full">
+                        {project.images.slice(0, 3).map((img, i) => (
+                          <img
+                            key={i}
+                            src={img}
+                            alt=""
+                            className="w-full h-full object-cover rounded"
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-800 dark:to-pink-800 rounded flex items-center justify-center">
+                        <ImageIcon className="h-8 w-8 text-purple-300" />
+                      </div>
+                    )}
                   </div>
+                  
                   <div className="flex-1 space-y-1">
-                    <h3 className="font-semibold">{project.title}</h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold">{project.title}</h3>
+                      {project.coming_soon && (
+                        <Badge className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700 text-xs">
+                          Coming Soon
+                        </Badge>
+                      )}
+                    </div>
                     <p className="text-sm text-muted-foreground line-clamp-2">
                       {project.description}
                     </p>
