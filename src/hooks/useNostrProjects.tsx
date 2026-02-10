@@ -20,6 +20,8 @@ export function useNostrProjects() {
         { signal }
       );
 
+      console.log(`[useNostrProjects] Fetched ${events.length} events from relay`);
+
       const projects: NostrProjectData[] = events
         .map((event): NostrProjectData | null => {
           try {
@@ -33,7 +35,12 @@ export function useNostrProjects() {
             const featured = event.tags.find(t => t[0] === 'featured')?.[1] === 'true';
             const comingSoon = event.tags.find(t => t[0] === 'coming-soon')?.[1] === 'true';
             
-            if (!id || !title) return null;
+            console.log(`[useNostrProjects] Processing event: ${title}, status: ${status}, id: ${id}`);
+            
+            if (!id || !title) {
+              console.warn(`[useNostrProjects] Skipping event - missing id or title:`, { id, title });
+              return null;
+            }
 
             return {
               id,
@@ -50,12 +57,15 @@ export function useNostrProjects() {
               featured,
               coming_soon: comingSoon,
             };
-          } catch {
+          } catch (error) {
+            console.error(`[useNostrProjects] Error parsing event:`, error);
             return null;
           }
         })
         .filter((p): p is NostrProjectData => p !== null && p.status === 'active')
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+      console.log(`[useNostrProjects] Returning ${projects.length} active projects:`, projects.map(p => p.title));
 
       return projects;
     },

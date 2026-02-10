@@ -111,9 +111,28 @@ export function NostrProjectManagement() {
   const handleSubmit = () => {
     // For coming soon projects, images are optional. For active projects, require at least one image.
     const requiresImages = !comingSoon;
-    if (!user || !title.trim() || (requiresImages && images.length === 0) || !priceSats) return;
+    if (!user || !title.trim() || (requiresImages && images.length === 0) || !priceSats) {
+      console.warn('[NostrProjectManagement] Form validation failed:', {
+        user: !!user,
+        title: title.trim(),
+        images: images.length,
+        priceSats,
+        comingSoon,
+        requiresImages
+      });
+      return;
+    }
 
     const projectId = editingProject?.id || generateNostrProjectUUID();
+
+    console.log('[NostrProjectManagement] Creating Nostr project:', {
+      projectId,
+      title: title.trim(),
+      status,
+      comingSoon,
+      imagesCount: images.length,
+      hasHeaderImage: !!headerImage
+    });
 
     createEvent(
       {
