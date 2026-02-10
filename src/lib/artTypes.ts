@@ -38,6 +38,7 @@ export interface ArtworkData {
   
   // Gallery display
   featured?: boolean; // Shows in tile gallery
+  order?: number; // Display order in gallery
 }
 
 export interface ArtworkBid {

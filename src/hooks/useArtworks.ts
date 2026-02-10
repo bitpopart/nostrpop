@@ -32,6 +32,7 @@ export function useArtworks(filter: ArtworkFilter = 'all') {
             const titleTag = event.tags.find(([name]) => name === 'title')?.[1];
             const saleTags = event.tags.filter(([name]) => name === 'sale').map(([, value]) => value);
             const featured = event.tags.find(([name]) => name === 'featured')?.[1] === 'true';
+            const orderTag = event.tags.find(([name]) => name === 'order')?.[1];
 
             // Basic validation
             if (!dTag || !titleTag || !content.title || !content.images?.length) {
@@ -90,7 +91,8 @@ export function useArtworks(filter: ArtworkFilter = 'all') {
               tags: content.tags || [],
               edition: content.edition,
               certificate_url: content.certificate_url,
-              featured
+              featured,
+              order: orderTag ? parseInt(orderTag) : undefined
             } as ArtworkData;
           } catch (error) {
             console.warn('Failed to parse artwork event:', error);
@@ -99,8 +101,18 @@ export function useArtworks(filter: ArtworkFilter = 'all') {
         })
         .filter(Boolean) as ArtworkData[];
 
-      // Sort by creation date (newest first)
-      const sortedArtworks = artworks.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      // Sort by order field (if present), otherwise by creation date
+      const sortedArtworks = artworks.sort((a, b) => {
+        // If both have order, sort by order (lower numbers first)
+        if (a.order !== undefined && b.order !== undefined) {
+          return a.order - b.order;
+        }
+        // If only one has order, prioritize it
+        if (a.order !== undefined) return -1;
+        if (b.order !== undefined) return 1;
+        // Otherwise sort by creation date (newest first)
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
 
       // If no artworks found from Nostr events, return sample data for demonstration
       if (sortedArtworks.length === 0) {

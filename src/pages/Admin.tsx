@@ -21,6 +21,7 @@ import { SocialMediaManagement } from '@/components/social/SocialMediaManagement
 import { NewsletterManager } from '@/components/newsletter/NewsletterManager';
 import { AnalyticsSettings } from '@/components/analytics/AnalyticsSettings';
 import { SiteSettings } from '@/components/settings/SiteSettings';
+import { ArtworkOrderManager } from '@/components/art/ArtworkOrderManager';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import {
   Plus,
@@ -563,7 +564,7 @@ const Admin = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="art">
+          <TabsContent value="art" className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
@@ -575,25 +576,20 @@ const Admin = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="text-center py-12">
-                  <Palette className="h-16 w-16 mx-auto text-purple-300 mb-4" />
-                  <h3 className="text-xl font-semibold mb-2">Artwork Manager</h3>
-                  <p className="text-muted-foreground mb-6">
-                    Create, edit, and manage your artworks from the Art page
-                  </p>
-                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                    <Button onClick={() => navigate('/art')} size="lg">
-                      <Palette className="mr-2 h-5 w-5" />
-                      Go to Art Gallery
-                    </Button>
-                    <Button onClick={() => navigate('/art?action=create')} size="lg" variant="outline">
-                      <Plus className="mr-2 h-5 w-5" />
-                      Create New Artwork
-                    </Button>
-                  </div>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <Button onClick={() => navigate('/art')} size="lg">
+                    <Palette className="mr-2 h-5 w-5" />
+                    Go to Art Gallery
+                  </Button>
+                  <Button onClick={() => navigate('/art?action=create')} size="lg" variant="outline">
+                    <Plus className="mr-2 h-5 w-5" />
+                    Create New Artwork
+                  </Button>
                 </div>
               </CardContent>
             </Card>
+
+            <ArtworkOrderManager />
           </TabsContent>
 
         </Tabs>
