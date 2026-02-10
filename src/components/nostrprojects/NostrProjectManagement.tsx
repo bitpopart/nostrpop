@@ -109,10 +109,25 @@ export function NostrProjectManagement() {
   };
 
   const handleSubmit = () => {
+    console.log('[NostrProjectManagement] handleSubmit called!');
+    
     // For coming soon projects, images are optional. For active projects, require at least one image.
     const requiresImages = !comingSoon;
+    
+    console.log('[NostrProjectManagement] Validating form:', {
+      hasUser: !!user,
+      title: title.trim(),
+      titleValid: !!title.trim(),
+      imagesCount: images.length,
+      priceSats: priceSats,
+      priceValid: !!priceSats,
+      comingSoon,
+      requiresImages,
+      imagesValid: !requiresImages || images.length > 0
+    });
+    
     if (!user || !title.trim() || (requiresImages && images.length === 0) || !priceSats) {
-      console.warn('[NostrProjectManagement] Form validation failed:', {
+      console.error('[NostrProjectManagement] ❌ Form validation FAILED:', {
         user: !!user,
         title: title.trim(),
         images: images.length,
@@ -122,6 +137,8 @@ export function NostrProjectManagement() {
       });
       return;
     }
+    
+    console.log('[NostrProjectManagement] ✅ Form validation PASSED');
 
     const projectId = editingProject?.id || generateNostrProjectUUID();
 
