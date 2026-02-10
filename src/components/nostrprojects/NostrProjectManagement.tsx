@@ -172,14 +172,23 @@ export function NostrProjectManagement() {
         ],
       },
       {
-        onSuccess: () => {
+        onSuccess: async () => {
+          console.log('[NostrProjectManagement] ✅ Event published successfully!');
           toast.success(editingProject ? 'Nostr project updated!' : 'Nostr project created!');
-          queryClient.invalidateQueries({ queryKey: ['nostr-projects'] });
-          queryClient.invalidateQueries({ queryKey: ['featured-nostr-projects'] });
+          
+          // Wait a bit for relay to process the event
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          console.log('[NostrProjectManagement] Invalidating queries and refetching...');
+          await queryClient.invalidateQueries({ queryKey: ['nostr-projects'] });
+          await queryClient.invalidateQueries({ queryKey: ['featured-nostr-projects'] });
+          await queryClient.refetchQueries({ queryKey: ['nostr-projects'] });
+          
+          console.log('[NostrProjectManagement] Queries refetched, resetting form');
           resetForm();
         },
         onError: (error) => {
-          console.error('Failed to create Nostr project:', error);
+          console.error('[NostrProjectManagement] ❌ Failed to create Nostr project:', error);
           toast.error('Failed to save Nostr project. Please try again.');
         },
       }
