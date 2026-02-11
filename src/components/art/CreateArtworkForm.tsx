@@ -813,19 +813,19 @@ export function CreateArtworkForm({ onSuccess, onCancel }: CreateArtworkFormProp
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="featured"
-                onCheckedChange={(checked) => setValue('featured', !!checked)}
+                checked={watch('featured') ?? false}
+                onCheckedChange={(checked) => {
+                  setValue('featured', checked === true, { shouldValidate: true });
+                }}
               />
-              <input
-                type="hidden"
-                {...register('featured')}
-              />
-              <Label htmlFor="featured" className="text-base font-medium flex items-center gap-2">
+              <Label htmlFor="featured" className="text-base font-medium flex items-center gap-2 cursor-pointer">
                 <Eye className="h-4 w-4" />
                 Feature in Tile Gallery
               </Label>
             </div>
             <p className="text-sm text-muted-foreground">
               Display this artwork in the featured tile gallery at the top of the Art page for maximum visibility.
+              {watch('featured') ? ' (Will be featured)' : ' (Not featured)'}
             </p>
           </div>
 

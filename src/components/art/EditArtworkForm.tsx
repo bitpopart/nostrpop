@@ -144,7 +144,8 @@ export function EditArtworkForm({ artwork, onSuccess, onCancel }: EditArtworkFor
     setValue('localCountries', artwork.shipping?.local_countries || '');
     setValue('localShippingCost', artwork.shipping?.local_cost);
     setValue('internationalShippingCost', artwork.shipping?.international_cost);
-    setValue('featured', artwork.featured || false);
+    // Explicitly set featured state - false if not present
+    setValue('featured', artwork.featured === true);
   }, [artwork, setValue]);
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -736,20 +737,19 @@ export function EditArtworkForm({ artwork, onSuccess, onCancel }: EditArtworkFor
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="featured"
-                checked={watch('featured')}
-                onCheckedChange={(checked) => setValue('featured', !!checked)}
+                checked={watch('featured') ?? false}
+                onCheckedChange={(checked) => {
+                  setValue('featured', checked === true, { shouldValidate: true });
+                }}
               />
-              <input
-                type="hidden"
-                {...register('featured')}
-              />
-              <Label htmlFor="featured" className="text-base font-medium flex items-center gap-2">
+              <Label htmlFor="featured" className="text-base font-medium flex items-center gap-2 cursor-pointer">
                 <Eye className="h-4 w-4" />
                 Feature in Tile Gallery
               </Label>
             </div>
             <p className="text-sm text-muted-foreground">
               Display this artwork in the featured tile gallery at the top of the Art page for maximum visibility.
+              {watch('featured') ? ' (Currently featured)' : ' (Not featured)'}
             </p>
           </div>
 

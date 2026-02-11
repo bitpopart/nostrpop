@@ -172,6 +172,8 @@ export function useArtwork(artworkId: string, authorPubkey?: string) {
       const event = events[0];
       const content = JSON.parse(event.content);
       const saleTags = event.tags.filter(([name]) => name === 'sale').map(([, value]) => value);
+      const featured = event.tags.find(([name]) => name === 'featured')?.[1] === 'true';
+      const orderTag = event.tags.find(([name]) => name === 'order')?.[1];
 
       // Process sale type and pricing
       let saleType: ArtworkData['sale_type'] = 'not_for_sale';
@@ -224,7 +226,9 @@ export function useArtwork(artworkId: string, authorPubkey?: string) {
         year: content.year,
         tags: content.tags || [],
         edition: content.edition,
-        certificate_url: content.certificate_url
+        certificate_url: content.certificate_url,
+        featured,
+        order: orderTag ? parseInt(orderTag) : undefined
       } as ArtworkData;
     },
     enabled: !!artworkId,
