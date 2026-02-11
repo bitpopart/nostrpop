@@ -69,10 +69,19 @@ export default function Projects() {
     queryFn: async (c) => {
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(3000)]);
       
+      console.log('[Projects] Fetching built-in project customizations...');
+      
       const events = await nostr.query(
         [{ kinds: [36171], authors: [ADMIN_PUBKEY], '#t': ['builtin-project'], limit: 10 }],
         { signal }
       );
+
+      console.log('[Projects] Found built-in customizations:', events.length);
+      events.forEach(e => {
+        const id = e.tags.find(t => t[0] === 'd')?.[1];
+        const image = e.tags.find(t => t[0] === 'image')?.[1];
+        console.log(`  - ${id}: ${image ? 'has thumbnail' : 'no thumbnail'}`);
+      });
 
       return events;
     },
@@ -131,6 +140,8 @@ export default function Projects() {
   const builtInProjectsWithThumbnails = BUILTIN_PROJECTS.map(project => {
     const customization = builtInCustomizations.find(e => e.tags.find(t => t[0] === 'd')?.[1] === project.id);
     const customThumbnail = customization?.tags.find(t => t[0] === 'image')?.[1];
+    
+    console.log(`[Projects] Built-in project ${project.id}: ${customThumbnail ? 'custom thumbnail' : 'default gradient'}`);
     
     return {
       ...project,
