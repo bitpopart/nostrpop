@@ -11,18 +11,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { User, Save, Eye, Upload, X, Image as ImageIcon, Loader2, Share2 } from 'lucide-react';
+import { User, Save, Eye, Upload, X, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import ReactMarkdown from 'react-markdown';
 
 const DEFAULT_CONTENT = `# My Story
@@ -68,7 +58,6 @@ export function ArtistContentManagement() {
   const [activeTab, setActiveTab] = useState<'edit' | 'preview'>('edit');
   const [isUploading, setIsUploading] = useState(false);
   const [shareToNostr, setShareToNostr] = useState(false);
-  const [showShareDialog, setShowShareDialog] = useState(false);
   const [hasLocalChanges, setHasLocalChanges] = useState(false);
 
   // Fetch artist page content
@@ -194,7 +183,7 @@ export function ArtistContentManagement() {
       return;
     }
 
-    // Save to local storage
+    // Always save to local storage first
     const draftData = {
       title,
       content,
@@ -204,65 +193,64 @@ export function ArtistContentManagement() {
     };
     localStorage.setItem('artist-page-draft', JSON.stringify(draftData));
     setHasLocalChanges(true);
-    toast.success('Artist page saved locally!');
 
-    // If share to Nostr is checked, show confirmation dialog
+    // If share to Nostr is checked, publish to Nostr
     if (shareToNostr) {
-      setShowShareDialog(true);
-    }
-  };
+      // Publish directly to Nostr
+      const tags: string[][] = [
+        ['d', 'artist-page'],
+        ['title', title],
+        ['t', 'artist'],
+        ['published_at', Math.floor(Date.now() / 1000).toString()],
+      ];
 
-  const handleShareToNostr = () => {
-    const tags: string[][] = [
-      ['d', 'artist-page'],
-      ['title', title],
-      ['t', 'artist'],
-      ['published_at', Math.floor(Date.now() / 1000).toString()],
-    ];
-
-    if (headerImage) {
-      tags.push(['image', headerImage]);
-    }
-
-    // Add gallery images
-    galleryImages.forEach(imgUrl => {
-      tags.push(['gallery', imgUrl]);
-    });
-
-    console.log('[ArtistContentManagement] Publishing artist page update...', {
-      title,
-      contentLength: content.length,
-      headerImage: !!headerImage,
-      galleryImages: galleryImages.length,
-      tags: tags.slice(0, 5)
-    });
-
-    createEvent(
-      {
-        kind: 30024,
-        content: content,
-        tags,
-      },
-      {
-        onSuccess: () => {
-          console.log('[ArtistContentManagement] ✅ Artist page published successfully!');
-          toast.success('Artist page shared to Nostr!');
-          // Clear local draft after successful publish
-          localStorage.removeItem('artist-page-draft');
-          setHasLocalChanges(false);
-          setShareToNostr(false);
-          queryClient.invalidateQueries({ queryKey: ['artist-page'] });
-          queryClient.invalidateQueries({ queryKey: ['artist-page-admin'] });
-          setShowShareDialog(false);
-        },
-        onError: (error) => {
-          console.error('[ArtistContentManagement] ❌ Publish error:', error);
-          toast.error('Failed to share artist page to Nostr');
-          setShowShareDialog(false);
-        },
+      if (headerImage) {
+        tags.push(['image', headerImage]);
       }
-    );
+
+      // Add gallery images
+      galleryImages.forEach(imgUrl => {
+        tags.push(['gallery', imgUrl]);
+      });
+
+      console.log('[ArtistContentManagement] Publishing artist page update...', {
+        title,
+        contentLength: content.length,
+        headerImage: !!headerImage,
+        galleryImages: galleryImages.length,
+        tags: tags.slice(0, 5)
+      });
+
+      createEvent(
+        {
+          kind: 30024,
+          content: content,
+          tags,
+        },
+        {
+          onSuccess: () => {
+            console.log('[ArtistContentManagement] ✅ Artist page published successfully!');
+            toast.success('Artist page saved and shared to Nostr!');
+            // Clear local draft after successful publish
+            localStorage.removeItem('artist-page-draft');
+            setHasLocalChanges(false);
+            setShareToNostr(false);
+            queryClient.invalidateQueries({ queryKey: ['artist-page'] });
+            queryClient.invalidateQueries({ queryKey: ['artist-page-admin'] });
+          },
+          onError: (error) => {
+            console.error('[ArtistContentManagement] ❌ Publish error:', error);
+            toast.error('Saved locally but failed to share to Nostr');
+          },
+        }
+      );
+    } else {
+      // Just saved locally
+      toast.success('Artist page saved locally!');
+    }
   };
+
+
 
   return (
     <Card>
@@ -462,10 +450,10 @@ export function ArtistContentManagement() {
                 htmlFor="share-nostr"
                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
               >
-                Share to Nostr
+                Share to Nostr Community
               </Label>
               <p className="text-xs text-muted-foreground mt-1">
-                Publish your artist page update to the Nostr network
+                Automatically publish your artist page to the Nostr network when saving
               </p>
             </div>
           </div>
@@ -491,30 +479,6 @@ export function ArtistContentManagement() {
             </p>
           )}
         </form>
-
-        {/* Share Confirmation Dialog */}
-        <AlertDialog open={showShareDialog} onOpenChange={setShowShareDialog}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Share to Nostr?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This will publish your artist page to the Nostr network. Your followers will be able to see it.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => {
-                setShowShareDialog(false);
-                setShareToNostr(false);
-              }}>
-                Cancel
-              </AlertDialogCancel>
-              <AlertDialogAction onClick={handleShareToNostr}>
-                <Share2 className="h-4 w-4 mr-2" />
-                Share to Nostr
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
       </CardContent>
     </Card>
   );
