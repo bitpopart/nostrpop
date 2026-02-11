@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency } from '@/hooks/usePayment';
 import { useLivePrice } from '@/hooks/useLivePrice';
+import { useFiatToSats } from '@/hooks/useFiatToSats';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { ShareToNostrButton } from '@/components/ShareToNostrButton';
 import { ClawstrShare } from '@/components/ClawstrShare';
@@ -63,7 +64,10 @@ export function ProductCard({ product, onViewDetails }: ProductCardProps) {
 
   const displayPrice = livePrice?.price ?? product.price;
   const displayCurrency = livePrice?.currency ?? product.currency;
-  const displayPriceInSats = livePrice?.priceInSats;
+  
+  // Always try to get sats conversion for fiat prices
+  const { data: satsConversion } = useFiatToSats(displayPrice, displayCurrency);
+  const displayPriceInSats = livePrice?.priceInSats ?? satsConversion;
 
   const isOutOfStock = product.quantity !== undefined && product.quantity <= 0;
   const hasShipping = product.shipping && product.shipping.length > 0;
