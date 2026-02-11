@@ -7,10 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ShareToNostrButton } from '@/components/ShareToNostrButton';
-import { ClawstrShare } from '@/components/ClawstrShare';
+import { SocialShareButtons } from '@/components/SocialShareButtons';
 import { ZapButton } from '@/components/ZapButton';
-import { MapPin, Calendar, ExternalLink, Globe, Share2 } from 'lucide-react';
+import { MapPin, Calendar, ExternalLink, Globe } from 'lucide-react';
 import { format } from 'date-fns';
 import { POPUP_TYPE_CONFIG, POPUP_STATUS_CONFIG, type PopUpType, type PopUpStatus, type PopUpEventData } from '@/lib/popupTypes';
 import { WorldMap } from '@/components/popup/WorldMap';
@@ -217,32 +216,9 @@ export default function PopUp() {
                       </div>
                     )}
                     <CardHeader className="space-y-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <h3 className="text-2xl font-bold group-hover:text-purple-600 transition-colors line-clamp-2 flex-1">
-                          {event.title}
-                        </h3>
-                        {isAdmin && event.event && (
-                          <div className="flex gap-1">
-                            <ShareToNostrButton
-                              url={`/popup#${event.id}`}
-                              title={event.title}
-                              description={event.description}
-                              image={event.image}
-                              variant="ghost"
-                              size="icon"
-                            />
-                            <ClawstrShare
-                              event={event.event}
-                              contentType="popup"
-                              trigger={
-                                <Button variant="ghost" size="icon">
-                                  <Share2 className="h-4 w-4" />
-                                </Button>
-                              }
-                            />
-                          </div>
-                        )}
-                      </div>
+                      <h3 className="text-2xl font-bold group-hover:text-purple-600 transition-colors line-clamp-2">
+                        {event.title}
+                      </h3>
                       {event.description && (
                         <p className="text-muted-foreground line-clamp-3 text-sm">
                           {event.description}
@@ -271,6 +247,19 @@ export default function PopUp() {
                           <span className="text-sm">Learn more</span>
                           <ExternalLink className="h-4 w-4 ml-2" />
                         </a>
+                      )}
+
+                      {/* Share Buttons - Admin Only */}
+                      {isAdmin && event.event && (
+                        <SocialShareButtons
+                          event={event.event}
+                          url={`/popup#${event.id}`}
+                          title={event.title}
+                          description={event.description}
+                          image={event.image}
+                          contentType="popup"
+                          className="pt-2"
+                        />
                       )}
                     </CardHeader>
                   </Card>

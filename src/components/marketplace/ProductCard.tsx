@@ -8,8 +8,7 @@ import { formatCurrency } from '@/hooks/usePayment';
 import { useLivePrice } from '@/hooks/useLivePrice';
 import { useFiatToSats } from '@/hooks/useFiatToSats';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
-import { ShareToNostrButton } from '@/components/ShareToNostrButton';
-import { ClawstrShare } from '@/components/ClawstrShare';
+import { SocialShareButtons } from '@/components/SocialShareButtons';
 import { PaymentDialog } from './PaymentDialog';
 import { ProductDetailsDialog } from './ProductDetailsDialog';
 import { ImageGallery } from './ImageGallery';
@@ -19,8 +18,7 @@ import {
   Download,
   Eye,
   Truck,
-  Zap,
-  Share2
+  Zap
 } from 'lucide-react';
 import type { NostrEvent } from '@nostrify/nostrify';
 
@@ -192,27 +190,15 @@ export function ProductCard({ product, onViewDetails }: ProductCardProps) {
 
           {/* Share Buttons - Admin Only */}
           {isAdmin && product.event && (
-            <div className="flex items-center gap-2 mb-3">
-              <ShareToNostrButton
-                url={`/shop/${product.id}`}
-                title={product.name}
-                description={product.description}
-                image={product.images[0]}
-                variant="outline"
-                size="sm"
-                className="flex-1"
-              />
-              <ClawstrShare
-                event={product.event}
-                contentType="product"
-                trigger={
-                  <Button variant="outline" size="sm" className="flex-1">
-                    <Share2 className="h-4 w-4 mr-2" />
-                    Share
-                  </Button>
-                }
-              />
-            </div>
+            <SocialShareButtons
+              event={product.event}
+              url={`/shop/${product.id}`}
+              title={product.name}
+              description={product.description}
+              image={product.images[0]}
+              contentType="product"
+              className="mb-3"
+            />
           )}
 
           {/* Actions */}
