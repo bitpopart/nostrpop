@@ -23,17 +23,12 @@ export function ArtworkOrderManager() {
 
   // Initialize ordered artworks when data loads
   useEffect(() => {
-    if (artworks.length > 0 && orderedArtworks.length === 0) {
+    console.log('[ArtworkOrderManager] Artworks loaded:', artworks.length);
+    if (artworks.length > 0) {
       setOrderedArtworks(artworks);
+      console.log('[ArtworkOrderManager] Ordered artworks set:', artworks.map(a => ({ title: a.title, order: a.order })));
     }
   }, [artworks]);
-
-  // Update when artworks change (but not if user has made changes)
-  useEffect(() => {
-    if (artworks.length > 0 && !hasChanges && orderedArtworks.length === 0) {
-      setOrderedArtworks(artworks);
-    }
-  }, [artworks, hasChanges, orderedArtworks.length]);
 
   const handleDragStart = (index: number) => {
     setDraggedIndex(index);
