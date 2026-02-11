@@ -329,7 +329,7 @@ const Index = () => {
   const featuredNostrProjectsList = featuredNostrProjects?.slice(0, 3) || [];
 
   useSeoMeta({
-    title: 'BitPopArt - Good Vibes Digital Cards',
+    title: 'BitPopArt - Love, Freedom & Joy Pop Art',
     description: 'Create and share beautiful digital cards for any occasion. Discover the latest updates and featured cards from BitPopArt.',
   });
 
