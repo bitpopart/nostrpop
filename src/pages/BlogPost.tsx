@@ -1,14 +1,16 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSeoMeta } from '@unhead/react';
 import { useNostr } from '@nostrify/react';
 import { useQuery } from '@tanstack/react-query';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
-import { Calendar, Tag, ArrowLeft, ExternalLink } from 'lucide-react';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Calendar, Tag, ArrowLeft, ExternalLink, Image as ImageIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import type { NostrEvent } from '@nostrify/nostrify';
 import ReactMarkdown from 'react-markdown';
@@ -18,6 +20,7 @@ export default function BlogPost() {
   const navigate = useNavigate();
   const { nostr } = useNostr();
   const { user } = useCurrentUser();
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   // Fetch the specific blog post
   const { data: post, isLoading } = useQuery({
@@ -61,6 +64,10 @@ export default function BlogPost() {
 
   const getSourceUrl = (event: NostrEvent): string | undefined => {
     return event.tags.find(t => t[0] === 'r')?.[1];
+  };
+
+  const getGalleryImages = (event: NostrEvent): string[] => {
+    return event.tags.filter(t => t[0] === 'gallery').map(t => t[1]);
   };
 
   // Set SEO metadata
@@ -125,6 +132,7 @@ export default function BlogPost() {
   const tags = getArticleTags(post);
   const publishedDate = getPublishedDate(post);
   const sourceUrl = getSourceUrl(post);
+  const galleryImages = getGalleryImages(post);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20">
@@ -204,6 +212,38 @@ export default function BlogPost() {
                 <ReactMarkdown>{post.content}</ReactMarkdown>
               </div>
 
+              {/* Gallery */}
+              {galleryImages.length > 0 && (
+                <>
+                  <Separator className="my-12" />
+                  
+                  <div className="mb-8">
+                    <h2 className="text-2xl font-bold mb-6 flex items-center">
+                      <ImageIcon className="h-6 w-6 mr-2" />
+                      Gallery
+                    </h2>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {galleryImages.map((imgUrl, index) => (
+                        <div
+                          key={index}
+                          className="relative aspect-square overflow-hidden rounded-lg cursor-pointer group"
+                          onClick={() => setSelectedImage(imgUrl)}
+                        >
+                          <img
+                            src={imgUrl}
+                            alt={`Gallery ${index + 1}`}
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                          />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                            <ImageIcon className="h-8 w-8 text-white" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+
               <Separator className="mt-12 mb-8" />
 
               {/* Footer */}
@@ -216,6 +256,19 @@ export default function BlogPost() {
             </CardContent>
           </Card>
         </article>
+
+        {/* Image Lightbox */}
+        <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
+          <DialogContent className="max-w-4xl p-0">
+            {selectedImage && (
+              <img
+                src={selectedImage}
+                alt="Gallery"
+                className="w-full h-auto"
+              />
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

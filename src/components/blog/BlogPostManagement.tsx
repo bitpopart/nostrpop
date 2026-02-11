@@ -3,6 +3,7 @@ import { useNostr } from '@nostrify/react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
+import { useUploadFile } from '@/hooks/useUploadFile';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,7 +36,9 @@ import {
   Eye,
   Edit,
   Share2,
-  X
+  X,
+  Upload,
+  Image as ImageIcon
 } from 'lucide-react';
 import { format } from 'date-fns';
 import type { NostrEvent } from '@nostrify/nostrify';
@@ -44,6 +47,7 @@ export function BlogPostManagement() {
   const { nostr } = useNostr();
   const { user } = useCurrentUser();
   const { mutate: createEvent } = useNostrPublish();
+  const { mutateAsync: uploadFile, isPending: isUploading } = useUploadFile();
   const queryClient = useQueryClient();
 
   const [importUrl, setImportUrl] = useState('');
@@ -56,6 +60,7 @@ export function BlogPostManagement() {
   const [editSummary, setEditSummary] = useState('');
   const [editContent, setEditContent] = useState('');
   const [editImage, setEditImage] = useState('');
+  const [editGalleryImages, setEditGalleryImages] = useState<string[]>([]);
   const [editTags, setEditTags] = useState('');
   
   // Confirmation dialogs
@@ -160,6 +165,11 @@ export function BlogPostManagement() {
     );
   };
 
+  // Get gallery images from event
+  const getGalleryImages = (event: NostrEvent): string[] => {
+    return event.tags.filter(t => t[0] === 'gallery').map(t => t[1]);
+  };
+
   // Start editing a post
   const handleEdit = (post: NostrEvent) => {
     setEditingPost(post);
@@ -167,6 +177,7 @@ export function BlogPostManagement() {
     setEditSummary(getArticleSummary(post));
     setEditContent(post.content);
     setEditImage(getArticleImage(post) || '');
+    setEditGalleryImages(getGalleryImages(post));
     setEditTags(getArticleTags(post).join(', '));
   };
 
@@ -177,7 +188,64 @@ export function BlogPostManagement() {
     setEditSummary('');
     setEditContent('');
     setEditImage('');
+    setEditGalleryImages([]);
     setEditTags('');
+  };
+
+  // Upload header image
+  const handleHeaderImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error('File is larger than 10MB. Please choose a smaller file.');
+      return;
+    }
+
+    try {
+      const tags = await uploadFile(file);
+      const imageUrl = tags[0][1];
+      setEditImage(imageUrl);
+      toast.success('Header image uploaded!');
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error('Failed to upload header image');
+    }
+  };
+
+  // Upload gallery images
+  const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const uploadedUrls: string[] = [];
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const maxSize = 10 * 1024 * 1024;
+      if (file.size > maxSize) {
+        toast.error(`${file.name} is larger than 10MB. Skipped.`);
+        continue;
+      }
+
+      try {
+        const tags = await uploadFile(file);
+        const imageUrl = tags[0][1];
+        uploadedUrls.push(imageUrl);
+      } catch (error) {
+        console.error('Upload error:', error);
+        toast.error(`Failed to upload ${file.name}`);
+      }
+    }
+
+    setEditGalleryImages(prev => [...prev, ...uploadedUrls]);
+    toast.success(`${uploadedUrls.length} image(s) uploaded!`);
+  };
+
+  // Remove gallery image
+  const removeGalleryImage = (index: number) => {
+    setEditGalleryImages(prev => prev.filter((_, i) => i !== index));
   };
 
   // Save edited post
@@ -201,6 +269,11 @@ export function BlogPostManagement() {
     if (editImage.trim()) {
       tags.push(['image', editImage.trim()]);
     }
+
+    // Add gallery images
+    editGalleryImages.forEach(imgUrl => {
+      tags.push(['gallery', imgUrl]);
+    });
 
     // Add tags
     const tagArray = editTags.split(',').map(t => t.trim()).filter(t => t);
@@ -416,14 +489,117 @@ export function BlogPostManagement() {
               />
             </div>
 
+            {/* Header Image */}
             <div className="space-y-2">
-              <Label htmlFor="edit-image">Header Image URL</Label>
-              <Input
-                id="edit-image"
-                value={editImage}
-                onChange={(e) => setEditImage(e.target.value)}
-                placeholder="https://example.com/image.jpg"
-              />
+              <Label>Main Header Photo</Label>
+              {editImage ? (
+                <div className="space-y-2">
+                  <div className="relative rounded-lg overflow-hidden border-2 border-gray-200 dark:border-gray-700">
+                    <img
+                      src={editImage}
+                      alt="Header"
+                      className="w-full h-48 object-cover"
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      className="absolute top-2 right-2"
+                      onClick={() => setEditImage('')}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <Input
+                    type="url"
+                    placeholder="Or paste image URL"
+                    value={editImage}
+                    onChange={(e) => setEditImage(e.target.value)}
+                  />
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <label className="w-full h-48 border-2 border-dashed rounded-lg flex items-center justify-center cursor-pointer hover:border-purple-500 transition-colors">
+                    <div className="text-center">
+                      {isUploading ? (
+                        <div className="animate-spin text-2xl">⏳</div>
+                      ) : (
+                        <>
+                          <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                          <span className="text-sm text-gray-500">Upload Header Photo</span>
+                        </>
+                      )}
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleHeaderImageUpload}
+                      disabled={isUploading}
+                    />
+                  </label>
+                  <Input
+                    type="url"
+                    placeholder="Or paste image URL"
+                    value={editImage}
+                    onChange={(e) => setEditImage(e.target.value)}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Gallery Images */}
+            <div className="space-y-2">
+              <Label>Gallery Photos</Label>
+              
+              {editGalleryImages.length > 0 && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                  {editGalleryImages.map((imgUrl, index) => (
+                    <div key={index} className="relative group rounded-lg overflow-hidden border-2 border-gray-200 dark:border-gray-700">
+                      <img
+                        src={imgUrl}
+                        alt={`Gallery ${index + 1}`}
+                        className="w-full h-32 object-cover"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => removeGalleryImage(index)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <label className="w-full h-32 border-2 border-dashed rounded-lg flex items-center justify-center cursor-pointer hover:border-purple-500 transition-colors">
+                <div className="text-center">
+                  {isUploading ? (
+                    <div className="animate-spin">⏳</div>
+                  ) : (
+                    <>
+                      <ImageIcon className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                      <span className="text-sm text-gray-500">Add Gallery Photos</span>
+                    </>
+                  )}
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={handleGalleryUpload}
+                  disabled={isUploading}
+                />
+              </label>
+              <p className="text-xs text-muted-foreground">
+                {editGalleryImages.length > 0 
+                  ? `${editGalleryImages.length} image(s) in gallery`
+                  : 'Upload multiple images to create a photo gallery'}
+              </p>
             </div>
 
             <div className="space-y-2">
