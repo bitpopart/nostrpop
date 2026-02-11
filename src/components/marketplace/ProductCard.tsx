@@ -139,42 +139,17 @@ export function ProductCard({ product, onViewDetails }: ProductCardProps) {
         </div>
 
         <CardHeader className="pb-2">
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex-1 min-w-0">
-              <CardTitle className="text-lg font-semibold truncate group-hover:text-purple-600 transition-colors">
-                {product.name}
-              </CardTitle>
-              <div className="flex items-center space-x-2 mt-1">
-                <Badge variant="outline" className="text-xs">
-                  {product.category}
-                </Badge>
-                {product.quantity !== undefined && (
-                  <span className="text-xs text-muted-foreground">
-                    {product.quantity} available
-                  </span>
-                )}
-              </div>
-            </div>
-            {isAdmin && product.event && (
-              <div className="flex gap-1">
-                <ShareToNostrButton
-                  url={`/shop/${product.id}`}
-                  title={product.name}
-                  description={product.description}
-                  image={product.images[0]}
-                  variant="ghost"
-                  size="icon"
-                />
-                <ClawstrShare
-                  event={product.event}
-                  contentType="product"
-                  trigger={
-                    <Button variant="ghost" size="icon">
-                      <Share2 className="h-4 w-4" />
-                    </Button>
-                  }
-                />
-              </div>
+          <CardTitle className="text-lg font-semibold truncate group-hover:text-purple-600 transition-colors">
+            {product.name}
+          </CardTitle>
+          <div className="flex items-center space-x-2 mt-1">
+            <Badge variant="outline" className="text-xs">
+              {product.category}
+            </Badge>
+            {product.quantity !== undefined && (
+              <span className="text-xs text-muted-foreground">
+                {product.quantity} available
+              </span>
             )}
           </div>
         </CardHeader>
@@ -192,49 +167,73 @@ export function ProductCard({ product, onViewDetails }: ProductCardProps) {
             </div>
           )}
 
-          {/* Price and actions */}
-          <div className="flex items-center justify-between">
-            <div>
-              {priceLoading ? (
-                <Skeleton className="h-6 w-20" />
-              ) : (
-                <>
-                  <div className="text-xl font-bold text-green-600 dark:text-green-400">
-                    {formatCurrency(displayPrice, displayCurrency)}
+          {/* Price */}
+          <div className="mb-3">
+            {priceLoading ? (
+              <Skeleton className="h-6 w-20" />
+            ) : (
+              <>
+                <div className="text-xl font-bold text-green-600 dark:text-green-400">
+                  {formatCurrency(displayPrice, displayCurrency)}
+                </div>
+                {displayPriceInSats && (
+                  <div className="flex items-center text-xs text-orange-600 dark:text-orange-400 mt-1">
+                    <Zap className="w-3 h-3 mr-1" />
+                    <span>{displayPriceInSats.toLocaleString()} sats</span>
                   </div>
-                  {displayPriceInSats && (
-                    <div className="flex items-center text-xs text-orange-600 dark:text-orange-400 mt-1">
-                      <Zap className="w-3 h-3 mr-1" />
-                      <span>{displayPriceInSats.toLocaleString()} sats</span>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
+                )}
+              </>
+            )}
+          </div>
 
-            <div className="flex space-x-2">
-              {product.type === 'digital' && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleViewDetails}
-                  className="flex items-center space-x-1"
-                >
-                  <Eye className="w-4 h-4" />
-                  <span>View</span>
-                </Button>
-              )}
-
-              <Button
+          {/* Share Buttons - Admin Only */}
+          {isAdmin && product.event && (
+            <div className="flex items-center gap-2 mb-3">
+              <ShareToNostrButton
+                url={`/shop/${product.id}`}
+                title={product.name}
+                description={product.description}
+                image={product.images[0]}
+                variant="outline"
                 size="sm"
-                onClick={handleBuyNow}
-                disabled={isOutOfStock}
-                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0"
-              >
-                <ShoppingCart className="w-4 h-4 mr-1" />
-                {isOutOfStock ? 'Sold Out' : (product.type === 'physical' ? 'View Product' : 'Buy Now')}
-              </Button>
+                className="flex-1"
+              />
+              <ClawstrShare
+                event={product.event}
+                contentType="product"
+                trigger={
+                  <Button variant="outline" size="sm" className="flex-1">
+                    <Share2 className="h-4 w-4 mr-2" />
+                    Share
+                  </Button>
+                }
+              />
             </div>
+          )}
+
+          {/* Actions */}
+          <div className="flex space-x-2">
+            {product.type === 'digital' && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleViewDetails}
+                className="flex items-center space-x-1 flex-1"
+              >
+                <Eye className="w-4 h-4" />
+                <span>View</span>
+              </Button>
+            )}
+
+            <Button
+              size="sm"
+              onClick={handleBuyNow}
+              disabled={isOutOfStock}
+              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 flex-1"
+            >
+              <ShoppingCart className="w-4 h-4 mr-1" />
+              {isOutOfStock ? 'Sold Out' : (product.type === 'physical' ? 'View Product' : 'Buy Now')}
+            </Button>
           </div>
         </CardContent>
       </Card>
