@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { User, Save, Eye, Upload, X, Image as ImageIcon, Loader2, Share2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -66,7 +67,9 @@ export function ArtistContentManagement() {
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<'edit' | 'preview'>('edit');
   const [isUploading, setIsUploading] = useState(false);
+  const [shareToNostr, setShareToNostr] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
+  const [hasLocalChanges, setHasLocalChanges] = useState(false);
 
   // Fetch artist page content
   const { data: artistEvent } = useQuery({
@@ -85,8 +88,25 @@ export function ArtistContentManagement() {
     enabled: !!user?.pubkey,
   });
 
-  // Load existing content into form
+  // Load existing content from Nostr or local storage
   useEffect(() => {
+    // Try to load from local storage first
+    const savedData = localStorage.getItem('artist-page-draft');
+    if (savedData) {
+      try {
+        const parsed = JSON.parse(savedData);
+        setTitle(parsed.title || 'My Story');
+        setContent(parsed.content || DEFAULT_CONTENT);
+        setHeaderImage(parsed.headerImage || '');
+        setGalleryImages(parsed.galleryImages || []);
+        setHasLocalChanges(true);
+        return;
+      } catch (error) {
+        console.error('Failed to parse saved draft:', error);
+      }
+    }
+
+    // If no local storage, load from Nostr event
     if (artistEvent) {
       const eventTitle = artistEvent.tags.find(t => t[0] === 'title')?.[1] || 'My Story';
       const eventHeaderImage = artistEvent.tags.find(t => t[0] === 'image')?.[1] || '';
@@ -96,8 +116,17 @@ export function ArtistContentManagement() {
       setContent(artistEvent.content);
       setHeaderImage(eventHeaderImage);
       setGalleryImages(eventGalleryImages);
+      setHasLocalChanges(false);
     }
   }, [artistEvent]);
+
+  // Track changes
+  useEffect(() => {
+    const savedData = localStorage.getItem('artist-page-draft');
+    if (savedData) {
+      setHasLocalChanges(true);
+    }
+  }, [title, content, headerImage, galleryImages]);
 
   const handleHeaderImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -157,7 +186,7 @@ export function ArtistContentManagement() {
     setGalleryImages(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!content.trim()) {
@@ -165,8 +194,22 @@ export function ArtistContentManagement() {
       return;
     }
 
-    // Show confirmation dialog to share to Nostr
-    setShowShareDialog(true);
+    // Save to local storage
+    const draftData = {
+      title,
+      content,
+      headerImage,
+      galleryImages,
+      savedAt: new Date().toISOString(),
+    };
+    localStorage.setItem('artist-page-draft', JSON.stringify(draftData));
+    setHasLocalChanges(true);
+    toast.success('Artist page saved locally!');
+
+    // If share to Nostr is checked, show confirmation dialog
+    if (shareToNostr) {
+      setShowShareDialog(true);
+    }
   };
 
   const handleShareToNostr = () => {
@@ -204,6 +247,10 @@ export function ArtistContentManagement() {
         onSuccess: () => {
           console.log('[ArtistContentManagement] ✅ Artist page published successfully!');
           toast.success('Artist page shared to Nostr!');
+          // Clear local draft after successful publish
+          localStorage.removeItem('artist-page-draft');
+          setHasLocalChanges(false);
+          setShareToNostr(false);
           queryClient.invalidateQueries({ queryKey: ['artist-page'] });
           queryClient.invalidateQueries({ queryKey: ['artist-page-admin'] });
           setShowShareDialog(false);
@@ -229,7 +276,7 @@ export function ArtistContentManagement() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSave} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="title">Page Title</Label>
             <Input
@@ -403,10 +450,30 @@ export function ArtistContentManagement() {
             </TabsContent>
           </Tabs>
 
-          <div className="flex gap-2 pt-4">
+          {/* Share to Nostr Checkbox */}
+          <div className="flex items-center space-x-2 pt-4 border-t">
+            <Checkbox
+              id="share-nostr"
+              checked={shareToNostr}
+              onCheckedChange={(checked) => setShareToNostr(checked as boolean)}
+            />
+            <div className="flex-1">
+              <Label
+                htmlFor="share-nostr"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+              >
+                Share to Nostr
+              </Label>
+              <p className="text-xs text-muted-foreground mt-1">
+                Publish your artist page update to the Nostr network
+              </p>
+            </div>
+          </div>
+
+          <div className="flex gap-2 pt-2">
             <Button type="submit" className="flex-1">
-              <Share2 className="h-4 w-4 mr-2" />
-              Share to Nostr
+              <Save className="h-4 w-4 mr-2" />
+              Save{shareToNostr ? ' & Share' : ''}
             </Button>
             <Button
               type="button"
@@ -414,23 +481,35 @@ export function ArtistContentManagement() {
               onClick={() => window.open('/artist', '_blank')}
             >
               <Eye className="h-4 w-4 mr-2" />
-              Preview Live
+              Preview
             </Button>
           </div>
+          
+          {hasLocalChanges && (
+            <p className="text-xs text-orange-600 dark:text-orange-400 text-center">
+              You have unsaved changes that are only stored locally
+            </p>
+          )}
         </form>
 
         {/* Share Confirmation Dialog */}
         <AlertDialog open={showShareDialog} onOpenChange={setShowShareDialog}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Share Artist Page to Nostr?</AlertDialogTitle>
+              <AlertDialogTitle>Share to Nostr?</AlertDialogTitle>
               <AlertDialogDescription>
-                This will publish your artist page update to the Nostr network. Your followers will be able to see the changes.
+                This will publish your artist page to the Nostr network. Your followers will be able to see it.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogCancel onClick={() => {
+                setShowShareDialog(false);
+                setShareToNostr(false);
+              }}>
+                Cancel
+              </AlertDialogCancel>
               <AlertDialogAction onClick={handleShareToNostr}>
+                <Share2 className="h-4 w-4 mr-2" />
                 Share to Nostr
               </AlertDialogAction>
             </AlertDialogFooter>
