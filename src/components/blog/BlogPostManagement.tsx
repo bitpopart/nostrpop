@@ -9,6 +9,18 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { importWordPressArticle, generateArticleId, type WordPressArticle } from '@/lib/wordpressImport';
 import {
@@ -19,8 +31,11 @@ import {
   Calendar,
   Tag,
   Loader2,
-    Trash2,
-    Eye
+  Trash2,
+  Eye,
+  Edit,
+  Share2,
+  X
 } from 'lucide-react';
 import { format } from 'date-fns';
 import type { NostrEvent } from '@nostrify/nostrify';
@@ -34,6 +49,24 @@ export function BlogPostManagement() {
   const [importUrl, setImportUrl] = useState('');
   const [isImporting, setIsImporting] = useState(false);
   const [importedArticle, setImportedArticle] = useState<WordPressArticle | null>(null);
+  
+  // Edit state
+  const [editingPost, setEditingPost] = useState<NostrEvent | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editSummary, setEditSummary] = useState('');
+  const [editContent, setEditContent] = useState('');
+  const [editImage, setEditImage] = useState('');
+  const [editTags, setEditTags] = useState('');
+  
+  // Confirmation dialogs
+  const [showShareDialog, setShowShareDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [postToDelete, setPostToDelete] = useState<NostrEvent | null>(null);
+  const [pendingPublishData, setPendingPublishData] = useState<{
+    kind: number;
+    content: string;
+    tags: string[][];
+  } | null>(null);
 
   // Fetch user's blog posts (kind 30023)
   const { data: blogPosts = [], isLoading } = useQuery({
@@ -75,7 +108,7 @@ export function BlogPostManagement() {
     }
   };
 
-  // Publish imported article to Nostr
+  // Prepare to publish imported article
   const handlePublish = () => {
     if (!importedArticle) return;
 
@@ -95,42 +128,148 @@ export function BlogPostManagement() {
     // Add source URL as reference
     tags.push(['r', importedArticle.sourceUrl]);
 
+    setPendingPublishData({
+      kind: 30023,
+      content: importedArticle.content,
+      tags,
+    });
+    setShowShareDialog(true);
+  };
+
+  // Confirm and publish to Nostr
+  const confirmPublish = () => {
+    if (!pendingPublishData) return;
+
     createEvent(
-      {
-        kind: 30023,
-        content: importedArticle.content,
-        tags,
-      },
+      pendingPublishData,
       {
         onSuccess: () => {
-          toast.success('Blog post published to Nostr!');
+          toast.success('Blog post shared to Nostr!');
           setImportedArticle(null);
           setImportUrl('');
+          setPendingPublishData(null);
+          setShowShareDialog(false);
           queryClient.invalidateQueries({ queryKey: ['blog-posts'] });
         },
         onError: (error) => {
           console.error('Publish error:', error);
-          toast.error('Failed to publish blog post');
+          toast.error('Failed to share blog post to Nostr');
+          setShowShareDialog(false);
         },
       }
     );
   };
 
-  // Delete blog post
-  const deleteMutation = useMutation({
-    mutationFn: async (event: NostrEvent) => {
-      // Create deletion request (kind 5)
-      createEvent({
+  // Start editing a post
+  const handleEdit = (post: NostrEvent) => {
+    setEditingPost(post);
+    setEditTitle(getArticleTitle(post));
+    setEditSummary(getArticleSummary(post));
+    setEditContent(post.content);
+    setEditImage(getArticleImage(post) || '');
+    setEditTags(getArticleTags(post).join(', '));
+  };
+
+  // Cancel editing
+  const cancelEdit = () => {
+    setEditingPost(null);
+    setEditTitle('');
+    setEditSummary('');
+    setEditContent('');
+    setEditImage('');
+    setEditTags('');
+  };
+
+  // Save edited post
+  const saveEdit = () => {
+    if (!editingPost || !editTitle.trim() || !editContent.trim()) {
+      toast.error('Title and content are required');
+      return;
+    }
+
+    const dTag = getArticleId(editingPost);
+    const tags: string[][] = [
+      ['d', dTag],
+      ['title', editTitle.trim()],
+      ['published_at', Math.floor(Date.now() / 1000).toString()],
+    ];
+
+    if (editSummary.trim()) {
+      tags.push(['summary', editSummary.trim()]);
+    }
+
+    if (editImage.trim()) {
+      tags.push(['image', editImage.trim()]);
+    }
+
+    // Add tags
+    const tagArray = editTags.split(',').map(t => t.trim()).filter(t => t);
+    tagArray.forEach(tag => {
+      tags.push(['t', tag.toLowerCase()]);
+    });
+
+    setPendingPublishData({
+      kind: 30023,
+      content: editContent,
+      tags,
+    });
+    setShowShareDialog(true);
+  };
+
+  // Confirm save after dialog
+  const confirmSaveEdit = () => {
+    if (!pendingPublishData) return;
+
+    createEvent(
+      pendingPublishData,
+      {
+        onSuccess: () => {
+          toast.success('Blog post updated and shared to Nostr!');
+          cancelEdit();
+          setPendingPublishData(null);
+          setShowShareDialog(false);
+          queryClient.invalidateQueries({ queryKey: ['blog-posts'] });
+        },
+        onError: (error) => {
+          console.error('Update error:', error);
+          toast.error('Failed to update blog post');
+          setShowShareDialog(false);
+        },
+      }
+    );
+  };
+
+  // Prepare to delete blog post
+  const handleDeleteClick = (post: NostrEvent) => {
+    setPostToDelete(post);
+    setShowDeleteDialog(true);
+  };
+
+  // Confirm and delete blog post
+  const confirmDelete = () => {
+    if (!postToDelete) return;
+
+    createEvent(
+      {
         kind: 5,
         content: 'Deleted blog post',
-        tags: [['a', `30023:${event.pubkey}:${event.tags.find(t => t[0] === 'd')?.[1]}`]],
-      });
-    },
-    onSuccess: () => {
-      toast.success('Blog post deleted');
-      queryClient.invalidateQueries({ queryKey: ['blog-posts'] });
-    },
-  });
+        tags: [['a', `30023:${postToDelete.pubkey}:${postToDelete.tags.find(t => t[0] === 'd')?.[1]}`]],
+      },
+      {
+        onSuccess: () => {
+          toast.success('Blog post deleted');
+          setPostToDelete(null);
+          setShowDeleteDialog(false);
+          queryClient.invalidateQueries({ queryKey: ['blog-posts'] });
+        },
+        onError: (error) => {
+          console.error('Delete error:', error);
+          toast.error('Failed to delete blog post');
+          setShowDeleteDialog(false);
+        },
+      }
+    );
+  };
 
   const getArticleTitle = (event: NostrEvent): string => {
     return event.tags.find(t => t[0] === 'title')?.[1] || 'Untitled';
@@ -223,8 +362,8 @@ export function BlogPostManagement() {
 
                   <div className="flex gap-2">
                     <Button onClick={handlePublish} className="flex-1">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Publish to Nostr
+                      <Share2 className="h-4 w-4 mr-2" />
+                      Share to Nostr
                     </Button>
                     <Button
                       variant="outline"
@@ -241,6 +380,86 @@ export function BlogPostManagement() {
       </Card>
 
       <Separator />
+
+      {/* Edit Form */}
+      {editingPost && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center">
+                <Edit className="h-5 w-5 mr-2" />
+                Edit Blog Post
+              </CardTitle>
+              <Button variant="ghost" size="sm" onClick={cancelEdit}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-title">Title *</Label>
+              <Input
+                id="edit-title"
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                placeholder="Article title"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-summary">Summary</Label>
+              <Input
+                id="edit-summary"
+                value={editSummary}
+                onChange={(e) => setEditSummary(e.target.value)}
+                placeholder="Brief summary of the article"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-image">Header Image URL</Label>
+              <Input
+                id="edit-image"
+                value={editImage}
+                onChange={(e) => setEditImage(e.target.value)}
+                placeholder="https://example.com/image.jpg"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-tags">Tags (comma-separated)</Label>
+              <Input
+                id="edit-tags"
+                value={editTags}
+                onChange={(e) => setEditTags(e.target.value)}
+                placeholder="bitcoin, art, creativity"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-content">Content *</Label>
+              <Textarea
+                id="edit-content"
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                placeholder="Article content (Markdown supported)"
+                rows={15}
+                className="font-mono text-sm"
+              />
+            </div>
+
+            <div className="flex gap-2">
+              <Button onClick={saveEdit} className="flex-1">
+                <Share2 className="h-4 w-4 mr-2" />
+                Save & Share to Nostr
+              </Button>
+              <Button variant="outline" onClick={cancelEdit}>
+                Cancel
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Published Posts */}
       <Card>
@@ -322,7 +541,14 @@ export function BlogPostManagement() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => deleteMutation.mutate(post)}
+                              onClick={() => handleEdit(post)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeleteClick(post)}
                             >
                               <Trash2 className="h-4 w-4 text-red-500" />
                             </Button>
@@ -337,6 +563,59 @@ export function BlogPostManagement() {
           )}
         </CardContent>
       </Card>
+
+      {/* Share to Nostr Confirmation Dialog */}
+      <AlertDialog open={showShareDialog} onOpenChange={setShowShareDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Share to Nostr?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {editingPost 
+                ? 'This will update your blog post on the Nostr network. Your followers will be able to see the changes.'
+                : 'This will publish your blog post to the Nostr network. Your followers will be able to see it.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setShowShareDialog(false);
+              setPendingPublishData(null);
+            }}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={editingPost ? confirmSaveEdit : confirmPublish}>
+              Share to Nostr
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Blog Post?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will send a deletion request to Nostr relays. The post may still be visible on some relays that don't honor deletion requests.
+              {postToDelete && (
+                <div className="mt-2 p-2 bg-muted rounded">
+                  <p className="font-medium">{getArticleTitle(postToDelete)}</p>
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setShowDeleteDialog(false);
+              setPostToDelete(null);
+            }}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
