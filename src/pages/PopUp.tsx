@@ -88,6 +88,17 @@ export default function PopUp() {
     },
   });
 
+  // Separate active and past events
+  const activeEvents = popupEvents.filter(e => {
+    const isFinished = e.event.tags.find(t => t[0] === 'finished')?.[1] === 'true';
+    return !isFinished;
+  });
+
+  const pastEvents = popupEvents.filter(e => {
+    const isFinished = e.event.tags.find(t => t[0] === 'finished')?.[1] === 'true';
+    return isFinished;
+  });
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20">
       <div className="container mx-auto px-4 py-12">
@@ -124,13 +135,13 @@ export default function PopUp() {
               </div>
             ) : (
               <div className="h-[500px] w-full">
-                <WorldMap events={popupEvents} />
+                <WorldMap events={activeEvents} />
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Event Schedule */}
+        {/* Active Events Schedule */}
         <div className="space-y-6">
           <h2 className="text-3xl font-bold text-center mb-8">Event Schedule</h2>
           
@@ -147,7 +158,7 @@ export default function PopUp() {
                 </Card>
               ))}
             </div>
-          ) : popupEvents.length === 0 ? (
+          ) : activeEvents.length === 0 && pastEvents.length === 0 ? (
             <Card className="max-w-md mx-auto">
               <CardContent className="py-12 text-center">
                 <Globe className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
@@ -157,9 +168,19 @@ export default function PopUp() {
                 </p>
               </CardContent>
             </Card>
+          ) : activeEvents.length === 0 ? (
+            <Card className="max-w-md mx-auto">
+              <CardContent className="py-12 text-center">
+                <Globe className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-xl font-semibold mb-2">No Active Events</h3>
+                <p className="text-muted-foreground">
+                  All events are finished. Check out past events below!
+                </p>
+              </CardContent>
+            </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {popupEvents.map((event) => {
+              {activeEvents.map((event) => {
                 const typeConfig = POPUP_TYPE_CONFIG[event.type];
                 const statusConfig = POPUP_STATUS_CONFIG[event.status];
 
@@ -268,6 +289,72 @@ export default function PopUp() {
             </div>
           )}
         </div>
+
+        {/* Past Events Section */}
+        {pastEvents.length > 0 && (
+          <div className="space-y-6 mt-16">
+            <h2 className="text-3xl font-bold text-center mb-8">Past Events</h2>
+            
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+              {pastEvents.map((event) => {
+                const typeConfig = POPUP_TYPE_CONFIG[event.type];
+                const statusConfig = POPUP_STATUS_CONFIG[event.status];
+
+                return (
+                  <Card key={event.id} className="hover:shadow-lg transition-all duration-300 overflow-hidden group bg-white dark:bg-gray-800 opacity-75">
+                    {event.image ? (
+                      <div className="relative h-32 overflow-hidden">
+                        <img
+                          src={event.image}
+                          alt={event.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+                        <div className="absolute top-2 left-2">
+                          <Badge className={`${typeConfig.bgColor} ${typeConfig.color} border shadow-lg text-xs`}>
+                            {typeConfig.icon}
+                          </Badge>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="relative h-32 bg-gradient-to-br from-purple-100 via-pink-100 to-indigo-100 dark:from-purple-900/20 dark:via-pink-900/20 dark:to-indigo-900/20 flex items-center justify-center">
+                        <span className="text-4xl opacity-40">{typeConfig.icon}</span>
+                      </div>
+                    )}
+                    <CardContent className="p-3">
+                      <h3 className="font-semibold text-sm line-clamp-2 mb-1">
+                        {event.title}
+                      </h3>
+                      <div className="space-y-1 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <MapPin className="h-3 w-3 flex-shrink-0" />
+                          <span className="line-clamp-1">{event.location}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3 flex-shrink-0" />
+                          <span className="line-clamp-1">
+                            {format(new Date(event.startDate), 'MMM d, yyyy')}
+                          </span>
+                        </div>
+                      </div>
+                      {event.link && (
+                        <a
+                          href={event.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center text-purple-600 hover:text-purple-700 transition-colors pt-2 text-xs font-medium"
+                        >
+                          <span>Details</span>
+                          <ExternalLink className="h-3 w-3 ml-1" />
+                        </a>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

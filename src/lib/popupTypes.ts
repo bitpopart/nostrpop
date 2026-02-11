@@ -21,7 +21,8 @@ export interface PopUpEventData {
   endDate?: string; // YYYY-MM-DD
   image?: string;
   link?: string;
-  event?: NostrEvent;
+  finished?: boolean;
+  event: NostrEvent;
 }
 
 export const POPUP_TYPE_CONFIG: Record<PopUpType, { 

@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import {
@@ -21,7 +22,8 @@ import {
   Trash2,
   Edit,
   X,
-  Upload
+  Upload,
+  CheckCircle2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import type { NostrEvent } from '@nostrify/nostrify';
@@ -39,6 +41,7 @@ interface PopUpFormData {
   endDate: string;
   image: string;
   link: string;
+  finished: boolean;
 }
 
 export function PopUpManagement() {
@@ -64,6 +67,7 @@ export function PopUpManagement() {
     endDate: '',
     image: '',
     link: '',
+    finished: false,
   });
 
   // Fetch user's PopUp events (kind 31922)
@@ -177,6 +181,9 @@ export function PopUpManagement() {
     if (formData.link) {
       tags.push(['r', formData.link]);
     }
+    if (formData.finished) {
+      tags.push(['finished', 'true']);
+    }
 
     // Store coordinates in content as JSON for easy retrieval
     const contentData = {
@@ -207,6 +214,7 @@ export function PopUpManagement() {
             endDate: '',
             image: '',
             link: '',
+            finished: false,
           });
           queryClient.invalidateQueries({ queryKey: ['popup-events'] });
         },
@@ -227,6 +235,7 @@ export function PopUpManagement() {
     const link = event.tags.find(t => t[0] === 'r')?.[1] || '';
     const type = event.tags.find(t => t[0] === 't' && ['art', 'shop', 'event'].includes(t[1]))?.[1] as PopUpType || 'art';
     const status = event.tags.find(t => t[0] === 'status')?.[1] as PopUpStatus || 'confirmed';
+    const finished = event.tags.find(t => t[0] === 'finished')?.[1] === 'true';
 
     let description = '';
     let lat = '';
@@ -253,6 +262,7 @@ export function PopUpManagement() {
       endDate,
       image,
       link,
+      finished,
     });
     setEditingEvent(event);
     setIsCreating(true);
@@ -294,6 +304,7 @@ export function PopUpManagement() {
       endDate: '',
       image: '',
       link: '',
+      finished: false,
     });
   };
 
@@ -521,6 +532,27 @@ export function PopUpManagement() {
                 />
               </div>
 
+              <Separator />
+
+              {/* Finished Checkbox */}
+              <div className="space-y-2 p-4 border rounded-lg bg-gray-50 dark:bg-gray-900/20">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="finished"
+                    checked={formData.finished}
+                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, finished: checked === true }))}
+                  />
+                  <Label htmlFor="finished" className="text-base font-medium flex items-center gap-2 cursor-pointer">
+                    <CheckCircle2 className="h-4 w-4" />
+                    Mark as Finished (Past Event)
+                  </Label>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Check this box for completed events. They will appear in the "Past Events" section with smaller thumbnails.
+                  {formData.finished ? ' (Event is marked as finished)' : ' (Event is active)'}
+                </p>
+              </div>
+
               <div className="flex gap-2">
                 <Button type="submit" className="flex-1">
                   <Plus className="h-4 w-4 mr-2" />
@@ -575,6 +607,7 @@ export function PopUpManagement() {
                 const image = event.tags.find(t => t[0] === 'image')?.[1];
                 const type = event.tags.find(t => t[0] === 't' && ['art', 'shop', 'event'].includes(t[1]))?.[1] as PopUpType || 'art';
                 const status = event.tags.find(t => t[0] === 'status')?.[1] as PopUpStatus || 'confirmed';
+                const finished = event.tags.find(t => t[0] === 'finished')?.[1] === 'true';
                 const typeConfig = POPUP_TYPE_CONFIG[type];
                 const statusConfig = POPUP_STATUS_CONFIG[status];
 
@@ -601,6 +634,12 @@ export function PopUpManagement() {
                               {status === 'option' && (
                                 <Badge className={`${statusConfig.bgColor} ${statusConfig.color} border`}>
                                   {statusConfig.label}
+                                </Badge>
+                              )}
+                              {finished && (
+                                <Badge className="bg-gray-500 text-white border">
+                                  <CheckCircle2 className="h-3 w-3 mr-1" />
+                                  Finished
                                 </Badge>
                               )}
                             </div>
