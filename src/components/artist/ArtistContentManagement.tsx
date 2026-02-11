@@ -10,8 +10,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { User, Save, Eye, Upload, X, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { User, Save, Eye, Upload, X, Image as ImageIcon, Loader2, Share2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import ReactMarkdown from 'react-markdown';
 
 const DEFAULT_CONTENT = `# My Story
@@ -56,6 +66,7 @@ export function ArtistContentManagement() {
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<'edit' | 'preview'>('edit');
   const [isUploading, setIsUploading] = useState(false);
+  const [showShareDialog, setShowShareDialog] = useState(false);
 
   // Fetch artist page content
   const { data: artistEvent } = useQuery({
@@ -65,7 +76,7 @@ export function ArtistContentManagement() {
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(3000)]);
       
       const events = await nostr.query(
-        [{ kinds: [30023], authors: [user.pubkey], '#d': ['artist-page'], limit: 1 }],
+        [{ kinds: [30024], authors: [user.pubkey], '#d': ['artist-page'], limit: 1 }],
         { signal }
       );
 
@@ -154,6 +165,11 @@ export function ArtistContentManagement() {
       return;
     }
 
+    // Show confirmation dialog to share to Nostr
+    setShowShareDialog(true);
+  };
+
+  const handleShareToNostr = () => {
     const tags: string[][] = [
       ['d', 'artist-page'],
       ['title', title],
@@ -180,20 +196,22 @@ export function ArtistContentManagement() {
 
     createEvent(
       {
-        kind: 30023,
+        kind: 30024,
         content: content,
         tags,
       },
       {
         onSuccess: () => {
           console.log('[ArtistContentManagement] ✅ Artist page published successfully!');
-          toast.success('Artist page updated!');
+          toast.success('Artist page shared to Nostr!');
           queryClient.invalidateQueries({ queryKey: ['artist-page'] });
           queryClient.invalidateQueries({ queryKey: ['artist-page-admin'] });
+          setShowShareDialog(false);
         },
         onError: (error) => {
           console.error('[ArtistContentManagement] ❌ Publish error:', error);
-          toast.error('Failed to update artist page');
+          toast.error('Failed to share artist page to Nostr');
+          setShowShareDialog(false);
         },
       }
     );
@@ -387,8 +405,8 @@ export function ArtistContentManagement() {
 
           <div className="flex gap-2 pt-4">
             <Button type="submit" className="flex-1">
-              <Save className="h-4 w-4 mr-2" />
-              Save Artist Page
+              <Share2 className="h-4 w-4 mr-2" />
+              Share to Nostr
             </Button>
             <Button
               type="button"
@@ -400,6 +418,24 @@ export function ArtistContentManagement() {
             </Button>
           </div>
         </form>
+
+        {/* Share Confirmation Dialog */}
+        <AlertDialog open={showShareDialog} onOpenChange={setShowShareDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Share Artist Page to Nostr?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will publish your artist page update to the Nostr network. Your followers will be able to see the changes.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleShareToNostr}>
+                Share to Nostr
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </CardContent>
     </Card>
   );

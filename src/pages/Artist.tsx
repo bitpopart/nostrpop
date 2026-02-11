@@ -19,7 +19,7 @@ export default function Artist() {
     description: 'Learn about the artist behind BitPopArt - Johannes Oppewal, world traveler and Bitcoin PopArt creator',
   });
 
-  // Fetch artist page content (kind 30023 with artist identifier)
+  // Fetch artist page content (kind 30024 with artist identifier)
   const { data: artistContent, isLoading } = useQuery({
     queryKey: ['artist-page'],
     queryFn: async (c) => {
@@ -28,7 +28,7 @@ export default function Artist() {
       console.log('[Artist] Fetching artist page from pubkey:', ARTIST_PUBKEY);
       
       const events = await nostr.query(
-        [{ kinds: [30023], authors: [ARTIST_PUBKEY], '#d': ['artist-page'], limit: 1 }],
+        [{ kinds: [30024], authors: [ARTIST_PUBKEY], '#d': ['artist-page'], limit: 1 }],
         { signal }
       );
 

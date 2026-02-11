@@ -32,7 +32,12 @@ export default function Blog() {
         : [{ kinds: [30023], limit: 50 }];
 
       const events = await nostr.query(filters, { signal });
-      return events.sort((a, b) => b.created_at - a.created_at);
+      // Filter out artist-page events (now using kind 30024, but filter just in case)
+      const filteredEvents = events.filter(e => {
+        const dTag = e.tags.find(t => t[0] === 'd')?.[1];
+        return dTag !== 'artist-page';
+      });
+      return filteredEvents.sort((a, b) => b.created_at - a.created_at);
     },
   });
 

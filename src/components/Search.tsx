@@ -59,6 +59,11 @@ export function Search({ open, onOpenChange }: { open: boolean; onOpenChange: (o
             const description = content.description || content.message || event.content || '';
             const dTag = event.tags.find(t => t[0] === 'd')?.[1];
 
+            // Filter out artist-page
+            if (dTag === 'artist-page') {
+              return null;
+            }
+
             // Filter by search term
             if (!title.toLowerCase().includes(searchTerm) && 
                 !description.toLowerCase().includes(searchTerm)) {
