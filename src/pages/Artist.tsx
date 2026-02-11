@@ -25,15 +25,28 @@ export default function Artist() {
     queryFn: async (c) => {
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(3000)]);
       
+      console.log('[Artist] Fetching artist page from pubkey:', ARTIST_PUBKEY);
+      
       const events = await nostr.query(
         [{ kinds: [30023], authors: [ARTIST_PUBKEY], '#d': ['artist-page'], limit: 1 }],
         { signal }
       );
 
+      console.log('[Artist] Found events:', events.length);
+      
       if (events.length > 0) {
-        return events[0];
+        const event = events[0];
+        console.log('[Artist] Event found:', {
+          id: event.id.substring(0, 8),
+          title: event.tags.find(t => t[0] === 'title')?.[1],
+          hasImage: !!event.tags.find(t => t[0] === 'image'),
+          galleryImages: event.tags.filter(t => t[0] === 'gallery').length,
+          contentLength: event.content.length
+        });
+        return event;
       }
 
+      console.log('[Artist] No events found, using default content');
       // Default content if no Nostr event found
       return null;
     },
@@ -113,15 +126,9 @@ Follow me at BitPopArt:
       <div className="container mx-auto px-4 py-12">
         {/* Header */}
         <div className="text-center mb-12">
-          <div className="flex items-center justify-center mb-4">
-            <User className="h-10 w-10 text-purple-600 mr-3" />
-            <h1 className="text-5xl font-bold bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
-              Artist
-            </h1>
-          </div>
-          <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            Meet Johannes Oppewal - World traveler and Bitcoin PopArt creator
-          </p>
+          <h1 className="text-5xl font-bold bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent mb-4">
+            My Story
+          </h1>
         </div>
 
         {/* Content */}

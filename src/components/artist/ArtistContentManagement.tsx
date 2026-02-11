@@ -170,6 +170,14 @@ export function ArtistContentManagement() {
       tags.push(['gallery', imgUrl]);
     });
 
+    console.log('[ArtistContentManagement] Publishing artist page update...', {
+      title,
+      contentLength: content.length,
+      headerImage: !!headerImage,
+      galleryImages: galleryImages.length,
+      tags: tags.slice(0, 5)
+    });
+
     createEvent(
       {
         kind: 30023,
@@ -178,12 +186,13 @@ export function ArtistContentManagement() {
       },
       {
         onSuccess: () => {
+          console.log('[ArtistContentManagement] ✅ Artist page published successfully!');
           toast.success('Artist page updated!');
           queryClient.invalidateQueries({ queryKey: ['artist-page'] });
           queryClient.invalidateQueries({ queryKey: ['artist-page-admin'] });
         },
         onError: (error) => {
-          console.error('Publish error:', error);
+          console.error('[ArtistContentManagement] ❌ Publish error:', error);
           toast.error('Failed to update artist page');
         },
       }
