@@ -63,6 +63,21 @@ export default function Projects() {
   // Fetch POP Badges
   const { data: badges = [] } = useBadges();
 
+  // Fetch built-in project customizations
+  const { data: builtInCustomizations = [] } = useQuery({
+    queryKey: ['builtin-projects'],
+    queryFn: async (c) => {
+      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(3000)]);
+      
+      const events = await nostr.query(
+        [{ kinds: [36171], authors: [ADMIN_PUBKEY], '#t': ['builtin-project'], limit: 10 }],
+        { signal }
+      );
+
+      return events;
+    },
+  });
+
   // Fetch custom projects from Nostr
   const { data: customProjects = [], isLoading } = useQuery({
     queryKey: ['projects'],
@@ -112,8 +127,19 @@ export default function Projects() {
     },
   });
 
+  // Apply custom thumbnails to built-in projects
+  const builtInProjectsWithThumbnails = BUILTIN_PROJECTS.map(project => {
+    const customization = builtInCustomizations.find(e => e.tags.find(t => t[0] === 'd')?.[1] === project.id);
+    const customThumbnail = customization?.tags.find(t => t[0] === 'image')?.[1];
+    
+    return {
+      ...project,
+      thumbnail: customThumbnail || project.thumbnail,
+    };
+  });
+
   // Combine built-in and custom projects
-  const allProjects = [...BUILTIN_PROJECTS, ...customProjects];
+  const allProjects = [...builtInProjectsWithThumbnails, ...customProjects];
 
   const handleProjectClick = (project: typeof BUILTIN_PROJECTS[0] | ProjectData) => {
     // Prevent navigation for coming soon projects

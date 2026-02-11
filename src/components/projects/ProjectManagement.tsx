@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNostr } from '@nostrify/react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -24,6 +24,7 @@ import {
   Image as ImageIcon,
   ExternalLink,
   Star,
+  Sparkles,
 } from 'lucide-react';
 import type { NostrEvent } from '@nostrify/nostrify';
 import { generateProjectUUID } from '@/lib/projectTypes';
@@ -552,6 +553,223 @@ export function ProjectManagement() {
           )}
         </CardContent>
       </Card>
+
+      {/* Built-in Projects Configuration */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Sparkles className="h-5 w-5 mr-2" />
+            Built-in Projects
+          </CardTitle>
+          <CardDescription>
+            Customize thumbnails for core projects (21K Art, Canvas, POP Cards)
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <BuiltInProjectsManager />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// Built-in Projects Manager Component
+function BuiltInProjectsManager() {
+  const { nostr } = useNostr();
+  const { user } = useCurrentUser();
+  const { mutate: createEvent } = useNostrPublish();
+  const { mutateAsync: uploadFile } = useUploadFile();
+  const queryClient = useQueryClient();
+  const fileInputRefs = {
+    '21k-art': useRef<HTMLInputElement>(null),
+    '100m-canvas': useRef<HTMLInputElement>(null),
+    'cards': useRef<HTMLInputElement>(null),
+  };
+
+  const [isUploading, setIsUploading] = useState<string | null>(null);
+  const [thumbnails, setThumbnails] = useState({
+    '21k-art': '',
+    '100m-canvas': '',
+    'cards': '',
+  });
+
+  // Fetch built-in project thumbnails
+  const { data: builtInProjects } = useQuery({
+    queryKey: ['builtin-projects', user?.pubkey],
+    queryFn: async (c) => {
+      if (!user?.pubkey) return [];
+      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(3000)]);
+      
+      const events = await nostr.query(
+        [{ kinds: [36171], authors: [user.pubkey], '#t': ['builtin-project'], limit: 10 }],
+        { signal }
+      );
+
+      return events;
+    },
+    enabled: !!user?.pubkey,
+  });
+
+  // Load thumbnails from events
+  useEffect(() => {
+    if (builtInProjects) {
+      const newThumbnails = { ...thumbnails };
+      builtInProjects.forEach(event => {
+        const projectId = event.tags.find(t => t[0] === 'd')?.[1];
+        const thumbnail = event.tags.find(t => t[0] === 'image')?.[1];
+        if (projectId && thumbnail) {
+          newThumbnails[projectId as keyof typeof thumbnails] = thumbnail;
+        }
+      });
+      setThumbnails(newThumbnails);
+    }
+  }, [builtInProjects]);
+
+  const handleImageUpload = async (projectId: string, event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error('File is larger than 10MB. Please choose a smaller file.');
+      return;
+    }
+
+    setIsUploading(projectId);
+    try {
+      const tags = await uploadFile(file);
+      const imageUrl = tags[0][1];
+      
+      // Save to Nostr
+      createEvent(
+        {
+          kind: 36171,
+          content: JSON.stringify({ thumbnail: imageUrl }),
+          tags: [
+            ['d', projectId],
+            ['image', imageUrl],
+            ['t', 'builtin-project'],
+          ],
+        },
+        {
+          onSuccess: () => {
+            setThumbnails(prev => ({ ...prev, [projectId]: imageUrl }));
+            toast.success('Thumbnail updated!');
+            queryClient.invalidateQueries({ queryKey: ['builtin-projects'] });
+            queryClient.invalidateQueries({ queryKey: ['projects'] });
+          },
+          onError: () => {
+            toast.error('Failed to update thumbnail');
+          },
+        }
+      );
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error('Failed to upload image');
+    } finally {
+      setIsUploading(null);
+    }
+  };
+
+  const handleRemoveImage = (projectId: string) => {
+    createEvent(
+      {
+        kind: 36171,
+        content: JSON.stringify({ thumbnail: '' }),
+        tags: [
+          ['d', projectId],
+          ['t', 'builtin-project'],
+        ],
+      },
+      {
+        onSuccess: () => {
+          setThumbnails(prev => ({ ...prev, [projectId]: '' }));
+          toast.success('Thumbnail removed!');
+          queryClient.invalidateQueries({ queryKey: ['builtin-projects'] });
+          queryClient.invalidateQueries({ queryKey: ['projects'] });
+        },
+      }
+    );
+  };
+
+  const projects = [
+    { id: '21k-art', name: '21K Art', description: 'Exclusive artwork collection priced at 21,000 sats' },
+    { id: '100m-canvas', name: '100M Canvas', description: 'Collaborative pixel art project' },
+    { id: 'cards', name: 'POP Cards', description: 'Create and share Good Vibes cards' },
+  ];
+
+  return (
+    <div className="space-y-4">
+      {projects.map((project) => (
+        <Card key={project.id} className="overflow-hidden">
+          <div className="flex gap-4">
+            {thumbnails[project.id as keyof typeof thumbnails] ? (
+              <div className="w-32 h-24 flex-shrink-0 relative group">
+                <img
+                  src={thumbnails[project.id as keyof typeof thumbnails]}
+                  alt={project.name}
+                  className="w-full h-full object-cover"
+                />
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={() => handleRemoveImage(project.id)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <div className="w-32 h-24 flex-shrink-0 bg-gradient-to-br from-purple-200 via-pink-200 to-indigo-200 dark:from-purple-800 dark:via-pink-800 dark:to-indigo-800 flex items-center justify-center">
+                <ImageIcon className="h-8 w-8 text-white opacity-50" />
+              </div>
+            )}
+            <div className="flex-1 p-4">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <h3 className="font-semibold text-lg mb-2">{project.name}</h3>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    {project.description}
+                  </p>
+                  <Badge variant="outline" className="text-xs">
+                    <Sparkles className="h-3 w-3 mr-1" />
+                    Built-in Project
+                  </Badge>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    ref={fileInputRefs[project.id as keyof typeof fileInputRefs]}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => handleImageUpload(project.id, e)}
+                    disabled={isUploading === project.id}
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRefs[project.id as keyof typeof fileInputRefs].current?.click()}
+                    disabled={isUploading === project.id}
+                  >
+                    {isUploading === project.id ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="h-4 w-4 mr-2" />
+                        {thumbnails[project.id as keyof typeof thumbnails] ? 'Change' : 'Add'} Thumbnail
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Card>
+      ))}
     </div>
   );
 }
