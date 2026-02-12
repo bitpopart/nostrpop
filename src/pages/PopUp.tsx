@@ -89,15 +89,19 @@ export default function PopUp() {
   });
 
   // Separate active and past events
-  const activeEvents = popupEvents.filter(e => {
-    const isFinished = e.event.tags.find(t => t[0] === 'finished')?.[1] === 'true';
-    return !isFinished;
-  });
+  const activeEvents = popupEvents
+    .filter(e => {
+      const isFinished = e.event.tags.find(t => t[0] === 'finished')?.[1] === 'true';
+      return !isFinished;
+    })
+    .sort((a, b) => a.startDate.localeCompare(b.startDate)); // Sort soonest first
 
-  const pastEvents = popupEvents.filter(e => {
-    const isFinished = e.event.tags.find(t => t[0] === 'finished')?.[1] === 'true';
-    return isFinished;
-  });
+  const pastEvents = popupEvents
+    .filter(e => {
+      const isFinished = e.event.tags.find(t => t[0] === 'finished')?.[1] === 'true';
+      return isFinished;
+    })
+    .sort((a, b) => b.startDate.localeCompare(a.startDate)); // Sort most recent first
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20">

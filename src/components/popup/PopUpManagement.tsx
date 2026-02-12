@@ -80,11 +80,34 @@ export function PopUpManagement() {
         [{ kinds: [31922], authors: [user.pubkey], '#t': ['bitpopart-popup'], limit: 100 }],
         { signal }
       );
-      return events.sort((a, b) => {
+      // Separate and sort: active events (soonest first), then past events (most recent first)
+      const active: NostrEvent[] = [];
+      const past: NostrEvent[] = [];
+      
+      events.forEach(event => {
+        const isFinished = event.tags.find(t => t[0] === 'finished')?.[1] === 'true';
+        if (isFinished) {
+          past.push(event);
+        } else {
+          active.push(event);
+        }
+      });
+
+      // Sort active events: soonest first
+      active.sort((a, b) => {
+        const aStart = a.tags.find(t => t[0] === 'start')?.[1] || '';
+        const bStart = b.tags.find(t => t[0] === 'start')?.[1] || '';
+        return aStart.localeCompare(bStart);
+      });
+
+      // Sort past events: most recent first
+      past.sort((a, b) => {
         const aStart = a.tags.find(t => t[0] === 'start')?.[1] || '';
         const bStart = b.tags.find(t => t[0] === 'start')?.[1] || '';
         return bStart.localeCompare(aStart);
       });
+
+      return [...active, ...past];
     },
     enabled: !!user?.pubkey,
   });
