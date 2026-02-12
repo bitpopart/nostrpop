@@ -58,7 +58,6 @@ export function ArtistContentManagement() {
   const [activeTab, setActiveTab] = useState<'edit' | 'preview'>('edit');
   const [isUploading, setIsUploading] = useState(false);
   const [shareToNostr, setShareToNostr] = useState(false);
-  const [hasLocalChanges, setHasLocalChanges] = useState(false);
 
   // Fetch artist page content
   const { data: artistEvent } = useQuery({
@@ -77,25 +76,8 @@ export function ArtistContentManagement() {
     enabled: !!user?.pubkey,
   });
 
-  // Load existing content from Nostr or local storage
+  // Load existing content from Nostr
   useEffect(() => {
-    // Try to load from local storage first
-    const savedData = localStorage.getItem('artist-page-draft');
-    if (savedData) {
-      try {
-        const parsed = JSON.parse(savedData);
-        setTitle(parsed.title || 'My Story');
-        setContent(parsed.content || DEFAULT_CONTENT);
-        setHeaderImage(parsed.headerImage || '');
-        setGalleryImages(parsed.galleryImages || []);
-        setHasLocalChanges(true);
-        return;
-      } catch (error) {
-        console.error('Failed to parse saved draft:', error);
-      }
-    }
-
-    // If no local storage, load from Nostr event
     if (artistEvent) {
       const eventTitle = artistEvent.tags.find(t => t[0] === 'title')?.[1] || 'My Story';
       const eventHeaderImage = artistEvent.tags.find(t => t[0] === 'image')?.[1] || '';
@@ -105,17 +87,8 @@ export function ArtistContentManagement() {
       setContent(artistEvent.content);
       setHeaderImage(eventHeaderImage);
       setGalleryImages(eventGalleryImages);
-      setHasLocalChanges(false);
     }
   }, [artistEvent]);
-
-  // Track changes
-  useEffect(() => {
-    const savedData = localStorage.getItem('artist-page-draft');
-    if (savedData) {
-      setHasLocalChanges(true);
-    }
-  }, [title, content, headerImage, galleryImages]);
 
   const handleHeaderImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -183,71 +156,82 @@ export function ArtistContentManagement() {
       return;
     }
 
-    // Always save to local storage first
-    const draftData = {
-      title,
-      content,
-      headerImage,
-      galleryImages,
-      savedAt: new Date().toISOString(),
-    };
-    localStorage.setItem('artist-page-draft', JSON.stringify(draftData));
-    setHasLocalChanges(true);
+    // Always publish to Nostr (kind 30024 - artist page)
+    const tags: string[][] = [
+      ['d', 'artist-page'],
+      ['title', title],
+      ['t', 'artist'],
+      ['published_at', Math.floor(Date.now() / 1000).toString()],
+    ];
 
-    // If share to Nostr is checked, publish to Nostr
-    if (shareToNostr) {
-      // Publish directly to Nostr
-      const tags: string[][] = [
-        ['d', 'artist-page'],
-        ['title', title],
-        ['t', 'artist'],
-        ['published_at', Math.floor(Date.now() / 1000).toString()],
-      ];
-
-      if (headerImage) {
-        tags.push(['image', headerImage]);
-      }
-
-      // Add gallery images
-      galleryImages.forEach(imgUrl => {
-        tags.push(['gallery', imgUrl]);
-      });
-
-      console.log('[ArtistContentManagement] Publishing artist page update...', {
-        title,
-        contentLength: content.length,
-        headerImage: !!headerImage,
-        galleryImages: galleryImages.length,
-        tags: tags.slice(0, 5)
-      });
-
-      createEvent(
-        {
-          kind: 30024,
-          content: content,
-          tags,
-        },
-        {
-          onSuccess: () => {
-            console.log('[ArtistContentManagement] ✅ Artist page published successfully!');
-            toast.success('Artist page saved and shared to Nostr!');
-            // Clear local draft after successful publish
-            localStorage.removeItem('artist-page-draft');
-            setHasLocalChanges(false);
-            setShareToNostr(false);
-            queryClient.invalidateQueries({ queryKey: ['artist-page'] });
-            queryClient.invalidateQueries({ queryKey: ['artist-page-admin'] });
-          },
-          onError: (error) => {
-            console.error('[ArtistContentManagement] ❌ Publish error:', error);
-            toast.error('Saved locally but failed to share to Nostr');
-          },
-        }
-      );
-    } else {
-      // Just saved locally
-      toast.success('Artist page saved locally!');
+    if (headerImage) {
+      tags.push(['image', headerImage]);
     }
+
+    // Add gallery images
+    galleryImages.forEach(imgUrl => {
+      tags.push(['gallery', imgUrl]);
+    });
+
+    console.log('[ArtistContentManagement] Publishing artist page update...', {
+      title,
+      contentLength: content.length,
+      headerImage: !!headerImage,
+      galleryImages: galleryImages.length,
+      tags: tags.slice(0, 5),
+      shareToNostrCommunity: shareToNostr
+    });
+
+    createEvent(
+      {
+        kind: 30024,
+        content: content,
+        tags,
+      },
+      {
+        onSuccess: () => {
+          console.log('[ArtistContentManagement] ✅ Artist page published to Nostr!');
+          
+          queryClient.invalidateQueries({ queryKey: ['artist-page'] });
+          queryClient.invalidateQueries({ queryKey: ['artist-page-admin'] });
+
+          // If share to Nostr community is checked, also create a kind 1 note
+          if (shareToNostr) {
+            // Create a summary for the community post
+            const firstParagraph = content.split('\n\n')[0].replace(/^#+ /, '').trim();
+            const shareContent = `📢 Updated my artist page: ${title}\n\n${firstParagraph.slice(0, 200)}${firstParagraph.length > 200 ? '...' : ''}\n\nhttps://bitpopart.com/artist`;
+            
+            createEvent(
+              {
+                kind: 1,
+                content: shareContent,
+                tags: [
+                  ['t', 'artist'],
+                  ['t', 'bitpopart'],
+                  ['r', 'https://bitpopart.com/artist'],
+                ],
+              },
+              {
+                onSuccess: () => {
+                  toast.success('Artist page saved and shared to Nostr community!');
+                  setShareToNostr(false);
+                },
+                onError: (error) => {
+                  console.error('[ArtistContentManagement] ❌ Community share error:', error);
+                  toast.success('Artist page saved! (Community share failed)');
+                },
+              }
+            );
+          } else {
+            toast.success('Artist page saved!');
+          }
+        },
+        onError: (error) => {
+          console.error('[ArtistContentManagement] ❌ Publish error:', error);
+          toast.error('Failed to save artist page');
+        },
+      }
+    );
   };
 
 
@@ -438,7 +422,7 @@ export function ArtistContentManagement() {
             </TabsContent>
           </Tabs>
 
-          {/* Share to Nostr Checkbox */}
+          {/* Share to Nostr Community Checkbox */}
           <div className="flex items-center space-x-2 pt-4 border-t">
             <Checkbox
               id="share-nostr"
@@ -448,12 +432,12 @@ export function ArtistContentManagement() {
             <div className="flex-1">
               <Label
                 htmlFor="share-nostr"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                className="text-base font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
               >
                 Share to Nostr Community
               </Label>
-              <p className="text-xs text-muted-foreground mt-1">
-                Automatically publish your artist page to the Nostr network when saving
+              <p className="text-sm text-muted-foreground mt-1">
+                Automatically share your artist page with the Nostr community to showcase your story and connect with art lovers.
               </p>
             </div>
           </div>
@@ -461,7 +445,7 @@ export function ArtistContentManagement() {
           <div className="flex gap-2 pt-2">
             <Button type="submit" className="flex-1">
               <Save className="h-4 w-4 mr-2" />
-              Save{shareToNostr ? ' & Share' : ''}
+              Save
             </Button>
             <Button
               type="button"
@@ -472,12 +456,6 @@ export function ArtistContentManagement() {
               Preview
             </Button>
           </div>
-          
-          {hasLocalChanges && (
-            <p className="text-xs text-orange-600 dark:text-orange-400 text-center">
-              You have unsaved changes that are only stored locally
-            </p>
-          )}
         </form>
       </CardContent>
     </Card>

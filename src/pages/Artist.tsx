@@ -1,41 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useSeoMeta } from '@unhead/react';
 import { useNostr } from '@nostrify/react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
-import { User, Image as ImageIcon, AlertCircle } from 'lucide-react';
+import { Image as ImageIcon } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
 const ARTIST_PUBKEY = '7d33ba57d8a6e8869a1f1d5215254597594ac0dbfeb01b690def8c461b82db35'; // traveltelly's pubkey
 
-interface ArtistDraft {
-  title: string;
-  content: string;
-  headerImage: string;
-  galleryImages: string[];
-  savedAt: string;
-}
-
 export default function Artist() {
   const { nostr } = useNostr();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [localDraft, setLocalDraft] = useState<ArtistDraft | null>(null);
-
-  // Load local draft if available
-  useEffect(() => {
-    const savedData = localStorage.getItem('artist-page-draft');
-    if (savedData) {
-      try {
-        const parsed = JSON.parse(savedData);
-        setLocalDraft(parsed);
-      } catch (error) {
-        console.error('Failed to parse saved draft:', error);
-      }
-    }
-  }, []);
 
   useSeoMeta({
     title: 'Artist - BitPopArt',
@@ -76,11 +53,6 @@ export default function Artist() {
   });
 
   const getContent = (): string => {
-    // Prioritize local draft over Nostr content
-    if (localDraft) {
-      return localDraft.content;
-    }
-    
     if (artistContent) {
       return artistContent.content;
     }
@@ -115,11 +87,6 @@ Follow me at BitPopArt:
   };
 
   const getTitle = (): string => {
-    // Prioritize local draft
-    if (localDraft) {
-      return localDraft.title;
-    }
-    
     if (artistContent) {
       return artistContent.tags.find(t => t[0] === 'title')?.[1] || 'Artist';
     }
@@ -127,11 +94,6 @@ Follow me at BitPopArt:
   };
 
   const getHeaderImage = (): string | null => {
-    // Prioritize local draft
-    if (localDraft) {
-      return localDraft.headerImage || null;
-    }
-    
     if (artistContent) {
       return artistContent.tags.find(t => t[0] === 'image')?.[1] || null;
     }
@@ -139,11 +101,6 @@ Follow me at BitPopArt:
   };
 
   const getGalleryImages = (): string[] => {
-    // Prioritize local draft
-    if (localDraft) {
-      return localDraft.galleryImages;
-    }
-    
     if (artistContent) {
       return artistContent.tags.filter(t => t[0] === 'gallery').map(t => t[1]);
     }
@@ -167,16 +124,6 @@ Follow me at BitPopArt:
       )}
 
       <div className="container mx-auto px-4 py-12">
-        {/* Draft Indicator */}
-        {localDraft && (
-          <div className="max-w-4xl mx-auto mb-6">
-            <Badge className="w-full justify-center bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-900/30 py-2">
-              <AlertCircle className="h-4 w-4 mr-2" />
-              Viewing draft version (not yet published to Nostr)
-            </Badge>
-          </div>
-        )}
-
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-5xl font-bold bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent mb-4">
