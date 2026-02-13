@@ -43,6 +43,9 @@ export default function Blog() {
     description: 'Read latest news and insights from BitPopArt on Bitcoin, art, and creativity',
   });
 
+  // BitPopArt admin pubkey
+  const ADMIN_PUBKEY = '43baaf0c28e6cfb195b17ee083e19eb3a4afdfac54d9b6baf170270ed193e34c';
+
   // Fetch all blog posts (kind 30023)
   const { data: blogPosts = [], isLoading } = useQuery({
     queryKey: ['blog-posts-public'],
@@ -50,7 +53,7 @@ export default function Blog() {
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(5000)]);
       
       const events = await nostr.query(
-        [{ kinds: [30023], '#t': ['blog'], limit: 50 }],
+        [{ kinds: [30023], authors: [ADMIN_PUBKEY], '#t': ['blog'], limit: 50 }],
         { signal }
       );
 

@@ -365,26 +365,6 @@ export function PageManagement() {
             <div className="border-t pt-6">
               <div className="flex items-center justify-between mb-4">
                 <Label className="text-lg font-semibold">Content Blocks</Label>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => addContentBlock('markdown')}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Text
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => addContentBlock('gallery')}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Gallery
-                  </Button>
-                </div>
               </div>
 
               <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'edit' | 'preview')}>
@@ -395,122 +375,146 @@ export function PageManagement() {
 
                 <TabsContent value="edit" className="space-y-4">
                   {contentBlocks.map((block, index) => (
-                    <Card key={block.id} className="border-2">
-                      <CardHeader className="pb-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <GripVertical className="h-4 w-4 text-muted-foreground cursor-move" />
-                            <span className="text-sm font-medium">
-                              {block.type === 'markdown' ? 'Text Block' : 'Photo Gallery'}
-                            </span>
+                    <div key={block.id} className="space-y-3">
+                      <Card className="border-2">
+                        <CardHeader className="pb-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <GripVertical className="h-4 w-4 text-muted-foreground cursor-move" />
+                              <span className="text-sm font-medium">
+                                {block.type === 'markdown' ? 'Text Block' : 'Photo Gallery'}
+                              </span>
+                            </div>
+                            <div className="flex gap-1">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => moveBlockUp(index)}
+                                disabled={index === 0}
+                              >
+                                ↑
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => moveBlockDown(index)}
+                                disabled={index === contentBlocks.length - 1}
+                              >
+                                ↓
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeBlock(block.id)}
+                                disabled={contentBlocks.length <= 1}
+                              >
+                                <Trash2 className="h-4 w-4 text-red-500" />
+                              </Button>
+                            </div>
                           </div>
-                          <div className="flex gap-1">
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => moveBlockUp(index)}
-                              disabled={index === 0}
-                            >
-                              ↑
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => moveBlockDown(index)}
-                              disabled={index === contentBlocks.length - 1}
-                            >
-                              ↓
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeBlock(block.id)}
-                              disabled={contentBlocks.length <= 1}
-                            >
-                              <Trash2 className="h-4 w-4 text-red-500" />
-                            </Button>
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        {block.type === 'markdown' ? (
-                          <div className="space-y-2">
-                            <Textarea
-                              placeholder="Write your content using Markdown..."
-                              value={block.content}
-                              onChange={(e) => updateBlockContent(block.id, e.target.value)}
-                              rows={10}
-                              className="font-mono text-sm"
-                            />
-                            <p className="text-xs text-muted-foreground">
-                              Supports Markdown: **bold**, *italic*, ## headings, [links](url), etc.
-                            </p>
-                          </div>
-                        ) : (
-                          <div className="space-y-2">
-                            {block.images.length > 0 && (
-                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                                {block.images.map((imgUrl, imgIndex) => (
-                                  <div key={imgIndex} className="relative group rounded-lg overflow-hidden border-2">
-                                    <img
-                                      src={imgUrl}
-                                      alt={`Gallery ${imgIndex + 1}`}
-                                      className="w-full h-32 object-cover"
-                                    />
-                                    <Button
-                                      type="button"
-                                      variant="destructive"
-                                      size="sm"
-                                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                                      onClick={() => removeGalleryImage(block.id, imgIndex)}
-                                    >
-                                      <X className="h-3 w-3" />
-                                    </Button>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-
-                            <input
-                              ref={(el) => galleryInputRefs.current[block.id] = el}
-                              type="file"
-                              accept="image/*"
-                              multiple
-                              className="hidden"
-                              onChange={(e) => handleGalleryUpload(block.id, e)}
-                              disabled={uploadingBlockId === block.id}
-                            />
-                            <Button
-                              type="button"
-                              variant="outline"
-                              className="w-full"
-                              onClick={() => galleryInputRefs.current[block.id]?.click()}
-                              disabled={uploadingBlockId === block.id}
-                            >
-                              {uploadingBlockId === block.id ? (
-                                <>
-                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                  Uploading...
-                                </>
-                              ) : (
-                                <>
-                                  <ImageIcon className="h-4 w-4 mr-2" />
-                                  Add Images to Gallery
-                                </>
+                        </CardHeader>
+                        <CardContent>
+                          {block.type === 'markdown' ? (
+                            <div className="space-y-2">
+                              <Textarea
+                                placeholder="Write your content using Markdown..."
+                                value={block.content}
+                                onChange={(e) => updateBlockContent(block.id, e.target.value)}
+                                rows={10}
+                                className="font-mono text-sm"
+                              />
+                              <p className="text-xs text-muted-foreground">
+                                Supports Markdown: **bold**, *italic*, ## headings, [links](url), etc.
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="space-y-2">
+                              {block.images.length > 0 && (
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                                  {block.images.map((imgUrl, imgIndex) => (
+                                    <div key={imgIndex} className="relative group rounded-lg overflow-hidden border-2">
+                                      <img
+                                        src={imgUrl}
+                                        alt={`Gallery ${imgIndex + 1}`}
+                                        className="w-full h-32 object-cover"
+                                      />
+                                      <Button
+                                        type="button"
+                                        variant="destructive"
+                                        size="sm"
+                                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                                        onClick={() => removeGalleryImage(block.id, imgIndex)}
+                                      >
+                                        <X className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                  ))}
+                                </div>
                               )}
-                            </Button>
-                            <p className="text-xs text-muted-foreground">
-                              {block.images.length > 0 
-                                ? `${block.images.length} image(s) in this gallery`
-                                : 'Upload images to create a photo gallery'}
-                            </p>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
+
+                              <input
+                                ref={(el) => galleryInputRefs.current[block.id] = el}
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                className="hidden"
+                                onChange={(e) => handleGalleryUpload(block.id, e)}
+                                disabled={uploadingBlockId === block.id}
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                className="w-full"
+                                onClick={() => galleryInputRefs.current[block.id]?.click()}
+                                disabled={uploadingBlockId === block.id}
+                              >
+                                {uploadingBlockId === block.id ? (
+                                  <>
+                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                    Uploading...
+                                  </>
+                                ) : (
+                                  <>
+                                    <ImageIcon className="h-4 w-4 mr-2" />
+                                    Add Images to Gallery
+                                  </>
+                                )}
+                              </Button>
+                              <p className="text-xs text-muted-foreground">
+                                {block.images.length > 0 
+                                  ? `${block.images.length} image(s) in this gallery`
+                                  : 'Upload images to create a photo gallery'}
+                              </p>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                      
+                      {/* Add Block Buttons - appear after each block */}
+                      <div className="flex justify-center gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => addContentBlock('markdown')}
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Text
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => addContentBlock('gallery')}
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Gallery
+                        </Button>
+                      </div>
+                    </div>
                   ))}
                 </TabsContent>
 
