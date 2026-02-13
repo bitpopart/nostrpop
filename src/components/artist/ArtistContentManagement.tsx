@@ -11,36 +11,32 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { User, Save, Eye, Upload, X, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { User, Save, Eye, Upload, X, Image as ImageIcon, Loader2, Plus, GripVertical, Trash2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ReactMarkdown from 'react-markdown';
 
-const DEFAULT_CONTENT = `# My Story
+// Content block types
+interface ContentBlock {
+  id: string;
+  type: 'markdown' | 'gallery';
+  content: string; // Markdown text or empty for gallery
+  images: string[]; // Images for gallery blocks
+}
+
+const DEFAULT_CONTENT_BLOCKS: ContentBlock[] = [
+  {
+    id: '1',
+    type: 'markdown',
+    content: `# My Story
 
 I have been drawing since childhood, like many of us, and I have never stopped drawing because it is what I love to do most in my life. I mostly drew cartoon designs, and when I completed 8 years of art school (4 years in graphic/media design and 4 years in animation and film), you can still see that illustration style in my work, whether it's in graphic designs or animations.
 
 Creating vector designs and using Adobe Illustrator is the foundation of most of my work. I have been sketching on the iPad (using Procreate) in recent years, but of course, I still use old-school pencil and paper.
 
-Around 2020, I wanted to draw more than just cartoons and tell stories through my art. I began drawing simpler human-like figures. A friend of mine had a sticker machine to print outlines, which allowed me to bring my art to life. During this time, my art style evolved more and more toward this pop art style, and I named it **BitPopArt**.
-
-People often associate the cartoons and, more specifically, the simple figures with the artist Keith Haring. While I use what we call outline figures (consisting of only lines and colors), my intention was never to reference him. As an artist, one's work will always remind others of something, and that is perfectly fine. This is the style that makes me happy.
-
-For me, this style allows me to tell more art stories without losing my cartoon side, and these outline figures were a convenient way to put them on bags, T-shirts, and my camper van, where I conducted my first Art Tour in 2022/23. In 2023, I began developing this style even further.
-
-## Bitcoin
-
-The 'Bit' in BitPopArt stands for Bitcoin. I have been a supporter of Bitcoin since I studied and learned what Bitcoin is. For me it stands for **Freedom**.
-
-## Travel
-
-I get inspiration from around the world. I have traveled to **88 countries** in my life, and many of them more than once. I can say that I've experienced a wide range of cultures. Humans, in general, serve as a significant source of inspiration for me. It's fascinating to observe how we behave, how we perceive the world, and how unique and unpredictable humans can be.
-
-## Nostr
-
-Nostr is a simple, open protocol that enables global, decentralized, and censorship-resistant social media.
-
-Follow me at BitPopArt:  
-**npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz**`;
+Around 2020, I wanted to draw more than just cartoons and tell stories through my art. I began drawing simpler human-like figures. A friend of mine had a sticker machine to print outlines, which allowed me to bring my art to life. During this time, my art style evolved more and more toward this pop art style, and I named it **BitPopArt**.`,
+    images: []
+  }
+];
 
 export function ArtistContentManagement() {
   const { nostr } = useNostr();
@@ -49,14 +45,15 @@ export function ArtistContentManagement() {
   const { mutateAsync: uploadFile } = useUploadFile();
   const queryClient = useQueryClient();
   const headerImageInputRef = useRef<HTMLInputElement>(null);
-  const galleryInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
 
   const [title, setTitle] = useState('My Story');
-  const [content, setContent] = useState(DEFAULT_CONTENT);
   const [headerImage, setHeaderImage] = useState('');
-  const [galleryImages, setGalleryImages] = useState<string[]>([]);
+  const [externalUrl, setExternalUrl] = useState('');
+  const [contentBlocks, setContentBlocks] = useState<ContentBlock[]>(DEFAULT_CONTENT_BLOCKS);
   const [activeTab, setActiveTab] = useState<'edit' | 'preview'>('edit');
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadingBlockId, setUploadingBlockId] = useState<string | null>(null);
   const [shareToNostr, setShareToNostr] = useState(false);
 
   // Fetch artist page content
@@ -81,14 +78,90 @@ export function ArtistContentManagement() {
     if (artistEvent) {
       const eventTitle = artistEvent.tags.find(t => t[0] === 'title')?.[1] || 'My Story';
       const eventHeaderImage = artistEvent.tags.find(t => t[0] === 'image')?.[1] || '';
-      const eventGalleryImages = artistEvent.tags.filter(t => t[0] === 'gallery').map(t => t[1]);
+      const eventExternalUrl = artistEvent.tags.find(t => t[0] === 'r')?.[1] || '';
       
       setTitle(eventTitle);
-      setContent(artistEvent.content);
       setHeaderImage(eventHeaderImage);
-      setGalleryImages(eventGalleryImages);
+      setExternalUrl(eventExternalUrl);
+
+      // Parse content blocks from content (JSON)
+      try {
+        const parsed = JSON.parse(artistEvent.content);
+        if (parsed.blocks && Array.isArray(parsed.blocks)) {
+          setContentBlocks(parsed.blocks);
+        } else {
+          // Legacy: single content field - convert to blocks
+          setContentBlocks([{
+            id: '1',
+            type: 'markdown',
+            content: artistEvent.content,
+            images: []
+          }]);
+        }
+      } catch {
+        // Old format: plain text content
+        setContentBlocks([{
+          id: '1',
+          type: 'markdown',
+          content: artistEvent.content,
+          images: []
+        }]);
+      }
+
+      // Load gallery images from tags (legacy support)
+      const eventGalleryImages = artistEvent.tags.filter(t => t[0] === 'gallery').map(t => t[1]);
+      if (eventGalleryImages.length > 0) {
+        // Add as gallery block if not already in content blocks
+        const hasGalleryBlock = contentBlocks.some(b => b.type === 'gallery' && b.images.length > 0);
+        if (!hasGalleryBlock) {
+          setContentBlocks(prev => [...prev, {
+            id: Date.now().toString(),
+            type: 'gallery',
+            content: '',
+            images: eventGalleryImages
+          }]);
+        }
+      }
     }
   }, [artistEvent]);
+
+  const addContentBlock = (type: 'markdown' | 'gallery') => {
+    const newBlock: ContentBlock = {
+      id: Date.now().toString(),
+      type,
+      content: type === 'markdown' ? '' : '',
+      images: []
+    };
+    setContentBlocks([...contentBlocks, newBlock]);
+  };
+
+  const updateBlockContent = (id: string, content: string) => {
+    setContentBlocks(contentBlocks.map(block => 
+      block.id === id ? { ...block, content } : block
+    ));
+  };
+
+  const removeBlock = (id: string) => {
+    if (contentBlocks.length <= 1) {
+      toast.error('You must have at least one content block');
+      return;
+    }
+    setContentBlocks(contentBlocks.filter(block => block.id !== id));
+  };
+
+  const moveBlockUp = (index: number) => {
+    if (index === 0) return;
+    const newBlocks = [...contentBlocks];
+    [newBlocks[index - 1], newBlocks[index]] = [newBlocks[index], newBlocks[index - 1]];
+    setContentBlocks(newBlocks);
+  };
+
+  const moveBlockDown = (index: number) => {
+    if (index === contentBlocks.length - 1) return;
+    const newBlocks = [...contentBlocks];
+    [newBlocks[index], newBlocks[index + 1]] = [newBlocks[index + 1], newBlocks[index]];
+    setContentBlocks(newBlocks);
+  };
 
   const handleHeaderImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -114,11 +187,11 @@ export function ArtistContentManagement() {
     }
   };
 
-  const handleGalleryUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleGalleryUpload = async (blockId: string, event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
 
-    setIsUploading(true);
+    setUploadingBlockId(blockId);
     const uploadedUrls: string[] = [];
 
     for (let i = 0; i < files.length; i++) {
@@ -139,22 +212,39 @@ export function ArtistContentManagement() {
       }
     }
 
-    setGalleryImages(prev => [...prev, ...uploadedUrls]);
-    setIsUploading(false);
+    setContentBlocks(contentBlocks.map(block =>
+      block.id === blockId ? { ...block, images: [...block.images, ...uploadedUrls] } : block
+    ));
+    setUploadingBlockId(null);
     toast.success(`${uploadedUrls.length} image(s) uploaded!`);
   };
 
-  const removeGalleryImage = (index: number) => {
-    setGalleryImages(prev => prev.filter((_, i) => i !== index));
+  const removeGalleryImage = (blockId: string, imageIndex: number) => {
+    setContentBlocks(contentBlocks.map(block =>
+      block.id === blockId 
+        ? { ...block, images: block.images.filter((_, i) => i !== imageIndex) }
+        : block
+    ));
   };
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!content.trim()) {
-      toast.error('Please enter content');
+    // Validation
+    const hasContent = contentBlocks.some(block => 
+      (block.type === 'markdown' && block.content.trim()) ||
+      (block.type === 'gallery' && block.images.length > 0)
+    );
+
+    if (!hasContent) {
+      toast.error('Please add at least one content block with content');
       return;
     }
+
+    // Prepare content as JSON with blocks
+    const contentData = {
+      blocks: contentBlocks
+    };
 
     // Always publish to Nostr (kind 30024 - artist page)
     const tags: string[][] = [
@@ -168,24 +258,31 @@ export function ArtistContentManagement() {
       tags.push(['image', headerImage]);
     }
 
-    // Add gallery images
-    galleryImages.forEach(imgUrl => {
-      tags.push(['gallery', imgUrl]);
+    if (externalUrl) {
+      tags.push(['r', externalUrl]);
+    }
+
+    // Add all gallery images as separate tags (for backwards compatibility and Nostr sharing)
+    contentBlocks.forEach(block => {
+      if (block.type === 'gallery') {
+        block.images.forEach(imgUrl => {
+          tags.push(['gallery', imgUrl]);
+        });
+      }
     });
 
     console.log('[ArtistContentManagement] Publishing artist page update...', {
       title,
-      contentLength: content.length,
+      blocks: contentBlocks.length,
       headerImage: !!headerImage,
-      galleryImages: galleryImages.length,
-      tags: tags.slice(0, 5),
+      externalUrl,
       shareToNostrCommunity: shareToNostr
     });
 
     createEvent(
       {
         kind: 30024,
-        content: content,
+        content: JSON.stringify(contentData),
         tags,
       },
       {
@@ -198,8 +295,13 @@ export function ArtistContentManagement() {
           // If share to Nostr community is checked, also create a kind 1 note
           if (shareToNostr) {
             // Create a summary for the community post
-            const firstParagraph = content.split('\n\n')[0].replace(/^#+ /, '').trim();
-            const shareContent = `📢 Updated my artist page: ${title}\n\n${firstParagraph.slice(0, 200)}${firstParagraph.length > 200 ? '...' : ''}\n\nhttps://bitpopart.com/artist`;
+            const firstMarkdownBlock = contentBlocks.find(b => b.type === 'markdown' && b.content.trim());
+            const firstParagraph = firstMarkdownBlock 
+              ? firstMarkdownBlock.content.split('\n\n')[0].replace(/^#+ /, '').trim()
+              : 'Check out my artist page!';
+            
+            const shareUrl = externalUrl || 'https://bitpopart.com/artist';
+            const shareContent = `📢 Updated my artist page: ${title}\n\n${firstParagraph.slice(0, 200)}${firstParagraph.length > 200 ? '...' : ''}\n\n${shareUrl}`;
             
             createEvent(
               {
@@ -208,7 +310,7 @@ export function ArtistContentManagement() {
                 tags: [
                   ['t', 'artist'],
                   ['t', 'bitpopart'],
-                  ['r', 'https://bitpopart.com/artist'],
+                  ['r', shareUrl],
                 ],
               },
               {
@@ -234,8 +336,6 @@ export function ArtistContentManagement() {
     );
   };
 
-
-
   return (
     <Card>
       <CardHeader>
@@ -244,11 +344,12 @@ export function ArtistContentManagement() {
           Artist Page Content
         </CardTitle>
         <CardDescription>
-          Update your artist story and bio (supports Markdown formatting)
+          Build your artist page with multiple content blocks - add markdown text and photo galleries
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSave} className="space-y-4">
+        <form onSubmit={handleSave} className="space-y-6">
+          {/* Page Title */}
           <div className="space-y-2">
             <Label htmlFor="title">Page Title</Label>
             <Input
@@ -326,101 +427,221 @@ export function ArtistContentManagement() {
             )}
           </div>
 
-          {/* Gallery Images */}
+          {/* External URL */}
           <div className="space-y-2">
-            <Label>Gallery Images</Label>
-            
-            {galleryImages.length > 0 && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                {galleryImages.map((imgUrl, index) => (
-                  <div key={index} className="relative group rounded-lg overflow-hidden border-2 border-gray-200 dark:border-gray-700">
-                    <img
-                      src={imgUrl}
-                      alt={`Gallery ${index + 1}`}
-                      className="w-full h-32 object-cover"
-                    />
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => removeGalleryImage(index)}
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <input
-              ref={galleryInputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              className="hidden"
-              onChange={handleGalleryUpload}
-              disabled={isUploading}
+            <Label htmlFor="external-url">External URL (Optional)</Label>
+            <Input
+              id="external-url"
+              type="url"
+              placeholder="https://example.com"
+              value={externalUrl}
+              onChange={(e) => setExternalUrl(e.target.value)}
             />
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              onClick={() => galleryInputRef.current?.click()}
-              disabled={isUploading}
-            >
-              {isUploading ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Uploading...
-                </>
-              ) : (
-                <>
-                  <ImageIcon className="h-4 w-4 mr-2" />
-                  Add Gallery Images
-                </>
-              )}
-            </Button>
             <p className="text-xs text-muted-foreground">
-              {galleryImages.length > 0 
-                ? `${galleryImages.length} image(s) in gallery`
-                : 'Upload multiple images to create a photo gallery'}
+              This URL will be shared when you post to Nostr and can link to external resources
             </p>
           </div>
 
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'edit' | 'preview')}>
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="edit">Edit</TabsTrigger>
-              <TabsTrigger value="preview">Preview</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="edit" className="mt-4">
-              <div className="space-y-2">
-                <Label htmlFor="content">Content (Markdown)</Label>
-                <Textarea
-                  id="content"
-                  placeholder="Write your story using Markdown..."
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  rows={20}
-                  className="font-mono text-sm"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Supports Markdown: **bold**, *italic*, ## headings, [links](url), etc.
-                </p>
+          <div className="border-t pt-6">
+            <div className="flex items-center justify-between mb-4">
+              <Label className="text-lg font-semibold">Content Blocks</Label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => addContentBlock('markdown')}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Text
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => addContentBlock('gallery')}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Gallery
+                </Button>
               </div>
-            </TabsContent>
+            </div>
 
-            <TabsContent value="preview" className="mt-4">
-              <Card className="min-h-[500px]">
-                <CardContent className="pt-6">
-                  <div className="prose prose-lg dark:prose-invert max-w-none">
-                    <ReactMarkdown>{content}</ReactMarkdown>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'edit' | 'preview')}>
+              <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsTrigger value="edit">Edit</TabsTrigger>
+                <TabsTrigger value="preview">Preview</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="edit" className="space-y-4">
+                {contentBlocks.map((block, index) => (
+                  <Card key={block.id} className="border-2">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <GripVertical className="h-4 w-4 text-muted-foreground cursor-move" />
+                          <span className="text-sm font-medium">
+                            {block.type === 'markdown' ? 'Text Block' : 'Photo Gallery'}
+                          </span>
+                        </div>
+                        <div className="flex gap-1">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => moveBlockUp(index)}
+                            disabled={index === 0}
+                          >
+                            ↑
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => moveBlockDown(index)}
+                            disabled={index === contentBlocks.length - 1}
+                          >
+                            ↓
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeBlock(block.id)}
+                            disabled={contentBlocks.length <= 1}
+                          >
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      {block.type === 'markdown' ? (
+                        <div className="space-y-2">
+                          <Textarea
+                            placeholder="Write your content using Markdown..."
+                            value={block.content}
+                            onChange={(e) => updateBlockContent(block.id, e.target.value)}
+                            rows={10}
+                            className="font-mono text-sm"
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Supports Markdown: **bold**, *italic*, ## headings, [links](url), etc.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {block.images.length > 0 && (
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                              {block.images.map((imgUrl, imgIndex) => (
+                                <div key={imgIndex} className="relative group rounded-lg overflow-hidden border-2 border-gray-200 dark:border-gray-700">
+                                  <img
+                                    src={imgUrl}
+                                    alt={`Gallery ${imgIndex + 1}`}
+                                    className="w-full h-32 object-cover"
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="destructive"
+                                    size="sm"
+                                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    onClick={() => removeGalleryImage(block.id, imgIndex)}
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          <input
+                            ref={(el) => galleryInputRefs.current[block.id] = el}
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            className="hidden"
+                            onChange={(e) => handleGalleryUpload(block.id, e)}
+                            disabled={uploadingBlockId === block.id}
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="w-full"
+                            onClick={() => galleryInputRefs.current[block.id]?.click()}
+                            disabled={uploadingBlockId === block.id}
+                          >
+                            {uploadingBlockId === block.id ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                Uploading...
+                              </>
+                            ) : (
+                              <>
+                                <ImageIcon className="h-4 w-4 mr-2" />
+                                Add Images to Gallery
+                              </>
+                            )}
+                          </Button>
+                          <p className="text-xs text-muted-foreground">
+                            {block.images.length > 0 
+                              ? `${block.images.length} image(s) in this gallery`
+                              : 'Upload images to create a photo gallery'}
+                          </p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </TabsContent>
+
+              <TabsContent value="preview" className="mt-4">
+                <div className="space-y-8">
+                  {headerImage && (
+                    <div className="w-full h-64 rounded-lg overflow-hidden">
+                      <img
+                        src={headerImage}
+                        alt="Header"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                  
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-3xl">{title}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-8">
+                      {contentBlocks.map((block) => (
+                        <div key={block.id}>
+                          {block.type === 'markdown' && block.content.trim() && (
+                            <div className="prose prose-lg dark:prose-invert max-w-none">
+                              <ReactMarkdown>{block.content}</ReactMarkdown>
+                            </div>
+                          )}
+                          {block.type === 'gallery' && block.images.length > 0 && (
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                              {block.images.map((imgUrl, index) => (
+                                <div
+                                  key={index}
+                                  className="relative aspect-square overflow-hidden rounded-lg"
+                                >
+                                  <img
+                                    src={imgUrl}
+                                    alt={`Gallery ${index + 1}`}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
 
           {/* Share to Nostr Community Checkbox */}
           <div className="flex items-center space-x-2 pt-4 border-t">
@@ -437,7 +658,7 @@ export function ArtistContentManagement() {
                 Share to Nostr Community
               </Label>
               <p className="text-sm text-muted-foreground mt-1">
-                Automatically share your artist page with the Nostr community to showcase your story and connect with art lovers.
+                Automatically share your artist page with the Nostr community
               </p>
             </div>
           </div>
@@ -445,7 +666,7 @@ export function ArtistContentManagement() {
           <div className="flex gap-2 pt-2">
             <Button type="submit" className="flex-1">
               <Save className="h-4 w-4 mr-2" />
-              Save
+              Save Artist Page
             </Button>
             <Button
               type="button"

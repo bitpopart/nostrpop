@@ -23,7 +23,6 @@ export function usePages() {
       const pages: PageData[] = events
         .map((event): PageData | null => {
           try {
-            const content = JSON.parse(event.content);
             const id = event.tags.find(t => t[0] === 'd')?.[1];
             const title = event.tags.find(t => t[0] === 'title')?.[1];
             const headerImage = event.tags.find(t => t[0] === 'header')?.[1];
@@ -33,13 +32,16 @@ export function usePages() {
             
             if (!id || !title) return null;
 
+            // Get all gallery images from tags
+            const galleryImages = event.tags.filter(t => t[0] === 'image').map(t => t[1]);
+
             return {
               id,
               event,
               title,
-              description: content.description || '',
+              description: event.content, // Store as-is (could be JSON with blocks or plain text)
               header_image: headerImage,
-              gallery_images: content.gallery_images || [],
+              gallery_images: galleryImages,
               external_url: externalUrl,
               author_pubkey: event.pubkey,
               created_at: new Date(event.created_at * 1000).toISOString(),
@@ -77,20 +79,22 @@ export function useFooterPages() {
       const pages: PageData[] = events
         .map((event): PageData | null => {
           try {
-            const content = JSON.parse(event.content);
             const id = event.tags.find(t => t[0] === 'd')?.[1];
             const title = event.tags.find(t => t[0] === 'title')?.[1];
             const order = event.tags.find(t => t[0] === 'order')?.[1];
             
             if (!id || !title) return null;
 
+            // Get all gallery images from tags
+            const galleryImages = event.tags.filter(t => t[0] === 'image').map(t => t[1]);
+
             return {
               id,
               event,
               title,
-              description: content.description || '',
+              description: event.content, // Store as-is (could be JSON with blocks or plain text)
               header_image: event.tags.find(t => t[0] === 'header')?.[1],
-              gallery_images: content.gallery_images || [],
+              gallery_images: galleryImages,
               external_url: event.tags.find(t => t[0] === 'r')?.[1],
               author_pubkey: event.pubkey,
               created_at: new Date(event.created_at * 1000).toISOString(),
@@ -129,19 +133,21 @@ export function usePage(slug: string) {
 
       const event = events[0];
       try {
-        const content = JSON.parse(event.content);
         const id = event.tags.find(t => t[0] === 'd')?.[1];
         const title = event.tags.find(t => t[0] === 'title')?.[1];
 
         if (!id || !title) return null;
 
+        // Get all gallery images from tags
+        const galleryImages = event.tags.filter(t => t[0] === 'image').map(t => t[1]);
+
         return {
           id,
           event,
           title,
-          description: content.description || '',
+          description: event.content, // Store as-is (could be JSON with blocks or plain text)
           header_image: event.tags.find(t => t[0] === 'header')?.[1],
-          gallery_images: content.gallery_images || [],
+          gallery_images: galleryImages,
           external_url: event.tags.find(t => t[0] === 'r')?.[1],
           author_pubkey: event.pubkey,
           created_at: new Date(event.created_at * 1000).toISOString(),

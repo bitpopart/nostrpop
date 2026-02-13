@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { usePages } from '@/hooks/usePages';
@@ -11,36 +11,51 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, X, Upload, FileText, Edit, Image as ImageIcon, ExternalLink } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Plus, X, Upload, FileText, Edit, Image as ImageIcon, ExternalLink, GripVertical, Trash2, Loader2 } from 'lucide-react';
 import { generateSlug } from '@/lib/pageTypes';
 import type { PageData } from '@/lib/pageTypes';
+import ReactMarkdown from 'react-markdown';
+
+// Content block types
+interface ContentBlock {
+  id: string;
+  type: 'markdown' | 'gallery';
+  content: string;
+  images: string[];
+}
 
 export function PageManagement() {
   const { user } = useCurrentUser();
   const { mutate: createEvent } = useNostrPublish();
-  const { mutateAsync: uploadFile, isPending: isUploading } = useUploadFile();
+  const { mutateAsync: uploadFile } = useUploadFile();
   const { data: pages, isLoading } = usePages();
+  const headerImageInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
   
   const [isCreating, setIsCreating] = useState(false);
   const [editingPage, setEditingPage] = useState<PageData | null>(null);
   
   // Form state
   const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
   const [headerImage, setHeaderImage] = useState('');
-  const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [externalUrl, setExternalUrl] = useState('');
   const [showInFooter, setShowInFooter] = useState(false);
   const [order, setOrder] = useState('');
+  const [contentBlocks, setContentBlocks] = useState<ContentBlock[]>([
+    { id: '1', type: 'markdown', content: '', images: [] }
+  ]);
+  const [activeTab, setActiveTab] = useState<'edit' | 'preview'>('edit');
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadingBlockId, setUploadingBlockId] = useState<string | null>(null);
   
   const resetForm = () => {
     setTitle('');
-    setDescription('');
     setHeaderImage('');
-    setGalleryImages([]);
     setExternalUrl('');
     setShowInFooter(false);
     setOrder('');
+    setContentBlocks([{ id: '1', type: 'markdown', content: '', images: [] }]);
     setEditingPage(null);
     setIsCreating(false);
   };
@@ -48,58 +63,147 @@ export function PageManagement() {
   const handleEdit = (page: PageData) => {
     setEditingPage(page);
     setTitle(page.title);
-    setDescription(page.description);
     setHeaderImage(page.header_image || '');
-    setGalleryImages(page.gallery_images);
     setExternalUrl(page.external_url || '');
     setShowInFooter(page.show_in_footer);
     setOrder(page.order?.toString() || '');
+    
+    // Parse content blocks from description
+    try {
+      const parsed = JSON.parse(page.description);
+      if (parsed.blocks && Array.isArray(parsed.blocks)) {
+        setContentBlocks(parsed.blocks);
+      } else {
+        // Legacy: single description field
+        setContentBlocks([{ 
+          id: '1', 
+          type: 'markdown', 
+          content: page.description,
+          images: page.gallery_images || []
+        }]);
+      }
+    } catch {
+      // Not JSON, treat as plain text
+      setContentBlocks([{ 
+        id: '1', 
+        type: 'markdown', 
+        content: page.description,
+        images: page.gallery_images || []
+      }]);
+    }
+    
     setIsCreating(true);
+  };
+
+  const addContentBlock = (type: 'markdown' | 'gallery') => {
+    const newBlock: ContentBlock = {
+      id: Date.now().toString(),
+      type,
+      content: '',
+      images: []
+    };
+    setContentBlocks([...contentBlocks, newBlock]);
+  };
+
+  const updateBlockContent = (id: string, content: string) => {
+    setContentBlocks(contentBlocks.map(block => 
+      block.id === id ? { ...block, content } : block
+    ));
+  };
+
+  const removeBlock = (id: string) => {
+    if (contentBlocks.length <= 1) {
+      return;
+    }
+    setContentBlocks(contentBlocks.filter(block => block.id !== id));
+  };
+
+  const moveBlockUp = (index: number) => {
+    if (index === 0) return;
+    const newBlocks = [...contentBlocks];
+    [newBlocks[index - 1], newBlocks[index]] = [newBlocks[index], newBlocks[index - 1]];
+    setContentBlocks(newBlocks);
+  };
+
+  const moveBlockDown = (index: number) => {
+    if (index === contentBlocks.length - 1) return;
+    const newBlocks = [...contentBlocks];
+    [newBlocks[index], newBlocks[index + 1]] = [newBlocks[index + 1], newBlocks[index]];
+    setContentBlocks(newBlocks);
   };
 
   const handleHeaderImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    setIsUploading(true);
     try {
       const tags = await uploadFile(file);
       const url = tags[0][1];
       setHeaderImage(url);
     } catch (error) {
       console.error('Failed to upload header image:', error);
+    } finally {
+      setIsUploading(false);
     }
   };
 
-  const handleGalleryImagesUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleGalleryUpload = async (blockId: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
+
+    setUploadingBlockId(blockId);
+    const uploadedUrls: string[] = [];
 
     for (let i = 0; i < files.length; i++) {
       try {
         const file = files[i];
         const tags = await uploadFile(file);
         const imageUrl = tags[0][1];
-        setGalleryImages(prev => [...prev, imageUrl]);
+        uploadedUrls.push(imageUrl);
       } catch (error) {
         console.error('Failed to upload gallery image:', error);
       }
     }
+
+    setContentBlocks(contentBlocks.map(block =>
+      block.id === blockId ? { ...block, images: [...block.images, ...uploadedUrls] } : block
+    ));
+    setUploadingBlockId(null);
   };
 
-  const removeGalleryImage = (index: number) => {
-    setGalleryImages(prev => prev.filter((_, i) => i !== index));
+  const removeGalleryImage = (blockId: string, imageIndex: number) => {
+    setContentBlocks(contentBlocks.map(block =>
+      block.id === blockId 
+        ? { ...block, images: block.images.filter((_, i) => i !== imageIndex) }
+        : block
+    ));
   };
 
   const handleSubmit = () => {
-    if (!user || !title.trim() || !description.trim()) return;
+    if (!user || !title.trim()) return;
+
+    const hasContent = contentBlocks.some(block => 
+      (block.type === 'markdown' && block.content.trim()) ||
+      (block.type === 'gallery' && block.images.length > 0)
+    );
+
+    if (!hasContent) return;
 
     const pageSlug = editingPage?.id || generateSlug(title);
+
+    // Collect all gallery images from blocks
+    const allGalleryImages: string[] = [];
+    contentBlocks.forEach(block => {
+      if (block.type === 'gallery') {
+        allGalleryImages.push(...block.images);
+      }
+    });
 
     createEvent({
       kind: 38175,
       content: JSON.stringify({
-        description: description.trim(),
-        gallery_images: galleryImages,
+        blocks: contentBlocks,
       }),
       tags: [
         ['d', pageSlug],
@@ -109,7 +213,7 @@ export function PageManagement() {
         ...(externalUrl ? [['r', externalUrl]] : []),
         ...(showInFooter ? [['footer', 'true']] : []),
         ...(order ? [['order', order]] : []),
-        ...galleryImages.map((img, i) => ['image', img, i.toString()]),
+        ...allGalleryImages.map((img) => ['image', img]),
       ],
     });
 
@@ -135,7 +239,7 @@ export function PageManagement() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle>Page Management</CardTitle>
-              <CardDescription>Create custom pages with galleries and external links</CardDescription>
+              <CardDescription>Create custom pages with multiple content blocks, galleries and external links</CardDescription>
             </div>
             <Button onClick={() => setIsCreating(!isCreating)} variant={isCreating ? "outline" : "default"}>
               {isCreating ? (
@@ -160,7 +264,7 @@ export function PageManagement() {
           <CardHeader>
             <CardTitle>{editingPage ? 'Edit' : 'Create New'} Page</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
             {/* Title */}
             <div className="space-y-2">
               <Label htmlFor="title">Page Title *</Label>
@@ -175,105 +279,71 @@ export function PageManagement() {
               </p>
             </div>
 
-            {/* Description */}
-            <div className="space-y-2">
-              <Label htmlFor="description">Description *</Label>
-              <Textarea
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Page content and description"
-                rows={6}
-              />
-            </div>
-
             {/* Header Image */}
             <div className="space-y-2">
               <Label>Header Image (optional)</Label>
               {headerImage ? (
-                <div className="relative inline-block">
-                  <img
-                    src={headerImage}
-                    alt="Header"
-                    className="w-full max-w-md h-48 object-cover rounded-lg border-2 border-purple-200"
+                <div className="space-y-2">
+                  <div className="relative rounded-lg overflow-hidden border-2 border-gray-200 dark:border-gray-700">
+                    <img
+                      src={headerImage}
+                      alt="Header"
+                      className="w-full h-48 object-cover"
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      className="absolute top-2 right-2"
+                      onClick={() => setHeaderImage('')}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <Input
+                    type="url"
+                    placeholder="Or paste image URL"
+                    value={headerImage}
+                    onChange={(e) => setHeaderImage(e.target.value)}
                   />
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    className="absolute top-2 right-2"
-                    onClick={() => setHeaderImage('')}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
                 </div>
               ) : (
-                <label className="w-full max-w-md h-48 border-2 border-dashed rounded-lg flex items-center justify-center cursor-pointer hover:border-purple-500 transition-colors">
-                  <div className="text-center">
-                    {isUploading ? (
-                      <div className="animate-spin text-2xl">⏳</div>
-                    ) : (
-                      <>
-                        <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                        <span className="text-sm text-gray-500">Upload Header Image</span>
-                      </>
-                    )}
-                  </div>
+                <div className="space-y-2">
                   <input
+                    ref={headerImageInputRef}
                     type="file"
                     accept="image/*"
                     className="hidden"
                     onChange={handleHeaderImageUpload}
                     disabled={isUploading}
                   />
-                </label>
-              )}
-            </div>
-
-            {/* Gallery Images */}
-            <div className="space-y-2">
-              <Label>Gallery Images (optional)</Label>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {galleryImages.map((img, index) => (
-                  <div key={index} className="relative group">
-                    <img
-                      src={img}
-                      alt={`Gallery ${index + 1}`}
-                      className="w-full h-32 object-cover rounded-lg"
-                    />
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => removeGalleryImage(index)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-                <label className="w-full h-32 border-2 border-dashed rounded-lg flex items-center justify-center cursor-pointer hover:border-purple-500 transition-colors">
-                  <div className="text-center">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => headerImageInputRef.current?.click()}
+                    disabled={isUploading}
+                  >
                     {isUploading ? (
-                      <div className="animate-spin">⏳</div>
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Uploading...
+                      </>
                     ) : (
                       <>
-                        <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                        <span className="text-sm text-gray-500">Add Images</span>
+                        <Upload className="h-4 w-4 mr-2" />
+                        Upload Header Image
                       </>
                     )}
-                  </div>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    className="hidden"
-                    onChange={handleGalleryImagesUpload}
-                    disabled={isUploading}
+                  </Button>
+                  <Input
+                    type="url"
+                    placeholder="Or paste image URL"
+                    value={headerImage}
+                    onChange={(e) => setHeaderImage(e.target.value)}
                   />
-                </label>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Upload multiple images to create a photo gallery
-              </p>
+                </div>
+              )}
             </div>
 
             {/* External URL */}
@@ -281,6 +351,7 @@ export function PageManagement() {
               <Label htmlFor="url">External URL (optional)</Label>
               <Input
                 id="url"
+                type="url"
                 value={externalUrl}
                 onChange={(e) => setExternalUrl(e.target.value)}
                 placeholder="https://example.com"
@@ -290,8 +361,223 @@ export function PageManagement() {
               </p>
             </div>
 
+            {/* Content Blocks */}
+            <div className="border-t pt-6">
+              <div className="flex items-center justify-between mb-4">
+                <Label className="text-lg font-semibold">Content Blocks</Label>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => addContentBlock('markdown')}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Text
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => addContentBlock('gallery')}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Gallery
+                  </Button>
+                </div>
+              </div>
+
+              <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'edit' | 'preview')}>
+                <TabsList className="grid w-full grid-cols-2 mb-4">
+                  <TabsTrigger value="edit">Edit</TabsTrigger>
+                  <TabsTrigger value="preview">Preview</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="edit" className="space-y-4">
+                  {contentBlocks.map((block, index) => (
+                    <Card key={block.id} className="border-2">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <GripVertical className="h-4 w-4 text-muted-foreground cursor-move" />
+                            <span className="text-sm font-medium">
+                              {block.type === 'markdown' ? 'Text Block' : 'Photo Gallery'}
+                            </span>
+                          </div>
+                          <div className="flex gap-1">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => moveBlockUp(index)}
+                              disabled={index === 0}
+                            >
+                              ↑
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => moveBlockDown(index)}
+                              disabled={index === contentBlocks.length - 1}
+                            >
+                              ↓
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeBlock(block.id)}
+                              disabled={contentBlocks.length <= 1}
+                            >
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        {block.type === 'markdown' ? (
+                          <div className="space-y-2">
+                            <Textarea
+                              placeholder="Write your content using Markdown..."
+                              value={block.content}
+                              onChange={(e) => updateBlockContent(block.id, e.target.value)}
+                              rows={10}
+                              className="font-mono text-sm"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                              Supports Markdown: **bold**, *italic*, ## headings, [links](url), etc.
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            {block.images.length > 0 && (
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                                {block.images.map((imgUrl, imgIndex) => (
+                                  <div key={imgIndex} className="relative group rounded-lg overflow-hidden border-2">
+                                    <img
+                                      src={imgUrl}
+                                      alt={`Gallery ${imgIndex + 1}`}
+                                      className="w-full h-32 object-cover"
+                                    />
+                                    <Button
+                                      type="button"
+                                      variant="destructive"
+                                      size="sm"
+                                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                                      onClick={() => removeGalleryImage(block.id, imgIndex)}
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            <input
+                              ref={(el) => galleryInputRefs.current[block.id] = el}
+                              type="file"
+                              accept="image/*"
+                              multiple
+                              className="hidden"
+                              onChange={(e) => handleGalleryUpload(block.id, e)}
+                              disabled={uploadingBlockId === block.id}
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="w-full"
+                              onClick={() => galleryInputRefs.current[block.id]?.click()}
+                              disabled={uploadingBlockId === block.id}
+                            >
+                              {uploadingBlockId === block.id ? (
+                                <>
+                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                  Uploading...
+                                </>
+                              ) : (
+                                <>
+                                  <ImageIcon className="h-4 w-4 mr-2" />
+                                  Add Images to Gallery
+                                </>
+                              )}
+                            </Button>
+                            <p className="text-xs text-muted-foreground">
+                              {block.images.length > 0 
+                                ? `${block.images.length} image(s) in this gallery`
+                                : 'Upload images to create a photo gallery'}
+                            </p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </TabsContent>
+
+                <TabsContent value="preview" className="mt-4">
+                  <div className="space-y-8">
+                    {headerImage && (
+                      <div className="w-full h-64 rounded-lg overflow-hidden">
+                        <img
+                          src={headerImage}
+                          alt="Header"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                    
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-3xl">{title || 'Page Title'}</CardTitle>
+                        {externalUrl && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            asChild
+                            className="mt-2 w-fit"
+                          >
+                            <a href={externalUrl} target="_blank" rel="noopener noreferrer">
+                              <ExternalLink className="h-4 w-4 mr-2" />
+                              Visit External Site
+                            </a>
+                          </Button>
+                        )}
+                      </CardHeader>
+                      <CardContent className="space-y-8">
+                        {contentBlocks.map((block) => (
+                          <div key={block.id}>
+                            {block.type === 'markdown' && block.content.trim() && (
+                              <div className="prose prose-lg dark:prose-invert max-w-none">
+                                <ReactMarkdown>{block.content}</ReactMarkdown>
+                              </div>
+                            )}
+                            {block.type === 'gallery' && block.images.length > 0 && (
+                              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                {block.images.map((imgUrl, index) => (
+                                  <div
+                                    key={index}
+                                    className="relative aspect-square overflow-hidden rounded-lg"
+                                  >
+                                    <img
+                                      src={imgUrl}
+                                      alt={`Gallery ${index + 1}`}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </CardContent>
+                    </Card>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </div>
+
             {/* Footer Display */}
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 border-t pt-4">
               <Checkbox
                 id="footer"
                 checked={showInFooter}
@@ -324,7 +610,7 @@ export function PageManagement() {
             <div className="flex gap-2">
               <Button
                 onClick={handleSubmit}
-                disabled={!title.trim() || !description.trim()}
+                disabled={!title.trim()}
               >
                 {editingPage ? 'Update' : 'Create'} Page
               </Button>
@@ -376,7 +662,18 @@ export function PageManagement() {
                   <div className="flex-1 space-y-1">
                     <h3 className="font-semibold">{page.title}</h3>
                     <p className="text-sm text-muted-foreground line-clamp-2">
-                      {page.description}
+                      {(() => {
+                        try {
+                          const parsed = JSON.parse(page.description);
+                          if (parsed.blocks && Array.isArray(parsed.blocks)) {
+                            const firstMarkdown = parsed.blocks.find((b: ContentBlock) => b.type === 'markdown' && b.content);
+                            return firstMarkdown?.content.slice(0, 100) || 'Custom page';
+                          }
+                          return page.description.slice(0, 100);
+                        } catch {
+                          return page.description.slice(0, 100);
+                        }
+                      })()}
                     </p>
                     <div className="flex items-center gap-2 flex-wrap">
                       <Badge variant="outline" className="text-xs">

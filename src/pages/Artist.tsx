@@ -5,10 +5,19 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Image as ImageIcon } from 'lucide-react';
+import { Image as ImageIcon, ExternalLink } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import ReactMarkdown from 'react-markdown';
 
 const ARTIST_PUBKEY = '7d33ba57d8a6e8869a1f1d5215254597594ac0dbfeb01b690def8c461b82db35'; // traveltelly's pubkey
+
+// Content block types
+interface ContentBlock {
+  id: string;
+  type: 'markdown' | 'gallery';
+  content: string;
+  images: string[];
+}
 
 export default function Artist() {
   const { nostr } = useNostr();
@@ -40,25 +49,23 @@ export default function Artist() {
           id: event.id.substring(0, 8),
           title: event.tags.find(t => t[0] === 'title')?.[1],
           hasImage: !!event.tags.find(t => t[0] === 'image'),
-          galleryImages: event.tags.filter(t => t[0] === 'gallery').length,
           contentLength: event.content.length
         });
         return event;
       }
 
       console.log('[Artist] No events found, using default content');
-      // Default content if no Nostr event found
       return null;
     },
   });
 
-  const getContent = (): string => {
-    if (artistContent) {
-      return artistContent.content;
-    }
-
-    // Default My Story content
-    return `# My Story
+  const getContentBlocks = (): ContentBlock[] => {
+    if (!artistContent) {
+      // Default content
+      return [{
+        id: '1',
+        type: 'markdown',
+        content: `# My Story
 
 I have been drawing since childhood, like many of us, and I have never stopped drawing because it is what I love to do most in my life. I mostly drew cartoon designs, and when I completed 8 years of art school (4 years in graphic/media design and 4 years in animation and film), you can still see that illustration style in my work, whether it's in graphic designs or animations.
 
@@ -83,12 +90,38 @@ I get inspiration from around the world. I have traveled to **88 countries** in 
 Nostr is a simple, open protocol that enables global, decentralized, and censorship-resistant social media.
 
 Follow me at BitPopArt:  
-**npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz**`;
+**npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz**`,
+        images: []
+      }];
+    }
+
+    try {
+      const parsed = JSON.parse(artistContent.content);
+      if (parsed.blocks && Array.isArray(parsed.blocks)) {
+        return parsed.blocks;
+      }
+    } catch {
+      // If not JSON or doesn't have blocks, treat as legacy single content block
+      return [{
+        id: '1',
+        type: 'markdown',
+        content: artistContent.content,
+        images: []
+      }];
+    }
+
+    // Fallback
+    return [{
+      id: '1',
+      type: 'markdown',
+      content: artistContent.content,
+      images: []
+    }];
   };
 
   const getTitle = (): string => {
     if (artistContent) {
-      return artistContent.tags.find(t => t[0] === 'title')?.[1] || 'Artist';
+      return artistContent.tags.find(t => t[0] === 'title')?.[1] || 'My Story';
     }
     return 'My Story';
   };
@@ -100,15 +133,16 @@ Follow me at BitPopArt:
     return null;
   };
 
-  const getGalleryImages = (): string[] => {
+  const getExternalUrl = (): string | null => {
     if (artistContent) {
-      return artistContent.tags.filter(t => t[0] === 'gallery').map(t => t[1]);
+      return artistContent.tags.find(t => t[0] === 'r')?.[1] || null;
     }
-    return [];
+    return null;
   };
 
   const headerImage = getHeaderImage();
-  const galleryImages = getGalleryImages();
+  const externalUrl = getExternalUrl();
+  const contentBlocks = getContentBlocks();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20">
@@ -127,8 +161,21 @@ Follow me at BitPopArt:
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-5xl font-bold bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent mb-4">
-            My Story
+            {getTitle()}
           </h1>
+          {externalUrl && (
+            <Button
+              variant="outline"
+              size="sm"
+              asChild
+              className="mt-4"
+            >
+              <a href={externalUrl} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Visit External Site
+              </a>
+            </Button>
+          )}
         </div>
 
         {/* Content */}
@@ -147,50 +194,54 @@ Follow me at BitPopArt:
             </CardContent>
           </Card>
         ) : (
-          <>
-            <Card className="max-w-4xl mx-auto">
-              <CardHeader>
-                <CardTitle className="text-3xl">{getTitle()}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="prose prose-lg dark:prose-invert max-w-none">
-                  <ReactMarkdown>{getContent()}</ReactMarkdown>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Gallery */}
-            {galleryImages.length > 0 && (
-              <Card className="max-w-4xl mx-auto mt-8">
-                <CardHeader>
-                  <CardTitle className="text-2xl flex items-center">
-                    <ImageIcon className="h-6 w-6 mr-2" />
-                    Gallery
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {galleryImages.map((imgUrl, index) => (
-                      <div
-                        key={index}
-                        className="relative aspect-square overflow-hidden rounded-lg cursor-pointer group"
-                        onClick={() => setSelectedImage(imgUrl)}
-                      >
-                        <img
-                          src={imgUrl}
-                          alt={`Gallery ${index + 1}`}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                        />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                          <ImageIcon className="h-8 w-8 text-white" />
-                        </div>
+          <div className="max-w-4xl mx-auto space-y-8">
+            {contentBlocks.map((block) => (
+              <div key={block.id}>
+                {/* Markdown Content Block */}
+                {block.type === 'markdown' && block.content.trim() && (
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="prose prose-lg dark:prose-invert max-w-none">
+                        <ReactMarkdown>{block.content}</ReactMarkdown>
                       </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Gallery Block */}
+                {block.type === 'gallery' && block.images.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-2xl flex items-center">
+                        <ImageIcon className="h-6 w-6 mr-2" />
+                        Gallery
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {block.images.map((imgUrl, index) => (
+                          <div
+                            key={index}
+                            className="relative aspect-square overflow-hidden rounded-lg cursor-pointer group"
+                            onClick={() => setSelectedImage(imgUrl)}
+                          >
+                            <img
+                              src={imgUrl}
+                              alt={`Gallery ${index + 1}`}
+                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                            />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                              <ImageIcon className="h-8 w-8 text-white" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            ))}
+          </div>
         )}
 
         {/* Image Lightbox */}

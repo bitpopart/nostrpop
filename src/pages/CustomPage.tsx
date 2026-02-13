@@ -1,20 +1,59 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSeoMeta } from '@unhead/react';
 import { usePage } from '@/hooks/usePages';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, ExternalLink } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Image as ImageIcon } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+
+// Content block types
+interface ContentBlock {
+  id: string;
+  type: 'markdown' | 'gallery';
+  content: string;
+  images: string[];
+}
 
 export default function CustomPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { data: page, isLoading } = usePage(slug || '');
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   useSeoMeta({
     title: page ? `${page.title} - BitPopArt` : 'Page',
     description: page?.description || '',
   });
+
+  const getContentBlocks = (): ContentBlock[] => {
+    if (!page) return [];
+
+    try {
+      const parsed = JSON.parse(page.description);
+      if (parsed.blocks && Array.isArray(parsed.blocks)) {
+        return parsed.blocks;
+      }
+    } catch {
+      // If not JSON or doesn't have blocks, treat as legacy single content block
+      return [{
+        id: '1',
+        type: 'markdown',
+        content: page.description,
+        images: page.gallery_images || []
+      }];
+    }
+
+    // Fallback
+    return [{
+      id: '1',
+      type: 'markdown',
+      content: page.description,
+      images: page.gallery_images || []
+    }];
+  };
 
   if (isLoading) {
     return (
@@ -48,6 +87,8 @@ export default function CustomPage() {
       </div>
     );
   }
+
+  const contentBlocks = getContentBlocks();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20">
@@ -86,20 +127,72 @@ export default function CustomPage() {
               <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent mb-4">
                 {page.title}
               </h1>
+              {page.external_url && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  asChild
+                  className="mt-4"
+                >
+                  <a href={page.external_url} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Visit External Site
+                  </a>
+                </Button>
+              )}
             </div>
           )}
 
-          {/* Description */}
-          <Card>
-            <CardContent className="py-8 px-6">
-              <div className="prose prose-lg dark:prose-invert max-w-none whitespace-pre-wrap">
-                {page.description}
-              </div>
-            </CardContent>
-          </Card>
+          {/* Content Blocks */}
+          {contentBlocks.map((block) => (
+            <div key={block.id}>
+              {/* Markdown Content Block */}
+              {block.type === 'markdown' && block.content.trim() && (
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="prose prose-lg dark:prose-invert max-w-none">
+                      <ReactMarkdown>{block.content}</ReactMarkdown>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
-          {/* External URL Button */}
-          {page.external_url && (
+              {/* Gallery Block */}
+              {block.type === 'gallery' && block.images.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-2xl flex items-center">
+                      <ImageIcon className="h-6 w-6 mr-2" />
+                      Gallery
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {block.images.map((imgUrl, index) => (
+                        <div
+                          key={index}
+                          className="relative aspect-square overflow-hidden rounded-lg cursor-pointer group"
+                          onClick={() => setSelectedImage(imgUrl)}
+                        >
+                          <img
+                            src={imgUrl}
+                            alt={`Gallery ${index + 1}`}
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                          />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                            <ImageIcon className="h-8 w-8 text-white" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          ))}
+
+          {/* External URL Button (when there's a header image) */}
+          {page.external_url && page.header_image && (
             <Card className="bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800">
               <CardContent className="py-6 text-center">
                 <Button
@@ -112,35 +205,21 @@ export default function CustomPage() {
               </CardContent>
             </Card>
           )}
-
-          {/* Gallery */}
-          {page.gallery_images.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Gallery</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {page.gallery_images.map((img, index) => (
-                    <div
-                      key={index}
-                      className="relative aspect-square rounded-lg overflow-hidden group cursor-pointer"
-                      onClick={() => window.open(img, '_blank')}
-                    >
-                      <img
-                        src={img}
-                        alt={`Gallery ${index + 1}`}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                      />
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
         </div>
       </div>
+
+      {/* Image Lightbox */}
+      <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
+        <DialogContent className="max-w-4xl p-0">
+          {selectedImage && (
+            <img
+              src={selectedImage}
+              alt="Gallery"
+              className="w-full h-auto"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
