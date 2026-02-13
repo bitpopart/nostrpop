@@ -29,7 +29,11 @@ import {
   X,
   ZoomIn,
   ZoomOut,
-  Sparkles
+  Sparkles,
+  Hand,
+  MapPin,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import type { NostrMetadata } from '@nostrify/nostrify';
 
@@ -73,12 +77,21 @@ function Canvas100M() {
   // Display settings
   const DISPLAY_SIZE = 500; // Canvas element size in pixels
   
-  // Zoom levels as percentage of full canvas (100% = entire canvas, 10% = 10% of canvas)
-  const ZOOM_LEVELS = [100, 50, 25, 10];
+  // Zoom levels as percentage of full canvas + pixel-level zoom
+  const ZOOM_LEVELS = [100, 50, 25, 10, 5, 1, 0.5, 0.1]; // 0.1% = 10x10 pixels visible
   const [zoomLevel, setZoomLevel] = useState(100); // Current zoom percentage
   const viewSize = Math.floor((CANVAS_WIDTH * zoomLevel) / 100); // How many canvas pixels to show
   const [viewX, setViewX] = useState(0); // Top-left X coordinate of viewport
   const [viewY, setViewY] = useState(0); // Top-left Y coordinate of viewport
+  
+  // Tool state
+  type Tool = 'paint' | 'hand';
+  const [activeTool, setActiveTool] = useState<Tool>('paint');
+  const [isPanning, setIsPanning] = useState(false);
+  const [panStart, setPanStart] = useState({ x: 0, y: 0 });
+  
+  // My work navigation
+  const [myWorkIndex, setMyWorkIndex] = useState(0);
   
   // Image upload
   const [uploadedImage, setUploadedImage] = useState<HTMLImageElement | null>(null);
@@ -177,6 +190,38 @@ function Canvas100M() {
   const contributors = pixels ? Array.from(new Set(pixels.map(p => p.author))) : [];
   const paintedPixels = (pixels?.length || 0) + pendingPixels.length;
   const percentPainted = ((paintedPixels / TOTAL_PIXELS) * 100).toFixed(4);
+  
+  // Get user's painted pixels and cluster them into work areas
+  const myPixels = user ? [...(pixels?.filter(p => p.author === user.pubkey) || []), ...pendingPixels] : [];
+  
+  // Group pixels into work areas (clusters within 100 pixels of each other)
+  const myWorkAreas = myPixels.length > 0 ? (() => {
+    const areas: { x: number; y: number; count: number }[] = [];
+    const processed = new Set<string>();
+    
+    myPixels.forEach(pixel => {
+      const key = `${pixel.x},${pixel.y}`;
+      if (processed.has(key)) return;
+      
+      // Find all pixels within 100 pixels
+      const cluster = myPixels.filter(p => {
+        const dx = Math.abs(p.x - pixel.x);
+        const dy = Math.abs(p.y - pixel.y);
+        return dx <= 100 && dy <= 100;
+      });
+      
+      // Mark as processed
+      cluster.forEach(p => processed.add(`${p.x},${p.y}`));
+      
+      // Calculate center of cluster
+      const centerX = Math.floor(cluster.reduce((sum, p) => sum + p.x, 0) / cluster.length);
+      const centerY = Math.floor(cluster.reduce((sum, p) => sum + p.y, 0) / cluster.length);
+      
+      areas.push({ x: centerX, y: centerY, count: cluster.length });
+    });
+    
+    return areas.sort((a, b) => b.count - a.count);
+  })() : [];
 
   // Draw the viewport
   useEffect(() => {
@@ -301,10 +346,49 @@ function Canvas100M() {
     setViewY(y => Math.max(0, Math.min(CANVAS_HEIGHT - newSize, y + (prevSize - newSize) / 2)));
     setZoomLevel(zoom);
   };
+  
+  // Navigate to my work area
+  const goToMyWork = () => {
+    if (myWorkAreas.length === 0) {
+      toast({
+        title: "No Work Found",
+        description: "You haven't painted any pixels yet!",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    const area = myWorkAreas[myWorkIndex];
+    const newZoom = 1; // Zoom to 1% to see your work
+    const newSize = Math.floor((CANVAS_WIDTH * newZoom) / 100);
+    
+    setViewX(Math.max(0, Math.min(CANVAS_WIDTH - newSize, area.x - newSize / 2)));
+    setViewY(Math.max(0, Math.min(CANVAS_HEIGHT - newSize, area.y - newSize / 2)));
+    setZoomLevel(newZoom);
+    
+    toast({
+      title: `📍 Work Area ${myWorkIndex + 1}/${myWorkAreas.length}`,
+      description: `${area.count} pixel${area.count > 1 ? 's' : ''} at (${area.x}, ${area.y})`,
+    });
+  };
+  
+  const nextWorkArea = () => {
+    if (myWorkAreas.length === 0) return;
+    const newIndex = (myWorkIndex + 1) % myWorkAreas.length;
+    setMyWorkIndex(newIndex);
+    setTimeout(() => goToMyWork(), 50);
+  };
+  
+  const prevWorkArea = () => {
+    if (myWorkAreas.length === 0) return;
+    const newIndex = (myWorkIndex - 1 + myWorkAreas.length) % myWorkAreas.length;
+    setMyWorkIndex(newIndex);
+    setTimeout(() => goToMyWork(), 50);
+  };
 
 
 
-  // Handle canvas mouse down - for dragging image or painting
+  // Handle canvas mouse down - for dragging image, panning, or painting
   const handleCanvasMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     if (uploadedImage) {
       // Start dragging image
@@ -315,34 +399,67 @@ function Canvas100M() {
       
       setIsDraggingImage(true);
       setDragStart({ x: clickX, y: clickY });
+      return;
     }
-  }, [uploadedImage]);
+    
+    if (activeTool === 'hand') {
+      // Start panning
+      const canvas = e.currentTarget;
+      const rect = canvas.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const clickY = e.clientY - rect.top;
+      
+      setIsPanning(true);
+      setPanStart({ x: clickX, y: clickY });
+    }
+  }, [uploadedImage, activeTool]);
 
-  // Handle canvas mouse move - for dragging image
+  // Handle canvas mouse move - for dragging image or panning
   const handleCanvasMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDraggingImage || !uploadedImage) return;
-
     const canvas = e.currentTarget;
     const rect = canvas.getBoundingClientRect();
     const currentX = e.clientX - rect.left;
     const currentY = e.clientY - rect.top;
     
-    const scale = DISPLAY_SIZE / viewSize;
-    const deltaX = Math.floor((currentX - dragStart.x) / scale);
-    const deltaY = Math.floor((currentY - dragStart.y) / scale);
+    if (isDraggingImage && uploadedImage) {
+      const scale = DISPLAY_SIZE / viewSize;
+      const deltaX = Math.floor((currentX - dragStart.x) / scale);
+      const deltaY = Math.floor((currentY - dragStart.y) / scale);
+      
+      setImagePosition(prev => ({
+        x: Math.max(0, Math.min(CANVAS_WIDTH - 100, prev.x + deltaX)),
+        y: Math.max(0, Math.min(CANVAS_HEIGHT - 100, prev.y + deltaY))
+      }));
+      
+      setDragStart({ x: currentX, y: currentY });
+      return;
+    }
     
-    setImagePosition(prev => ({
-      x: Math.max(0, Math.min(CANVAS_WIDTH - 100, prev.x + deltaX)),
-      y: Math.max(0, Math.min(CANVAS_HEIGHT - 100, prev.y + deltaY))
-    }));
-    
-    setDragStart({ x: currentX, y: currentY });
-  }, [isDraggingImage, uploadedImage, dragStart, viewSize]);
+    if (isPanning && activeTool === 'hand') {
+      const scale = DISPLAY_SIZE / viewSize;
+      const deltaX = Math.floor((currentX - panStart.x) / scale);
+      const deltaY = Math.floor((currentY - panStart.y) / scale);
+      
+      setViewX(prev => Math.max(0, Math.min(CANVAS_WIDTH - viewSize, prev - deltaX)));
+      setViewY(prev => Math.max(0, Math.min(CANVAS_HEIGHT - viewSize, prev - deltaY)));
+      
+      setPanStart({ x: currentX, y: currentY });
+    }
+  }, [isDraggingImage, uploadedImage, dragStart, viewSize, isPanning, activeTool, panStart]);
 
-  // Handle canvas mouse up - end dragging or paint pixel
+  // Handle canvas mouse up - end dragging, panning, or paint pixel
   const handleCanvasMouseUp = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     if (uploadedImage) {
       setIsDraggingImage(false);
+      return;
+    }
+    
+    if (isPanning) {
+      setIsPanning(false);
+      return;
+    }
+    
+    if (activeTool === 'hand') {
       return;
     }
 
@@ -376,9 +493,9 @@ function Canvas100M() {
       return;
     }
 
-    // Auto-zoom to 10% if not already zoomed in enough
-    if (zoomLevel > 25) {
-      const newZoom = 10;
+    // Auto-zoom to 1% if not already zoomed in enough
+    if (zoomLevel > 5) {
+      const newZoom = 1;
       const newSize = Math.floor((CANVAS_WIDTH * newZoom) / 100);
       
       // Center the view on the clicked pixel
@@ -388,7 +505,7 @@ function Canvas100M() {
       
       toast({
         title: "🔍 Zoomed In",
-        description: "Zoomed to 10% to see the grid. Click again to paint!",
+        description: "Zoomed to 1% to see pixels clearly. Click again to paint!",
       });
       return;
     }
@@ -431,7 +548,7 @@ function Canvas100M() {
       title: "✓ Pixel Added",
       description: `Position: (${globalX}, ${globalY})`,
     });
-  }, [user, selectedColor, pixels, pendingPixels, toast, currentBlockHeight, viewX, viewY, viewSize, uploadedImage, zoomLevel]);
+  }, [user, selectedColor, pixels, pendingPixels, toast, currentBlockHeight, viewX, viewY, viewSize, uploadedImage, zoomLevel, isPanning, activeTool]);
 
   // Image upload handler
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -829,19 +946,77 @@ function Canvas100M() {
                       Click to paint pixels. {user ? 'You can paint multiple pixels before publishing!' : 'Login to start painting.'}
                     </CardDescription>
                   </div>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    {/* Tool Selection */}
+                    <div className="flex items-center space-x-1 border-r pr-2">
+                      <Button
+                        variant={activeTool === 'paint' ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setActiveTool('paint')}
+                        title="Paint Tool"
+                      >
+                        <Paintbrush className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant={activeTool === 'hand' ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setActiveTool('hand')}
+                        title="Hand Tool (Pan)"
+                      >
+                        <Hand className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    
+                    {/* My Work Navigation */}
+                    {user && myWorkAreas.length > 0 && (
+                      <div className="flex items-center space-x-1 border-r pr-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={prevWorkArea}
+                          disabled={myWorkAreas.length <= 1}
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={goToMyWork}
+                          className="min-w-24"
+                        >
+                          <MapPin className="h-4 w-4 mr-1" />
+                          Work {myWorkIndex + 1}/{myWorkAreas.length}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={nextWorkArea}
+                          disabled={myWorkAreas.length <= 1}
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
+                    
+                    {/* Zoom Levels */}
                     <div className="flex items-center space-x-1">
-                      {ZOOM_LEVELS.map((level) => (
+                      <Button variant="outline" size="sm" onClick={handleZoomOut}>
+                        <ZoomOut className="h-4 w-4" />
+                      </Button>
+                      {ZOOM_LEVELS.filter(l => l >= 1).map((level) => (
                         <Button
                           key={level}
                           variant={zoomLevel === level ? "default" : "outline"}
                           size="sm"
                           onClick={() => setZoom(level)}
-                          className="min-w-14"
+                          className="min-w-12"
                         >
                           {level}%
                         </Button>
                       ))}
+                      <Button variant="outline" size="sm" onClick={handleZoomIn}>
+                        <ZoomIn className="h-4 w-4" />
+                      </Button>
                     </div>
                     <div className="ml-4 flex items-center space-x-1">
                       <Button variant="outline" size="sm" onClick={() => moveView(-Math.floor(viewSize / 10), 0)}>
@@ -889,7 +1064,11 @@ function Canvas100M() {
                         className="w-full h-full"
                         style={{ 
                           imageRendering: 'pixelated',
-                          cursor: uploadedImage ? (isDraggingImage ? 'grabbing' : 'grab') : 'crosshair'
+                          cursor: uploadedImage 
+                            ? (isDraggingImage ? 'grabbing' : 'grab')
+                            : activeTool === 'hand' 
+                              ? (isPanning ? 'grabbing' : 'grab')
+                              : 'crosshair'
                         }}
                       />
                     </div>
