@@ -19,6 +19,7 @@ import { EditArtworkForm } from '@/components/art/EditArtworkForm';
 import { PaymentDialog } from '@/components/marketplace/PaymentDialog';
 import { Label } from '@/components/ui/label';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useToast } from '@/hooks/useToast';
 import type { ArtworkData, ArtworkFilter } from '@/lib/artTypes';
 import {
@@ -38,6 +39,7 @@ const Art = () => {
   const { user } = useCurrentUser();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
+  const { getGradientStyle } = useThemeColors();
 
   // Check if current user is admin
   const isAdmin = useIsAdmin();
@@ -207,12 +209,15 @@ const Art = () => {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
             <Palette className="h-8 w-8 text-purple-600 mr-3" />
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold" style={getGradientStyle('header-text')}>
               BitPopArt Gallery
             </h1>
           </div>
           {user && isAdmin && (
-            <Badge className="mt-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0">
+            <Badge 
+              className="mt-4 text-white border-0"
+              style={getGradientStyle('primary')}
+            >
               Admin Access • Art Gallery Management
             </Badge>
           )}

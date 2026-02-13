@@ -1,5 +1,6 @@
 import { useSeoMeta } from '@unhead/react';
 import { useFundraisers } from '@/hooks/useFundraisers';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { FundraiserCard } from '@/components/fundraiser/FundraiserCard';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -8,6 +9,7 @@ import { Target, Sparkles } from 'lucide-react';
 
 export default function Fundraising() {
   const { data: fundraisers = [], isLoading } = useFundraisers();
+  const { getGradientStyle } = useThemeColors();
 
   // Filter active fundraisers
   const activeFundraisers = fundraisers.filter(f => f.status === 'active');
@@ -25,7 +27,7 @@ export default function Fundraising() {
         <div className="text-center mb-12">
           <div className="flex items-center justify-center mb-4">
             <Target className="h-10 w-10 text-purple-600 mr-3" />
-            <h1 className="text-5xl font-bold bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
+            <h1 className="text-5xl font-bold" style={getGradientStyle('header-text')}>
               Fundraising
             </h1>
           </div>

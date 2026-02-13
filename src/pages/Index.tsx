@@ -11,6 +11,7 @@ import { useLatestCards } from '@/hooks/useLatestCards';
 import { useArtworks } from '@/hooks/useArtworks';
 import { useFeaturedProjects } from '@/hooks/useProjects';
 import { useFeaturedNostrProjects } from '@/hooks/useNostrProjects';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { genUserName } from '@/lib/genUserName';
 import { RelaySelector } from '@/components/RelaySelector';
 import { getFirstImage, stripImagesFromContent } from '@/lib/extractImages';
@@ -318,6 +319,7 @@ const Index = () => {
   const { data: featuredArtworks, isLoading: artworksLoading, error: artworksError } = useArtworks('all');
   const { data: featuredProjects } = useFeaturedProjects();
   const { data: featuredNostrProjects } = useFeaturedNostrProjects();
+  const { getGradientStyle } = useThemeColors();
   const author = useAuthor(ADMIN_HEX);
   const metadata: NostrMetadata | undefined = author.data?.metadata;
 
@@ -339,7 +341,12 @@ const Index = () => {
         {/* Hero Section */}
         <div className="text-center mb-16 pt-8">
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" asChild className="rounded-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600">
+            <Button 
+              size="lg" 
+              asChild 
+              className="rounded-full text-white border-0"
+              style={getGradientStyle('primary')}
+            >
               <Link to="/canvas">
                 <Sparkles className="mr-2 h-5 w-5" />
                 Start Painting

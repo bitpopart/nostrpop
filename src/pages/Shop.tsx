@@ -3,6 +3,7 @@ import { useSeoMeta } from '@unhead/react';
 import { useSearchParams } from 'react-router-dom';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useMarketplaceProducts } from '@/hooks/useMarketplaceProducts';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -34,6 +35,7 @@ import { useCategories } from '@/hooks/useCategories';
 const Shop = () => {
   const { user } = useCurrentUser();
   const [searchParams] = useSearchParams();
+  const { getGradientStyle } = useThemeColors();
 
   // Check if current user is admin
   const isAdmin = useIsAdmin();
@@ -100,7 +102,7 @@ const Shop = () => {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
             <ShoppingCart className="h-8 w-8 text-purple-600 mr-3" />
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold" style={getGradientStyle('header-text')}>
               BitPop Marketplace
             </h1>
           </div>
@@ -115,7 +117,10 @@ const Shop = () => {
             <LightningStatusIndicator />
           </div>
           {user && isAdmin && (
-            <Badge className="mt-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0">
+            <Badge 
+              className="mt-4 text-white border-0"
+              style={getGradientStyle('primary')}
+            >
               Admin Access • NIP-15 Marketplace
             </Badge>
           )}

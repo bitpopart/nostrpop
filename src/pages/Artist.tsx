@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useSeoMeta } from '@unhead/react';
 import { useNostr } from '@nostrify/react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Image as ImageIcon, ExternalLink, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import ReactMarkdown from 'react-markdown';
 import { toast } from 'sonner';
 import { nip19 } from 'nostr-tools';
@@ -25,6 +26,7 @@ interface ContentBlock {
 
 export default function Artist() {
   const { nostr } = useNostr();
+  const { getGradientStyle } = useThemeColors();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   useSeoMeta({
@@ -168,7 +170,7 @@ Follow me at BitPopArt:
       <div className="container mx-auto px-4 py-12">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent mb-4">
+          <h1 className="text-5xl font-bold mb-4" style={getGradientStyle('header-text')}>
             {getTitle()}
           </h1>
         </div>
@@ -280,7 +282,8 @@ Follow me at BitPopArt:
                 variant="default"
                 size="lg"
                 asChild
-                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0"
+                className="text-white border-0"
+                style={getGradientStyle('primary')}
               >
                 <a href="https://primal.net/p/npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz" target="_blank" rel="noopener noreferrer">
                   <Zap className="h-5 w-5 mr-2" />

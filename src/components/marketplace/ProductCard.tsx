@@ -8,6 +8,7 @@ import { formatCurrency } from '@/hooks/usePayment';
 import { useLivePrice } from '@/hooks/useLivePrice';
 import { useFiatToSats } from '@/hooks/useFiatToSats';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { SocialShareButtons } from '@/components/SocialShareButtons';
 import { PaymentDialog } from './PaymentDialog';
 import { ProductDetailsDialog } from './ProductDetailsDialog';
@@ -52,6 +53,7 @@ export function ProductCard({ product, onViewDetails }: ProductCardProps) {
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const isAdmin = useIsAdmin();
   const navigate = useNavigate();
+  const { getGradientStyle } = useThemeColors();
 
   // Fetch live price from source URL if available
   const { data: livePrice, isLoading: priceLoading } = useLivePrice(
@@ -222,7 +224,8 @@ export function ProductCard({ product, onViewDetails }: ProductCardProps) {
               size="sm"
               onClick={handleBuyNow}
               disabled={isOutOfStock}
-              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 flex-1"
+              className="text-white border-0 flex-1"
+              style={!isOutOfStock ? getGradientStyle('primary') : undefined}
             >
               <ShoppingCart className="w-4 h-4 mr-1" />
               {isOutOfStock ? 'Sold Out' : (product.type === 'physical' ? 'View Product' : 'Buy Now')}

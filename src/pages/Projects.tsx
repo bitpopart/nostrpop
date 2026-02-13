@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ShareToNostrButton } from '@/components/ShareToNostrButton';
 import { ClawstrShare } from '@/components/ClawstrShare';
 import { ZapButton } from '@/components/ZapButton';
@@ -53,6 +54,7 @@ export default function Projects() {
   const { nostr } = useNostr();
   const navigate = useNavigate();
   const isAdmin = useIsAdmin();
+  const { getGradientStyle } = useThemeColors();
   const [_selectedProject, _setSelectedProject] = useState<string | null>(null);
 
   useSeoMeta({
@@ -179,7 +181,7 @@ export default function Projects() {
         <div className="text-center mb-12">
           <div className="flex items-center justify-center mb-4">
             <FolderKanban className="h-10 w-10 text-purple-600 mr-3" />
-            <h1 className="text-5xl font-bold bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
+            <h1 className="text-5xl font-bold" style={getGradientStyle('header-text')}>
               Projects
             </h1>
           </div>
@@ -245,7 +247,10 @@ export default function Projects() {
                   {/* Coming Soon Badge Overlay */}
                   {isComingSoon && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                      <Badge className="bg-gradient-to-r from-orange-500 to-pink-500 text-white text-lg px-4 py-2 border-0 shadow-lg">
+                      <Badge 
+                        className="text-white text-lg px-4 py-2 border-0 shadow-lg"
+                        style={getGradientStyle('coming-soon')}
+                      >
                         Coming Soon
                       </Badge>
                     </div>
@@ -324,7 +329,7 @@ export default function Projects() {
               <div className="text-center mb-8">
                 <div className="flex items-center justify-center mb-4">
                   <Users className="h-8 w-8 text-purple-600 mr-3" />
-                  <h2 className="text-4xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent">
+                  <h2 className="text-4xl font-bold" style={getGradientStyle('header-text')}>
                     Nostr Projects
                   </h2>
                 </div>
@@ -378,7 +383,10 @@ export default function Projects() {
                       {/* Coming Soon Badge Overlay */}
                       {isComingSoon && (
                         <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                          <Badge className="bg-gradient-to-r from-orange-500 to-pink-500 text-white text-lg px-4 py-2 border-0 shadow-lg">
+                          <Badge 
+                            className="text-white text-lg px-4 py-2 border-0 shadow-lg"
+                            style={getGradientStyle('coming-soon')}
+                          >
                             Coming Soon
                           </Badge>
                         </div>

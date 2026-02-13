@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -23,6 +24,7 @@ export default function Blog() {
   const { nostr } = useNostr();
   const { user } = useCurrentUser();
   const isAdmin = useIsAdmin();
+  const { getGradientStyle } = useThemeColors();
   const [searchParams] = useSearchParams();
 
   // Get initial tab from URL params
@@ -138,14 +140,17 @@ export default function Blog() {
       <div className="container mx-auto px-4 py-12">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent mb-4">
+          <h1 className="text-5xl font-bold mb-4" style={getGradientStyle('header-text')}>
             Blog
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
             Latest news from BitPopArt
           </p>
           {user && isAdmin && (
-            <Badge className="mt-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0">
+            <Badge 
+              className="mt-4 text-white border-0"
+              style={getGradientStyle('primary')}
+            >
               Admin Access • Blog Management
             </Badge>
           )}

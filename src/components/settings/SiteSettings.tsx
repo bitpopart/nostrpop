@@ -17,6 +17,9 @@ interface SiteColors {
   secondaryFrom: string;
   secondaryTo: string;
   accentColor: string;
+  headerTextFrom: string;
+  headerTextVia: string;
+  headerTextTo: string;
 }
 
 const DEFAULT_COLORS: SiteColors = {
@@ -27,6 +30,9 @@ const DEFAULT_COLORS: SiteColors = {
   secondaryFrom: '#6366f1',
   secondaryTo: '#8b5cf6',
   accentColor: '#f97316',
+  headerTextFrom: '#db2777',
+  headerTextVia: '#a855f7',
+  headerTextTo: '#6366f1',
 };
 
 const COLOR_PRESETS = [
@@ -44,6 +50,9 @@ const COLOR_PRESETS = [
       secondaryFrom: '#6366f1',
       secondaryTo: '#8b5cf6',
       accentColor: '#a855f7',
+      headerTextFrom: '#8b5cf6',
+      headerTextVia: '#a855f7',
+      headerTextTo: '#ec4899',
     }
   },
   {
@@ -56,6 +65,9 @@ const COLOR_PRESETS = [
       secondaryFrom: '#06b6d4',
       secondaryTo: '#0ea5e9',
       accentColor: '#3b82f6',
+      headerTextFrom: '#0ea5e9',
+      headerTextVia: '#3b82f6',
+      headerTextTo: '#8b5cf6',
     }
   },
   {
@@ -68,6 +80,9 @@ const COLOR_PRESETS = [
       secondaryFrom: '#ef4444',
       secondaryTo: '#f97316',
       accentColor: '#f97316',
+      headerTextFrom: '#ef4444',
+      headerTextVia: '#f97316',
+      headerTextTo: '#fbbf24',
     }
   },
 ];
@@ -84,17 +99,22 @@ export function SiteSettings() {
     const root = document.documentElement;
     root.style.setProperty('--coming-soon-from', colors.comingSoonFrom);
     root.style.setProperty('--coming-soon-to', colors.comingSoonTo);
-    root.style.setProperty('--primary-from', colors.primaryFrom);
-    root.style.setProperty('--primary-to', colors.primaryTo);
-    root.style.setProperty('--secondary-from', colors.secondaryFrom);
-    root.style.setProperty('--secondary-to', colors.secondaryTo);
+    root.style.setProperty('--primary-gradient-from', colors.primaryFrom);
+    root.style.setProperty('--primary-gradient-to', colors.primaryTo);
+    root.style.setProperty('--secondary-gradient-from', colors.secondaryFrom);
+    root.style.setProperty('--secondary-gradient-to', colors.secondaryTo);
     root.style.setProperty('--accent-color', colors.accentColor);
+    root.style.setProperty('--header-text-from', colors.headerTextFrom);
+    root.style.setProperty('--header-text-via', colors.headerTextVia);
+    root.style.setProperty('--header-text-to', colors.headerTextTo);
   };
 
   const handleSave = () => {
     setSiteColors(tempColors);
     applyColorsToDOM(tempColors);
-    toast.success('Site colors saved successfully!');
+    // Dispatch custom event to notify components of color change
+    window.dispatchEvent(new CustomEvent('theme-colors-updated', { detail: tempColors }));
+    toast.success('Site colors saved! Changes applied immediately.');
   };
 
   const handleReset = () => {
@@ -227,6 +247,32 @@ export function SiteSettings() {
                     onChange={(v) => setTempColors(prev => ({ ...prev, accentColor: v }))}
                   />
                 </div>
+
+                <Separator />
+
+                <div>
+                  <Label className="text-base font-semibold mb-3 block">Header Text Gradients</Label>
+                  <div className="grid grid-cols-3 gap-4">
+                    <ColorInput
+                      label="Start Color"
+                      value={tempColors.headerTextFrom}
+                      onChange={(v) => setTempColors(prev => ({ ...prev, headerTextFrom: v }))}
+                    />
+                    <ColorInput
+                      label="Middle Color"
+                      value={tempColors.headerTextVia}
+                      onChange={(v) => setTempColors(prev => ({ ...prev, headerTextVia: v }))}
+                    />
+                    <ColorInput
+                      label="End Color"
+                      value={tempColors.headerTextTo}
+                      onChange={(v) => setTempColors(prev => ({ ...prev, headerTextTo: v }))}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Controls the gradient colors for page titles like "Projects", "Art Gallery", etc.
+                  </p>
+                </div>
               </div>
             </TabsContent>
           </Tabs>
@@ -236,30 +282,50 @@ export function SiteSettings() {
               <CardTitle className="text-base">Live Preview</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex flex-wrap items-center gap-3">
-                <Badge
-                  className="text-sm px-4 py-1.5 border-0 shadow-md"
-                  style={{ background: `linear-gradient(to right, ${tempColors.comingSoonFrom}, ${tempColors.comingSoonTo})`, color: '#ffffff' }}
-                >
-                  Coming Soon
-                </Badge>
-                <Button
-                  size="sm"
-                  className="border-0 shadow-md"
-                  style={{ background: `linear-gradient(to right, ${tempColors.primaryFrom}, ${tempColors.primaryTo})`, color: '#ffffff' }}
-                >
-                  Primary Button
-                </Button>
-                <Button
-                  size="sm"
-                  className="border-0 shadow-md"
-                  style={{ background: `linear-gradient(to right, ${tempColors.secondaryFrom}, ${tempColors.secondaryTo})`, color: '#ffffff' }}
-                >
-                  Secondary
-                </Button>
-                <div className="flex items-center gap-2">
-                  <Zap className="h-5 w-5" style={{ color: tempColors.accentColor }} />
-                  <Star className="h-5 w-5" style={{ color: tempColors.accentColor }} />
+              <div className="space-y-4">
+                {/* Header Text Preview */}
+                <div className="text-center">
+                  <h2 
+                    className="text-3xl font-bold"
+                    style={{ 
+                      background: `linear-gradient(to right, ${tempColors.headerTextFrom}, ${tempColors.headerTextVia}, ${tempColors.headerTextTo})`,
+                      WebkitBackgroundClip: 'text',
+                      backgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      paddingBottom: '0.15em',
+                      lineHeight: '1.3'
+                    }}
+                  >
+                    Page Title
+                  </h2>
+                </div>
+
+                {/* Buttons and Badges */}
+                <div className="flex flex-wrap items-center gap-3 justify-center">
+                  <Badge
+                    className="text-sm px-4 py-1.5 border-0 shadow-md"
+                    style={{ background: `linear-gradient(to right, ${tempColors.comingSoonFrom}, ${tempColors.comingSoonTo})`, color: '#ffffff' }}
+                  >
+                    Coming Soon
+                  </Badge>
+                  <Button
+                    size="sm"
+                    className="border-0 shadow-md text-white"
+                    style={{ background: `linear-gradient(to right, ${tempColors.primaryFrom}, ${tempColors.primaryTo})` }}
+                  >
+                    Primary Button
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="border-0 shadow-md text-white"
+                    style={{ background: `linear-gradient(to right, ${tempColors.secondaryFrom}, ${tempColors.secondaryTo})` }}
+                  >
+                    Secondary
+                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Zap className="h-5 w-5" style={{ color: tempColors.accentColor }} />
+                    <Star className="h-5 w-5" style={{ color: tempColors.accentColor }} />
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -276,13 +342,13 @@ export function SiteSettings() {
             </Button>
           </div>
 
-          <div className="text-sm bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 space-y-2">
-            <p className="font-semibold">Important Notes:</p>
+          <div className="text-sm bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 space-y-2">
+            <p className="font-semibold">💡 How It Works:</p>
             <ul className="list-disc list-inside space-y-1 text-muted-foreground">
               <li>Colors are saved to your browser and persist across sessions</li>
-              <li>Coming Soon badges will update immediately</li>
-              <li>For full effect on all elements, refresh the page after saving</li>
-              <li>Custom colors apply site-wide to all matching elements</li>
+              <li>Changes apply immediately to all buttons, badges, and headers</li>
+              <li>Header text gradients control titles like "Projects", "Art Gallery", "My Story"</li>
+              <li>Custom colors apply site-wide across all pages</li>
             </ul>
           </div>
         </CardContent>

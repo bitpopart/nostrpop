@@ -9,6 +9,31 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
+
+  /* Custom gradient utilities */
+  .gradient-primary {
+    background: linear-gradient(to right, var(--primary-gradient-from), var(--primary-gradient-to));
+  }
+  
+  .gradient-primary-hover:hover {
+    background: linear-gradient(to right, var(--primary-gradient-from), var(--primary-gradient-to));
+    filter: brightness(1.1);
+  }
+
+  .gradient-secondary {
+    background: linear-gradient(to right, var(--secondary-gradient-from), var(--secondary-gradient-to));
+  }
+
+  .gradient-coming-soon {
+    background: linear-gradient(to right, var(--coming-soon-from), var(--coming-soon-to));
+  }
+
+  .gradient-header-text {
+    background: linear-gradient(to right, var(--header-text-from), var(--header-text-via), var(--header-text-to));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
 }
 
 @layer base {
@@ -58,6 +83,18 @@
     --sidebar-border: 220 13% 91%;
 
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Custom theme colors - BitPopArt defaults */
+    --coming-soon-from: #f97316;
+    --coming-soon-to: #ec4899;
+    --primary-gradient-from: #a855f7;
+    --primary-gradient-to: #ec4899;
+    --secondary-gradient-from: #6366f1;
+    --secondary-gradient-to: #8b5cf6;
+    --accent-color: #f97316;
+    --header-text-from: #db2777;
+    --header-text-via: #a855f7;
+    --header-text-to: #6366f1;
   }
 
   .dark {
@@ -96,6 +133,8 @@
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Custom theme colors inherit from light mode */
   }
 }
 

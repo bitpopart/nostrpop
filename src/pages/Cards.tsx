@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useCardCategories } from '@/hooks/useCardCategories';
 import { Shield } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -21,6 +21,7 @@ const Cards = () => {
   const location = useLocation();
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [activeTab, setActiveTab] = useState('create');
+  const { getGradientStyle } = useThemeColors();
 
   // Get category names for filtering, with 'All' as first option
   const categoryOptions = ['All', ...visibleCategories.map(cat => cat.name)];
@@ -56,7 +57,7 @@ const Cards = () => {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
+          <h1 className="text-4xl font-bold mb-4" style={getGradientStyle('header-text')}>
             BitPop Cards
           </h1>
         </div>
