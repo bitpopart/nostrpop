@@ -63,8 +63,11 @@ export function ProductCard({ product, onViewDetails }: ProductCardProps) {
   const displayPrice = livePrice?.price ?? product.price;
   const displayCurrency = livePrice?.currency ?? product.currency;
   
-  // Always try to get sats conversion for fiat prices
-  const { data: satsConversion } = useFiatToSats(displayPrice, displayCurrency);
+  // Convert price to USD if needed
+  const priceInUSD = displayCurrency === 'USD' ? displayPrice : displayPrice; // For now, keep original price
+  
+  // Always get sats conversion for USD prices
+  const { data: satsConversion } = useFiatToSats(priceInUSD, 'USD');
   const displayPriceInSats = livePrice?.priceInSats ?? satsConversion;
 
   const isOutOfStock = product.quantity !== undefined && product.quantity <= 0;
@@ -165,7 +168,7 @@ export function ProductCard({ product, onViewDetails }: ProductCardProps) {
           {product.type === 'physical' && hasShipping && (
             <div className="flex items-center text-xs text-muted-foreground mb-3">
               <Truck className="w-3 h-3 mr-1" />
-              <span>Shipping: {formatCurrency(shippingCost, product.currency)}</span>
+              <span>Shipping: {formatCurrency(shippingCost, 'USD')}</span>
             </div>
           )}
 
@@ -176,7 +179,7 @@ export function ProductCard({ product, onViewDetails }: ProductCardProps) {
             ) : (
               <>
                 <div className="text-xl font-bold text-green-600 dark:text-green-400">
-                  {formatCurrency(displayPrice, displayCurrency)}
+                  {formatCurrency(priceInUSD, 'USD')}
                 </div>
                 {displayPriceInSats && (
                   <div className="flex items-center text-xs text-orange-600 dark:text-orange-400 mt-1">
