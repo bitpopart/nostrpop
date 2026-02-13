@@ -4,6 +4,25 @@ import { getArtworksByFilter, getArtworkById, type ArtworkData, type ArtworkFilt
 import { useCurrentUser } from './useCurrentUser';
 import { useToast } from './useToast';
 
+// Local storage for deleted artworks (prevents them from reappearing)
+const DELETED_ARTWORKS_KEY = 'nostrpop_deleted_artworks';
+
+function getDeletedArtworks(): Set<string> {
+  try {
+    const stored = localStorage.getItem(DELETED_ARTWORKS_KEY);
+    return new Set(stored ? JSON.parse(stored) : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function addDeletedArtwork(artworkAddress: string) {
+  const deleted = getDeletedArtworks();
+  deleted.add(artworkAddress);
+  localStorage.setItem(DELETED_ARTWORKS_KEY, JSON.stringify(Array.from(deleted)));
+  console.log(`📝 Stored artwork deletion locally: ${artworkAddress}`);
+}
+
 export function useArtworks(filter: ArtworkFilter = 'all') {
   const { nostr } = useNostr();
 
@@ -12,18 +31,48 @@ export function useArtworks(filter: ArtworkFilter = 'all') {
     queryFn: async (c) => {
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(5000)]);
 
-      // Query for artwork events (kind 30023 - Long-form content for art)
-      const filters = [
-        {
-          kinds: [30023], // NIP-23 long-form content adapted for artwork
-          '#t': ['artwork'], // Tag to identify artwork posts
-          limit: 50,
-        }
-      ];
+      // Query for artwork events (kind 30023) and deletion events (kind 5)
+      const [artworkEvents, deletionEvents] = await Promise.all([
+        nostr.query([
+          {
+            kinds: [30023], // NIP-23 long-form content adapted for artwork
+            '#t': ['artwork'], // Tag to identify artwork posts
+            limit: 50,
+          }
+        ], { signal }),
+        nostr.query([
+          {
+            kinds: [5], // Deletion events
+            limit: 1000,
+          }
+        ], { signal })
+      ]);
 
-      const events = await nostr.query(filters, { signal });
+      console.log(`Found ${artworkEvents.length} artworks and ${deletionEvents.length} deletion events`);
 
-      // Process and validate artwork events
+      // Build set of deleted artwork addresses from ALL deletion events
+      const deletedAddresses = new Set<string>();
+      
+      // Add deletions from Nostr events
+      deletionEvents.forEach(delEvent => {
+        const aTags = delEvent.tags.filter(([name]) => name === 'a');
+        aTags.forEach(([, address]) => {
+          if (address && address.startsWith('30023:')) {
+            deletedAddresses.add(address);
+            console.log(`Found deletion event for artwork: ${address}`);
+          }
+        });
+      });
+
+      // Add locally stored deletions (prevents deleted artworks from reappearing)
+      const locallyDeleted = getDeletedArtworks();
+      locallyDeleted.forEach(address => deletedAddresses.add(address));
+
+      console.log(`Total deleted artwork addresses: ${deletedAddresses.size} (${locallyDeleted.size} local + ${deletedAddresses.size - locallyDeleted.size} from network)`);
+
+      const events = artworkEvents;
+
+      // Process and validate artwork events, filtering out deleted ones
       const artworks = events
         .map(event => {
           try {
@@ -36,6 +85,13 @@ export function useArtworks(filter: ArtworkFilter = 'all') {
 
             // Basic validation
             if (!dTag || !titleTag || !content.title || !content.images?.length) {
+              return null;
+            }
+
+            // Check if this artwork has been deleted
+            const artworkAddress = `30023:${event.pubkey}:${dTag}`;
+            if (deletedAddresses.has(artworkAddress)) {
+              console.log(`Filtering out deleted artwork: ${artworkAddress}`);
               return null;
             }
 
@@ -150,17 +206,26 @@ export function useArtwork(artworkId: string, authorPubkey?: string) {
     queryFn: async (c) => {
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(5000)]);
 
-      const events = await nostr.query([
-        {
-          kinds: [30023],
-          '#d': [artworkId],
-          '#t': ['artwork'],
-          ...(authorPubkey && { authors: [authorPubkey] }),
-          limit: 1
-        }
-      ], { signal });
+      // Query for the artwork and deletion events
+      const [artworkEvents, deletionEvents] = await Promise.all([
+        nostr.query([
+          {
+            kinds: [30023],
+            '#d': [artworkId],
+            '#t': ['artwork'],
+            ...(authorPubkey && { authors: [authorPubkey] }),
+            limit: 1
+          }
+        ], { signal }),
+        nostr.query([
+          {
+            kinds: [5], // Deletion events
+            limit: 1000,
+          }
+        ], { signal })
+      ]);
 
-      if (events.length === 0) {
+      if (artworkEvents.length === 0) {
         // If no Nostr event found, try sample data
         const sampleArtwork = getArtworkById(artworkId);
         if (!sampleArtwork) {
@@ -169,7 +234,33 @@ export function useArtwork(artworkId: string, authorPubkey?: string) {
         return sampleArtwork;
       }
 
-      const event = events[0];
+      const event = artworkEvents[0];
+
+      // Check if this artwork has been deleted
+      const artworkAddress = `30023:${event.pubkey}:${artworkId}`;
+      
+      // Build set of deleted artwork addresses
+      const deletedAddresses = new Set<string>();
+      
+      // Add deletions from Nostr events
+      deletionEvents.forEach(delEvent => {
+        const aTags = delEvent.tags.filter(([name]) => name === 'a');
+        aTags.forEach(([, address]) => {
+          if (address && address.startsWith('30023:')) {
+            deletedAddresses.add(address);
+          }
+        });
+      });
+
+      // Add locally stored deletions
+      const locallyDeleted = getDeletedArtworks();
+      locallyDeleted.forEach(address => deletedAddresses.add(address));
+
+      if (deletedAddresses.has(artworkAddress)) {
+        console.log(`Artwork has been deleted: ${artworkAddress}`);
+        throw new Error('Artwork not found');
+      }
+
       const content = JSON.parse(event.content);
       const saleTags = event.tags.filter(([name]) => name === 'sale').map(([, value]) => value);
       const featured = event.tags.find(([name]) => name === 'featured')?.[1] === 'true';
@@ -360,30 +451,60 @@ export function useDeleteArtwork() {
         throw new Error('User must be logged in to delete artwork');
       }
 
+      const artworkAddress = `30023:${user.pubkey}:${artworkId}`;
+      console.log(`🗑️ Deleting artwork: ${artworkAddress}`);
+
       // Create a deletion event (kind 5) for the artwork
       const deletionEvent = {
         kind: 5,
         content: 'Artwork deleted',
         tags: [
-          ['a', `30023:${user.pubkey}:${artworkId}`] // Reference to the addressable event
+          ['a', artworkAddress] // Reference to the addressable event
         ],
         created_at: Math.floor(Date.now() / 1000),
       };
 
       const signedEvent = await user.signer.signEvent(deletionEvent);
+      console.log('📤 Publishing deletion event:', signedEvent);
+      
       await nostr.event(signedEvent, { signal: AbortSignal.timeout(5000) });
+      
+      console.log('✓ Deletion event published to relay');
 
-      return { artworkId, deletionEvent: signedEvent };
+      // Store deletion locally so it persists across refreshes
+      addDeletedArtwork(artworkAddress);
+
+      return { artworkId, artworkAddress, deletionEvent: signedEvent };
     },
     onSuccess: (data) => {
+      console.log(`✓ Deletion handler completed for: ${data.artworkAddress}`);
+      
       toast({
         title: "Artwork Deleted",
         description: "The artwork has been successfully removed from the gallery.",
       });
 
-      // Invalidate and refetch artworks
-      queryClient.invalidateQueries({ queryKey: ['artworks'] });
-      queryClient.invalidateQueries({ queryKey: ['artwork', data.artworkId] });
+      // HARD DELETE: Remove from ALL cached queries immediately
+      queryClient.setQueriesData(
+        { queryKey: ['artworks'] }, 
+        (oldData: ArtworkData[] | undefined) => {
+          if (!oldData || !Array.isArray(oldData)) return oldData;
+          const filtered = oldData.filter((artwork: ArtworkData) => {
+            const artworkAddress = `30023:${artwork.artist_pubkey}:${artwork.id}`;
+            return artworkAddress !== data.artworkAddress;
+          });
+          console.log(`Cache update: ${oldData.length} -> ${filtered.length} artworks`);
+          return filtered;
+        }
+      );
+
+      // Remove specific artwork query
+      queryClient.removeQueries({ queryKey: ['artwork', data.artworkId] });
+
+      // Cancel any in-flight queries
+      queryClient.cancelQueries({ queryKey: ['artworks'] });
+      
+      console.log('✓ Cache cleared, artwork removed');
     },
     onError: (error) => {
       console.error('Failed to delete artwork:', error);
