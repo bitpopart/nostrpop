@@ -75,7 +75,25 @@ export default function Blog() {
   };
 
   const getArticleSummary = (event: NostrEvent): string => {
-    return event.tags.find(t => t[0] === 'summary')?.[1] || event.content.slice(0, 200) + '...';
+    const summaryTag = event.tags.find(t => t[0] === 'summary')?.[1];
+    if (summaryTag) return summaryTag;
+
+    // Try to parse JSON content and extract first markdown block
+    try {
+      const parsed = JSON.parse(event.content);
+      if (parsed.blocks && Array.isArray(parsed.blocks)) {
+        const firstMarkdownBlock = parsed.blocks.find((b: { type: string; content: string }) => 
+          b.type === 'markdown' && b.content?.trim()
+        );
+        if (firstMarkdownBlock?.content) {
+          return firstMarkdownBlock.content.slice(0, 200) + (firstMarkdownBlock.content.length > 200 ? '...' : '');
+        }
+      }
+    } catch {
+      // Not JSON, use raw content
+    }
+    
+    return event.content.slice(0, 200) + (event.content.length > 200 ? '...' : '');
   };
 
   const getArticleImage = (event: NostrEvent): string | undefined => {

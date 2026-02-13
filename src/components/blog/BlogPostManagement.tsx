@@ -552,29 +552,43 @@ export function BlogPostManagement() {
 
             {/* Publish Date */}
             <div className="space-y-2">
-              <Label>Publish Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !publishDate && "text-muted-foreground"
-                    )}
-                  >
-                    <Calendar className="mr-2 h-4 w-4" />
-                    {publishDate ? format(publishDate, "PPP") : <span>Pick a date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <CalendarComponent
-                    mode="single"
-                    selected={publishDate}
-                    onSelect={(date) => date && setPublishDate(date)}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <Label htmlFor="publish-date">Publish Date</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="publish-date"
+                  type="date"
+                  value={publishDate ? format(publishDate, "yyyy-MM-dd") : ''}
+                  onChange={(e) => {
+                    const newDate = new Date(e.target.value);
+                    if (!isNaN(newDate.getTime())) {
+                      setPublishDate(newDate);
+                    }
+                  }}
+                  className="flex-1"
+                />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="flex-shrink-0"
+                    >
+                      <Calendar className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="end">
+                    <CalendarComponent
+                      mode="single"
+                      selected={publishDate}
+                      onSelect={(date) => date && setPublishDate(date)}
+                      initialFocus
+                      captionLayout="dropdown-buttons"
+                      fromYear={2000}
+                      toYear={new Date().getFullYear() + 1}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
               <p className="text-xs text-muted-foreground">
                 Set the publish date for this blog post (useful for adding older posts)
               </p>
