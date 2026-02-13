@@ -72,7 +72,11 @@ function Canvas100M() {
   
   // Display settings
   const DISPLAY_SIZE = 500; // Canvas element size in pixels
-  const [viewSize, setViewSize] = useState(500); // How many canvas pixels to show (zoom level)
+  
+  // Zoom levels as percentage of full canvas (100% = entire canvas, 10% = 10% of canvas)
+  const ZOOM_LEVELS = [100, 50, 25, 10];
+  const [zoomLevel, setZoomLevel] = useState(100); // Current zoom percentage
+  const viewSize = Math.floor((CANVAS_WIDTH * zoomLevel) / 100); // How many canvas pixels to show
   const [viewX, setViewX] = useState(0); // Top-left X coordinate of viewport
   const [viewY, setViewY] = useState(0); // Top-left Y coordinate of viewport
   
@@ -261,23 +265,41 @@ function Canvas100M() {
   };
 
   const handleZoomIn = () => {
-    setViewSize(prev => {
-      const newSize = Math.max(50, Math.floor(prev / 2));
+    const currentIndex = ZOOM_LEVELS.indexOf(zoomLevel);
+    if (currentIndex > 0) {
+      const prevSize = viewSize;
+      const newZoom = ZOOM_LEVELS[currentIndex - 1];
+      const newSize = Math.floor((CANVAS_WIDTH * newZoom) / 100);
+      
       // Adjust viewport to keep it centered
-      setViewX(x => Math.max(0, Math.min(CANVAS_WIDTH - newSize, x + (prev - newSize) / 2)));
-      setViewY(y => Math.max(0, Math.min(CANVAS_HEIGHT - newSize, y + (prev - newSize) / 2)));
-      return newSize;
-    });
+      setViewX(x => Math.max(0, Math.min(CANVAS_WIDTH - newSize, x + (prevSize - newSize) / 2)));
+      setViewY(y => Math.max(0, Math.min(CANVAS_HEIGHT - newSize, y + (prevSize - newSize) / 2)));
+      setZoomLevel(newZoom);
+    }
   };
 
   const handleZoomOut = () => {
-    setViewSize(prev => {
-      const newSize = Math.min(5000, prev * 2);
+    const currentIndex = ZOOM_LEVELS.indexOf(zoomLevel);
+    if (currentIndex < ZOOM_LEVELS.length - 1) {
+      const prevSize = viewSize;
+      const newZoom = ZOOM_LEVELS[currentIndex + 1];
+      const newSize = Math.floor((CANVAS_WIDTH * newZoom) / 100);
+      
       // Adjust viewport to keep it centered
-      setViewX(x => Math.max(0, Math.min(CANVAS_WIDTH - newSize, x - (newSize - prev) / 2)));
-      setViewY(y => Math.max(0, Math.min(CANVAS_HEIGHT - newSize, y - (newSize - prev) / 2)));
-      return newSize;
-    });
+      setViewX(x => Math.max(0, Math.min(CANVAS_WIDTH - newSize, x - (newSize - prevSize) / 2)));
+      setViewY(y => Math.max(0, Math.min(CANVAS_HEIGHT - newSize, y - (newSize - prevSize) / 2)));
+      setZoomLevel(newZoom);
+    }
+  };
+
+  const setZoom = (zoom: number) => {
+    const prevSize = viewSize;
+    const newSize = Math.floor((CANVAS_WIDTH * zoom) / 100);
+    
+    // Adjust viewport to keep it centered
+    setViewX(x => Math.max(0, Math.min(CANVAS_WIDTH - newSize, x + (prevSize - newSize) / 2)));
+    setViewY(y => Math.max(0, Math.min(CANVAS_HEIGHT - newSize, y + (prevSize - newSize) / 2)));
+    setZoomLevel(zoom);
   };
 
 
@@ -791,26 +813,30 @@ function Canvas100M() {
                     </CardDescription>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Button variant="outline" size="sm" onClick={handleZoomOut}>
-                      <ZoomOut className="h-4 w-4" />
-                    </Button>
-                    <span className="text-sm text-muted-foreground min-w-20 text-center">
-                      {viewSize}x{viewSize}px
-                    </span>
-                    <Button variant="outline" size="sm" onClick={handleZoomIn}>
-                      <ZoomIn className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center space-x-1">
+                      {ZOOM_LEVELS.map((level) => (
+                        <Button
+                          key={level}
+                          variant={zoomLevel === level ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setZoom(level)}
+                          className="min-w-14"
+                        >
+                          {level}%
+                        </Button>
+                      ))}
+                    </div>
                     <div className="ml-4 flex items-center space-x-1">
-                      <Button variant="outline" size="sm" onClick={() => moveView(-50, 0)}>
+                      <Button variant="outline" size="sm" onClick={() => moveView(-Math.floor(viewSize / 10), 0)}>
                         ←
                       </Button>
-                      <Button variant="outline" size="sm" onClick={() => moveView(0, -50)}>
+                      <Button variant="outline" size="sm" onClick={() => moveView(0, -Math.floor(viewSize / 10))}>
                         ↑
                       </Button>
-                      <Button variant="outline" size="sm" onClick={() => moveView(0, 50)}>
+                      <Button variant="outline" size="sm" onClick={() => moveView(0, Math.floor(viewSize / 10))}>
                         ↓
                       </Button>
-                      <Button variant="outline" size="sm" onClick={() => moveView(50, 0)}>
+                      <Button variant="outline" size="sm" onClick={() => moveView(Math.floor(viewSize / 10), 0)}>
                         →
                       </Button>
                     </div>
@@ -832,8 +858,8 @@ function Canvas100M() {
                 ) : (
                   <div className="relative">
                     <div className="text-xs text-muted-foreground mb-2 flex justify-between">
-                      <span>Viewport: ({viewX}, {viewY}) to ({viewX + viewSize}, {viewY + viewSize})</span>
-                      <span>Zoom: {(DISPLAY_SIZE / viewSize).toFixed(1)}x</span>
+                      <span>Position: ({viewX.toLocaleString()}, {viewY.toLocaleString()})</span>
+                      <span>Viewing {zoomLevel}% of canvas ({viewSize.toLocaleString()}×{viewSize.toLocaleString()}px)</span>
                     </div>
                     <div className="border-2 border-purple-200 dark:border-purple-800 rounded-lg overflow-hidden bg-white">
                       <canvas
