@@ -32,7 +32,7 @@ export default function Artist() {
   const { data: artistContent, isLoading } = useQuery({
     queryKey: ['artist-page'],
     queryFn: async (c) => {
-      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(3000)]);
+      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(5000)]);
       
       console.log('[Artist] Fetching artist page from pubkey:', ARTIST_PUBKEY);
       
@@ -49,7 +49,9 @@ export default function Artist() {
           id: event.id.substring(0, 8),
           title: event.tags.find(t => t[0] === 'title')?.[1],
           hasImage: !!event.tags.find(t => t[0] === 'image'),
-          contentLength: event.content.length
+          contentLength: event.content.length,
+          externalUrl: event.tags.find(t => t[0] === 'r')?.[1],
+          timestamp: new Date(event.created_at * 1000).toISOString()
         });
         return event;
       }
@@ -57,6 +59,8 @@ export default function Artist() {
       console.log('[Artist] No events found, using default content');
       return null;
     },
+    staleTime: 0, // Always fetch fresh data
+    gcTime: 0, // Don't cache old data
   });
 
   const getContentBlocks = (): ContentBlock[] => {

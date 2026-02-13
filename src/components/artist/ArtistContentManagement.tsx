@@ -55,22 +55,37 @@ export function ArtistContentManagement() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadingBlockId, setUploadingBlockId] = useState<string | null>(null);
   const [shareToNostr, setShareToNostr] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Fetch artist page content
   const { data: artistEvent } = useQuery({
     queryKey: ['artist-page-admin', user?.pubkey],
     queryFn: async (c) => {
       if (!user?.pubkey) return null;
-      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(3000)]);
+      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(5000)]);
+      
+      console.log('[ArtistContentManagement] Fetching artist page for pubkey:', user.pubkey.slice(0, 8) + '...');
       
       const events = await nostr.query(
         [{ kinds: [30024], authors: [user.pubkey], '#d': ['artist-page'], limit: 1 }],
         { signal }
       );
 
+      if (events.length > 0) {
+        console.log('[ArtistContentManagement] Loaded existing artist page:', {
+          title: events[0].tags.find(t => t[0] === 'title')?.[1],
+          hasImage: !!events[0].tags.find(t => t[0] === 'image'),
+          externalUrl: events[0].tags.find(t => t[0] === 'r')?.[1],
+          timestamp: new Date(events[0].created_at * 1000).toISOString()
+        });
+      } else {
+        console.log('[ArtistContentManagement] No existing artist page found, will use defaults');
+      }
+
       return events[0] || null;
     },
     enabled: !!user?.pubkey,
+    staleTime: 0, // Always fetch fresh data
   });
 
   // Load existing content from Nostr
@@ -241,6 +256,8 @@ export function ArtistContentManagement() {
       return;
     }
 
+    setIsSaving(true);
+
     // Prepare content as JSON with blocks
     const contentData = {
       blocks: contentBlocks
@@ -286,11 +303,22 @@ export function ArtistContentManagement() {
         tags,
       },
       {
-        onSuccess: () => {
+        onSuccess: async () => {
           console.log('[ArtistContentManagement] ✅ Artist page published to Nostr!');
           
-          queryClient.invalidateQueries({ queryKey: ['artist-page'] });
-          queryClient.invalidateQueries({ queryKey: ['artist-page-admin'] });
+          // Give relay a moment to process the event
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // Invalidate and refetch queries
+          await queryClient.invalidateQueries({ queryKey: ['artist-page'] });
+          await queryClient.invalidateQueries({ queryKey: ['artist-page-admin'] });
+          
+          console.log('[ArtistContentManagement] 🔄 Refetching artist page data...');
+          const refetchResults = await Promise.all([
+            queryClient.refetchQueries({ queryKey: ['artist-page'] }),
+            queryClient.refetchQueries({ queryKey: ['artist-page-admin'] })
+          ]);
+          console.log('[ArtistContentManagement] ✅ Refetch completed:', refetchResults);
 
           // If share to Nostr community is checked, also create a kind 1 note
           if (shareToNostr) {
@@ -317,20 +345,24 @@ export function ArtistContentManagement() {
                 onSuccess: () => {
                   toast.success('Artist page saved and shared to Nostr community!');
                   setShareToNostr(false);
+                  setIsSaving(false);
                 },
                 onError: (error) => {
                   console.error('[ArtistContentManagement] ❌ Community share error:', error);
                   toast.success('Artist page saved! (Community share failed)');
+                  setIsSaving(false);
                 },
               }
             );
           } else {
-            toast.success('Artist page saved!');
+            toast.success('Artist page saved! Changes will appear on the frontend shortly.');
+            setIsSaving(false);
           }
         },
         onError: (error) => {
           console.error('[ArtistContentManagement] ❌ Publish error:', error);
           toast.error('Failed to save artist page');
+          setIsSaving(false);
         },
       }
     );
@@ -664,14 +696,24 @@ export function ArtistContentManagement() {
           </div>
 
           <div className="flex gap-2 pt-2">
-            <Button type="submit" className="flex-1">
-              <Save className="h-4 w-4 mr-2" />
-              Save Artist Page
+            <Button type="submit" className="flex-1" disabled={isSaving}>
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saving & Updating...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Artist Page
+                </>
+              )}
             </Button>
             <Button
               type="button"
               variant="outline"
               onClick={() => window.open('/artist', '_blank')}
+              disabled={isSaving}
             >
               <Eye className="h-4 w-4 mr-2" />
               Preview
