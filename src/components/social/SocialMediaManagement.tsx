@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useSocialMediaLinks } from '@/hooks/usePages';
@@ -8,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from 'sonner';
 import { Plus, X, Edit, Trash2 } from 'lucide-react';
 import type { SocialMediaLink } from '@/lib/pageTypes';
 
@@ -28,6 +30,7 @@ export function SocialMediaManagement() {
   const { user } = useCurrentUser();
   const { mutate: createEvent } = useNostrPublish();
   const { data: socialLinks, isLoading } = useSocialMediaLinks();
+  const queryClient = useQueryClient();
   
   const [isCreating, setIsCreating] = useState(false);
   const [editingLink, setEditingLink] = useState<SocialMediaLink | null>(null);
@@ -57,11 +60,14 @@ export function SocialMediaManagement() {
   };
 
   const handleSubmit = () => {
-    if (!user || !platform.trim() || !url.trim()) return;
+    if (!user || !platform.trim() || !url.trim()) {
+      toast.error('Platform and URL are required');
+      return;
+    }
 
     const selectedPlatform = SOCIAL_PLATFORMS.find(p => p.name === platform);
     const icon = customIcon || selectedPlatform?.icon || '🔗';
-    const linkId = editingLink?.id || platform.toLowerCase().replace(/[^a-z0-9]/g, '-');
+    const linkId = editingLink?.id || `${platform.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${Date.now()}`;
 
     createEvent({
       kind: 38176,
@@ -74,23 +80,49 @@ export function SocialMediaManagement() {
         ['t', 'social-media'],
         ...(order ? [['order', order]] : []),
       ],
+    }, {
+      onSuccess: async () => {
+        toast.success(editingLink ? 'Social link updated!' : 'Social link added!');
+        // Give relay time to process
+        await new Promise(resolve => setTimeout(resolve, 500));
+        // Invalidate and refetch
+        await queryClient.invalidateQueries({ queryKey: ['social-media-links'] });
+        await queryClient.refetchQueries({ queryKey: ['social-media-links'] });
+        resetForm();
+      },
+      onError: (error) => {
+        console.error('Failed to save social link:', error);
+        toast.error('Failed to save social link');
+      }
     });
-
-    resetForm();
   };
 
   const handleDelete = (link: SocialMediaLink) => {
     if (!user) return;
     
-    // To delete, publish the same event with empty/deleted status
-    // Or in Nostr, you typically just publish a newer version with empty content
+    if (!confirm(`Delete ${link.platform} link?`)) return;
+
+    // Publish deletion event (kind 5)
     createEvent({
-      kind: 38176,
-      content: JSON.stringify({ deleted: true }),
+      kind: 5,
+      content: 'Deleted social media link',
       tags: [
-        ['d', link.id],
-        ['t', 'social-media-deleted'],
+        ['e', link.event.id],
+        ['a', `38176:${link.event.pubkey}:${link.id}`],
       ],
+    }, {
+      onSuccess: async () => {
+        toast.success('Social link deleted!');
+        // Give relay time to process
+        await new Promise(resolve => setTimeout(resolve, 500));
+        // Invalidate and refetch
+        await queryClient.invalidateQueries({ queryKey: ['social-media-links'] });
+        await queryClient.refetchQueries({ queryKey: ['social-media-links'] });
+      },
+      onError: (error) => {
+        console.error('Failed to delete social link:', error);
+        toast.error('Failed to delete social link');
+      }
     });
   };
 

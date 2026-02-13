@@ -172,13 +172,17 @@ export function useSocialMediaLinks() {
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(3000)]);
       
       const events = await nostr.query(
-        [{ kinds: [38176], authors: [ADMIN_PUBKEY], limit: 20 }],
+        [{ kinds: [38176], authors: [ADMIN_PUBKEY], '#t': ['social-media'], limit: 20 }],
         { signal }
       );
 
       const links: SocialMediaLink[] = events
         .map((event): SocialMediaLink | null => {
           try {
+            const content = JSON.parse(event.content);
+            // Skip deleted items
+            if (content.deleted) return null;
+            
             const id = event.tags.find(t => t[0] === 'd')?.[1];
             const platform = event.tags.find(t => t[0] === 'platform')?.[1];
             const icon = event.tags.find(t => t[0] === 'icon')?.[1];
@@ -205,5 +209,6 @@ export function useSocialMediaLinks() {
 
       return links;
     },
+    staleTime: 10000,
   });
 }
