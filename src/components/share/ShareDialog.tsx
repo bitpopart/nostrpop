@@ -212,12 +212,15 @@ export function ShareDialog({
     }
 
     try {
+      // Ensure URL is absolute
+      const absoluteUrl = url.startsWith('http') ? url : `https://bitpopart.com${url}`;
+      
       // Create the share content
-      let shareContent = `${title}\n\n${url}`;
+      let shareContent = `${title}\n\n${absoluteUrl}`;
 
       // Add the image link if available
       if (imageUrl) {
-        shareContent = `${title}\n\n${url}\n\n${imageUrl}`;
+        shareContent = `${title}\n\n${absoluteUrl}\n\n${imageUrl}`;
       }
 
       // Add hashtags at the end
@@ -229,7 +232,7 @@ export function ShareDialog({
         ['t', contentType],
         ['t', categoryTag],
         ['t', 'bitpopart'],
-        ['r', url],
+        ['r', absoluteUrl],
       ];
 
       // Add event reference if available
@@ -250,7 +253,7 @@ export function ShareDialog({
           `url ${imageUrl}`,
           'm image/jpeg',
           `alt Preview image for "${title}"`,
-          `fallback ${url}`
+          `fallback ${absoluteUrl}`
         ]);
         tags.push(['r', imageUrl]);
         tags.push(['url', imageUrl]);
@@ -399,7 +402,9 @@ export function ShareDialog({
               <CardContent>
                 <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 space-y-3">
                   <div className="font-medium">{title}</div>
-                  <div className="text-blue-600 dark:text-blue-400 text-sm break-all">{url}</div>
+                  <div className="text-blue-600 dark:text-blue-400 text-sm break-all">
+                    {url.startsWith('http') ? url : `https://bitpopart.com${url}`}
+                  </div>
                   {imageUrl && (
                     <div className="text-blue-600 dark:text-blue-400 text-sm break-all">{imageUrl}</div>
                   )}

@@ -27,7 +27,7 @@ export function SocialShareButtons({
   size = 'sm',
   variant = 'outline',
 }: SocialShareButtonsProps) {
-  const fullUrl = url.startsWith('http') ? url : `https://bitpopart.com${url}`;
+  const fullUrl = url.startsWith('http') ? url : `https://www.bitpopart.com${url}`;
   const encodedUrl = encodeURIComponent(fullUrl);
   const encodedTitle = encodeURIComponent(title);
   const encodedDescription = encodeURIComponent(description || title);
@@ -46,7 +46,7 @@ export function SocialShareButtons({
     <div className={`flex items-center gap-2 ${className}`}>
       {/* Share to Nostr */}
       <ShareToNostrButton
-        url={url}
+        url={fullUrl}
         title={title}
         description={description}
         image={image}

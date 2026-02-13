@@ -35,7 +35,7 @@ export function ShareToNostrButton({
   const [customMessage, setCustomMessage] = useState('');
 
   // Ensure URL is absolute
-  const shareUrl = url.startsWith('http') ? url : `https://bitpopart.com${url}`;
+  const shareUrl = url.startsWith('http') ? url : `https://www.bitpopart.com${url}`;
 
   // Generate default content
   let generatedContent = defaultContent;
@@ -45,7 +45,7 @@ export function ShareToNostrButton({
     if (description) {
       generatedContent += `\n\n${description}`;
     }
-    generatedContent += `\n\n🎨 bitpopart.com`;
+    generatedContent += `\n\n🎨 ${shareUrl}`;
   }
 
   const handleShare = () => {
@@ -65,7 +65,7 @@ export function ShareToNostrButton({
     let content = customMessage.trim() || generatedContent;
     
     // Add shareUrl to content if not already there
-    if (!content.includes(shareUrl) && !content.includes('bitpopart.com')) {
+    if (!content.includes(shareUrl) && !content.includes('www.bitpopart.com')) {
       content += `\n\n${shareUrl}`;
     }
     
