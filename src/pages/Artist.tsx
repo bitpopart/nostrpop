@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Image as ImageIcon, ExternalLink, RefreshCw } from 'lucide-react';
+import { Image as ImageIcon, ExternalLink, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ReactMarkdown from 'react-markdown';
 import { toast } from 'sonner';
@@ -25,9 +25,7 @@ interface ContentBlock {
 
 export default function Artist() {
   const { nostr } = useNostr();
-  const queryClient = useQueryClient();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useSeoMeta({
     title: 'Artist - BitPopArt',
@@ -154,20 +152,6 @@ Follow me at BitPopArt:
   const externalUrl = getExternalUrl();
   const contentBlocks = getContentBlocks();
 
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    try {
-      await queryClient.invalidateQueries({ queryKey: ['artist-page'] });
-      await queryClient.refetchQueries({ queryKey: ['artist-page'] });
-      toast.success('Page refreshed successfully!');
-    } catch (error) {
-      console.error('Failed to refresh:', error);
-      toast.error('Failed to refresh page');
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20">
       {/* Header Image */}
@@ -187,29 +171,6 @@ Follow me at BitPopArt:
           <h1 className="text-5xl font-bold bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent mb-4">
             {getTitle()}
           </h1>
-          <div className="flex items-center justify-center gap-2 mt-4">
-            {externalUrl && (
-              <Button
-                variant="outline"
-                size="sm"
-                asChild
-              >
-                <a href={externalUrl} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  Visit External Site
-                </a>
-              </Button>
-            )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-            >
-              <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
-          </div>
         </div>
 
         {/* Content */}
@@ -234,8 +195,8 @@ Follow me at BitPopArt:
                 {/* Markdown Content Block */}
                 {block.type === 'markdown' && block.content.trim() && (
                   <Card>
-                    <CardContent className="pt-6 space-y-4">
-                      <div className="prose prose-lg dark:prose-invert max-w-none">
+                    <CardContent className="pt-6 pb-8 space-y-4">
+                      <div className="prose prose-lg dark:prose-invert max-w-none [&_h1]:leading-tight [&_h1]:mb-6 [&_h2]:leading-tight [&_h2]:mb-4 [&_h3]:leading-tight [&_h3]:mb-3 [&_p]:mb-4">
                         <ReactMarkdown>{block.content}</ReactMarkdown>
                       </div>
                       {block.externalUrl && (
@@ -312,6 +273,21 @@ Follow me at BitPopArt:
                 )}
               </div>
             ))}
+
+            {/* BitPopArt on Nostr Button - at the bottom */}
+            <div className="flex justify-center mt-12">
+              <Button
+                variant="default"
+                size="lg"
+                asChild
+                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0"
+              >
+                <a href="https://primal.net/p/npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz" target="_blank" rel="noopener noreferrer">
+                  <Zap className="h-5 w-5 mr-2" />
+                  BitPopArt on Nostr
+                </a>
+              </Button>
+            </div>
           </div>
         )}
 

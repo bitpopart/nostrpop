@@ -438,6 +438,7 @@ export function ArtistContentManagement() {
                   placeholder="Or paste image URL"
                   value={headerImage}
                   onChange={(e) => setHeaderImage(e.target.value)}
+                  onClick={(e) => e.stopPropagation()}
                 />
               </div>
             ) : (
@@ -474,6 +475,7 @@ export function ArtistContentManagement() {
                   placeholder="Or paste image URL"
                   value={headerImage}
                   onChange={(e) => setHeaderImage(e.target.value)}
+                  onClick={(e) => e.stopPropagation()}
                 />
               </div>
             )}
@@ -488,6 +490,7 @@ export function ArtistContentManagement() {
               placeholder="https://example.com"
               value={externalUrl}
               onChange={(e) => setExternalUrl(e.target.value)}
+              onClick={(e) => e.stopPropagation()}
             />
             <p className="text-xs text-muted-foreground">
               This URL will be shared when you post to Nostr and can link to external resources
@@ -624,7 +627,7 @@ export function ArtistContentManagement() {
                         )}
                         
                         {/* External URL for this block */}
-                        <div className="space-y-2 pt-2 border-t">
+                        <div className="space-y-2 pt-2 border-t" onClick={(e) => e.stopPropagation()}>
                           <Label htmlFor={`external-url-${block.id}`} className="text-sm">External URL (Optional)</Label>
                           <Input
                             id={`external-url-${block.id}`}
@@ -632,6 +635,7 @@ export function ArtistContentManagement() {
                             placeholder="https://example.com"
                             value={block.externalUrl || ''}
                             onChange={(e) => updateBlockExternalUrl(block.id, e.target.value)}
+                            onClick={(e) => e.stopPropagation()}
                             className="text-sm"
                           />
                           <p className="text-xs text-muted-foreground">
