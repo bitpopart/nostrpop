@@ -65,7 +65,7 @@ export function Navigation() {
                 key={item.name}
                 to={item.href}
                 className={cn(
-                  "flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                  "flex items-center space-x-2 px-3 py-2 rounded-full text-sm font-medium transition-colors",
                   isActive(item.href)
                     ? "bg-primary/10 text-primary"
                     : "text-muted-foreground hover:text-foreground hover:bg-accent"
