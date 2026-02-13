@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { useSeoMeta } from '@unhead/react';
 import { useNostr } from '@nostrify/react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Image as ImageIcon, ExternalLink } from 'lucide-react';
+import { Image as ImageIcon, ExternalLink, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ReactMarkdown from 'react-markdown';
+import { toast } from 'sonner';
 
 const ARTIST_PUBKEY = '7d33ba57d8a6e8869a1f1d5215254597594ac0dbfeb01b690def8c461b82db35'; // traveltelly's pubkey
 
@@ -21,7 +22,9 @@ interface ContentBlock {
 
 export default function Artist() {
   const { nostr } = useNostr();
+  const queryClient = useQueryClient();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useSeoMeta({
     title: 'Artist - BitPopArt',
@@ -148,6 +151,20 @@ Follow me at BitPopArt:
   const externalUrl = getExternalUrl();
   const contentBlocks = getContentBlocks();
 
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await queryClient.invalidateQueries({ queryKey: ['artist-page'] });
+      await queryClient.refetchQueries({ queryKey: ['artist-page'] });
+      toast.success('Page refreshed successfully!');
+    } catch (error) {
+      console.error('Failed to refresh:', error);
+      toast.error('Failed to refresh page');
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20">
       {/* Header Image */}
@@ -167,19 +184,29 @@ Follow me at BitPopArt:
           <h1 className="text-5xl font-bold bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent mb-4">
             {getTitle()}
           </h1>
-          {externalUrl && (
+          <div className="flex items-center justify-center gap-2 mt-4">
+            {externalUrl && (
+              <Button
+                variant="outline"
+                size="sm"
+                asChild
+              >
+                <a href={externalUrl} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Visit External Site
+                </a>
+              </Button>
+            )}
             <Button
               variant="outline"
               size="sm"
-              asChild
-              className="mt-4"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
             >
-              <a href={externalUrl} target="_blank" rel="noopener noreferrer">
-                <ExternalLink className="h-4 w-4 mr-2" />
-                Visit External Site
-              </a>
+              <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+              Refresh
             </Button>
-          )}
+          </div>
         </div>
 
         {/* Content */}
