@@ -80,6 +80,8 @@ function Canvas100M() {
   const [uploadedImage, setUploadedImage] = useState<HTMLImageElement | null>(null);
   const [imageScale, setImageScale] = useState(100);
   const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
+  const [isDraggingImage, setIsDraggingImage] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
   // Fetch current Bitcoin block height
   useEffect(() => {
@@ -187,10 +189,10 @@ function Canvas100M() {
     // Calculate scale factor (how many display pixels per canvas pixel)
     const scale = DISPLAY_SIZE / viewSize;
 
-    // Draw grid (every 10 canvas pixels)
+    // Draw grid (every 1 canvas pixel to match painted pixel size)
     ctx.strokeStyle = '#E5E7EB';
     ctx.lineWidth = 1;
-    const gridSpacing = 10 * scale;
+    const gridSpacing = 1 * scale; // Grid matches pixel size
     for (let i = 0; i <= DISPLAY_SIZE; i += gridSpacing) {
       ctx.beginPath();
       ctx.moveTo(i, 0);
@@ -280,10 +282,47 @@ function Canvas100M() {
 
 
 
-  // Handle canvas click - SIMPLE AND DIRECT
-  const handleCanvasClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
-    // Don't paint if image is loaded (use Apply button instead)
-    if (uploadedImage) return;
+  // Handle canvas mouse down - for dragging image or painting
+  const handleCanvasMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (uploadedImage) {
+      // Start dragging image
+      const canvas = e.currentTarget;
+      const rect = canvas.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const clickY = e.clientY - rect.top;
+      
+      setIsDraggingImage(true);
+      setDragStart({ x: clickX, y: clickY });
+    }
+  }, [uploadedImage]);
+
+  // Handle canvas mouse move - for dragging image
+  const handleCanvasMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!isDraggingImage || !uploadedImage) return;
+
+    const canvas = e.currentTarget;
+    const rect = canvas.getBoundingClientRect();
+    const currentX = e.clientX - rect.left;
+    const currentY = e.clientY - rect.top;
+    
+    const scale = DISPLAY_SIZE / viewSize;
+    const deltaX = Math.floor((currentX - dragStart.x) / scale);
+    const deltaY = Math.floor((currentY - dragStart.y) / scale);
+    
+    setImagePosition(prev => ({
+      x: Math.max(0, Math.min(CANVAS_WIDTH - 100, prev.x + deltaX)),
+      y: Math.max(0, Math.min(CANVAS_HEIGHT - 100, prev.y + deltaY))
+    }));
+    
+    setDragStart({ x: currentX, y: currentY });
+  }, [isDraggingImage, uploadedImage, dragStart, viewSize]);
+
+  // Handle canvas mouse up - end dragging or paint pixel
+  const handleCanvasMouseUp = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (uploadedImage) {
+      setIsDraggingImage(false);
+      return;
+    }
 
     if (!user) {
       toast({
@@ -686,6 +725,14 @@ function Canvas100M() {
           <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto mb-4">
             A collaborative art project on Nostr. Paint pixel by pixel on a 100 million pixel canvas!
           </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 text-sm mb-4">
+            <Badge variant="outline" className="text-orange-600 dark:text-orange-400 border-orange-300 dark:border-orange-700">
+              ⚠️ Best used on desktop to paint
+            </Badge>
+            <Badge variant="outline" className="text-yellow-600 dark:text-yellow-400 border-yellow-300 dark:border-yellow-700">
+              🧪 Experimental project - Paint at your own risk
+            </Badge>
+          </div>
           <div className="flex flex-wrap items-center justify-center gap-4 text-sm mb-6">
             <Badge variant="secondary" className="text-base px-4 py-2">
               <Zap className="w-4 h-4 mr-2 text-yellow-500" />
@@ -786,18 +833,20 @@ function Canvas100M() {
                   <div className="relative">
                     <div className="text-xs text-muted-foreground mb-2 flex justify-between">
                       <span>Viewport: ({viewX}, {viewY}) to ({viewX + viewSize}, {viewY + viewSize})</span>
-                      <span>Zoom: {(500 / viewSize * 100).toFixed(0)}%</span>
+                      <span>Zoom: {(DISPLAY_SIZE / viewSize).toFixed(1)}x</span>
                     </div>
                     <div className="border-2 border-purple-200 dark:border-purple-800 rounded-lg overflow-hidden bg-white">
                       <canvas
                         ref={canvasRef}
                         width={DISPLAY_SIZE}
                         height={DISPLAY_SIZE}
-                        onClick={handleCanvasClick}
+                        onMouseDown={handleCanvasMouseDown}
+                        onMouseMove={handleCanvasMouseMove}
+                        onMouseUp={handleCanvasMouseUp}
                         className="w-full h-full"
                         style={{ 
                           imageRendering: 'pixelated',
-                          cursor: uploadedImage ? 'default' : 'crosshair'
+                          cursor: uploadedImage ? (isDraggingImage ? 'grabbing' : 'grab') : 'crosshair'
                         }}
                       />
                     </div>
@@ -882,7 +931,7 @@ function Canvas100M() {
                   Upload Image
                 </CardTitle>
                 <CardDescription>
-                  {uploadedImage ? 'Position your image on canvas' : 'Upload an image and convert it to pixels'}
+                  {uploadedImage ? 'Drag the image on canvas or use controls to position' : 'Upload an image and convert it to pixels'}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
