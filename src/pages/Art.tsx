@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSeoMeta } from '@unhead/react';
 import { useSearchParams } from 'react-router-dom';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { useArtworks } from '@/hooks/useArtworks';
+import { useArtworks, useDeleteArtwork } from '@/hooks/useArtworks';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -76,6 +76,7 @@ const Art = () => {
 
   // Fetch artworks
   const { data: artworks, isLoading: artworksLoading, error: artworksError } = useArtworks(selectedFilter);
+  const { mutate: deleteArtwork } = useDeleteArtwork();
   
   // Get featured artworks for tile gallery
   const featuredArtworks = artworks?.filter(artwork => artwork.featured) || [];
@@ -136,6 +137,24 @@ const Art = () => {
     }
 
     setEditingArtwork(artwork);
+  };
+
+  const handleDelete = (artwork: ArtworkData) => {
+    // Check if user is admin or the artwork owner
+    const canDelete = user && (isAdmin || artwork.artist_pubkey === user.pubkey);
+    
+    if (!canDelete) {
+      toast({
+        title: "Access Denied",
+        description: "Only admins or artwork owners can delete artworks.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (confirm(`Are you sure you want to delete "${artwork.title}"? This action cannot be undone.`)) {
+      deleteArtwork(artwork.id);
+    }
   };
 
   const handleEditSuccess = () => {
@@ -430,16 +449,22 @@ const Art = () => {
                   </div>
 
                   <div className={`grid gap-6 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1 md:grid-cols-2'}`}>
-                    {artworks.map((artwork) => (
-                      <ArtworkThumbnail
-                        key={artwork.id}
-                        artwork={artwork}
-                        onViewDetails={handleViewDetails}
-                        onBuy={handleBuy}
-                        onBid={handleBid}
-                        onEdit={user && isAdmin ? handleEdit : undefined}
-                      />
-                    ))}
+                    {artworks.map((artwork) => {
+                      // Check if user can delete (admin or owner)
+                      const canDelete = user && (isAdmin || artwork.artist_pubkey === user.pubkey);
+                      
+                      return (
+                        <ArtworkThumbnail
+                          key={artwork.id}
+                          artwork={artwork}
+                          onViewDetails={handleViewDetails}
+                          onBuy={handleBuy}
+                          onBid={handleBid}
+                          onEdit={user && isAdmin ? handleEdit : undefined}
+                          onDelete={canDelete ? handleDelete : undefined}
+                        />
+                      );
+                    })}
                   </div>
                 </div>
               )}

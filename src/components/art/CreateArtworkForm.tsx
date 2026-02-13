@@ -110,7 +110,7 @@ export function CreateArtworkForm({ onSuccess, onCancel }: CreateArtworkFormProp
       saleType: 'not_for_sale',
       currency: 'SAT',
       auctionDuration: 24,
-      shareToNostr: true, // Default to sharing
+      shareToNostr: false, // Default to not sharing (user must check the box)
       shareMessage: ''
     }
   });

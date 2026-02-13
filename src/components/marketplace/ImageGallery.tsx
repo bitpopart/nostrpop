@@ -63,7 +63,7 @@ export function ImageGallery({
     <>
       <div className={`space-y-4 ${className}`}>
         {/* Main Image */}
-        <div className={`relative overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800 group cursor-pointer ${aspectRatio === 'square' ? 'aspect-square' : ''}`}>
+        <div className={`relative overflow-hidden rounded-lg bg-white dark:bg-gray-900 group cursor-pointer ${aspectRatio === 'square' ? 'aspect-square' : ''}`}>
           <button
             onClick={handleImageClick}
             className="w-full h-full block focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 rounded-lg"
@@ -72,7 +72,7 @@ export function ImageGallery({
             <img
               src={images[selectedImage]}
               alt={`${productName} - Image ${selectedImage + 1}`}
-              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+              className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAwIiBoZWlnaHQ9IjUwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIyNCIgZmlsbD0iIzk5YTNhZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg==';

@@ -10,7 +10,8 @@ import {
   CheckCircle,
   Eye,
   Timer,
-  Edit
+  Edit,
+  Trash2
 } from 'lucide-react';
 import type { NostrMetadata } from '@nostrify/nostrify';
 
@@ -20,9 +21,10 @@ interface ArtworkThumbnailProps {
   onBuy?: (artwork: ArtworkData) => void;
   onBid?: (artwork: ArtworkData) => void;
   onEdit?: (artwork: ArtworkData) => void;
+  onDelete?: (artwork: ArtworkData) => void;
 }
 
-export function ArtworkThumbnail({ artwork, onViewDetails, onBuy, onBid, onEdit }: ArtworkThumbnailProps) {
+export function ArtworkThumbnail({ artwork, onViewDetails, onBuy, onBid, onEdit, onDelete }: ArtworkThumbnailProps) {
   const author = useAuthor(artwork.artist_pubkey);
   const metadata: NostrMetadata | undefined = author.data?.metadata;
 
@@ -74,12 +76,12 @@ export function ArtworkThumbnail({ artwork, onViewDetails, onBuy, onBid, onEdit 
   return (
     <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
       {/* Artwork Image */}
-      <div className="aspect-square relative overflow-hidden bg-gray-100 dark:bg-gray-800">
+      <div className="aspect-square relative overflow-hidden bg-white dark:bg-gray-900">
         {artwork.images && artwork.images.length > 0 ? (
           <img
             src={artwork.images[0]}
             alt={artwork.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
             onError={(e) => {
               // Show placeholder if image fails to load
               const placeholder = e.currentTarget.parentElement!.querySelector('.image-placeholder');
@@ -128,20 +130,35 @@ export function ArtworkThumbnail({ artwork, onViewDetails, onBuy, onBid, onEdit 
           </div>
         )}
 
-        {/* Edit Button for Admins */}
-        {onEdit && (
-          <div className={`absolute top-3 ${isAuction && auctionActive && artwork.auction_end ? 'right-20' : 'right-3'}`}>
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit(artwork);
-              }}
-              className="h-8 w-8 p-0 bg-white/90 hover:bg-white text-gray-900 opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-              <Edit className="w-3 h-3" />
-            </Button>
+        {/* Edit and Delete Buttons for Admins */}
+        {(onEdit || onDelete) && (
+          <div className={`absolute top-3 ${isAuction && auctionActive && artwork.auction_end ? 'right-20' : 'right-3'} flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity`}>
+            {onEdit && (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(artwork);
+                }}
+                className="h-8 w-8 p-0 bg-white/90 hover:bg-white text-gray-900"
+              >
+                <Edit className="w-3 h-3" />
+              </Button>
+            )}
+            {onDelete && (
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(artwork);
+                }}
+                className="h-8 w-8 p-0 bg-red-500/90 hover:bg-red-600 text-white"
+              >
+                <Trash2 className="w-3 h-3" />
+              </Button>
+            )}
           </div>
         )}
 

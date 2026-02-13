@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useSeoMeta } from '@unhead/react';
 import { nip19 } from 'nostr-tools';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useArtwork } from '@/hooks/useArtworks';
+import { useArtwork, useDeleteArtwork } from '@/hooks/useArtworks';
 import { useAuthor } from '@/hooks/useAuthor';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
@@ -34,13 +34,15 @@ import {
   Timer,
   Award,
   Edit,
-  Share2
+  Share2,
+  Trash2
 } from 'lucide-react';
 import type { NostrMetadata } from '@nostrify/nostrify';
 import type { ArtworkData } from '@/lib/artTypes';
 
 const ArtworkView = () => {
   const { naddr } = useParams<{ naddr: string }>();
+  const navigate = useNavigate();
   const { user } = useCurrentUser();
   const isAdmin = useIsAdmin();
   const { toast } = useToast();
@@ -65,6 +67,7 @@ const ArtworkView = () => {
   }, [naddr]);
 
   const { data: artwork, isLoading, error } = useArtwork(artworkId, artistPubkey);
+  const { mutate: deleteArtwork } = useDeleteArtwork();
   const author = useAuthor(artistPubkey);
   const metadata: NostrMetadata | undefined = author.data?.metadata;
 
@@ -131,6 +134,30 @@ const ArtworkView = () => {
 
   const handleEditCancel = () => {
     setIsEditing(false);
+  };
+
+  const handleDelete = () => {
+    if (!artwork || !user) return;
+
+    // Check if user is admin or the artwork owner
+    const canDelete = isAdmin || artwork.artist_pubkey === user.pubkey;
+    
+    if (!canDelete) {
+      toast({
+        title: "Access Denied",
+        description: "Only admins or artwork owners can delete artworks.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (confirm(`Are you sure you want to delete "${artwork.title}"? This action cannot be undone.`)) {
+      deleteArtwork(artwork.id, {
+        onSuccess: () => {
+          navigate('/art');
+        }
+      });
+    }
   };
 
   // Convert artwork to marketplace product format for payment
@@ -291,17 +318,30 @@ const ArtworkView = () => {
 
                     {/* Actions and Status */}
                     <div className="flex items-center space-x-3">
-                      {/* Edit Button for Admins */}
-                      {user && isAdmin && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleEdit}
-                          className="flex items-center space-x-2"
-                        >
-                          <Edit className="w-4 h-4" />
-                          <span>Edit</span>
-                        </Button>
+                      {/* Edit and Delete Buttons for Admins/Owners */}
+                      {user && (isAdmin || artwork.artist_pubkey === user.pubkey) && (
+                        <div className="flex items-center space-x-2">
+                          {isAdmin && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={handleEdit}
+                              className="flex items-center space-x-2"
+                            >
+                              <Edit className="w-4 h-4" />
+                              <span>Edit</span>
+                            </Button>
+                          )}
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={handleDelete}
+                            className="flex items-center space-x-2"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            <span>Delete</span>
+                          </Button>
+                        </div>
                       )}
 
                       {/* Sale Status Badge */}
