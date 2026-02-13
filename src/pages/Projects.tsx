@@ -11,6 +11,7 @@ import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { ShareToNostrButton } from '@/components/ShareToNostrButton';
 import { ClawstrShare } from '@/components/ClawstrShare';
 import { ZapButton } from '@/components/ZapButton';
+import { ShareDialog } from '@/components/share/ShareDialog';
 import { FolderKanban, Sparkles, ArrowRight, Users, Zap, Award, Share2, Image as ImageIcon } from 'lucide-react';
 import { useNostrProjects } from '@/hooks/useNostrProjects';
 import { useBadges } from '@/hooks/useBadges';
@@ -291,6 +292,33 @@ export default function Projects() {
                   <CardDescription className="line-clamp-3 text-base">
                     {project.description}
                   </CardDescription>
+                  {/* Share Button */}
+                  {!isComingSoon && (
+                    <div className="pt-3" onClick={(e) => e.stopPropagation()}>
+                      <ShareDialog
+                        title={project.name}
+                        description={project.description}
+                        url={project.url?.startsWith('http') ? project.url : `${window.location.origin}${project.url || `/projects#${project.id}`}`}
+                        imageUrl={project.thumbnail}
+                        contentType="project"
+                        eventRef={'event' in project ? {
+                          id: project.event.id,
+                          kind: project.event.kind,
+                          pubkey: project.event.pubkey,
+                          dTag: project.id
+                        } : undefined}
+                      >
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full"
+                        >
+                          <Share2 className="h-4 w-4 mr-2" />
+                          Share Project
+                        </Button>
+                      </ShareDialog>
+                    </div>
+                  )}
                 </CardHeader>
               </Card>
               );

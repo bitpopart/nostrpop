@@ -19,6 +19,7 @@ import { EditArtworkForm } from '@/components/art/EditArtworkForm';
 import { PaymentDialog } from '@/components/marketplace/PaymentDialog';
 import { ShareArtworkToNostrDialog } from '@/components/art/ShareArtworkToNostrDialog';
 import { ClawstrShare } from '@/components/ClawstrShare';
+import { ShareDialog } from '@/components/share/ShareDialog';
 import {
   ArrowLeft,
   Calendar,
@@ -479,40 +480,66 @@ const ArtworkView = () => {
                 </Card>
               )}
 
-              {/* Share to Nostr */}
-              {artwork.event && isAdmin && (
+              {/* Share Artwork */}
+              {artwork.event && (
                 <Card className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
                   <CardHeader>
                     <CardTitle className="text-lg">Share Artwork</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2">
-                    <ShareArtworkToNostrDialog
-                      artworkEvent={artwork.event}
-                      artworkData={artwork}
+                    <ShareDialog
+                      title={artwork.title}
+                      description={artwork.description}
+                      url={`${window.location.origin}/art/${naddr}`}
+                      imageUrl={artwork.images[0]}
+                      category={artwork.medium || artwork.type}
+                      contentType="artwork"
+                      eventRef={{
+                        id: artwork.event.id,
+                        kind: artwork.event.kind,
+                        pubkey: artwork.event.pubkey,
+                        dTag: artworkId
+                      }}
                     >
                       <Button
                         variant="outline"
-                        className="w-full bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 border-purple-200 dark:border-purple-800"
+                        className="w-full bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-purple-200 dark:border-purple-800"
                       >
                         <Share2 className="mr-2 h-4 w-4 text-purple-600 dark:text-purple-400" />
-                        Share to Nostr
+                        Share Artwork
                       </Button>
-                    </ShareArtworkToNostrDialog>
-                    <ClawstrShare
-                      event={artwork.event}
-                      contentType="artwork"
-                      trigger={
-                        <Button
-                          variant="outline"
-                          className="w-full bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 border-purple-200 dark:border-purple-800"
+                    </ShareDialog>
+                    {isAdmin && (
+                      <>
+                        <ShareArtworkToNostrDialog
+                          artworkEvent={artwork.event}
+                          artworkData={artwork}
                         >
-                          <Share2 className="mr-2 h-4 w-4 text-purple-600 dark:text-purple-400" />
-                          Share to Clawstr
-                        </Button>
-                      }
-                    />
+                          <Button
+                            variant="outline"
+                            className="w-full bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 border-purple-200 dark:border-purple-800"
+                          >
+                            <Share2 className="mr-2 h-4 w-4 text-purple-600 dark:text-purple-400" />
+                            Share to Nostr (Admin)
+                          </Button>
+                        </ShareArtworkToNostrDialog>
+                        <ClawstrShare
+                          event={artwork.event}
+                          contentType="artwork"
+                          trigger={
+                            <Button
+                              variant="outline"
+                              className="w-full bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 border-purple-200 dark:border-purple-800"
+                            >
+                              <Share2 className="mr-2 h-4 w-4 text-purple-600 dark:text-purple-400" />
+                              Share to Clawstr (Admin)
+                            </Button>
+                          }
+                        />
+                      </>
+                    )}
                     <p className="text-xs text-center text-muted-foreground mt-2">
-                      Share this artwork with the Nostr and Clawstr communities
+                      Share this artwork with friends and the Nostr community
                     </p>
                   </CardContent>
                 </Card>

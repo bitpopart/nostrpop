@@ -9,7 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SocialShareButtons } from '@/components/SocialShareButtons';
 import { ZapButton } from '@/components/ZapButton';
-import { MapPin, Calendar, ExternalLink, Globe } from 'lucide-react';
+import { ShareDialog } from '@/components/share/ShareDialog';
+import { MapPin, Calendar, ExternalLink, Globe, Share2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { POPUP_TYPE_CONFIG, POPUP_STATUS_CONFIG, type PopUpType, type PopUpStatus, type PopUpEventData } from '@/lib/popupTypes';
 import { WorldMap } from '@/components/popup/WorldMap';
@@ -274,7 +275,36 @@ export default function PopUp() {
                         </a>
                       )}
 
-                      {/* Share Buttons - Admin Only */}
+                      {/* Share Button */}
+                      {event.event && (
+                        <div className="pt-3">
+                          <ShareDialog
+                            title={event.title}
+                            description={event.description}
+                            url={`${window.location.origin}/popup#${event.id}`}
+                            imageUrl={event.image}
+                            category={event.type}
+                            contentType="event"
+                            eventRef={{
+                              id: event.event.id,
+                              kind: event.event.kind,
+                              pubkey: event.event.pubkey,
+                              dTag: event.id
+                            }}
+                          >
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-full"
+                            >
+                              <Share2 className="h-4 w-4 mr-2" />
+                              Share Event
+                            </Button>
+                          </ShareDialog>
+                        </div>
+                      )}
+
+                      {/* Admin Share Buttons */}
                       {isAdmin && event.event && (
                         <SocialShareButtons
                           event={event.event}
@@ -319,6 +349,33 @@ export default function PopUp() {
                             {typeConfig.icon}
                           </Badge>
                         </div>
+                        {/* Share button overlay */}
+                        {event.event && (
+                          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200" onClick={(e) => e.stopPropagation()}>
+                            <ShareDialog
+                              title={event.title}
+                              description={event.description}
+                              url={`${window.location.origin}/popup#${event.id}`}
+                              imageUrl={event.image}
+                              category={event.type}
+                              contentType="event"
+                              eventRef={{
+                                id: event.event.id,
+                                kind: event.event.kind,
+                                pubkey: event.event.pubkey,
+                                dTag: event.id
+                              }}
+                            >
+                              <Button
+                                variant="default"
+                                size="sm"
+                                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 border-0 shadow-lg h-7 w-7 p-0"
+                              >
+                                <Share2 className="h-3 w-3" />
+                              </Button>
+                            </ShareDialog>
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <div className="relative h-32 bg-gradient-to-br from-purple-100 via-pink-100 to-indigo-100 dark:from-purple-900/20 dark:via-pink-900/20 dark:to-indigo-900/20 flex items-center justify-center">

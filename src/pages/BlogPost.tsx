@@ -10,10 +10,11 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { Calendar, Tag, ArrowLeft, ExternalLink, Image as ImageIcon } from 'lucide-react';
+import { Calendar, Tag, ArrowLeft, ExternalLink, Image as ImageIcon, Share2 } from 'lucide-react';
 import { format } from 'date-fns';
 import type { NostrEvent } from '@nostrify/nostrify';
 import ReactMarkdown from 'react-markdown';
+import { ShareDialog } from '@/components/share/ShareDialog';
 
 // Content block types
 interface ContentBlock {
@@ -249,6 +250,33 @@ export default function BlogPost() {
                   ))}
                 </div>
               )}
+
+              {/* Share Button */}
+              <div className="flex justify-center mb-8">
+                <ShareDialog
+                  title={title}
+                  description={summary}
+                  url={`${window.location.origin}/blog/${articleId}`}
+                  imageUrl={image}
+                  category={postTags[0]}
+                  contentType="blog"
+                  eventRef={{
+                    id: post.id,
+                    kind: post.kind,
+                    pubkey: post.pubkey,
+                    dTag: articleId
+                  }}
+                >
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-purple-200 dark:border-purple-800"
+                  >
+                    <Share2 className="h-4 w-4 mr-2" />
+                    Share Article
+                  </Button>
+                </ShareDialog>
+              </div>
 
               <Separator className="mb-8" />
 
