@@ -12,6 +12,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,6 +42,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 import type { NostrEvent } from '@nostrify/nostrify';
 import ReactMarkdown from 'react-markdown';
 
@@ -69,6 +72,7 @@ export function BlogPostManagement() {
   const [headerImage, setHeaderImage] = useState('');
   const [externalUrl, setExternalUrl] = useState('');
   const [tags, setTags] = useState('');
+  const [publishDate, setPublishDate] = useState<Date>(new Date());
   const [contentBlocks, setContentBlocks] = useState<ContentBlock[]>([
     { id: '1', type: 'markdown', content: '', images: [] }
   ]);
@@ -76,7 +80,7 @@ export function BlogPostManagement() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadingBlockId, setUploadingBlockId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [shareToNostr, setShareToNostr] = useState(true);
+  const [shareToNostr, setShareToNostr] = useState(false);
   
   // Confirmation dialogs
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -110,10 +114,12 @@ export function BlogPostManagement() {
     setHeaderImage('');
     setExternalUrl('');
     setTags('');
+    setPublishDate(new Date());
     setContentBlocks([{ id: '1', type: 'markdown', content: '', images: [] }]);
     setEditingPost(null);
     setIsCreating(false);
     setActiveTab('edit');
+    setShareToNostr(false);
   };
 
   const addContentBlock = (type: 'markdown' | 'gallery') => {
@@ -219,6 +225,10 @@ export function BlogPostManagement() {
     setHeaderImage(post.tags.find(t => t[0] === 'image')?.[1] || '');
     setExternalUrl(post.tags.find(t => t[0] === 'r')?.[1] || '');
     setTags(post.tags.filter(t => t[0] === 't').map(t => t[1]).join(', '));
+    
+    // Load publish date
+    const publishedAt = post.tags.find(t => t[0] === 'published_at')?.[1];
+    setPublishDate(publishedAt ? new Date(parseInt(publishedAt) * 1000) : new Date(post.created_at * 1000));
 
     // Parse content blocks
     try {
@@ -296,7 +306,7 @@ export function BlogPostManagement() {
     const blogTags: string[][] = [
       ['d', articleId],
       ['title', title.trim()],
-      ['published_at', Math.floor(Date.now() / 1000).toString()],
+      ['published_at', Math.floor(publishDate.getTime() / 1000).toString()],
       ['t', 'blog'],
     ];
 
@@ -354,10 +364,60 @@ export function BlogPostManagement() {
           await queryClient.refetchQueries({ queryKey: ['blog-posts'] });
           
           const action = editingPost ? 'updated' : 'created';
-          toast.success(`Blog post ${action} successfully!`);
           
-          resetForm();
-          setIsSaving(false);
+          // If share to Nostr is checked, create a kind 1 note
+          if (shareToNostr) {
+            const firstMarkdownBlock = contentBlocks.find(b => b.type === 'markdown' && b.content.trim());
+            const excerpt = firstMarkdownBlock 
+              ? firstMarkdownBlock.content.split('\n\n')[0].replace(/^#+ /, '').trim()
+              : summary || 'Check out my latest blog post!';
+            
+            const blogUrl = `${window.location.origin}/blog/${articleId}`;
+            const shareContent = `📝 ${title}\n\n${excerpt.slice(0, 200)}${excerpt.length > 200 ? '...' : ''}\n\n${blogUrl}`;
+            
+            const shareTags = [
+              ['t', 'blog'],
+              ['t', 'bitpopart'],
+              ['r', blogUrl],
+              ['a', `30023:${user?.pubkey}:${articleId}`, '', 'mention'],
+            ];
+
+            if (headerImage) {
+              shareTags.push(['image', headerImage]);
+              shareTags.push([
+                'imeta',
+                `url ${headerImage}`,
+                'm image/jpeg',
+                `alt ${title}`,
+                `fallback ${blogUrl}`
+              ]);
+            }
+            
+            createEvent(
+              {
+                kind: 1,
+                content: shareContent,
+                tags: shareTags,
+              },
+              {
+                onSuccess: () => {
+                  toast.success(`Blog post ${action} and shared to Nostr!`);
+                  resetForm();
+                  setIsSaving(false);
+                },
+                onError: (error) => {
+                  console.error('[BlogPostManagement] ❌ Share error:', error);
+                  toast.success(`Blog post ${action}! (Nostr share failed)`);
+                  resetForm();
+                  setIsSaving(false);
+                },
+              }
+            );
+          } else {
+            toast.success(`Blog post ${action} successfully!`);
+            resetForm();
+            setIsSaving(false);
+          }
         },
         onError: (error) => {
           console.error('[BlogPostManagement] ❌ Publish error:', error);
@@ -488,6 +548,36 @@ export function BlogPostManagement() {
                 onChange={(e) => setSummary(e.target.value)}
                 placeholder="Brief summary for preview cards..."
               />
+            </div>
+
+            {/* Publish Date */}
+            <div className="space-y-2">
+              <Label>Publish Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !publishDate && "text-muted-foreground"
+                    )}
+                  >
+                    <Calendar className="mr-2 h-4 w-4" />
+                    {publishDate ? format(publishDate, "PPP") : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <CalendarComponent
+                    mode="single"
+                    selected={publishDate}
+                    onSelect={(date) => date && setPublishDate(date)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              <p className="text-xs text-muted-foreground">
+                Set the publish date for this blog post (useful for adding older posts)
+              </p>
             </div>
 
             {/* Header Image */}
@@ -855,8 +945,28 @@ export function BlogPostManagement() {
               </Tabs>
             </div>
 
+            {/* Share to Nostr Checkbox */}
+            <div className="flex items-center space-x-2 pt-4 border-t">
+              <Checkbox
+                id="share-nostr"
+                checked={shareToNostr}
+                onCheckedChange={(checked) => setShareToNostr(checked as boolean)}
+              />
+              <div className="flex-1">
+                <Label
+                  htmlFor="share-nostr"
+                  className="text-base font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                >
+                  Share to Nostr Community
+                </Label>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Automatically post this blog to your Nostr feed when publishing
+                </p>
+              </div>
+            </div>
+
             {/* Actions */}
-            <div className="flex gap-2 pt-4 border-t">
+            <div className="flex gap-2 pt-4">
               <Button onClick={handleSave} className="flex-1" disabled={isSaving}>
                 {isSaving ? (
                   <>

@@ -13,8 +13,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ZapButton } from '@/components/ZapButton';
 import { LoginArea } from '@/components/auth/LoginArea';
 import { BlogPostManagement } from '@/components/blog/BlogPostManagement';
-import { Calendar, Tag, ArrowRight, FileText, Plus } from 'lucide-react';
-import { format } from 'date-fns';
+import { ShareDialog } from '@/components/share/ShareDialog';
+import { Calendar, Tag, ArrowRight, FileText, Plus, Share2, Archive } from 'lucide-react';
+import { format, startOfMonth } from 'date-fns';
 import { Link } from 'react-router-dom';
 import type { NostrEvent } from '@nostrify/nostrify';
 
@@ -39,8 +40,8 @@ export default function Blog() {
   }, [searchParams, isAdmin]);
 
   useSeoMeta({
-    title: 'News - BitPopArt',
-    description: 'Read latest news and insights from BitPopArt on Bitcoin, art, and creativity',
+    title: 'Blog - BitPopArt',
+    description: 'Latest news from BitPopArt',
   });
 
   // BitPopArt admin pubkey
@@ -94,16 +95,36 @@ export default function Blog() {
     return publishedAt ? new Date(parseInt(publishedAt) * 1000) : new Date(event.created_at * 1000);
   };
 
+  // Group posts by month for archives
+  const postsByMonth = blogPosts.reduce((acc, post) => {
+    const date = getPublishedDate(post);
+    const monthKey = format(startOfMonth(date), 'yyyy-MM');
+    const monthLabel = format(date, 'MMMM yyyy');
+    
+    if (!acc[monthKey]) {
+      acc[monthKey] = {
+        label: monthLabel,
+        posts: []
+      };
+    }
+    acc[monthKey].posts.push(post);
+    return acc;
+  }, {} as Record<string, { label: string; posts: NostrEvent[] }>);
+
+  const archiveMonths = Object.entries(postsByMonth)
+    .sort(([a], [b]) => b.localeCompare(a))
+    .map(([key, value]) => ({ key, ...value }));
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20">
       <div className="container mx-auto px-4 py-12">
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-5xl font-bold bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent mb-4">
-            News
+            Blog
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            Latest news on Bitcoin, art, and creativity
+            Latest news from BitPopArt
           </p>
           {user && isAdmin && (
             <Badge className="mt-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0">
@@ -114,12 +135,16 @@ export default function Blog() {
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full max-w-6xl mx-auto">
           {isAdmin ? (
-            <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto mb-8">
+            <TabsList className="grid w-full grid-cols-3 max-w-2xl mx-auto mb-8">
               <TabsTrigger value="blog">Blog Posts</TabsTrigger>
+              <TabsTrigger value="archives">Archives</TabsTrigger>
               <TabsTrigger value="admin">Manage Posts</TabsTrigger>
             </TabsList>
           ) : (
-            <div className="mb-8" />
+            <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto mb-8">
+              <TabsTrigger value="blog">Blog Posts</TabsTrigger>
+              <TabsTrigger value="archives">Archives</TabsTrigger>
+            </TabsList>
           )}
 
           <TabsContent value="blog">
@@ -183,8 +208,8 @@ export default function Blog() {
                   const publishedDate = getPublishedDate(post);
 
                   return (
-                    <Link key={post.id} to={`/blog/${articleId}`}>
-                      <Card className="h-full hover:shadow-xl transition-all duration-300 cursor-pointer group overflow-hidden">
+                    <Card key={post.id} className="h-full hover:shadow-xl transition-all duration-300 group overflow-hidden">
+                      <Link to={`/blog/${articleId}`}>
                         {image && (
                           <div className="relative h-48 overflow-hidden">
                             <img
@@ -192,8 +217,32 @@ export default function Blog() {
                               alt={postTitle}
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                             />
-                            {/* Zap button overlay */}
-                            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                            {/* Action buttons overlay */}
+                            <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                              <div onClick={(e) => e.stopPropagation()}>
+                                <ShareDialog
+                                  title={postTitle}
+                                  description={summary}
+                                  url={`${window.location.origin}/blog/${articleId}`}
+                                  imageUrl={image}
+                                  category={postTags[0]}
+                                  contentType="blog"
+                                  eventRef={{
+                                    id: post.id,
+                                    kind: post.kind,
+                                    pubkey: post.pubkey,
+                                    dTag: articleId
+                                  }}
+                                >
+                                  <Button
+                                    size="sm"
+                                    variant="default"
+                                    className="bg-purple-600 hover:bg-purple-700 text-white border-0 shadow-lg h-8 w-8 p-0"
+                                  >
+                                    <Share2 className="h-4 w-4" />
+                                  </Button>
+                                </ShareDialog>
+                              </div>
                               <div onClick={(e) => e.stopPropagation()}>
                                 <ZapButton
                                   authorPubkey={post.pubkey}
@@ -201,14 +250,16 @@ export default function Blog() {
                                   eventTitle={postTitle}
                                   size="sm"
                                   variant="default"
-                                  className="bg-orange-600 hover:bg-orange-700 text-white border-0 shadow-lg"
+                                  className="bg-orange-600 hover:bg-orange-700 text-white border-0 shadow-lg h-8 w-8 p-0"
                                   showLabel={false}
                                 />
                               </div>
                             </div>
                           </div>
                         )}
-                        <CardHeader className="space-y-3">
+                      </Link>
+                      <CardHeader className="space-y-3">
+                        <Link to={`/blog/${articleId}`}>
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <Calendar className="h-4 w-4" />
                             <time>{format(publishedDate, 'MMMM d, yyyy')}</time>
@@ -238,11 +289,150 @@ export default function Blog() {
                             <span className="text-sm font-medium">Read more</span>
                             <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
                           </div>
-                        </CardHeader>
-                      </Card>
-                    </Link>
+                        </Link>
+                        {/* Share Button at bottom of card */}
+                        <div onClick={(e) => e.stopPropagation()}>
+                          <ShareDialog
+                            title={postTitle}
+                            description={summary}
+                            url={`${window.location.origin}/blog/${articleId}`}
+                            imageUrl={image}
+                            category={postTags[0]}
+                            contentType="blog"
+                            eventRef={{
+                              id: post.id,
+                              kind: post.kind,
+                              pubkey: post.pubkey,
+                              dTag: articleId
+                            }}
+                          >
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-full"
+                            >
+                              <Share2 className="h-4 w-4 mr-2" />
+                              Share Article
+                            </Button>
+                          </ShareDialog>
+                        </div>
+                      </CardHeader>
+                    </Card>
                   );
                 })}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="archives">
+            {/* Archives by Month */}
+            {isLoading ? (
+              <div className="space-y-6">
+                {[...Array(3)].map((_, i) => (
+                  <Card key={i}>
+                    <CardHeader>
+                      <Skeleton className="h-6 w-32" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-3/4" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : archiveMonths.length === 0 ? (
+              <Card className="max-w-md mx-auto">
+                <CardContent className="py-12 text-center">
+                  <Archive className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-xl font-semibold mb-2">No Archives Yet</h3>
+                  <p className="text-muted-foreground">
+                    Blog posts will be organized by month here.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-6 max-w-4xl mx-auto">
+                {archiveMonths.map((month) => (
+                  <Card key={month.key}>
+                    <CardHeader>
+                      <CardTitle className="flex items-center text-xl">
+                        <Archive className="h-5 w-5 mr-2 text-purple-600" />
+                        {month.label}
+                        <Badge variant="secondary" className="ml-auto">
+                          {month.posts.length} {month.posts.length === 1 ? 'post' : 'posts'}
+                        </Badge>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {month.posts.map((post) => {
+                          const postTitle = getArticleTitle(post);
+                          const articleId = getArticleId(post);
+                          const publishedDate = getPublishedDate(post);
+                          const image = getArticleImage(post);
+                          const postTags = getArticleTags(post);
+
+                          return (
+                            <div key={post.id} className="flex items-start gap-4 p-3 rounded-lg hover:bg-accent/50 transition-colors">
+                              <Link to={`/blog/${articleId}`} className="flex-1 flex items-start gap-4">
+                                {image && (
+                                  <img
+                                    src={image}
+                                    alt={postTitle}
+                                    className="w-20 h-20 object-cover rounded flex-shrink-0"
+                                  />
+                                )}
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+                                    <Calendar className="h-3 w-3" />
+                                    <time>{format(publishedDate, 'MMM d')}</time>
+                                  </div>
+                                  <h3 className="font-semibold hover:text-purple-600 transition-colors line-clamp-2">
+                                    {postTitle}
+                                  </h3>
+                                  {postTags.length > 0 && (
+                                    <div className="flex flex-wrap gap-1 mt-2">
+                                      {postTags.slice(0, 2).map((tag) => (
+                                        <Badge key={tag} variant="outline" className="text-xs">
+                                          {tag}
+                                        </Badge>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              </Link>
+                              <div onClick={(e) => e.stopPropagation()}>
+                                <ShareDialog
+                                  title={postTitle}
+                                  description={getArticleSummary(post)}
+                                  url={`${window.location.origin}/blog/${articleId}`}
+                                  imageUrl={image}
+                                  category={postTags[0]}
+                                  contentType="blog"
+                                  eventRef={{
+                                    id: post.id,
+                                    kind: post.kind,
+                                    pubkey: post.pubkey,
+                                    dTag: articleId
+                                  }}
+                                >
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                  >
+                                    <Share2 className="h-4 w-4" />
+                                  </Button>
+                                </ShareDialog>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             )}
           </TabsContent>
