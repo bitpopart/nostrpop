@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,7 @@ import { formatCurrency } from '@/hooks/usePayment';
 import { useMarketplaceProduct } from '@/hooks/useMarketplaceProducts';
 import { useLivePrice } from '@/hooks/useLivePrice';
 import { useToast } from '@/hooks/useToast';
+import { useQuery } from '@tanstack/react-query';
 import { ImageGallery } from '@/components/marketplace/ImageGallery';
 import { ArrowLeft, Package, Truck, Star, Shield, Heart, Share2, ExternalLink, Zap, ShoppingCart } from 'lucide-react';
 
@@ -24,9 +25,73 @@ export function ProductPage() {
     product?.currency
   );
 
+  // Always use USD as display currency
   const displayPrice = livePrice?.price ?? product?.price ?? 0;
-  const displayCurrency = livePrice?.currency ?? product?.currency ?? 'USD';
-  const displayPriceInSats = livePrice?.priceInSats;
+  const sourceCurrency = livePrice?.currency ?? product?.currency ?? 'USD';
+  const displayCurrency = 'USD';
+
+  // Convert to USD if needed
+  const [priceInUSD, setPriceInUSD] = useState<number>(displayPrice);
+
+  // Fetch BTC price and calculate sats
+  const { data: btcPrice } = useQuery({
+    queryKey: ['btc-price-usd'],
+    queryFn: async ({ signal }) => {
+      try {
+        const response = await fetch(
+          'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd',
+          { signal }
+        );
+        const data = await response.json();
+        return data?.bitcoin?.usd || null;
+      } catch (error) {
+        console.warn('Failed to fetch BTC price:', error);
+        return null;
+      }
+    },
+    staleTime: 300000, // 5 minutes
+    refetchInterval: 300000,
+  });
+
+  // Calculate price in sats
+  const displayPriceInSats = btcPrice && priceInUSD > 0 
+    ? Math.round((priceInUSD / btcPrice) * 100000000)
+    : livePrice?.priceInSats;
+
+  // Convert source currency to USD if needed
+  useEffect(() => {
+    const convertToUSD = async () => {
+      if (sourceCurrency === 'USD') {
+        setPriceInUSD(displayPrice);
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          `https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd,${sourceCurrency.toLowerCase()}`
+        );
+        const data = await response.json();
+        const usdRate = data?.bitcoin?.usd;
+        const sourceRate = data?.bitcoin?.[sourceCurrency.toLowerCase()];
+
+        if (usdRate && sourceRate) {
+          // Convert through BTC as intermediate
+          const priceInBTC = displayPrice / sourceRate;
+          const converted = priceInBTC * usdRate;
+          setPriceInUSD(converted);
+        } else {
+          setPriceInUSD(displayPrice);
+        }
+      } catch (error) {
+        console.warn('Currency conversion failed:', error);
+        setPriceInUSD(displayPrice);
+      }
+    };
+
+    if (displayPrice > 0) {
+      convertToUSD();
+    }
+  }, [displayPrice, sourceCurrency]);
 
   useEffect(() => {
     if (!isLoading && !product) {
@@ -120,23 +185,23 @@ export function ProductPage() {
             <h1 className="text-4xl font-bold mb-4">{product.name}</h1>
             <p className="text-xl text-muted-foreground mb-4">{product.description}</p>
 
-            <div className="flex items-center space-x-4 mb-4">
+            <div className="flex items-baseline flex-wrap gap-4 mb-4">
               <div className="text-3xl font-bold text-green-600">
-                {formatCurrency(displayPrice, displayCurrency)}
+                {formatCurrency(priceInUSD, displayCurrency)}
               </div>
               {displayPriceInSats && (
-                <div className="flex items-center text-lg text-orange-600">
-                  <Zap className="w-4 h-4 mr-1" />
-                  <span>{displayPriceInSats.toLocaleString()} sats</span>
-                </div>
-              )}
-              {hasShipping && (
-                <div className="flex items-center text-sm text-muted-foreground">
-                  <Truck className="w-4 h-4 mr-1" />
-                  <span>+ {formatCurrency(shippingCost, product.currency)} shipping</span>
+                <div className="flex items-center text-xl text-orange-600">
+                  <Zap className="w-5 h-5 mr-1" />
+                  <span className="font-semibold">{displayPriceInSats.toLocaleString()} sats</span>
                 </div>
               )}
             </div>
+            {hasShipping && shippingCost > 0 && (
+              <div className="flex items-center text-sm text-muted-foreground mb-4">
+                <Truck className="w-4 h-4 mr-1" />
+                <span>+ {formatCurrency(shippingCost, displayCurrency)} shipping</span>
+              </div>
+            )}
 
             {product.quantity !== undefined && (
               <div className="text-sm text-muted-foreground mb-6">
@@ -259,7 +324,7 @@ export function ProductPage() {
               )}
 
               {/* Shipping Info */}
-              {hasShipping && (
+              {hasShipping && shippingCost > 0 && (
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-lg flex items-center">
@@ -269,7 +334,7 @@ export function ProductPage() {
                   </CardHeader>
                   <CardContent>
                     <p className="text-muted-foreground">
-                      Standard shipping: {formatCurrency(shippingCost, product.currency)}
+                      Standard shipping: {formatCurrency(shippingCost, displayCurrency)}
                     </p>
                   </CardContent>
                 </Card>
