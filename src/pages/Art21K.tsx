@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { useSeoMeta } from '@unhead/react';
+import { nip19 } from 'nostr-tools';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +24,10 @@ import {
   Info
 } from 'lucide-react';
 
+// Admin configuration
+const ADMIN_NPUB = 'npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz';
+const ADMIN_HEX = nip19.decode(ADMIN_NPUB).data as string;
+
 // Event kind for 21K Art entries
 const ART_21K_KIND = 30421;
 
@@ -41,6 +46,9 @@ function Art21K() {
   const { nostr } = useNostr();
   const { toast } = useToast();
   const { mutateAsync: uploadFile, isPending: isUploading } = useUploadFile();
+  
+  // Check if current user is admin
+  const isAdmin = user?.pubkey === ADMIN_HEX;
   
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -238,40 +246,24 @@ function Art21K() {
           </Badge>
         </div>
 
-        {/* Login Prompt */}
-        {!user && (
-          <Card className="mb-6 bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-900/20 dark:to-yellow-900/20 border-orange-200 dark:border-orange-800">
-            <CardContent className="pt-6">
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="text-center sm:text-left">
-                  <h3 className="font-semibold text-orange-700 dark:text-orange-300 mb-1">
-                    Add Your Artwork
-                  </h3>
-                  <p className="text-sm text-orange-600 dark:text-orange-400">
-                    Log in to upload and track your 21K sats artwork sales
-                  </p>
-                </div>
-                <LoginArea className="max-w-48" />
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
-        <div className="grid lg:grid-cols-3 gap-6">
-          {/* Upload Form */}
-          <div className="lg:col-span-1">
-            <Card className="border-orange-200 dark:border-orange-800">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Upload className="h-5 w-5 mr-2" />
-                  Add Artwork Sale
-                </CardTitle>
-                <CardDescription>
-                  Upload a sold artwork and record the sale
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
+
+        <div className={`grid ${isAdmin ? 'lg:grid-cols-3' : 'lg:grid-cols-1'} gap-6`}>
+          {/* Upload Form - Admin Only */}
+          {isAdmin && (
+            <div className="lg:col-span-1">
+              <Card className="border-orange-200 dark:border-orange-800">
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Upload className="h-5 w-5 mr-2" />
+                    Add Artwork Sale
+                  </CardTitle>
+                  <CardDescription>
+                    Upload a sold artwork and record the sale
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleSubmit} className="space-y-4">
                   {/* Image Upload */}
                   <div className="space-y-2">
                     <Label htmlFor="image">Artwork Image *</Label>
@@ -389,10 +381,11 @@ function Art21K() {
                 </CardContent>
               </Card>
             )}
-          </div>
+            </div>
+          )}
 
           {/* Graph and Gallery */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className={`${isAdmin ? 'lg:col-span-2' : 'lg:col-span-1'} space-y-6`}>
             {/* Line Graph */}
             <Card className="border-orange-200 dark:border-orange-800">
               <CardHeader>
