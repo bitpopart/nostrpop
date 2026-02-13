@@ -15,6 +15,7 @@ import { genUserName } from '@/lib/genUserName';
 import { useToast } from '@/hooks/useToast';
 import { RelaySelector } from '@/components/RelaySelector';
 import { useLightningPayment } from '@/hooks/usePayment';
+import { SocialShareButtons } from '@/components/SocialShareButtons';
 import {
   Paintbrush,
   Zap,
@@ -33,8 +34,11 @@ import {
   Hand,
   MapPin,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  RotateCcw,
+  Trash2
 } from 'lucide-react';
+import { nip19 } from 'nostr-tools';
 import type { NostrMetadata } from '@nostrify/nostrify';
 
 // Canvas dimensions: 10,000 x 10,000 = 100 million pixels
@@ -42,6 +46,10 @@ const CANVAS_WIDTH = 10000;
 const CANVAS_HEIGHT = 10000;
 const TOTAL_PIXELS = CANVAS_WIDTH * CANVAS_HEIGHT;
 const SAT_PER_PIXEL = 1;
+
+// Admin configuration
+const ADMIN_NPUB = 'npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz';
+const ADMIN_HEX = nip19.decode(ADMIN_NPUB).data as string;
 
 // Event kind for canvas pixels (using addressable event kind)
 const CANVAS_PIXEL_KIND = 30100;
@@ -69,10 +77,14 @@ function Canvas100M() {
   const qrCanvasRef = useRef<HTMLCanvasElement>(null);
   const [selectedColor, setSelectedColor] = useState('#FF00FF');
   const [pendingPixels, setPendingPixels] = useState<PendingPixel[]>([]);
+  const [undoHistory, setUndoHistory] = useState<PendingPixel[][]>([]);
   const [showPreview, setShowPreview] = useState(false);
   const [currentBlockHeight, setCurrentBlockHeight] = useState<number | null>(null);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [payingWithAlby, setPayingWithAlby] = useState(false);
+  
+  // Check if current user is admin
+  const isAdmin = user?.pubkey === ADMIN_HEX;
   
   // Display settings
   const DISPLAY_SIZE = 500; // Canvas element size in pixels
@@ -534,6 +546,9 @@ function Canvas100M() {
       blockHeight: currentBlockHeight || undefined
     };
 
+    // Save undo history before making changes
+    setUndoHistory(prev => [...prev, [...pendingPixels]]);
+
     if (existingIndex >= 0) {
       setPendingPixels(prev => {
         const updated = [...prev];
@@ -548,7 +563,7 @@ function Canvas100M() {
       title: "✓ Pixel Added",
       description: `Position: (${globalX}, ${globalY})`,
     });
-  }, [user, selectedColor, pixels, pendingPixels, toast, currentBlockHeight, viewX, viewY, viewSize, uploadedImage, zoomLevel, isPanning, activeTool]);
+  }, [user, selectedColor, pixels, pendingPixels, toast, currentBlockHeight, viewX, viewY, viewSize, uploadedImage, zoomLevel, isPanning, activeTool, undoHistory]);
 
   // Image upload handler
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -640,6 +655,9 @@ function Canvas100M() {
         }
       }
 
+      // Save undo history before applying image
+      setUndoHistory(prev => [...prev, [...pendingPixels]]);
+      
       setPendingPixels(prev => [...prev, ...newPixels]);
       setUploadedImage(null);
       
@@ -657,15 +675,53 @@ function Canvas100M() {
     }
   };
 
-  // Undo last pixel
+  // Undo - go back to previous state
   const handleUndo = () => {
-    setPendingPixels(prev => prev.slice(0, -1));
+    if (undoHistory.length === 0) {
+      toast({
+        title: "Nothing to Undo",
+        description: "No more actions to undo.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    const previousState = undoHistory[undoHistory.length - 1];
+    setPendingPixels(previousState);
+    setUndoHistory(prev => prev.slice(0, -1));
+    
+    toast({
+      title: "↩️ Undone",
+      description: "Restored previous state.",
+    });
   };
 
   // Clear all pending pixels
   const handleClear = () => {
     setPendingPixels([]);
     setShowPreview(false);
+  };
+
+  // Clear canvas - remove all my pending pixels and reset work areas
+  const handleClearCanvas = () => {
+    if (pendingPixels.length === 0) {
+      toast({
+        title: "Canvas Already Clear",
+        description: "You haven't painted anything yet.",
+      });
+      return;
+    }
+    
+    setPendingPixels([]);
+    setUndoHistory([]);
+    setShowPreview(false);
+    setUploadedImage(null);
+    setMyWorkIndex(0);
+    
+    toast({
+      title: "🗑️ Canvas Cleared",
+      description: "All your pending work has been removed.",
+    });
   };
 
   // Start fresh - clear pending pixels and move to empty area
@@ -687,6 +743,12 @@ function Canvas100M() {
   // Publish pixels to Nostr
   const handlePublish = async () => {
     if (!user || pendingPixels.length === 0) return;
+
+    // Admin can publish without payment
+    if (isAdmin) {
+      await publishPixelsToNostr();
+      return;
+    }
 
     const totalSats = pendingPixels.length * SAT_PER_PIXEL;
 
@@ -1032,15 +1094,26 @@ function Canvas100M() {
                         →
                       </Button>
                     </div>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={handleStartFresh}
-                      className="ml-4"
-                    >
-                      <Sparkles className="h-4 w-4 mr-2" />
-                      New Canvas
-                    </Button>
+                    <div className="ml-4 flex items-center space-x-1">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={handleUndo}
+                        disabled={undoHistory.length === 0}
+                        title="Undo (go back)"
+                      >
+                        <RotateCcw className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={handleClearCanvas}
+                        title="Clear all my work"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Clear Canvas
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </CardHeader>
@@ -1086,8 +1159,8 @@ function Canvas100M() {
                       Pending Pixels ({pendingPixels.length})
                     </span>
                     <div className="flex items-center space-x-2">
-                      <Button variant="outline" size="sm" onClick={handleUndo} disabled={pendingPixels.length === 0}>
-                        <Undo className="h-4 w-4 mr-2" />
+                      <Button variant="outline" size="sm" onClick={handleUndo} disabled={undoHistory.length === 0}>
+                        <RotateCcw className="h-4 w-4 mr-2" />
                         Undo
                       </Button>
                       <Button variant="outline" size="sm" onClick={handleClear}>
@@ -1097,7 +1170,7 @@ function Canvas100M() {
                     </div>
                   </CardTitle>
                   <CardDescription className="text-purple-600 dark:text-purple-400">
-                    Total cost: {totalCost} sats
+                    {isAdmin ? 'Admin: Free publishing' : `Total cost: ${totalCost} sats`}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -1112,7 +1185,7 @@ function Canvas100M() {
                     </Button>
                     <Button className="flex-1" onClick={handlePublish}>
                       <Check className="h-4 w-4 mr-2" />
-                      Publish & Pay {totalCost} sats
+                      {isAdmin ? 'Publish (Admin)' : `Publish & Pay ${totalCost} sats`}
                     </Button>
                   </div>
                   {showPreview && (
@@ -1299,15 +1372,24 @@ function Canvas100M() {
               <CardHeader>
                 <CardTitle>Actions</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
+              <CardContent className="space-y-3">
                 <Button className="w-full" variant="outline" onClick={handlePrint}>
                   <Download className="h-4 w-4 mr-2" />
                   Print Canvas (300 DPI)
                 </Button>
-                <Button className="w-full" variant="outline" onClick={handleShare}>
-                  <Share2 className="h-4 w-4 mr-2" />
-                  Share Project
-                </Button>
+                
+                <div>
+                  <p className="text-sm font-medium mb-2">Share Project</p>
+                  <SocialShareButtons
+                    url={window.location.href}
+                    title="100M Canvas - Nostr Art Project"
+                    description="Paint on a 100 million pixel canvas with the Nostr community. 1 sat per pixel."
+                    contentType="project"
+                    size="sm"
+                    variant="outline"
+                    className="flex-wrap"
+                  />
+                </div>
               </CardContent>
             </Card>
 
