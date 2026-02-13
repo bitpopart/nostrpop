@@ -275,12 +275,6 @@ export default function Projects() {
                   <CardTitle className="text-2xl group-hover:text-purple-600 transition-colors flex items-center justify-between gap-2 flex-wrap">
                     <span>{project.name}</span>
                     <div className="flex items-center gap-2">
-                      {('isBuiltIn' in project && project.isBuiltIn) && (
-                        <Badge variant="outline" className="text-xs">
-                          <Sparkles className="h-3 w-3 mr-1" />
-                          Core
-                        </Badge>
-                      )}
                       {isComingSoon && (
                         <Badge className="bg-gradient-to-r from-orange-100 to-pink-100 dark:from-orange-900/30 dark:to-pink-900/30 text-orange-700 dark:text-orange-300 border-orange-300 dark:border-pink-700 text-xs">
                           Coming Soon
