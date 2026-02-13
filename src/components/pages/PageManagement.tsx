@@ -23,6 +23,7 @@ interface ContentBlock {
   type: 'markdown' | 'gallery';
   content: string;
   images: string[];
+  externalUrl?: string;
 }
 
 export function PageManagement() {
@@ -100,7 +101,8 @@ export function PageManagement() {
       id: Date.now().toString(),
       type,
       content: '',
-      images: []
+      images: [],
+      externalUrl: ''
     };
     setContentBlocks([...contentBlocks, newBlock]);
   };
@@ -108,6 +110,12 @@ export function PageManagement() {
   const updateBlockContent = (id: string, content: string) => {
     setContentBlocks(contentBlocks.map(block => 
       block.id === id ? { ...block, content } : block
+    ));
+  };
+
+  const updateBlockExternalUrl = (id: string, externalUrl: string) => {
+    setContentBlocks(contentBlocks.map(block => 
+      block.id === id ? { ...block, externalUrl } : block
     ));
   };
 
@@ -416,7 +424,7 @@ export function PageManagement() {
                             </div>
                           </div>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="space-y-4">
                           {block.type === 'markdown' ? (
                             <div className="space-y-2">
                               <Textarea
@@ -490,6 +498,22 @@ export function PageManagement() {
                               </p>
                             </div>
                           )}
+                          
+                          {/* External URL for this block */}
+                          <div className="space-y-2 pt-2 border-t">
+                            <Label htmlFor={`external-url-${block.id}`} className="text-sm">External URL (Optional)</Label>
+                            <Input
+                              id={`external-url-${block.id}`}
+                              type="url"
+                              placeholder="https://example.com"
+                              value={block.externalUrl || ''}
+                              onChange={(e) => updateBlockExternalUrl(block.id, e.target.value)}
+                              className="text-sm"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                              Add a link related to this content block
+                            </p>
+                          </div>
                         </CardContent>
                       </Card>
                       
@@ -549,27 +573,61 @@ export function PageManagement() {
                       </CardHeader>
                       <CardContent className="space-y-8">
                         {contentBlocks.map((block) => (
-                          <div key={block.id}>
+                          <div key={block.id} className="space-y-4">
                             {block.type === 'markdown' && block.content.trim() && (
-                              <div className="prose prose-lg dark:prose-invert max-w-none">
-                                <ReactMarkdown>{block.content}</ReactMarkdown>
-                              </div>
+                              <>
+                                <div className="prose prose-lg dark:prose-invert max-w-none">
+                                  <ReactMarkdown>{block.content}</ReactMarkdown>
+                                </div>
+                                {block.externalUrl && (
+                                  <div className="flex justify-center pt-4 border-t">
+                                    <Button variant="outline" size="sm" asChild>
+                                      <a href={block.externalUrl} target="_blank" rel="noopener noreferrer">
+                                        <ExternalLink className="h-4 w-4 mr-2" />
+                                        Related Link
+                                      </a>
+                                    </Button>
+                                  </div>
+                                )}
+                              </>
                             )}
                             {block.type === 'gallery' && block.images.length > 0 && (
-                              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                                {block.images.map((imgUrl, index) => (
-                                  <div
-                                    key={index}
-                                    className="relative aspect-square overflow-hidden rounded-lg"
-                                  >
+                              <>
+                                {block.images.length === 1 ? (
+                                  <div className="w-full">
                                     <img
-                                      src={imgUrl}
-                                      alt={`Gallery ${index + 1}`}
-                                      className="w-full h-full object-cover"
+                                      src={block.images[0]}
+                                      alt="Image"
+                                      className="w-full h-auto object-contain rounded-lg"
                                     />
                                   </div>
-                                ))}
-                              </div>
+                                ) : (
+                                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                    {block.images.map((imgUrl, index) => (
+                                      <div
+                                        key={index}
+                                        className="relative aspect-square overflow-hidden rounded-lg"
+                                      >
+                                        <img
+                                          src={imgUrl}
+                                          alt={`Image ${index + 1}`}
+                                          className="w-full h-full object-cover"
+                                        />
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                                {block.externalUrl && (
+                                  <div className="flex justify-center pt-4 border-t">
+                                    <Button variant="outline" size="sm" asChild>
+                                      <a href={block.externalUrl} target="_blank" rel="noopener noreferrer">
+                                        <ExternalLink className="h-4 w-4 mr-2" />
+                                        Related Link
+                                      </a>
+                                    </Button>
+                                  </div>
+                                )}
+                              </>
                             )}
                           </div>
                         ))}

@@ -9,8 +9,10 @@ import { Image as ImageIcon, ExternalLink, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ReactMarkdown from 'react-markdown';
 import { toast } from 'sonner';
+import { nip19 } from 'nostr-tools';
 
-const ARTIST_PUBKEY = '7d33ba57d8a6e8869a1f1d5215254597594ac0dbfeb01b690def8c461b82db35'; // traveltelly's pubkey
+const ADMIN_NPUB = 'npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz'; // BitPopArt admin
+const ARTIST_PUBKEY = nip19.decode(ADMIN_NPUB).data as string; // BitPopArt's pubkey
 
 // Content block types
 interface ContentBlock {
@@ -18,6 +20,7 @@ interface ContentBlock {
   type: 'markdown' | 'gallery';
   content: string;
   images: string[];
+  externalUrl?: string;
 }
 
 export default function Artist() {
@@ -231,10 +234,24 @@ Follow me at BitPopArt:
                 {/* Markdown Content Block */}
                 {block.type === 'markdown' && block.content.trim() && (
                   <Card>
-                    <CardContent className="pt-6">
+                    <CardContent className="pt-6 space-y-4">
                       <div className="prose prose-lg dark:prose-invert max-w-none">
                         <ReactMarkdown>{block.content}</ReactMarkdown>
                       </div>
+                      {block.externalUrl && (
+                        <div className="flex justify-center pt-4 border-t">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            asChild
+                          >
+                            <a href={block.externalUrl} target="_blank" rel="noopener noreferrer">
+                              <ExternalLink className="h-4 w-4 mr-2" />
+                              Related Link
+                            </a>
+                          </Button>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 )}
@@ -242,31 +259,54 @@ Follow me at BitPopArt:
                 {/* Gallery Block */}
                 {block.type === 'gallery' && block.images.length > 0 && (
                   <Card>
-                    <CardHeader>
-                      <CardTitle className="text-2xl flex items-center">
-                        <ImageIcon className="h-6 w-6 mr-2" />
-                        Gallery
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        {block.images.map((imgUrl, index) => (
-                          <div
-                            key={index}
-                            className="relative aspect-square overflow-hidden rounded-lg cursor-pointer group"
-                            onClick={() => setSelectedImage(imgUrl)}
-                          >
-                            <img
-                              src={imgUrl}
-                              alt={`Gallery ${index + 1}`}
-                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                            />
-                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                              <ImageIcon className="h-8 w-8 text-white" />
+                    <CardContent className="pt-6 space-y-4">
+                      {/* Single image: full width */}
+                      {block.images.length === 1 ? (
+                        <div
+                          className="relative w-full overflow-hidden rounded-lg cursor-pointer group"
+                          onClick={() => setSelectedImage(block.images[0])}
+                        >
+                          <img
+                            src={block.images[0]}
+                            alt="Image"
+                            className="w-full h-auto object-contain group-hover:opacity-90 transition-opacity duration-300"
+                          />
+                        </div>
+                      ) : (
+                        /* Multiple images: grid layout */
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                          {block.images.map((imgUrl, index) => (
+                            <div
+                              key={index}
+                              className="relative aspect-square overflow-hidden rounded-lg cursor-pointer group"
+                              onClick={() => setSelectedImage(imgUrl)}
+                            >
+                              <img
+                                src={imgUrl}
+                                alt={`Image ${index + 1}`}
+                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                              />
+                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                                <ImageIcon className="h-8 w-8 text-white" />
+                              </div>
                             </div>
-                          </div>
-                        ))}
-                      </div>
+                          ))}
+                        </div>
+                      )}
+                      {block.externalUrl && (
+                        <div className="flex justify-center pt-4 border-t">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            asChild
+                          >
+                            <a href={block.externalUrl} target="_blank" rel="noopener noreferrer">
+                              <ExternalLink className="h-4 w-4 mr-2" />
+                              Related Link
+                            </a>
+                          </Button>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 )}
