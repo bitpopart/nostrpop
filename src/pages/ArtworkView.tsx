@@ -152,7 +152,7 @@ const ArtworkView = () => {
     }
 
     if (confirm(`Are you sure you want to delete "${artwork.title}"? This action cannot be undone.`)) {
-      deleteArtwork(artwork.id, {
+      deleteArtwork({ artworkId: artwork.id, artistPubkey: artwork.artist_pubkey }, {
         onSuccess: () => {
           navigate('/art');
         }

@@ -446,12 +446,12 @@ export function useDeleteArtwork() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (artworkId: string) => {
+    mutationFn: async ({ artworkId, artistPubkey }: { artworkId: string; artistPubkey: string }) => {
       if (!user) {
         throw new Error('User must be logged in to delete artwork');
       }
 
-      const artworkAddress = `30023:${user.pubkey}:${artworkId}`;
+      const artworkAddress = `30023:${artistPubkey}:${artworkId}`;
       console.log(`🗑️ Deleting artwork: ${artworkAddress}`);
 
       // Create a deletion event (kind 5) for the artwork
