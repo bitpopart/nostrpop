@@ -15,6 +15,14 @@ import { format } from 'date-fns';
 import type { NostrEvent } from '@nostrify/nostrify';
 import ReactMarkdown from 'react-markdown';
 
+// Content block types
+interface ContentBlock {
+  id: string;
+  type: 'markdown' | 'gallery';
+  content: string;
+  images: string[];
+}
+
 export default function BlogPost() {
   const { articleId } = useParams<{ articleId: string }>();
   const navigate = useNavigate();
@@ -28,7 +36,7 @@ export default function BlogPost() {
     queryFn: async (c) => {
       if (!articleId) return null;
       
-      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(3000)]);
+      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(5000)]);
       
       // Query by d tag (identifier)
       const filters = user?.pubkey
@@ -39,7 +47,48 @@ export default function BlogPost() {
       return events[0] || null;
     },
     enabled: !!articleId,
+    staleTime: 0,
   });
+
+  const getContentBlocks = (): ContentBlock[] => {
+    if (!post) return [];
+
+    try {
+      const parsed = JSON.parse(post.content);
+      if (parsed.blocks && Array.isArray(parsed.blocks)) {
+        return parsed.blocks;
+      }
+    } catch {
+      // If not JSON or doesn't have blocks, treat as legacy single content block
+      const galleryImages = post.tags.filter(t => t[0] === 'gallery').map(t => t[1]);
+      const blocks: ContentBlock[] = [{
+        id: '1',
+        type: 'markdown',
+        content: post.content,
+        images: []
+      }];
+      
+      // Add gallery block if there are gallery images
+      if (galleryImages.length > 0) {
+        blocks.push({
+          id: '2',
+          type: 'gallery',
+          content: '',
+          images: galleryImages
+        });
+      }
+      
+      return blocks;
+    }
+
+    // Fallback
+    return [{
+      id: '1',
+      type: 'markdown',
+      content: post.content,
+      images: []
+    }];
+  };
 
   const getArticleTitle = (event: NostrEvent): string => {
     return event.tags.find(t => t[0] === 'title')?.[1] || 'Untitled';
@@ -54,7 +103,7 @@ export default function BlogPost() {
   };
 
   const getArticleTags = (event: NostrEvent): string[] => {
-    return event.tags.filter(t => t[0] === 't').map(t => t[1]);
+    return event.tags.filter(t => t[0] === 't' && t[1] !== 'blog').map(t => t[1]);
   };
 
   const getPublishedDate = (event: NostrEvent): Date => {
@@ -64,10 +113,6 @@ export default function BlogPost() {
 
   const getSourceUrl = (event: NostrEvent): string | undefined => {
     return event.tags.find(t => t[0] === 'r')?.[1];
-  };
-
-  const getGalleryImages = (event: NostrEvent): string[] => {
-    return event.tags.filter(t => t[0] === 'gallery').map(t => t[1]);
   };
 
   // Set SEO metadata
@@ -129,10 +174,10 @@ export default function BlogPost() {
   const title = getArticleTitle(post);
   const summary = getArticleSummary(post);
   const image = getArticleImage(post);
-  const tags = getArticleTags(post);
+  const postTags = getArticleTags(post);
   const publishedDate = getPublishedDate(post);
   const sourceUrl = getSourceUrl(post);
-  const galleryImages = getGalleryImages(post);
+  const contentBlocks = getContentBlocks();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20">
@@ -194,9 +239,9 @@ export default function BlogPost() {
               )}
 
               {/* Tags */}
-              {tags.length > 0 && (
+              {postTags.length > 0 && (
                 <div className="flex flex-wrap gap-2 mb-8">
-                  {tags.map((tag) => (
+                  {postTags.map((tag) => (
                     <Badge key={tag} variant="secondary">
                       <Tag className="h-3 w-3 mr-1" />
                       {tag}
@@ -207,42 +252,47 @@ export default function BlogPost() {
 
               <Separator className="mb-8" />
 
-              {/* Content */}
-              <div className="prose prose-lg dark:prose-invert max-w-none">
-                <ReactMarkdown>{post.content}</ReactMarkdown>
-              </div>
+              {/* Content Blocks */}
+              <div className="space-y-8">
+                {contentBlocks.map((block) => (
+                  <div key={block.id}>
+                    {/* Markdown Content Block */}
+                    {block.type === 'markdown' && block.content.trim() && (
+                      <div className="prose prose-lg dark:prose-invert max-w-none">
+                        <ReactMarkdown>{block.content}</ReactMarkdown>
+                      </div>
+                    )}
 
-              {/* Gallery */}
-              {galleryImages.length > 0 && (
-                <>
-                  <Separator className="my-12" />
-                  
-                  <div className="mb-8">
-                    <h2 className="text-2xl font-bold mb-6 flex items-center">
-                      <ImageIcon className="h-6 w-6 mr-2" />
-                      Gallery
-                    </h2>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      {galleryImages.map((imgUrl, index) => (
-                        <div
-                          key={index}
-                          className="relative aspect-square overflow-hidden rounded-lg cursor-pointer group"
-                          onClick={() => setSelectedImage(imgUrl)}
-                        >
-                          <img
-                            src={imgUrl}
-                            alt={`Gallery ${index + 1}`}
-                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                          />
-                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                            <ImageIcon className="h-8 w-8 text-white" />
-                          </div>
+                    {/* Gallery Block */}
+                    {block.type === 'gallery' && block.images.length > 0 && (
+                      <div>
+                        <h2 className="text-2xl font-bold mb-6 flex items-center">
+                          <ImageIcon className="h-6 w-6 mr-2" />
+                          Gallery
+                        </h2>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                          {block.images.map((imgUrl, index) => (
+                            <div
+                              key={index}
+                              className="relative aspect-square overflow-hidden rounded-lg cursor-pointer group"
+                              onClick={() => setSelectedImage(imgUrl)}
+                            >
+                              <img
+                                src={imgUrl}
+                                alt={`Gallery ${index + 1}`}
+                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                              />
+                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                                <ImageIcon className="h-8 w-8 text-white" />
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    )}
                   </div>
-                </>
-              )}
+                ))}
+              </div>
 
               <Separator className="mt-12 mb-8" />
 

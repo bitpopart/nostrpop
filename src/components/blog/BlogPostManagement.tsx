@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNostr } from '@nostrify/react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useUploadFile } from '@/hooks/useUploadFile';
@@ -8,10 +8,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,11 +23,8 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { importWordPressArticle, generateArticleId, type WordPressArticle } from '@/lib/wordpressImport';
 import {
   FileText,
-  Link as LinkIcon,
-  Download,
   Plus,
   Calendar,
   Tag,
@@ -35,298 +32,351 @@ import {
   Trash2,
   Eye,
   Edit,
-  Share2,
   X,
   Upload,
-  Image as ImageIcon
+  Image as ImageIcon,
+  GripVertical,
+  Save,
+  ExternalLink
 } from 'lucide-react';
 import { format } from 'date-fns';
 import type { NostrEvent } from '@nostrify/nostrify';
+import ReactMarkdown from 'react-markdown';
+
+// Content block types
+interface ContentBlock {
+  id: string;
+  type: 'markdown' | 'gallery';
+  content: string;
+  images: string[];
+}
 
 export function BlogPostManagement() {
   const { nostr } = useNostr();
   const { user } = useCurrentUser();
   const { mutate: createEvent } = useNostrPublish();
-  const { mutateAsync: uploadFile, isPending: isUploading } = useUploadFile();
+  const { mutateAsync: uploadFile } = useUploadFile();
   const queryClient = useQueryClient();
+  const headerImageInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
 
-  const [importUrl, setImportUrl] = useState('');
-  const [isImporting, setIsImporting] = useState(false);
-  const [importedArticle, setImportedArticle] = useState<WordPressArticle | null>(null);
-  
-  // Edit state
+  // Create/Edit state
+  const [isCreating, setIsCreating] = useState(false);
   const [editingPost, setEditingPost] = useState<NostrEvent | null>(null);
-  const [editTitle, setEditTitle] = useState('');
-  const [editSummary, setEditSummary] = useState('');
-  const [editContent, setEditContent] = useState('');
-  const [editImage, setEditImage] = useState('');
-  const [editGalleryImages, setEditGalleryImages] = useState<string[]>([]);
-  const [editTags, setEditTags] = useState('');
+  const [title, setTitle] = useState('');
+  const [summary, setSummary] = useState('');
+  const [headerImage, setHeaderImage] = useState('');
+  const [externalUrl, setExternalUrl] = useState('');
+  const [tags, setTags] = useState('');
+  const [contentBlocks, setContentBlocks] = useState<ContentBlock[]>([
+    { id: '1', type: 'markdown', content: '', images: [] }
+  ]);
+  const [activeTab, setActiveTab] = useState<'edit' | 'preview'>('edit');
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadingBlockId, setUploadingBlockId] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [shareToNostr, setShareToNostr] = useState(true);
   
   // Confirmation dialogs
-  const [showShareDialog, setShowShareDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [postToDelete, setPostToDelete] = useState<NostrEvent | null>(null);
-  const [pendingPublishData, setPendingPublishData] = useState<{
-    kind: number;
-    content: string;
-    tags: string[][];
-  } | null>(null);
 
   // Fetch user's blog posts (kind 30023)
   const { data: blogPosts = [], isLoading } = useQuery({
     queryKey: ['blog-posts', user?.pubkey],
     queryFn: async (c) => {
       if (!user?.pubkey) return [];
-      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(3000)]);
+      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(5000)]);
       const events = await nostr.query(
         [{ kinds: [30023], authors: [user.pubkey], limit: 50 }],
         { signal }
       );
-      // Filter out artist-page events (now using kind 30024, but filter just in case)
+      // Filter out artist-page events
       const filteredEvents = events.filter(e => {
         const dTag = e.tags.find(t => t[0] === 'd')?.[1];
-        return dTag !== 'artist-page';
+        const hasArtworkTag = e.tags.some(t => t[0] === 't' && t[1] === 'artwork');
+        return dTag !== 'artist-page' && !hasArtworkTag;
       });
       return filteredEvents.sort((a, b) => b.created_at - a.created_at);
     },
     enabled: !!user?.pubkey,
+    staleTime: 0,
   });
 
-  // Import from WordPress
-  const handleImport = async () => {
-    if (!importUrl.trim()) {
-      toast.error('Please enter a WordPress article URL');
-      return;
-    }
+  const resetForm = () => {
+    setTitle('');
+    setSummary('');
+    setHeaderImage('');
+    setExternalUrl('');
+    setTags('');
+    setContentBlocks([{ id: '1', type: 'markdown', content: '', images: [] }]);
+    setEditingPost(null);
+    setIsCreating(false);
+    setActiveTab('edit');
+  };
 
-    setIsImporting(true);
+  const addContentBlock = (type: 'markdown' | 'gallery') => {
+    const newBlock: ContentBlock = {
+      id: Date.now().toString(),
+      type,
+      content: '',
+      images: []
+    };
+    setContentBlocks([...contentBlocks, newBlock]);
+  };
+
+  const updateBlockContent = (id: string, content: string) => {
+    setContentBlocks(contentBlocks.map(block => 
+      block.id === id ? { ...block, content } : block
+    ));
+  };
+
+  const removeBlock = (id: string) => {
+    if (contentBlocks.length <= 1) return;
+    setContentBlocks(contentBlocks.filter(block => block.id !== id));
+  };
+
+  const moveBlockUp = (index: number) => {
+    if (index === 0) return;
+    const newBlocks = [...contentBlocks];
+    [newBlocks[index - 1], newBlocks[index]] = [newBlocks[index], newBlocks[index - 1]];
+    setContentBlocks(newBlocks);
+  };
+
+  const moveBlockDown = (index: number) => {
+    if (index === contentBlocks.length - 1) return;
+    const newBlocks = [...contentBlocks];
+    [newBlocks[index], newBlocks[index + 1]] = [newBlocks[index + 1], newBlocks[index]];
+    setContentBlocks(newBlocks);
+  };
+
+  const handleHeaderImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
     try {
-      const article = await importWordPressArticle(importUrl);
-      setImportedArticle(article);
-      toast.success('Article imported successfully!');
+      const fileTags = await uploadFile(file);
+      const url = fileTags[0][1];
+      setHeaderImage(url);
+      toast.success('Header image uploaded!');
     } catch (error) {
-      console.error('Import error:', error);
-      toast.error('Failed to import article. Please check the URL and try again.');
+      console.error('Failed to upload header image:', error);
+      toast.error('Failed to upload header image');
     } finally {
-      setIsImporting(false);
+      setIsUploading(false);
     }
   };
 
-  // Prepare to publish imported article
-  const handlePublish = () => {
-    if (!importedArticle) return;
+  const handleGalleryUpload = async (blockId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
-    const articleId = generateArticleId(importedArticle.sourceUrl);
-    const tags: string[][] = [
-      ['d', articleId],
-      ['title', importedArticle.title],
-      ['summary', importedArticle.summary],
-      ['published_at', importedArticle.publishedAt.toString()],
-      ...importedArticle.tags.map(tag => ['t', tag.toLowerCase()]),
-    ];
+    setUploadingBlockId(blockId);
+    const uploadedUrls: string[] = [];
 
-    if (importedArticle.image) {
-      tags.push(['image', importedArticle.image]);
-    }
-
-    // Add source URL as reference
-    tags.push(['r', importedArticle.sourceUrl]);
-
-    setPendingPublishData({
-      kind: 30023,
-      content: importedArticle.content,
-      tags,
-    });
-    setShowShareDialog(true);
-  };
-
-  // Confirm and publish to Nostr
-  const confirmPublish = () => {
-    if (!pendingPublishData) return;
-
-    createEvent(
-      pendingPublishData,
-      {
-        onSuccess: () => {
-          toast.success('Blog post shared to Nostr!');
-          setImportedArticle(null);
-          setImportUrl('');
-          setPendingPublishData(null);
-          setShowShareDialog(false);
-          queryClient.invalidateQueries({ queryKey: ['blog-posts'] });
-        },
-        onError: (error) => {
-          console.error('Publish error:', error);
-          toast.error('Failed to share blog post to Nostr');
-          setShowShareDialog(false);
-        },
+    for (let i = 0; i < files.length; i++) {
+      try {
+        const file = files[i];
+        const fileTags = await uploadFile(file);
+        const imageUrl = fileTags[0][1];
+        uploadedUrls.push(imageUrl);
+      } catch (error) {
+        console.error('Failed to upload gallery image:', error);
       }
-    );
+    }
+
+    setContentBlocks(contentBlocks.map(block =>
+      block.id === blockId ? { ...block, images: [...block.images, ...uploadedUrls] } : block
+    ));
+    setUploadingBlockId(null);
+    if (uploadedUrls.length > 0) {
+      toast.success(`${uploadedUrls.length} image(s) uploaded!`);
+    }
   };
 
-  // Get gallery images from event
-  const getGalleryImages = (event: NostrEvent): string[] => {
-    return event.tags.filter(t => t[0] === 'gallery').map(t => t[1]);
+  const removeGalleryImage = (blockId: string, imageIndex: number) => {
+    setContentBlocks(contentBlocks.map(block =>
+      block.id === blockId 
+        ? { ...block, images: block.images.filter((_, i) => i !== imageIndex) }
+        : block
+    ));
   };
 
   // Start editing a post
   const handleEdit = (post: NostrEvent) => {
     setEditingPost(post);
-    setEditTitle(getArticleTitle(post));
-    setEditSummary(getArticleSummary(post));
-    setEditContent(post.content);
-    setEditImage(getArticleImage(post) || '');
-    setEditGalleryImages(getGalleryImages(post));
-    setEditTags(getArticleTags(post).join(', '));
-  };
+    setTitle(post.tags.find(t => t[0] === 'title')?.[1] || '');
+    setSummary(post.tags.find(t => t[0] === 'summary')?.[1] || '');
+    setHeaderImage(post.tags.find(t => t[0] === 'image')?.[1] || '');
+    setExternalUrl(post.tags.find(t => t[0] === 'r')?.[1] || '');
+    setTags(post.tags.filter(t => t[0] === 't').map(t => t[1]).join(', '));
 
-  // Cancel editing
-  const cancelEdit = () => {
-    setEditingPost(null);
-    setEditTitle('');
-    setEditSummary('');
-    setEditContent('');
-    setEditImage('');
-    setEditGalleryImages([]);
-    setEditTags('');
-  };
-
-  // Upload header image
-  const handleHeaderImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const maxSize = 10 * 1024 * 1024;
-    if (file.size > maxSize) {
-      toast.error('File is larger than 10MB. Please choose a smaller file.');
-      return;
-    }
-
+    // Parse content blocks
     try {
-      const tags = await uploadFile(file);
-      const imageUrl = tags[0][1];
-      setEditImage(imageUrl);
-      toast.success('Header image uploaded!');
-    } catch (error) {
-      console.error('Upload error:', error);
-      toast.error('Failed to upload header image');
-    }
-  };
-
-  // Upload gallery images
-  const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    const uploadedUrls: string[] = [];
-
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const maxSize = 10 * 1024 * 1024;
-      if (file.size > maxSize) {
-        toast.error(`${file.name} is larger than 10MB. Skipped.`);
-        continue;
+      const parsed = JSON.parse(post.content);
+      if (parsed.blocks && Array.isArray(parsed.blocks)) {
+        setContentBlocks(parsed.blocks);
+      } else {
+        // Legacy: single content field
+        const galleryImages = post.tags.filter(t => t[0] === 'gallery').map(t => t[1]);
+        setContentBlocks([{ 
+          id: '1', 
+          type: 'markdown', 
+          content: post.content,
+          images: []
+        }]);
+        if (galleryImages.length > 0) {
+          setContentBlocks(prev => [...prev, {
+            id: Date.now().toString(),
+            type: 'gallery',
+            content: '',
+            images: galleryImages
+          }]);
+        }
       }
-
-      try {
-        const tags = await uploadFile(file);
-        const imageUrl = tags[0][1];
-        uploadedUrls.push(imageUrl);
-      } catch (error) {
-        console.error('Upload error:', error);
-        toast.error(`Failed to upload ${file.name}`);
+    } catch {
+      // Not JSON, treat as plain markdown
+      const galleryImages = post.tags.filter(t => t[0] === 'gallery').map(t => t[1]);
+      setContentBlocks([{ 
+        id: '1', 
+        type: 'markdown', 
+        content: post.content,
+        images: []
+      }]);
+      if (galleryImages.length > 0) {
+        setContentBlocks(prev => [...prev, {
+          id: Date.now().toString(),
+          type: 'gallery',
+          content: '',
+          images: galleryImages
+        }]);
       }
     }
 
-    setEditGalleryImages(prev => [...prev, ...uploadedUrls]);
-    toast.success(`${uploadedUrls.length} image(s) uploaded!`);
+    setIsCreating(true);
   };
 
-  // Remove gallery image
-  const removeGalleryImage = (index: number) => {
-    setEditGalleryImages(prev => prev.filter((_, i) => i !== index));
-  };
-
-  // Save edited post
-  const saveEdit = () => {
-    if (!editingPost || !editTitle.trim() || !editContent.trim()) {
-      toast.error('Title and content are required');
+  const handleSave = () => {
+    if (!title.trim()) {
+      toast.error('Title is required');
       return;
     }
 
-    const dTag = getArticleId(editingPost);
-    const tags: string[][] = [
-      ['d', dTag],
-      ['title', editTitle.trim()],
+    const hasContent = contentBlocks.some(block => 
+      (block.type === 'markdown' && block.content.trim()) ||
+      (block.type === 'gallery' && block.images.length > 0)
+    );
+
+    if (!hasContent) {
+      toast.error('Please add at least one content block with content');
+      return;
+    }
+
+    setIsSaving(true);
+
+    // Generate article ID
+    const articleId = editingPost 
+      ? editingPost.tags.find(t => t[0] === 'd')?.[1] || `blog-${Date.now()}`
+      : `blog-${Date.now()}`;
+
+    // Prepare content as JSON with blocks
+    const contentData = {
+      blocks: contentBlocks
+    };
+
+    const blogTags: string[][] = [
+      ['d', articleId],
+      ['title', title.trim()],
       ['published_at', Math.floor(Date.now() / 1000).toString()],
+      ['t', 'blog'],
     ];
 
-    if (editSummary.trim()) {
-      tags.push(['summary', editSummary.trim()]);
+    if (summary.trim()) {
+      blogTags.push(['summary', summary.trim()]);
     }
 
-    if (editImage.trim()) {
-      tags.push(['image', editImage.trim()]);
+    if (headerImage) {
+      blogTags.push(['image', headerImage]);
     }
 
-    // Add gallery images
-    editGalleryImages.forEach(imgUrl => {
-      tags.push(['gallery', imgUrl]);
+    if (externalUrl) {
+      blogTags.push(['r', externalUrl]);
+    }
+
+    // Add gallery images as separate tags
+    contentBlocks.forEach(block => {
+      if (block.type === 'gallery') {
+        block.images.forEach(imgUrl => {
+          blogTags.push(['gallery', imgUrl]);
+        });
+      }
     });
 
-    // Add tags
-    const tagArray = editTags.split(',').map(t => t.trim()).filter(t => t);
+    // Add user tags
+    const tagArray = tags.split(',').map(t => t.trim()).filter(t => t);
     tagArray.forEach(tag => {
-      tags.push(['t', tag.toLowerCase()]);
+      blogTags.push(['t', tag.toLowerCase()]);
     });
 
-    setPendingPublishData({
-      kind: 30023,
-      content: editContent,
-      tags,
+    console.log('[BlogPostManagement] Publishing blog post...', {
+      title,
+      blocks: contentBlocks.length,
+      headerImage: !!headerImage,
+      externalUrl,
+      isEdit: !!editingPost
     });
-    setShowShareDialog(true);
-  };
-
-  // Confirm save after dialog
-  const confirmSaveEdit = () => {
-    if (!pendingPublishData) return;
 
     createEvent(
-      pendingPublishData,
       {
-        onSuccess: () => {
-          toast.success('Blog post updated and shared to Nostr!');
-          cancelEdit();
-          setPendingPublishData(null);
-          setShowShareDialog(false);
-          queryClient.invalidateQueries({ queryKey: ['blog-posts'] });
+        kind: 30023,
+        content: JSON.stringify(contentData),
+        tags: blogTags,
+      },
+      {
+        onSuccess: async () => {
+          console.log('[BlogPostManagement] ✅ Blog post published!');
+          
+          // Give relay time to process
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // Invalidate and refetch
+          await queryClient.invalidateQueries({ queryKey: ['blog-posts'] });
+          await queryClient.invalidateQueries({ queryKey: ['blog-posts-public'] });
+          await queryClient.refetchQueries({ queryKey: ['blog-posts'] });
+          
+          const action = editingPost ? 'updated' : 'created';
+          toast.success(`Blog post ${action} successfully!`);
+          
+          resetForm();
+          setIsSaving(false);
         },
         onError: (error) => {
-          console.error('Update error:', error);
-          toast.error('Failed to update blog post');
-          setShowShareDialog(false);
+          console.error('[BlogPostManagement] ❌ Publish error:', error);
+          toast.error('Failed to save blog post');
+          setIsSaving(false);
         },
       }
     );
   };
 
-  // Prepare to delete blog post
+  // Delete blog post
   const handleDeleteClick = (post: NostrEvent) => {
     setPostToDelete(post);
     setShowDeleteDialog(true);
   };
 
-  // Confirm and delete blog post
   const confirmDelete = () => {
     if (!postToDelete) return;
+
+    const dTag = postToDelete.tags.find(t => t[0] === 'd')?.[1];
+    const artworkAddress = `30023:${postToDelete.pubkey}:${dTag}`;
 
     createEvent(
       {
         kind: 5,
         content: 'Deleted blog post',
-        tags: [['a', `30023:${postToDelete.pubkey}:${postToDelete.tags.find(t => t[0] === 'd')?.[1]}`]],
+        tags: [['a', artworkAddress]],
       },
       {
         onSuccess: () => {
@@ -334,6 +384,7 @@ export function BlogPostManagement() {
           setPostToDelete(null);
           setShowDeleteDialog(false);
           queryClient.invalidateQueries({ queryKey: ['blog-posts'] });
+          queryClient.invalidateQueries({ queryKey: ['blog-posts-public'] });
         },
         onError: (error) => {
           console.error('Delete error:', error);
@@ -357,146 +408,88 @@ export function BlogPostManagement() {
   };
 
   const getArticleTags = (event: NostrEvent): string[] => {
-    return event.tags.filter(t => t[0] === 't').map(t => t[1]);
+    return event.tags.filter(t => t[0] === 't' && t[1] !== 'blog').map(t => t[1]);
   };
 
   const getArticleId = (event: NostrEvent): string => {
     return event.tags.find(t => t[0] === 'd')?.[1] || '';
   };
 
-  return (
-    <div className="space-y-6">
-      {/* Import Section */}
+  if (!user) {
+    return (
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center">
-            <Download className="h-5 w-5 mr-2" />
-            Import from WordPress
-          </CardTitle>
-          <CardDescription>
-            Import articles from your existing WordPress blog by entering the article URL
-          </CardDescription>
+          <CardTitle>Authentication Required</CardTitle>
+          <CardDescription>Please log in to manage blog posts</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex gap-2">
-            <div className="flex-1">
-              <Input
-                placeholder="https://bitpopart.com/2026/01/19/bitcoin-is-money/"
-                value={importUrl}
-                onChange={(e) => setImportUrl(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleImport()}
-              />
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Blog Post Management</CardTitle>
+              <CardDescription>Create and manage your blog posts with rich content blocks</CardDescription>
             </div>
-            <Button onClick={handleImport} disabled={isImporting || !importUrl.trim()}>
-              {isImporting ? (
+            <Button onClick={() => setIsCreating(!isCreating)} variant={isCreating ? "outline" : "default"}>
+              {isCreating ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Importing...
+                  <X className="h-4 w-4 mr-2" />
+                  Cancel
                 </>
               ) : (
                 <>
-                  <LinkIcon className="h-4 w-4 mr-2" />
-                  Import
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create New Blog Post
                 </>
               )}
             </Button>
           </div>
-
-          {importedArticle && (
-            <Alert>
-              <FileText className="h-4 w-4" />
-              <AlertDescription>
-                <div className="space-y-4 mt-2">
-                  <div>
-                    <h4 className="font-semibold text-lg">{importedArticle.title}</h4>
-                    <p className="text-sm text-muted-foreground mt-1">{importedArticle.summary}</p>
-                  </div>
-
-                  {importedArticle.image && (
-                    <img
-                      src={importedArticle.image}
-                      alt={importedArticle.title}
-                      className="w-full max-h-64 object-cover rounded-lg"
-                    />
-                  )}
-
-                  <div className="flex flex-wrap gap-2">
-                    <Badge variant="outline">
-                      <Calendar className="h-3 w-3 mr-1" />
-                      {format(new Date(importedArticle.publishedAt * 1000), 'MMM d, yyyy')}
-                    </Badge>
-                    {importedArticle.tags.map((tag) => (
-                      <Badge key={tag} variant="secondary">
-                        <Tag className="h-3 w-3 mr-1" />
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Button onClick={handlePublish} className="flex-1">
-                      <Share2 className="h-4 w-4 mr-2" />
-                      Share to Nostr
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => setImportedArticle(null)}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              </AlertDescription>
-            </Alert>
-          )}
-        </CardContent>
+        </CardHeader>
       </Card>
 
-      <Separator />
-
-      {/* Edit Form */}
-      {editingPost && (
+      {/* Create/Edit Form */}
+      {isCreating && (
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center">
-                <Edit className="h-5 w-5 mr-2" />
-                Edit Blog Post
-              </CardTitle>
-              <Button variant="ghost" size="sm" onClick={cancelEdit}>
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
+            <CardTitle>{editingPost ? 'Edit' : 'Create New'} Blog Post</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
+            {/* Title */}
             <div className="space-y-2">
-              <Label htmlFor="edit-title">Title *</Label>
+              <Label htmlFor="title">Post Title *</Label>
               <Input
-                id="edit-title"
-                value={editTitle}
-                onChange={(e) => setEditTitle(e.target.value)}
-                placeholder="Article title"
+                id="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Enter blog post title..."
               />
             </div>
 
+            {/* Summary */}
             <div className="space-y-2">
-              <Label htmlFor="edit-summary">Summary</Label>
+              <Label htmlFor="summary">Summary</Label>
               <Input
-                id="edit-summary"
-                value={editSummary}
-                onChange={(e) => setEditSummary(e.target.value)}
-                placeholder="Brief summary of the article"
+                id="summary"
+                value={summary}
+                onChange={(e) => setSummary(e.target.value)}
+                placeholder="Brief summary for preview cards..."
               />
             </div>
 
             {/* Header Image */}
             <div className="space-y-2">
-              <Label>Main Header Photo</Label>
-              {editImage ? (
+              <Label>Header Image</Label>
+              {headerImage ? (
                 <div className="space-y-2">
                   <div className="relative rounded-lg overflow-hidden border-2 border-gray-200 dark:border-gray-700">
                     <img
-                      src={editImage}
+                      src={headerImage}
                       alt="Header"
                       className="w-full h-48 object-cover"
                     />
@@ -505,7 +498,7 @@ export function BlogPostManagement() {
                       variant="destructive"
                       size="sm"
                       className="absolute top-2 right-2"
-                      onClick={() => setEditImage('')}
+                      onClick={() => setHeaderImage('')}
                     >
                       <X className="h-4 w-4" />
                     </Button>
@@ -513,123 +506,315 @@ export function BlogPostManagement() {
                   <Input
                     type="url"
                     placeholder="Or paste image URL"
-                    value={editImage}
-                    onChange={(e) => setEditImage(e.target.value)}
+                    value={headerImage}
+                    onChange={(e) => setHeaderImage(e.target.value)}
                   />
                 </div>
               ) : (
                 <div className="space-y-2">
-                  <label className="w-full h-48 border-2 border-dashed rounded-lg flex items-center justify-center cursor-pointer hover:border-purple-500 transition-colors">
-                    <div className="text-center">
-                      {isUploading ? (
-                        <div className="animate-spin text-2xl">⏳</div>
-                      ) : (
-                        <>
-                          <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                          <span className="text-sm text-gray-500">Upload Header Photo</span>
-                        </>
-                      )}
-                    </div>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleHeaderImageUpload}
-                      disabled={isUploading}
-                    />
-                  </label>
+                  <input
+                    ref={headerImageInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleHeaderImageUpload}
+                    disabled={isUploading}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => headerImageInputRef.current?.click()}
+                    disabled={isUploading}
+                  >
+                    {isUploading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="h-4 w-4 mr-2" />
+                        Upload Header Image
+                      </>
+                    )}
+                  </Button>
                   <Input
                     type="url"
                     placeholder="Or paste image URL"
-                    value={editImage}
-                    onChange={(e) => setEditImage(e.target.value)}
+                    value={headerImage}
+                    onChange={(e) => setHeaderImage(e.target.value)}
                   />
                 </div>
               )}
             </div>
 
-            {/* Gallery Images */}
+            {/* External URL */}
             <div className="space-y-2">
-              <Label>Gallery Photos</Label>
-              
-              {editGalleryImages.length > 0 && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                  {editGalleryImages.map((imgUrl, index) => (
-                    <div key={index} className="relative group rounded-lg overflow-hidden border-2 border-gray-200 dark:border-gray-700">
-                      <img
-                        src={imgUrl}
-                        alt={`Gallery ${index + 1}`}
-                        className="w-full h-32 object-cover"
-                      />
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="sm"
-                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => removeGalleryImage(index)}
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <label className="w-full h-32 border-2 border-dashed rounded-lg flex items-center justify-center cursor-pointer hover:border-purple-500 transition-colors">
-                <div className="text-center">
-                  {isUploading ? (
-                    <div className="animate-spin">⏳</div>
-                  ) : (
-                    <>
-                      <ImageIcon className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                      <span className="text-sm text-gray-500">Add Gallery Photos</span>
-                    </>
-                  )}
-                </div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  className="hidden"
-                  onChange={handleGalleryUpload}
-                  disabled={isUploading}
-                />
-              </label>
+              <Label htmlFor="external-url">External URL (Optional)</Label>
+              <Input
+                id="external-url"
+                type="url"
+                placeholder="https://example.com"
+                value={externalUrl}
+                onChange={(e) => setExternalUrl(e.target.value)}
+              />
               <p className="text-xs text-muted-foreground">
-                {editGalleryImages.length > 0 
-                  ? `${editGalleryImages.length} image(s) in gallery`
-                  : 'Upload multiple images to create a photo gallery'}
+                Link to original article or external resource
               </p>
             </div>
 
+            {/* Tags */}
             <div className="space-y-2">
-              <Label htmlFor="edit-tags">Tags (comma-separated)</Label>
+              <Label htmlFor="tags">Tags (comma-separated)</Label>
               <Input
-                id="edit-tags"
-                value={editTags}
-                onChange={(e) => setEditTags(e.target.value)}
+                id="tags"
+                value={tags}
+                onChange={(e) => setTags(e.target.value)}
                 placeholder="bitcoin, art, creativity"
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="edit-content">Content *</Label>
-              <Textarea
-                id="edit-content"
-                value={editContent}
-                onChange={(e) => setEditContent(e.target.value)}
-                placeholder="Article content (Markdown supported)"
-                rows={15}
-                className="font-mono text-sm"
-              />
+            {/* Content Blocks */}
+            <div className="border-t pt-6">
+              <div className="flex items-center justify-between mb-4">
+                <Label className="text-lg font-semibold">Content Blocks</Label>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => addContentBlock('markdown')}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Text
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => addContentBlock('gallery')}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Gallery
+                  </Button>
+                </div>
+              </div>
+
+              <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'edit' | 'preview')}>
+                <TabsList className="grid w-full grid-cols-2 mb-4">
+                  <TabsTrigger value="edit">Edit</TabsTrigger>
+                  <TabsTrigger value="preview">Preview</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="edit" className="space-y-4">
+                  {contentBlocks.map((block, index) => (
+                    <Card key={block.id} className="border-2">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <GripVertical className="h-4 w-4 text-muted-foreground cursor-move" />
+                            <span className="text-sm font-medium">
+                              {block.type === 'markdown' ? 'Text Block' : 'Photo Gallery'}
+                            </span>
+                          </div>
+                          <div className="flex gap-1">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => moveBlockUp(index)}
+                              disabled={index === 0}
+                            >
+                              ↑
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => moveBlockDown(index)}
+                              disabled={index === contentBlocks.length - 1}
+                            >
+                              ↓
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeBlock(block.id)}
+                              disabled={contentBlocks.length <= 1}
+                            >
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        {block.type === 'markdown' ? (
+                          <div className="space-y-2">
+                            <Textarea
+                              placeholder="Write your content using Markdown..."
+                              value={block.content}
+                              onChange={(e) => updateBlockContent(block.id, e.target.value)}
+                              rows={10}
+                              className="font-mono text-sm"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                              Supports Markdown: **bold**, *italic*, ## headings, [links](url), etc.
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            {block.images.length > 0 && (
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                                {block.images.map((imgUrl, imgIndex) => (
+                                  <div key={imgIndex} className="relative group rounded-lg overflow-hidden border-2">
+                                    <img
+                                      src={imgUrl}
+                                      alt={`Gallery ${imgIndex + 1}`}
+                                      className="w-full h-32 object-cover"
+                                    />
+                                    <Button
+                                      type="button"
+                                      variant="destructive"
+                                      size="sm"
+                                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                                      onClick={() => removeGalleryImage(block.id, imgIndex)}
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            <input
+                              ref={(el) => galleryInputRefs.current[block.id] = el}
+                              type="file"
+                              accept="image/*"
+                              multiple
+                              className="hidden"
+                              onChange={(e) => handleGalleryUpload(block.id, e)}
+                              disabled={uploadingBlockId === block.id}
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="w-full"
+                              onClick={() => galleryInputRefs.current[block.id]?.click()}
+                              disabled={uploadingBlockId === block.id}
+                            >
+                              {uploadingBlockId === block.id ? (
+                                <>
+                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                  Uploading...
+                                </>
+                              ) : (
+                                <>
+                                  <ImageIcon className="h-4 w-4 mr-2" />
+                                  Add Images to Gallery
+                                </>
+                              )}
+                            </Button>
+                            <p className="text-xs text-muted-foreground">
+                              {block.images.length > 0 
+                                ? `${block.images.length} image(s) in this gallery`
+                                : 'Upload images to create a photo gallery'}
+                            </p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </TabsContent>
+
+                <TabsContent value="preview" className="mt-4">
+                  <div className="space-y-8">
+                    {headerImage && (
+                      <div className="w-full h-64 rounded-lg overflow-hidden">
+                        <img
+                          src={headerImage}
+                          alt="Header"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                    
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-3xl">{title || 'Blog Post Title'}</CardTitle>
+                        {summary && (
+                          <CardDescription className="text-base">{summary}</CardDescription>
+                        )}
+                        {externalUrl && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            asChild
+                            className="mt-2 w-fit"
+                          >
+                            <a href={externalUrl} target="_blank" rel="noopener noreferrer">
+                              <ExternalLink className="h-4 w-4 mr-2" />
+                              View Original
+                            </a>
+                          </Button>
+                        )}
+                      </CardHeader>
+                      <CardContent className="space-y-8">
+                        {contentBlocks.map((block) => (
+                          <div key={block.id}>
+                            {block.type === 'markdown' && block.content.trim() && (
+                              <div className="prose prose-lg dark:prose-invert max-w-none">
+                                <ReactMarkdown>{block.content}</ReactMarkdown>
+                              </div>
+                            )}
+                            {block.type === 'gallery' && block.images.length > 0 && (
+                              <div>
+                                <h3 className="text-xl font-semibold mb-4 flex items-center">
+                                  <ImageIcon className="h-5 w-5 mr-2" />
+                                  Gallery
+                                </h3>
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                  {block.images.map((imgUrl, index) => (
+                                    <div
+                                      key={index}
+                                      className="relative aspect-square overflow-hidden rounded-lg"
+                                    >
+                                      <img
+                                        src={imgUrl}
+                                        alt={`Gallery ${index + 1}`}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </CardContent>
+                    </Card>
+                  </div>
+                </TabsContent>
+              </Tabs>
             </div>
 
-            <div className="flex gap-2">
-              <Button onClick={saveEdit} className="flex-1">
-                <Share2 className="h-4 w-4 mr-2" />
-                Save & Share to Nostr
+            {/* Actions */}
+            <div className="flex gap-2 pt-4 border-t">
+              <Button onClick={handleSave} className="flex-1" disabled={isSaving}>
+                {isSaving ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    {editingPost ? 'Update' : 'Publish'} Blog Post
+                  </>
+                )}
               </Button>
-              <Button variant="outline" onClick={cancelEdit}>
+              <Button variant="outline" onClick={resetForm} disabled={isSaving}>
                 Cancel
               </Button>
             </div>
@@ -645,7 +830,7 @@ export function BlogPostManagement() {
             Your Blog Posts
           </CardTitle>
           <CardDescription>
-            Manage your published articles on Nostr
+            Manage your published blog articles
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -656,15 +841,15 @@ export function BlogPostManagement() {
           ) : blogPosts.length === 0 ? (
             <div className="text-center py-12">
               <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">No blog posts yet. Import your first article above!</p>
+              <p className="text-muted-foreground">No blog posts yet. Create your first post above!</p>
             </div>
           ) : (
             <div className="space-y-4">
               {blogPosts.map((post) => {
-                const title = getArticleTitle(post);
-                const summary = getArticleSummary(post);
+                const postTitle = getArticleTitle(post);
+                const postSummary = getArticleSummary(post);
                 const image = getArticleImage(post);
-                const tags = getArticleTags(post);
+                const postTags = getArticleTags(post);
                 const articleId = getArticleId(post);
 
                 return (
@@ -674,7 +859,7 @@ export function BlogPostManagement() {
                         <div className="w-48 h-32 flex-shrink-0">
                           <img
                             src={image}
-                            alt={title}
+                            alt={postTitle}
                             className="w-full h-full object-cover"
                           />
                         </div>
@@ -682,10 +867,10 @@ export function BlogPostManagement() {
                       <div className="flex-1 p-4">
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex-1">
-                            <h3 className="font-semibold text-lg mb-1">{title}</h3>
-                            {summary && (
+                            <h3 className="font-semibold text-lg mb-1">{postTitle}</h3>
+                            {postSummary && (
                               <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
-                                {summary}
+                                {postSummary}
                               </p>
                             )}
                             <div className="flex flex-wrap gap-2 mb-2">
@@ -693,15 +878,15 @@ export function BlogPostManagement() {
                                 <Calendar className="h-3 w-3 mr-1" />
                                 {format(new Date(post.created_at * 1000), 'MMM d, yyyy')}
                               </Badge>
-                              {tags.slice(0, 3).map((tag) => (
+                              {postTags.slice(0, 3).map((tag) => (
                                 <Badge key={tag} variant="secondary" className="text-xs">
                                   <Tag className="h-3 w-3 mr-1" />
                                   {tag}
                                 </Badge>
                               ))}
-                              {tags.length > 3 && (
+                              {postTags.length > 3 && (
                                 <Badge variant="secondary" className="text-xs">
-                                  +{tags.length - 3} more
+                                  +{postTags.length - 3} more
                                 </Badge>
                               )}
                             </div>
@@ -739,31 +924,6 @@ export function BlogPostManagement() {
           )}
         </CardContent>
       </Card>
-
-      {/* Share to Nostr Confirmation Dialog */}
-      <AlertDialog open={showShareDialog} onOpenChange={setShowShareDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Share to Nostr?</AlertDialogTitle>
-            <AlertDialogDescription>
-              {editingPost 
-                ? 'This will update your blog post on the Nostr network. Your followers will be able to see the changes.'
-                : 'This will publish your blog post to the Nostr network. Your followers will be able to see it.'}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => {
-              setShowShareDialog(false);
-              setPendingPublishData(null);
-            }}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={editingPost ? confirmSaveEdit : confirmPublish}>
-              Share to Nostr
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
