@@ -376,6 +376,23 @@ function Canvas100M() {
       return;
     }
 
+    // Auto-zoom to 10% if not already zoomed in enough
+    if (zoomLevel > 25) {
+      const newZoom = 10;
+      const newSize = Math.floor((CANVAS_WIDTH * newZoom) / 100);
+      
+      // Center the view on the clicked pixel
+      setViewX(Math.max(0, Math.min(CANVAS_WIDTH - newSize, globalX - newSize / 2)));
+      setViewY(Math.max(0, Math.min(CANVAS_HEIGHT - newSize, globalY - newSize / 2)));
+      setZoomLevel(newZoom);
+      
+      toast({
+        title: "🔍 Zoomed In",
+        description: "Zoomed to 10% to see the grid. Click again to paint!",
+      });
+      return;
+    }
+
     // Check if already painted
     const isAlreadyPainted = pixels?.some(p => p.x === globalX && p.y === globalY);
     if (isAlreadyPainted) {
@@ -414,7 +431,7 @@ function Canvas100M() {
       title: "✓ Pixel Added",
       description: `Position: (${globalX}, ${globalY})`,
     });
-  }, [user, selectedColor, pixels, pendingPixels, toast, currentBlockHeight, viewX, viewY, viewSize, uploadedImage]);
+  }, [user, selectedColor, pixels, pendingPixels, toast, currentBlockHeight, viewX, viewY, viewSize, uploadedImage, zoomLevel]);
 
   // Image upload handler
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
