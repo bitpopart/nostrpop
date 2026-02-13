@@ -183,9 +183,6 @@ export default function Projects() {
               Projects
             </h1>
           </div>
-          <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            Explore creative projects and collaborations
-          </p>
         </div>
 
         {/* Regular Projects Grid */}
@@ -337,9 +334,6 @@ export default function Projects() {
                     Nostr Projects
                   </h2>
                 </div>
-                <p className="text-lg text-gray-600 dark:text-gray-300">
-                  Collaborative art projects - Join by selecting an image and paying in sats
-                </p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
