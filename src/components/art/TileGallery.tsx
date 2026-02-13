@@ -20,10 +20,6 @@ export function TileGallery({ artworks, onViewDetails, onBuy, onBid }: TileGalle
 
   return (
     <div className="mb-12">
-      <h2 className="text-3xl font-bold text-center mb-8 bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent">
-        Featured Gallery
-      </h2>
-      
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
         {artworks.map((artwork) => (
           <Card

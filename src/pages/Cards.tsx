@@ -59,9 +59,6 @@ const Cards = () => {
           <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
             BitPop Cards
           </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            Create and share beautiful digital cards for any occasion
-          </p>
         </div>
 
         {/* Main Content */}
