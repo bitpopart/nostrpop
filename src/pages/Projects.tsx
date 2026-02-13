@@ -15,9 +15,11 @@ import { ShareDialog } from '@/components/share/ShareDialog';
 import { FolderKanban, Sparkles, ArrowRight, Users, Zap, Award, Share2, Image as ImageIcon } from 'lucide-react';
 import { useNostrProjects } from '@/hooks/useNostrProjects';
 import { useBadges } from '@/hooks/useBadges';
+import { nip19 } from 'nostr-tools';
 import type { ProjectData } from '@/lib/projectTypes';
 
-const ADMIN_PUBKEY = '7d33ba57d8a6e8869a1f1d5215254597594ac0dbfeb01b690def8c461b82db35';
+const ADMIN_NPUB = 'npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz'; // BitPopArt admin
+const ADMIN_PUBKEY = nip19.decode(ADMIN_NPUB).data as string;
 
 // Built-in projects
 const BUILTIN_PROJECTS = [
