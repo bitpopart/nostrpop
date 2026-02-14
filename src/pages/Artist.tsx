@@ -170,9 +170,16 @@ Follow me at BitPopArt:
       <div className="container mx-auto px-4 py-12">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-5xl font-bold mb-4" style={getGradientStyle('header-text')}>
-            {getTitle()}
-          </h1>
+          <div className="flex items-center justify-center mb-4 gap-3">
+            <img 
+              src={`${import.meta.env.BASE_URL || '/'}artist_button_1.svg`} 
+              alt="Artist" 
+              className="h-12 w-12 flex-shrink-0" 
+            />
+            <h1 className="text-5xl font-bold leading-tight" style={getGradientStyle('header-text')}>
+              {getTitle()}
+            </h1>
+          </div>
         </div>
 
         {/* Content */}

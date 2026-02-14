@@ -13,7 +13,7 @@ import { ShareToNostrButton } from '@/components/ShareToNostrButton';
 import { ClawstrShare } from '@/components/ClawstrShare';
 import { ZapButton } from '@/components/ZapButton';
 import { ShareDialog } from '@/components/share/ShareDialog';
-import { FolderKanban, Sparkles, ArrowRight, Users, Zap, Award, Share2, Image as ImageIcon } from 'lucide-react';
+import { Sparkles, ArrowRight, Users, Zap, Award, Share2, Image as ImageIcon } from 'lucide-react';
 import { useNostrProjects } from '@/hooks/useNostrProjects';
 import { useBadges } from '@/hooks/useBadges';
 import { nip19 } from 'nostr-tools';
@@ -179,9 +179,13 @@ export default function Projects() {
       <div className="container mx-auto px-4 py-12">
         {/* Header */}
         <div className="text-center mb-12">
-          <div className="flex items-center justify-center mb-4">
-            <FolderKanban className="h-10 w-10 text-purple-600 mr-3" />
-            <h1 className="text-5xl font-bold" style={getGradientStyle('header-text')}>
+          <div className="flex items-center justify-center mb-4 gap-3">
+            <img 
+              src={`${import.meta.env.BASE_URL || '/'}projects_button_1.svg`} 
+              alt="Projects" 
+              className="h-12 w-12 flex-shrink-0" 
+            />
+            <h1 className="text-5xl font-bold leading-tight" style={getGradientStyle('header-text')}>
               Projects
             </h1>
           </div>

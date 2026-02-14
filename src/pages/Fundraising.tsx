@@ -25,9 +25,13 @@ export default function Fundraising() {
       <div className="container mx-auto px-4 py-12">
         {/* Header */}
         <div className="text-center mb-12">
-          <div className="flex items-center justify-center mb-4">
-            <Target className="h-10 w-10 text-purple-600 mr-3" />
-            <h1 className="text-5xl font-bold" style={getGradientStyle('header-text')}>
+          <div className="flex items-center justify-center mb-4 gap-3">
+            <img 
+              src={`${import.meta.env.BASE_URL || '/'}fundrasing_button_1.svg`} 
+              alt="Fundraising" 
+              className="h-12 w-12 flex-shrink-0" 
+            />
+            <h1 className="text-5xl font-bold leading-tight" style={getGradientStyle('header-text')}>
               Fundraising
             </h1>
           </div>
