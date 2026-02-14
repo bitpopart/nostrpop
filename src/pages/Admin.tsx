@@ -22,6 +22,7 @@ import { NewsletterManager } from '@/components/newsletter/NewsletterManager';
 import { AnalyticsSettings } from '@/components/analytics/AnalyticsSettings';
 import { ZapAnalytics } from '@/components/analytics/ZapAnalytics';
 import { SiteSettings } from '@/components/settings/SiteSettings';
+import { HomepageSettings } from '@/components/settings/HomepageSettings';
 import { ArtworkOrderManager } from '@/components/art/ArtworkOrderManager';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import {
@@ -44,7 +45,8 @@ import {
   Mail,
   Target,
   Settings,
-  Zap
+  Zap,
+  Home
 } from 'lucide-react';
 
 const Admin = () => {
@@ -297,8 +299,9 @@ const Admin = () => {
 
         {/* Admin Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-8 lg:grid-cols-16 max-w-7xl mx-auto mb-8 text-xs">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-9 lg:grid-cols-17 max-w-7xl mx-auto mb-8 text-xs">
             <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="homepage">Homepage</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
             <TabsTrigger value="blog">News</TabsTrigger>
             <TabsTrigger value="artist">Artist</TabsTrigger>
@@ -469,6 +472,10 @@ const Admin = () => {
                 </div>
               </div>
             </div>
+          </TabsContent>
+
+          <TabsContent value="homepage">
+            <HomepageSettings />
           </TabsContent>
 
           <TabsContent value="settings">

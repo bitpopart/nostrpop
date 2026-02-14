@@ -12,6 +12,7 @@ import { useArtworks } from '@/hooks/useArtworks';
 import { useFeaturedProjects } from '@/hooks/useProjects';
 import { useFeaturedNostrProjects } from '@/hooks/useNostrProjects';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useHomepageSettings } from '@/hooks/useHomepageSettings';
 import { genUserName } from '@/lib/genUserName';
 import { RelaySelector } from '@/components/RelaySelector';
 import { getFirstImage, stripImagesFromContent } from '@/lib/extractImages';
@@ -320,6 +321,7 @@ const Index = () => {
   const { data: featuredProjects } = useFeaturedProjects();
   const { data: featuredNostrProjects } = useFeaturedNostrProjects();
   const { getGradientStyle } = useThemeColors();
+  const { data: homepageSettings } = useHomepageSettings();
   const author = useAuthor(ADMIN_HEX);
   const metadata: NostrMetadata | undefined = author.data?.metadata;
 
@@ -329,6 +331,11 @@ const Index = () => {
   const featuredArtworksList = featuredArtworks?.slice(0, 3) || [];
   // Get first 3 featured Nostr projects
   const featuredNostrProjectsList = featuredNostrProjects?.slice(0, 3) || [];
+
+  // Get section settings
+  const getSectionSettings = (id: string) => {
+    return homepageSettings?.find(s => s.id === id) || null;
+  };
 
   useSeoMeta({
     title: 'BitPopArt - Love, Freedom & Joy Pop Art',
@@ -362,13 +369,13 @@ const Index = () => {
         </div>
 
         {/* Featured Nostr Projects Section */}
-        {featuredNostrProjectsList.length > 0 && (
+        {featuredNostrProjectsList.length > 0 && getSectionSettings('nostr-projects')?.enabled !== false && (
           <div className="mb-16">
             <div className="flex items-center justify-between mb-8">
               <div>
-                <h2 className="text-3xl font-bold mb-2">Nostr Projects</h2>
+                <h2 className="text-3xl font-bold mb-2">{getSectionSettings('nostr-projects')?.title || 'Nostr Projects'}</h2>
                 <p className="text-gray-600 dark:text-gray-300">
-                  Join collaborative art - Select an image & pay in sats
+                  {getSectionSettings('nostr-projects')?.subtitle || 'Join collaborative art - Select an image & pay in sats'}
                 </p>
               </div>
               <Button variant="outline" asChild>
@@ -430,13 +437,13 @@ const Index = () => {
         )}
 
         {/* Featured Projects Section */}
-        {featuredProjects && featuredProjects.length > 0 && (
+        {featuredProjects && featuredProjects.length > 0 && getSectionSettings('projects')?.enabled !== false && (
           <div className="mb-16">
             <div className="flex items-center justify-between mb-8">
               <div>
-                <h2 className="text-3xl font-bold mb-2">Projects</h2>
+                <h2 className="text-3xl font-bold mb-2">{getSectionSettings('projects')?.title || 'Projects'}</h2>
                 <p className="text-gray-600 dark:text-gray-300">
-                  By BitPopArt
+                  {getSectionSettings('projects')?.subtitle || 'By BitPopArt'}
                 </p>
               </div>
               <Button variant="outline" asChild>
@@ -511,22 +518,23 @@ const Index = () => {
         )}
 
         {/* Featured Art Section */}
-        <div className="mb-16">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h2 className="text-3xl font-bold mb-2">Art</h2>
-              <p className="text-gray-600 dark:text-gray-300">
-                By BitPopArt
-              </p>
+        {!artworksError && featuredArtworksList && featuredArtworksList.length > 0 && getSectionSettings('art')?.enabled !== false && (
+          <div className="mb-16">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h2 className="text-3xl font-bold mb-2">{getSectionSettings('art')?.title || 'Art'}</h2>
+                <p className="text-gray-600 dark:text-gray-300">
+                  {getSectionSettings('art')?.subtitle || 'Browse artwork gallery'}
+                </p>
+              </div>
+              <Button variant="outline" asChild>
+                <Link to="/art" className="flex items-center space-x-2">
+                  <Palette className="h-4 w-4" />
+                  <span>Browse Gallery</span>
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
             </div>
-            <Button variant="outline" asChild>
-              <Link to="/art" className="flex items-center space-x-2">
-                <Palette className="h-4 w-4" />
-                <span>Browse Gallery</span>
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
 
           {artworksError && (
             <Card className="border-dashed border-purple-200 dark:border-purple-800 bg-purple-50/50 dark:bg-purple-900/10">
@@ -599,25 +607,27 @@ const Index = () => {
               })}
             </div>
           )}
-        </div>
+          </div>
+        )}
 
         {/* Latest Cards Section */}
-        <div className="mb-16">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h2 className="text-3xl font-bold mb-2">Cards</h2>
-              <p className="text-gray-600 dark:text-gray-300">
-                Send a positive vibe to someone
-              </p>
+        {getSectionSettings('cards')?.enabled !== false && (
+          <div className="mb-16">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                  <h2 className="text-3xl font-bold mb-2">{getSectionSettings('cards')?.title || 'Cards'}</h2>
+                <p className="text-gray-600 dark:text-gray-300">
+                  {getSectionSettings('cards')?.subtitle || 'Send a positive vibe to someone'}
+                </p>
+              </div>
+              <Button variant="outline" asChild>
+                <Link to="/cards" className="flex items-center space-x-2">
+                  <CreditCard className="h-4 w-4" />
+                  <span>Browse All</span>
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
             </div>
-            <Button variant="outline" asChild>
-              <Link to="/cards" className="flex items-center space-x-2">
-                <CreditCard className="h-4 w-4" />
-                <span>Browse All</span>
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
 
           {cardsError && (
             <Card className="border-dashed border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-900/10">
@@ -690,25 +700,27 @@ const Index = () => {
               })}
             </div>
           )}
-        </div>
+          </div>
+        )}
 
         {/* Latest Updates Section */}
-        <div className="mb-16">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h2 className="text-3xl font-bold mb-2">Nostr News</h2>
-              <p className="text-gray-600 dark:text-gray-300">
-                From BitPopArt
-              </p>
+        {getSectionSettings('news')?.enabled !== false && (
+          <div className="mb-16">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h2 className="text-3xl font-bold mb-2">{getSectionSettings('news')?.title || 'Nostr News'}</h2>
+                <p className="text-gray-600 dark:text-gray-300">
+                  {getSectionSettings('news')?.subtitle || 'From BitPopArt'}
+                </p>
+              </div>
+              <Button variant="outline" asChild>
+                <Link to="/feed" className="flex items-center space-x-2">
+                  <Rss className="h-4 w-4" />
+                  <span>View All</span>
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
             </div>
-            <Button variant="outline" asChild>
-              <Link to="/feed" className="flex items-center space-x-2">
-                <Rss className="h-4 w-4" />
-                <span>View All</span>
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
 
           {notesError && (
             <Card className="border-dashed border-orange-200 dark:border-orange-800 bg-orange-50/50 dark:bg-orange-900/10">
@@ -768,7 +780,8 @@ const Index = () => {
               ))}
             </div>
           )}
-        </div>
+          </div>
+        )}
 
 
 
