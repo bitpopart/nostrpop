@@ -43,7 +43,8 @@ import {
   Share2,
   Mail,
   Target,
-  Settings
+  Settings,
+  Zap
 } from 'lucide-react';
 
 const Admin = () => {
