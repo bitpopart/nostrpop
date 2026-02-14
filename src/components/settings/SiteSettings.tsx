@@ -5,9 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { toast } from 'sonner';
-import { Palette, RotateCcw, Zap, Star } from 'lucide-react';
+import { Palette, RotateCcw, Zap, Star, Upload, Cloud } from 'lucide-react';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useNostrPublish } from '@/hooks/useNostrPublish';
+import { useQuery } from '@tanstack/react-query';
+import { useNostr } from '@nostrify/react';
+import { getAdminPubkeyHex } from '@/lib/adminUtils';
 
 interface SiteColors {
   comingSoonFrom: string;
@@ -88,12 +92,45 @@ const COLOR_PRESETS = [
 ];
 
 export function SiteSettings() {
-  const [siteColors, setSiteColors] = useLocalStorage<SiteColors>('site-colors', DEFAULT_COLORS);
-  const [tempColors, setTempColors] = useState<SiteColors>(siteColors);
+  const { user } = useCurrentUser();
+  const { nostr } = useNostr();
+  const { mutate: publishEvent, isPending: isPublishing } = useNostrPublish();
+  const adminPubkey = getAdminPubkeyHex();
 
+  // Query site colors from Nostr
+  const { data: nostrColors, refetch } = useQuery({
+    queryKey: ['site-colors', adminPubkey],
+    queryFn: async (c) => {
+      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(5000)]);
+      
+      const events = await nostr.query([{
+        kinds: [30078],
+        authors: [adminPubkey],
+        '#d': ['com.bitpopart.site-colors'],
+        limit: 1,
+      }], { signal });
+
+      if (events.length > 0 && events[0].content) {
+        try {
+          return JSON.parse(events[0].content) as SiteColors;
+        } catch (e) {
+          console.error('Failed to parse site colors from Nostr:', e);
+        }
+      }
+      return DEFAULT_COLORS;
+    },
+    enabled: !!adminPubkey,
+  });
+
+  const [tempColors, setTempColors] = useState<SiteColors>(nostrColors || DEFAULT_COLORS);
+
+  // Update temp colors when nostr colors change
   useEffect(() => {
-    applyColorsToDOM(siteColors);
-  }, [siteColors]);
+    if (nostrColors) {
+      setTempColors(nostrColors);
+      applyColorsToDOM(nostrColors);
+    }
+  }, [nostrColors]);
 
   const applyColorsToDOM = (colors: SiteColors) => {
     const root = document.documentElement;
@@ -110,23 +147,69 @@ export function SiteSettings() {
   };
 
   const handleSave = () => {
-    setSiteColors(tempColors);
-    applyColorsToDOM(tempColors);
-    // Dispatch custom event to notify components of color change
-    window.dispatchEvent(new CustomEvent('theme-colors-updated', { detail: tempColors }));
-    toast.success('Site colors saved! Changes applied immediately.');
+    if (!user) {
+      toast.error('Please log in to save site settings');
+      return;
+    }
+
+    // Publish to Nostr
+    publishEvent({
+      kind: 30078,
+      content: JSON.stringify(tempColors),
+      tags: [['d', 'com.bitpopart.site-colors']],
+    }, {
+      onSuccess: () => {
+        applyColorsToDOM(tempColors);
+        // Dispatch custom event to notify components of color change
+        window.dispatchEvent(new CustomEvent('theme-colors-updated', { detail: tempColors }));
+        toast.success('Site colors saved to Nostr! Changes are now visible to everyone.');
+        refetch();
+      },
+      onError: (error) => {
+        toast.error('Failed to save colors: ' + error.message);
+      }
+    });
   };
 
   const handleReset = () => {
+    if (!user) {
+      toast.error('Please log in to reset site settings');
+      return;
+    }
+
     setTempColors(DEFAULT_COLORS);
-    setSiteColors(DEFAULT_COLORS);
-    applyColorsToDOM(DEFAULT_COLORS);
-    toast.success('Colors reset to default!');
+    
+    // Publish default colors to Nostr
+    publishEvent({
+      kind: 30078,
+      content: JSON.stringify(DEFAULT_COLORS),
+      tags: [['d', 'com.bitpopart.site-colors']],
+    }, {
+      onSuccess: () => {
+        applyColorsToDOM(DEFAULT_COLORS);
+        toast.success('Colors reset to default on Nostr!');
+        refetch();
+      },
+      onError: (error) => {
+        toast.error('Failed to reset colors: ' + error.message);
+      }
+    });
   };
 
   const applyPreset = (preset: typeof COLOR_PRESETS[0]) => {
     setTempColors(preset.colors);
   };
+
+  if (!user) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Site Look & Feel</CardTitle>
+          <CardDescription>Please log in to manage site settings</CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -332,23 +415,36 @@ export function SiteSettings() {
           </Card>
 
           <div className="flex gap-2">
-            <Button onClick={handleSave} size="lg">
-              <Palette className="h-4 w-4 mr-2" />
-              Save Colors
+            <Button onClick={handleSave} size="lg" disabled={isPublishing}>
+              {isPublishing ? (
+                <>
+                  <Upload className="h-4 w-4 mr-2 animate-pulse" />
+                  Publishing...
+                </>
+              ) : (
+                <>
+                  <Cloud className="h-4 w-4 mr-2" />
+                  Save to Nostr
+                </>
+              )}
             </Button>
-            <Button variant="outline" onClick={handleReset}>
+            <Button variant="outline" onClick={handleReset} disabled={isPublishing}>
               <RotateCcw className="h-4 w-4 mr-2" />
               Reset to Default
             </Button>
           </div>
 
           <div className="text-sm bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 space-y-2">
-            <p className="font-semibold">💡 How It Works:</p>
+            <p className="font-semibold flex items-center gap-2">
+              <Cloud className="h-4 w-4" />
+              How It Works:
+            </p>
             <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-              <li>Colors are saved to your browser and persist across sessions</li>
-              <li>Changes apply immediately to all buttons, badges, and headers</li>
-              <li>Header text gradients control titles like "Projects", "Art Gallery", "My Story"</li>
-              <li>Custom colors apply site-wide across all pages</li>
+              <li><strong>Published to Nostr:</strong> Colors are saved as a Nostr event (kind 30078)</li>
+              <li><strong>Visible to Everyone:</strong> All visitors see your custom colors, logged in or not</li>
+              <li><strong>Decentralized:</strong> Settings are stored on Nostr relays, not in a database</li>
+              <li><strong>Instant Updates:</strong> Changes apply immediately across the entire site</li>
+              <li><strong>No Login Required:</strong> Visitors don't need to log in to see your branding</li>
             </ul>
           </div>
         </CardContent>
