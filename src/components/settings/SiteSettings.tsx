@@ -24,24 +24,30 @@ interface SiteColors {
   headerTextFrom: string;
   headerTextVia: string;
   headerTextTo: string;
+  pageBackground: string;
+  bodyText: string;
+  buttonText: string;
 }
 
 const DEFAULT_COLORS: SiteColors = {
-  comingSoonFrom: '#f97316',
-  comingSoonTo: '#ec4899',
-  primaryFrom: '#a855f7',
-  primaryTo: '#ec4899',
-  secondaryFrom: '#6366f1',
-  secondaryTo: '#8b5cf6',
-  accentColor: '#f97316',
-  headerTextFrom: '#db2777',
-  headerTextVia: '#a855f7',
-  headerTextTo: '#6366f1',
+  comingSoonFrom: '#e99840',
+  comingSoonTo: '#e99840',
+  primaryFrom: '#e99840',
+  primaryTo: '#e99840',
+  secondaryFrom: '#e99840',
+  secondaryTo: '#e99840',
+  accentColor: '#e99840',
+  headerTextFrom: '#e99840',
+  headerTextVia: '#e99840',
+  headerTextTo: '#e99840',
+  pageBackground: '#f7f8f9',
+  bodyText: '#1a1a1a',
+  buttonText: '#ffffff',
 };
 
 const COLOR_PRESETS = [
   {
-    name: 'Orange & Pink (BitPopArt)',
+    name: 'Orange Theme (BitPopArt)',
     colors: DEFAULT_COLORS,
   },
   {
@@ -57,6 +63,9 @@ const COLOR_PRESETS = [
       headerTextFrom: '#8b5cf6',
       headerTextVia: '#a855f7',
       headerTextTo: '#ec4899',
+      pageBackground: '#faf5ff',
+      bodyText: '#1a1a1a',
+      buttonText: '#ffffff',
     }
   },
   {
@@ -72,6 +81,9 @@ const COLOR_PRESETS = [
       headerTextFrom: '#0ea5e9',
       headerTextVia: '#3b82f6',
       headerTextTo: '#8b5cf6',
+      pageBackground: '#f0f9ff',
+      bodyText: '#1a1a1a',
+      buttonText: '#ffffff',
     }
   },
   {
@@ -87,6 +99,9 @@ const COLOR_PRESETS = [
       headerTextFrom: '#ef4444',
       headerTextVia: '#f97316',
       headerTextTo: '#fbbf24',
+      pageBackground: '#fff7ed',
+      bodyText: '#1a1a1a',
+      buttonText: '#ffffff',
     }
   },
 ];
@@ -144,6 +159,9 @@ export function SiteSettings() {
     root.style.setProperty('--header-text-from', colors.headerTextFrom);
     root.style.setProperty('--header-text-via', colors.headerTextVia);
     root.style.setProperty('--header-text-to', colors.headerTextTo);
+    root.style.setProperty('--page-background', colors.pageBackground);
+    root.style.setProperty('--body-text-color', colors.bodyText);
+    root.style.setProperty('--button-text-color', colors.buttonText);
   };
 
   const handleSave = () => {
@@ -356,11 +374,37 @@ export function SiteSettings() {
                     Controls the gradient colors for page titles like "Projects", "Art Gallery", etc.
                   </p>
                 </div>
+
+                <Separator />
+
+                <div>
+                  <Label className="text-base font-semibold mb-3 block">Background & Text Colors</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <ColorInput
+                      label="Page Background"
+                      value={tempColors.pageBackground}
+                      onChange={(v) => setTempColors(prev => ({ ...prev, pageBackground: v }))}
+                    />
+                    <ColorInput
+                      label="Body Text"
+                      value={tempColors.bodyText}
+                      onChange={(v) => setTempColors(prev => ({ ...prev, bodyText: v }))}
+                    />
+                    <ColorInput
+                      label="Button Text"
+                      value={tempColors.buttonText}
+                      onChange={(v) => setTempColors(prev => ({ ...prev, buttonText: v }))}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Page background color, main text color, and text color on gradient buttons
+                  </p>
+                </div>
               </div>
             </TabsContent>
           </Tabs>
 
-          <Card className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20">
+          <Card style={{ backgroundColor: tempColors.pageBackground }}>
             <CardHeader>
               <CardTitle className="text-base">Live Preview</CardTitle>
             </CardHeader>
@@ -381,27 +425,30 @@ export function SiteSettings() {
                   >
                     Page Title
                   </h2>
+                  <p className="mt-2 text-sm" style={{ color: tempColors.bodyText }}>
+                    Browse artwork gallery
+                  </p>
                 </div>
 
                 {/* Buttons and Badges */}
                 <div className="flex flex-wrap items-center gap-3 justify-center">
                   <Badge
                     className="text-sm px-4 py-1.5 border-0 shadow-md"
-                    style={{ background: `linear-gradient(to right, ${tempColors.comingSoonFrom}, ${tempColors.comingSoonTo})`, color: '#ffffff' }}
+                    style={{ background: `linear-gradient(to right, ${tempColors.comingSoonFrom}, ${tempColors.comingSoonTo})`, color: tempColors.buttonText }}
                   >
                     Coming Soon
                   </Badge>
                   <Button
                     size="sm"
-                    className="border-0 shadow-md text-white"
-                    style={{ background: `linear-gradient(to right, ${tempColors.primaryFrom}, ${tempColors.primaryTo})` }}
+                    className="border-0 shadow-md"
+                    style={{ background: `linear-gradient(to right, ${tempColors.primaryFrom}, ${tempColors.primaryTo})`, color: tempColors.buttonText }}
                   >
                     Primary Button
                   </Button>
                   <Button
                     size="sm"
-                    className="border-0 shadow-md text-white"
-                    style={{ background: `linear-gradient(to right, ${tempColors.secondaryFrom}, ${tempColors.secondaryTo})` }}
+                    className="border-0 shadow-md"
+                    style={{ background: `linear-gradient(to right, ${tempColors.secondaryFrom}, ${tempColors.secondaryTo})`, color: tempColors.buttonText }}
                   >
                     Secondary
                   </Button>
@@ -409,6 +456,13 @@ export function SiteSettings() {
                     <Zap className="h-5 w-5" style={{ color: tempColors.accentColor }} />
                     <Star className="h-5 w-5" style={{ color: tempColors.accentColor }} />
                   </div>
+                </div>
+
+                {/* Text Sample */}
+                <div className="border rounded-lg p-4" style={{ backgroundColor: '#ffffff' }}>
+                  <p style={{ color: tempColors.bodyText }}>
+                    This is how your body text will appear on white cards and backgrounds throughout the site.
+                  </p>
                 </div>
               </div>
             </CardContent>

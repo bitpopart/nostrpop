@@ -42,6 +42,13 @@
   .bg-gradient-to-br.from-purple-50 {
     background: var(--page-background) !important;
   }
+
+  /* Apply gradient button text color */
+  .gradient-primary,
+  .gradient-secondary,
+  .gradient-coming-soon {
+    color: var(--button-text-color);
+  }
 }
 
 @layer base {
@@ -106,6 +113,10 @@
     
     /* Page background color */
     --page-background: #f7f8f9;
+    
+    /* Body and button text colors */
+    --body-text-color: #1a1a1a;
+    --button-text-color: #ffffff;
   }
 
   .dark {
@@ -157,6 +168,7 @@
   body {
     @apply text-foreground;
     overflow-x: hidden;
+    color: var(--body-text-color);
   }
   
   html {
