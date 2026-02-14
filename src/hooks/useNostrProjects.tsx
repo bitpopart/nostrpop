@@ -30,26 +30,33 @@ export function useNostrProjects() {
         tags: e.tags.length
       })));
 
-      // Deduplicate by d-tag (addressable events) - keep the newest
-      const deduplicatedEvents = events.reduce((acc, event) => {
-        const dTag = event.tags.find(t => t[0] === 'd')?.[1];
-        if (!dTag) return acc;
+      // Group by title to find duplicate projects (created multiple times with different d-tags)
+      const titleGroups = events.reduce((acc, event) => {
+        const title = event.tags.find(t => t[0] === 'title')?.[1];
+        if (!title) return acc;
         
-        const existing = acc.find(e => e.tags.find(t => t[0] === 'd')?.[1] === dTag);
-        if (!existing) {
-          acc.push(event);
-        } else if (event.created_at > existing.created_at) {
-          // Replace with newer version
-          const index = acc.indexOf(existing);
-          acc[index] = event;
-          console.log(`[useNostrProjects] Replaced older version of ${dTag} with newer one`);
-        } else {
-          console.log(`[useNostrProjects] Skipping older version of ${dTag}`);
+        if (!acc[title]) {
+          acc[title] = [];
         }
+        acc[title].push(event);
         return acc;
-      }, [] as typeof events);
+      }, {} as Record<string, typeof events>);
 
-      console.log(`[useNostrProjects] After deduplication: ${deduplicatedEvents.length} events`);
+      // For each title group, keep only the newest event
+      const deduplicatedEvents = Object.values(titleGroups).flatMap(group => {
+        if (group.length === 1) return group;
+        
+        // Sort by created_at descending (newest first)
+        const sorted = group.sort((a, b) => b.created_at - a.created_at);
+        const newest = sorted[0];
+        const title = newest.tags.find(t => t[0] === 'title')?.[1];
+        
+        console.log(`[useNostrProjects] Found ${group.length} versions of "${title}", keeping newest (${newest.tags.find(t => t[0] === 'd')?.[1]?.substring(0, 8)}...)`);
+        
+        return [newest];
+      });
+
+      console.log(`[useNostrProjects] After deduplication: ${deduplicatedEvents.length} events (from ${events.length} total)`);
 
       const projects: NostrProjectData[] = deduplicatedEvents
         .map((event): NostrProjectData | null => {
@@ -119,20 +126,21 @@ export function useFeaturedNostrProjects() {
         { signal }
       );
 
-      // Deduplicate by d-tag (addressable events) - keep the newest
-      const deduplicatedEvents = events.reduce((acc, event) => {
-        const dTag = event.tags.find(t => t[0] === 'd')?.[1];
-        if (!dTag) return acc;
-        
-        const existing = acc.find(e => e.tags.find(t => t[0] === 'd')?.[1] === dTag);
-        if (!existing) {
-          acc.push(event);
-        } else if (event.created_at > existing.created_at) {
-          const index = acc.indexOf(existing);
-          acc[index] = event;
-        }
+      // Group by title to find duplicate projects
+      const titleGroups = events.reduce((acc, event) => {
+        const title = event.tags.find(t => t[0] === 'title')?.[1];
+        if (!title) return acc;
+        if (!acc[title]) acc[title] = [];
+        acc[title].push(event);
         return acc;
-      }, [] as typeof events);
+      }, {} as Record<string, typeof events>);
+
+      // Keep only the newest event for each title
+      const deduplicatedEvents = Object.values(titleGroups).flatMap(group => {
+        if (group.length === 1) return group;
+        const sorted = group.sort((a, b) => b.created_at - a.created_at);
+        return [sorted[0]];
+      });
 
       const projects: NostrProjectData[] = deduplicatedEvents
         .map((event): NostrProjectData | null => {
