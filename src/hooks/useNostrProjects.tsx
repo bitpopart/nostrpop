@@ -24,12 +24,34 @@ export function useNostrProjects() {
       console.log(`[useNostrProjects] Fetched ${events.length} events from relay`);
       console.log('[useNostrProjects] Raw events:', events.map(e => ({
         id: e.id.substring(0, 8),
+        dTag: e.tags.find(t => t[0] === 'd')?.[1],
         title: e.tags.find(t => t[0] === 'title')?.[1],
         created_at: e.created_at,
         tags: e.tags.length
       })));
 
-      const projects: NostrProjectData[] = events
+      // Deduplicate by d-tag (addressable events) - keep the newest
+      const deduplicatedEvents = events.reduce((acc, event) => {
+        const dTag = event.tags.find(t => t[0] === 'd')?.[1];
+        if (!dTag) return acc;
+        
+        const existing = acc.find(e => e.tags.find(t => t[0] === 'd')?.[1] === dTag);
+        if (!existing) {
+          acc.push(event);
+        } else if (event.created_at > existing.created_at) {
+          // Replace with newer version
+          const index = acc.indexOf(existing);
+          acc[index] = event;
+          console.log(`[useNostrProjects] Replaced older version of ${dTag} with newer one`);
+        } else {
+          console.log(`[useNostrProjects] Skipping older version of ${dTag}`);
+        }
+        return acc;
+      }, [] as typeof events);
+
+      console.log(`[useNostrProjects] After deduplication: ${deduplicatedEvents.length} events`);
+
+      const projects: NostrProjectData[] = deduplicatedEvents
         .map((event): NostrProjectData | null => {
           try {
             const content = JSON.parse(event.content);
@@ -97,7 +119,22 @@ export function useFeaturedNostrProjects() {
         { signal }
       );
 
-      const projects: NostrProjectData[] = events
+      // Deduplicate by d-tag (addressable events) - keep the newest
+      const deduplicatedEvents = events.reduce((acc, event) => {
+        const dTag = event.tags.find(t => t[0] === 'd')?.[1];
+        if (!dTag) return acc;
+        
+        const existing = acc.find(e => e.tags.find(t => t[0] === 'd')?.[1] === dTag);
+        if (!existing) {
+          acc.push(event);
+        } else if (event.created_at > existing.created_at) {
+          const index = acc.indexOf(existing);
+          acc[index] = event;
+        }
+        return acc;
+      }, [] as typeof events);
+
+      const projects: NostrProjectData[] = deduplicatedEvents
         .map((event): NostrProjectData | null => {
           try {
             const content = JSON.parse(event.content);
