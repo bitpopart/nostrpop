@@ -36,6 +36,12 @@
     color: transparent;
     display: inline-block;
   }
+
+  /* Override purple gradients with page background */
+  .bg-gradient-to-br.from-pink-50,
+  .bg-gradient-to-br.from-purple-50 {
+    background: var(--page-background) !important;
+  }
 }
 
 @layer base {

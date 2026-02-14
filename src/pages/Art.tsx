@@ -203,7 +203,7 @@ const Art = () => {
   const stats = getFilterStats();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20">
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--page-background)' }}>
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">
