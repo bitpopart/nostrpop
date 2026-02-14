@@ -20,6 +20,7 @@ import { PageManagement } from '@/components/pages/PageManagement';
 import { SocialMediaManagement } from '@/components/social/SocialMediaManagement';
 import { NewsletterManager } from '@/components/newsletter/NewsletterManager';
 import { AnalyticsSettings } from '@/components/analytics/AnalyticsSettings';
+import { ZapAnalytics } from '@/components/analytics/ZapAnalytics';
 import { SiteSettings } from '@/components/settings/SiteSettings';
 import { ArtworkOrderManager } from '@/components/art/ArtworkOrderManager';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
@@ -222,6 +223,14 @@ const Admin = () => {
       action: () => setActiveTab('analytics'),
       badge: 'Stats'
     },
+    {
+      title: 'Zap Analytics',
+      description: 'Track lightning zaps',
+      icon: Zap,
+      color: 'from-yellow-500 to-orange-500',
+      action: () => setActiveTab('zaps'),
+      badge: 'Zaps'
+    },
   ];
 
   const statsCards = [
@@ -287,7 +296,7 @@ const Admin = () => {
 
         {/* Admin Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-7 lg:grid-cols-14 max-w-7xl mx-auto mb-8 text-xs">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-8 lg:grid-cols-16 max-w-7xl mx-auto mb-8 text-xs">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
             <TabsTrigger value="blog">News</TabsTrigger>
@@ -297,6 +306,7 @@ const Admin = () => {
             <TabsTrigger value="social">Social</TabsTrigger>
             <TabsTrigger value="newsletter">Newsletter</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            <TabsTrigger value="zaps">Zaps</TabsTrigger>
             <TabsTrigger value="projects">Projects</TabsTrigger>
             <TabsTrigger value="nostr-projects">Nostr</TabsTrigger>
             <TabsTrigger value="fundraisers">Fundraisers</TabsTrigger>
@@ -520,6 +530,10 @@ const Admin = () => {
 
           <TabsContent value="analytics">
             <AnalyticsSettings />
+          </TabsContent>
+
+          <TabsContent value="zaps">
+            <ZapAnalytics />
           </TabsContent>
 
           <TabsContent value="popup">
