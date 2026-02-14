@@ -32,13 +32,16 @@ const queryClient = new QueryClient({
 
 const defaultConfig: AppConfig = {
   theme: "light",
-  relayUrl: "wss://relay.damus.io",
+  relayUrl: "wss://relay.primal.net",
 };
 
 const presetRelays = [
-  { url: 'wss://relay.damus.io', name: 'Damus' },
-  { url: 'wss://ditto.pub/relay', name: 'Ditto' },
   { url: 'wss://relay.primal.net', name: 'Primal' },
+  { url: 'wss://relay.damus.io', name: 'Damus' },
+  { url: 'wss://relay.nostr.band', name: 'Nostr.Band' },
+  { url: 'wss://nos.lol', name: 'Nos' },
+  { url: 'wss://relay.snort.social', name: 'Snort' },
+  { url: 'wss://ditto.pub/relay', name: 'Ditto' },
 ];
 
 export function App() {

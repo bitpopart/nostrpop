@@ -8,6 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { RelaySelector } from '@/components/RelaySelector';
 import { useAuthor } from '@/hooks/useAuthor';
 import { genUserName } from '@/lib/genUserName';
 import { getAdminPubkeyHex } from '@/lib/adminUtils';
@@ -122,10 +124,12 @@ export function ZapAnalytics() {
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | 'all'>('30d');
   const adminPubkey = getAdminPubkeyHex();
 
-  const { data: zaps, isLoading } = useQuery({
+  const { data: zaps, isLoading, error } = useQuery({
     queryKey: ['zap-analytics', adminPubkey, timeRange],
     queryFn: async (c) => {
-      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(10000)]);
+      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(15000)]);
+      
+      console.log('[ZapAnalytics] Querying zaps for pubkey:', adminPubkey);
       
       // Calculate the timestamp for the time range
       const now = Math.floor(Date.now() / 1000);
@@ -145,7 +149,11 @@ export function ZapAnalytics() {
         filter.since = since;
       }
 
+      console.log('[ZapAnalytics] Query filter:', filter);
+
       const events = await nostr.query([filter], { signal });
+      
+      console.log('[ZapAnalytics] Found events:', events.length);
       
       // Parse zap events
       const zapData: ZapData[] = events
@@ -295,7 +303,7 @@ export function ZapAnalytics() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
             <Zap className="h-8 w-8 text-yellow-500" />
@@ -305,30 +313,44 @@ export function ZapAnalytics() {
             Track your lightning zaps and supporters
           </p>
         </div>
-        <div className="flex gap-2">
-          <Badge
-            variant={timeRange === '7d' ? 'default' : 'outline'}
-            className="cursor-pointer"
-            onClick={() => setTimeRange('7d')}
-          >
-            7 Days
-          </Badge>
-          <Badge
-            variant={timeRange === '30d' ? 'default' : 'outline'}
-            className="cursor-pointer"
-            onClick={() => setTimeRange('30d')}
-          >
-            30 Days
-          </Badge>
-          <Badge
-            variant={timeRange === 'all' ? 'default' : 'outline'}
-            className="cursor-pointer"
-            onClick={() => setTimeRange('all')}
-          >
-            All Time
-          </Badge>
+        <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+          <div className="flex gap-2">
+            <Badge
+              variant={timeRange === '7d' ? 'default' : 'outline'}
+              className="cursor-pointer"
+              onClick={() => setTimeRange('7d')}
+            >
+              7 Days
+            </Badge>
+            <Badge
+              variant={timeRange === '30d' ? 'default' : 'outline'}
+              className="cursor-pointer"
+              onClick={() => setTimeRange('30d')}
+            >
+              30 Days
+            </Badge>
+            <Badge
+              variant={timeRange === 'all' ? 'default' : 'outline'}
+              className="cursor-pointer"
+              onClick={() => setTimeRange('all')}
+            >
+              All Time
+            </Badge>
+          </div>
+          <RelaySelector className="w-[200px]" />
         </div>
       </div>
+
+      {/* Info Alert */}
+      {(!zaps || zaps.length === 0) && !isLoading && (
+        <Alert>
+          <Zap className="h-4 w-4" />
+          <AlertDescription>
+            No zaps found on this relay. Try switching to a different relay above. 
+            Relays like <strong>Primal</strong> or <strong>Damus</strong> typically store zap data well.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
