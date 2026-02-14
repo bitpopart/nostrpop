@@ -1,11 +1,40 @@
 import { useSeoMeta } from '@unhead/react';
 import { useNostrProjects } from '@/hooks/useNostrProjects';
+import { useBadge } from '@/hooks/useBadges';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, Users, ArrowRight, Zap } from 'lucide-react';
+import { Sparkles, Users, ArrowRight, Zap, Award } from 'lucide-react';
+
+function ProjectBadge({ badgeId }: { badgeId?: string }) {
+  const { data: badge } = useBadge(badgeId || '');
+  const navigate = useNavigate();
+  
+  if (!badge || !badgeId) return null;
+
+  return (
+    <div
+      className="absolute top-2 right-2 z-10 cursor-pointer"
+      onClick={(e) => {
+        e.stopPropagation();
+        navigate('/badges');
+      }}
+    >
+      <div className="relative group">
+        <img
+          src={badge.image_url}
+          alt={badge.title}
+          className="w-16 h-16 rounded-full border-4 border-white dark:border-gray-800 shadow-lg hover:scale-110 transition-transform duration-200"
+        />
+        <div className="absolute inset-0 rounded-full bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+          <Award className="h-6 w-6 text-white" />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function NostrProjects() {
   const navigate = useNavigate();
@@ -70,6 +99,10 @@ export default function NostrProjects() {
                       </div>
                     ))}
                   </div>
+                  
+                  {/* Badge Thumbnail */}
+                  {project.badge_id && <ProjectBadge badgeId={project.badge_id} />}
+                  
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   
                   {/* Hover overlay */}

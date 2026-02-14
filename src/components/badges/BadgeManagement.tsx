@@ -3,8 +3,8 @@ import { useNostr } from '@nostrify/react';
 import { useQuery } from '@tanstack/react-query';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { useBadges } from '@/hooks/useBadges';
 import { useUploadFile } from '@/hooks/useUploadFile';
+import type { BadgeData } from '@/lib/badgeTypes';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,7 +42,57 @@ export function BadgeManagement() {
   const { user } = useCurrentUser();
   const { mutate: createEvent } = useNostrPublish();
   const { mutateAsync: uploadFile, isPending: isUploading } = useUploadFile();
-  const { data: badges, isLoading } = useBadges();
+  
+  // Fetch ALL badges for admin (including inactive/archived)
+  const { data: allBadges, isLoading } = useQuery({
+    queryKey: ['badges-admin', user?.pubkey],
+    queryFn: async (c) => {
+      if (!user?.pubkey) return [];
+      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(3000)]);
+      
+      const events = await nostr.query(
+        [{ kinds: [38173], authors: [user.pubkey], limit: 100 }],
+        { signal }
+      );
+
+      const badges: BadgeData[] = events
+        .map((event): BadgeData | null => {
+          try {
+            const content = JSON.parse(event.content);
+            const id = event.tags.find(t => t[0] === 'd')?.[1];
+            const title = event.tags.find(t => t[0] === 'title')?.[1];
+            const status = event.tags.find(t => t[0] === 'status')?.[1] as 'active' | 'sold_out' | 'archived' || 'active';
+            const price = event.tags.find(t => t[0] === 'price')?.[1];
+            const imageUrl = event.tags.find(t => t[0] === 'image')?.[1];
+            const featured = event.tags.find(t => t[0] === 'featured')?.[1] === 'true';
+            
+            if (!id || !title || !imageUrl) return null;
+
+            return {
+              id,
+              event,
+              title,
+              description: content.description,
+              image_url: imageUrl,
+              price_sats: price ? parseInt(price) : 0,
+              author_pubkey: event.pubkey,
+              created_at: new Date(event.created_at * 1000).toISOString(),
+              status,
+              featured,
+            };
+          } catch {
+            return null;
+          }
+        })
+        .filter((b): b is BadgeData => b !== null)
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+      return badges;
+    },
+    enabled: !!user?.pubkey,
+  });
+  
+  const badges = allBadges || [];
   
   const [isCreating, setIsCreating] = useState(false);
   const [editingBadge, setEditingBadge] = useState<BadgeData | null>(null);
@@ -58,16 +108,20 @@ export function BadgeManagement() {
   const [featured, setFeatured] = useState(false);
 
   // Fetch NIP-58 badges from user's account (kind 30009)
-  const { data: nip58Badges = [], isLoading: isLoadingNIP58 } = useQuery({
+  const { data: nip58Badges = [], isLoading: isLoadingNIP58, refetch: refetchNIP58 } = useQuery({
     queryKey: ['nip58-badges', user?.pubkey],
     queryFn: async (c) => {
       if (!user?.pubkey) return [];
-      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(3000)]);
+      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(5000)]);
+      
+      console.log('[BadgeManagement] Fetching NIP-58 badges from pubkey:', user.pubkey);
       
       const events = await nostr.query(
         [{ kinds: [30009], authors: [user.pubkey], limit: 100 }],
         { signal }
       );
+
+      console.log('[BadgeManagement] Found NIP-58 events:', events.length);
 
       const parsedBadges: NIP58Badge[] = events
         .map((event): NIP58Badge | null => {
@@ -77,6 +131,8 @@ export function BadgeManagement() {
             const description = event.tags.find(t => t[0] === 'description')?.[1] || event.content;
             const image = event.tags.find(t => t[0] === 'image')?.[1];
             const thumb = event.tags.find(t => t[0] === 'thumb')?.[1];
+
+            console.log('[BadgeManagement] Parsing badge:', { id, name, hasImage: !!image });
 
             if (!id || !name || !image) return null;
 
@@ -88,15 +144,18 @@ export function BadgeManagement() {
               thumb,
               event,
             };
-          } catch {
+          } catch (e) {
+            console.error('[BadgeManagement] Failed to parse badge:', e);
             return null;
           }
         })
         .filter((b): b is NIP58Badge => b !== null);
 
+      console.log('[BadgeManagement] Parsed badges:', parsedBadges.length);
       return parsedBadges;
     },
     enabled: !!user?.pubkey && showImport,
+    staleTime: 0, // Always fetch fresh data
   });
   
   const resetForm = () => {

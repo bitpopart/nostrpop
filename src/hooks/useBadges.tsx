@@ -1,8 +1,9 @@
 import { useNostr } from '@nostrify/react';
 import { useQuery } from '@tanstack/react-query';
 import type { BadgeData, BadgePurchase } from '@/lib/badgeTypes';
+import { getAdminPubkeyHex } from '@/lib/adminUtils';
 
-const ADMIN_PUBKEY = '7d33ba57d8a6e8869a1f1d5215254597594ac0dbfeb01b690def8c461b82db35';
+const ADMIN_PUBKEY = getAdminPubkeyHex();
 
 /**
  * Fetch all active badges

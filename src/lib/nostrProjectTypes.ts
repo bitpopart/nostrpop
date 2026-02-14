@@ -19,6 +19,7 @@ export interface NostrProjectData {
   status: 'active' | 'completed' | 'archived';
   featured?: boolean; // Show on homepage
   coming_soon?: boolean; // Shows thumbnail only, no join functionality
+  badge_id?: string; // Optional: Associated badge that participants can earn
 }
 
 /**

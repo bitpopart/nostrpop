@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LoginArea } from '@/components/auth/LoginArea';
 import { CardManagement } from '@/components/cards/CardManagement';
+import { BadgeManagement } from '@/components/badges/BadgeManagement';
 import { ProductManagement } from '@/components/marketplace/ProductManagement';
 import { FundraiserManagement } from '@/components/fundraiser/FundraiserManagement';
 import { BlogPostManagement } from '@/components/blog/BlogPostManagement';
@@ -46,7 +47,8 @@ import {
   Target,
   Settings,
   Zap,
-  Home
+  Home,
+  Award
 } from 'lucide-react';
 
 const Admin = () => {
@@ -150,6 +152,14 @@ const Admin = () => {
       color: 'from-violet-500 to-purple-500',
       action: () => setActiveTab('cards'),
       badge: 'Cards'
+    },
+    {
+      title: 'POP Badges',
+      description: 'Create collectible badges',
+      icon: Award,
+      color: 'from-indigo-500 to-purple-500',
+      action: () => setActiveTab('badges'),
+      badge: 'Badges'
     },
     {
       title: 'Art Gallery',
@@ -299,7 +309,7 @@ const Admin = () => {
 
         {/* Admin Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-9 lg:grid-cols-17 max-w-7xl mx-auto mb-8 text-xs">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-9 lg:grid-cols-18 max-w-7xl mx-auto mb-8 text-xs">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="homepage">Homepage</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
@@ -315,6 +325,7 @@ const Admin = () => {
             <TabsTrigger value="nostr-projects">Nostr</TabsTrigger>
             <TabsTrigger value="fundraisers">Fundraisers</TabsTrigger>
             <TabsTrigger value="cards">Cards</TabsTrigger>
+            <TabsTrigger value="badges">Badges</TabsTrigger>
             <TabsTrigger value="shop">Shop</TabsTrigger>
             <TabsTrigger value="art">Art</TabsTrigger>
           </TabsList>
@@ -563,6 +574,23 @@ const Admin = () => {
 
           <TabsContent value="cards">
             <CardManagement />
+          </TabsContent>
+
+          <TabsContent value="badges">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Award className="h-6 w-6 mr-2" />
+                  Badge Management
+                </CardTitle>
+                <CardDescription>
+                  Create and manage collectible POP badges for your community
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <BadgeManagement />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="shop">
