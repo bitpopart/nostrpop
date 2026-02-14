@@ -140,9 +140,16 @@ export default function Blog() {
       <div className="container mx-auto px-4 py-12">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-5xl font-bold mb-4" style={getGradientStyle('header-text')}>
-            Blog
-          </h1>
+          <div className="flex items-center justify-center mb-4 gap-3">
+            <img 
+              src={`${import.meta.env.BASE_URL || '/'}News_button_1.svg`} 
+              alt="News" 
+              className="h-12 w-12 flex-shrink-0" 
+            />
+            <h1 className="text-5xl font-bold leading-tight" style={getGradientStyle('header-text')}>
+              Blog
+            </h1>
+          </div>
           <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
             Latest news from BitPopArt
           </p>

@@ -207,9 +207,13 @@ const Art = () => {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="flex items-center justify-center mb-4">
-            <Palette className="h-8 w-8 text-purple-600 mr-3" />
-            <h1 className="text-4xl font-bold" style={getGradientStyle('header-text')}>
+          <div className="flex items-center justify-center mb-4 gap-3">
+            <img 
+              src={`${import.meta.env.BASE_URL || '/'}Art_button_1.svg`} 
+              alt="Art" 
+              className="h-12 w-12 flex-shrink-0" 
+            />
+            <h1 className="text-4xl font-bold leading-tight" style={getGradientStyle('header-text')}>
               BitPopArt Gallery
             </h1>
           </div>
