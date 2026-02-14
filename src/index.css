@@ -145,6 +145,11 @@
 
   body {
     @apply bg-background text-foreground;
+    overflow-x: hidden;
+  }
+  
+  html {
+    overflow-x: hidden;
   }
 
   /* Fix for gradient text cutting off descenders (y, j, g, p, q) */

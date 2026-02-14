@@ -158,25 +158,25 @@ Follow me at BitPopArt:
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20">
       {/* Header Image */}
       {headerImage && (
-        <div className="w-full h-64 md:h-96 overflow-hidden">
+        <div className="w-full h-48 sm:h-64 md:h-80 lg:h-96 overflow-hidden">
           <img
             src={headerImage}
             alt="Artist Header"
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover object-center"
           />
         </div>
       )}
 
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         {/* Header */}
-        <div className="text-center mb-12">
-          <div className="flex items-center justify-center mb-4 gap-3">
+        <div className="text-center mb-8 sm:mb-12">
+          <div className="flex items-center justify-center mb-4 gap-2 sm:gap-3">
             <img 
               src={`${import.meta.env.BASE_URL || '/'}artist_button_1.svg`} 
               alt="Artist" 
-              className="h-12 w-12 flex-shrink-0" 
+              className="h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0" 
             />
-            <h1 className="text-5xl font-bold leading-tight" style={getGradientStyle('header-text')}>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight" style={getGradientStyle('header-text')}>
               {getTitle()}
             </h1>
           </div>
@@ -205,7 +205,7 @@ Follow me at BitPopArt:
                 {block.type === 'markdown' && block.content.trim() && (
                   <Card>
                     <CardContent className="pt-6 pb-8 space-y-4">
-                      <div className="prose prose-lg dark:prose-invert max-w-none [&_h1]:leading-tight [&_h1]:mb-6 [&_h2]:leading-tight [&_h2]:mb-4 [&_h3]:leading-tight [&_h3]:mb-3 [&_p]:mb-4">
+                      <div className="prose prose-sm sm:prose-lg dark:prose-invert max-w-none break-words [&_h1]:leading-tight [&_h1]:mb-6 [&_h2]:leading-tight [&_h2]:mb-4 [&_h3]:leading-tight [&_h3]:mb-3 [&_p]:mb-4 [&_img]:max-w-full [&_img]:h-auto">
                         <ReactMarkdown>{block.content}</ReactMarkdown>
                       </div>
                       {block.externalUrl && (
@@ -303,12 +303,12 @@ Follow me at BitPopArt:
 
         {/* Image Lightbox */}
         <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
-          <DialogContent className="max-w-4xl p-0">
+          <DialogContent className="max-w-[95vw] sm:max-w-4xl p-0 max-h-[90vh] overflow-auto">
             {selectedImage && (
               <img
                 src={selectedImage}
                 alt="Gallery"
-                className="w-full h-auto"
+                className="w-full h-auto object-contain"
               />
             )}
           </DialogContent>
