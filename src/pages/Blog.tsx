@@ -67,7 +67,16 @@ export default function Blog() {
         return dTag !== 'artist-page' && !hasArtworkTag;
       });
       
-      return filteredEvents.sort((a, b) => b.created_at - a.created_at);
+      // Sort by published_at tag if it exists, otherwise by created_at (newest first)
+      return filteredEvents.sort((a, b) => {
+        const aPublished = a.tags.find(t => t[0] === 'published_at')?.[1];
+        const bPublished = b.tags.find(t => t[0] === 'published_at')?.[1];
+        
+        const aDate = aPublished ? parseInt(aPublished) : a.created_at;
+        const bDate = bPublished ? parseInt(bPublished) : b.created_at;
+        
+        return bDate - aDate; // Newest first (descending order)
+      });
     },
     staleTime: 30000,
   });
@@ -132,8 +141,17 @@ export default function Blog() {
   }, {} as Record<string, { label: string; posts: NostrEvent[] }>);
 
   const archiveMonths = Object.entries(postsByMonth)
-    .sort(([a], [b]) => b.localeCompare(a))
-    .map(([key, value]) => ({ key, ...value }));
+    .sort(([a], [b]) => b.localeCompare(a)) // Newest month first
+    .map(([key, value]) => ({ 
+      key, 
+      ...value,
+      posts: value.posts.sort((a, b) => {
+        // Within each month, sort posts newest first
+        const aDate = getPublishedDate(a).getTime();
+        const bDate = getPublishedDate(b).getTime();
+        return bDate - aDate;
+      })
+    }));
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20">
