@@ -36,7 +36,7 @@ export default function Fundraising() {
             </h1>
           </div>
           <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            Support art projects with Bitcoin Lightning. Help bring creative visions to life.
+            Support BitPopArt projects.
           </p>
         </div>
 
