@@ -29,10 +29,29 @@ const DEFAULT_COLORS: SiteColors = {
   headerTextTo: '#6366f1',
 };
 
+const applyColorsToDOM = (colors: SiteColors) => {
+  const root = document.documentElement;
+  root.style.setProperty('--coming-soon-from', colors.comingSoonFrom);
+  root.style.setProperty('--coming-soon-to', colors.comingSoonTo);
+  root.style.setProperty('--primary-gradient-from', colors.primaryFrom);
+  root.style.setProperty('--primary-gradient-to', colors.primaryTo);
+  root.style.setProperty('--secondary-gradient-from', colors.secondaryFrom);
+  root.style.setProperty('--secondary-gradient-to', colors.secondaryTo);
+  root.style.setProperty('--accent-color', colors.accentColor);
+  root.style.setProperty('--header-text-from', colors.headerTextFrom);
+  root.style.setProperty('--header-text-via', colors.headerTextVia);
+  root.style.setProperty('--header-text-to', colors.headerTextTo);
+};
+
 export function useThemeColors() {
   const { nostr } = useNostr();
   const adminPubkey = getAdminPubkeyHex();
   const [colors, setColors] = useState<SiteColors>(DEFAULT_COLORS);
+
+  // Apply default colors immediately on mount
+  useEffect(() => {
+    applyColorsToDOM(DEFAULT_COLORS);
+  }, []);
 
   // Fetch site colors from Nostr
   const { data: nostrColors } = useQuery({
@@ -89,20 +108,6 @@ export function useThemeColors() {
     window.addEventListener('theme-colors-updated', handleColorUpdate);
     return () => window.removeEventListener('theme-colors-updated', handleColorUpdate);
   }, []);
-
-  const applyColorsToDOM = (colors: SiteColors) => {
-    const root = document.documentElement;
-    root.style.setProperty('--coming-soon-from', colors.comingSoonFrom);
-    root.style.setProperty('--coming-soon-to', colors.comingSoonTo);
-    root.style.setProperty('--primary-gradient-from', colors.primaryFrom);
-    root.style.setProperty('--primary-gradient-to', colors.primaryTo);
-    root.style.setProperty('--secondary-gradient-from', colors.secondaryFrom);
-    root.style.setProperty('--secondary-gradient-to', colors.secondaryTo);
-    root.style.setProperty('--accent-color', colors.accentColor);
-    root.style.setProperty('--header-text-from', colors.headerTextFrom);
-    root.style.setProperty('--header-text-via', colors.headerTextVia);
-    root.style.setProperty('--header-text-to', colors.headerTextTo);
-  };
 
   const getGradientStyle = (type: 'primary' | 'secondary' | 'coming-soon' | 'header-text') => {
     switch (type) {
