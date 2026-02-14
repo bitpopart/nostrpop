@@ -31,8 +31,10 @@
   .gradient-header-text {
     background: linear-gradient(to right, var(--header-text-from), var(--header-text-via), var(--header-text-to));
     -webkit-background-clip: text;
-    background-clip: text;
     -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+    display: inline-block;
   }
 }
 

@@ -127,8 +127,10 @@ export function useThemeColors() {
         return {
           background: `linear-gradient(to right, ${colors.headerTextFrom}, ${colors.headerTextVia}, ${colors.headerTextTo})`,
           WebkitBackgroundClip: 'text',
-          backgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text',
+          color: 'transparent',
+          display: 'inline-block',
         };
     }
   };
