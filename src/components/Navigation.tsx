@@ -104,11 +104,11 @@ export function Navigation() {
                 asChild
                 variant="outline"
                 size="sm"
-                className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-purple-200 dark:border-purple-800 hover:bg-gradient-to-r hover:from-purple-100 hover:to-pink-100 dark:hover:from-purple-900/30 dark:hover:to-pink-900/30"
+                className="bg-gradient-to-r from-orange-50 to-orange-50 dark:from-orange-900/20 dark:to-orange-900/20 border-orange-200 dark:border-orange-800 hover:bg-gradient-to-r hover:from-orange-100 hover:to-orange-100 dark:hover:from-orange-900/30 dark:hover:to-orange-900/30"
               >
                 <Link to="/admin" className="flex items-center space-x-2">
-                  <Shield className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                  <span className="text-purple-700 dark:text-purple-300 font-medium">Dashboard</span>
+                  <Shield className="h-4 w-4" style={{ color: '#e99840' }} />
+                  <span className="font-medium" style={{ color: '#e99840' }}>Dashboard</span>
                 </Link>
               </Button>
             )}
@@ -130,7 +130,8 @@ export function Navigation() {
                     <div className="px-4">
                       <Button
                         asChild
-                        className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+                        className="w-full text-white"
+                        style={{ background: '#e99840' }}
                         onClick={() => setIsOpen(false)}
                       >
                         <Link to="/admin" className="flex items-center justify-center space-x-2">
