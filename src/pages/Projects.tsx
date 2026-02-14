@@ -63,7 +63,18 @@ export default function Projects() {
   });
 
   // Fetch Nostr Projects (collaborative art)
-  const { data: nostrProjects = [] } = useNostrProjects();
+  const { data: allNostrProjects = [] } = useNostrProjects();
+  
+  // Deduplicate Nostr projects by ID (in case relay returns duplicates)
+  const nostrProjects = allNostrProjects.reduce((acc, project) => {
+    const exists = acc.find(p => p.id === project.id);
+    if (!exists) {
+      acc.push(project);
+    } else {
+      console.warn('[Projects] Duplicate Nostr project found:', project.id);
+    }
+    return acc;
+  }, [] as typeof allNostrProjects);
 
   // Fetch POP Badges
   const { data: badges = [] } = useBadges();
