@@ -2,7 +2,7 @@ import { useNostr } from '@nostrify/react';
 import { useQuery } from '@tanstack/react-query';
 import type { PageData, SocialMediaLink } from '@/lib/pageTypes';
 
-const ADMIN_PUBKEY = '7d33ba57d8a6e8869a1f1d5215254597594ac0dbfeb01b690def8c461b82db35';
+const ADMIN_PUBKEY = '43baaf0c28e6cfb195b17ee083e19eb3a4afdfac54d9b6baf170270ed193e34c';
 
 /**
  * Fetch all pages
