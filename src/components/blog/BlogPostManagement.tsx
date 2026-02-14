@@ -382,11 +382,23 @@ export function BlogPostManagement() {
               ['a', `30023:${user?.pubkey}:${articleId}`, '', 'mention'],
             ];
 
-            if (headerImage) {
-              shareTags.push(['image', headerImage]);
+            // Use header image or first uploaded image from content blocks
+            let imageToShare = headerImage;
+            if (!imageToShare) {
+              // Find first image in any content block
+              for (const block of contentBlocks) {
+                if (block.images && block.images.length > 0) {
+                  imageToShare = block.images[0];
+                  break;
+                }
+              }
+            }
+
+            if (imageToShare) {
+              shareTags.push(['image', imageToShare]);
               shareTags.push([
                 'imeta',
-                `url ${headerImage}`,
+                `url ${imageToShare}`,
                 'm image/jpeg',
                 `alt ${title}`,
                 `fallback ${blogUrl}`
