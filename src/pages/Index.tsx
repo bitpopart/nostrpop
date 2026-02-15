@@ -377,8 +377,6 @@ const Index = () => {
   };
 
   const renderNostrProjectsSection = (settings: ReturnType<typeof getSectionSettings>) => {
-    if (featuredNostrProjectsList.length === 0) return null;
-    
     return (
       <div key="nostr-projects" className="mb-16">
         <div className="flex items-center justify-between mb-8">
@@ -397,57 +395,69 @@ const Index = () => {
           </Button>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6">
-          {featuredNostrProjectsList.map((project, index) => (
-            <Card
-              key={project.id}
-              className="group overflow-hidden cursor-pointer hover:shadow-2xl transition-all duration-300 bg-white dark:bg-gray-800 animate-in fade-in slide-in-from-bottom-4"
-              style={{ animationDelay: `${index * 100}ms` }}
-              onClick={() => window.location.href = `/nostr-projects/${project.id}`}
-            >
-              <div className="relative h-56 overflow-hidden bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/20 dark:to-pink-900/20">
-                <div className="grid grid-cols-2 gap-1 h-full p-2">
-                  {project.images.slice(0, 4).map((img, imgIndex) => (
-                    <div key={imgIndex} className="relative overflow-hidden rounded-lg">
-                      <img
-                        src={img}
-                        alt=""
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                      />
-                    </div>
-                  ))}
+        {featuredNostrProjectsList.length > 0 ? (
+          <div className="grid md:grid-cols-3 gap-6">
+            {featuredNostrProjectsList.map((project, index) => (
+              <Card
+                key={project.id}
+                className="group overflow-hidden cursor-pointer hover:shadow-2xl transition-all duration-300 bg-white dark:bg-gray-800 animate-in fade-in slide-in-from-bottom-4"
+                style={{ animationDelay: `${index * 100}ms` }}
+                onClick={() => window.location.href = `/nostr-projects/${project.id}`}
+              >
+                <div className="relative h-56 overflow-hidden bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/20 dark:to-pink-900/20">
+                  <div className="grid grid-cols-2 gap-1 h-full p-2">
+                    {project.images.slice(0, 4).map((img, imgIndex) => (
+                      <div key={imgIndex} className="relative overflow-hidden rounded-lg">
+                        <img
+                          src={img}
+                          alt=""
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 </div>
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              </div>
 
-              <CardHeader>
-                <CardTitle className="text-xl group-hover:text-purple-600 transition-colors flex items-center justify-between">
-                  <span className="truncate">{project.title}</span>
-                  <Badge variant="default" className="gap-1 shrink-0">
-                    <Zap className="h-3 w-3" />
-                    {project.price_sats.toLocaleString()}
-                  </Badge>
-                </CardTitle>
-                <CardDescription className="line-clamp-2">
-                  {project.description}
-                </CardDescription>
-                <div className="flex items-center gap-2 pt-2">
-                  <Badge variant="outline" className="gap-1 text-xs">
-                    <Sparkles className="h-3 w-3" />
-                    {project.images.length} images
-                  </Badge>
+                <CardHeader>
+                  <CardTitle className="text-xl group-hover:text-purple-600 transition-colors flex items-center justify-between">
+                    <span className="truncate">{project.title}</span>
+                    <Badge variant="default" className="gap-1 shrink-0">
+                      <Zap className="h-3 w-3" />
+                      {project.price_sats.toLocaleString()}
+                    </Badge>
+                  </CardTitle>
+                  <CardDescription className="line-clamp-2">
+                    {project.description}
+                  </CardDescription>
+                  <div className="flex items-center gap-2 pt-2">
+                    <Badge variant="outline" className="gap-1 text-xs">
+                      <Sparkles className="h-3 w-3" />
+                      {project.images.length} images
+                    </Badge>
+                  </div>
+                </CardHeader>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <Card className="border-dashed">
+            <CardContent className="py-8 px-6 text-center">
+              <div className="max-w-sm mx-auto space-y-4">
+                <Users className="h-8 w-8 mx-auto text-gray-400" />
+                <div>
+                  <CardTitle className="mb-2">No Nostr Projects</CardTitle>
+                  <CardDescription>No projects available yet.</CardDescription>
                 </div>
-              </CardHeader>
-            </Card>
-          ))}
-        </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     );
   };
 
   const renderProjectsSection = (settings: ReturnType<typeof getSectionSettings>) => {
-    if (!featuredProjects || featuredProjects.length === 0) return null;
-    
     return (
       <div key="projects" className="mb-16">
         <div className="flex items-center justify-between mb-8">
@@ -466,8 +476,9 @@ const Index = () => {
           </Button>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6">
-          {featuredProjects.map((project, index) => {
+        {featuredProjects && featuredProjects.length > 0 ? (
+          <div className="grid md:grid-cols-3 gap-6">
+            {featuredProjects.map((project, index) => {
             const handleClick = () => {
               if (project.url) {
                 if (project.url.startsWith('http')) {
@@ -523,15 +534,26 @@ const Index = () => {
               </Card>
             );
           })}
-        </div>
+          </div>
+        ) : (
+          <Card className="border-dashed">
+            <CardContent className="py-8 px-6 text-center">
+              <div className="max-w-sm mx-auto space-y-4">
+                <FolderKanban className="h-8 w-8 mx-auto text-gray-400" />
+                <div>
+                  <CardTitle className="mb-2">No Projects</CardTitle>
+                  <CardDescription>No projects available yet.</CardDescription>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     );
   };
 
   const renderArtSection = (settings: ReturnType<typeof getSectionSettings>) => {
-    if (artworksError || !featuredArtworksList || featuredArtworksList.length === 0) {
-      if (!artworksError) return null;
-    }
+    // Always render section
     
     return (
       <div key="art" className="mb-16">
@@ -721,8 +743,6 @@ const Index = () => {
   };
 
   const renderPagesSection = (settings: ReturnType<typeof getSectionSettings>) => {
-    if (featuredPagesList.length === 0) return null;
-    
     return (
       <div key="pages" className="mb-16">
         <div className="flex items-center justify-between mb-8">
@@ -734,8 +754,9 @@ const Index = () => {
           </div>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6">
-          {featuredPagesList.map((page, index) => (
+        {featuredPagesList.length > 0 ? (
+          <div className="grid md:grid-cols-3 gap-6">
+            {featuredPagesList.map((page, index) => (
             <Link
               key={page.id}
               to={`/page/${page.id}`}
@@ -776,7 +797,20 @@ const Index = () => {
               </Card>
             </Link>
           ))}
-        </div>
+          </div>
+        ) : (
+          <Card className="border-dashed">
+            <CardContent className="py-8 px-6 text-center">
+              <div className="max-w-sm mx-auto space-y-4">
+                <FileText className="h-8 w-8 mx-auto text-gray-400" />
+                <div>
+                  <CardTitle className="mb-2">No Pages</CardTitle>
+                  <CardDescription>No custom pages available yet.</CardDescription>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     );
   };
