@@ -254,18 +254,20 @@ function Canvas100M() {
     ctx.strokeStyle = '#E5E7EB';
     ctx.lineWidth = 1;
     
-    // Calculate grid spacing: use larger grid intervals when zoomed out
+    // Calculate grid spacing: ensure minimum 5px spacing for visibility
+    // We want the grid to always be visible, especially to see painted pixels
     let gridInterval = 1; // Default: 1 canvas pixel
-    if (scale < 0.05) gridInterval = 100; // Very zoomed out: grid every 100 pixels
-    else if (scale < 0.1) gridInterval = 50; // Zoomed out: grid every 50 pixels
-    else if (scale < 0.2) gridInterval = 20; // Medium zoom: grid every 20 pixels
-    else if (scale < 0.5) gridInterval = 10; // Closer: grid every 10 pixels
-    else if (scale < 1) gridInterval = 5; // Close: grid every 5 pixels
+    if (scale < 0.05) gridInterval = 200; // Very zoomed out (100%): grid every 200 pixels (10px on screen)
+    else if (scale < 0.1) gridInterval = 100; // Zoomed out: grid every 100 pixels
+    else if (scale < 0.2) gridInterval = 50; // Medium zoom: grid every 50 pixels
+    else if (scale < 0.5) gridInterval = 20; // Closer: grid every 20 pixels
+    else if (scale < 1) gridInterval = 10; // Close: grid every 10 pixels
+    else if (scale < 2) gridInterval = 5; // Very close: grid every 5 pixels
     
     const gridSpacing = gridInterval * scale;
     
-    // Only draw grid if spacing is visible (at least 2 pixels)
-    if (gridSpacing >= 2) {
+    // Always draw grid if spacing is at least 1 pixel (increased visibility)
+    if (gridSpacing >= 1) {
       for (let i = 0; i <= DISPLAY_SIZE; i += gridSpacing) {
         ctx.beginPath();
         ctx.moveTo(i, 0);
@@ -289,6 +291,13 @@ function Canvas100M() {
         if (pixel.x >= viewX && pixel.x < viewX + viewSize && pixel.y >= viewY && pixel.y < viewY + viewSize) {
           ctx.fillStyle = pixel.color;
           ctx.fillRect(localX, localY, scale, scale);
+          
+          // Add subtle border to make pixels visible when zoomed out
+          if (scale < 1) {
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
+            ctx.lineWidth = 0.5;
+            ctx.strokeRect(localX, localY, scale, scale);
+          }
         }
       });
     }
@@ -301,6 +310,13 @@ function Canvas100M() {
       if (pixel.x >= viewX && pixel.x < viewX + viewSize && pixel.y >= viewY && pixel.y < viewY + viewSize) {
         ctx.fillStyle = pixel.color;
         ctx.fillRect(localX, localY, scale, scale);
+        
+        // Add subtle border to make pixels visible when zoomed out
+        if (scale < 1) {
+          ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
+          ctx.lineWidth = 0.5;
+          ctx.strokeRect(localX, localY, scale, scale);
+        }
       }
     });
 
