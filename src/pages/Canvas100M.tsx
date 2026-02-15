@@ -655,8 +655,8 @@ function Canvas100M() {
       const finalHeight = Math.floor((uploadedImage.height * imageScale) / 100);
       const totalPixels = finalWidth * finalHeight;
       
-      // Check if image is too large (limit to 10,000 pixels to prevent browser crashes)
-      const MAX_PIXELS = 10000;
+      // Check if image is too large (limit to 210,000 pixels to prevent browser crashes)
+      const MAX_PIXELS = 210000;
       if (totalPixels > MAX_PIXELS) {
         toast({
           title: "Image Too Large",
@@ -666,9 +666,9 @@ function Canvas100M() {
         return;
       }
       
-      // Warn if image is large (more than 5000 pixels)
-      if (totalPixels > 5000) {
-        const proceed = confirm(`This will create ${totalPixels.toLocaleString()} pixels. This may take a moment. Continue?`);
+      // Warn if image is large (more than 50,000 pixels)
+      if (totalPixels > 50000) {
+        const proceed = confirm(`This will create ${totalPixels.toLocaleString()} pixels. This may take a moment to process. Continue?`);
         if (!proceed) return;
       }
       
