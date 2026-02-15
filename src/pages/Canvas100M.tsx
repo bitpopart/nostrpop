@@ -650,11 +650,29 @@ function Canvas100M() {
     if (!uploadedImage || !user) return;
 
     try {
-      const tempCanvas = document.createElement('canvas');
       // Scale affects the actual canvas pixel size directly
       const finalWidth = Math.floor((uploadedImage.width * imageScale) / 100);
       const finalHeight = Math.floor((uploadedImage.height * imageScale) / 100);
+      const totalPixels = finalWidth * finalHeight;
       
+      // Check if image is too large (limit to 10,000 pixels to prevent browser crashes)
+      const MAX_PIXELS = 10000;
+      if (totalPixels > MAX_PIXELS) {
+        toast({
+          title: "Image Too Large",
+          description: `Image would create ${totalPixels.toLocaleString()} pixels. Maximum is ${MAX_PIXELS.toLocaleString()}. Try reducing the scale or using a smaller image.`,
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Warn if image is large (more than 5000 pixels)
+      if (totalPixels > 5000) {
+        const proceed = confirm(`This will create ${totalPixels.toLocaleString()} pixels. This may take a moment. Continue?`);
+        if (!proceed) return;
+      }
+      
+      const tempCanvas = document.createElement('canvas');
       tempCanvas.width = finalWidth;
       tempCanvas.height = finalHeight;
       
@@ -715,7 +733,7 @@ function Canvas100M() {
       console.error('Failed to apply image:', error);
       toast({
         title: "Image Application Failed",
-        description: "Failed to convert image to pixels.",
+        description: "Image is too large or complex. Try reducing the scale or using a smaller/simpler image.",
         variant: "destructive"
       });
     }
@@ -1083,6 +1101,7 @@ function Canvas100M() {
                           size="sm"
                           onClick={prevWorkArea}
                           disabled={myWorkAreas.length <= 1}
+                          title="Previous work area"
                         >
                           <ChevronLeft className="h-4 w-4" />
                         </Button>
@@ -1090,16 +1109,18 @@ function Canvas100M() {
                           variant="secondary"
                           size="sm"
                           onClick={goToMyWork}
-                          className="min-w-24"
+                          className="min-w-32"
+                          title={`View work area ${myWorkIndex + 1} of ${myWorkAreas.length} (${myWorkAreas[myWorkIndex]?.count || 0} pixels)`}
                         >
                           <MapPin className="h-4 w-4 mr-1" />
-                          Work {myWorkIndex + 1}/{myWorkAreas.length}
+                          My Work {myWorkIndex + 1}/{myWorkAreas.length}
                         </Button>
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={nextWorkArea}
                           disabled={myWorkAreas.length <= 1}
+                          title="Next work area"
                         >
                           <ChevronRight className="h-4 w-4" />
                         </Button>
@@ -1116,8 +1137,8 @@ function Canvas100M() {
                           type="range"
                           min="0"
                           max={ZOOM_LEVELS.length - 1}
-                          value={ZOOM_LEVELS.indexOf(zoomLevel)}
-                          onChange={(e) => setZoom(ZOOM_LEVELS[parseInt(e.target.value)])}
+                          value={ZOOM_LEVELS.length - 1 - ZOOM_LEVELS.indexOf(zoomLevel)}
+                          onChange={(e) => setZoom(ZOOM_LEVELS[ZOOM_LEVELS.length - 1 - parseInt(e.target.value)])}
                           className="w-24"
                           title="Zoom slider"
                         />
@@ -1304,7 +1325,14 @@ function Canvas100M() {
                     </div>
                     
                     <div>
-                      <label className="text-xs font-medium mb-1 block">Scale: {imageScale}%</label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-xs font-medium">Scale: {imageScale}%</label>
+                        {uploadedImage && (
+                          <span className="text-xs text-muted-foreground">
+                            ~{Math.floor((uploadedImage.width * imageScale) / 100) * Math.floor((uploadedImage.height * imageScale) / 100)} pixels
+                          </span>
+                        )}
+                      </div>
                       <input
                         type="range"
                         min="10"
