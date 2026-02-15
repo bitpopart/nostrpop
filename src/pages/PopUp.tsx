@@ -1,4 +1,5 @@
 import { useSeoMeta } from '@unhead/react';
+import { Link } from 'react-router-dom';
 import { useNostr } from '@nostrify/react';
 import { useQuery } from '@tanstack/react-query';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -194,7 +195,8 @@ export default function PopUp() {
                 const statusConfig = POPUP_STATUS_CONFIG[event.status];
 
                 return (
-                  <Card key={event.id} className="h-full hover:shadow-xl transition-all duration-300 overflow-hidden group bg-white dark:bg-gray-800">
+                  <Link key={event.id} to={`/popup/${event.id}`}>
+                    <Card className="h-full hover:shadow-xl transition-all duration-300 overflow-hidden group bg-white dark:bg-gray-800">
                     {event.image ? (
                       <div className="relative h-56 overflow-hidden">
                         <img
@@ -322,6 +324,7 @@ export default function PopUp() {
                       )}
                     </CardHeader>
                   </Card>
+                  </Link>
                 );
               })}
             </div>
@@ -339,7 +342,8 @@ export default function PopUp() {
                 const statusConfig = POPUP_STATUS_CONFIG[event.status];
 
                 return (
-                  <Card key={event.id} className="hover:shadow-lg transition-all duration-300 overflow-hidden group bg-white dark:bg-gray-800 opacity-75">
+                  <Link key={event.id} to={`/popup/${event.id}`}>
+                    <Card className="hover:shadow-lg transition-all duration-300 overflow-hidden group bg-white dark:bg-gray-800 opacity-75 h-full">
                     {event.image ? (
                       <div className="relative h-32 overflow-hidden">
                         <img
@@ -402,19 +406,9 @@ export default function PopUp() {
                           </span>
                         </div>
                       </div>
-                      {event.link && (
-                        <a
-                          href={event.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center text-purple-600 hover:text-purple-700 transition-colors pt-2 text-xs font-medium"
-                        >
-                          <span>Details</span>
-                          <ExternalLink className="h-3 w-3 ml-1" />
-                        </a>
-                      )}
                     </CardContent>
                   </Card>
+                  </Link>
                 );
               })}
             </div>
