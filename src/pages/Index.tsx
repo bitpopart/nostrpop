@@ -344,6 +344,14 @@ const Index = () => {
   // Get ordered section IDs based on settings
   const orderedSections = homepageSettings?.filter(s => s.enabled).map(s => s.id) || [];
   console.log('[Homepage] Ordered sections:', orderedSections);
+  
+  // Helper to check if section is enabled
+  const isSectionEnabled = (id: string) => {
+    // If settings haven't loaded yet, show default sections
+    if (!homepageSettings) return ['nostr-projects', 'projects', 'art', 'cards', 'news'].includes(id);
+    // Otherwise only show if in enabled list
+    return orderedSections.includes(id);
+  };
 
   useSeoMeta({
     title: 'BitPopArt - Love, Freedom & Joy Pop Art',
@@ -377,7 +385,7 @@ const Index = () => {
         </div>
 
         {/* Featured Nostr Projects Section */}
-        {featuredNostrProjectsList.length > 0 && getSectionSettings('nostr-projects')?.enabled !== false && (
+        {featuredNostrProjectsList.length > 0 && isSectionEnabled('nostr-projects') && (
           <div className="mb-16">
             <div className="flex items-center justify-between mb-8">
               <div>
@@ -445,7 +453,7 @@ const Index = () => {
         )}
 
         {/* Featured Projects Section */}
-        {featuredProjects && featuredProjects.length > 0 && getSectionSettings('projects')?.enabled !== false && (
+        {featuredProjects && featuredProjects.length > 0 && isSectionEnabled('projects') && (
           <div className="mb-16">
             <div className="flex items-center justify-between mb-8">
               <div>
@@ -526,7 +534,7 @@ const Index = () => {
         )}
 
         {/* Featured Art Section */}
-        {!artworksError && featuredArtworksList && featuredArtworksList.length > 0 && getSectionSettings('art')?.enabled !== false && (
+        {!artworksError && featuredArtworksList && featuredArtworksList.length > 0 && isSectionEnabled('art') && (
           <div className="mb-16">
             <div className="flex items-center justify-between mb-8">
               <div>
@@ -619,7 +627,7 @@ const Index = () => {
         )}
 
         {/* Latest Cards Section */}
-        {getSectionSettings('cards')?.enabled !== false && (
+        {isSectionEnabled('cards') && (
           <div className="mb-16">
             <div className="flex items-center justify-between mb-8">
               <div>
@@ -712,7 +720,7 @@ const Index = () => {
         )}
 
         {/* Custom Pages Section */}
-        {featuredPagesList.length > 0 && getSectionSettings('pages')?.enabled === true && (
+        {featuredPagesList.length > 0 && isSectionEnabled('pages') && (
           <div className="mb-16">
             <div className="flex items-center justify-between mb-8">
               <div>
@@ -770,7 +778,7 @@ const Index = () => {
         )}
 
         {/* Latest Updates Section */}
-        {getSectionSettings('news')?.enabled !== false && (
+        {isSectionEnabled('news') && (
           <div className="mb-16">
             <div className="flex items-center justify-between mb-8">
               <div>
