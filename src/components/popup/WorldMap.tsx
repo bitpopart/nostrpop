@@ -71,7 +71,7 @@ export function WorldMap({ events }: WorldMapProps) {
         ? '#a855f7' 
         : event.type === 'shop' 
         ? '#ec4899' 
-        : '#6366f1';
+        : '#f97316';
 
       // Create custom icon
       const customIcon = L.divIcon({
@@ -126,8 +126,8 @@ export function WorldMap({ events }: WorldMapProps) {
                 display: inline-block;
                 padding: 4px 10px;
                 border-radius: 8px;
-                background-color: ${event.type === 'art' ? '#f3e8ff' : event.type === 'shop' ? '#fce7f3' : '#e0e7ff'};
-                color: ${event.type === 'art' ? '#7e22ce' : event.type === 'shop' ? '#be185d' : '#4338ca'};
+                background-color: ${event.type === 'art' ? '#f3e8ff' : event.type === 'shop' ? '#fce7f3' : '#fed7aa'};
+                color: ${event.type === 'art' ? '#7e22ce' : event.type === 'shop' ? '#be185d' : '#c2410c'};
                 font-size: 12px;
                 font-weight: 700;
               ">
@@ -200,7 +200,7 @@ export function WorldMap({ events }: WorldMapProps) {
             <div 
               className="w-5 h-5 rounded-full border-2 border-white shadow-md flex-shrink-0"
               style={{ 
-                backgroundColor: key === 'art' ? '#a855f7' : key === 'shop' ? '#ec4899' : '#6366f1' 
+                backgroundColor: key === 'art' ? '#a855f7' : key === 'shop' ? '#ec4899' : '#f97316' 
               }}
             />
             <span className="font-medium">{config.icon} {config.label}</span>
