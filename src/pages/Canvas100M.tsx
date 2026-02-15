@@ -308,9 +308,29 @@ function Canvas100M() {
         const imgW = finalWidth * scale;
         const imgH = finalHeight * scale;
         
+        // Draw semi-transparent image
         ctx.globalAlpha = 0.7;
         ctx.drawImage(uploadedImage, imgX, imgY, imgW, imgH);
         ctx.globalAlpha = 1.0;
+        
+        // Draw bounding box around image
+        ctx.strokeStyle = isDraggingImage ? '#8B5CF6' : '#A78BFA'; // Purple when dragging, lighter otherwise
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 5]);
+        ctx.strokeRect(imgX, imgY, imgW, imgH);
+        ctx.setLineDash([]);
+        
+        // Draw corner handles
+        const handleSize = 8;
+        ctx.fillStyle = isDraggingImage ? '#8B5CF6' : '#A78BFA';
+        // Top-left
+        ctx.fillRect(imgX - handleSize/2, imgY - handleSize/2, handleSize, handleSize);
+        // Top-right
+        ctx.fillRect(imgX + imgW - handleSize/2, imgY - handleSize/2, handleSize, handleSize);
+        // Bottom-left
+        ctx.fillRect(imgX - handleSize/2, imgY + imgH - handleSize/2, handleSize, handleSize);
+        // Bottom-right
+        ctx.fillRect(imgX + imgW - handleSize/2, imgY + imgH - handleSize/2, handleSize, handleSize);
       }
     }
   }, [pixels, pendingPixels, viewX, viewY, viewSize, uploadedImage, imageScale, imagePosition]);
@@ -1060,22 +1080,23 @@ function Canvas100M() {
                       </div>
                     )}
                     
-                    {/* Zoom Levels */}
-                    <div className="flex items-center space-x-1">
+                    {/* Zoom Controls */}
+                    <div className="flex items-center space-x-2">
                       <Button variant="outline" size="sm" onClick={handleZoomOut}>
                         <ZoomOut className="h-4 w-4" />
                       </Button>
-                      {ZOOM_LEVELS.filter(l => l >= 1).map((level) => (
-                        <Button
-                          key={level}
-                          variant={zoomLevel === level ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => setZoom(level)}
-                          className="min-w-12"
-                        >
-                          {level}%
-                        </Button>
-                      ))}
+                      <div className="flex items-center space-x-2 min-w-32">
+                        <input
+                          type="range"
+                          min="0"
+                          max={ZOOM_LEVELS.length - 1}
+                          value={ZOOM_LEVELS.indexOf(zoomLevel)}
+                          onChange={(e) => setZoom(ZOOM_LEVELS[parseInt(e.target.value)])}
+                          className="w-24"
+                          title="Zoom slider"
+                        />
+                        <span className="text-xs font-medium min-w-12">{zoomLevel}%</span>
+                      </div>
                       <Button variant="outline" size="sm" onClick={handleZoomIn}>
                         <ZoomIn className="h-4 w-4" />
                       </Button>
@@ -1138,7 +1159,7 @@ function Canvas100M() {
                         style={{ 
                           imageRendering: 'pixelated',
                           cursor: uploadedImage 
-                            ? (isDraggingImage ? 'grabbing' : 'grab')
+                            ? (isDraggingImage ? 'move' : 'move')
                             : activeTool === 'hand' 
                               ? (isPanning ? 'grabbing' : 'grab')
                               : 'crosshair'
@@ -1242,7 +1263,13 @@ function Canvas100M() {
                 
                 {uploadedImage && (
                   <div className="space-y-3">
-                    <div className="aspect-square border-2 border-purple-200 rounded-lg overflow-hidden bg-white">
+                    <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700 rounded-lg p-3 mb-3">
+                      <div className="flex items-center gap-2 text-sm text-purple-700 dark:text-purple-300">
+                        <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+                        <span className="font-medium">Image ready - Drag on canvas to position</span>
+                      </div>
+                    </div>
+                    <div className="aspect-square border-2 border-purple-500 rounded-lg overflow-hidden bg-white shadow-lg">
                       <img 
                         src={uploadedImage.src} 
                         alt="Preview" 
@@ -1255,11 +1282,15 @@ function Canvas100M() {
                       <input
                         type="range"
                         min="10"
-                        max="200"
+                        max="300"
                         value={imageScale}
                         onChange={(e) => setImageScale(parseInt(e.target.value))}
                         className="w-full"
                       />
+                      <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                        <span>10%</span>
+                        <span>300%</span>
+                      </div>
                     </div>
                     
                     <div className="grid grid-cols-2 gap-2">
