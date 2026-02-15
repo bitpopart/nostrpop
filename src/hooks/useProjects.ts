@@ -1,8 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNostr } from '@nostrify/react';
 import type { ProjectData } from '@/lib/projectTypes';
-
-const ADMIN_PUBKEY = '7d33ba57d8a6e8869a1f1d5215254597594ac0dbfeb01b690def8c461b82db35';
+import { getAdminPubkeyHex } from '@/lib/adminUtils';
 
 // Built-in projects
 const BUILTIN_PROJECTS = [
@@ -34,15 +33,16 @@ const BUILTIN_PROJECTS = [
 
 export function useFeaturedProjects() {
   const { nostr } = useNostr();
+  const adminPubkey = getAdminPubkeyHex();
 
   return useQuery({
-    queryKey: ['projects-featured'],
+    queryKey: ['projects-featured', adminPubkey],
     queryFn: async (c) => {
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(3000)]);
       
       // Fetch built-in project customizations
       const builtInEvents = await nostr.query(
-        [{ kinds: [36171], authors: [ADMIN_PUBKEY], '#t': ['builtin-project'], limit: 10 }],
+        [{ kinds: [36171], authors: [adminPubkey], '#t': ['builtin-project'], limit: 10 }],
         { signal }
       );
 
@@ -58,7 +58,7 @@ export function useFeaturedProjects() {
         return {
           ...project,
           thumbnail: customThumbnail || project.thumbnail,
-          author_pubkey: ADMIN_PUBKEY,
+          author_pubkey: adminPubkey,
           created_at: new Date().toISOString(),
           featured: true,
         };
@@ -66,7 +66,7 @@ export function useFeaturedProjects() {
 
       // Fetch custom featured projects
       const events = await nostr.query(
-        [{ kinds: [36171], authors: [ADMIN_PUBKEY], '#t': ['bitpopart-project'], '#featured': ['true'], limit: 10 }],
+        [{ kinds: [36171], authors: [adminPubkey], '#t': ['bitpopart-project'], '#featured': ['true'], limit: 10 }],
         { signal }
       );
 
@@ -108,5 +108,6 @@ export function useFeaturedProjects() {
 
       return allProjects;
     },
+    enabled: !!adminPubkey,
   });
 }
