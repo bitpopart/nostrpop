@@ -250,19 +250,32 @@ function Canvas100M() {
     // Calculate scale factor (how many display pixels per canvas pixel)
     const scale = DISPLAY_SIZE / viewSize;
 
-    // Draw grid (every 1 canvas pixel to match painted pixel size)
+    // Draw grid with adaptive spacing for visibility at all zoom levels
     ctx.strokeStyle = '#E5E7EB';
     ctx.lineWidth = 1;
-    const gridSpacing = 1 * scale; // Grid matches pixel size
-    for (let i = 0; i <= DISPLAY_SIZE; i += gridSpacing) {
-      ctx.beginPath();
-      ctx.moveTo(i, 0);
-      ctx.lineTo(i, DISPLAY_SIZE);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(0, i);
-      ctx.lineTo(DISPLAY_SIZE, i);
-      ctx.stroke();
+    
+    // Calculate grid spacing: use larger grid intervals when zoomed out
+    let gridInterval = 1; // Default: 1 canvas pixel
+    if (scale < 0.05) gridInterval = 100; // Very zoomed out: grid every 100 pixels
+    else if (scale < 0.1) gridInterval = 50; // Zoomed out: grid every 50 pixels
+    else if (scale < 0.2) gridInterval = 20; // Medium zoom: grid every 20 pixels
+    else if (scale < 0.5) gridInterval = 10; // Closer: grid every 10 pixels
+    else if (scale < 1) gridInterval = 5; // Close: grid every 5 pixels
+    
+    const gridSpacing = gridInterval * scale;
+    
+    // Only draw grid if spacing is visible (at least 2 pixels)
+    if (gridSpacing >= 2) {
+      for (let i = 0; i <= DISPLAY_SIZE; i += gridSpacing) {
+        ctx.beginPath();
+        ctx.moveTo(i, 0);
+        ctx.lineTo(i, DISPLAY_SIZE);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(0, i);
+        ctx.lineTo(DISPLAY_SIZE, i);
+        ctx.stroke();
+      }
     }
 
     // Draw existing pixels
@@ -293,12 +306,9 @@ function Canvas100M() {
 
     // Draw image preview if uploaded
     if (uploadedImage) {
-      const scaledWidth = Math.floor((uploadedImage.width * imageScale) / 100);
-      const scaledHeight = Math.floor((uploadedImage.height * imageScale) / 100);
-      const maxDimension = 100;
-      const imgScale = Math.min(1, maxDimension / Math.max(scaledWidth, scaledHeight));
-      const finalWidth = Math.floor(scaledWidth * imgScale);
-      const finalHeight = Math.floor(scaledHeight * imgScale);
+      // Scale affects the actual canvas pixel size directly
+      const finalWidth = Math.floor((uploadedImage.width * imageScale) / 100);
+      const finalHeight = Math.floor((uploadedImage.height * imageScale) / 100);
       
       // Check if image is in viewport
       if (imagePosition.x + finalWidth >= viewX && imagePosition.x < viewX + viewSize &&
@@ -458,9 +468,13 @@ function Canvas100M() {
       const deltaX = Math.floor((currentX - dragStart.x) / scale);
       const deltaY = Math.floor((currentY - dragStart.y) / scale);
       
+      // Calculate actual scaled image dimensions
+      const scaledWidth = Math.floor((uploadedImage.width * imageScale) / 100);
+      const scaledHeight = Math.floor((uploadedImage.height * imageScale) / 100);
+      
       setImagePosition(prev => ({
-        x: Math.max(0, Math.min(CANVAS_WIDTH - 100, prev.x + deltaX)),
-        y: Math.max(0, Math.min(CANVAS_HEIGHT - 100, prev.y + deltaY))
+        x: Math.max(0, Math.min(CANVAS_WIDTH - scaledWidth, prev.x + deltaX)),
+        y: Math.max(0, Math.min(CANVAS_HEIGHT - scaledHeight, prev.y + deltaY))
       }));
       
       setDragStart({ x: currentX, y: currentY });
@@ -621,13 +635,9 @@ function Canvas100M() {
 
     try {
       const tempCanvas = document.createElement('canvas');
-      const scaledWidth = Math.floor((uploadedImage.width * imageScale) / 100);
-      const scaledHeight = Math.floor((uploadedImage.height * imageScale) / 100);
-      
-      const maxDimension = 100;
-      const scale = Math.min(1, maxDimension / Math.max(scaledWidth, scaledHeight));
-      const finalWidth = Math.floor(scaledWidth * scale);
-      const finalHeight = Math.floor(scaledHeight * scale);
+      // Scale affects the actual canvas pixel size directly
+      const finalWidth = Math.floor((uploadedImage.width * imageScale) / 100);
+      const finalHeight = Math.floor((uploadedImage.height * imageScale) / 100);
       
       tempCanvas.width = finalWidth;
       tempCanvas.height = finalHeight;
@@ -1308,7 +1318,10 @@ function Canvas100M() {
                           <Button 
                             size="sm" 
                             variant="outline" 
-                            onClick={() => setImagePosition(prev => ({ ...prev, x: Math.min(CANVAS_WIDTH - 100, prev.x + 10) }))}
+                            onClick={() => {
+                              const scaledWidth = uploadedImage ? Math.floor((uploadedImage.width * imageScale) / 100) : 100;
+                              setImagePosition(prev => ({ ...prev, x: Math.min(CANVAS_WIDTH - scaledWidth, prev.x + 10) }));
+                            }}
                             className="flex-1"
                           >
                             →
@@ -1329,7 +1342,10 @@ function Canvas100M() {
                           <Button 
                             size="sm" 
                             variant="outline" 
-                            onClick={() => setImagePosition(prev => ({ ...prev, y: Math.min(CANVAS_HEIGHT - 100, prev.y + 10) }))}
+                            onClick={() => {
+                              const scaledHeight = uploadedImage ? Math.floor((uploadedImage.height * imageScale) / 100) : 100;
+                              setImagePosition(prev => ({ ...prev, y: Math.min(CANVAS_HEIGHT - scaledHeight, prev.y + 10) }));
+                            }}
                             className="flex-1"
                           >
                             ↓
