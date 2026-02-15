@@ -14,19 +14,26 @@ interface SiteColors {
   headerTextFrom: string;
   headerTextVia: string;
   headerTextTo: string;
+  pageBackground?: string;
+  bodyText?: string;
+  buttonText?: string;
+  headingText?: string;
+  iconColor?: string;
+  linkColor?: string;
+  linkHoverColor?: string;
 }
 
 const DEFAULT_COLORS: SiteColors = {
-  comingSoonFrom: '#f97316',
-  comingSoonTo: '#ec4899',
-  primaryFrom: '#a855f7',
-  primaryTo: '#ec4899',
-  secondaryFrom: '#6366f1',
-  secondaryTo: '#8b5cf6',
-  accentColor: '#f97316',
-  headerTextFrom: '#db2777',
-  headerTextVia: '#a855f7',
-  headerTextTo: '#6366f1',
+  comingSoonFrom: '#e99840',
+  comingSoonTo: '#e99840',
+  primaryFrom: '#e99840',
+  primaryTo: '#e99840',
+  secondaryFrom: '#e99840',
+  secondaryTo: '#e99840',
+  accentColor: '#e99840',
+  headerTextFrom: '#e99840',
+  headerTextVia: '#e99840',
+  headerTextTo: '#e99840',
 };
 
 const applyColorsToDOM = (colors: SiteColors) => {
@@ -41,6 +48,15 @@ const applyColorsToDOM = (colors: SiteColors) => {
   root.style.setProperty('--header-text-from', colors.headerTextFrom);
   root.style.setProperty('--header-text-via', colors.headerTextVia);
   root.style.setProperty('--header-text-to', colors.headerTextTo);
+  
+  // Apply optional color properties
+  if (colors.pageBackground) root.style.setProperty('--page-background', colors.pageBackground);
+  if (colors.bodyText) root.style.setProperty('--body-text-color', colors.bodyText);
+  if (colors.buttonText) root.style.setProperty('--button-text-color', colors.buttonText);
+  if (colors.headingText) root.style.setProperty('--heading-text-color', colors.headingText);
+  if (colors.iconColor) root.style.setProperty('--icon-color', colors.iconColor);
+  if (colors.linkColor) root.style.setProperty('--link-color', colors.linkColor);
+  if (colors.linkHoverColor) root.style.setProperty('--link-hover-color', colors.linkHoverColor);
 };
 
 export function useThemeColors() {

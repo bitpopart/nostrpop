@@ -49,6 +49,25 @@
   .gradient-coming-soon {
     color: var(--button-text-color);
   }
+
+  /* Apply theme heading color to headings */
+  h1, h2, h3, h4, h5, h6 {
+    color: var(--heading-text-color);
+  }
+
+  /* Apply theme icon color */
+  .icon-themed {
+    color: var(--icon-color);
+  }
+
+  /* Apply theme link colors */
+  a.link-themed {
+    color: var(--link-color);
+  }
+
+  a.link-themed:hover {
+    color: var(--link-hover-color);
+  }
 }
 
 @layer base {
@@ -114,9 +133,13 @@
     /* Page background color */
     --page-background: #f7f8f9;
     
-    /* Body and button text colors */
+    /* Text colors */
     --body-text-color: #1a1a1a;
     --button-text-color: #ffffff;
+    --heading-text-color: #1a1a1a;
+    --icon-color: #e99840;
+    --link-color: #e99840;
+    --link-hover-color: #c87a30;
   }
 
   .dark {

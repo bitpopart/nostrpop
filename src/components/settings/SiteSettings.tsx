@@ -27,6 +27,10 @@ interface SiteColors {
   pageBackground: string;
   bodyText: string;
   buttonText: string;
+  headingText: string;
+  iconColor: string;
+  linkColor: string;
+  linkHoverColor: string;
 }
 
 const DEFAULT_COLORS: SiteColors = {
@@ -43,6 +47,10 @@ const DEFAULT_COLORS: SiteColors = {
   pageBackground: '#f7f8f9',
   bodyText: '#1a1a1a',
   buttonText: '#ffffff',
+  headingText: '#1a1a1a',
+  iconColor: '#e99840',
+  linkColor: '#e99840',
+  linkHoverColor: '#c87a30',
 };
 
 const COLOR_PRESETS = [
@@ -66,6 +74,10 @@ const COLOR_PRESETS = [
       pageBackground: '#faf5ff',
       bodyText: '#1a1a1a',
       buttonText: '#ffffff',
+      headingText: '#1a1a1a',
+      iconColor: '#a855f7',
+      linkColor: '#8b5cf6',
+      linkHoverColor: '#7c3aed',
     }
   },
   {
@@ -84,6 +96,10 @@ const COLOR_PRESETS = [
       pageBackground: '#f0f9ff',
       bodyText: '#1a1a1a',
       buttonText: '#ffffff',
+      headingText: '#1a1a1a',
+      iconColor: '#3b82f6',
+      linkColor: '#0ea5e9',
+      linkHoverColor: '#0284c7',
     }
   },
   {
@@ -102,6 +118,10 @@ const COLOR_PRESETS = [
       pageBackground: '#fff7ed',
       bodyText: '#1a1a1a',
       buttonText: '#ffffff',
+      headingText: '#1a1a1a',
+      iconColor: '#f97316',
+      linkColor: '#f97316',
+      linkHoverColor: '#ea580c',
     }
   },
 ];
@@ -162,6 +182,10 @@ export function SiteSettings() {
     root.style.setProperty('--page-background', colors.pageBackground);
     root.style.setProperty('--body-text-color', colors.bodyText);
     root.style.setProperty('--button-text-color', colors.buttonText);
+    root.style.setProperty('--heading-text-color', colors.headingText);
+    root.style.setProperty('--icon-color', colors.iconColor);
+    root.style.setProperty('--link-color', colors.linkColor);
+    root.style.setProperty('--link-hover-color', colors.linkHoverColor);
   };
 
   const handleSave = () => {
@@ -400,6 +424,37 @@ export function SiteSettings() {
                     Page background color, main text color, and text color on gradient buttons
                   </p>
                 </div>
+
+                <Separator />
+
+                <div>
+                  <Label className="text-base font-semibold mb-3 block">Headings, Icons & Links</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <ColorInput
+                      label="Heading Text Color"
+                      value={tempColors.headingText}
+                      onChange={(v) => setTempColors(prev => ({ ...prev, headingText: v }))}
+                    />
+                    <ColorInput
+                      label="Icon Color"
+                      value={tempColors.iconColor}
+                      onChange={(v) => setTempColors(prev => ({ ...prev, iconColor: v }))}
+                    />
+                    <ColorInput
+                      label="Link Color"
+                      value={tempColors.linkColor}
+                      onChange={(v) => setTempColors(prev => ({ ...prev, linkColor: v }))}
+                    />
+                    <ColorInput
+                      label="Link Hover Color"
+                      value={tempColors.linkHoverColor}
+                      onChange={(v) => setTempColors(prev => ({ ...prev, linkHoverColor: v }))}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Control the colors for section headings, icons throughout the admin backend, and hyperlinks
+                  </p>
+                </div>
               </div>
             </TabsContent>
           </Tabs>
@@ -459,10 +514,20 @@ export function SiteSettings() {
                 </div>
 
                 {/* Text Sample */}
-                <div className="border rounded-lg p-4" style={{ backgroundColor: '#ffffff' }}>
+                <div className="border rounded-lg p-4 space-y-3" style={{ backgroundColor: '#ffffff' }}>
+                  <h3 style={{ color: tempColors.headingText, fontWeight: '600' }}>
+                    Section Heading
+                  </h3>
                   <p style={{ color: tempColors.bodyText }}>
-                    This is how your body text will appear on white cards and backgrounds throughout the site.
+                    This is how your body text will appear on white cards and backgrounds throughout the site.{' '}
+                    <a href="#" style={{ color: tempColors.linkColor }} onMouseEnter={(e) => e.currentTarget.style.color = tempColors.linkHoverColor} onMouseLeave={(e) => e.currentTarget.style.color = tempColors.linkColor}>
+                      Sample link
+                    </a>
                   </p>
+                  <div className="flex items-center gap-2">
+                    <Zap className="h-4 w-4" style={{ color: tempColors.iconColor }} />
+                    <span className="text-sm" style={{ color: tempColors.bodyText }}>Icon color preview</span>
+                  </div>
                 </div>
               </div>
             </CardContent>
