@@ -47,9 +47,13 @@ export function useFeaturedProjects() {
       );
 
       // Apply custom thumbnails to built-in projects
+      console.log('[useFeaturedProjects] Found built-in customizations:', builtInEvents.length);
+      
       const builtInWithThumbnails = BUILTIN_PROJECTS.map(project => {
         const customization = builtInEvents.find(e => e.tags.find(t => t[0] === 'd')?.[1] === project.id);
         const customThumbnail = customization?.tags.find(t => t[0] === 'image')?.[1];
+        
+        console.log(`[useFeaturedProjects] Project ${project.id}: ${customThumbnail ? `has thumbnail: ${customThumbnail.substring(0, 50)}...` : 'NO THUMBNAIL'}`);
         
         return {
           ...project,
