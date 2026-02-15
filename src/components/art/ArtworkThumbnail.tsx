@@ -81,7 +81,13 @@ export function ArtworkThumbnail({ artwork, onViewDetails, onBuy, onBid, onEdit,
           <img
             src={artwork.images[0]}
             alt={artwork.title}
+            loading="lazy"
+            decoding="async"
             className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+            style={{
+              imageRendering: 'auto',
+              willChange: 'transform'
+            }}
             onError={(e) => {
               // Show placeholder if image fails to load
               const placeholder = e.currentTarget.parentElement!.querySelector('.image-placeholder');

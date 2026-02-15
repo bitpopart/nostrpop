@@ -158,11 +158,12 @@ Follow me at BitPopArt:
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20">
       {/* Header Image */}
       {headerImage && (
-        <div className="w-full h-48 sm:h-64 md:h-80 lg:h-96 overflow-hidden">
+        <div className="w-full h-48 sm:h-64 md:h-80 lg:h-96 overflow-hidden bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20">
           <img
             src={headerImage}
             alt="Artist Header"
-            className="w-full h-full object-cover object-center"
+            loading="eager"
+            className="w-full h-full object-contain object-center"
           />
         </div>
       )}
@@ -239,6 +240,8 @@ Follow me at BitPopArt:
                           <img
                             src={block.images[0]}
                             alt="Image"
+                            loading="lazy"
+                            decoding="async"
                             className="w-full h-auto object-contain group-hover:opacity-90 transition-opacity duration-300"
                           />
                         </div>
@@ -254,6 +257,8 @@ Follow me at BitPopArt:
                               <img
                                 src={imgUrl}
                                 alt={`Image ${index + 1}`}
+                                loading="lazy"
+                                decoding="async"
                                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                               />
                               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
