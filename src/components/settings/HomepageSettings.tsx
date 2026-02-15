@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNostr } from '@nostrify/react';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
@@ -100,6 +100,7 @@ export function HomepageSettings() {
   const { nostr } = useNostr();
   const { mutate: publishEvent, isPending: isPublishing } = useNostrPublish();
   const adminPubkey = getAdminPubkeyHex();
+  const queryClient = useQueryClient();
 
   // Query homepage settings from Nostr
   const { data: nostrSections, refetch } = useQuery({
@@ -190,9 +191,16 @@ export function HomepageSettings() {
       tags: [['d', 'com.bitpopart.homepage-settings']],
     }, {
       onSuccess: () => {
-        // Dispatch custom event to notify homepage of changes
-        window.dispatchEvent(new CustomEvent('homepage-settings-updated', { detail: sections }));
         toast.success('Homepage settings saved to Nostr! Changes are now visible to everyone.');
+        
+        // Invalidate both query keys to force fresh data
+        queryClient.invalidateQueries({ queryKey: ['homepage-settings', adminPubkey] });
+        queryClient.invalidateQueries({ queryKey: ['homepage-settings-public', adminPubkey] });
+        
+        // Also dispatch custom event for any other listeners
+        window.dispatchEvent(new CustomEvent('homepage-settings-updated', { detail: sections }));
+        
+        // Refetch this component's data
         refetch();
       },
       onError: (error) => {
@@ -217,6 +225,12 @@ export function HomepageSettings() {
     }, {
       onSuccess: () => {
         toast.success('Homepage settings reset to default!');
+        
+        // Invalidate both query keys to force fresh data
+        queryClient.invalidateQueries({ queryKey: ['homepage-settings', adminPubkey] });
+        queryClient.invalidateQueries({ queryKey: ['homepage-settings-public', adminPubkey] });
+        
+        // Refetch this component's data
         refetch();
       },
       onError: (error) => {

@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNostr } from '@nostrify/react';
 import { getAdminPubkeyHex } from '@/lib/adminUtils';
 
@@ -66,6 +66,7 @@ const DEFAULT_SECTIONS: HomepageSection[] = [
 export function useHomepageSettings() {
   const { nostr } = useNostr();
   const adminPubkey = getAdminPubkeyHex();
+  const queryClient = useQueryClient();
 
   const query = useQuery({
     queryKey: ['homepage-settings-public', adminPubkey],
@@ -97,19 +98,21 @@ export function useHomepageSettings() {
       return DEFAULT_SECTIONS.sort((a, b) => a.order - b.order);
     },
     enabled: !!adminPubkey,
-    staleTime: 30 * 1000, // Cache for 30 seconds (shorter to see changes faster)
+    staleTime: 0, // Don't cache - always fresh data
+    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes but allow refetching
   });
 
   // Listen for custom events from admin settings to refetch immediately
   useEffect(() => {
     const handleSettingsUpdate = () => {
-      console.log('[useHomepageSettings] Received settings update event, refetching...');
-      query.refetch();
+      console.log('[useHomepageSettings] Received settings update event, invalidating cache and refetching...');
+      // Invalidate the cache to force a fresh fetch
+      queryClient.invalidateQueries({ queryKey: ['homepage-settings-public', adminPubkey] });
     };
 
     window.addEventListener('homepage-settings-updated', handleSettingsUpdate);
     return () => window.removeEventListener('homepage-settings-updated', handleSettingsUpdate);
-  }, [query]);
+  }, [queryClient, adminPubkey]);
 
   return query;
 }

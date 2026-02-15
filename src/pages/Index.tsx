@@ -31,7 +31,8 @@ import {
   Eye,
   FolderKanban,
   Users,
-  Zap
+  Zap,
+  FileText
 } from 'lucide-react';
 import type { NostrEvent, NostrMetadata } from '@nostrify/nostrify';
 import type { ArtworkData } from '@/lib/artTypes';
