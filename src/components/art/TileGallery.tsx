@@ -27,12 +27,18 @@ export function TileGallery({ artworks, onViewDetails, onBuy, onBid }: TileGalle
             className="group overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-2xl hover:scale-105 bg-white dark:bg-gray-800"
             onClick={() => onViewDetails(artwork)}
           >
-            <div className="relative aspect-square overflow-hidden">
+            <div className="relative aspect-square overflow-hidden bg-white dark:bg-gray-900">
               {artwork.images && artwork.images.length > 0 ? (
                 <img
                   src={artwork.images[0]}
                   alt={artwork.title}
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  style={{
+                    imageRendering: 'auto',
+                    willChange: 'transform'
+                  }}
                 />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-purple-100 via-pink-100 to-indigo-100 dark:from-purple-900/20 dark:via-pink-900/20 dark:to-indigo-900/20 flex items-center justify-center">

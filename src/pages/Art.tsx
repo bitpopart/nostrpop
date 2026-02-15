@@ -211,6 +211,10 @@ const Art = () => {
             <img 
               src={`${import.meta.env.BASE_URL || '/'}Art_button_1.svg`} 
               alt="Art" 
+              loading="eager"
+              decoding="async"
+              width="48"
+              height="48"
               className="h-12 w-12 flex-shrink-0" 
             />
             <h1 className="text-4xl font-bold leading-tight gradient-header-text">
@@ -374,7 +378,7 @@ const Art = () => {
               {/* Artworks Display */}
               {artworksLoading && (
                 <div className={`grid gap-6 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'}`}>
-                  {Array.from({ length: 6 }).map((_, i) => (
+                  {Array.from({ length: 3 }).map((_, i) => (
                     <Card key={i} className="overflow-hidden">
                       <div className="aspect-square">
                         <Skeleton className="w-full h-full" />
