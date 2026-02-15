@@ -22,7 +22,8 @@ import {
   CreditCard,
   Rss,
   FolderKanban,
-  Users
+  Users,
+  FileText
 } from 'lucide-react';
 
 interface HomepageSection {
@@ -75,6 +76,14 @@ const DEFAULT_SECTIONS: HomepageSection[] = [
     enabled: true,
     order: 4,
   },
+  {
+    id: 'pages',
+    title: 'Pages',
+    subtitle: 'Explore custom content',
+    icon: 'FileText',
+    enabled: false,
+    order: 5,
+  },
 ];
 
 const ICON_MAP: Record<string, any> = {
@@ -83,6 +92,7 @@ const ICON_MAP: Record<string, any> = {
   Palette,
   CreditCard,
   Rss,
+  FileText,
 };
 
 export function HomepageSettings() {
@@ -180,6 +190,8 @@ export function HomepageSettings() {
       tags: [['d', 'com.bitpopart.homepage-settings']],
     }, {
       onSuccess: () => {
+        // Dispatch custom event to notify homepage of changes
+        window.dispatchEvent(new CustomEvent('homepage-settings-updated', { detail: sections }));
         toast.success('Homepage settings saved to Nostr! Changes are now visible to everyone.');
         refetch();
       },
@@ -339,15 +351,25 @@ export function HomepageSettings() {
           </Button>
         </div>
 
-        <div className="text-sm bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 space-y-2">
-          <p className="font-semibold">💡 How It Works:</p>
-          <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-            <li>Toggle sections on/off to show/hide them on the homepage</li>
-            <li>Use ↑↓ buttons to change the order of sections</li>
-            <li>Customize the title and subtitle for each section</li>
-            <li>Settings are saved to Nostr and visible to all visitors</li>
-            <li>Hidden sections won't appear on the homepage for anyone</li>
-          </ul>
+        <div className="space-y-4">
+          <div className="text-sm bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 space-y-2">
+            <p className="font-semibold">💡 How It Works:</p>
+            <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+              <li>Toggle sections on/off to show/hide them on the homepage</li>
+              <li>Customize the title and subtitle for each section</li>
+              <li>Settings are saved to Nostr and visible to all visitors</li>
+              <li>Hidden sections won't appear on the homepage for anyone</li>
+              <li>Refresh the page after saving to see changes</li>
+            </ul>
+          </div>
+
+          <div className="text-sm bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 space-y-2">
+            <p className="font-semibold">⚠️ Section Ordering:</p>
+            <p className="text-muted-foreground">
+              The ↑↓ buttons change the order in this list, but section ordering on the homepage is currently fixed in this sequence: Nostr Projects → Projects → Art → Cards → Pages → News. 
+              This will be updated in a future version to respect custom ordering.
+            </p>
+          </div>
         </div>
       </CardContent>
     </Card>

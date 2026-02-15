@@ -13,6 +13,7 @@ import { useFeaturedProjects } from '@/hooks/useProjects';
 import { useFeaturedNostrProjects } from '@/hooks/useNostrProjects';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useHomepageSettings } from '@/hooks/useHomepageSettings';
+import { usePages } from '@/hooks/usePages';
 import { genUserName } from '@/lib/genUserName';
 import { RelaySelector } from '@/components/RelaySelector';
 import { getFirstImage, stripImagesFromContent } from '@/lib/extractImages';
@@ -320,6 +321,7 @@ const Index = () => {
   const { data: featuredArtworks, isLoading: artworksLoading, error: artworksError } = useArtworks('all');
   const { data: featuredProjects } = useFeaturedProjects();
   const { data: featuredNostrProjects } = useFeaturedNostrProjects();
+  const { data: customPages } = usePages();
   const { getGradientStyle } = useThemeColors();
   const { data: homepageSettings } = useHomepageSettings();
   const author = useAuthor(ADMIN_HEX);
@@ -331,11 +333,17 @@ const Index = () => {
   const featuredArtworksList = featuredArtworks?.slice(0, 3) || [];
   // Get first 3 featured Nostr projects
   const featuredNostrProjectsList = featuredNostrProjects?.slice(0, 3) || [];
+  // Get first 3 custom pages
+  const featuredPagesList = customPages?.slice(0, 3) || [];
 
   // Get section settings
   const getSectionSettings = (id: string) => {
     return homepageSettings?.find(s => s.id === id) || null;
   };
+
+  // Get ordered section IDs based on settings
+  const orderedSections = homepageSettings?.filter(s => s.enabled).map(s => s.id) || [];
+  console.log('[Homepage] Ordered sections:', orderedSections);
 
   useSeoMeta({
     title: 'BitPopArt - Love, Freedom & Joy Pop Art',
@@ -700,6 +708,64 @@ const Index = () => {
               })}
             </div>
           )}
+          </div>
+        )}
+
+        {/* Custom Pages Section */}
+        {featuredPagesList.length > 0 && getSectionSettings('pages')?.enabled === true && (
+          <div className="mb-16">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h2 className="text-3xl font-bold mb-2">{getSectionSettings('pages')?.title || 'Pages'}</h2>
+                <p className="text-gray-600 dark:text-gray-300">
+                  {getSectionSettings('pages')?.subtitle || 'Explore custom content'}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-6">
+              {featuredPagesList.map((page, index) => (
+                <Link
+                  key={page.id}
+                  to={`/page/${page.id}`}
+                  className="block animate-in fade-in slide-in-from-bottom-4"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm group overflow-hidden">
+                    {page.header_image && (
+                      <div className="aspect-video relative overflow-hidden">
+                        <img
+                          src={page.header_image}
+                          alt={page.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          onError={(e) => {
+                            const container = e.currentTarget.parentElement;
+                            if (container) {
+                              container.style.display = 'none';
+                            }
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      </div>
+                    )}
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center space-x-2">
+                        <FileText className="h-4 w-4 text-teal-600" />
+                        <CardTitle className="text-sm font-semibold truncate">
+                          {page.title}
+                        </CardTitle>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div className="flex items-center text-teal-600 group-hover:text-teal-700 transition-colors">
+                        <span className="text-xs font-medium">View page</span>
+                        <ArrowRight className="h-3 w-3 ml-1 group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
           </div>
         )}
 

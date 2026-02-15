@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNostr } from '@nostrify/react';
 import { getAdminPubkeyHex } from '@/lib/adminUtils';
@@ -52,13 +53,21 @@ const DEFAULT_SECTIONS: HomepageSection[] = [
     enabled: true,
     order: 4,
   },
+  {
+    id: 'pages',
+    title: 'Pages',
+    subtitle: 'Explore custom content',
+    icon: 'FileText',
+    enabled: false,
+    order: 5,
+  },
 ];
 
 export function useHomepageSettings() {
   const { nostr } = useNostr();
   const adminPubkey = getAdminPubkeyHex();
 
-  return useQuery({
+  const query = useQuery({
     queryKey: ['homepage-settings-public', adminPubkey],
     queryFn: async (c) => {
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(5000)]);
@@ -74,7 +83,8 @@ export function useHomepageSettings() {
         if (events.length > 0 && events[0].content) {
           try {
             const parsed = JSON.parse(events[0].content) as HomepageSection[];
-            // Sort by order and filter enabled
+            console.log('[useHomepageSettings] Loaded settings from Nostr:', parsed);
+            // Sort by order
             return parsed.sort((a, b) => a.order - b.order);
           } catch (e) {
             console.error('[useHomepageSettings] Failed to parse settings from Nostr:', e);
@@ -87,6 +97,19 @@ export function useHomepageSettings() {
       return DEFAULT_SECTIONS.sort((a, b) => a.order - b.order);
     },
     enabled: !!adminPubkey,
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    staleTime: 30 * 1000, // Cache for 30 seconds (shorter to see changes faster)
   });
+
+  // Listen for custom events from admin settings to refetch immediately
+  useEffect(() => {
+    const handleSettingsUpdate = () => {
+      console.log('[useHomepageSettings] Received settings update event, refetching...');
+      query.refetch();
+    };
+
+    window.addEventListener('homepage-settings-updated', handleSettingsUpdate);
+    return () => window.removeEventListener('homepage-settings-updated', handleSettingsUpdate);
+  }, [query]);
+
+  return query;
 }
