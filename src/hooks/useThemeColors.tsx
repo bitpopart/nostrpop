@@ -144,10 +144,10 @@ export function useThemeColors() {
           background: `linear-gradient(to right, ${colors.headerTextFrom}, ${colors.headerTextVia}, ${colors.headerTextTo})`,
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
-          backgroundClip: 'text',
+          backgroundClip: 'text' as any,
           color: 'transparent',
           display: 'inline-block',
-        };
+        } as React.CSSProperties;
     }
   };
 
