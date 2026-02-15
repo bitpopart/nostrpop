@@ -115,7 +115,7 @@ export default function PopUp() {
               alt="PopUp" 
               className="h-12 w-12 flex-shrink-0" 
             />
-            <h1 className="text-5xl font-bold leading-tight bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
+            <h1 className="text-5xl font-bold leading-tight gradient-header-text">
               PopUp Events
             </h1>
           </div>
