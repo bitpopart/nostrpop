@@ -354,6 +354,514 @@ const Index = () => {
     return orderedSections.includes(id);
   };
 
+  // Section renderer map
+  const renderSection = (sectionId: string) => {
+    const settings = getSectionSettings(sectionId);
+    
+    switch (sectionId) {
+      case 'nostr-projects':
+        return renderNostrProjectsSection(settings);
+      case 'projects':
+        return renderProjectsSection(settings);
+      case 'art':
+        return renderArtSection(settings);
+      case 'cards':
+        return renderCardsSection(settings);
+      case 'pages':
+        return renderPagesSection(settings);
+      case 'news':
+        return renderNewsSection(settings);
+      default:
+        return null;
+    }
+  };
+
+  const renderNostrProjectsSection = (settings: ReturnType<typeof getSectionSettings>) => {
+    if (featuredNostrProjectsList.length === 0) return null;
+    
+    return (
+      <div key="nostr-projects" className="mb-16">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h2 className="text-3xl font-bold mb-2">{settings?.title || 'Nostr Projects'}</h2>
+            <p className="text-gray-600 dark:text-gray-300">
+              {settings?.subtitle || 'Join collaborative art - Select an image & pay in sats'}
+            </p>
+          </div>
+          <Button variant="outline" asChild>
+            <Link to="/nostr-projects" className="flex items-center space-x-2">
+              <Users className="h-4 w-4" />
+              <span>View All</span>
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-6">
+          {featuredNostrProjectsList.map((project, index) => (
+            <Card
+              key={project.id}
+              className="group overflow-hidden cursor-pointer hover:shadow-2xl transition-all duration-300 bg-white dark:bg-gray-800 animate-in fade-in slide-in-from-bottom-4"
+              style={{ animationDelay: `${index * 100}ms` }}
+              onClick={() => window.location.href = `/nostr-projects/${project.id}`}
+            >
+              <div className="relative h-56 overflow-hidden bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/20 dark:to-pink-900/20">
+                <div className="grid grid-cols-2 gap-1 h-full p-2">
+                  {project.images.slice(0, 4).map((img, imgIndex) => (
+                    <div key={imgIndex} className="relative overflow-hidden rounded-lg">
+                      <img
+                        src={img}
+                        alt=""
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                      />
+                    </div>
+                  ))}
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              </div>
+
+              <CardHeader>
+                <CardTitle className="text-xl group-hover:text-purple-600 transition-colors flex items-center justify-between">
+                  <span className="truncate">{project.title}</span>
+                  <Badge variant="default" className="gap-1 shrink-0">
+                    <Zap className="h-3 w-3" />
+                    {project.price_sats.toLocaleString()}
+                  </Badge>
+                </CardTitle>
+                <CardDescription className="line-clamp-2">
+                  {project.description}
+                </CardDescription>
+                <div className="flex items-center gap-2 pt-2">
+                  <Badge variant="outline" className="gap-1 text-xs">
+                    <Sparkles className="h-3 w-3" />
+                    {project.images.length} images
+                  </Badge>
+                </div>
+              </CardHeader>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderProjectsSection = (settings: ReturnType<typeof getSectionSettings>) => {
+    if (!featuredProjects || featuredProjects.length === 0) return null;
+    
+    return (
+      <div key="projects" className="mb-16">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h2 className="text-3xl font-bold mb-2">{settings?.title || 'Projects'}</h2>
+            <p className="text-gray-600 dark:text-gray-300">
+              {settings?.subtitle || 'By BitPopArt'}
+            </p>
+          </div>
+          <Button variant="outline" asChild>
+            <Link to="/projects" className="flex items-center space-x-2">
+              <FolderKanban className="h-4 w-4" />
+              <span>View All</span>
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-6">
+          {featuredProjects.map((project, index) => {
+            const handleClick = () => {
+              if (project.url) {
+                if (project.url.startsWith('http')) {
+                  window.open(project.url, '_blank');
+                } else {
+                  window.location.href = project.url;
+                }
+              }
+            };
+
+            return (
+              <Card
+                key={project.id}
+                className="hover:shadow-lg transition-all duration-300 cursor-pointer bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm group overflow-hidden animate-in fade-in slide-in-from-bottom-4"
+                style={{ animationDelay: `${index * 100}ms` }}
+                onClick={handleClick}
+              >
+                {project.thumbnail ? (
+                  <div className="aspect-square relative overflow-hidden">
+                    <img
+                      src={project.thumbnail}
+                      alt={project.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  </div>
+                ) : (
+                  <div className="aspect-square relative overflow-hidden bg-gradient-to-br from-purple-100 via-pink-100 to-indigo-100 dark:from-purple-900/20 dark:via-pink-900/20 dark:to-indigo-900/20 flex items-center justify-center">
+                    <FolderKanban className="h-12 w-12 text-purple-400 dark:text-purple-500" />
+                  </div>
+                )}
+
+                <CardHeader className="pb-3">
+                  <div className="flex items-center space-x-2">
+                    <FolderKanban className="h-4 w-4 text-purple-600" />
+                    <CardTitle className="text-sm font-semibold truncate">
+                      {project.name}
+                    </CardTitle>
+                  </div>
+                  <div className="flex items-center space-x-1 text-xs text-muted-foreground">
+                    <span>by BitPopArt</span>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="text-sm text-gray-600 dark:text-gray-300 mb-3 line-clamp-2">
+                    {project.description.substring(0, 80)}...
+                  </div>
+                  <div className="flex items-center text-purple-600 group-hover:text-purple-700 transition-colors">
+                    <span className="text-xs font-medium">View project</span>
+                    <ArrowRight className="h-3 w-3 ml-1 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  const renderArtSection = (settings: ReturnType<typeof getSectionSettings>) => {
+    if (artworksError || !featuredArtworksList || featuredArtworksList.length === 0) {
+      if (!artworksError) return null;
+    }
+    
+    return (
+      <div key="art" className="mb-16">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h2 className="text-3xl font-bold mb-2">{settings?.title || 'Art'}</h2>
+            <p className="text-gray-600 dark:text-gray-300">
+              {settings?.subtitle || 'Browse artwork gallery'}
+            </p>
+          </div>
+          <Button variant="outline" asChild>
+            <Link to="/art" className="flex items-center space-x-2">
+              <Palette className="h-4 w-4" />
+              <span>Browse Gallery</span>
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
+
+        {artworksError && (
+          <Card className="border-dashed border-purple-200 dark:border-purple-800 bg-purple-50/50 dark:bg-purple-900/10">
+            <CardContent className="py-8 px-6 text-center">
+              <div className="max-w-sm mx-auto space-y-4">
+                <Palette className="h-8 w-8 mx-auto text-purple-500" />
+                <div>
+                  <CardTitle className="text-purple-600 dark:text-purple-400 mb-2 text-lg">
+                    Unable to Load Artworks
+                  </CardTitle>
+                  <CardDescription>
+                    Try switching to a different relay to discover artworks.
+                  </CardDescription>
+                </div>
+                <RelaySelector className="w-full" />
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {artworksLoading && (
+          <div className="grid md:grid-cols-3 gap-6">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <ThumbnailSkeleton key={i} />
+            ))}
+          </div>
+        )}
+
+        {featuredArtworksList.length === 0 && !artworksLoading && !artworksError && (
+          <Card className="border-dashed">
+            <CardContent className="py-8 px-6 text-center">
+              <div className="max-w-sm mx-auto space-y-4">
+                <Palette className="h-8 w-8 mx-auto text-gray-400" />
+                <div>
+                  <CardTitle className="mb-2">No Artworks Found</CardTitle>
+                  <CardDescription>
+                    No artworks found yet. Try switching to a different relay or explore the art gallery!
+                  </CardDescription>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <RelaySelector className="flex-1" />
+                  <Button size="sm" asChild>
+                    <Link to="/art">Browse Gallery</Link>
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {featuredArtworksList.length > 0 && (
+          <div className="grid md:grid-cols-3 gap-6">
+            {featuredArtworksList.map((artwork, index) => {
+              const naddr = nip19.naddrEncode({
+                identifier: artwork.id,
+                pubkey: artwork.artist_pubkey,
+                kind: 30023,
+              });
+
+              return (
+                <Link
+                  key={artwork.id}
+                  to={`/art/${naddr}`}
+                  className="block animate-in fade-in slide-in-from-bottom-4"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  <ArtworkThumbnail artwork={artwork} />
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderCardsSection = (settings: ReturnType<typeof getSectionSettings>) => {
+    return (
+      <div key="cards" className="mb-16">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h2 className="text-3xl font-bold mb-2">{settings?.title || 'Cards'}</h2>
+            <p className="text-gray-600 dark:text-gray-300">
+              {settings?.subtitle || 'Send a positive vibe to someone'}
+            </p>
+          </div>
+          <Button variant="outline" asChild>
+            <Link to="/cards" className="flex items-center space-x-2">
+              <CreditCard className="h-4 w-4" />
+              <span>Browse All</span>
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
+
+        {cardsError && (
+          <Card className="border-dashed border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-900/10">
+            <CardContent className="py-8 px-6 text-center">
+              <div className="max-w-sm mx-auto space-y-4">
+                <CreditCard className="h-8 w-8 mx-auto text-blue-500" />
+                <div>
+                  <CardTitle className="text-blue-600 dark:text-blue-400 mb-2 text-lg">
+                    Unable to Load Cards
+                  </CardTitle>
+                  <CardDescription>
+                    Try switching to a different relay to discover cards.
+                  </CardDescription>
+                </div>
+                <RelaySelector className="w-full" />
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {cardsLoading && (
+          <div className="grid md:grid-cols-3 gap-6">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <ThumbnailSkeleton key={i} />
+            ))}
+          </div>
+        )}
+
+        {latestCards && latestCards.length === 0 && (
+          <Card className="border-dashed">
+            <CardContent className="py-8 px-6 text-center">
+              <div className="max-w-sm mx-auto space-y-4">
+                <CreditCard className="h-8 w-8 mx-auto text-gray-400" />
+                <div>
+                  <CardTitle className="mb-2">No Cards Found</CardTitle>
+                  <CardDescription>
+                    No cards found yet. Try switching to a different relay or create the first card!
+                  </CardDescription>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <RelaySelector className="flex-1" />
+                  <Button size="sm" asChild>
+                    <Link to="/cards">Send Card</Link>
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {latestCards && latestCards.length > 0 && (
+          <div className="grid md:grid-cols-3 gap-6">
+            {latestCards.map((card, index) => {
+              const naddr = nip19.naddrEncode({
+                identifier: card.id,
+                pubkey: card.event.pubkey,
+                kind: card.event.kind,
+              });
+
+              return (
+                <Link
+                  key={card.id}
+                  to={`/card/${naddr}`}
+                  className="block animate-in fade-in slide-in-from-bottom-4"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  <CardThumbnail card={card} />
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderPagesSection = (settings: ReturnType<typeof getSectionSettings>) => {
+    if (featuredPagesList.length === 0) return null;
+    
+    return (
+      <div key="pages" className="mb-16">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h2 className="text-3xl font-bold mb-2">{settings?.title || 'Pages'}</h2>
+            <p className="text-gray-600 dark:text-gray-300">
+              {settings?.subtitle || 'Explore custom content'}
+            </p>
+          </div>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-6">
+          {featuredPagesList.map((page, index) => (
+            <Link
+              key={page.id}
+              to={`/page/${page.id}`}
+              className="block animate-in fade-in slide-in-from-bottom-4"
+              style={{ animationDelay: `${index * 100}ms` }}
+            >
+              <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm group overflow-hidden">
+                {page.header_image && (
+                  <div className="aspect-video relative overflow-hidden">
+                    <img
+                      src={page.header_image}
+                      alt={page.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      onError={(e) => {
+                        const container = e.currentTarget.parentElement;
+                        if (container) {
+                          container.style.display = 'none';
+                        }
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  </div>
+                )}
+                <CardHeader className="pb-3">
+                  <div className="flex items-center space-x-2">
+                    <FileText className="h-4 w-4 text-teal-600" />
+                    <CardTitle className="text-sm font-semibold truncate">
+                      {page.title}
+                    </CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="flex items-center text-teal-600 group-hover:text-teal-700 transition-colors">
+                    <span className="text-xs font-medium">View page</span>
+                    <ArrowRight className="h-3 w-3 ml-1 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderNewsSection = (settings: ReturnType<typeof getSectionSettings>) => {
+    return (
+      <div key="news" className="mb-16">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h2 className="text-3xl font-bold mb-2">{settings?.title || 'Nostr News'}</h2>
+            <p className="text-gray-600 dark:text-gray-300">
+              {settings?.subtitle || 'From BitPopArt'}
+            </p>
+          </div>
+          <Button variant="outline" asChild>
+            <Link to="/feed" className="flex items-center space-x-2">
+              <Rss className="h-4 w-4" />
+              <span>View All</span>
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
+
+        {notesError && (
+          <Card className="border-dashed border-orange-200 dark:border-orange-800 bg-orange-50/50 dark:bg-orange-900/10">
+            <CardContent className="py-8 px-6 text-center">
+              <div className="max-w-sm mx-auto space-y-4">
+                <MessageSquare className="h-8 w-8 mx-auto text-orange-500" />
+                <div>
+                  <CardTitle className="text-orange-600 dark:text-orange-400 mb-2 text-lg">
+                    Unable to Load Updates
+                  </CardTitle>
+                  <CardDescription>
+                    Try switching to a different relay to see the latest updates.
+                  </CardDescription>
+                </div>
+                <RelaySelector className="w-full" />
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {notesLoading && (
+          <div className="grid md:grid-cols-3 gap-6">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <ThumbnailSkeleton key={i} />
+            ))}
+          </div>
+        )}
+
+        {adminNotes && adminNotes.length === 0 && (
+          <Card className="border-dashed">
+            <CardContent className="py-8 px-6 text-center">
+              <div className="max-w-sm mx-auto space-y-4">
+                <MessageSquare className="h-8 w-8 mx-auto text-gray-400" />
+                <div>
+                  <CardTitle className="mb-2">No Updates Found</CardTitle>
+                  <CardDescription>
+                    No recent updates found. Try switching to a different relay.
+                  </CardDescription>
+                </div>
+                <RelaySelector className="w-full" />
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {adminNotes && adminNotes.length > 0 && (
+          <div className="grid md:grid-cols-3 gap-6">
+            {adminNotes.map((note, index) => (
+              <Link
+                key={note.id}
+                to="/feed"
+                className="block animate-in fade-in slide-in-from-bottom-4"
+                style={{ animationDelay: `${index * 100}ms` }}
+              >
+                <NoteThumbnail event={note} />
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   useSeoMeta({
     title: 'BitPopArt - Love, Freedom & Joy Pop Art',
     description: 'Create and share beautiful digital cards for any occasion. Discover the latest updates and featured cards from BitPopArt.',
@@ -385,8 +893,11 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Featured Nostr Projects Section */}
-        {featuredNostrProjectsList.length > 0 && isSectionEnabled('nostr-projects') && (
+        {/* Dynamic Sections based on settings */}
+        {orderedSections.map(renderSection)}
+
+        {/* LEGACY: Featured Nostr Projects Section (keep as fallback) */}
+        {false && featuredNostrProjectsList.length > 0 && isSectionEnabled('nostr-projects') && (
           <div className="mb-16">
             <div className="flex items-center justify-between mb-8">
               <div>
@@ -453,8 +964,8 @@ const Index = () => {
           </div>
         )}
 
-        {/* Featured Projects Section */}
-        {featuredProjects && featuredProjects.length > 0 && isSectionEnabled('projects') && (
+        {/* LEGACY: Featured Projects Section (keep as fallback) */}
+        {false && featuredProjects && featuredProjects.length > 0 && isSectionEnabled('projects') && (
           <div className="mb-16">
             <div className="flex items-center justify-between mb-8">
               <div>
@@ -534,8 +1045,8 @@ const Index = () => {
           </div>
         )}
 
-        {/* Featured Art Section */}
-        {!artworksError && featuredArtworksList && featuredArtworksList.length > 0 && isSectionEnabled('art') && (
+        {/* LEGACY: Featured Art Section (keep as fallback) */}
+        {false && !artworksError && featuredArtworksList && featuredArtworksList.length > 0 && isSectionEnabled('art') && (
           <div className="mb-16">
             <div className="flex items-center justify-between mb-8">
               <div>
@@ -627,8 +1138,8 @@ const Index = () => {
           </div>
         )}
 
-        {/* Latest Cards Section */}
-        {isSectionEnabled('cards') && (
+        {/* LEGACY: Latest Cards Section (keep as fallback) */}
+        {false && isSectionEnabled('cards') && (
           <div className="mb-16">
             <div className="flex items-center justify-between mb-8">
               <div>
@@ -720,8 +1231,8 @@ const Index = () => {
           </div>
         )}
 
-        {/* Custom Pages Section */}
-        {featuredPagesList.length > 0 && isSectionEnabled('pages') && (
+        {/* LEGACY: Custom Pages Section (keep as fallback) */}
+        {false && featuredPagesList.length > 0 && isSectionEnabled('pages') && (
           <div className="mb-16">
             <div className="flex items-center justify-between mb-8">
               <div>
@@ -778,8 +1289,8 @@ const Index = () => {
           </div>
         )}
 
-        {/* Latest Updates Section */}
-        {isSectionEnabled('news') && (
+        {/* LEGACY: Latest Updates Section (keep as fallback) */}
+        {false && isSectionEnabled('news') && (
           <div className="mb-16">
             <div className="flex items-center justify-between mb-8">
               <div>
