@@ -213,7 +213,7 @@ const Art = () => {
               alt="Art" 
               className="h-12 w-12 flex-shrink-0" 
             />
-            <h1 className="text-4xl font-bold leading-tight" style={getGradientStyle('header-text')}>
+            <h1 className="text-4xl font-bold leading-tight gradient-header-text">
               BitPopArt Gallery
             </h1>
           </div>

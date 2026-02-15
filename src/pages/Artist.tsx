@@ -176,7 +176,7 @@ Follow me at BitPopArt:
               alt="Artist" 
               className="h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0" 
             />
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight" style={getGradientStyle('header-text')}>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight gradient-header-text">
               {getTitle()}
             </h1>
           </div>

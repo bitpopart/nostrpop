@@ -57,7 +57,7 @@ const Cards = () => {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-4" style={getGradientStyle('header-text')}>
+          <h1 className="text-4xl font-bold mb-4 gradient-header-text">
             BitPop Cards
           </h1>
         </div>

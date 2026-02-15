@@ -185,7 +185,7 @@ export default function Projects() {
               alt="Projects" 
               className="h-12 w-12 flex-shrink-0" 
             />
-            <h1 className="text-5xl font-bold leading-tight" style={getGradientStyle('header-text')}>
+            <h1 className="text-5xl font-bold leading-tight gradient-header-text">
               Projects
             </h1>
           </div>
@@ -333,7 +333,7 @@ export default function Projects() {
               <div className="text-center mb-8">
                 <div className="flex items-center justify-center mb-4">
                   <Users className="h-8 w-8 text-purple-600 mr-3" />
-                  <h2 className="text-4xl font-bold" style={getGradientStyle('header-text')}>
+                  <h2 className="text-4xl font-bold gradient-header-text">
                     Nostr Projects
                   </h2>
                 </div>
