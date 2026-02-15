@@ -243,6 +243,9 @@ function Canvas100M() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    // Disable image smoothing for pixelated rendering
+    ctx.imageSmoothingEnabled = false;
+
     // Clear with white background
     ctx.fillStyle = '#FFFFFF';
     ctx.fillRect(0, 0, DISPLAY_SIZE, DISPLAY_SIZE);
@@ -676,9 +679,12 @@ function Canvas100M() {
       tempCanvas.width = finalWidth;
       tempCanvas.height = finalHeight;
       
-      const tempCtx = tempCanvas.getContext('2d');
+      const tempCtx = tempCanvas.getContext('2d', { willReadFrequently: true });
       if (!tempCtx) return;
 
+      // Disable image smoothing to preserve exact pixel colors (nearest-neighbor scaling)
+      tempCtx.imageSmoothingEnabled = false;
+      
       tempCtx.drawImage(uploadedImage, 0, 0, finalWidth, finalHeight);
       const imageData = tempCtx.getImageData(0, 0, finalWidth, finalHeight);
       const newPixels: PendingPixel[] = [];
