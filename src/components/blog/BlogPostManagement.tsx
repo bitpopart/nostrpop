@@ -4,7 +4,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useUploadFile } from '@/hooks/useUploadFile';
-import { useAppContext } from '@/hooks/useAppContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -62,7 +61,6 @@ interface ContentBlock {
 export function BlogPostManagement() {
   const { nostr } = useNostr();
   const { user } = useCurrentUser();
-  const { config } = useAppContext();
   const { mutate: createEvent } = useNostrPublish();
   const { mutateAsync: uploadFile } = useUploadFile();
   const queryClient = useQueryClient();
@@ -94,16 +92,14 @@ export function BlogPostManagement() {
 
   // Fetch user's blog posts (kind 30023)
   const { data: blogPosts = [], isLoading } = useQuery({
-    queryKey: ['blog-posts', user?.pubkey, config.relayUrl],
+    queryKey: ['blog-posts', user?.pubkey],
     queryFn: async (c) => {
       if (!user?.pubkey) return [];
-      console.log('[BlogPostManagement] Fetching blog posts from relay:', config.relayUrl);
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(5000)]);
       const events = await nostr.query(
         [{ kinds: [30023], authors: [user.pubkey], limit: 50 }],
         { signal }
       );
-      console.log('[BlogPostManagement] Received events:', events.length);
       // Filter out artist-page events
       const filteredEvents = events.filter(e => {
         const dTag = e.tags.find(t => t[0] === 'd')?.[1];
@@ -425,15 +421,6 @@ export function BlogPostManagement() {
       blogTags.push(['t', tag.toLowerCase()]);
     });
 
-    console.log('[BlogPostManagement] Publishing blog post...', {
-      title,
-      blocks: contentBlocks.length,
-      headerImage: !!headerImage,
-      externalUrl,
-      isEdit: !!editingPost,
-      tags: blogTags
-    });
-
     createEvent(
       {
         kind: 30023,
@@ -442,13 +429,6 @@ export function BlogPostManagement() {
       },
       {
         onSuccess: async (result) => {
-          console.log('[BlogPostManagement] ✅ Blog post published!', {
-            eventId: result.id,
-            kind: result.kind,
-            tags: result.tags,
-            dTag: result.tags.find(t => t[0] === 'd')?.[1]
-          });
-          
           // CRITICAL: Capture values BEFORE any async operations
           const shouldShare = shareToNostr === true && !editingPost;
           const capturedTitle = title;
@@ -456,40 +436,28 @@ export function BlogPostManagement() {
           const capturedTags = tags;
           const capturedShareMessage = shareMessage;
           
-          // Give relay more time to process and propagate
-          console.log('[BlogPostManagement] ⏳ Waiting for relay to process...');
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          // Give relay time to process
+          await new Promise(resolve => setTimeout(resolve, 1500));
           
           // Invalidate and refetch both admin and public queries
-          console.log('[BlogPostManagement] 🔄 Invalidating queries...');
           await queryClient.invalidateQueries({ queryKey: ['blog-posts'] });
           await queryClient.invalidateQueries({ queryKey: ['blog-posts-public'] });
-          
-          console.log('[BlogPostManagement] 🔄 Refetching queries...');
-          const adminRefetch = await queryClient.refetchQueries({ queryKey: ['blog-posts'] });
-          const publicRefetch = await queryClient.refetchQueries({ queryKey: ['blog-posts-public'] });
-          
-          console.log('[BlogPostManagement] ✅ Refetch results:', {
-            admin: adminRefetch,
-            public: publicRefetch
-          });
+          await queryClient.refetchQueries({ queryKey: ['blog-posts'] });
+          await queryClient.refetchQueries({ queryKey: ['blog-posts-public'] });
           
           const action = editingPost ? 'updated' : 'created';
           toast.success(`Blog post ${action} successfully!`);
           
           // Share ONLY if checkbox was checked
           if (shouldShare) {
-            console.log('📢 Sharing to Nostr (checkbox was checked)');
             shareBlogToNostr(result, capturedTitle, capturedHeaderImage, capturedTags, capturedShareMessage);
-          } else {
-            console.log('❌ NOT sharing (checkbox not checked or editing)');
           }
           
           resetForm();
           setIsSaving(false);
         },
         onError: (error) => {
-          console.error('[BlogPostManagement] ❌ Publish error:', error);
+          console.error('Failed to save blog post:', error);
           toast.error('Failed to save blog post');
           setIsSaving(false);
         },

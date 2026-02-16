@@ -6,7 +6,6 @@ import { useSearchParams } from 'react-router-dom';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { useAppContext } from '@/hooks/useAppContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -16,7 +15,6 @@ import { ZapButton } from '@/components/ZapButton';
 import { LoginArea } from '@/components/auth/LoginArea';
 import { BlogPostManagement } from '@/components/blog/BlogPostManagement';
 import { ShareDialog } from '@/components/share/ShareDialog';
-import { RelaySelector } from '@/components/RelaySelector';
 import { Calendar, Tag, ArrowRight, FileText, Plus, Share2, Archive } from 'lucide-react';
 import { format, startOfMonth } from 'date-fns';
 import { Link } from 'react-router-dom';
@@ -27,7 +25,6 @@ export default function Blog() {
   const { user } = useCurrentUser();
   const isAdmin = useIsAdmin();
   const { getGradientStyle } = useThemeColors();
-  const { config } = useAppContext();
   const [searchParams] = useSearchParams();
 
   // Get initial tab from URL params
@@ -54,9 +51,8 @@ export default function Blog() {
 
   // Fetch all blog posts (kind 30023)
   const { data: blogPosts = [], isLoading } = useQuery({
-    queryKey: ['blog-posts-public', config.relayUrl],
+    queryKey: ['blog-posts-public'],
     queryFn: async (c) => {
-      console.log('[Blog] 🔍 Fetching blog posts from relay:', config.relayUrl);
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(5000)]);
       
       const events = await nostr.query(
@@ -64,28 +60,11 @@ export default function Blog() {
         { signal }
       );
 
-      console.log('[Blog] 📥 Received events from relay:', {
-        relay: config.relayUrl,
-        total: events.length,
-        eventIds: events.map(e => ({ id: e.id, dTag: e.tags.find(t => t[0] === 'd')?.[1] }))
-      });
-
       // Filter out artist-page and artwork events
       const filteredEvents = events.filter(e => {
         const dTag = e.tags.find(t => t[0] === 'd')?.[1];
         const hasArtworkTag = e.tags.some(t => t[0] === 't' && t[1] === 'artwork');
-        const shouldInclude = dTag !== 'artist-page' && !hasArtworkTag;
-        
-        if (!shouldInclude) {
-          console.log('[Blog] ⚠️ Filtering out event:', { dTag, hasArtworkTag });
-        }
-        
-        return shouldInclude;
-      });
-      
-      console.log('[Blog] ✅ After filtering:', {
-        total: filteredEvents.length,
-        eventIds: filteredEvents.map(e => ({ id: e.id, dTag: e.tags.find(t => t[0] === 'd')?.[1] }))
+        return dTag !== 'artist-page' && !hasArtworkTag;
       });
       
       // Sort by published_at tag if it exists, otherwise by created_at (newest first)
@@ -200,12 +179,6 @@ export default function Blog() {
               Admin Access • Blog Management
             </Badge>
           )}
-          
-          {/* Relay Selector for debugging/content discovery */}
-          <div className="mt-6 flex items-center justify-center gap-3">
-            <span className="text-sm text-muted-foreground">Relay:</span>
-            <RelaySelector className="w-64" />
-          </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full max-w-6xl mx-auto">
