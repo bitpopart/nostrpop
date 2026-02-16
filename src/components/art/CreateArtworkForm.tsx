@@ -215,7 +215,7 @@ export function CreateArtworkForm({ onSuccess, onCancel }: CreateArtworkFormProp
       const naddr = nip19.naddrEncode({
         identifier: dTag,
         pubkey: user.pubkey,
-        kind: 30023, // Artwork uses kind 30023
+        kind: 39239, // Artwork uses kind 39239
       });
 
       // Create the artwork URL
@@ -252,7 +252,7 @@ export function CreateArtworkForm({ onSuccess, onCancel }: CreateArtworkFormProp
         ['t', 'art'],
         ['t', 'nostr'],
         ['e', artworkEvent.id, '', 'mention'], // Reference the artwork event
-        ['a', `30023:${user.pubkey}:${dTag}`, '', 'mention'], // Reference the addressable event
+        ['a', `39239:${user.pubkey}:${dTag}`, '', 'mention'], // Reference the addressable event
       ];
 
       // Add image-related tags for maximum compatibility

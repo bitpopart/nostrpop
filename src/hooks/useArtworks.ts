@@ -31,11 +31,11 @@ export function useArtworks(filter: ArtworkFilter = 'all') {
     queryFn: async (c) => {
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(5000)]);
 
-      // Query for artwork events (kind 30023) and deletion events (kind 5)
+      // Query for artwork events (kind 39239) and deletion events (kind 5)
       const [artworkEvents, deletionEvents] = await Promise.all([
         nostr.query([
           {
-            kinds: [30023], // NIP-23 long-form content adapted for artwork
+            kinds: [39239], // Custom kind for artwork
             '#t': ['artwork'], // Tag to identify artwork posts
             limit: 50,
           }
@@ -57,7 +57,7 @@ export function useArtworks(filter: ArtworkFilter = 'all') {
       deletionEvents.forEach(delEvent => {
         const aTags = delEvent.tags.filter(([name]) => name === 'a');
         aTags.forEach(([, address]) => {
-          if (address && address.startsWith('30023:')) {
+          if (address && address.startsWith('39239:')) {
             deletedAddresses.add(address);
             console.log(`Found deletion event for artwork: ${address}`);
           }
@@ -89,7 +89,7 @@ export function useArtworks(filter: ArtworkFilter = 'all') {
             }
 
             // Check if this artwork has been deleted
-            const artworkAddress = `30023:${event.pubkey}:${dTag}`;
+            const artworkAddress = `39239:${event.pubkey}:${dTag}`;
             if (deletedAddresses.has(artworkAddress)) {
               console.log(`Filtering out deleted artwork: ${artworkAddress}`);
               return null;
@@ -210,7 +210,7 @@ export function useArtwork(artworkId: string, authorPubkey?: string) {
       const [artworkEvents, deletionEvents] = await Promise.all([
         nostr.query([
           {
-            kinds: [30023],
+            kinds: [39239],
             '#d': [artworkId],
             '#t': ['artwork'],
             ...(authorPubkey && { authors: [authorPubkey] }),
@@ -237,7 +237,7 @@ export function useArtwork(artworkId: string, authorPubkey?: string) {
       const event = artworkEvents[0];
 
       // Check if this artwork has been deleted
-      const artworkAddress = `30023:${event.pubkey}:${artworkId}`;
+      const artworkAddress = `39239:${event.pubkey}:${artworkId}`;
       
       // Build set of deleted artwork addresses
       const deletedAddresses = new Set<string>();
@@ -246,7 +246,7 @@ export function useArtwork(artworkId: string, authorPubkey?: string) {
       deletionEvents.forEach(delEvent => {
         const aTags = delEvent.tags.filter(([name]) => name === 'a');
         aTags.forEach(([, address]) => {
-          if (address && address.startsWith('30023:')) {
+          if (address && address.startsWith('39239:')) {
             deletedAddresses.add(address);
           }
         });
@@ -408,7 +408,7 @@ export function useCreateArtwork() {
       }
 
       const artworkEvent = {
-        kind: 30023,
+        kind: 39239,
         content: JSON.stringify(content),
         tags,
         created_at: Math.floor(Date.now() / 1000),
@@ -451,7 +451,7 @@ export function useDeleteArtwork() {
         throw new Error('User must be logged in to delete artwork');
       }
 
-      const artworkAddress = `30023:${artistPubkey}:${artworkId}`;
+      const artworkAddress = `39239:${artistPubkey}:${artworkId}`;
       console.log(`🗑️ Deleting artwork: ${artworkAddress}`);
 
       // Create a deletion event (kind 5) for the artwork
@@ -490,7 +490,7 @@ export function useDeleteArtwork() {
         (oldData: ArtworkData[] | undefined) => {
           if (!oldData || !Array.isArray(oldData)) return oldData;
           const filtered = oldData.filter((artwork: ArtworkData) => {
-            const artworkAddress = `30023:${artwork.artist_pubkey}:${artwork.id}`;
+            const artworkAddress = `39239:${artwork.artist_pubkey}:${artwork.id}`;
             return artworkAddress !== data.artworkAddress;
           });
           console.log(`Cache update: ${oldData.length} -> ${filtered.length} artworks`);

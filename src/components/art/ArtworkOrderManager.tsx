@@ -81,7 +81,7 @@ export function ArtworkOrderManager() {
 
       // Publish updated event
       createEvent({
-        kind: 30023,
+        kind: 39239,
         content: JSON.stringify(content),
         tags: newTags,
       });

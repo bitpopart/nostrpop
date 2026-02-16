@@ -283,9 +283,9 @@ export function EditArtworkForm({ artwork, onSuccess, onCancel }: EditArtworkFor
         eventTags.push(['currency', data.currency]);
       }
 
-      // Publish as updated artwork event (kind 30023)
+      // Publish as updated artwork event (kind 39239)
       createEvent({
-        kind: 30023,
+        kind: 39239,
         content: JSON.stringify(content),
         tags: eventTags
       });

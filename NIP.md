@@ -278,6 +278,94 @@ The artist biography page uses **kind 30023** (NIP-23 long-form content) with a 
 
 The artist page content is editable through the admin panel and supports full Markdown formatting. If no event is found, a default "My Story" content is displayed.
 
+## Artworks (Kind 39239)
+
+Digital artworks displayed in the art gallery with full sale and auction support.
+
+### Event Structure
+
+```json
+{
+  "kind": 39239,
+  "content": {
+    "title": "<artwork title>",
+    "description": "<artwork description>",
+    "images": ["<image_url_1>", "<image_url_2>", ...],
+    "medium": "<art medium>",
+    "dimensions": "<dimensions>",
+    "year": "<creation year>",
+    "edition": "<edition info>",
+    "certificate_url": "<certificate_url>",
+    "tags": ["<tag1>", "<tag2>", ...],
+    "price": <price>,
+    "currency": "<currency_code>",
+    "starting_bid": <bid>,
+    "current_bid": <bid>,
+    "auction_start": "<iso_timestamp>",
+    "auction_end": "<iso_timestamp>",
+    "shipping": {
+      "local_countries": "<country_codes>",
+      "local_cost": <cost>,
+      "international_cost": <cost>
+    }
+  },
+  "tags": [
+    ["d", "<artwork_id>"],
+    ["title", "<artwork title>"],
+    ["t", "artwork"],
+    ["t", "art"],
+    ["sale", "fixed|auction|sold"],
+    ["featured", "true"],
+    ["order", "<display_order>"],
+    ["price", "<price>"],
+    ["currency", "<currency>"],
+    ["alt", "Artwork: <title>"]
+  ]
+}
+```
+
+### Fields
+
+- **d tag**: Unique artwork identifier (auto-generated)
+- **title tag**: Artwork title for quick access
+- **t tags**: Always includes `artwork` and `art`, plus custom tags
+- **sale tag**: Sale type (fixed/auction/sold) if applicable
+- **featured tag**: If "true", displays in featured tile gallery
+- **order tag**: Custom display order
+- **price/currency tags**: Pricing information if for sale
+
+### Content Object
+
+- **title**: Full artwork title
+- **description**: Detailed artwork description
+- **images**: Array of artwork image URLs (first is main image)
+- **medium**: Art medium (Digital Art, Photography, etc.)
+- **dimensions**: Artwork dimensions
+- **year**: Year created
+- **edition**: Edition information (e.g., "1/1", "Limited Edition")
+- **certificate_url**: Link to certificate of authenticity
+- **tags**: Custom tags for categorization
+- **price/currency**: For fixed-price sales
+- **starting_bid/current_bid**: For auctions
+- **auction_start/auction_end**: Auction timeframe
+- **shipping**: Shipping cost information
+
+### Sale Types
+
+1. **Not for Sale**: Display only, no sale tags
+2. **Fixed Price**: `sale: fixed` tag with price/currency
+3. **Auction**: `sale: auction` tag with bidding info
+4. **Sold**: `sale: sold` tag to mark as sold
+
+### Usage
+
+- Admin creates artworks through Art Gallery → Create Artwork
+- Supports multiple images per artwork
+- Optional sale/auction functionality
+- Featured artworks appear in tile gallery at top of Art page
+- Custom ordering support for gallery layout
+- Shipping cost calculator for physical artworks
+
 ## Nostr Projects (Kind 38171)
 
 Collaborative art projects where participants can join by selecting an image and paying in sats.
