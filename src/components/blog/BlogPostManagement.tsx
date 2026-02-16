@@ -498,7 +498,7 @@ export function BlogPostManagement() {
               headerImage,
               tags
             });
-            shareBlogToNostr(result.event, title, headerImage, tags, shareMessage);
+            shareBlogToNostr(result, title, headerImage, tags, shareMessage);
           } else {
             console.log('❌ NOT sharing to Nostr', { 
               shareToNostr, 
