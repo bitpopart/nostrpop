@@ -268,13 +268,18 @@ export function BlogPostManagement() {
     const publishedAt = post.tags.find(t => t[0] === 'published_at')?.[1];
     setPublishDate(publishedAt ? new Date(parseInt(publishedAt) * 1000) : new Date(post.created_at * 1000));
 
-    // Parse content blocks
-    try {
-      const parsed = JSON.parse(post.content);
-      if (parsed.blocks && Array.isArray(parsed.blocks)) {
-        setContentBlocks(parsed.blocks);
-      } else {
-        // Legacy: single content field
+    // Parse content blocks - prioritize 'blocks' tag over content field
+    const blocksTag = post.tags.find(t => t[0] === 'blocks')?.[1];
+    
+    if (blocksTag) {
+      // New format: blocks stored in tag
+      try {
+        const parsed = JSON.parse(blocksTag);
+        if (Array.isArray(parsed)) {
+          setContentBlocks(parsed);
+        }
+      } catch {
+        // Fallback to content if blocks tag is invalid
         const galleryImages = post.tags.filter(t => t[0] === 'gallery').map(t => t[1]);
         setContentBlocks([{ 
           id: '1', 
@@ -291,22 +296,47 @@ export function BlogPostManagement() {
           }]);
         }
       }
-    } catch {
-      // Not JSON, treat as plain markdown
-      const galleryImages = post.tags.filter(t => t[0] === 'gallery').map(t => t[1]);
-      setContentBlocks([{ 
-        id: '1', 
-        type: 'markdown', 
-        content: post.content,
-        images: []
-      }]);
-      if (galleryImages.length > 0) {
-        setContentBlocks(prev => [...prev, {
-          id: Date.now().toString(),
-          type: 'gallery',
-          content: '',
-          images: galleryImages
+    } else {
+      // Old format: try parsing content as JSON (legacy), otherwise treat as markdown
+      try {
+        const parsed = JSON.parse(post.content);
+        if (parsed.blocks && Array.isArray(parsed.blocks)) {
+          setContentBlocks(parsed.blocks);
+        } else {
+          // Content is JSON but not blocks format
+          const galleryImages = post.tags.filter(t => t[0] === 'gallery').map(t => t[1]);
+          setContentBlocks([{ 
+            id: '1', 
+            type: 'markdown', 
+            content: post.content,
+            images: []
+          }]);
+          if (galleryImages.length > 0) {
+            setContentBlocks(prev => [...prev, {
+              id: Date.now().toString(),
+              type: 'gallery',
+              content: '',
+              images: galleryImages
+            }]);
+          }
+        }
+      } catch {
+        // Content is plain markdown/text
+        const galleryImages = post.tags.filter(t => t[0] === 'gallery').map(t => t[1]);
+        setContentBlocks([{ 
+          id: '1', 
+          type: 'markdown', 
+          content: post.content,
+          images: []
         }]);
+        if (galleryImages.length > 0) {
+          setContentBlocks(prev => [...prev, {
+            id: Date.now().toString(),
+            type: 'gallery',
+            content: '',
+            images: galleryImages
+          }]);
+        }
       }
     }
 
@@ -416,10 +446,25 @@ export function BlogPostManagement() {
       ? editingPost.tags.find(t => t[0] === 'd')?.[1] || `blog-${Date.now()}`
       : `blog-${Date.now()}`;
 
-    // Prepare content as JSON with blocks
-    const contentData = {
-      blocks: contentBlocks
-    };
+    // Prepare content as markdown (NOT JSON!)
+    // Combine all markdown blocks with galleries as image links
+    let markdownContent = '';
+    contentBlocks.forEach((block, index) => {
+      if (block.type === 'markdown' && block.content.trim()) {
+        markdownContent += block.content.trim();
+        if (block.externalUrl) {
+          markdownContent += `\n\n[View Related Link](${block.externalUrl})`;
+        }
+        markdownContent += '\n\n';
+      } else if (block.type === 'gallery' && block.images.length > 0) {
+        block.images.forEach(imgUrl => {
+          markdownContent += `![Gallery Image](${imgUrl})\n\n`;
+        });
+        if (block.externalUrl) {
+          markdownContent += `[View Related Link](${block.externalUrl})\n\n`;
+        }
+      }
+    });
 
     const blogTags: string[][] = [
       ['d', articleId],
@@ -440,7 +485,7 @@ export function BlogPostManagement() {
       blogTags.push(['r', externalUrl]);
     }
 
-    // Add gallery images as separate tags
+    // Add gallery images as separate tags for UI rendering
     contentBlocks.forEach(block => {
       if (block.type === 'gallery') {
         block.images.forEach(imgUrl => {
@@ -448,6 +493,9 @@ export function BlogPostManagement() {
         });
       }
     });
+
+    // Store block structure in a separate tag for UI editing
+    blogTags.push(['blocks', JSON.stringify(contentBlocks)]);
 
     // Add user tags
     const tagArray = tags.split(',').map(t => t.trim()).filter(t => t);
@@ -460,7 +508,7 @@ export function BlogPostManagement() {
     createEvent(
       {
         kind: 30023,
-        content: JSON.stringify(contentData),
+        content: markdownContent.trim() || summary.trim() || title.trim(),
         tags: blogTags,
       },
       {

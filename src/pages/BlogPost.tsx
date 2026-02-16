@@ -55,41 +55,49 @@ export default function BlogPost() {
   const getContentBlocks = (): ContentBlock[] => {
     if (!post) return [];
 
+    // NEW FORMAT: Check for blocks tag first
+    const blocksTag = post.tags.find(t => t[0] === 'blocks')?.[1];
+    if (blocksTag) {
+      try {
+        const parsed = JSON.parse(blocksTag);
+        if (Array.isArray(parsed)) {
+          return parsed;
+        }
+      } catch {
+        // Invalid blocks tag, fall through
+      }
+    }
+
+    // LEGACY FORMAT: Try parsing content as JSON
     try {
       const parsed = JSON.parse(post.content);
       if (parsed.blocks && Array.isArray(parsed.blocks)) {
         return parsed.blocks;
       }
     } catch {
-      // If not JSON or doesn't have blocks, treat as legacy single content block
-      const galleryImages = post.tags.filter(t => t[0] === 'gallery').map(t => t[1]);
-      const blocks: ContentBlock[] = [{
-        id: '1',
-        type: 'markdown',
-        content: post.content,
-        images: []
-      }];
-      
-      // Add gallery block if there are gallery images
-      if (galleryImages.length > 0) {
-        blocks.push({
-          id: '2',
-          type: 'gallery',
-          content: '',
-          images: galleryImages
-        });
-      }
-      
-      return blocks;
+      // Content is not JSON
     }
 
-    // Fallback
-    return [{
+    // PLAIN MARKDOWN: Treat content as markdown
+    const galleryImages = post.tags.filter(t => t[0] === 'gallery').map(t => t[1]);
+    const blocks: ContentBlock[] = [{
       id: '1',
       type: 'markdown',
       content: post.content,
       images: []
     }];
+    
+    // Add gallery block if there are gallery images
+    if (galleryImages.length > 0) {
+      blocks.push({
+        id: '2',
+        type: 'gallery',
+        content: '',
+        images: galleryImages
+      });
+    }
+    
+    return blocks;
   };
 
   const getArticleTitle = (event: NostrEvent): string => {

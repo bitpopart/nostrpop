@@ -111,7 +111,25 @@ export default function Blog() {
     const summaryTag = event.tags.find(t => t[0] === 'summary')?.[1];
     if (summaryTag) return summaryTag;
 
-    // Try to parse JSON content and extract first markdown block
+    // Check for blocks tag first (new format)
+    const blocksTag = event.tags.find(t => t[0] === 'blocks')?.[1];
+    if (blocksTag) {
+      try {
+        const parsed = JSON.parse(blocksTag);
+        if (Array.isArray(parsed)) {
+          const firstMarkdownBlock = parsed.find((b: { type: string; content: string }) => 
+            b.type === 'markdown' && b.content?.trim()
+          );
+          if (firstMarkdownBlock?.content) {
+            return firstMarkdownBlock.content.slice(0, 200) + (firstMarkdownBlock.content.length > 200 ? '...' : '');
+          }
+        }
+      } catch {
+        // Invalid blocks tag
+      }
+    }
+
+    // Legacy: Try to parse content as JSON
     try {
       const parsed = JSON.parse(event.content);
       if (parsed.blocks && Array.isArray(parsed.blocks)) {
