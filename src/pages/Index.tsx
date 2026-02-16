@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 
 import { useAuthor } from '@/hooks/useAuthor';
-import { useLatestAdminNotes, useLatestBlogPosts } from '@/hooks/useAdminNotes';
+import { useLatestAdminNotes } from '@/hooks/useAdminNotes';
 import { useLatestCards } from '@/hooks/useLatestCards';
 import { useArtworks } from '@/hooks/useArtworks';
 import { useFeaturedProjects } from '@/hooks/useProjects';
@@ -318,7 +318,6 @@ function ThumbnailSkeleton() {
 
 const Index = () => {
   const { data: adminNotes, isLoading: notesLoading, error: notesError } = useLatestAdminNotes(3);
-  const { data: blogPosts, isLoading: blogPostsLoading, error: blogPostsError } = useLatestBlogPosts(3);
   const { data: latestCards, isLoading: cardsLoading, error: cardsError } = useLatestCards(3);
   const { data: featuredArtworks, isLoading: artworksLoading, error: artworksError } = useArtworks('all');
   const { data: featuredProjects } = useFeaturedProjects();
@@ -846,29 +845,29 @@ const Index = () => {
           <div>
             <h2 className="text-3xl font-bold mb-2">{settings?.title || 'Nostr News'}</h2>
             <p className="text-gray-600 dark:text-gray-300">
-              {settings?.subtitle || 'Latest blog posts'}
+              {settings?.subtitle || 'From BitPopArt'}
             </p>
           </div>
           <Button variant="outline" asChild>
-            <Link to="/blog" className="flex items-center space-x-2">
-              <FileText className="h-4 w-4" />
+            <Link to="/feed" className="flex items-center space-x-2">
+              <Rss className="h-4 w-4" />
               <span>View All</span>
               <ArrowRight className="h-4 w-4" />
             </Link>
           </Button>
         </div>
 
-        {blogPostsError && (
+        {notesError && (
           <Card className="border-dashed border-orange-200 dark:border-orange-800 bg-orange-50/50 dark:bg-orange-900/10">
             <CardContent className="py-8 px-6 text-center">
               <div className="max-w-sm mx-auto space-y-4">
-                <FileText className="h-8 w-8 mx-auto text-orange-500" />
+                <MessageSquare className="h-8 w-8 mx-auto text-orange-500" />
                 <div>
                   <CardTitle className="text-orange-600 dark:text-orange-400 mb-2 text-lg">
-                    Unable to Load Blog Posts
+                    Unable to Load Updates
                   </CardTitle>
                   <CardDescription>
-                    Try switching to a different relay to see blog posts.
+                    Try switching to a different relay to see the latest updates.
                   </CardDescription>
                 </div>
                 <RelaySelector className="w-full" />
@@ -877,7 +876,7 @@ const Index = () => {
           </Card>
         )}
 
-        {blogPostsLoading && (
+        {notesLoading && (
           <div className="grid md:grid-cols-3 gap-6">
             {Array.from({ length: 3 }).map((_, i) => (
               <ThumbnailSkeleton key={i} />
@@ -885,15 +884,15 @@ const Index = () => {
           </div>
         )}
 
-        {blogPosts && blogPosts.length === 0 && (
+        {adminNotes && adminNotes.length === 0 && (
           <Card className="border-dashed">
             <CardContent className="py-8 px-6 text-center">
               <div className="max-w-sm mx-auto space-y-4">
-                <FileText className="h-8 w-8 mx-auto text-gray-400" />
+                <MessageSquare className="h-8 w-8 mx-auto text-gray-400" />
                 <div>
-                  <CardTitle className="mb-2">No Blog Posts Yet</CardTitle>
+                  <CardTitle className="mb-2">No Updates Found</CardTitle>
                   <CardDescription>
-                    Check back soon for new blog posts!
+                    No recent updates found. Try switching to a different relay.
                   </CardDescription>
                 </div>
                 <RelaySelector className="w-full" />
@@ -902,57 +901,18 @@ const Index = () => {
           </Card>
         )}
 
-        {blogPosts && blogPosts.length > 0 && (
+        {adminNotes && adminNotes.length > 0 && (
           <div className="grid md:grid-cols-3 gap-6">
-            {blogPosts.map((post, index) => {
-              const title = post.tags.find(t => t[0] === 'title')?.[1] || 'Untitled';
-              const image = post.tags.find(t => t[0] === 'image')?.[1];
-              const dTag = post.tags.find(t => t[0] === 'd')?.[1] || post.id;
-              const publishedAt = post.tags.find(t => t[0] === 'published_at')?.[1];
-              const date = publishedAt ? new Date(parseInt(publishedAt) * 1000) : new Date(post.created_at * 1000);
-              
-              return (
-                <Link
-                  key={post.id}
-                  to={`/blog/${dTag}`}
-                  className="block animate-in fade-in slide-in-from-bottom-4"
-                  style={{ animationDelay: `${index * 100}ms` }}
-                >
-                  <Card className="hover:shadow-xl transition-all duration-300 cursor-pointer group overflow-hidden h-full">
-                    {image && (
-                      <div className="aspect-video relative overflow-hidden">
-                        <img
-                          src={image}
-                          alt={title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                      </div>
-                    )}
-                    <CardHeader>
-                      <div className="flex items-center justify-between mb-2">
-                        <Badge variant="secondary" className="text-xs">
-                          <FileText className="h-3 w-3 mr-1" />
-                          Blog
-                        </Badge>
-                        <div className="flex items-center space-x-1 text-xs text-muted-foreground">
-                          <Calendar className="h-3 w-3" />
-                          <span>{date.toLocaleDateString()}</span>
-                        </div>
-                      </div>
-                      <CardTitle className="text-lg line-clamp-2 group-hover:text-orange-600 transition-colors">
-                        {title}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <div className="flex items-center text-orange-600 group-hover:text-orange-700 transition-colors">
-                        <span className="text-sm font-medium">Read article</span>
-                        <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              );
-            })}
+            {adminNotes.map((note, index) => (
+              <Link
+                key={note.id}
+                to="/feed"
+                className="block animate-in fade-in slide-in-from-bottom-4"
+                style={{ animationDelay: `${index * 100}ms` }}
+              >
+                <NoteThumbnail event={note} />
+              </Link>
+            ))}
           </div>
         )}
       </div>

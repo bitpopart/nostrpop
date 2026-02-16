@@ -60,11 +60,10 @@ export default function Blog() {
         { signal }
       );
 
-      // Filter out artist-page and artwork events
+      // Filter out artist-page events (but keep blog posts even if they have artwork tag)
       const filteredEvents = events.filter(e => {
         const dTag = e.tags.find(t => t[0] === 'd')?.[1];
-        const hasArtworkTag = e.tags.some(t => t[0] === 't' && t[1] === 'artwork');
-        return dTag !== 'artist-page' && !hasArtworkTag;
+        return dTag !== 'artist-page';
       });
       
       // Sort by published_at tag if it exists, otherwise by created_at (newest first)
