@@ -280,7 +280,16 @@ export function BadgeManagement() {
               <CardDescription>Create badges that people can purchase - inspired by badges.page</CardDescription>
             </div>
             <div className="flex gap-2">
-              <Button onClick={() => setShowImport(!showImport)} variant={showImport ? "outline" : "secondary"}>
+              <Button 
+                onClick={() => {
+                  setShowImport(!showImport);
+                  if (!showImport) {
+                    // Trigger immediate refetch when opening import
+                    refetchNIP58();
+                  }
+                }} 
+                variant={showImport ? "outline" : "secondary"}
+              >
                 {showImport ? (
                   <>
                     <X className="h-4 w-4 mr-2" />
@@ -315,13 +324,35 @@ export function BadgeManagement() {
       {showImport && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center">
-              <Download className="h-5 w-5 mr-2" />
-              Import Badges from badges.page
-            </CardTitle>
-            <CardDescription>
-              Select your NIP-58 badges to import and make them available for purchase
-            </CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center">
+                  <Download className="h-5 w-5 mr-2" />
+                  Import Badges from badges.page
+                </CardTitle>
+                <CardDescription>
+                  Select your NIP-58 badges to import and make them available for purchase
+                </CardDescription>
+              </div>
+              <Button
+                onClick={() => refetchNIP58()}
+                variant="outline"
+                size="sm"
+                disabled={isLoadingNIP58}
+              >
+                {isLoadingNIP58 ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Loading...
+                  </>
+                ) : (
+                  <>
+                    <Download className="h-4 w-4 mr-2" />
+                    Refresh
+                  </>
+                )}
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             {isLoadingNIP58 ? (

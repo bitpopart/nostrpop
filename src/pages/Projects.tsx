@@ -396,6 +396,28 @@ export default function Projects() {
                         </div>
                       )}
                       
+                      {/* Badge Thumbnail (top left) */}
+                      {project.badge_naddr && project.badge_image && (
+                        <a
+                          href={`https://badges.page/a/${project.badge_naddr}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="absolute top-2 left-2 z-10"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div className="relative group/badge">
+                            <img
+                              src={project.badge_image}
+                              alt="Project badge"
+                              className="w-16 h-16 rounded-full border-4 border-white dark:border-gray-800 shadow-lg hover:scale-110 transition-transform duration-200"
+                            />
+                            <div className="absolute inset-0 rounded-full bg-black/60 opacity-0 group-hover/badge:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+                              <Award className="h-6 w-6 text-white" />
+                            </div>
+                          </div>
+                        </a>
+                      )}
+                      
                       {/* Zap button overlay (only for non-coming-soon projects) */}
                       {!isComingSoon && project.event && (
                         <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">

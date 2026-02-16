@@ -70,9 +70,10 @@ export function useNostrProjects() {
             const headerImage = event.tags.find(t => t[0] === 'header-image')?.[1];
             const featured = event.tags.find(t => t[0] === 'featured')?.[1] === 'true';
             const comingSoon = event.tags.find(t => t[0] === 'coming-soon')?.[1] === 'true';
-            const badgeId = event.tags.find(t => t[0] === 'badge-id')?.[1];
+            const badgeNaddr = event.tags.find(t => t[0] === 'badge-naddr')?.[1];
+            const badgeImage = event.tags.find(t => t[0] === 'badge-image')?.[1];
             
-            console.log(`[useNostrProjects] Processing event: ${title}, status: ${status}, id: ${id}, badge: ${badgeId}`);
+            console.log(`[useNostrProjects] Processing event: ${title}, status: ${status}, id: ${id}, badge: ${badgeNaddr}`);
             
             if (!id || !title) {
               console.warn(`[useNostrProjects] Skipping event - missing id or title:`, { id, title });
@@ -93,7 +94,8 @@ export function useNostrProjects() {
               status,
               featured,
               coming_soon: comingSoon,
-              badge_id: badgeId,
+              badge_naddr: badgeNaddr,
+              badge_image: badgeImage,
             };
           } catch (error) {
             console.error(`[useNostrProjects] Error parsing event:`, error);
@@ -153,7 +155,8 @@ export function useFeaturedNostrProjects() {
             const authorHandle = event.tags.find(t => t[0] === 'author-handle')?.[1];
             const headerImage = event.tags.find(t => t[0] === 'header-image')?.[1];
             const comingSoon = event.tags.find(t => t[0] === 'coming-soon')?.[1] === 'true';
-            const badgeId = event.tags.find(t => t[0] === 'badge-id')?.[1];
+            const badgeNaddr = event.tags.find(t => t[0] === 'badge-naddr')?.[1];
+            const badgeImage = event.tags.find(t => t[0] === 'badge-image')?.[1];
             
             if (!id || !title || status !== 'active') return null;
 
@@ -171,7 +174,8 @@ export function useFeaturedNostrProjects() {
               status,
               featured: true,
               coming_soon: comingSoon,
-              badge_id: badgeId,
+              badge_naddr: badgeNaddr,
+              badge_image: badgeImage,
             };
           } catch {
             return null;
@@ -213,7 +217,8 @@ export function useNostrProject(projectId: string) {
         const authorHandle = event.tags.find(t => t[0] === 'author-handle')?.[1];
         const headerImage = event.tags.find(t => t[0] === 'header-image')?.[1];
         const comingSoon = event.tags.find(t => t[0] === 'coming-soon')?.[1] === 'true';
-        const badgeId = event.tags.find(t => t[0] === 'badge-id')?.[1];
+        const badgeNaddr = event.tags.find(t => t[0] === 'badge-naddr')?.[1];
+        const badgeImage = event.tags.find(t => t[0] === 'badge-image')?.[1];
 
         if (!id || !title) return null;
 
@@ -230,7 +235,8 @@ export function useNostrProject(projectId: string) {
           created_at: new Date(event.created_at * 1000).toISOString(),
           status,
           coming_soon: comingSoon,
-          badge_id: badgeId,
+          badge_naddr: badgeNaddr,
+          badge_image: badgeImage,
         } as NostrProjectData;
       } catch {
         return null;

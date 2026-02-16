@@ -1,6 +1,5 @@
 import { useSeoMeta } from '@unhead/react';
 import { useNostrProjects } from '@/hooks/useNostrProjects';
-import { useBadge } from '@/hooks/useBadges';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,31 +7,33 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useNavigate } from 'react-router-dom';
 import { Sparkles, Users, ArrowRight, Zap, Award } from 'lucide-react';
 
-function ProjectBadge({ badgeId }: { badgeId?: string }) {
-  const { data: badge } = useBadge(badgeId || '');
-  const navigate = useNavigate();
-  
-  if (!badge || !badgeId) return null;
+function ProjectBadge({ badgeNaddr, badgeImage }: { badgeNaddr?: string; badgeImage?: string }) {
+  if (!badgeImage || !badgeNaddr) return null;
+
+  // Generate badges.page reward URL from naddr
+  const badgesPageUrl = `https://badges.page/a/${badgeNaddr}`;
 
   return (
-    <div
-      className="absolute top-2 right-2 z-10 cursor-pointer"
+    <a
+      href={badgesPageUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="absolute top-2 right-2 z-10"
       onClick={(e) => {
         e.stopPropagation();
-        navigate('/badges');
       }}
     >
       <div className="relative group">
         <img
-          src={badge.image_url}
-          alt={badge.title}
+          src={badgeImage}
+          alt="Project badge"
           className="w-16 h-16 rounded-full border-4 border-white dark:border-gray-800 shadow-lg hover:scale-110 transition-transform duration-200"
         />
         <div className="absolute inset-0 rounded-full bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
           <Award className="h-6 w-6 text-white" />
         </div>
       </div>
-    </div>
+    </a>
   );
 }
 
@@ -101,7 +102,9 @@ export default function NostrProjects() {
                   </div>
                   
                   {/* Badge Thumbnail */}
-                  {project.badge_id && <ProjectBadge badgeId={project.badge_id} />}
+                  {project.badge_naddr && project.badge_image && (
+                    <ProjectBadge badgeNaddr={project.badge_naddr} badgeImage={project.badge_image} />
+                  )}
                   
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   

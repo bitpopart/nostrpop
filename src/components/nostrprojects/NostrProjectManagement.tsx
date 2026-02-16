@@ -46,6 +46,8 @@ export function NostrProjectManagement() {
   const [status, setStatus] = useState<'active' | 'completed' | 'archived'>('active');
   const [featured, setFeatured] = useState(false);
   const [comingSoon, setComingSoon] = useState(false);
+  const [badgeNaddr, setBadgeNaddr] = useState('');
+  const [badgeImage, setBadgeImage] = useState('');
   
   const resetForm = () => {
     setHeaderImage('');
@@ -57,6 +59,8 @@ export function NostrProjectManagement() {
     setStatus('active');
     setFeatured(false);
     setComingSoon(false);
+    setBadgeNaddr('');
+    setBadgeImage('');
     setEditingProject(null);
     setIsCreating(false);
   };
@@ -72,6 +76,8 @@ export function NostrProjectManagement() {
     setStatus(project.status);
     setFeatured(project.featured || false);
     setComingSoon(project.coming_soon || false);
+    setBadgeNaddr(project.badge_naddr || '');
+    setBadgeImage(project.badge_image || '');
     setIsCreating(true);
   };
 
@@ -164,10 +170,12 @@ export function NostrProjectManagement() {
           ['price', priceSats],
           ['status', status],
           ['t', 'nostr-project'],
-          ...(headerImage ? [['header-image', headerImage]] : []),
+          ...(headerImage ? [          ['header-image', headerImage]] : []),
           ...(featured ? [['featured', 'true']] : []),
           ...(comingSoon ? [['coming-soon', 'true']] : []),
           ...(authorHandle ? [['author-handle', authorHandle.trim()]] : []),
+          ...(badgeNaddr ? [['badge-naddr', badgeNaddr.trim()]] : []),
+          ...(badgeImage ? [['badge-image', badgeImage.trim()]] : []),
           ...images.map((img, i) => ['image', img, i.toString()]),
         ],
       },
@@ -412,6 +420,62 @@ export function NostrProjectManagement() {
                 onChange={(e) => setAuthorHandle(e.target.value)}
                 placeholder="@bitpopart"
               />
+            </div>
+
+            {/* Badge Naddr */}
+            <div className="space-y-2">
+              <Label htmlFor="badge-naddr">Badge Naddr (optional)</Label>
+              <Input
+                id="badge-naddr"
+                value={badgeNaddr}
+                onChange={(e) => setBadgeNaddr(e.target.value)}
+                placeholder="naddr1..."
+              />
+              <p className="text-sm text-muted-foreground">
+                Link to a badge from badges.page - paste the naddr from the badge's URL
+              </p>
+            </div>
+
+            {/* Badge Image */}
+            <div className="space-y-2">
+              <Label htmlFor="badge-image">Badge Thumbnail URL (optional)</Label>
+              {badgeImage ? (
+                <div className="space-y-2">
+                  <div className="relative inline-block">
+                    <img
+                      src={badgeImage}
+                      alt="Badge thumbnail"
+                      className="w-24 h-24 object-cover rounded-lg border-2 border-purple-200"
+                    />
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      className="absolute -top-2 -right-2"
+                      onClick={() => setBadgeImage('')}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <Input
+                    id="badge-image"
+                    type="url"
+                    placeholder="Or paste badge image URL"
+                    value={badgeImage}
+                    onChange={(e) => setBadgeImage(e.target.value)}
+                  />
+                </div>
+              ) : (
+                <Input
+                  id="badge-image"
+                  type="url"
+                  placeholder="Paste badge image URL"
+                  value={badgeImage}
+                  onChange={(e) => setBadgeImage(e.target.value)}
+                />
+              )}
+              <p className="text-sm text-muted-foreground">
+                Badge thumbnail to display on project card (clickable link to badges.page)
+              </p>
             </div>
 
             {/* Status */}
