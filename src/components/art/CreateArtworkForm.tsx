@@ -181,8 +181,21 @@ export function CreateArtworkForm({ onSuccess, onCancel }: CreateArtworkFormProp
     setTags(prev => prev.filter(tag => tag !== tagToRemove));
   };
 
-  const shareArtworkToNostr = (artworkEvent: { id: string; tags: string[][] }, formData: ArtworkFormData) => {
-    console.log('🚀 shareArtworkToNostr called with:', { artworkEvent, formData });
+  const shareArtworkToNostr = (
+    artworkEvent: { id: string; tags: string[][] },
+    artworkTitle: string,
+    artworkImages: string[],
+    customShareMessage: string,
+    medium?: string,
+    saleType?: string
+  ) => {
+    console.log('🚀 shareArtworkToNostr called with:', { 
+      artworkEvent, 
+      artworkTitle,
+      customShareMessage,
+      medium,
+      saleType
+    });
 
     if (!user) {
       console.log('❌ No user found for sharing');
@@ -209,28 +222,28 @@ export function CreateArtworkForm({ onSuccess, onCancel }: CreateArtworkFormProp
       const artworkUrl = `${window.location.origin}/art/${naddr}`;
 
       // Create share message with image link after text, before hashtags
-      const customMessage = formData.shareMessage?.trim();
+      const customMessage = customShareMessage?.trim();
       let shareContent = customMessage
-        ? `${customMessage}\n\n🎨 "${formData.title}"\n${artworkUrl}`
-        : `Just created a beautiful new artwork! 🎨\n\n"${formData.title}"\n\n${artworkUrl}`;
+        ? `${customMessage}\n\n🎨 "${artworkTitle}"\n${artworkUrl}`
+        : `Just created a beautiful new artwork! 🎨\n\n"${artworkTitle}"\n\n${artworkUrl}`;
 
       // Add the artwork image link after the text content, before hashtags
-      if (images && images.length > 0) {
-        shareContent += `\n\n${images[0]}`;
+      if (artworkImages && artworkImages.length > 0) {
+        shareContent += `\n\n${artworkImages[0]}`;
       }
 
       // Add hashtags at the end
       shareContent += `\n\n#artwork #art #nostr`;
 
       // Add medium-specific hashtag if available (but not in tags, only in content)
-      if (formData.medium) {
-        const mediumTag = formData.medium.toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (medium) {
+        const mediumTag = medium.toLowerCase().replace(/[^a-z0-9]/g, '');
         shareContent += ` #${mediumTag}`;
       }
 
       // Add sale type hashtag (but not in tags, only in content)
-      if (formData.saleType !== 'not_for_sale') {
-        shareContent += ` #${formData.saleType}`;
+      if (saleType && saleType !== 'not_for_sale') {
+        shareContent += ` #${saleType}`;
       }
 
       // Prepare tags array - only essential tags for the share note
@@ -243,8 +256,8 @@ export function CreateArtworkForm({ onSuccess, onCancel }: CreateArtworkFormProp
       ];
 
       // Add image-related tags for maximum compatibility
-      if (images && images.length > 0) {
-        const imageUrl = images[0];
+      if (artworkImages && artworkImages.length > 0) {
+        const imageUrl = artworkImages[0];
 
         // Method 1: Simple image tag (widely supported)
         shareTags.push(['image', imageUrl]);
@@ -254,7 +267,7 @@ export function CreateArtworkForm({ onSuccess, onCancel }: CreateArtworkFormProp
           'imeta',
           `url ${imageUrl}`,
           'm image/jpeg',
-          `alt Preview image for "${formData.title}" artwork`,
+          `alt Preview image for "${artworkTitle}" artwork`,
           `fallback ${artworkUrl}`
         ]);
 
@@ -360,8 +373,20 @@ export function CreateArtworkForm({ onSuccess, onCancel }: CreateArtworkFormProp
 
           // Share to Nostr if requested
           if (data.shareToNostr) {
-            console.log('📢 Sharing to Nostr...', { shareToNostr: data.shareToNostr, shareMessage: data.shareMessage });
-            shareArtworkToNostr(result.event, data);
+            console.log('📢 Sharing to Nostr...', { 
+              shareToNostr: data.shareToNostr, 
+              shareMessage: data.shareMessage,
+              title: data.title,
+              images: images.length
+            });
+            shareArtworkToNostr(
+              result.event, 
+              data.title, 
+              images, 
+              data.shareMessage || '',
+              data.medium,
+              data.saleType
+            );
           } else {
             console.log('❌ Not sharing to Nostr (shareToNostr is false)');
           }
