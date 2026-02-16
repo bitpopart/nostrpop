@@ -96,16 +96,21 @@ export function BlogPostManagement() {
     queryFn: async (c) => {
       if (!user?.pubkey) return [];
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(5000)]);
+      console.log('🔍 [BlogPostManagement] Fetching blog posts for user:', user.pubkey);
       const events = await nostr.query(
         [{ kinds: [30023], authors: [user.pubkey], limit: 50 }],
         { signal }
       );
+      console.log('📥 [BlogPostManagement] Received', events.length, 'kind 30023 events');
       // Filter out artist-page events
       const filteredEvents = events.filter(e => {
         const dTag = e.tags.find(t => t[0] === 'd')?.[1];
         const hasArtworkTag = e.tags.some(t => t[0] === 't' && t[1] === 'artwork');
+        const hasBlogTag = e.tags.some(t => t[0] === 't' && t[1] === 'blog');
+        console.log('  Event:', dTag, '| blog tag:', hasBlogTag, '| artwork tag:', hasArtworkTag);
         return dTag !== 'artist-page' && !hasArtworkTag;
       });
+      console.log('✅ [BlogPostManagement] After filtering:', filteredEvents.length, 'blog posts');
       return filteredEvents.sort((a, b) => b.created_at - a.created_at);
     },
     enabled: !!user?.pubkey,
@@ -421,6 +426,8 @@ export function BlogPostManagement() {
       blogTags.push(['t', tag.toLowerCase()]);
     });
 
+    console.log('📝 [BlogPostManagement] Publishing blog post with tags:', blogTags.map(([k, v]) => `${k}:${v}`).join(', '));
+    
     createEvent(
       {
         kind: 30023,
@@ -429,6 +436,9 @@ export function BlogPostManagement() {
       },
       {
         onSuccess: async (result) => {
+          console.log('✅ [BlogPostManagement] Blog post published successfully!', result.id);
+          console.log('   Event tags:', result.tags);
+          
           // CRITICAL: Capture values BEFORE any async operations
           const shouldShare = shareToNostr === true && !editingPost;
           const capturedTitle = title;
@@ -437,9 +447,11 @@ export function BlogPostManagement() {
           const capturedShareMessage = shareMessage;
           
           // Give relay time to process
+          console.log('⏳ [BlogPostManagement] Waiting 1.5s for relay...');
           await new Promise(resolve => setTimeout(resolve, 1500));
           
           // Invalidate and refetch both admin and public queries
+          console.log('🔄 [BlogPostManagement] Refetching queries...');
           await queryClient.invalidateQueries({ queryKey: ['blog-posts'] });
           await queryClient.invalidateQueries({ queryKey: ['blog-posts-public'] });
           await queryClient.refetchQueries({ queryKey: ['blog-posts'] });
@@ -457,7 +469,7 @@ export function BlogPostManagement() {
           setIsSaving(false);
         },
         onError: (error) => {
-          console.error('Failed to save blog post:', error);
+          console.error('❌ [BlogPostManagement] Failed to save blog post:', error);
           toast.error('Failed to save blog post');
           setIsSaving(false);
         },
