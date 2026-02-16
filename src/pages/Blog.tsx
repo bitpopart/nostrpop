@@ -6,6 +6,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useAppContext } from '@/hooks/useAppContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -25,6 +26,7 @@ export default function Blog() {
   const { user } = useCurrentUser();
   const isAdmin = useIsAdmin();
   const { getGradientStyle } = useThemeColors();
+  const { config } = useAppContext();
   const [searchParams] = useSearchParams();
 
   // Get initial tab from URL params
@@ -51,8 +53,9 @@ export default function Blog() {
 
   // Fetch all blog posts (kind 30023)
   const { data: blogPosts = [], isLoading } = useQuery({
-    queryKey: ['blog-posts-public'],
+    queryKey: ['blog-posts-public', config.relayUrl],
     queryFn: async (c) => {
+      console.log('[Blog] 🔍 Fetching blog posts from relay:', config.relayUrl);
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(5000)]);
       
       const events = await nostr.query(
@@ -60,11 +63,28 @@ export default function Blog() {
         { signal }
       );
 
+      console.log('[Blog] 📥 Received events from relay:', {
+        relay: config.relayUrl,
+        total: events.length,
+        eventIds: events.map(e => ({ id: e.id, dTag: e.tags.find(t => t[0] === 'd')?.[1] }))
+      });
+
       // Filter out artist-page and artwork events
       const filteredEvents = events.filter(e => {
         const dTag = e.tags.find(t => t[0] === 'd')?.[1];
         const hasArtworkTag = e.tags.some(t => t[0] === 't' && t[1] === 'artwork');
-        return dTag !== 'artist-page' && !hasArtworkTag;
+        const shouldInclude = dTag !== 'artist-page' && !hasArtworkTag;
+        
+        if (!shouldInclude) {
+          console.log('[Blog] ⚠️ Filtering out event:', { dTag, hasArtworkTag });
+        }
+        
+        return shouldInclude;
+      });
+      
+      console.log('[Blog] ✅ After filtering:', {
+        total: filteredEvents.length,
+        eventIds: filteredEvents.map(e => ({ id: e.id, dTag: e.tags.find(t => t[0] === 'd')?.[1] }))
       });
       
       // Sort by published_at tag if it exists, otherwise by created_at (newest first)
