@@ -102,13 +102,10 @@ export function BlogPostManagement() {
         { signal }
       );
       console.log('📥 [BlogPostManagement] Received', events.length, 'kind 30023 events');
-      // Filter out artist-page events
+      // Filter out artist-page events (but keep blog posts even if they have artwork tag)
       const filteredEvents = events.filter(e => {
         const dTag = e.tags.find(t => t[0] === 'd')?.[1];
-        const hasArtworkTag = e.tags.some(t => t[0] === 't' && t[1] === 'artwork');
-        const hasBlogTag = e.tags.some(t => t[0] === 't' && t[1] === 'blog');
-        console.log('  Event:', dTag, '| blog tag:', hasBlogTag, '| artwork tag:', hasArtworkTag);
-        return dTag !== 'artist-page' && !hasArtworkTag;
+        return dTag !== 'artist-page';
       });
       console.log('✅ [BlogPostManagement] After filtering:', filteredEvents.length, 'blog posts');
       return filteredEvents.sort((a, b) => b.created_at - a.created_at);
