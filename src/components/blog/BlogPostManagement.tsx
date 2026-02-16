@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
@@ -39,12 +40,14 @@ import {
   Image as ImageIcon,
   GripVertical,
   Save,
-  ExternalLink
+  ExternalLink,
+  Share2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import type { NostrEvent } from '@nostrify/nostrify';
 import ReactMarkdown from 'react-markdown';
+import { nip19 } from 'nostr-tools';
 
 // Content block types
 interface ContentBlock {
@@ -80,6 +83,8 @@ export function BlogPostManagement() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadingBlockId, setUploadingBlockId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [shareToNostr, setShareToNostr] = useState(false);
+  const [shareMessage, setShareMessage] = useState('');
   
   // Confirmation dialogs
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -117,6 +122,8 @@ export function BlogPostManagement() {
     setContentBlocks([{ id: '1', type: 'markdown', content: '', images: [] }]);
     setEditingPost(null);
     setActiveTab('edit');
+    setShareToNostr(false);
+    setShareMessage('');
   };
 
   const addContentBlock = (type: 'markdown' | 'gallery') => {
@@ -272,6 +279,86 @@ export function BlogPostManagement() {
     setIsCreating(true);
   };
 
+  const shareBlogToNostr = (
+    blogEventParam: NostrEvent,
+    blogTitleParam: string,
+    blogHeaderImageParam: string,
+    blogTagsParam: string,
+    customShareMessageParam: string
+  ) => {
+    if (!user) {
+      console.log('❌ No user for sharing');
+      return;
+    }
+
+    try {
+      const dTag = blogEventParam.tags.find(([name]) => name === 'd')?.[1];
+      if (!dTag) {
+        console.error('No d-tag found in blog event');
+        return;
+      }
+
+      const naddr = nip19.naddrEncode({
+        identifier: dTag,
+        pubkey: user.pubkey,
+        kind: 30023,
+      });
+
+      const blogUrl = `${window.location.origin}/blog/${naddr}`;
+
+      let shareContent = customShareMessageParam?.trim()
+        ? `${customShareMessageParam.trim()}\n\n📝 "${blogTitleParam}"\n${blogUrl}`
+        : `Just published a new blog post! 📝\n\n"${blogTitleParam}"\n\n${blogUrl}`;
+
+      if (blogHeaderImageParam) {
+        shareContent += `\n\n${blogHeaderImageParam}`;
+      }
+
+      shareContent += `\n\n#blog #nostr`;
+
+      const shareTags: string[][] = [
+        ['t', 'blog'],
+        ['t', 'nostr'],
+        ['e', blogEventParam.id, '', 'mention'],
+        ['a', `30023:${user.pubkey}:${dTag}`, '', 'mention'],
+      ];
+
+      const tagArray = blogTagsParam.split(',').map(t => t.trim()).filter(t => t);
+      tagArray.forEach(tag => {
+        shareTags.push(['t', tag.toLowerCase()]);
+      });
+
+      if (blogHeaderImageParam) {
+        shareTags.push(['image', blogHeaderImageParam]);
+        shareTags.push([
+          'imeta',
+          `url ${blogHeaderImageParam}`,
+          'm image/jpeg',
+          `alt Preview image for "${blogTitleParam}" blog post`,
+          `fallback ${blogUrl}`
+        ]);
+      }
+
+      createEvent({
+        kind: 1,
+        content: shareContent,
+        tags: shareTags
+      }, {
+        onSuccess: () => {
+          console.log('✅ Shared to Nostr successfully');
+          toast.success('Shared to Nostr! 📝');
+        },
+        onError: (error) => {
+          console.error('Share error:', error);
+          toast.error('Blog created but sharing failed');
+        }
+      });
+    } catch (error) {
+      console.error('Share error:', error);
+      toast.error('Failed to share to Nostr');
+    }
+  };
+
   const handleSave = () => {
     if (!title.trim()) {
       toast.error('Title is required');
@@ -352,6 +439,13 @@ export function BlogPostManagement() {
         onSuccess: async (result) => {
           console.log('[BlogPostManagement] ✅ Blog post published!');
           
+          // CRITICAL: Capture values BEFORE any async operations
+          const shouldShare = shareToNostr === true && !editingPost;
+          const capturedTitle = title;
+          const capturedHeaderImage = headerImage;
+          const capturedTags = tags;
+          const capturedShareMessage = shareMessage;
+          
           // Give relay time to process
           await new Promise(resolve => setTimeout(resolve, 1000));
           
@@ -362,6 +456,15 @@ export function BlogPostManagement() {
           
           const action = editingPost ? 'updated' : 'created';
           toast.success(`Blog post ${action} successfully!`);
+          
+          // Share ONLY if checkbox was checked
+          if (shouldShare) {
+            console.log('📢 Sharing to Nostr (checkbox was checked)');
+            shareBlogToNostr(result, capturedTitle, capturedHeaderImage, capturedTags, capturedShareMessage);
+          } else {
+            console.log('❌ NOT sharing (checkbox not checked or editing)');
+          }
+          
           resetForm();
           setIsSaving(false);
         },
@@ -904,6 +1007,42 @@ export function BlogPostManagement() {
                 </TabsContent>
               </Tabs>
             </div>
+
+            {/* Share to Nostr */}
+            {!editingPost && (
+              <div className="space-y-4 p-4 border rounded-lg bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="shareToNostr"
+                    checked={shareToNostr}
+                    onCheckedChange={(checked) => setShareToNostr(!!checked)}
+                  />
+                  <Label htmlFor="shareToNostr" className="text-base font-medium flex items-center gap-2 cursor-pointer">
+                    <Share2 className="h-4 w-4" />
+                    Share to Nostr Community
+                  </Label>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Check this box to share your blog post with the Nostr community after publishing.
+                </p>
+
+                {shareToNostr && (
+                  <div className="space-y-2">
+                    <Label htmlFor="shareMessage" className="text-sm font-medium">
+                      Custom Share Message (optional)
+                    </Label>
+                    <Textarea
+                      id="shareMessage"
+                      placeholder="Add a personal message when sharing..."
+                      rows={3}
+                      value={shareMessage}
+                      onChange={(e) => setShareMessage(e.target.value)}
+                      className="text-sm resize-none"
+                    />
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Actions */}
             <div className="flex gap-2 pt-4">
