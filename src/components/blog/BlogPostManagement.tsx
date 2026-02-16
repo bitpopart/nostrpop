@@ -284,17 +284,23 @@ export function BlogPostManagement() {
     setIsCreating(true);
   };
 
-  const shareBlogToNostr = (blogEvent: NostrEvent) => {
-    console.log('🚀 shareBlogToNostr called with:', { blogEvent });
+  const shareBlogToNostr = (
+    blogEvent: NostrEvent,
+    blogTitle: string,
+    blogHeaderImage: string,
+    blogTags: string,
+    customShareMessage: string
+  ) => {
+    console.log('🚀 shareBlogToNostr called with:', { 
+      blogEvent, 
+      blogTitle,
+      blogHeaderImage,
+      blogTags,
+      customShareMessage
+    });
 
     if (!user) {
       console.log('❌ No user found for sharing');
-      return;
-    }
-
-    // Double-check that sharing was explicitly requested
-    if (!shareToNostr) {
-      console.log('❌ CRITICAL: shareBlogToNostr called but shareToNostr is false - aborting');
       return;
     }
 
@@ -318,14 +324,14 @@ export function BlogPostManagement() {
       const blogUrl = `${window.location.origin}/blog/${naddr}`;
 
       // Create share message with image link after text, before hashtags
-      const customMessage = shareMessage?.trim();
+      const customMessage = customShareMessage?.trim();
       let shareContent = customMessage
-        ? `${customMessage}\n\n📝 "${title}"\n${blogUrl}`
-        : `Just published a new blog post! 📝\n\n"${title}"\n\n${blogUrl}`;
+        ? `${customMessage}\n\n📝 "${blogTitle}"\n${blogUrl}`
+        : `Just published a new blog post! 📝\n\n"${blogTitle}"\n\n${blogUrl}`;
 
       // Add the header image link after the text content, before hashtags
-      if (headerImage) {
-        shareContent += `\n\n${headerImage}`;
+      if (blogHeaderImage) {
+        shareContent += `\n\n${blogHeaderImage}`;
       }
 
       // Add hashtags at the end
@@ -340,30 +346,30 @@ export function BlogPostManagement() {
       ];
 
       // Add user tags from the blog post
-      const tagArray = tags.split(',').map(t => t.trim()).filter(t => t);
+      const tagArray = blogTags.split(',').map(t => t.trim()).filter(t => t);
       tagArray.forEach(tag => {
         shareTags.push(['t', tag.toLowerCase()]);
       });
 
       // Add image-related tags for maximum compatibility
-      if (headerImage) {
+      if (blogHeaderImage) {
         // Method 1: Simple image tag (widely supported)
-        shareTags.push(['image', headerImage]);
+        shareTags.push(['image', blogHeaderImage]);
 
         // Method 2: NIP-92 imeta tag (newer clients)
         shareTags.push([
           'imeta',
-          `url ${headerImage}`,
+          `url ${blogHeaderImage}`,
           'm image/jpeg',
-          `alt Preview image for "${title}" blog post`,
+          `alt Preview image for "${blogTitle}" blog post`,
           `fallback ${blogUrl}`
         ]);
 
         // Method 3: Add r tag for reference (some clients use this)
-        shareTags.push(['r', headerImage]);
+        shareTags.push(['r', blogHeaderImage]);
 
         // Method 4: Add url tag (alternative approach some clients check)
-        shareTags.push(['url', headerImage]);
+        shareTags.push(['url', blogHeaderImage]);
       }
 
       // Create kind 1 note to share the blog
@@ -487,9 +493,12 @@ export function BlogPostManagement() {
             console.log('📢 User explicitly requested sharing to Nostr', { 
               shareToNostr, 
               shareMessage, 
-              isEdit: !!editingPost 
+              isEdit: !!editingPost,
+              title,
+              headerImage,
+              tags
             });
-            shareBlogToNostr(result.event);
+            shareBlogToNostr(result.event, title, headerImage, tags, shareMessage);
           } else {
             console.log('❌ NOT sharing to Nostr', { 
               shareToNostr, 
