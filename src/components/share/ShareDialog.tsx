@@ -358,14 +358,14 @@ export function ShareDialog({
             <Card className="overflow-hidden">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-purple-500" />
+                  <Sparkles className="h-5 w-5 text-orange-500" />
                   Preview
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Image Preview */}
                 {imageUrl && (
-                  <div className="relative aspect-video rounded-lg overflow-hidden bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/20 dark:to-pink-900/20">
+                  <div className="relative aspect-video rounded-lg overflow-hidden bg-gradient-to-br from-orange-100 to-pink-100 dark:from-orange-900/20 dark:to-pink-900/20">
                     <img
                       src={imageUrl}
                       alt={title}
@@ -383,7 +383,7 @@ export function ShareDialog({
                   <h3 className="font-semibold text-lg">{title}</h3>
                   {description && <p className="text-muted-foreground text-sm">{description}</p>}
                   {category && (
-                    <span className="inline-block text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-2 py-1 rounded">
+                    <span className="inline-block text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 px-2 py-1 rounded">
                       {category}
                     </span>
                   )}
@@ -408,7 +408,7 @@ export function ShareDialog({
                   {imageUrl && (
                     <div className="text-blue-600 dark:text-blue-400 text-sm break-all">{imageUrl}</div>
                   )}
-                  <div className="text-purple-600 dark:text-purple-400 text-sm">
+                  <div className="text-orange-600 dark:text-orange-400 text-sm">
                     #{contentType} #{category ? category.toLowerCase().replace(/[^a-z0-9]/g, '') : contentType} #bitpopart
                   </div>
                 </div>
@@ -419,7 +419,7 @@ export function ShareDialog({
             <Button
               onClick={postToNostr}
               disabled={isPending || !user}
-              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+              className="w-full bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600"
             >
               {isPending ? (
                 <>

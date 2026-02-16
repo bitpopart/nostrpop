@@ -198,14 +198,14 @@ export default function Blog() {
           <TabsContent value="blog">
             {/* Login Prompt for Non-Logged-In Users */}
             {!user && (
-              <Card className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-purple-200 dark:border-purple-800 mb-6">
+              <Card className="bg-gradient-to-r from-orange-50 to-pink-50 dark:from-orange-900/20 dark:to-pink-900/20 border-orange-200 dark:border-orange-800 mb-6">
                 <CardContent className="pt-6">
                   <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                     <div className="text-center sm:text-left">
-                      <h3 className="font-semibold text-purple-700 dark:text-purple-300 mb-1">
+                      <h3 className="font-semibold text-orange-700 dark:text-orange-300 mb-1">
                         Join the Community
                       </h3>
-                      <p className="text-sm text-purple-600 dark:text-purple-400">
+                      <p className="text-sm text-orange-600 dark:text-orange-400">
                         Log in with Nostr to interact with posts and support creators
                       </p>
                     </div>
@@ -285,7 +285,7 @@ export default function Blog() {
                                   <Button
                                     size="sm"
                                     variant="default"
-                                    className="bg-purple-600 hover:bg-purple-700 text-white border-0 shadow-lg h-8 w-8 p-0"
+                                    className="bg-orange-600 hover:bg-orange-700 text-white border-0 shadow-lg h-8 w-8 p-0"
                                   >
                                     <Share2 className="h-4 w-4" />
                                   </Button>

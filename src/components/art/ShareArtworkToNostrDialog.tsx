@@ -227,14 +227,14 @@ export function ShareArtworkToNostrDialog({ artworkEvent, artworkData, children 
           <Card className="overflow-hidden">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
-                <Palette className="h-5 w-5 text-purple-500" />
+                <Palette className="h-5 w-5 text-orange-500" />
                 Artwork Preview
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Artwork Image Preview */}
               {artworkData.images && artworkData.images.length > 0 ? (
-                <div className="relative aspect-square rounded-lg overflow-hidden bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/20 dark:to-pink-900/20">
+                <div className="relative aspect-square rounded-lg overflow-hidden bg-gradient-to-br from-orange-100 to-pink-100 dark:from-orange-900/20 dark:to-pink-900/20">
                   <img
                     src={artworkData.images[0]}
                     alt={artworkData.title}
@@ -255,7 +255,7 @@ export function ShareArtworkToNostrDialog({ artworkEvent, artworkData, children 
                   )}
                 </div>
               ) : (
-                <div className="aspect-square rounded-lg bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/20 dark:to-pink-900/20 flex items-center justify-center">
+                <div className="aspect-square rounded-lg bg-gradient-to-br from-orange-100 to-pink-100 dark:from-orange-900/20 dark:to-pink-900/20 flex items-center justify-center">
                   <div className="text-center">
                     <div className="text-4xl mb-2">🎨</div>
                     <p className="text-muted-foreground">Beautiful Artwork</p>

@@ -271,7 +271,7 @@ export default function BlogPost() {
                   <Button
                     variant="outline"
                     size="lg"
-                    className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-purple-200 dark:border-purple-800"
+                    className="bg-gradient-to-r from-orange-50 to-pink-50 dark:from-orange-900/20 dark:to-pink-900/20 border-orange-200 dark:border-orange-800"
                   >
                     <Share2 className="h-4 w-4 mr-2" />
                     Share Article
