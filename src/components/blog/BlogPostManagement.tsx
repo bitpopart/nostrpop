@@ -447,15 +447,13 @@ export function BlogPostManagement() {
           const capturedShareMessage = shareMessage;
           
           // Give relay time to process
-          console.log('⏳ [BlogPostManagement] Waiting 1.5s for relay...');
-          await new Promise(resolve => setTimeout(resolve, 1500));
+          console.log('⏳ [BlogPostManagement] Waiting 2s for relay...');
+          await new Promise(resolve => setTimeout(resolve, 2000));
           
-          // Invalidate and refetch both admin and public queries
-          console.log('🔄 [BlogPostManagement] Refetching queries...');
-          await queryClient.invalidateQueries({ queryKey: ['blog-posts'] });
-          await queryClient.invalidateQueries({ queryKey: ['blog-posts-public'] });
-          await queryClient.refetchQueries({ queryKey: ['blog-posts'] });
-          await queryClient.refetchQueries({ queryKey: ['blog-posts-public'] });
+          // Reset queries to force complete refetch (clears cache)
+          console.log('🔄 [BlogPostManagement] Resetting queries...');
+          await queryClient.resetQueries({ queryKey: ['blog-posts'] });
+          await queryClient.resetQueries({ queryKey: ['blog-posts-public'] });
           
           const action = editingPost ? 'updated' : 'created';
           toast.success(`Blog post ${action} successfully!`);
