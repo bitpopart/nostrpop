@@ -61,21 +61,48 @@ export function useLatestBlogPosts(limit: number = 3) {
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(5000)]);
 
       console.log('🔍 [useLatestBlogPosts] Fetching blog posts...');
-      const events = await nostr.query([
-        {
-          kinds: [30023], // Long-form articles
-          authors: [ADMIN_HEX],
-          '#t': ['blog'], // Only fetch events tagged with 'blog'
-          limit: limit * 2 // Fetch extra to account for filtering
-        }
-      ], { signal });
+      
+      // Fetch blog posts and deletion events
+      const [events, deletionEvents] = await Promise.all([
+        nostr.query([
+          {
+            kinds: [30023], // Long-form articles
+            authors: [ADMIN_HEX],
+            '#t': ['blog'], // Only fetch events tagged with 'blog'
+            limit: limit * 2 // Fetch extra to account for filtering
+          }
+        ], { signal }),
+        nostr.query([
+          {
+            kinds: [5], // Deletion events
+            authors: [ADMIN_HEX],
+            limit: 100
+          }
+        ], { signal })
+      ]);
 
-      console.log('📥 [useLatestBlogPosts] Received', events.length, 'events');
+      console.log('📥 [useLatestBlogPosts] Received', events.length, 'events and', deletionEvents.length, 'deletion events');
 
-      // Filter out artist-page events (but keep blog posts even if they have artwork tag)
+      // Build set of deleted addresses from kind 5 events
+      const deletedAddresses = new Set<string>();
+      deletionEvents.forEach(delEvent => {
+        delEvent.tags.forEach(tag => {
+          if (tag[0] === 'a') {
+            deletedAddresses.add(tag[1]);
+          }
+        });
+      });
+
+      // Filter out artist-page events and deleted posts
       const filteredEvents = events.filter(e => {
         const dTag = e.tags.find(t => t[0] === 'd')?.[1];
-        return dTag !== 'artist-page';
+        if (dTag === 'artist-page') return false;
+        
+        // Check if this post is deleted
+        const address = `30023:${e.pubkey}:${dTag}`;
+        if (deletedAddresses.has(address)) return false;
+        
+        return true;
       });
 
       console.log('✅ [useLatestBlogPosts] After filtering:', filteredEvents.length, 'blog posts');

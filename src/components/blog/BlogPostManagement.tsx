@@ -97,16 +97,48 @@ export function BlogPostManagement() {
       if (!user?.pubkey) return [];
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(5000)]);
       console.log('🔍 [BlogPostManagement] Fetching blog posts for user:', user.pubkey);
-      const events = await nostr.query(
-        [{ kinds: [30023], authors: [user.pubkey], limit: 50 }],
-        { signal }
-      );
-      console.log('📥 [BlogPostManagement] Received', events.length, 'kind 30023 events');
-      // Filter out artist-page events (but keep blog posts even if they have artwork tag)
+      
+      // Fetch blog posts and deletion events
+      const [events, deletionEvents] = await Promise.all([
+        nostr.query(
+          [{ kinds: [30023], authors: [user.pubkey], limit: 50 }],
+          { signal }
+        ),
+        nostr.query(
+          [{ kinds: [5], authors: [user.pubkey], limit: 100 }],
+          { signal }
+        )
+      ]);
+      
+      console.log('📥 [BlogPostManagement] Received', events.length, 'kind 30023 events and', deletionEvents.length, 'deletion events');
+      
+      // Build set of deleted addresses from kind 5 events
+      const deletedAddresses = new Set<string>();
+      deletionEvents.forEach(delEvent => {
+        delEvent.tags.forEach(tag => {
+          if (tag[0] === 'a') {
+            deletedAddresses.add(tag[1]);
+          }
+        });
+      });
+      
+      console.log('🗑️ [BlogPostManagement] Found', deletedAddresses.size, 'deleted addresses');
+      
+      // Filter out artist-page events and deleted posts
       const filteredEvents = events.filter(e => {
         const dTag = e.tags.find(t => t[0] === 'd')?.[1];
-        return dTag !== 'artist-page';
+        if (dTag === 'artist-page') return false;
+        
+        // Check if this post is deleted
+        const address = `30023:${e.pubkey}:${dTag}`;
+        if (deletedAddresses.has(address)) {
+          console.log('  Filtering out deleted post:', dTag);
+          return false;
+        }
+        
+        return true;
       });
+      
       console.log('✅ [BlogPostManagement] After filtering:', filteredEvents.length, 'blog posts');
       return filteredEvents.sort((a, b) => b.created_at - a.created_at);
     },
@@ -478,28 +510,44 @@ export function BlogPostManagement() {
     setShowDeleteDialog(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!postToDelete) return;
 
     const dTag = postToDelete.tags.find(t => t[0] === 'd')?.[1];
     const artworkAddress = `30023:${postToDelete.pubkey}:${dTag}`;
 
+    console.log('🗑️ [BlogPostManagement] Deleting blog post:', dTag, 'address:', artworkAddress);
+
     createEvent(
       {
         kind: 5,
         content: 'Deleted blog post',
-        tags: [['a', artworkAddress]],
+        tags: [
+          ['a', artworkAddress],
+          ['k', '30023']
+        ],
       },
       {
-        onSuccess: () => {
-          toast.success('Blog post deleted');
+        onSuccess: async () => {
+          console.log('✅ [BlogPostManagement] Deletion event published');
+          toast.success('Blog post deleted successfully');
           setPostToDelete(null);
           setShowDeleteDialog(false);
-          queryClient.invalidateQueries({ queryKey: ['blog-posts'] });
-          queryClient.invalidateQueries({ queryKey: ['blog-posts-public'] });
+          
+          // Wait 2 seconds for relay to process
+          console.log('⏳ [BlogPostManagement] Waiting 2s for relay...');
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          
+          // Hard reset queries
+          console.log('🔄 [BlogPostManagement] Resetting queries...');
+          await queryClient.resetQueries({ queryKey: ['blog-posts'] });
+          await queryClient.resetQueries({ queryKey: ['blog-posts-public'] });
+          await queryClient.resetQueries({ queryKey: ['latest-blog-posts'] });
+          
+          console.log('✨ [BlogPostManagement] Delete complete');
         },
         onError: (error) => {
-          console.error('Delete error:', error);
+          console.error('❌ [BlogPostManagement] Delete error:', error);
           toast.error('Failed to delete blog post');
           setShowDeleteDialog(false);
         },

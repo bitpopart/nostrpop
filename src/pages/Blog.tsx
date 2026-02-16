@@ -55,15 +55,38 @@ export default function Blog() {
     queryFn: async (c) => {
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(5000)]);
       
-      const events = await nostr.query(
-        [{ kinds: [30023], authors: [ADMIN_PUBKEY], '#t': ['blog'], limit: 50 }],
-        { signal }
-      );
+      // Fetch blog posts and deletion events
+      const [events, deletionEvents] = await Promise.all([
+        nostr.query(
+          [{ kinds: [30023], authors: [ADMIN_PUBKEY], '#t': ['blog'], limit: 50 }],
+          { signal }
+        ),
+        nostr.query(
+          [{ kinds: [5], authors: [ADMIN_PUBKEY], limit: 100 }],
+          { signal }
+        )
+      ]);
 
-      // Filter out artist-page events (but keep blog posts even if they have artwork tag)
+      // Build set of deleted addresses from kind 5 events
+      const deletedAddresses = new Set<string>();
+      deletionEvents.forEach(delEvent => {
+        delEvent.tags.forEach(tag => {
+          if (tag[0] === 'a') {
+            deletedAddresses.add(tag[1]);
+          }
+        });
+      });
+
+      // Filter out artist-page events and deleted posts
       const filteredEvents = events.filter(e => {
         const dTag = e.tags.find(t => t[0] === 'd')?.[1];
-        return dTag !== 'artist-page';
+        if (dTag === 'artist-page') return false;
+        
+        // Check if this post is deleted
+        const address = `30023:${e.pubkey}:${dTag}`;
+        if (deletedAddresses.has(address)) return false;
+        
+        return true;
       });
       
       // Sort by published_at tag if it exists, otherwise by created_at (newest first)
