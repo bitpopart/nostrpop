@@ -50,3 +50,47 @@ export function useAdminNotes(limit: number = 10) {
 export function useLatestAdminNotes(limit: number = 3) {
   return useAdminNotes(limit);
 }
+
+// Hook to fetch latest blog posts (kind 30023)
+export function useLatestBlogPosts(limit: number = 3) {
+  const { nostr } = useNostr();
+
+  return useQuery({
+    queryKey: ['latest-blog-posts', ADMIN_HEX, limit],
+    queryFn: async (c) => {
+      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(5000)]);
+
+      const events = await nostr.query([
+        {
+          kinds: [30023], // Long-form articles
+          authors: [ADMIN_HEX],
+          '#t': ['blog'], // Only fetch events tagged with 'blog'
+          limit: limit * 2 // Fetch extra to account for filtering
+        }
+      ], { signal });
+
+      // Filter out artist-page and artwork events
+      const filteredEvents = events.filter(e => {
+        const dTag = e.tags.find(t => t[0] === 'd')?.[1];
+        const hasArtworkTag = e.tags.some(t => t[0] === 't' && t[1] === 'artwork');
+        return dTag !== 'artist-page' && !hasArtworkTag;
+      });
+
+      // Sort by published_at tag if it exists, otherwise by created_at (newest first)
+      return filteredEvents
+        .sort((a, b) => {
+          const aPublished = a.tags.find(t => t[0] === 'published_at')?.[1];
+          const bPublished = b.tags.find(t => t[0] === 'published_at')?.[1];
+          
+          const aDate = aPublished ? parseInt(aPublished) : a.created_at;
+          const bDate = bPublished ? parseInt(bPublished) : b.created_at;
+          
+          return bDate - aDate; // Newest first
+        })
+        .slice(0, limit);
+    },
+    staleTime: 60000, // 1 minute
+    refetchInterval: 120000, // Refetch every 2 minutes
+    retry: 3, // Retry failed requests up to 3 times
+  });
+}
