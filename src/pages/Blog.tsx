@@ -16,6 +16,7 @@ import { ZapButton } from '@/components/ZapButton';
 import { LoginArea } from '@/components/auth/LoginArea';
 import { BlogPostManagement } from '@/components/blog/BlogPostManagement';
 import { ShareDialog } from '@/components/share/ShareDialog';
+import { RelaySelector } from '@/components/RelaySelector';
 import { Calendar, Tag, ArrowRight, FileText, Plus, Share2, Archive } from 'lucide-react';
 import { format, startOfMonth } from 'date-fns';
 import { Link } from 'react-router-dom';
@@ -199,6 +200,12 @@ export default function Blog() {
               Admin Access • Blog Management
             </Badge>
           )}
+          
+          {/* Relay Selector for debugging/content discovery */}
+          <div className="mt-6 flex items-center justify-center gap-3">
+            <span className="text-sm text-muted-foreground">Relay:</span>
+            <RelaySelector className="w-64" />
+          </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full max-w-6xl mx-auto">
