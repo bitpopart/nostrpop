@@ -115,30 +115,13 @@ export function ShareArtworkToNostrDialog({ artworkEvent, artworkData, children 
         shareContent += ` #${artworkData.sale_type}`;
       }
 
-      // Prepare tags array
-      const tags = [
+      // Prepare tags array - only essential tags for the share note
+      const tags: string[][] = [
         ['t', 'artwork'],
         ['t', 'art'],
         ['t', 'nostr'],
         ['e', artworkEvent.id, '', 'mention'], // Reference the artwork event
       ];
-
-      // Add medium tag if available
-      if (artworkData.medium) {
-        tags.push(['t', artworkData.medium.toLowerCase().replace(/[^a-z0-9]/g, '')]);
-      }
-
-      // Add sale type tag
-      if (artworkData.sale_type !== 'not_for_sale') {
-        tags.push(['t', artworkData.sale_type]);
-      }
-
-      // Add custom tags from artwork
-      if (artworkData.tags && artworkData.tags.length > 0) {
-        artworkData.tags.forEach(tag => {
-          tags.push(['t', tag.toLowerCase()]);
-        });
-      }
 
       // Add the d-tag reference if available
       const dTag = artworkEvent.tags.find(([name]) => name === 'd')?.[1];

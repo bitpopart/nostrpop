@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
@@ -39,12 +40,14 @@ import {
   Image as ImageIcon,
   GripVertical,
   Save,
-  ExternalLink
+  ExternalLink,
+  Share2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import type { NostrEvent } from '@nostrify/nostrify';
 import ReactMarkdown from 'react-markdown';
+import { nip19 } from 'nostr-tools';
 
 // Content block types
 interface ContentBlock {
@@ -80,6 +83,9 @@ export function BlogPostManagement() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadingBlockId, setUploadingBlockId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [shareToNostr, setShareToNostr] = useState(false);
+  const [shareMessage, setShareMessage] = useState('');
+  const [isSharing, setIsSharing] = useState(false);
   
   // Confirmation dialogs
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -117,6 +123,8 @@ export function BlogPostManagement() {
     setContentBlocks([{ id: '1', type: 'markdown', content: '', images: [] }]);
     setEditingPost(null);
     setActiveTab('edit');
+    setShareToNostr(false);
+    setShareMessage('');
   };
 
   const addContentBlock = (type: 'markdown' | 'gallery') => {
@@ -272,6 +280,106 @@ export function BlogPostManagement() {
     setIsCreating(true);
   };
 
+  const shareBlogToNostr = (blogEvent: NostrEvent) => {
+    console.log('🚀 shareBlogToNostr called with:', { blogEvent });
+
+    if (!user) {
+      console.log('❌ No user found for sharing');
+      return;
+    }
+
+    setIsSharing(true);
+
+    try {
+      // Get the d-tag from the blog event
+      const dTag = blogEvent.tags.find(([name]: [string, string]) => name === 'd')?.[1];
+      if (!dTag) {
+        throw new Error('No d-tag found in blog event');
+      }
+
+      // Generate naddr for the blog post
+      const naddr = nip19.naddrEncode({
+        identifier: dTag,
+        pubkey: user.pubkey,
+        kind: 30023, // Blog uses kind 30023
+      });
+
+      // Create the blog URL
+      const blogUrl = `${window.location.origin}/blog/${naddr}`;
+
+      // Create share message with image link after text, before hashtags
+      const customMessage = shareMessage?.trim();
+      let shareContent = customMessage
+        ? `${customMessage}\n\n📝 "${title}"\n${blogUrl}`
+        : `Just published a new blog post! 📝\n\n"${title}"\n\n${blogUrl}`;
+
+      // Add the header image link after the text content, before hashtags
+      if (headerImage) {
+        shareContent += `\n\n${headerImage}`;
+      }
+
+      // Add hashtags at the end
+      shareContent += `\n\n#blog #nostr`;
+
+      // Prepare tags array
+      const shareTags: string[][] = [
+        ['t', 'blog'],
+        ['t', 'nostr'],
+        ['e', blogEvent.id, '', 'mention'], // Reference the blog event
+        ['a', `30023:${user.pubkey}:${dTag}`, '', 'mention'], // Reference the addressable event
+      ];
+
+      // Add user tags from the blog post
+      const tagArray = tags.split(',').map(t => t.trim()).filter(t => t);
+      tagArray.forEach(tag => {
+        shareTags.push(['t', tag.toLowerCase()]);
+      });
+
+      // Add image-related tags for maximum compatibility
+      if (headerImage) {
+        // Method 1: Simple image tag (widely supported)
+        shareTags.push(['image', headerImage]);
+
+        // Method 2: NIP-92 imeta tag (newer clients)
+        shareTags.push([
+          'imeta',
+          `url ${headerImage}`,
+          'm image/jpeg',
+          `alt Preview image for "${title}" blog post`,
+          `fallback ${blogUrl}`
+        ]);
+
+        // Method 3: Add r tag for reference (some clients use this)
+        shareTags.push(['r', headerImage]);
+
+        // Method 4: Add url tag (alternative approach some clients check)
+        shareTags.push(['url', headerImage]);
+      }
+
+      // Create kind 1 note to share the blog
+      createEvent({
+        kind: 1,
+        content: shareContent,
+        tags: shareTags
+      }, {
+        onSuccess: () => {
+          console.log('✅ Successfully shared to Nostr');
+          toast.success('Shared to Nostr! 📝');
+          setIsSharing(false);
+        },
+        onError: (error) => {
+          console.error('Share to Nostr error:', error);
+          toast.error('Blog was created but sharing to Nostr failed. You can share it manually later.');
+          setIsSharing(false);
+        }
+      });
+    } catch (error) {
+      console.error('Error generating share content:', error);
+      toast.error('Failed to generate share content. You can share the blog manually later.');
+      setIsSharing(false);
+    }
+  };
+
   const handleSave = () => {
     if (!title.trim()) {
       toast.error('Title is required');
@@ -349,7 +457,7 @@ export function BlogPostManagement() {
         tags: blogTags,
       },
       {
-        onSuccess: async () => {
+        onSuccess: async (result) => {
           console.log('[BlogPostManagement] ✅ Blog post published!');
           
           // Give relay time to process
@@ -362,6 +470,15 @@ export function BlogPostManagement() {
           
           const action = editingPost ? 'updated' : 'created';
           toast.success(`Blog post ${action} successfully!`);
+          
+          // Share to Nostr if requested
+          if (shareToNostr && !editingPost) {
+            console.log('📢 Sharing to Nostr...', { shareToNostr, shareMessage });
+            shareBlogToNostr(result.event);
+          } else {
+            console.log('❌ Not sharing to Nostr (shareToNostr is false or editing existing post)');
+          }
+          
           resetForm();
           setIsSaving(false);
         },
@@ -905,13 +1022,57 @@ export function BlogPostManagement() {
               </Tabs>
             </div>
 
+            {/* Share to Nostr Option */}
+            {!editingPost && (
+              <div className="space-y-4 p-4 border rounded-lg bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="shareToNostr"
+                    checked={shareToNostr}
+                    onCheckedChange={(checked) => setShareToNostr(!!checked)}
+                  />
+                  <Label htmlFor="shareToNostr" className="text-base font-medium flex items-center gap-2 cursor-pointer">
+                    <Share2 className="h-4 w-4" />
+                    Share to Nostr Community
+                  </Label>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Automatically share your new blog post with the Nostr community to reach more readers.
+                </p>
+
+                {shareToNostr && (
+                  <div className="space-y-2">
+                    <Label htmlFor="shareMessage" className="text-sm font-medium">
+                      Custom Share Message (optional)
+                    </Label>
+                    <Textarea
+                      id="shareMessage"
+                      placeholder="Add a personal message when sharing your blog post... (leave empty for default message)"
+                      rows={3}
+                      value={shareMessage}
+                      onChange={(e) => setShareMessage(e.target.value)}
+                      className="text-sm resize-none"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      If left empty, we'll create a nice default message for you.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Actions */}
             <div className="flex gap-2 pt-4">
-              <Button onClick={handleSave} className="flex-1" disabled={isSaving}>
+              <Button onClick={handleSave} className="flex-1" disabled={isSaving || isSharing}>
                 {isSaving ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Saving...
+                  </>
+                ) : isSharing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Sharing to Nostr...
                   </>
                 ) : (
                   <>
@@ -920,7 +1081,7 @@ export function BlogPostManagement() {
                   </>
                 )}
               </Button>
-              <Button variant="outline" onClick={resetForm} disabled={isSaving}>
+              <Button variant="outline" onClick={resetForm} disabled={isSaving || isSharing}>
                 Cancel
               </Button>
             </div>

@@ -222,42 +222,25 @@ export function CreateArtworkForm({ onSuccess, onCancel }: CreateArtworkFormProp
       // Add hashtags at the end
       shareContent += `\n\n#artwork #art #nostr`;
 
-      // Add medium-specific hashtag if available
+      // Add medium-specific hashtag if available (but not in tags, only in content)
       if (formData.medium) {
         const mediumTag = formData.medium.toLowerCase().replace(/[^a-z0-9]/g, '');
         shareContent += ` #${mediumTag}`;
       }
 
-      // Add sale type hashtag
+      // Add sale type hashtag (but not in tags, only in content)
       if (formData.saleType !== 'not_for_sale') {
         shareContent += ` #${formData.saleType}`;
       }
 
-      // Prepare tags array
-      const shareTags = [
+      // Prepare tags array - only essential tags for the share note
+      const shareTags: string[][] = [
         ['t', 'artwork'],
         ['t', 'art'],
         ['t', 'nostr'],
         ['e', artworkEvent.id, '', 'mention'], // Reference the artwork event
         ['a', `30023:${user.pubkey}:${dTag}`, '', 'mention'], // Reference the addressable event
       ];
-
-      // Add medium tag if available
-      if (formData.medium) {
-        shareTags.push(['t', formData.medium.toLowerCase().replace(/[^a-z0-9]/g, '')]);
-      }
-
-      // Add sale type tag
-      if (formData.saleType !== 'not_for_sale') {
-        shareTags.push(['t', formData.saleType]);
-      }
-
-      // Add custom tags from artwork
-      if (tags && tags.length > 0) {
-        tags.forEach(tag => {
-          shareTags.push(['t', tag.toLowerCase()]);
-        });
-      }
 
       // Add image-related tags for maximum compatibility
       if (images && images.length > 0) {
