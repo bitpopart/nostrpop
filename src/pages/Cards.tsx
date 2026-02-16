@@ -53,7 +53,7 @@ const Cards = () => {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-pink-50 to-yellow-50 dark:from-gray-900 dark:via-orange-900/20 dark:to-yellow-900/20">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">
@@ -88,8 +88,8 @@ const Cards = () => {
                           className={cn(
                             "text-xs",
                             selectedCategory === categoryName
-                              ? "bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 hover:from-pink-600 hover:via-purple-600 hover:to-indigo-600"
-                              : "hover:bg-purple-50 dark:hover:bg-purple-900/20"
+                              ? "bg-gradient-to-r from-orange-500 via-pink-500 to-yellow-500 hover:from-orange-600 hover:via-pink-600 hover:to-yellow-600"
+                              : "hover:bg-orange-50 dark:hover:bg-orange-900/20"
                           )}
                         >
                           {category && categoryName !== 'All' && (

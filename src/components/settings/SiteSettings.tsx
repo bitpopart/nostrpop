@@ -31,6 +31,8 @@ interface SiteColors {
   iconColor: string;
   linkColor: string;
   linkHoverColor: string;
+  hoverColor: string;
+  hoverColorDark: string;
 }
 
 const DEFAULT_COLORS: SiteColors = {
@@ -51,6 +53,8 @@ const DEFAULT_COLORS: SiteColors = {
   iconColor: '#e99840',
   linkColor: '#e99840',
   linkHoverColor: '#c87a30',
+  hoverColor: '#e99840',
+  hoverColorDark: '#c87a30',
 };
 
 const COLOR_PRESETS = [
@@ -78,6 +82,8 @@ const COLOR_PRESETS = [
       iconColor: '#a855f7',
       linkColor: '#8b5cf6',
       linkHoverColor: '#7c3aed',
+      hoverColor: '#a855f7',
+      hoverColorDark: '#7c3aed',
     }
   },
   {
@@ -100,6 +106,8 @@ const COLOR_PRESETS = [
       iconColor: '#3b82f6',
       linkColor: '#0ea5e9',
       linkHoverColor: '#0284c7',
+      hoverColor: '#3b82f6',
+      hoverColorDark: '#0284c7',
     }
   },
   {
@@ -122,6 +130,8 @@ const COLOR_PRESETS = [
       iconColor: '#f97316',
       linkColor: '#f97316',
       linkHoverColor: '#ea580c',
+      hoverColor: '#f97316',
+      hoverColorDark: '#ea580c',
     }
   },
 ];
@@ -186,6 +196,8 @@ export function SiteSettings() {
     root.style.setProperty('--icon-color', colors.iconColor);
     root.style.setProperty('--link-color', colors.linkColor);
     root.style.setProperty('--link-hover-color', colors.linkHoverColor);
+    root.style.setProperty('--hover-color', colors.hoverColor);
+    root.style.setProperty('--hover-color-dark', colors.hoverColorDark);
   };
 
   const handleSave = () => {
@@ -277,7 +289,7 @@ export function SiteSettings() {
                 {COLOR_PRESETS.map((preset) => (
                   <Card
                     key={preset.name}
-                    className="cursor-pointer hover:shadow-md transition-all border-2 hover:border-purple-300"
+                    className="cursor-pointer hover:shadow-md transition-all border-2 hover:border-orange-300"
                     onClick={() => applyPreset(preset)}
                   >
                     <CardContent className="p-4 space-y-3">
@@ -453,6 +465,27 @@ export function SiteSettings() {
                   </div>
                   <p className="text-xs text-muted-foreground mt-2">
                     Control the colors for section headings, icons throughout the admin backend, and hyperlinks
+                  </p>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <Label className="text-base font-semibold mb-3 block">Card Hover Effects</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <ColorInput
+                      label="Hover Color"
+                      value={tempColors.hoverColor}
+                      onChange={(v) => setTempColors(prev => ({ ...prev, hoverColor: v }))}
+                    />
+                    <ColorInput
+                      label="Hover Color (Darker)"
+                      value={tempColors.hoverColorDark}
+                      onChange={(v) => setTempColors(prev => ({ ...prev, hoverColorDark: v }))}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Controls the color when hovering over card titles, project names, and "Read More" links
                   </p>
                 </div>
               </div>

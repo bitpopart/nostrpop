@@ -125,7 +125,7 @@ export default function CustomPage() {
           {/* Title (if no header image) */}
           {!page.header_image && (
             <div className="text-center">
-              <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent mb-4">
+              <h1 className="text-4xl md:text-5xl font-bold gradient-header-text mb-4">
                 {page.title}
               </h1>
               {page.external_url && (

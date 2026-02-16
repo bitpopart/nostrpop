@@ -52,8 +52,8 @@ export default function NostrProjects() {
         {/* Header */}
         <div className="text-center mb-12">
           <div className="flex items-center justify-center mb-4">
-            <Users className="h-10 w-10 text-purple-600 mr-3" />
-            <h1 className="text-5xl font-bold bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
+            <Users className="h-10 w-10 text-orange-600 mr-3" />
+            <h1 className="text-5xl font-bold gradient-header-text">
               Nostr Projects
             </h1>
           </div>
@@ -85,7 +85,7 @@ export default function NostrProjects() {
                 onClick={() => navigate(`/nostr-projects/${project.id}`)}
               >
                 {/* Image Grid Preview */}
-                <div className="relative h-56 overflow-hidden bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/20 dark:to-pink-900/20">
+                <div className="relative h-56 overflow-hidden bg-gradient-to-br from-orange-100 to-pink-100 dark:from-orange-900/20 dark:to-pink-900/20">
                   <div className="grid grid-cols-2 gap-1 h-full p-2">
                     {project.images.slice(0, 4).map((img, index) => (
                       <div
@@ -127,7 +127,7 @@ export default function NostrProjects() {
 
                 {/* Content */}
                 <CardHeader>
-                  <CardTitle className="text-2xl group-hover:text-purple-600 transition-colors flex items-center justify-between">
+                  <CardTitle className="text-2xl group-hover:text-orange-600 transition-colors flex items-center justify-between">
                     {project.title}
                     <Badge variant="default" className="gap-1">
                       <Zap className="h-3 w-3" />

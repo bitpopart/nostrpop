@@ -68,6 +68,13 @@
   a.link-themed:hover {
     color: var(--link-hover-color);
   }
+
+  /* Apply theme hover color to card titles */
+  .hover\:text-orange-600:hover,
+  .group:hover .group-hover\:text-orange-600,
+  .group-hover\:text-orange-700:hover {
+    color: var(--link-color) !important;
+  }
 }
 
 @layer base {
@@ -140,6 +147,8 @@
     --icon-color: #e99840;
     --link-color: #e99840;
     --link-hover-color: #c87a30;
+    --hover-color: #e99840;
+    --hover-color-dark: #c87a30;
   }
 
   .dark {

@@ -220,7 +220,7 @@ export default function BlogPost() {
                     href={sourceUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 hover:text-purple-600 transition-colors"
+                    className="flex items-center gap-2 hover:text-orange-600 transition-colors"
                   >
                     <ExternalLink className="h-4 w-4" />
                     View Original
@@ -229,7 +229,7 @@ export default function BlogPost() {
               </div>
 
               {/* Title */}
-              <h1 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
+              <h1 className="text-4xl md:text-5xl font-bold mb-6 gradient-header-text">
                 {title}
               </h1>
 

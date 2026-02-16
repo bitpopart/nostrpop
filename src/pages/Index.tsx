@@ -213,7 +213,7 @@ function ArtworkThumbnail({ artwork }: { artwork: ArtworkData }) {
     if (isSold) return { label: 'Sold', color: 'text-green-600', icon: Eye };
     if (isForSale) return { label: 'For Sale', color: 'text-blue-600', icon: ShoppingCart };
     if (isAuction) return { label: 'Auction', color: 'text-red-600', icon: ShoppingCart };
-    return { label: 'View', color: 'text-purple-600', icon: Eye };
+    return { label: 'View', color: 'text-orange-600', icon: Eye };
   };
 
   const saleInfo = getSaleInfo();
@@ -247,18 +247,18 @@ function ArtworkThumbnail({ artwork }: { artwork: ArtworkData }) {
           </div>
           {/* Fallback placeholder (hidden by default) */}
           <div className="image-placeholder absolute inset-0 bg-gradient-to-br from-purple-100 via-pink-100 to-indigo-100 dark:from-purple-900/20 dark:via-pink-900/20 dark:to-indigo-900/20 hidden items-center justify-center">
-            <Palette className="h-12 w-12 text-purple-400 dark:text-purple-500" />
+            <Palette className="h-12 w-12 text-orange-400 dark:text-orange-500" />
           </div>
         </div>
       ) : (
-        <div className="aspect-square relative overflow-hidden bg-gradient-to-br from-purple-100 via-pink-100 to-indigo-100 dark:from-purple-900/20 dark:via-pink-900/20 dark:to-indigo-900/20 flex items-center justify-center">
-          <Palette className="h-12 w-12 text-purple-400 dark:text-purple-500" />
+        <div className="aspect-square relative overflow-hidden bg-gradient-to-br from-orange-100 via-pink-100 to-yellow-100 dark:from-orange-900/20 dark:via-pink-900/20 dark:to-yellow-900/20 flex items-center justify-center">
+          <Palette className="h-12 w-12 text-orange-400 dark:text-orange-500" />
         </div>
       )}
 
       <CardHeader className="pb-3">
         <div className="flex items-center space-x-2">
-          <Palette className="h-4 w-4 text-purple-600" />
+          <Palette className="h-4 w-4 text-orange-600" />
           <CardTitle className="text-sm font-semibold truncate">
             {artwork.title}
           </CardTitle>
@@ -529,14 +529,14 @@ const Index = () => {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   </div>
                 ) : (
-                  <div className="aspect-square relative overflow-hidden bg-gradient-to-br from-purple-100 via-pink-100 to-indigo-100 dark:from-purple-900/20 dark:via-pink-900/20 dark:to-indigo-900/20 flex items-center justify-center">
-                    <FolderKanban className="h-12 w-12 text-purple-400 dark:text-purple-500" />
+                  <div className="aspect-square relative overflow-hidden bg-gradient-to-br from-orange-100 via-pink-100 to-yellow-100 dark:from-orange-900/20 dark:via-pink-900/20 dark:to-yellow-900/20 flex items-center justify-center">
+                    <FolderKanban className="h-12 w-12 text-orange-400 dark:text-orange-500" />
                   </div>
                 )}
 
                 <CardHeader className="pb-3">
                   <div className="flex items-center space-x-2">
-                    <FolderKanban className="h-4 w-4 text-purple-600" />
+                    <FolderKanban className="h-4 w-4 text-orange-600" />
                     <CardTitle className="text-sm font-semibold truncate">
                       {project.name}
                     </CardTitle>
@@ -549,7 +549,7 @@ const Index = () => {
                   <div className="text-sm text-gray-600 dark:text-gray-300 mb-3 line-clamp-2">
                     {project.description.substring(0, 80)}...
                   </div>
-                  <div className="flex items-center text-purple-600 group-hover:text-purple-700 transition-colors">
+                  <div className="flex items-center text-orange-600 group-hover:text-orange-700 transition-colors">
                     <span className="text-xs font-medium">View project</span>
                     <ArrowRight className="h-3 w-3 ml-1 group-hover:translate-x-1 transition-transform" />
                   </div>
@@ -597,12 +597,12 @@ const Index = () => {
         </div>
 
         {artworksError && (
-          <Card className="border-dashed border-purple-200 dark:border-purple-800 bg-purple-50/50 dark:bg-purple-900/10">
+          <Card className="border-dashed border-orange-200 dark:border-orange-800 bg-orange-50/50 dark:bg-orange-900/10">
             <CardContent className="py-8 px-6 text-center">
               <div className="max-w-sm mx-auto space-y-4">
-                <Palette className="h-8 w-8 mx-auto text-purple-500" />
+                <Palette className="h-8 w-8 mx-auto text-orange-500" />
                 <div>
-                  <CardTitle className="text-purple-600 dark:text-purple-400 mb-2 text-lg">
+                  <CardTitle className="text-orange-600 dark:text-orange-400 mb-2 text-lg">
                     Unable to Load Artworks
                   </CardTitle>
                   <CardDescription>
@@ -981,7 +981,7 @@ const Index = () => {
                   onClick={() => window.location.href = `/nostr-projects/${project.id}`}
                 >
                   {/* Image Grid Preview */}
-                  <div className="relative h-56 overflow-hidden bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/20 dark:to-pink-900/20">
+                <div className="relative h-56 overflow-hidden bg-gradient-to-br from-orange-100 to-pink-100 dark:from-orange-900/20 dark:to-pink-900/20">
                     <div className="grid grid-cols-2 gap-1 h-full p-2">
                       {project.images.slice(0, 4).map((img, imgIndex) => (
                         <div key={imgIndex} className="relative overflow-hidden rounded-lg">
@@ -998,7 +998,7 @@ const Index = () => {
 
                   {/* Content */}
                   <CardHeader>
-                    <CardTitle className="text-xl group-hover:text-purple-600 transition-colors flex items-center justify-between">
+                    <CardTitle className="text-xl group-hover:text-orange-600 transition-colors flex items-center justify-between">
                       <span className="truncate">{project.title}</span>
                       <Badge variant="default" className="gap-1 shrink-0">
                         <Zap className="h-3 w-3" />
@@ -1070,14 +1070,14 @@ const Index = () => {
                         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                       </div>
                     ) : (
-                      <div className="aspect-square relative overflow-hidden bg-gradient-to-br from-purple-100 via-pink-100 to-indigo-100 dark:from-purple-900/20 dark:via-pink-900/20 dark:to-indigo-900/20 flex items-center justify-center">
-                        <FolderKanban className="h-12 w-12 text-purple-400 dark:text-purple-500" />
+                      <div className="aspect-square relative overflow-hidden bg-gradient-to-br from-orange-100 via-pink-100 to-yellow-100 dark:from-orange-900/20 dark:via-pink-900/20 dark:to-yellow-900/20 flex items-center justify-center">
+                        <FolderKanban className="h-12 w-12 text-orange-400 dark:text-orange-500" />
                       </div>
                     )}
 
                     <CardHeader className="pb-3">
                       <div className="flex items-center space-x-2">
-                        <FolderKanban className="h-4 w-4 text-purple-600" />
+                        <FolderKanban className="h-4 w-4 text-orange-600" />
                         <CardTitle className="text-sm font-semibold truncate">
                           {project.name}
                         </CardTitle>
@@ -1090,7 +1090,7 @@ const Index = () => {
                       <div className="text-sm text-gray-600 dark:text-gray-300 mb-3 line-clamp-2">
                         {project.description.substring(0, 80)}...
                       </div>
-                      <div className="flex items-center text-purple-600 group-hover:text-purple-700 transition-colors">
+        <div className="flex items-center text-orange-600 group-hover:text-orange-700 transition-colors">
                         <span className="text-xs font-medium">View project</span>
                         <ArrowRight className="h-3 w-3 ml-1 group-hover:translate-x-1 transition-transform" />
                       </div>
@@ -1122,12 +1122,12 @@ const Index = () => {
             </div>
 
           {artworksError && (
-            <Card className="border-dashed border-purple-200 dark:border-purple-800 bg-purple-50/50 dark:bg-purple-900/10">
+            <Card className="border-dashed border-orange-200 dark:border-orange-800 bg-orange-50/50 dark:bg-orange-900/10">
               <CardContent className="py-8 px-6 text-center">
                 <div className="max-w-sm mx-auto space-y-4">
-                  <Palette className="h-8 w-8 mx-auto text-purple-500" />
+                  <Palette className="h-8 w-8 mx-auto text-orange-500" />
                   <div>
-                    <CardTitle className="text-purple-600 dark:text-purple-400 mb-2 text-lg">
+                    <CardTitle className="text-orange-600 dark:text-orange-400 mb-2 text-lg">
                       Unable to Load Artworks
                     </CardTitle>
                     <CardDescription>

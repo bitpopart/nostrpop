@@ -106,7 +106,7 @@ export default function PopUp() {
     .sort((a, b) => b.startDate.localeCompare(a.startDate)); // Sort most recent first
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-pink-50 to-yellow-50 dark:from-gray-900 dark:via-orange-900/20 dark:to-yellow-900/20">
       <div className="container mx-auto px-4 py-12">
         {/* Header */}
         <div className="text-center mb-12">
@@ -231,7 +231,7 @@ export default function PopUp() {
                         )}
                       </div>
                     ) : (
-                      <div className="relative h-56 bg-gradient-to-br from-purple-100 via-pink-100 to-indigo-100 dark:from-purple-900/20 dark:via-pink-900/20 dark:to-indigo-900/20 flex items-center justify-center">
+                      <div className="relative h-56 bg-gradient-to-br from-orange-100 via-pink-100 to-yellow-100 dark:from-orange-900/20 dark:via-pink-900/20 dark:to-yellow-900/20 flex items-center justify-center">
                         <div className="text-center">
                           <span className="text-6xl opacity-40">{typeConfig.icon}</span>
                         </div>
@@ -248,7 +248,7 @@ export default function PopUp() {
                       </div>
                     )}
                     <CardHeader className="space-y-3">
-                      <h3 className="text-2xl font-bold group-hover:text-purple-600 transition-colors line-clamp-2">
+                      <h3 className="text-2xl font-bold group-hover:text-orange-600 transition-colors line-clamp-2">
                         {event.title}
                       </h3>
                       {event.description && (
@@ -274,7 +274,7 @@ export default function PopUp() {
                           href={event.link}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center text-purple-600 hover:text-purple-700 transition-colors pt-2 font-medium"
+                          className="flex items-center text-orange-600 hover:text-orange-700 transition-colors pt-2 font-medium"
                         >
                           <span className="text-sm">Learn more</span>
                           <ExternalLink className="h-4 w-4 ml-2" />

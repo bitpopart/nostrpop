@@ -281,7 +281,7 @@ export default function Projects() {
 
                 {/* Content */}
                 <CardHeader>
-                  <CardTitle className="text-2xl group-hover:text-purple-600 transition-colors flex items-center justify-between gap-2 flex-wrap">
+                  <CardTitle className="text-2xl group-hover:text-orange-600 transition-colors flex items-center justify-between gap-2 flex-wrap">
                     <span>{project.name}</span>
                     <div className="flex items-center gap-2">
                       {isComingSoon && (
@@ -332,7 +332,7 @@ export default function Projects() {
             <div className="mt-16 max-w-6xl mx-auto">
               <div className="text-center mb-8">
                 <div className="flex items-center justify-center mb-4">
-                  <Users className="h-8 w-8 text-purple-600 mr-3" />
+                  <Users className="h-8 w-8 text-orange-600 mr-3" />
                   <h2 className="text-4xl font-bold gradient-header-text">
                     Nostr Projects
                   </h2>
@@ -354,7 +354,7 @@ export default function Projects() {
                     onClick={() => !isComingSoon && navigate(`/nostr-projects/${project.id}`)}
                   >
                     {/* Thumbnail / Image Preview */}
-                    <div className="relative h-56 overflow-hidden bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/20 dark:to-pink-900/20">
+                    <div className="relative h-56 overflow-hidden bg-gradient-to-br from-orange-100 to-pink-100 dark:from-orange-900/20 dark:to-pink-900/20">
                       {project.header_image ? (
                         <img
                           src={project.header_image}
@@ -457,7 +457,7 @@ export default function Projects() {
                     {/* Content */}
                     <CardHeader>
                       <div className="flex items-start justify-between gap-2 mb-2">
-                        <CardTitle className="text-2xl group-hover:text-purple-600 transition-colors flex-1">
+                        <CardTitle className="text-2xl group-hover:text-orange-600 transition-colors flex-1">
                           {project.title}
                         </CardTitle>
                         {isAdmin && project.event && (
@@ -545,7 +545,7 @@ export default function Projects() {
 
                     {/* Content */}
                     <CardHeader className="pb-3 pt-3">
-                      <CardTitle className="text-sm group-hover:text-purple-600 transition-colors truncate">
+                      <CardTitle className="text-sm group-hover:text-orange-600 transition-colors truncate">
                         {badge.title}
                       </CardTitle>
                       <Badge variant="default" className="gap-1 w-fit">

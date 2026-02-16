@@ -318,7 +318,7 @@ const CardView = () => {
   if (!nip19Param) {
     console.error('❌ No nip19 parameter provided to CardView');
     return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20">
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-pink-50 to-yellow-50 dark:from-gray-900 dark:via-orange-900/20 dark:to-yellow-900/20">
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-3xl font-bold mb-4 text-red-600">
@@ -340,7 +340,7 @@ const CardView = () => {
   // Loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20">
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-pink-50 to-yellow-50 dark:from-gray-900 dark:via-orange-900/20 dark:to-yellow-900/20">
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-6xl mx-auto">
             <Skeleton className="h-10 w-32 mb-8" />
@@ -397,7 +397,7 @@ const CardView = () => {
   // Error state
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20">
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-pink-50 to-yellow-50 dark:from-gray-900 dark:via-orange-900/20 dark:to-yellow-900/20">
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-4xl mx-auto text-center">
             <Button
@@ -459,7 +459,7 @@ const CardView = () => {
     }
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20">
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-pink-50 to-yellow-50 dark:from-gray-900 dark:via-orange-900/20 dark:to-yellow-900/20">
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-4xl mx-auto text-center">
             <Button
@@ -549,7 +549,7 @@ const CardView = () => {
 
   // Success state - show the card
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-pink-50 to-yellow-50 dark:from-gray-900 dark:via-orange-900/20 dark:to-yellow-900/20">
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
           {/* Header with Back Button */}
@@ -598,7 +598,7 @@ const CardView = () => {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
                   </div>
                 ) : (
-                  <div className="aspect-[4/3] bg-gradient-to-br from-purple-100 via-pink-100 to-indigo-100 dark:from-purple-900/30 dark:via-pink-900/30 dark:to-indigo-900/30 flex items-center justify-center">
+                  <div className="aspect-[4/3] bg-gradient-to-br from-orange-100 via-pink-100 to-yellow-100 dark:from-orange-900/30 dark:via-pink-900/30 dark:to-yellow-900/30 flex items-center justify-center">
                     <div className="text-center">
                       <div className="text-8xl mb-6">🎨</div>
                       <h3 className="text-2xl font-semibold text-muted-foreground mb-2">Beautiful BitPop Card</h3>
@@ -617,12 +617,12 @@ const CardView = () => {
                   <div className="flex items-start gap-3">
                     <Badge
                       variant="secondary"
-                      className="shrink-0 bg-gradient-to-r from-pink-100 to-purple-100 dark:from-pink-900/30 dark:to-purple-900/30 text-pink-700 dark:text-pink-300 border-0"
+                      className="shrink-0 bg-gradient-to-r from-orange-100 to-pink-100 dark:from-orange-900/30 dark:to-pink-900/30 text-orange-700 dark:text-orange-300 border-0"
                     >
                       {cardData.category}
                     </Badge>
                     <div className="flex-1">
-                      <CardTitle className="text-2xl leading-tight mb-3 bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                      <CardTitle className="text-2xl leading-tight mb-3 gradient-header-text">
                         {cardData.title}
                       </CardTitle>
                       <CardDescription className="text-base leading-relaxed">
@@ -635,7 +635,7 @@ const CardView = () => {
                 <CardContent className="space-y-6">
                   {/* Creator Info */}
                   <div className="flex items-center gap-3 p-4 rounded-lg bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-700/50">
-                    <Avatar className="h-12 w-12 ring-2 ring-purple-200 dark:ring-purple-800">
+                    <Avatar className="h-12 w-12 ring-2 ring-orange-200 dark:ring-orange-800">
                       <AvatarImage src={authorAvatar} alt={authorName} />
                       <AvatarFallback className="bg-gradient-to-br from-pink-400 to-purple-500 text-white">
                         <User className="h-5 w-5" />

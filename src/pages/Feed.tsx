@@ -154,8 +154,8 @@ const Feed = () => {
 
           <div className="text-center">
             <div className="flex items-center justify-center mb-4">
-              <Rss className="h-8 w-8 text-purple-600 mr-3" />
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
+              <Rss className="h-8 w-8 text-orange-600 mr-3" />
+              <h1 className="text-4xl font-bold gradient-header-text">
                 {displayName}'s Feed
               </h1>
             </div>

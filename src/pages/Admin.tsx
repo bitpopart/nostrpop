@@ -74,10 +74,10 @@ const Admin = () => {
   // Show login prompt if not logged in
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-pink-50 to-yellow-50 dark:from-gray-900 dark:via-orange-900/20 dark:to-yellow-900/20 flex items-center justify-center">
         <Card className="max-w-md mx-auto">
           <CardHeader className="text-center">
-            <Shield className="h-12 w-12 mx-auto mb-4 text-purple-600" />
+            <Shield className="h-12 w-12 mx-auto mb-4 text-orange-600" />
             <CardTitle className="text-2xl">Admin Access Required</CardTitle>
             <CardDescription>
               Please log in with your admin account to access the dashboard.
@@ -94,7 +94,7 @@ const Admin = () => {
   // Show access denied if not admin
   if (!isAdmin) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-pink-50 to-yellow-50 dark:from-gray-900 dark:via-orange-900/20 dark:to-yellow-900/20 flex items-center justify-center">
         <Card className="max-w-md mx-auto border-red-200 dark:border-red-800">
           <CardHeader className="text-center">
             <Shield className="h-12 w-12 mx-auto mb-4 text-red-500" />
@@ -252,7 +252,7 @@ const Admin = () => {
       value: 'BitPopArt',
       description: 'On Nostr Network',
       icon: Sparkles,
-      color: 'text-purple-600'
+                  color: 'text-orange-600'
     },
     {
       title: 'Sections',
@@ -271,20 +271,20 @@ const Admin = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-pink-50 to-yellow-50 dark:from-gray-900 dark:via-orange-900/20 dark:to-yellow-900/20">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
-            <Shield className="h-8 w-8 text-purple-600 mr-3" />
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
+            <Shield className="h-8 w-8 text-orange-600 mr-3" />
+            <h1 className="text-4xl font-bold gradient-header-text">
               Admin Dashboard
             </h1>
           </div>
           <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
             Welcome back! Manage your BitPopArt platform from here.
           </p>
-          <Badge className="mt-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0">
+          <Badge className="mt-4 bg-gradient-to-r from-orange-500 to-pink-500 text-white border-0">
             Administrator Access
           </Badge>
         </div>
@@ -352,7 +352,7 @@ const Admin = () => {
                             {action.badge}
                           </Badge>
                         </div>
-                        <CardTitle className="text-lg group-hover:text-purple-600 transition-colors">
+                        <CardTitle className="text-lg group-hover:text-orange-600 transition-colors">
                           {action.title}
                         </CardTitle>
                         <CardDescription className="text-sm">
@@ -360,7 +360,7 @@ const Admin = () => {
                         </CardDescription>
                       </CardHeader>
                       <CardContent className="pt-0">
-                        <div className="flex items-center text-purple-600 group-hover:text-purple-700 transition-colors">
+                        <div className="flex items-center text-orange-600 group-hover:text-orange-700 transition-colors">
                           <span className="text-sm font-medium">Manage</span>
                           <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
                         </div>
@@ -389,7 +389,7 @@ const Admin = () => {
                             {action.badge}
                           </Badge>
                         </div>
-                        <CardTitle className="text-lg group-hover:text-purple-600 transition-colors">
+                        <CardTitle className="text-lg group-hover:text-orange-600 transition-colors">
                           {action.title}
                         </CardTitle>
                         <CardDescription className="text-sm">
@@ -397,7 +397,7 @@ const Admin = () => {
                         </CardDescription>
                       </CardHeader>
                       <CardContent className="pt-0">
-                        <div className="flex items-center text-purple-600 group-hover:text-purple-700 transition-colors">
+                        <div className="flex items-center text-orange-600 group-hover:text-orange-700 transition-colors">
                           <span className="text-sm font-medium">Manage</span>
                           <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
                         </div>
@@ -426,7 +426,7 @@ const Admin = () => {
                             {action.badge}
                           </Badge>
                         </div>
-                        <CardTitle className="text-lg group-hover:text-purple-600 transition-colors">
+                        <CardTitle className="text-lg group-hover:text-orange-600 transition-colors">
                           {action.title}
                         </CardTitle>
                         <CardDescription className="text-sm">
@@ -434,7 +434,7 @@ const Admin = () => {
                         </CardDescription>
                       </CardHeader>
                       <CardContent className="pt-0">
-                        <div className="flex items-center text-purple-600 group-hover:text-purple-700 transition-colors">
+                        <div className="flex items-center text-orange-600 group-hover:text-orange-700 transition-colors">
                           <span className="text-sm font-medium">Manage</span>
                           <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
                         </div>
@@ -453,7 +453,7 @@ const Admin = () => {
                     className="h-24 flex flex-col items-center justify-center gap-2 hover:bg-purple-50 dark:hover:bg-purple-900/20"
                     onClick={() => navigate('/art')}
                   >
-                    <Palette className="h-6 w-6 text-purple-600" />
+                <Palette className="h-6 w-6 text-orange-600" />
                     <span className="text-sm font-medium">View Gallery</span>
                   </Button>
                   <Button
@@ -645,11 +645,11 @@ const Admin = () => {
         </Tabs>
 
         {/* Platform Info */}
-        <Card className="max-w-6xl mx-auto bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 border-0">
+        <Card className="max-w-6xl mx-auto bg-gradient-to-r from-orange-100 to-pink-100 dark:from-orange-900/30 dark:to-pink-900/30 border-0">
           <CardContent className="p-8">
             <div className="text-center mb-6">
               <div className="flex items-center justify-center mb-4">
-                <Sparkles className="h-8 w-8 text-purple-600 mr-2" />
+                <Sparkles className="h-8 w-8 text-orange-600 mr-2" />
                 <h2 className="text-2xl font-bold">BitPopArt Platform</h2>
               </div>
               <p className="text-lg mb-6 text-muted-foreground">
