@@ -78,7 +78,7 @@ export default function Blog() {
         return bDate - aDate; // Newest first (descending order)
       });
     },
-    staleTime: 30000,
+    staleTime: 0,
   });
 
   const getArticleTitle = (event: NostrEvent): string => {
