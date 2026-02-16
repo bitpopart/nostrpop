@@ -231,6 +231,10 @@ export function BlogPostManagement() {
     setExternalUrl(post.tags.find(t => t[0] === 'r')?.[1] || '');
     setTags(post.tags.filter(t => t[0] === 't').map(t => t[1]).join(', '));
     
+    // CRITICAL: Ensure sharing is disabled when editing existing posts
+    setShareToNostr(false);
+    setShareMessage('');
+    
     // Load publish date
     const publishedAt = post.tags.find(t => t[0] === 'published_at')?.[1];
     setPublishDate(publishedAt ? new Date(parseInt(publishedAt) * 1000) : new Date(post.created_at * 1000));
@@ -285,6 +289,12 @@ export function BlogPostManagement() {
 
     if (!user) {
       console.log('❌ No user found for sharing');
+      return;
+    }
+
+    // Double-check that sharing was explicitly requested
+    if (!shareToNostr) {
+      console.log('❌ CRITICAL: shareBlogToNostr called but shareToNostr is false - aborting');
       return;
     }
 
@@ -471,12 +481,21 @@ export function BlogPostManagement() {
           const action = editingPost ? 'updated' : 'created';
           toast.success(`Blog post ${action} successfully!`);
           
-          // Share to Nostr if requested
-          if (shareToNostr && !editingPost) {
-            console.log('📢 Sharing to Nostr...', { shareToNostr, shareMessage });
+          // Share to Nostr ONLY if explicitly requested (checkbox checked) AND creating new post (not editing)
+          // CRITICAL: Never share without explicit user consent via checkbox
+          if (shareToNostr === true && !editingPost) {
+            console.log('📢 User explicitly requested sharing to Nostr', { 
+              shareToNostr, 
+              shareMessage, 
+              isEdit: !!editingPost 
+            });
             shareBlogToNostr(result.event);
           } else {
-            console.log('❌ Not sharing to Nostr (shareToNostr is false or editing existing post)');
+            console.log('❌ NOT sharing to Nostr', { 
+              shareToNostr, 
+              isEdit: !!editingPost,
+              reason: editingPost ? 'Editing existing post' : 'Share checkbox not checked'
+            });
           }
           
           resetForm();
@@ -1029,7 +1048,10 @@ export function BlogPostManagement() {
                   <Checkbox
                     id="shareToNostr"
                     checked={shareToNostr}
-                    onCheckedChange={(checked) => setShareToNostr(!!checked)}
+                    onCheckedChange={(checked) => {
+                      console.log('Share to Nostr checkbox changed:', checked);
+                      setShareToNostr(!!checked);
+                    }}
                   />
                   <Label htmlFor="shareToNostr" className="text-base font-medium flex items-center gap-2 cursor-pointer">
                     <Share2 className="h-4 w-4" />
@@ -1037,7 +1059,7 @@ export function BlogPostManagement() {
                   </Label>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Automatically share your new blog post with the Nostr community to reach more readers.
+                  <strong>⚠️ Optional:</strong> Check this box to automatically share your new blog post with the Nostr community. Leave unchecked to publish without sharing.
                 </p>
 
                 {shareToNostr && (
