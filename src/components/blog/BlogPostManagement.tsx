@@ -449,10 +449,11 @@ export function BlogPostManagement() {
           // Give relay time to process
           await new Promise(resolve => setTimeout(resolve, 1000));
           
-          // Invalidate and refetch
+          // Invalidate and refetch both admin and public queries
           await queryClient.invalidateQueries({ queryKey: ['blog-posts'] });
           await queryClient.invalidateQueries({ queryKey: ['blog-posts-public'] });
           await queryClient.refetchQueries({ queryKey: ['blog-posts'] });
+          await queryClient.refetchQueries({ queryKey: ['blog-posts-public'] });
           
           const action = editingPost ? 'updated' : 'created';
           toast.success(`Blog post ${action} successfully!`);
