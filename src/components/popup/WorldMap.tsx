@@ -213,7 +213,7 @@ export function WorldMap({ events }: WorldMapProps) {
       <div ref={mapRef} className="w-full h-full rounded-lg overflow-hidden" />
 
       {/* Legend */}
-      <div className="absolute top-4 left-4 bg-white/95 dark:bg-gray-800/95 rounded-xl shadow-xl p-4 space-y-3 backdrop-blur-sm border border-gray-200 dark:border-gray-700 z-[1000]">
+      <div className="absolute top-4 left-4 bg-white/30 dark:bg-gray-800/30 rounded-xl shadow-xl p-4 space-y-3 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 z-[1000]">
         <h3 className="font-bold text-base mb-2 flex items-center gap-2">
           <MapPin className="h-5 w-5" />
           Legend
@@ -244,7 +244,7 @@ export function WorldMap({ events }: WorldMapProps) {
       </div>
 
       {/* Event counter */}
-      <div className="absolute bottom-4 right-4 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm rounded-xl px-4 py-3 shadow-xl border border-gray-200 dark:border-gray-700 z-[1000]">
+      <div className="absolute bottom-4 right-4 bg-white/30 dark:bg-gray-800/30 backdrop-blur-sm rounded-xl px-4 py-3 shadow-xl border border-gray-200/50 dark:border-gray-700/50 z-[1000]">
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse flex-shrink-0" />
           <span className="text-sm font-semibold whitespace-nowrap">{events.length} event{events.length !== 1 ? 's' : ''} worldwide</span>
