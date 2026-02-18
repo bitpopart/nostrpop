@@ -145,7 +145,7 @@ export default function PopUp() {
               </div>
             ) : (
               <div className="h-[500px] w-full">
-                <WorldMap events={activeEvents} />
+                <WorldMap events={popupEvents} />
               </div>
             )}
           </CardContent>

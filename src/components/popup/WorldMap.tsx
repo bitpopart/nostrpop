@@ -67,23 +67,33 @@ export function WorldMap({ events }: WorldMapProps) {
 
     // Add new markers
     events.forEach((event) => {
+      // Check if event is finished (past event)
+      const isFinished = event.event.tags.find(t => t[0] === 'finished')?.[1] === 'true';
+      
       const markerColor = event.type === 'art' 
         ? '#a855f7' 
         : event.type === 'shop' 
         ? '#ec4899' 
         : '#f97316';
 
+      // For past events: smaller size, lighter opacity, thinner border
+      const size = isFinished ? 16 : 24;
+      const borderWidth = isFinished ? 2 : 4;
+      const opacity = isFinished ? 0.5 : 1;
+      const innerDotSize = isFinished ? 5 : 8;
+
       // Create custom icon
       const customIcon = L.divIcon({
         className: 'custom-marker',
         html: `
           <div style="
-            width: 24px;
-            height: 24px;
+            width: ${size}px;
+            height: ${size}px;
             background-color: ${markerColor};
-            border: 4px solid white;
+            border: ${borderWidth}px solid white;
             border-radius: 50%;
             box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            opacity: ${opacity};
             position: relative;
           ">
             <div style="
@@ -91,15 +101,15 @@ export function WorldMap({ events }: WorldMapProps) {
               top: 50%;
               left: 50%;
               transform: translate(-50%, -50%);
-              width: 8px;
-              height: 8px;
+              width: ${innerDotSize}px;
+              height: ${innerDotSize}px;
               background-color: white;
               border-radius: 50%;
             "></div>
           </div>
         `,
-        iconSize: [24, 24],
-        iconAnchor: [12, 12],
+        iconSize: [size, size],
+        iconAnchor: [size / 2, size / 2],
       });
 
       const marker = L.marker([event.latitude, event.longitude], {
@@ -109,6 +119,7 @@ export function WorldMap({ events }: WorldMapProps) {
 
       // Create popup
       const typeConfig = POPUP_TYPE_CONFIG[event.type];
+      
       const popupContent = `
         <div style="min-width: 250px; max-width: 300px; font-family: system-ui;">
           ${event.image ? `
@@ -133,7 +144,19 @@ export function WorldMap({ events }: WorldMapProps) {
               ">
                 ${typeConfig.icon} ${typeConfig.label}
               </span>
-              ${event.status === 'option' ? `
+              ${isFinished ? `
+                <span style="
+                  display: inline-block;
+                  padding: 4px 10px;
+                  border-radius: 8px;
+                  background-color: #f3f4f6;
+                  color: #6b7280;
+                  font-size: 12px;
+                  font-weight: 700;
+                ">
+                  Past Event
+                </span>
+              ` : event.status === 'option' ? `
                 <span style="
                   display: inline-block;
                   padding: 4px 10px;
@@ -193,7 +216,7 @@ export function WorldMap({ events }: WorldMapProps) {
       <div className="absolute top-4 left-4 bg-white/95 dark:bg-gray-800/95 rounded-xl shadow-xl p-4 space-y-3 backdrop-blur-sm border border-gray-200 dark:border-gray-700 z-[1000]">
         <h3 className="font-bold text-base mb-2 flex items-center gap-2">
           <MapPin className="h-5 w-5" />
-          Event Types
+          Legend
         </h3>
         {Object.entries(POPUP_TYPE_CONFIG).map(([key, config]) => (
           <div key={key} className="flex items-center gap-3 text-sm">
@@ -206,6 +229,18 @@ export function WorldMap({ events }: WorldMapProps) {
             <span className="font-medium">{config.icon} {config.label}</span>
           </div>
         ))}
+        <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex items-center gap-3 text-sm mb-2">
+            <div 
+              className="w-5 h-5 rounded-full border-2 border-white shadow-md flex-shrink-0"
+              style={{ backgroundColor: '#9ca3af', opacity: 0.5 }}
+            />
+            <span className="font-medium text-muted-foreground">Past Event</span>
+          </div>
+          <p className="text-xs text-muted-foreground ml-8">
+            Smaller, lighter dots show event history
+          </p>
+        </div>
       </div>
 
       {/* Event counter */}
