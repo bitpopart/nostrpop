@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ZapButton } from '@/components/cards/ZapButton';
 import { ShareCardDialog } from '@/components/cards/ShareCardDialog';
 import { ShareToNostrDialog } from '@/components/cards/ShareToNostrDialog';
+import { EcashGiftDialog } from '@/components/cards/EcashGiftDialog';
 import { useAuthor } from '@/hooks/useAuthor';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useAppContext } from '@/hooks/useAppContext';
@@ -33,7 +34,8 @@ import {
   Eye,
   RefreshCw,
   AlertCircle,
-  Loader2
+  Loader2,
+  Wallet
 } from 'lucide-react';
 import { useToast } from '@/hooks/useToast';
 import type { NostrEvent, NostrFilter } from '@nostrify/nostrify';
@@ -709,33 +711,61 @@ const CardView = () => {
 
                     {/* Public Actions */}
                     <div className="space-y-2">
-                      <ShareCardDialog
-                        cardId={cardEvent.id}
-                        cardTitle={cardData.title}
-                        cardAuthor={cardEvent.pubkey}
-                        cardUrl={(() => {
-                          const dTag = cardEvent.tags.find(([name]) => name === 'd')?.[1];
-                          if (dTag) {
-                            try {
-                              const naddr = nip19.naddrEncode({
-                                identifier: dTag,
-                                pubkey: cardEvent.pubkey,
-                                kind: cardEvent.kind,
-                              });
-                              return `${window.location.origin}/card/${naddr}`;
-                            } catch (error) {
-                              console.error('Error generating naddr:', error);
-                              return `${window.location.origin}/card/${dTag}`;
+                      <div className="grid grid-cols-2 gap-2">
+                        <ShareCardDialog
+                          cardId={cardEvent.id}
+                          cardTitle={cardData.title}
+                          cardAuthor={cardEvent.pubkey}
+                          cardUrl={(() => {
+                            const dTag = cardEvent.tags.find(([name]) => name === 'd')?.[1];
+                            if (dTag) {
+                              try {
+                                const naddr = nip19.naddrEncode({
+                                  identifier: dTag,
+                                  pubkey: cardEvent.pubkey,
+                                  kind: cardEvent.kind,
+                                });
+                                return `${window.location.origin}/card/${naddr}`;
+                              } catch (error) {
+                                console.error('Error generating naddr:', error);
+                                return `${window.location.origin}/card/${dTag}`;
+                              }
                             }
-                          }
-                          return `${window.location.origin}/card/${cardEvent.id}`;
-                        })()}
-                      >
-                        <Button className="w-full bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 hover:from-pink-600 hover:via-purple-600 hover:to-indigo-600">
-                          <Share2 className="mr-2 h-4 w-4" />
-                          Share Card
-                        </Button>
-                      </ShareCardDialog>
+                            return `${window.location.origin}/card/${cardEvent.id}`;
+                          })()}
+                        >
+                          <Button className="w-full bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 hover:from-pink-600 hover:via-purple-600 hover:to-indigo-600">
+                            <Share2 className="mr-2 h-4 w-4" />
+                            Share Card
+                          </Button>
+                        </ShareCardDialog>
+
+                        <EcashGiftDialog
+                          cardTitle={cardData.title}
+                          cardUrl={(() => {
+                            const dTag = cardEvent.tags.find(([name]) => name === 'd')?.[1];
+                            if (dTag) {
+                              try {
+                                const naddr = nip19.naddrEncode({
+                                  identifier: dTag,
+                                  pubkey: cardEvent.pubkey,
+                                  kind: cardEvent.kind,
+                                });
+                                return `${window.location.origin}/card/${naddr}`;
+                              } catch (error) {
+                                console.error('Error generating naddr:', error);
+                                return `${window.location.origin}/card/${dTag}`;
+                              }
+                            }
+                            return `${window.location.origin}/card/${cardEvent.id}`;
+                          })()}
+                        >
+                          <Button className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600">
+                            <Wallet className="mr-2 h-4 w-4" />
+                            Share 🥜
+                          </Button>
+                        </EcashGiftDialog>
+                      </div>
 
                       <ShareToNostrDialog
                         cardEvent={cardEvent}
