@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { RelaySelector } from '@/components/RelaySelector';
-import { Send } from 'lucide-react';
+import { EcashSupportDialog } from '@/components/EcashSupportDialog';
+import { Send, Zap, Wallet, Users } from 'lucide-react';
 import BitPopArtLogo from '@/assets/bitpopart-logo.png';
 
 export function Footer() {
@@ -58,9 +59,50 @@ export function Footer() {
                 className="h-6 dark:invert"
               />
             </Link>
-            <p className="text-sm text-muted-foreground mb-4">
+            <p className="text-sm text-muted-foreground mb-3">
               Love, Freedom & Joy
             </p>
+            
+            {/* Support Buttons */}
+            <div className="flex flex-col gap-2 mb-4">
+              <Button
+                asChild
+                size="sm"
+                variant="outline"
+                className="w-full justify-start text-xs border-purple-200 hover:bg-purple-50 dark:border-purple-800 dark:hover:bg-purple-900/20"
+              >
+                <a href="https://primal.net/p/npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz" target="_blank" rel="noopener noreferrer">
+                  <Users className="h-3 w-3 mr-1.5 text-purple-500" />
+                  BitPopArt on Nostr
+                </a>
+              </Button>
+              
+              <Button
+                asChild
+                size="sm"
+                variant="outline"
+                className="w-full justify-start text-xs border-yellow-200 hover:bg-yellow-50 dark:border-yellow-800 dark:hover:bg-yellow-900/20"
+              >
+                <a href="lightning:bitpopart@walletofsatoshi.com" target="_blank" rel="noopener noreferrer">
+                  <Zap className="h-3 w-3 mr-1.5 text-yellow-500" />
+                  Support ⚡️
+                </a>
+              </Button>
+              
+              <EcashSupportDialog
+                recipientAddress="bitpopart@minibits.cash"
+                recipientName="BitPopArt"
+              >
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-full justify-start text-xs border-orange-200 hover:bg-orange-50 dark:border-orange-800 dark:hover:bg-orange-900/20"
+                >
+                  <Wallet className="h-3 w-3 mr-1.5 text-orange-500" />
+                  Support 🥜
+                </Button>
+              </EcashSupportDialog>
+            </div>
             
             {/* Relay Selector - Desktop Only */}
             <div className="hidden md:block mb-4">
