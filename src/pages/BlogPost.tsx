@@ -296,7 +296,7 @@ export default function BlogPost() {
                     {/* Markdown Content Block */}
                     {block.type === 'markdown' && block.content.trim() && (
                       <div className="space-y-4">
-                        <div className="prose prose-lg dark:prose-invert max-w-none">
+                        <div className="prose prose-lg dark:prose-invert max-w-none break-words [&_h1]:text-4xl [&_h1]:font-bold [&_h1]:mb-6 [&_h1]:leading-tight [&_h2]:text-3xl [&_h2]:font-bold [&_h2]:mb-5 [&_h2]:mt-8 [&_h2]:leading-tight [&_h3]:text-2xl [&_h3]:font-semibold [&_h3]:mb-4 [&_h3]:mt-6 [&_p]:mb-4 [&_p]:leading-relaxed [&_ul]:mb-4 [&_ol]:mb-4 [&_li]:mb-2 [&_a]:text-purple-600 [&_a]:underline hover:[&_a]:text-purple-700 [&_blockquote]:border-l-4 [&_blockquote]:border-purple-500 [&_blockquote]:pl-4 [&_blockquote]:italic [&_code]:bg-gray-100 dark:[&_code]:bg-gray-800 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-sm [&_pre]:bg-gray-100 dark:[&_pre]:bg-gray-800 [&_pre]:p-4 [&_pre]:rounded-lg [&_pre]:overflow-x-auto [&_img]:rounded-lg [&_img]:my-6">
                           <ReactMarkdown>{block.content}</ReactMarkdown>
                         </div>
                         {block.externalUrl && (
