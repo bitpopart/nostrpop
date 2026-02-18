@@ -44,6 +44,7 @@ export function ShareCardDialog({ cardId, cardTitle, cardAuthor, cardUrl, childr
   const [zapMessage, setZapMessage] = useState('');
   const [ecashAmount, setEcashAmount] = useState('1000'); // Default 1000 sats
   const [ecashMessage, setEcashMessage] = useState('');
+  const [ecashRecipient, setEcashRecipient] = useState(''); // Custom recipient for ecash gift
   const [isOpen, setIsOpen] = useState(false);
 
   const shareUrl = cardUrl || `${window.location.origin}/card/${cardId}`;
@@ -461,10 +462,27 @@ export function ShareCardDialog({ cardId, cardTitle, cardAuthor, cardUrl, childr
               <CardHeader>
                 <CardTitle className="text-lg">Send Ecash Gift 🥜</CardTitle>
                 <CardDescription>
-                  Send an ecash gift along with this card
+                  Send an ecash gift to anyone along with this card
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="ecash-recipient">
+                    Recipient Ecash Address
+                    <span className="text-xs text-muted-foreground ml-2">(e.g., friend@minibits.cash)</span>
+                  </Label>
+                  <Input
+                    id="ecash-recipient"
+                    type="text"
+                    placeholder="friend@minibits.cash"
+                    value={ecashRecipient}
+                    onChange={(e) => setEcashRecipient(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Enter your friend's ecash address or leave blank to send to the card creator
+                  </p>
+                </div>
+                
                 <div className="space-y-2">
                   <Label htmlFor="ecash-amount">Amount (sats)</Label>
                   <div className="flex gap-2">
@@ -490,6 +508,7 @@ export function ShareCardDialog({ cardId, cardTitle, cardAuthor, cardUrl, childr
                     </div>
                   </div>
                 </div>
+                
                 <div className="space-y-2">
                   <Label htmlFor="ecash-message">Message (optional)</Label>
                   <Textarea
@@ -500,13 +519,23 @@ export function ShareCardDialog({ cardId, cardTitle, cardAuthor, cardUrl, childr
                     rows={2}
                   />
                 </div>
+                
                 <div className="bg-orange-50 dark:bg-orange-900/20 p-3 rounded-lg">
                   <p className="text-sm text-orange-800 dark:text-orange-200">
                     <strong>🥜 Ecash Gift</strong>
                     <br />
-                    Send ecash to <code className="bg-orange-100 dark:bg-orange-800 px-1 rounded">{ecashAddress}</code> with your card message.
+                    {ecashRecipient.trim() ? (
+                      <>
+                        Send ecash to <code className="bg-orange-100 dark:bg-orange-800 px-1 rounded">{ecashRecipient.trim()}</code> with your card message.
+                      </>
+                    ) : (
+                      <>
+                        Send ecash to card creator <code className="bg-orange-100 dark:bg-orange-800 px-1 rounded">{ecashAddress}</code> or add a custom recipient above.
+                      </>
+                    )}
                   </p>
                 </div>
+                
                 <Button
                   onClick={() => {
                     const amount = parseInt(ecashAmount);
@@ -519,12 +548,25 @@ export function ShareCardDialog({ cardId, cardTitle, cardAuthor, cardUrl, childr
                       return;
                     }
                     
+                    // Use custom recipient if provided, otherwise default to card creator
+                    const recipient = ecashRecipient.trim() || ecashAddress;
+                    
+                    // Validate recipient format (basic check for @ symbol)
+                    if (!recipient.includes('@')) {
+                      toast({
+                        title: "Invalid Recipient",
+                        description: "Please enter a valid ecash address (e.g., user@minibits.cash)",
+                        variant: "destructive"
+                      });
+                      return;
+                    }
+                    
                     const message = ecashMessage.trim() || `Ecash gift with card: "${cardTitle}"! 🎨`;
-                    openMinibitsWallet(amount, ecashAddress, message);
+                    openMinibitsWallet(amount, recipient, message);
                     
                     toast({
                       title: "Opening Minibits Wallet",
-                      description: `Sending ${amount} sats ecash gift`,
+                      description: `Sending ${amount} sats to ${recipient}`,
                     });
                   }}
                   className="w-full bg-orange-500 hover:bg-orange-600 text-white"
