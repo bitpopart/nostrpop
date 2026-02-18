@@ -8,7 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Image as ImageIcon, ExternalLink, Zap, Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { useEcash } from '@/hooks/useEcash';
+import { EcashSupportDialog } from '@/components/EcashSupportDialog';
 import ReactMarkdown from 'react-markdown';
 import { toast } from 'sonner';
 import { nip19 } from 'nostr-tools';
@@ -28,7 +28,6 @@ interface ContentBlock {
 export default function Artist() {
   const { nostr } = useNostr();
   const { getGradientStyle } = useThemeColors();
-  const { openEcashWallet } = useEcash();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   useSeoMeta({
@@ -319,21 +318,19 @@ Follow me at BitPopArt:
                   </a>
                 </Button>
                 
-                <Button
-                  variant="outline"
-                  size="lg"
-                  onClick={() => {
-                    openEcashWallet(
-                      1000,
-                      'bitpopart@minibits.cash',
-                      'Support for BitPopArt! 🎨'
-                    );
-                  }}
-                  className="flex-1 border-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20"
+                <EcashSupportDialog
+                  recipientAddress="bitpopart@minibits.cash"
+                  recipientName="BitPopArt"
                 >
-                  <Wallet className="h-5 w-5 mr-2 text-orange-500" />
-                  Support 🥜
-                </Button>
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="flex-1 border-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20"
+                  >
+                    <Wallet className="h-5 w-5 mr-2 text-orange-500" />
+                    Support 🥜
+                  </Button>
+                </EcashSupportDialog>
               </div>
             </div>
           </div>
