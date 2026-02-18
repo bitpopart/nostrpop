@@ -32,7 +32,8 @@ import {
   FolderKanban,
   Users,
   Zap,
-  FileText
+  FileText,
+  MapPin
 } from 'lucide-react';
 import type { NostrEvent, NostrMetadata } from '@nostrify/nostrify';
 import type { ArtworkData } from '@/lib/artTypes';
@@ -945,6 +946,17 @@ const Index = () => {
               <Link to="/shop">
                 <Gift className="mr-2 h-5 w-5" />
                 Visit Shop
+              </Link>
+            </Button>
+            <Button 
+              size="lg" 
+              variant="outline" 
+              asChild 
+              className="rounded-full border-orange-300 hover:bg-orange-50 dark:border-orange-700 dark:hover:bg-orange-900/20"
+            >
+              <Link to="/popup">
+                <MapPin className="mr-2 h-5 w-5 text-orange-600 dark:text-orange-400" />
+                Pop Tour
               </Link>
             </Button>
           </div>
