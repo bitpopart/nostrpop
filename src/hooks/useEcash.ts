@@ -64,12 +64,10 @@ export function useEcash() {
   };
   
   /**
-   * Open Minibits wallet with payment details
-   * This uses the minibits:// URL scheme if available
+   * Open ecash wallet with payment details
+   * Tries multiple wallet URL schemes and falls back to manual instructions
    */
-  const openMinibitsWallet = (amount: number, recipientAddress: string, description?: string) => {
-    // Construct minibits URL scheme
-    // Format: minibits://send?address=ADDRESS&amount=AMOUNT&memo=DESCRIPTION
+  const openEcashWallet = (amount: number, recipientAddress: string, description?: string) => {
     const params = new URLSearchParams({
       address: recipientAddress,
       amount: amount.toString(),
@@ -79,26 +77,42 @@ export function useEcash() {
       params.append('memo', description);
     }
     
+    // Try multiple wallet URL schemes
+    // Minibits wallet
     const minibitsUrl = `minibits://send?${params.toString()}`;
     
-    // Try to open the URL
-    // If Minibits app is installed, it will open
-    // Otherwise, show instructions
+    // eNuts wallet (another popular Cashu wallet)
+    const enutsUrl = `enuts://send?${params.toString()}`;
+    
+    // Cashu.me wallet
+    const cashuUrl = `cashu://send?${params.toString()}`;
+    
     try {
+      // Try Minibits first (most popular)
       window.location.href = minibitsUrl;
       
       toast({
-        title: "Opening Minibits Wallet",
+        title: "Opening Ecash Wallet",
         description: `Sending ${amount} sats to ${recipientAddress}`,
       });
       
+      // Show fallback instructions after a short delay
+      setTimeout(() => {
+        toast({
+          title: "Alternative Wallets",
+          description: `If your wallet didn't open, manually send ${amount} sats to ${recipientAddress} using any Cashu wallet (Minibits, eNuts, Cashu.me, etc.)`,
+          duration: 7000,
+        });
+      }, 2000);
+      
       return true;
     } catch (error) {
-      console.error('Failed to open Minibits:', error);
+      console.error('Failed to open ecash wallet:', error);
       
       toast({
-        title: "Manual Payment",
-        description: `Please send ${amount} sats to ${recipientAddress} using your Minibits wallet.`,
+        title: "Manual Payment Required",
+        description: `Please send ${amount} sats to ${recipientAddress} using your ecash wallet (Minibits, eNuts, Cashu.me, or any Cashu-compatible wallet).`,
+        duration: 7000,
       });
       
       return false;
@@ -108,7 +122,8 @@ export function useEcash() {
   return {
     sendEcash,
     createEcashPaymentRequest,
-    openMinibitsWallet,
+    openEcashWallet,
+    openMinibitsWallet: openEcashWallet, // Alias for backward compatibility
     isLoading,
   };
 }

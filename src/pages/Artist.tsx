@@ -28,7 +28,7 @@ interface ContentBlock {
 export default function Artist() {
   const { nostr } = useNostr();
   const { getGradientStyle } = useThemeColors();
-  const { openMinibitsWallet } = useEcash();
+  const { openEcashWallet } = useEcash();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   useSeoMeta({
@@ -323,7 +323,7 @@ Follow me at BitPopArt:
                   variant="outline"
                   size="lg"
                   onClick={() => {
-                    openMinibitsWallet(
+                    openEcashWallet(
                       1000,
                       'bitpopart@minibits.cash',
                       'Support for BitPopArt! 🎨'

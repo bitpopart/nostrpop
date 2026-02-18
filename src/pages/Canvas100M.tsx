@@ -74,7 +74,7 @@ function Canvas100M() {
   const { nostr } = useNostr();
   const { toast } = useToast();
   const { createInvoice, invoice, isLoading: _paymentLoading, clearInvoice } = useLightningPayment();
-  const { openMinibitsWallet } = useEcash();
+  const { openEcashWallet } = useEcash();
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const qrCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -1754,14 +1754,14 @@ function Canvas100M() {
                     className="w-full bg-gradient-to-r from-orange-400 to-red-500 hover:from-orange-500 hover:to-red-600 text-white font-semibold"
                     onClick={() => {
                       const totalSats = pendingPixels.length * SAT_PER_PIXEL;
-                      openMinibitsWallet(
+                      openEcashWallet(
                         totalSats,
                         'bitpopart@minibits.cash',
                         `${pendingPixels.length} pixel${pendingPixels.length > 1 ? 's' : ''} on 100M Canvas`
                       );
                     }}
                   >
-                    🥜 Open Minibits Wallet
+                    🥜 Open Ecash Wallet
                   </Button>
 
                   <div className="text-xs text-center text-muted-foreground bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded">
@@ -1769,9 +1769,9 @@ function Canvas100M() {
                       💡 <strong>How it works:</strong>
                     </p>
                     <ol className="text-left space-y-1 list-decimal list-inside">
-                      <li>Click "Open Minibits Wallet" above</li>
-                      <li>Your Minibits app will open with payment details</li>
-                      <li>Confirm the payment in Minibits</li>
+                      <li>Click "Open Ecash Wallet" above</li>
+                      <li>Your ecash wallet will open with payment details</li>
+                      <li>Confirm the payment in your wallet</li>
                       <li>Return here and click "I've Paid"</li>
                     </ol>
                   </div>
@@ -1799,7 +1799,7 @@ function Canvas100M() {
               </div>
 
               <p className="text-xs text-center text-muted-foreground">
-                Click "I've Paid" after completing payment via Minibits
+                Works with Minibits, eNuts, Cashu.me, and other Cashu wallets
               </p>
             </div>
           )}

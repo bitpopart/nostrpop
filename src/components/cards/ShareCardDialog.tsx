@@ -34,7 +34,7 @@ export function ShareCardDialog({ cardId, cardTitle, cardAuthor, cardUrl, childr
   
   // Ecash integration
   const ecashAddress = 'bitpopart@minibits.cash';
-  const { openMinibitsWallet } = useEcash();
+  const { openEcashWallet } = useEcash();
 
   const [dmRecipient, setDmRecipient] = useState('');
   const [dmMessage, setDmMessage] = useState('');
@@ -469,17 +469,17 @@ export function ShareCardDialog({ cardId, cardTitle, cardAuthor, cardUrl, childr
                 <div className="space-y-2">
                   <Label htmlFor="ecash-recipient">
                     Recipient Ecash Address
-                    <span className="text-xs text-muted-foreground ml-2">(e.g., friend@minibits.cash)</span>
+                    <span className="text-xs text-muted-foreground ml-2">(e.g., friend@enuts.cash)</span>
                   </Label>
                   <Input
                     id="ecash-recipient"
                     type="text"
-                    placeholder="friend@minibits.cash"
+                    placeholder="friend@wallet.cashu"
                     value={ecashRecipient}
                     onChange={(e) => setEcashRecipient(e.target.value)}
                   />
                   <p className="text-xs text-muted-foreground">
-                    Enter your friend's ecash address or leave blank to send to the card creator
+                    Works with any Cashu wallet address (Minibits, eNuts, Cashu.me, etc.)
                   </p>
                 </div>
                 
@@ -555,27 +555,22 @@ export function ShareCardDialog({ cardId, cardTitle, cardAuthor, cardUrl, childr
                     if (!recipient.includes('@')) {
                       toast({
                         title: "Invalid Recipient",
-                        description: "Please enter a valid ecash address (e.g., user@minibits.cash)",
+                        description: "Please enter a valid ecash address (e.g., user@wallet.cashu)",
                         variant: "destructive"
                       });
                       return;
                     }
                     
                     const message = ecashMessage.trim() || `Ecash gift with card: "${cardTitle}"! 🎨`;
-                    openMinibitsWallet(amount, recipient, message);
-                    
-                    toast({
-                      title: "Opening Minibits Wallet",
-                      description: `Sending ${amount} sats to ${recipient}`,
-                    });
+                    openEcashWallet(amount, recipient, message);
                   }}
                   className="w-full bg-orange-500 hover:bg-orange-600 text-white"
                 >
                   <Wallet className="mr-2 h-4 w-4" />
-                  Send Ecash Gift via Minibits
+                  Send Ecash Gift
                 </Button>
                 <p className="text-xs text-center text-muted-foreground">
-                  Your Minibits wallet will open to complete the ecash payment
+                  Works with Minibits, eNuts, Cashu.me, and other Cashu wallets
                 </p>
               </CardContent>
             </Card>
