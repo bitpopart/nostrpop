@@ -268,63 +268,29 @@ export function CardItem({ card, showAuthor = false, onRefetch }: CardItemProps)
           </Badge>
         </div>
 
-        <div className="flex flex-col gap-2">
-          <div className="flex gap-2">
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate(cardUrl)}
+            className="flex-1"
+          >
+            <ExternalLink className="h-3 w-3 mr-1" />
+            View
+          </Button>
+
+          <ShareToNostrDialog
+            cardEvent={card.event}
+            cardData={card}
+          >
             <Button
               variant="outline"
               size="sm"
-              onClick={() => navigate(cardUrl)}
-              className="flex-1"
+              className="bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 border-purple-200 dark:border-purple-800"
             >
-              <ExternalLink className="h-3 w-3 mr-1" />
-              View
+              <Share2 className="h-3 w-3 text-purple-600 dark:text-purple-400" />
             </Button>
-
-            <ShareToNostrDialog
-              cardEvent={card.event}
-              cardData={card}
-            >
-              <Button
-                variant="outline"
-                size="sm"
-                className="bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 border-purple-200 dark:border-purple-800"
-              >
-                <Share2 className="h-3 w-3 text-purple-600 dark:text-purple-400" />
-              </Button>
-            </ShareToNostrDialog>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => likeCard(card.id)}
-            >
-              <Heart className="h-3 w-3" />
-            </Button>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => downloadCard(card.id, card.images)}
-              disabled={isDownloading}
-            >
-              {isDownloading ? (
-                <Loader2 className="h-3 w-3 animate-spin" />
-              ) : (
-                <Download className="h-3 w-3" />
-              )}
-            </Button>
-
-            <ZapButton
-              recipientPubkey={card.event.pubkey}
-              eventId={card.id}
-              eventTitle={card.title}
-              variant="outline"
-              size="sm"
-              className="bg-yellow-50 hover:bg-yellow-100 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/30 border-yellow-200 dark:border-yellow-800"
-            >
-              <Zap className="h-3 w-3 text-yellow-600 dark:text-yellow-400" />
-            </ZapButton>
-          </div>
+          </ShareToNostrDialog>
 
           {/* Share Card with Ecash Gift Button */}
           <EcashGiftDialog
@@ -334,12 +300,43 @@ export function CardItem({ card, showAuthor = false, onRefetch }: CardItemProps)
             <Button
               variant="outline"
               size="sm"
-              className="w-full bg-orange-50 hover:bg-orange-100 dark:bg-orange-900/20 dark:hover:bg-orange-900/30 border-orange-200 dark:border-orange-800 text-orange-700 dark:text-orange-300"
+              className="bg-orange-50 hover:bg-orange-100 dark:bg-orange-900/20 dark:hover:bg-orange-900/30 border-orange-200 dark:border-orange-800"
             >
-              <Wallet className="h-3 w-3 mr-1" />
-              Share Card 🥜
+              <Wallet className="h-3 w-3 text-orange-600 dark:text-orange-400" />
             </Button>
           </EcashGiftDialog>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => likeCard(card.id)}
+          >
+            <Heart className="h-3 w-3" />
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => downloadCard(card.id, card.images)}
+            disabled={isDownloading}
+          >
+            {isDownloading ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <Download className="h-3 w-3" />
+            )}
+          </Button>
+
+          <ZapButton
+            recipientPubkey={card.event.pubkey}
+            eventId={card.id}
+            eventTitle={card.title}
+            variant="outline"
+            size="sm"
+            className="bg-yellow-50 hover:bg-yellow-100 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/30 border-yellow-200 dark:border-yellow-800"
+          >
+            <Zap className="h-3 w-3 text-yellow-600 dark:text-yellow-400" />
+          </ZapButton>
 
           {/* Owner actions dropdown - only show for card owner */}
           {isOwner && (
