@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, MapPin, Calendar, ExternalLink, Globe, Share2 } from 'lucide-react';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { ArrowLeft, MapPin, Calendar, ExternalLink, Globe, Share2, Image as ImageIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { POPUP_TYPE_CONFIG, POPUP_STATUS_CONFIG, type PopUpEventData } from '@/lib/popupTypes';
 import { WorldMap } from '@/components/popup/WorldMap';
@@ -21,6 +22,7 @@ export default function PopUpEventView() {
   const navigate = useNavigate();
   const { nostr } = useNostr();
   const isAdmin = useIsAdmin();
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   // Fetch single event
   const { data: eventData, isLoading } = useQuery({
@@ -42,6 +44,7 @@ export default function PopUpEventView() {
       const startDate = event.tags.find(t => t[0] === 'start')?.[1] || '';
       const endDate = event.tags.find(t => t[0] === 'end')?.[1];
       const image = event.tags.find(t => t[0] === 'image')?.[1];
+      const galleryImages = event.tags.filter(t => t[0] === 'gallery').map(t => t[1]);
       const link = event.tags.find(t => t[0] === 'r')?.[1];
       const type = event.tags.find(t => t[0] === 't' && ['art', 'shop', 'event'].includes(t[1]))?.[1] as 'art' | 'shop' | 'event' || 'art';
       const status = event.tags.find(t => t[0] === 'status')?.[1] as 'confirmed' | 'option' || 'confirmed';
@@ -72,6 +75,7 @@ export default function PopUpEventView() {
         startDate,
         endDate,
         image,
+        galleryImages,
         link,
         event,
         isFinished,
@@ -229,6 +233,39 @@ export default function PopUpEventView() {
               )}
             </Card>
 
+            {/* Gallery */}
+            {eventData.galleryImages && eventData.galleryImages.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <ImageIcon className="h-5 w-5 mr-2" />
+                    Photo Gallery ({eventData.galleryImages.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {eventData.galleryImages.map((imgUrl, index) => (
+                      <div
+                        key={index}
+                        className="relative aspect-square overflow-hidden rounded-lg cursor-pointer group"
+                        onClick={() => setSelectedImage(imgUrl)}
+                      >
+                        <img
+                          src={imgUrl}
+                          alt={`Gallery ${index + 1}`}
+                          loading="lazy"
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                        />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                          <ImageIcon className="h-8 w-8 text-white" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Map */}
             {eventData.latitude && eventData.longitude && (
               <Card className="overflow-hidden">
@@ -372,6 +409,19 @@ export default function PopUpEventView() {
             </Card>
           </div>
         </div>
+
+        {/* Image Lightbox */}
+        <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
+          <DialogContent className="max-w-[95vw] sm:max-w-4xl p-0 max-h-[90vh] overflow-auto">
+            {selectedImage && (
+              <img
+                src={selectedImage}
+                alt="Gallery"
+                className="w-full h-auto object-contain"
+              />
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

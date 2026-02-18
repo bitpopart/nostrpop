@@ -40,6 +40,7 @@ interface PopUpFormData {
   startDate: string;
   endDate: string;
   image: string;
+  galleryImages: string[];
   link: string;
   finished: boolean;
 }
@@ -55,6 +56,8 @@ export function PopUpManagement() {
   const [isCreating, setIsCreating] = useState(false);
   const [editingEvent, setEditingEvent] = useState<NostrEvent | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadingGallery, setUploadingGallery] = useState(false);
+  const galleryFileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState<PopUpFormData>({
     title: '',
     description: '',
@@ -66,6 +69,7 @@ export function PopUpManagement() {
     startDate: '',
     endDate: '',
     image: '',
+    galleryImages: [],
     link: '',
     finished: false,
   });
@@ -201,6 +205,10 @@ export function PopUpManagement() {
     if (formData.image) {
       tags.push(['image', formData.image]);
     }
+    // Add gallery images
+    formData.galleryImages.forEach(imgUrl => {
+      tags.push(['gallery', imgUrl]);
+    });
     if (formData.link) {
       tags.push(['r', formData.link]);
     }
@@ -236,6 +244,7 @@ export function PopUpManagement() {
             startDate: '',
             endDate: '',
             image: '',
+            galleryImages: [],
             link: '',
             finished: false,
           });
@@ -255,6 +264,7 @@ export function PopUpManagement() {
     const startDate = event.tags.find(t => t[0] === 'start')?.[1] || '';
     const endDate = event.tags.find(t => t[0] === 'end')?.[1] || '';
     const image = event.tags.find(t => t[0] === 'image')?.[1] || '';
+    const galleryImages = event.tags.filter(t => t[0] === 'gallery').map(t => t[1]);
     const link = event.tags.find(t => t[0] === 'r')?.[1] || '';
     const type = event.tags.find(t => t[0] === 't' && ['art', 'shop', 'event'].includes(t[1]))?.[1] as PopUpType || 'art';
     const status = event.tags.find(t => t[0] === 'status')?.[1] as PopUpStatus || 'confirmed';
@@ -284,6 +294,7 @@ export function PopUpManagement() {
       startDate,
       endDate,
       image,
+      galleryImages,
       link,
       finished,
     });
@@ -326,9 +337,44 @@ export function PopUpManagement() {
       startDate: '',
       endDate: '',
       image: '',
+      galleryImages: [],
       link: '',
       finished: false,
     });
+  };
+
+  const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingGallery(true);
+    try {
+      const tags = await uploadFile(file);
+      const imageUrl = tags[0]?.[1];
+      
+      if (imageUrl) {
+        setFormData(prev => ({ 
+          ...prev, 
+          galleryImages: [...prev.galleryImages, imageUrl] 
+        }));
+        toast.success('Gallery image uploaded!');
+      }
+    } catch (error) {
+      console.error('Gallery upload error:', error);
+      toast.error('Failed to upload gallery image');
+    } finally {
+      setUploadingGallery(false);
+      if (galleryFileInputRef.current) {
+        galleryFileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const removeGalleryImage = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      galleryImages: prev.galleryImages.filter((_, i) => i !== index)
+    }));
   };
 
   return (
@@ -553,6 +599,65 @@ export function PopUpManagement() {
                   value={formData.link}
                   onChange={(e) => handleInputChange('link', e.target.value)}
                 />
+              </div>
+
+              <Separator />
+
+              {/* Gallery Images */}
+              <div className="space-y-2">
+                <Label>Gallery Images (optional)</Label>
+                <p className="text-sm text-muted-foreground">Add additional photos to create a gallery for this event</p>
+                
+                {formData.galleryImages.length > 0 && (
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-3">
+                    {formData.galleryImages.map((imgUrl, index) => (
+                      <div key={index} className="relative rounded-lg overflow-hidden border-2 border-gray-200 dark:border-gray-700">
+                        <img
+                          src={imgUrl}
+                          alt={`Gallery ${index + 1}`}
+                          className="w-full h-32 object-cover"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          className="absolute top-1 right-1 h-6 w-6 p-0"
+                          onClick={() => removeGalleryImage(index)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <input
+                  ref={galleryFileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleGalleryUpload}
+                  disabled={uploadingGallery}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => galleryFileInputRef.current?.click()}
+                  disabled={uploadingGallery}
+                >
+                  {uploadingGallery ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-4 w-4 mr-2" />
+                      Add Gallery Image
+                    </>
+                  )}
+                </Button>
               </div>
 
               <Separator />

@@ -20,6 +20,7 @@ export interface PopUpEventData {
   startDate: string; // YYYY-MM-DD
   endDate?: string; // YYYY-MM-DD
   image?: string;
+  galleryImages?: string[];
   link?: string;
   finished?: boolean;
   event: NostrEvent;
