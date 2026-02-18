@@ -7,12 +7,13 @@ import { Button } from '@/components/ui/button';
 import { EditCardDialog } from './EditCardDialog';
 import { DeleteCardDialog } from './DeleteCardDialog';
 import { ShareToNostrDialog } from './ShareToNostrDialog';
+import { EcashGiftDialog } from './EcashGiftDialog';
 import { ZapButton } from './ZapButton';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useAuthor } from '@/hooks/useAuthor';
 import { genUserName } from '@/lib/genUserName';
 import { useToast } from '@/hooks/useToast';
-import { Heart, Download, Calendar, Sparkles, Zap, ExternalLink, Edit, Trash2, MoreVertical, User, Share2, Loader2 } from 'lucide-react';
+import { Heart, Download, Calendar, Sparkles, Zap, ExternalLink, Edit, Trash2, MoreVertical, User, Share2, Loader2, Wallet } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import type { NostrEvent } from '@nostrify/nostrify';
 
@@ -267,111 +268,125 @@ export function CardItem({ card, showAuthor = false, onRefetch }: CardItemProps)
           </Badge>
         </div>
 
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate(cardUrl)}
-            className="flex-1"
-          >
-            <ExternalLink className="h-3 w-3 mr-1" />
-            View
-          </Button>
+        <div className="flex flex-col gap-2">
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate(cardUrl)}
+              className="flex-1"
+            >
+              <ExternalLink className="h-3 w-3 mr-1" />
+              View
+            </Button>
 
-          <ShareToNostrDialog
-            cardEvent={card.event}
-            cardData={card}
+            <ShareToNostrDialog
+              cardEvent={card.event}
+              cardData={card}
+            >
+              <Button
+                variant="outline"
+                size="sm"
+                className="bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 border-purple-200 dark:border-purple-800"
+              >
+                <Share2 className="h-3 w-3 text-purple-600 dark:text-purple-400" />
+              </Button>
+            </ShareToNostrDialog>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => likeCard(card.id)}
+            >
+              <Heart className="h-3 w-3" />
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => downloadCard(card.id, card.images)}
+              disabled={isDownloading}
+            >
+              {isDownloading ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Download className="h-3 w-3" />
+              )}
+            </Button>
+
+            <ZapButton
+              recipientPubkey={card.event.pubkey}
+              eventId={card.id}
+              eventTitle={card.title}
+              variant="outline"
+              size="sm"
+              className="bg-yellow-50 hover:bg-yellow-100 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/30 border-yellow-200 dark:border-yellow-800"
+            >
+              <Zap className="h-3 w-3 text-yellow-600 dark:text-yellow-400" />
+            </ZapButton>
+          </div>
+
+          {/* Share Card with Ecash Gift Button */}
+          <EcashGiftDialog
+            cardTitle={card.title}
+            cardUrl={`${window.location.origin}${cardUrl}`}
           >
             <Button
               variant="outline"
               size="sm"
-              className="bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 border-purple-200 dark:border-purple-800"
+              className="w-full bg-orange-50 hover:bg-orange-100 dark:bg-orange-900/20 dark:hover:bg-orange-900/30 border-orange-200 dark:border-orange-800 text-orange-700 dark:text-orange-300"
             >
-              <Share2 className="h-3 w-3 text-purple-600 dark:text-purple-400" />
+              <Wallet className="h-3 w-3 mr-1" />
+              Share Card 🥜
             </Button>
-          </ShareToNostrDialog>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => likeCard(card.id)}
-          >
-            <Heart className="h-3 w-3" />
-          </Button>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => downloadCard(card.id, card.images)}
-            disabled={isDownloading}
-          >
-            {isDownloading ? (
-              <Loader2 className="h-3 w-3 animate-spin" />
-            ) : (
-              <Download className="h-3 w-3" />
-            )}
-          </Button>
-
-          <ZapButton
-            recipientPubkey={card.event.pubkey}
-            eventId={card.id}
-            eventTitle={card.title}
-            variant="outline"
-            size="sm"
-            className="bg-yellow-50 hover:bg-yellow-100 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/30 border-yellow-200 dark:border-yellow-800"
-          >
-            <Zap className="h-3 w-3 text-yellow-600 dark:text-yellow-400" />
-          </ZapButton>
+          </EcashGiftDialog>
 
           {/* Owner actions dropdown - only show for card owner */}
           {isOwner && (
-            <>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <MoreVertical className="h-3 w-3" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onSelect={() => setEditDialogOpen(true)}>
-                    <Edit className="mr-2 h-4 w-4" />
-                    Edit Card
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onSelect={() => setDeleteDialogOpen(true)}
-                    className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-900/20"
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete Card
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              {/* Edit Dialog - controlled separately */}
-              {editDialogOpen && (
-                <EditCardDialog
-                  cardEvent={card.event}
-                  cardData={card}
-                  onCardUpdated={onRefetch}
-                  open={editDialogOpen}
-                  onOpenChange={setEditDialogOpen}
-                />
-              )}
-
-              {/* Delete Dialog - controlled separately */}
-              {deleteDialogOpen && (
-                <DeleteCardDialog
-                  cardEvent={card.event}
-                  cardTitle={card.title}
-                  onCardDeleted={onRefetch}
-                  open={deleteDialogOpen}
-                  onOpenChange={setDeleteDialogOpen}
-                />
-              )}
-            </>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <MoreVertical className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onSelect={() => setEditDialogOpen(true)}>
+                  <Edit className="mr-2 h-4 w-4" />
+                  Edit Card
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onSelect={() => setDeleteDialogOpen(true)}
+                  className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-900/20"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete Card
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
         </div>
+
+        {/* Edit and Delete Dialogs - controlled separately */}
+        {isOwner && editDialogOpen && (
+          <EditCardDialog
+            cardEvent={card.event}
+            cardData={card}
+            onCardUpdated={onRefetch}
+            open={editDialogOpen}
+            onOpenChange={setEditDialogOpen}
+          />
+        )}
+
+        {isOwner && deleteDialogOpen && (
+          <DeleteCardDialog
+            cardEvent={card.event}
+            cardTitle={card.title}
+            onCardDeleted={onRefetch}
+            open={deleteDialogOpen}
+            onOpenChange={setDeleteDialogOpen}
+          />
+        )}
       </CardContent>
     </Card>
   );

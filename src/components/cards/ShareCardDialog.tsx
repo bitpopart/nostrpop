@@ -10,9 +10,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useZap } from '@/hooks/useZap';
-import { useEcash } from '@/hooks/useEcash';
 import { useToast } from '@/hooks/useToast';
-import { Share2, Send, Mail, Zap, Copy, Loader2, Wallet } from 'lucide-react';
+import { Share2, Send, Mail, Zap, Copy, Loader2 } from 'lucide-react';
 import { nip19 } from 'nostr-tools';
 
 interface ShareCardDialogProps {
@@ -31,10 +30,6 @@ export function ShareCardDialog({ cardId, cardTitle, cardAuthor, cardUrl, childr
   // LNURL integration for zaps
   const lightningAddress = 'bitpopart@getalby.com';
   const { sendZap, isZapping, supportsZaps, canZap } = useZap(lightningAddress);
-  
-  // Ecash integration
-  const ecashAddress = 'bitpopart@minibits.cash';
-  const { openEcashWallet } = useEcash();
 
   const [dmRecipient, setDmRecipient] = useState('');
   const [dmMessage, setDmMessage] = useState('');
@@ -42,9 +37,6 @@ export function ShareCardDialog({ cardId, cardTitle, cardAuthor, cardUrl, childr
   const [emailMessage, setEmailMessage] = useState('');
   const [zapAmount, setZapAmount] = useState('1000'); // Default 1000 sats
   const [zapMessage, setZapMessage] = useState('');
-  const [ecashAmount, setEcashAmount] = useState('1000'); // Default 1000 sats
-  const [ecashMessage, setEcashMessage] = useState('');
-  const [ecashRecipient, setEcashRecipient] = useState(''); // Custom recipient for ecash gift
   const [isOpen, setIsOpen] = useState(false);
 
   const shareUrl = cardUrl || `${window.location.origin}/card/${cardId}`;
@@ -249,12 +241,11 @@ export function ShareCardDialog({ cardId, cardTitle, cardAuthor, cardUrl, childr
         </DialogHeader>
 
         <Tabs defaultValue="link" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="link">Link</TabsTrigger>
             <TabsTrigger value="dm">DM</TabsTrigger>
             <TabsTrigger value="email">Email</TabsTrigger>
             <TabsTrigger value="zap">Zap</TabsTrigger>
-            <TabsTrigger value="ecash">Ecash</TabsTrigger>
           </TabsList>
 
           <TabsContent value="link" className="space-y-4">
@@ -453,125 +444,6 @@ export function ShareCardDialog({ cardId, cardTitle, cardAuthor, cardUrl, childr
                     {!user ? 'Please log in to send zaps' : 'Lightning wallet not available'}
                   </p>
                 )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="ecash" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Send Ecash Gift 🥜</CardTitle>
-                <CardDescription>
-                  Send an ecash gift to anyone along with this card
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="ecash-recipient">
-                    Recipient Ecash Address
-                    <span className="text-xs text-muted-foreground ml-2">(e.g., friend@enuts.cash)</span>
-                  </Label>
-                  <Input
-                    id="ecash-recipient"
-                    type="text"
-                    placeholder="friend@wallet.cashu"
-                    value={ecashRecipient}
-                    onChange={(e) => setEcashRecipient(e.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Works with any Cashu wallet address (Minibits, eNuts, Cashu.me, etc.)
-                  </p>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="ecash-amount">Amount (sats)</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="ecash-amount"
-                      type="number"
-                      placeholder="1000"
-                      value={ecashAmount}
-                      onChange={(e) => setEcashAmount(e.target.value)}
-                      min="1"
-                    />
-                    <div className="flex gap-1">
-                      {['100', '1000', '5000'].map((amount) => (
-                        <Button
-                          key={amount}
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setEcashAmount(amount)}
-                        >
-                          {amount}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="ecash-message">Message (optional)</Label>
-                  <Textarea
-                    id="ecash-message"
-                    placeholder="Enjoy this card! 🎨"
-                    value={ecashMessage}
-                    onChange={(e) => setEcashMessage(e.target.value)}
-                    rows={2}
-                  />
-                </div>
-                
-                <div className="bg-orange-50 dark:bg-orange-900/20 p-3 rounded-lg">
-                  <p className="text-sm text-orange-800 dark:text-orange-200">
-                    <strong>🥜 Ecash Gift</strong>
-                    <br />
-                    {ecashRecipient.trim() ? (
-                      <>
-                        Send ecash to <code className="bg-orange-100 dark:bg-orange-800 px-1 rounded">{ecashRecipient.trim()}</code> with your card message.
-                      </>
-                    ) : (
-                      <>
-                        Send ecash to card creator <code className="bg-orange-100 dark:bg-orange-800 px-1 rounded">{ecashAddress}</code> or add a custom recipient above.
-                      </>
-                    )}
-                  </p>
-                </div>
-                
-                <Button
-                  onClick={() => {
-                    const amount = parseInt(ecashAmount);
-                    if (isNaN(amount) || amount < 1) {
-                      toast({
-                        title: "Invalid Amount",
-                        description: "Please enter a valid ecash amount in sats.",
-                        variant: "destructive"
-                      });
-                      return;
-                    }
-                    
-                    // Use custom recipient if provided, otherwise default to card creator
-                    const recipient = ecashRecipient.trim() || ecashAddress;
-                    
-                    // Validate recipient format (basic check for @ symbol)
-                    if (!recipient.includes('@')) {
-                      toast({
-                        title: "Invalid Recipient",
-                        description: "Please enter a valid ecash address (e.g., user@wallet.cashu)",
-                        variant: "destructive"
-                      });
-                      return;
-                    }
-                    
-                    const message = ecashMessage.trim() || `Ecash gift with card: "${cardTitle}"! 🎨`;
-                    openEcashWallet(amount, recipient, message);
-                  }}
-                  className="w-full bg-orange-500 hover:bg-orange-600 text-white"
-                >
-                  <Wallet className="mr-2 h-4 w-4" />
-                  Send Ecash Gift
-                </Button>
-                <p className="text-xs text-center text-muted-foreground">
-                  Works with Minibits, eNuts, Cashu.me, and other Cashu wallets
-                </p>
               </CardContent>
             </Card>
           </TabsContent>
