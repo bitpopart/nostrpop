@@ -5,9 +5,10 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Image as ImageIcon, ExternalLink, Zap } from 'lucide-react';
+import { Image as ImageIcon, ExternalLink, Zap, Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useEcash } from '@/hooks/useEcash';
 import ReactMarkdown from 'react-markdown';
 import { toast } from 'sonner';
 import { nip19 } from 'nostr-tools';
@@ -27,6 +28,7 @@ interface ContentBlock {
 export default function Artist() {
   const { nostr } = useNostr();
   const { getGradientStyle } = useThemeColors();
+  const { openMinibitsWallet } = useEcash();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   useSeoMeta({
@@ -289,12 +291,12 @@ Follow me at BitPopArt:
             ))}
 
             {/* BitPopArt on Nostr Button - at the bottom */}
-            <div className="flex justify-center mt-12">
+            <div className="flex flex-col items-center gap-4 mt-12">
               <Button
                 variant="default"
                 size="lg"
                 asChild
-                className="text-white border-0"
+                className="text-white border-0 w-full max-w-sm"
                 style={getGradientStyle('primary')}
               >
                 <a href="https://primal.net/p/npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz" target="_blank" rel="noopener noreferrer">
@@ -302,6 +304,37 @@ Follow me at BitPopArt:
                   BitPopArt on Nostr
                 </a>
               </Button>
+              
+              {/* Support Buttons */}
+              <div className="flex flex-col sm:flex-row gap-3 w-full max-w-sm">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  asChild
+                  className="flex-1 border-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-900/20"
+                >
+                  <a href="lightning:bitpopart@walletofsatoshi.com" target="_blank" rel="noopener noreferrer">
+                    <Zap className="h-5 w-5 mr-2 text-yellow-500" />
+                    Support ⚡️
+                  </a>
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={() => {
+                    openMinibitsWallet(
+                      1000,
+                      'bitpopart@minibits.cash',
+                      'Support for BitPopArt! 🎨'
+                    );
+                  }}
+                  className="flex-1 border-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20"
+                >
+                  <Wallet className="h-5 w-5 mr-2 text-orange-500" />
+                  Support 🥜
+                </Button>
+              </div>
             </div>
           </div>
         )}

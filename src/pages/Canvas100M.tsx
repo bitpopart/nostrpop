@@ -15,6 +15,7 @@ import { genUserName } from '@/lib/genUserName';
 import { useToast } from '@/hooks/useToast';
 import { RelaySelector } from '@/components/RelaySelector';
 import { useLightningPayment } from '@/hooks/usePayment';
+import { useEcash } from '@/hooks/useEcash';
 import { SocialShareButtons } from '@/components/SocialShareButtons';
 import {
   Paintbrush,
@@ -36,7 +37,8 @@ import {
   ChevronLeft,
   ChevronRight,
   RotateCcw,
-  Trash2
+  Trash2,
+  Wallet
 } from 'lucide-react';
 import { nip19 } from 'nostr-tools';
 import type { NostrMetadata } from '@nostrify/nostrify';
@@ -72,6 +74,7 @@ function Canvas100M() {
   const { nostr } = useNostr();
   const { toast } = useToast();
   const { createInvoice, invoice, isLoading: _paymentLoading, clearInvoice } = useLightningPayment();
+  const { openMinibitsWallet } = useEcash();
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const qrCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -82,6 +85,7 @@ function Canvas100M() {
   const [currentBlockHeight, setCurrentBlockHeight] = useState<number | null>(null);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [payingWithAlby, setPayingWithAlby] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<'lightning' | 'ecash'>('lightning');
   
   // Check if current user is admin
   const isAdmin = user?.pubkey === ADMIN_HEX;
@@ -1596,74 +1600,181 @@ function Canvas100M() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center">
-              <Zap className="w-5 h-5 mr-2 text-yellow-500" />
-              Pay with Lightning
+              {paymentMethod === 'lightning' ? (
+                <>
+                  <Zap className="w-5 h-5 mr-2 text-yellow-500" />
+                  Pay with Lightning
+                </>
+              ) : (
+                <>
+                  <Wallet className="w-5 h-5 mr-2 text-orange-500" />
+                  Pay with Ecash
+                </>
+              )}
             </DialogTitle>
             <DialogDescription>
-              Scan this invoice with your Lightning wallet to publish your pixels
+              Choose your payment method to publish your pixels
             </DialogDescription>
           </DialogHeader>
           
-          {invoice ? (
+          {/* Payment Method Selector */}
+          <div className="grid grid-cols-2 gap-2 mb-4">
+            <Button
+              variant={paymentMethod === 'lightning' ? 'default' : 'outline'}
+              onClick={() => setPaymentMethod('lightning')}
+              className={paymentMethod === 'lightning' ? 'bg-yellow-500 hover:bg-yellow-600' : ''}
+            >
+              <Zap className="h-4 w-4 mr-2" />
+              Lightning
+            </Button>
+            <Button
+              variant={paymentMethod === 'ecash' ? 'default' : 'outline'}
+              onClick={() => setPaymentMethod('ecash')}
+              className={paymentMethod === 'ecash' ? 'bg-orange-500 hover:bg-orange-600' : ''}
+            >
+              🥜 Ecash
+            </Button>
+          </div>
+
+          {paymentMethod === 'lightning' ? (
+            invoice ? (
+              <div className="space-y-4">
+                <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border-2 border-gray-200 dark:border-gray-700">
+                  <div className="text-center mb-4">
+                    <div className="text-3xl font-bold text-orange-600">
+                      {invoice.amount_sats.toLocaleString()} sats
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {pendingPixels.length} pixel{pendingPixels.length > 1 ? 's' : ''} × {SAT_PER_PIXEL} sat
+                    </div>
+                  </div>
+
+                  {/* QR Code */}
+                  <div className="bg-white rounded-lg flex items-center justify-center mb-4 p-4">
+                    <canvas
+                      ref={qrCanvasRef}
+                      className="max-w-full h-auto"
+                    />
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => {
+                      navigator.clipboard.writeText(invoice.payment_request);
+                      toast({
+                        title: "Invoice Copied!",
+                        description: "Paste it into your Lightning wallet to pay.",
+                      });
+                    }}
+                  >
+                    Copy Invoice
+                  </Button>
+                </div>
+
+                {/* Alby Payment Button */}
+                <Button
+                  className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white font-semibold"
+                  onClick={handlePayWithAlby}
+                  disabled={payingWithAlby}
+                >
+                  {payingWithAlby ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="h-4 w-4 mr-2" />
+                      Pay with Alby
+                    </>
+                  )}
+                </Button>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">Or</span>
+                  </div>
+                </div>
+
+                <div className="flex space-x-2">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => {
+                      setShowPaymentDialog(false);
+                      clearInvoice();
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    className="flex-1 bg-green-600 hover:bg-green-700"
+                    onClick={publishPixelsToNostr}
+                  >
+                    <Check className="h-4 w-4 mr-2" />
+                    I've Paid
+                  </Button>
+                </div>
+
+                <p className="text-xs text-center text-muted-foreground">
+                  Scan QR code or click "I've Paid" after sending payment
+                </p>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+                <p className="text-sm text-muted-foreground">Creating invoice...</p>
+              </div>
+            )
+          ) : (
             <div className="space-y-4">
-              <div className="p-4 bg-white rounded-lg border-2 border-gray-200">
+              <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border-2 border-orange-200 dark:border-orange-800">
                 <div className="text-center mb-4">
                   <div className="text-3xl font-bold text-orange-600">
-                    {invoice.amount_sats.toLocaleString()} sats
+                    {(pendingPixels.length * SAT_PER_PIXEL).toLocaleString()} sats
                   </div>
                   <div className="text-sm text-muted-foreground">
                     {pendingPixels.length} pixel{pendingPixels.length > 1 ? 's' : ''} × {SAT_PER_PIXEL} sat
                   </div>
                 </div>
 
-                {/* QR Code */}
-                <div className="bg-white rounded-lg flex items-center justify-center mb-4 p-4">
-                  <canvas
-                    ref={qrCanvasRef}
-                    className="max-w-full h-auto"
-                  />
-                </div>
+                <div className="space-y-3">
+                  <div className="text-sm">
+                    <p className="font-semibold mb-1">Send ecash to:</p>
+                    <code className="block bg-white dark:bg-gray-800 px-3 py-2 rounded text-xs break-all">
+                      bitpopart@minibits.cash
+                    </code>
+                  </div>
 
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => {
-                    navigator.clipboard.writeText(invoice.payment_request);
-                    toast({
-                      title: "Invoice Copied!",
-                      description: "Paste it into your Lightning wallet to pay.",
-                    });
-                  }}
-                >
-                  Copy Invoice
-                </Button>
-              </div>
+                  <Button
+                    className="w-full bg-gradient-to-r from-orange-400 to-red-500 hover:from-orange-500 hover:to-red-600 text-white font-semibold"
+                    onClick={() => {
+                      const totalSats = pendingPixels.length * SAT_PER_PIXEL;
+                      openMinibitsWallet(
+                        totalSats,
+                        'bitpopart@minibits.cash',
+                        `${pendingPixels.length} pixel${pendingPixels.length > 1 ? 's' : ''} on 100M Canvas`
+                      );
+                    }}
+                  >
+                    🥜 Open Minibits Wallet
+                  </Button>
 
-              {/* Alby Payment Button */}
-              <Button
-                className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white font-semibold"
-                onClick={handlePayWithAlby}
-                disabled={payingWithAlby}
-              >
-                {payingWithAlby ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    <Zap className="h-4 w-4 mr-2" />
-                    Pay with Alby
-                  </>
-                )}
-              </Button>
-
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">Or</span>
+                  <div className="text-xs text-center text-muted-foreground bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded">
+                    <p className="mb-2">
+                      💡 <strong>How it works:</strong>
+                    </p>
+                    <ol className="text-left space-y-1 list-decimal list-inside">
+                      <li>Click "Open Minibits Wallet" above</li>
+                      <li>Your Minibits app will open with payment details</li>
+                      <li>Confirm the payment in Minibits</li>
+                      <li>Return here and click "I've Paid"</li>
+                    </ol>
+                  </div>
                 </div>
               </div>
 
@@ -1688,13 +1799,8 @@ function Canvas100M() {
               </div>
 
               <p className="text-xs text-center text-muted-foreground">
-                Scan QR code or click "I've Paid" after sending payment
+                Click "I've Paid" after completing payment via Minibits
               </p>
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-              <p className="text-sm text-muted-foreground">Creating invoice...</p>
             </div>
           )}
         </DialogContent>
