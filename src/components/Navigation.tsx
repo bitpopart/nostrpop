@@ -91,7 +91,8 @@ export function Navigation() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-9 w-9 p-0 rounded-full bg-orange-500 hover:bg-orange-600 text-white"
+                className="h-9 w-9 p-0 rounded-full text-white hover:opacity-90"
+                style={{ backgroundColor: '#e9983d' }}
               >
                 <Video className="h-4 w-4" />
               </Button>
@@ -130,7 +131,8 @@ export function Navigation() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-9 w-9 p-0 rounded-full bg-orange-500 hover:bg-orange-600 text-white"
+                className="h-9 w-9 p-0 rounded-full text-white hover:opacity-90"
+                style={{ backgroundColor: '#e9983d' }}
               >
                 <Video className="h-4 w-4" />
               </Button>
