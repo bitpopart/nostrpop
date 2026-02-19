@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -181,6 +181,14 @@ function PostItem({ post, isSelected, onToggle }: PostItemProps) {
   const createdAt = new Date(post.created_at * 1000);
   const previewText = post.content.substring(0, 100).replace(/https?:\/\/[^\s]+/g, '');
 
+  const handleClick = (e: React.MouseEvent) => {
+    // Don't trigger if clicking on the checkbox itself
+    if ((e.target as HTMLElement).closest('[role="checkbox"]')) {
+      return;
+    }
+    onToggle();
+  };
+
   return (
     <div
       className={`flex items-start gap-4 p-4 rounded-lg border-2 transition-all cursor-pointer hover:bg-muted/50 ${
@@ -188,7 +196,7 @@ function PostItem({ post, isSelected, onToggle }: PostItemProps) {
           ? 'border-purple-500 bg-purple-50/50 dark:bg-purple-900/10'
           : 'border-transparent bg-muted/20'
       }`}
-      onClick={onToggle}
+      onClick={handleClick}
     >
       <Checkbox
         checked={isSelected}
