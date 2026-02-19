@@ -71,19 +71,26 @@ export function useFeaturedBitPopArtPosts() {
       
       // Get selected posts from localStorage
       const stored = localStorage.getItem('featured-bitpopart-posts');
-      let selectedIds: string[] = [];
       
-      if (stored) {
-        try {
-          selectedIds = JSON.parse(stored);
-        } catch {
-          selectedIds = [];
-        }
+      // If nothing in localStorage, show ALL posts (default behavior)
+      if (!stored) {
+        console.log('[BitPopArt] No selections saved, showing all posts');
+        return allPosts;
       }
       
-      // Return posts that are in the selected list
-      // Maintain the order from newest to oldest
-      return allPosts.filter(post => selectedIds.includes(post.id));
+      try {
+        const selectedIds: string[] = JSON.parse(stored);
+        
+        // If localStorage exists but is empty array, respect that (show nothing)
+        // Otherwise filter by selected IDs
+        const filteredPosts = allPosts.filter(post => selectedIds.includes(post.id));
+        console.log(`[BitPopArt] Showing ${filteredPosts.length} selected posts`);
+        return filteredPosts;
+      } catch {
+        // If parsing fails, show all posts
+        console.log('[BitPopArt] Error parsing selections, showing all posts');
+        return allPosts;
+      }
     },
     enabled: !!allPosts,
     staleTime: Infinity, // Don't refetch, rely on localStorage

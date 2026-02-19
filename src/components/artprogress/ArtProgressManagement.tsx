@@ -27,15 +27,13 @@ export function ArtProgressManagement() {
         if (allPosts) {
           const allIds = allPosts.map(post => post.id);
           setSelectedIds(allIds);
-          localStorage.setItem('featured-bitpopart-posts', JSON.stringify(allIds));
         }
       }
     } else {
-      // If nothing in localStorage, select all posts by default
+      // If nothing in localStorage, select all posts by default (but don't save yet)
       if (allPosts) {
         const allIds = allPosts.map(post => post.id);
         setSelectedIds(allIds);
-        localStorage.setItem('featured-bitpopart-posts', JSON.stringify(allIds));
       }
     }
   }, [allPosts]);
@@ -116,7 +114,7 @@ export function ArtProgressManagement() {
           Art Progress Management
         </CardTitle>
         <CardDescription>
-          Control which #bitpopart posts appear on the homepage. Check posts to show them, uncheck to hide them. Click "Save Changes" to apply.
+          Control which #bitpopart posts appear on the homepage. By default, all posts are shown. Select specific posts and click "Save Changes" to customize what visitors see.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
