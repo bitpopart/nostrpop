@@ -81,18 +81,6 @@ export function useFeaturedBitPopArtPosts() {
         }
       }
       
-      // Find new posts that aren't in the selected list yet
-      const allPostIds = allPosts.map(post => post.id);
-      const newPostIds = allPostIds.filter(id => !selectedIds.includes(id));
-      
-      // Auto-select new posts (add them to the selected list)
-      if (newPostIds.length > 0) {
-        const updatedSelectedIds = [...selectedIds, ...newPostIds];
-        localStorage.setItem('featured-bitpopart-posts', JSON.stringify(updatedSelectedIds));
-        selectedIds = updatedSelectedIds;
-        console.log(`[BitPopArt] Auto-selected ${newPostIds.length} new posts`);
-      }
-      
       // Return posts that are in the selected list
       // Maintain the order from newest to oldest
       return allPosts.filter(post => selectedIds.includes(post.id));

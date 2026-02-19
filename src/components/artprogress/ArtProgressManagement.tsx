@@ -42,33 +42,39 @@ export function ArtProgressManagement() {
 
   const handleTogglePost = (postId: string) => {
     setSelectedIds(prev => {
-      const newSelectedIds = prev.includes(postId)
-        ? prev.filter(id => id !== postId)
-        : [...prev, postId];
-      
-      // Immediately save to localStorage
-      localStorage.setItem('featured-bitpopart-posts', JSON.stringify(newSelectedIds));
-      
-      // Invalidate the featured posts query to trigger a refetch
-      queryClient.invalidateQueries({ queryKey: ['featured-bitpopart-posts'] });
-      
-      return newSelectedIds;
+      if (prev.includes(postId)) {
+        return prev.filter(id => id !== postId);
+      } else {
+        return [...prev, postId];
+      }
     });
+  };
+
+  const handleSave = () => {
+    // Save to localStorage
+    localStorage.setItem('featured-bitpopart-posts', JSON.stringify(selectedIds));
+    
+    // Invalidate the featured posts query to trigger a refetch
+    queryClient.invalidateQueries({ queryKey: ['featured-bitpopart-posts'] });
+    
+    // Show success message
+    const toast = document.createElement('div');
+    toast.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-in fade-in slide-in-from-top-2';
+    toast.textContent = `✓ Saved! ${selectedIds.length} posts showing on frontend`;
+    document.body.appendChild(toast);
+    setTimeout(() => {
+      toast.remove();
+    }, 3000);
   };
 
   const handleSelectAll = () => {
     if (allPosts) {
-      const allIds = allPosts.map(post => post.id);
-      setSelectedIds(allIds);
-      localStorage.setItem('featured-bitpopart-posts', JSON.stringify(allIds));
-      queryClient.invalidateQueries({ queryKey: ['featured-bitpopart-posts'] });
+      setSelectedIds(allPosts.map(post => post.id));
     }
   };
 
   const handleDeselectAll = () => {
     setSelectedIds([]);
-    localStorage.setItem('featured-bitpopart-posts', JSON.stringify([]));
-    queryClient.invalidateQueries({ queryKey: ['featured-bitpopart-posts'] });
   };
 
 
@@ -110,7 +116,7 @@ export function ArtProgressManagement() {
           Art Progress Management
         </CardTitle>
         <CardDescription>
-          Control which #bitpopart posts appear on the homepage. Check posts to show them, uncheck to hide them. Changes apply instantly.
+          Control which #bitpopart posts appear on the homepage. Check posts to show them, uncheck to hide them. Click "Save Changes" to apply.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -123,23 +129,25 @@ export function ArtProgressManagement() {
             </div>
             <div className="h-12 w-px bg-border" />
             <div>
-              <div className="text-sm font-medium">Showing on Frontend</div>
-              <div className="text-2xl font-bold text-green-600">{selectedIds.length}</div>
-            </div>
-            <div className="h-12 w-px bg-border" />
-            <div>
-              <div className="text-sm font-medium">Hidden</div>
-              <div className="text-2xl font-bold text-red-600">{(allPosts?.length || 0) - selectedIds.length}</div>
+              <div className="text-sm font-medium">Selected to Show</div>
+              <div className="text-2xl font-bold text-purple-600">{selectedIds.length}</div>
             </div>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={handleSelectAll}>
               <Check className="h-4 w-4 mr-1" />
-              Show All
+              Select All
             </Button>
             <Button variant="outline" size="sm" onClick={handleDeselectAll}>
               <X className="h-4 w-4 mr-1" />
-              Hide All
+              Deselect All
+            </Button>
+            <Button 
+              size="sm" 
+              onClick={handleSave} 
+              className="bg-purple-600 hover:bg-purple-700 text-white"
+            >
+              💾 Save Changes
             </Button>
           </div>
         </div>
@@ -221,9 +229,9 @@ function PostItem({ post, isSelected, onToggle }: PostItemProps) {
         <div className="flex items-center gap-2 mb-1">
           <Badge 
             variant={isSelected ? 'default' : 'secondary'} 
-            className={`text-xs ${isSelected ? 'bg-green-600' : 'bg-red-600 text-white'}`}
+            className={`text-xs ${isSelected ? 'bg-purple-600' : 'bg-gray-600 text-white'}`}
           >
-            {isSelected ? 'Showing' : 'Hidden'}
+            {isSelected ? 'Selected' : 'Not Selected'}
           </Badge>
           <span className="text-xs text-muted-foreground">
             {createdAt.toLocaleDateString()} at {createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
