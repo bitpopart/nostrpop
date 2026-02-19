@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Label } from '@/components/ui/label';
 
 import { ZapButton } from '@/components/cards/ZapButton';
 import { ShareCardDialog } from '@/components/cards/ShareCardDialog';
@@ -58,6 +59,11 @@ const CardView = () => {
   const { user } = useCurrentUser();
   const { config } = useAppContext();
   const [isDownloading, setIsDownloading] = useState(false);
+  
+  // Check for ecash token in URL parameters
+  const searchParams = new URLSearchParams(window.location.search);
+  const ecashToken = searchParams.get('token');
+  const ecashAmount = searchParams.get('amount');
 
   // Debug: Always log when component renders
   console.log('🎯 CardView component rendered with param:', nip19Param);
@@ -573,7 +579,63 @@ const CardView = () => {
 
           <div className="grid lg:grid-cols-3 gap-8">
             {/* Main Card Display */}
-            <div className="lg:col-span-2">
+            <div className="lg:col-span-2 space-y-6">
+              {/* Ecash Gift Display - Show if token is present */}
+              {ecashToken && (
+                <Card className="overflow-hidden shadow-2xl border-4 border-orange-400 dark:border-orange-600 bg-gradient-to-br from-orange-50 via-yellow-50 to-pink-50 dark:from-orange-900/30 dark:via-yellow-900/30 dark:to-pink-900/30">
+                  <CardHeader className="text-center pb-4 bg-gradient-to-r from-orange-500 via-yellow-500 to-pink-500 text-white">
+                    <div className="text-6xl mb-3">🎁</div>
+                    <CardTitle className="text-3xl font-bold">
+                      You've Got a Gift!
+                    </CardTitle>
+                    <CardDescription className="text-white/90 text-lg">
+                      {ecashAmount ? `${ecashAmount} sats` : 'Ecash token'} attached to this card
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-6 space-y-4">
+                    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border-2 border-orange-200 dark:border-orange-800">
+                      <Label className="text-sm font-semibold text-orange-700 dark:text-orange-300 mb-2 block">
+                        Your Ecash Token:
+                      </Label>
+                      <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded border border-gray-200 dark:border-gray-700 font-mono text-xs break-all max-h-32 overflow-y-auto">
+                        {decodeURIComponent(ecashToken)}
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Button
+                        onClick={() => {
+                          navigator.clipboard.writeText(decodeURIComponent(ecashToken)).then(() => {
+                            toast({
+                              title: "Token Copied! 🎉",
+                              description: "Paste it in your Cashu wallet to redeem",
+                              duration: 5000,
+                            });
+                          });
+                        }}
+                        className="w-full bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white text-lg py-6"
+                      >
+                        <Wallet className="mr-2 h-5 w-5" />
+                        Copy Token to Clipboard 🥜
+                      </Button>
+                      
+                      <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                        <p className="text-sm text-blue-800 dark:text-blue-200">
+                          <strong>How to redeem:</strong>
+                        </p>
+                        <ol className="text-sm text-blue-700 dark:text-blue-300 list-decimal list-inside space-y-1 mt-2">
+                          <li>Copy the token above</li>
+                          <li>Open your Cashu wallet (Minibits, eNuts, etc.)</li>
+                          <li>Look for "Redeem" or "Receive" option</li>
+                          <li>Paste the token</li>
+                          <li>Enjoy your sats! 💰</li>
+                        </ol>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              
               <Card className="overflow-hidden shadow-xl border-0 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm">
                 {/* Card Image */}
                 {cardData.images && cardData.images.length > 0 ? (

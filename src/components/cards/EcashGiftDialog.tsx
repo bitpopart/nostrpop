@@ -51,16 +51,29 @@ export function EcashGiftDialog({ cardTitle, cardUrl, children }: EcashGiftDialo
       return;
     }
     
-    // In a real implementation, this would save the token to the card event or storage
-    // For now, we'll copy it to clipboard along with the card URL
-    const shareMessage = `Check out this card with an ecash gift! 🎁\n\nCard: ${shareUrl}\n\nEcash Token (${ecashAmount} sats):\n${ecashToken.trim()}`;
+    // Create URL with token as parameter (base64 encoded for safety)
+    const tokenEncoded = encodeURIComponent(token);
+    const cardWithTokenUrl = `${shareUrl}?token=${tokenEncoded}&amount=${ecashAmount}`;
     
-    navigator.clipboard.writeText(shareMessage).then(() => {
-      toast({
-        title: "Token Attached! 🎁",
-        description: "Card link + token copied to clipboard. Share with recipient!",
-        duration: 5000,
-      });
+    // Open email client with pre-filled message
+    const subject = encodeURIComponent(`🎁 You've received a gift card with ${ecashAmount} sats!`);
+    const body = encodeURIComponent(
+      `You've received a special gift! 🎁\n\n` +
+      `I'm sending you "${cardTitle}" with an ecash gift attached.\n\n` +
+      `💰 Amount: ${ecashAmount} sats\n\n` +
+      `Click the link below to view your card and claim your ecash gift:\n` +
+      `${cardWithTokenUrl}\n\n` +
+      `The ecash token is embedded in the card and ready to redeem in your Cashu wallet (Minibits, eNuts, etc.).\n\n` +
+      `Enjoy! 🎨✨`
+    );
+    
+    const mailtoUrl = `mailto:?subject=${subject}&body=${body}`;
+    window.open(mailtoUrl, '_blank');
+    
+    toast({
+      title: "Email Opened! 📧",
+      description: "Share the card with embedded ecash token via email",
+      duration: 5000,
     });
     
     setIsOpen(false);
@@ -291,10 +304,10 @@ export function EcashGiftDialog({ cardTitle, cardUrl, children }: EcashGiftDialo
               disabled={!ecashToken.trim()}
             >
               <Gift className="mr-2 h-4 w-4" />
-              Attach Token to Card 🎁
+              Share Card + Token via Email 📧
             </Button>
             <p className="text-xs text-center text-muted-foreground">
-              Card link + token copied to clipboard
+              Opens email with card link containing embedded token
             </p>
           </TabsContent>
         </Tabs>
