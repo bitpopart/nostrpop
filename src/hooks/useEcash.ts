@@ -68,6 +68,7 @@ export function useEcash() {
    * Tries multiple wallet URL schemes and falls back to manual instructions
    */
   const openEcashWallet = (amount: number, recipientAddress: string, description?: string) => {
+    // Build payment URL parameters
     const params = new URLSearchParams({
       address: recipientAddress,
       amount: amount.toString(),
@@ -88,8 +89,21 @@ export function useEcash() {
     const cashuUrl = `cashu://send?${params.toString()}`;
     
     try {
-      // Try Minibits first (most popular)
-      window.location.href = minibitsUrl;
+      // Create a hidden iframe to attempt opening the app
+      const iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      iframe.src = minibitsUrl;
+      document.body.appendChild(iframe);
+      
+      // Remove iframe after a short delay
+      setTimeout(() => {
+        document.body.removeChild(iframe);
+      }, 1000);
+      
+      // Also try direct window.location as fallback
+      setTimeout(() => {
+        window.location.href = minibitsUrl;
+      }, 25);
       
       toast({
         title: "Opening Ecash Wallet",
@@ -99,11 +113,11 @@ export function useEcash() {
       // Show fallback instructions after a short delay
       setTimeout(() => {
         toast({
-          title: "Alternative Wallets",
-          description: `If your wallet didn't open, manually send ${amount} sats to ${recipientAddress} using any Cashu wallet (Minibits, eNuts, Cashu.me, etc.)`,
-          duration: 7000,
+          title: "Wallet didn't open?",
+          description: `Manually send ${amount} sats to ${recipientAddress} in your Cashu wallet (Minibits, eNuts, Cashu.me, etc.)`,
+          duration: 8000,
         });
-      }, 2000);
+      }, 3000);
       
       return true;
     } catch (error) {
@@ -119,11 +133,33 @@ export function useEcash() {
     }
   };
   
+  /**
+   * Generate instructions for creating an ecash token to attach to a card
+   * This guides the user to create a token in their wallet that can be shared with the card
+   */
+  const generateEcashTokenInstructions = (amount: number, cardTitle: string) => {
+    return {
+      amount,
+      cardTitle,
+      instructions: [
+        `Open your Cashu wallet (Minibits, eNuts, etc.)`,
+        `Create a new token/note for ${amount} sats`,
+        `The token will be attached to the card "${cardTitle}"`,
+        `Recipients can redeem it when they view the card`
+      ],
+      step1: 'Open your Cashu wallet app',
+      step2: `Create a token for ${amount} sats`,
+      step3: 'Copy the token (cashuA... format)',
+      step4: 'Paste it below to attach to the card'
+    };
+  };
+  
   return {
     sendEcash,
     createEcashPaymentRequest,
     openEcashWallet,
     openMinibitsWallet: openEcashWallet, // Alias for backward compatibility
+    generateEcashTokenInstructions,
     isLoading,
   };
 }
