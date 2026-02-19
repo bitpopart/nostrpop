@@ -1,9 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNostr } from '@nostrify/react';
+import { nip19 } from 'nostr-tools';
 import type { NostrEvent } from '@nostrify/nostrify';
 
+const ADMIN_NPUB = 'npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz';
+const ADMIN_HEX = nip19.decode(ADMIN_NPUB).data as string;
+
 /**
- * Hook to fetch Nostr posts with #bitpopart hashtag
+ * Hook to fetch Nostr posts with #bitpopart hashtag from admin only
  */
 export function useBitPopArtPosts() {
   const { nostr } = useNostr();
@@ -13,10 +17,11 @@ export function useBitPopArtPosts() {
     queryFn: async (c) => {
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(3000)]);
       
-      // Query for kind 1 notes with #bitpopart tag
+      // Query for kind 1 notes with #bitpopart tag from admin pubkey only
       const events = await nostr.query(
         [{
           kinds: [1],
+          authors: [ADMIN_HEX],
           '#t': ['bitpopart'],
           limit: 100,
         }],
