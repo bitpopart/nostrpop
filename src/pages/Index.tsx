@@ -13,7 +13,7 @@ import { useArtworks } from '@/hooks/useArtworks';
 import { useFeaturedProjects } from '@/hooks/useProjects';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useHomepageSettings } from '@/hooks/useHomepageSettings';
-import { useFeaturedBitPopArtPosts } from '@/hooks/useBitPopArtPosts';
+import { useBitPopArtPosts, useFeaturedBitPopArtPosts } from '@/hooks/useBitPopArtPosts';
 import { genUserName } from '@/lib/genUserName';
 import { RelaySelector } from '@/components/RelaySelector';
 import { ArtProgressToggle } from '@/components/ArtProgressToggle';
@@ -344,7 +344,17 @@ const Index = () => {
   const { data: latestCards, isLoading: cardsLoading, error: cardsError } = useLatestCards(3);
   const { data: featuredArtworks, isLoading: artworksLoading, error: artworksError } = useArtworks('all');
   const { data: featuredProjects } = useFeaturedProjects();
-  const { data: artProgressPosts, isLoading: artProgressLoading } = useFeaturedBitPopArtPosts();
+  
+  // Get all #bitpopart posts
+  const { data: allArtProgressPosts, isLoading: allArtProgressLoading } = useBitPopArtPosts();
+  // Get featured posts (manually selected in admin)
+  const { data: featuredArtProgressPosts } = useFeaturedBitPopArtPosts();
+  
+  // Use featured posts if any are selected, otherwise show all posts
+  const artProgressPosts = (featuredArtProgressPosts && featuredArtProgressPosts.length > 0) 
+    ? featuredArtProgressPosts 
+    : allArtProgressPosts;
+  const artProgressLoading = allArtProgressLoading;
   
   // Placeholder data for features not yet implemented
   const featuredNostrProjects: never[] = [];
@@ -991,7 +1001,9 @@ const Index = () => {
             <div className="mb-8">
               <h2 className="text-3xl font-bold mb-2 text-center">Art in Progress</h2>
               <p className="text-gray-600 dark:text-gray-300 text-center">
-                Latest creations tagged with #bitpopart
+                {(featuredArtProgressPosts && featuredArtProgressPosts.length > 0) 
+                  ? `Featured creations tagged with #bitpopart (${featuredArtProgressPosts.length} selected)`
+                  : 'Latest creations tagged with #bitpopart'}
               </p>
             </div>
             <ArtProgressGrid 

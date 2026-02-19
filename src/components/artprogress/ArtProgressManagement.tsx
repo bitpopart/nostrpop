@@ -95,7 +95,7 @@ export function ArtProgressManagement() {
           Art Progress Management
         </CardTitle>
         <CardDescription>
-          Select which #bitpopart posts appear on the homepage "Art in Progress" section
+          All posts with #bitpopart automatically appear on the homepage. Select specific posts here to feature only those (optional). If nothing is selected, all posts are shown.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
