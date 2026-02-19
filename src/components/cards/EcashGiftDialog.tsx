@@ -30,7 +30,9 @@ export function EcashGiftDialog({ cardTitle, cardUrl, children }: EcashGiftDialo
   const tokenInstructions = generateEcashTokenInstructions(parseInt(ecashAmount) || 1000, cardTitle);
 
   const handleAttachToken = () => {
-    if (!ecashToken.trim()) {
+    const token = ecashToken.trim();
+    
+    if (!token) {
       toast({
         title: "Token Required",
         description: "Please paste your ecash token to attach it to the card",
@@ -39,11 +41,11 @@ export function EcashGiftDialog({ cardTitle, cardUrl, children }: EcashGiftDialo
       return;
     }
     
-    // Validate that it looks like a Cashu token
-    if (!ecashToken.trim().startsWith('cashuA')) {
+    // Validate that it looks like a Cashu token (cashuA or cashuB or other versions)
+    if (!token.toLowerCase().startsWith('cashu')) {
       toast({
         title: "Invalid Token",
-        description: "Please paste a valid Cashu token (starts with 'cashuA')",
+        description: "Please paste a valid Cashu token (starts with 'cashu')",
         variant: "destructive"
       });
       return;
@@ -264,14 +266,14 @@ export function EcashGiftDialog({ cardTitle, cardUrl, children }: EcashGiftDialo
               </Label>
               <Textarea
                 id="ecash-token"
-                placeholder="cashuA..."
+                placeholder="cashuA... or cashuB..."
                 value={ecashToken}
                 onChange={(e) => setEcashToken(e.target.value)}
                 rows={4}
                 className="text-xs font-mono"
               />
               <p className="text-xs text-muted-foreground">
-                Create this token in your Cashu wallet app first
+                Tokens from Minibits, eNuts, or any Cashu wallet
               </p>
             </div>
 
