@@ -23,6 +23,7 @@ import NostrProjects from "./pages/NostrProjects";
 import NostrProjectView from "./pages/NostrProjectView";
 import Badges from "./pages/Badges";
 import Fundraising from "./pages/Fundraising";
+import Vlog from "./pages/Vlog";
 import CustomPage from "./pages/CustomPage";
 import { CategoryDemo } from "./pages/CategoryDemo";
 import { ProductPage } from "./pages/ProductPage";
@@ -61,6 +62,7 @@ export function AppRouter() {
           <Route path="/nostr-projects/:projectId" element={<NostrProjectView />} />
           <Route path="/badges" element={<Badges />} />
           <Route path="/fundraising" element={<Fundraising />} />
+          <Route path="/vlog" element={<Vlog />} />
           <Route path="/page/:slug" element={<CustomPage />} />
           <Route path="/categories" element={<CategoryDemo />} />
           <Route path="/shop/:productId/delete" element={<DeleteProductPage />} />

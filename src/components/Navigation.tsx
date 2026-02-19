@@ -7,7 +7,7 @@ import { RelaySelector } from '@/components/RelaySelector';
 import { Search } from '@/components/Search';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useTheme } from '@/hooks/useTheme';
-import { Menu, Moon, Sun, Shield, Search as SearchIcon } from 'lucide-react';
+import { Menu, Moon, Sun, Shield, Search as SearchIcon, Video } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // Get the base path from import.meta.env or default to '/'
@@ -87,6 +87,15 @@ export function Navigation() {
             >
               <SearchIcon className="h-4 w-4" />
             </Button>
+            <Link to="/vlog">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 w-9 p-0 rounded-full bg-orange-500 hover:bg-orange-600 text-white"
+              >
+                <Video className="h-4 w-4" />
+              </Button>
+            </Link>
             <Button
               variant="ghost"
               size="sm"
@@ -116,7 +125,16 @@ export function Navigation() {
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="md:hidden">
+          <div className="md:hidden flex items-center space-x-2">
+            <Link to="/vlog">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 w-9 p-0 rounded-full bg-orange-500 hover:bg-orange-600 text-white"
+              >
+                <Video className="h-4 w-4" />
+              </Button>
+            </Link>
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-9 w-9 p-0">
