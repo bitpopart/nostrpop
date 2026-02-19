@@ -1,4 +1,5 @@
 import { useSeoMeta } from '@unhead/react';
+import { useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,7 +17,7 @@ import {
   ArrowLeft,
   Rss
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import type { NostrEvent, NostrMetadata } from '@nostrify/nostrify';
 import { nip19 } from 'nostr-tools';
 
@@ -37,7 +38,10 @@ function NoteCard({ event }: { event: NostrEvent }) {
   const firstImage = getFirstImage(event.content, event.tags);
 
   return (
-    <Card className="hover:shadow-lg transition-shadow bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm overflow-hidden">
+    <Card 
+      id={`event-${event.id}`} 
+      className="hover:shadow-lg transition-shadow bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm overflow-hidden scroll-mt-8"
+    >
       {/* Note Image Thumbnail */}
       {firstImage && (
         <div className="aspect-video relative overflow-hidden">
@@ -130,8 +134,27 @@ const Feed = () => {
   const { data: notes, isLoading, error } = useAdminNotes(10);
   const author = useAuthor(ADMIN_HEX);
   const metadata: NostrMetadata | undefined = author.data?.metadata;
+  const location = useLocation();
 
   const displayName = metadata?.name ?? genUserName(ADMIN_HEX);
+
+  // Scroll to event if hash is present
+  useEffect(() => {
+    if (location.hash && notes && notes.length > 0) {
+      const hash = location.hash.slice(1); // Remove the '#'
+      const element = document.getElementById(hash);
+      if (element) {
+        setTimeout(() => {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Add a brief highlight effect
+          element.classList.add('ring-2', 'ring-purple-500', 'ring-offset-2');
+          setTimeout(() => {
+            element.classList.remove('ring-2', 'ring-purple-500', 'ring-offset-2');
+          }, 2000);
+        }, 300);
+      }
+    }
+  }, [location.hash, notes]);
 
   useSeoMeta({
     title: `${displayName}'s Feed - BitPop Cards`,

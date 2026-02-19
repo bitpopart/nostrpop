@@ -25,6 +25,7 @@ import { ZapAnalytics } from '@/components/analytics/ZapAnalytics';
 import { SiteSettings } from '@/components/settings/SiteSettings';
 import { HomepageSettings } from '@/components/settings/HomepageSettings';
 import { ArtworkOrderManager } from '@/components/art/ArtworkOrderManager';
+import { ArtProgressManagement } from '@/components/artprogress/ArtProgressManagement';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import {
   Plus,
@@ -309,10 +310,11 @@ const Admin = () => {
 
         {/* Admin Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-9 lg:grid-cols-18 max-w-7xl mx-auto mb-8 text-xs">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-9 lg:grid-cols-19 max-w-7xl mx-auto mb-8 text-xs">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="homepage">Homepage</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
+            <TabsTrigger value="art-progress">Art Progress</TabsTrigger>
             <TabsTrigger value="blog">News</TabsTrigger>
             <TabsTrigger value="artist">Artist</TabsTrigger>
             <TabsTrigger value="popup">PopUp</TabsTrigger>
@@ -491,6 +493,10 @@ const Admin = () => {
 
           <TabsContent value="settings">
             <SiteSettings />
+          </TabsContent>
+
+          <TabsContent value="art-progress">
+            <ArtProgressManagement />
           </TabsContent>
 
           <TabsContent value="blog">

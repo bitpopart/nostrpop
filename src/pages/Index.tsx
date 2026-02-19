@@ -1,5 +1,6 @@
 import { useSeoMeta } from '@unhead/react';
 import { Link } from 'react-router-dom';
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,8 +13,11 @@ import { useArtworks } from '@/hooks/useArtworks';
 import { useFeaturedProjects } from '@/hooks/useProjects';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useHomepageSettings } from '@/hooks/useHomepageSettings';
+import { useFeaturedBitPopArtPosts } from '@/hooks/useBitPopArtPosts';
 import { genUserName } from '@/lib/genUserName';
 import { RelaySelector } from '@/components/RelaySelector';
+import { ArtProgressToggle } from '@/components/ArtProgressToggle';
+import { ArtProgressGrid } from '@/components/ArtProgressGrid';
 import { getFirstImage, stripImagesFromContent } from '@/lib/extractImages';
 import { formatPrice } from '@/lib/artTypes';
 import {
@@ -321,6 +325,9 @@ const Index = () => {
   const author = useAuthor(ADMIN_HEX);
   const metadata: NostrMetadata | undefined = author.data?.metadata;
   
+  // View mode toggle state
+  const [viewMode, setViewMode] = useState<'gallery' | 'progress'>('gallery');
+  
   // Get ordered section IDs based on settings
   const orderedSections = homepageSettings?.filter(s => s.enabled).map(s => s.id) || [];
   
@@ -337,6 +344,7 @@ const Index = () => {
   const { data: latestCards, isLoading: cardsLoading, error: cardsError } = useLatestCards(3);
   const { data: featuredArtworks, isLoading: artworksLoading, error: artworksError } = useArtworks('all');
   const { data: featuredProjects } = useFeaturedProjects();
+  const { data: artProgressPosts, isLoading: artProgressLoading } = useFeaturedBitPopArtPosts();
   
   // Placeholder data for features not yet implemented
   const featuredNostrProjects: never[] = [];
@@ -933,40 +941,68 @@ const Index = () => {
       <div className="container mx-auto px-4 py-8">
         {/* Hero Section */}
         <div className="text-center mb-16 pt-8">
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button 
-              size="lg" 
-              asChild 
-              className="rounded-full text-white border-0"
-              style={getGradientStyle('primary')}
-            >
-              <Link to="/canvas">
-                <Sparkles className="mr-2 h-5 w-5" />
-                Start Painting
-              </Link>
-            </Button>
-            <Button size="lg" variant="outline" asChild className="rounded-full">
-              <Link to="/shop">
-                <Gift className="mr-2 h-5 w-5" />
-                Visit Shop
-              </Link>
-            </Button>
-            <Button 
-              size="lg" 
-              variant="outline" 
-              asChild 
-              className="rounded-full border-orange-300 hover:bg-orange-50 dark:border-orange-700 dark:hover:bg-orange-900/20"
-            >
-              <Link to="/popup">
-                <MapPin className="mr-2 h-5 w-5 text-orange-600 dark:text-orange-400" />
-                Pop Tour
-              </Link>
-            </Button>
+          <div className="flex flex-col gap-4 items-center">
+            {/* Main Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button 
+                size="lg" 
+                asChild 
+                className="rounded-full text-white border-0"
+                style={getGradientStyle('primary')}
+              >
+                <Link to="/canvas">
+                  <Sparkles className="mr-2 h-5 w-5" />
+                  Start Painting
+                </Link>
+              </Button>
+              <Button size="lg" variant="outline" asChild className="rounded-full">
+                <Link to="/shop">
+                  <Gift className="mr-2 h-5 w-5" />
+                  Visit Shop
+                </Link>
+              </Button>
+              <Button 
+                size="lg" 
+                variant="outline" 
+                asChild 
+                className="rounded-full border-orange-300 hover:bg-orange-50 dark:border-orange-700 dark:hover:bg-orange-900/20"
+              >
+                <Link to="/popup">
+                  <MapPin className="mr-2 h-5 w-5 text-orange-600 dark:text-orange-400" />
+                  Pop Tour
+                </Link>
+              </Button>
+            </div>
+            
+            {/* Art Progress Toggle - desktop: next to buttons, mobile: below */}
+            <div className="mt-4 sm:mt-0">
+              <ArtProgressToggle 
+                mode={viewMode} 
+                onToggle={setViewMode}
+              />
+            </div>
           </div>
         </div>
 
-        {/* Dynamic Sections based on settings */}
-        {orderedSections.map(renderSection)}
+        {/* Conditional Content Based on View Mode */}
+        {viewMode === 'progress' ? (
+          /* Art Progress View */
+          <div className="mb-16">
+            <div className="mb-8">
+              <h2 className="text-3xl font-bold mb-2 text-center">Art in Progress</h2>
+              <p className="text-gray-600 dark:text-gray-300 text-center">
+                Latest creations tagged with #bitpopart
+              </p>
+            </div>
+            <ArtProgressGrid 
+              posts={artProgressPosts || []} 
+              isLoading={artProgressLoading}
+            />
+          </div>
+        ) : (
+          /* Gallery View - Dynamic Sections based on settings */
+          orderedSections.map(renderSection)
+        )}
 
         {/* LEGACY: Featured Nostr Projects Section (keep as fallback) */}
         {false && featuredNostrProjectsList.length > 0 && isSectionEnabled('nostr-projects') && (
