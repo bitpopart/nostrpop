@@ -23,40 +23,55 @@ export function ArtProgressManagement() {
         const ids: string[] = JSON.parse(stored);
         setSelectedIds(ids);
       } catch {
-        setSelectedIds([]);
+        // If parsing fails, select all posts by default
+        if (allPosts) {
+          const allIds = allPosts.map(post => post.id);
+          setSelectedIds(allIds);
+          localStorage.setItem('featured-bitpopart-posts', JSON.stringify(allIds));
+        }
+      }
+    } else {
+      // If nothing in localStorage, select all posts by default
+      if (allPosts) {
+        const allIds = allPosts.map(post => post.id);
+        setSelectedIds(allIds);
+        localStorage.setItem('featured-bitpopart-posts', JSON.stringify(allIds));
       }
     }
-  }, []);
+  }, [allPosts]);
 
   const handleTogglePost = (postId: string) => {
     setSelectedIds(prev => {
-      if (prev.includes(postId)) {
-        return prev.filter(id => id !== postId);
-      } else {
-        return [...prev, postId];
-      }
+      const newSelectedIds = prev.includes(postId)
+        ? prev.filter(id => id !== postId)
+        : [...prev, postId];
+      
+      // Immediately save to localStorage
+      localStorage.setItem('featured-bitpopart-posts', JSON.stringify(newSelectedIds));
+      
+      // Invalidate the featured posts query to trigger a refetch
+      queryClient.invalidateQueries({ queryKey: ['featured-bitpopart-posts'] });
+      
+      return newSelectedIds;
     });
-  };
-
-  const handleSave = () => {
-    // Save to localStorage
-    localStorage.setItem('featured-bitpopart-posts', JSON.stringify(selectedIds));
-    
-    // Invalidate the featured posts query to trigger a refetch
-    queryClient.invalidateQueries({ queryKey: ['featured-bitpopart-posts'] });
-    
-    alert(`Successfully saved ${selectedIds.length} featured posts!`);
   };
 
   const handleSelectAll = () => {
     if (allPosts) {
-      setSelectedIds(allPosts.map(post => post.id));
+      const allIds = allPosts.map(post => post.id);
+      setSelectedIds(allIds);
+      localStorage.setItem('featured-bitpopart-posts', JSON.stringify(allIds));
+      queryClient.invalidateQueries({ queryKey: ['featured-bitpopart-posts'] });
     }
   };
 
   const handleDeselectAll = () => {
     setSelectedIds([]);
+    localStorage.setItem('featured-bitpopart-posts', JSON.stringify([]));
+    queryClient.invalidateQueries({ queryKey: ['featured-bitpopart-posts'] });
   };
+
+
 
   if (isLoading) {
     return (
@@ -95,7 +110,7 @@ export function ArtProgressManagement() {
           Art Progress Management
         </CardTitle>
         <CardDescription>
-          All posts with #bitpopart automatically appear on the homepage. Select specific posts here to feature only those (optional). If nothing is selected, all posts are shown.
+          Control which #bitpopart posts appear on the homepage. Check posts to show them, uncheck to hide them. Changes apply instantly.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -108,21 +123,23 @@ export function ArtProgressManagement() {
             </div>
             <div className="h-12 w-px bg-border" />
             <div>
-              <div className="text-sm font-medium">Featured</div>
-              <div className="text-2xl font-bold text-purple-600">{selectedIds.length}</div>
+              <div className="text-sm font-medium">Showing on Frontend</div>
+              <div className="text-2xl font-bold text-green-600">{selectedIds.length}</div>
+            </div>
+            <div className="h-12 w-px bg-border" />
+            <div>
+              <div className="text-sm font-medium">Hidden</div>
+              <div className="text-2xl font-bold text-red-600">{(allPosts?.length || 0) - selectedIds.length}</div>
             </div>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={handleSelectAll}>
               <Check className="h-4 w-4 mr-1" />
-              Select All
+              Show All
             </Button>
             <Button variant="outline" size="sm" onClick={handleDeselectAll}>
               <X className="h-4 w-4 mr-1" />
-              Deselect All
-            </Button>
-            <Button size="sm" onClick={handleSave} className="bg-purple-600 hover:bg-purple-700">
-              Save Changes
+              Hide All
             </Button>
           </div>
         </div>
@@ -194,8 +211,11 @@ function PostItem({ post, isSelected, onToggle }: PostItemProps) {
       
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1">
-          <Badge variant={isSelected ? 'default' : 'secondary'} className="text-xs">
-            {isSelected ? 'Featured' : 'Not Featured'}
+          <Badge 
+            variant={isSelected ? 'default' : 'secondary'} 
+            className={`text-xs ${isSelected ? 'bg-green-600' : 'bg-red-600 text-white'}`}
+          >
+            {isSelected ? 'Showing' : 'Hidden'}
           </Badge>
           <span className="text-xs text-muted-foreground">
             {createdAt.toLocaleDateString()} at {createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

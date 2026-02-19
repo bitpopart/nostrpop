@@ -347,13 +347,11 @@ const Index = () => {
   
   // Get all #bitpopart posts
   const { data: allArtProgressPosts, isLoading: allArtProgressLoading } = useBitPopArtPosts();
-  // Get featured posts (manually selected in admin)
-  const { data: featuredArtProgressPosts } = useFeaturedBitPopArtPosts();
+  // Get selected posts (manually selected in admin)
+  const { data: selectedArtProgressPosts } = useFeaturedBitPopArtPosts();
   
-  // Use featured posts if any are selected, otherwise show all posts
-  const artProgressPosts = (featuredArtProgressPosts && featuredArtProgressPosts.length > 0) 
-    ? featuredArtProgressPosts 
-    : allArtProgressPosts;
+  // Show only selected posts (those checked in admin panel)
+  const artProgressPosts = selectedArtProgressPosts || [];
   const artProgressLoading = allArtProgressLoading;
   
   // Placeholder data for features not yet implemented
@@ -1001,9 +999,9 @@ const Index = () => {
             <div className="mb-8">
               <h2 className="text-3xl font-bold mb-2 text-center">Art in Progress</h2>
               <p className="text-gray-600 dark:text-gray-300 text-center">
-                {(featuredArtProgressPosts && featuredArtProgressPosts.length > 0) 
-                  ? `Featured creations tagged with #bitpopart (${featuredArtProgressPosts.length} selected)`
-                  : 'Latest creations tagged with #bitpopart'}
+                Latest creations tagged with #bitpopart
+                {selectedArtProgressPosts && selectedArtProgressPosts.length > 0 && 
+                  ` (${selectedArtProgressPosts.length} selected)`}
               </p>
             </div>
             <ArtProgressGrid 
