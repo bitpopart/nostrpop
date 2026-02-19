@@ -10,6 +10,7 @@ import { RelaySelector } from '@/components/RelaySelector';
 import { CreateVlogForm } from '@/components/vlog/CreateVlogForm';
 import { VideoPlayerDialog } from '@/components/vlog/VideoPlayerDialog';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useNostr } from '@nostrify/react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuthor } from '@/hooks/useAuthor';
@@ -237,6 +238,7 @@ function useVlogs() {
 
 export default function Vlog() {
   const { user } = useCurrentUser();
+  const isAdmin = useIsAdmin();
   const [activeTab, setActiveTab] = useState('browse');
   const { data: vlogs, isLoading, error } = useVlogs();
 
@@ -274,17 +276,18 @@ export default function Vlog() {
 
         {/* Tabs */}
         <div className="max-w-6xl mx-auto">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full max-w-md mb-8" style={{ gridTemplateColumns: '1fr 1fr' }}>
-              <TabsTrigger value="browse" className="flex items-center gap-2">
-                <List className="w-4 h-4" />
-                Browse Vlogs
-              </TabsTrigger>
-              <TabsTrigger value="create" className="flex items-center gap-2">
-                <Plus className="w-4 h-4" />
-                Create Vlog
-              </TabsTrigger>
-            </TabsList>
+          {isAdmin ? (
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full max-w-md mb-8" style={{ gridTemplateColumns: '1fr 1fr' }}>
+                <TabsTrigger value="browse" className="flex items-center gap-2">
+                  <List className="w-4 h-4" />
+                  Browse Vlogs
+                </TabsTrigger>
+                <TabsTrigger value="create" className="flex items-center gap-2">
+                  <Plus className="w-4 h-4" />
+                  Create Vlog
+                </TabsTrigger>
+              </TabsList>
 
             {/* Browse Tab */}
             <TabsContent value="browse" className="mt-0">
@@ -329,27 +332,55 @@ export default function Vlog() {
               )}
             </TabsContent>
 
-            {/* Create Tab */}
-            <TabsContent value="create" className="mt-0">
-              {!user ? (
+              {/* Create Tab */}
+              <TabsContent value="create" className="mt-0">
+                <CreateVlogForm />
+              </TabsContent>
+            </Tabs>
+          ) : (
+            /* Non-admin users only see browse view */
+            <div>
+              {error ? (
+                <Card className="border-dashed">
+                  <CardContent className="py-12 px-8 text-center">
+                    <div className="max-w-sm mx-auto space-y-6">
+                      <p className="text-muted-foreground">
+                        Failed to load vlogs. Try another relay?
+                      </p>
+                      <RelaySelector className="w-full" />
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : isLoading ? (
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {Array.from({ length: 6 }, (_, i) => (
+                    <VlogSkeleton key={i} />
+                  ))}
+                </div>
+              ) : !vlogs || vlogs.length === 0 ? (
                 <Card className="border-dashed">
                   <CardContent className="py-12 px-8 text-center">
                     <div className="max-w-sm mx-auto space-y-6">
                       <Video className="w-16 h-16 mx-auto text-orange-500" />
                       <div>
-                        <h3 className="font-semibold text-lg mb-2">Login Required</h3>
+                        <h3 className="font-semibold text-lg mb-2">No vlogs found</h3>
                         <p className="text-muted-foreground mb-4">
-                          Please log in to create vlogs
+                          No vlogs are available yet. Check back soon!
                         </p>
                       </div>
+                      <RelaySelector className="w-full" />
                     </div>
                   </CardContent>
                 </Card>
               ) : (
-                <CreateVlogForm />
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {vlogs.map((vlog) => (
+                    <VlogCard key={vlog.id} vlog={vlog} />
+                  ))}
+                </div>
               )}
-            </TabsContent>
-          </Tabs>
+            </div>
+          )}
         </div>
 
         {/* Footer */}
