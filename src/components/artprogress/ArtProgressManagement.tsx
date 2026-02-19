@@ -17,26 +17,42 @@ export function ArtProgressManagement() {
 
   // Load selected posts from localStorage on mount
   useEffect(() => {
+    if (!allPosts) return;
+    
     const stored = localStorage.getItem('featured-bitpopart-posts');
+    const allPostIds = allPosts.map(post => post.id);
+    
     if (stored) {
       try {
-        const ids: string[] = JSON.parse(stored);
-        setSelectedIds(ids);
+        const savedIds: string[] = JSON.parse(stored);
+        
+        // Find new posts that aren't in the saved list
+        const newPostIds = allPostIds.filter(id => !savedIds.includes(id));
+        
+        if (newPostIds.length > 0) {
+          // Auto-add new posts to the selection
+          const updatedIds = [...savedIds, ...newPostIds];
+          setSelectedIds(updatedIds);
+          
+          // Auto-save to localStorage so they appear on frontend immediately
+          localStorage.setItem('featured-bitpopart-posts', JSON.stringify(updatedIds));
+          
+          // Invalidate query to update frontend
+          queryClient.invalidateQueries({ queryKey: ['featured-bitpopart-posts'] });
+          
+          console.log(`[BitPopArt] Auto-added ${newPostIds.length} new posts to selection and saved`);
+        } else {
+          setSelectedIds(savedIds);
+        }
       } catch {
         // If parsing fails, select all posts by default
-        if (allPosts) {
-          const allIds = allPosts.map(post => post.id);
-          setSelectedIds(allIds);
-        }
+        setSelectedIds(allPostIds);
       }
     } else {
       // If nothing in localStorage, select all posts by default (but don't save yet)
-      if (allPosts) {
-        const allIds = allPosts.map(post => post.id);
-        setSelectedIds(allIds);
-      }
+      setSelectedIds(allPostIds);
     }
-  }, [allPosts]);
+  }, [allPosts, queryClient]);
 
   const handleTogglePost = (postId: string) => {
     setSelectedIds(prev => {
