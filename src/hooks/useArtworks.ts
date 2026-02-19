@@ -23,11 +23,12 @@ function addDeletedArtwork(artworkAddress: string) {
   console.log(`📝 Stored artwork deletion locally: ${artworkAddress}`);
 }
 
-export function useArtworks(filter: ArtworkFilter = 'all') {
+export function useArtworks(filter: ArtworkFilter = 'all', options?: { enabled?: boolean }) {
   const { nostr } = useNostr();
 
   return useQuery({
     queryKey: ['artworks', filter],
+    enabled: options?.enabled !== false,
     queryFn: async (c) => {
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(5000)]);
 

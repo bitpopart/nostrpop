@@ -10,10 +10,8 @@ import { useLatestAdminNotes } from '@/hooks/useAdminNotes';
 import { useLatestCards } from '@/hooks/useLatestCards';
 import { useArtworks } from '@/hooks/useArtworks';
 import { useFeaturedProjects } from '@/hooks/useProjects';
-import { useFeaturedNostrProjects } from '@/hooks/useNostrProjects';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useHomepageSettings } from '@/hooks/useHomepageSettings';
-import { usePages } from '@/hooks/usePages';
 import { genUserName } from '@/lib/genUserName';
 import { RelaySelector } from '@/components/RelaySelector';
 import { getFirstImage, stripImagesFromContent } from '@/lib/extractImages';
@@ -318,16 +316,31 @@ function ThumbnailSkeleton() {
 
 
 const Index = () => {
-  const { data: adminNotes, isLoading: notesLoading, error: notesError } = useLatestAdminNotes(3);
-  const { data: latestCards, isLoading: cardsLoading, error: cardsError } = useLatestCards(3);
-  const { data: featuredArtworks, isLoading: artworksLoading, error: artworksError } = useArtworks('all');
-  const { data: featuredProjects } = useFeaturedProjects();
-  const { data: featuredNostrProjects } = useFeaturedNostrProjects();
-  const { data: customPages } = usePages();
   const { getGradientStyle } = useThemeColors();
   const { data: homepageSettings } = useHomepageSettings();
   const author = useAuthor(ADMIN_HEX);
   const metadata: NostrMetadata | undefined = author.data?.metadata;
+  
+  // Get ordered section IDs based on settings
+  const orderedSections = homepageSettings?.filter(s => s.enabled).map(s => s.id) || [];
+  
+  // Helper to check if section is enabled
+  const isSectionEnabled = (id: string) => {
+    // If settings haven't loaded yet, show only essential sections (not nostr-projects)
+    if (!homepageSettings) return ['projects', 'art', 'cards', 'news'].includes(id);
+    // Otherwise only show if in enabled list
+    return orderedSections.includes(id);
+  };
+  
+  // Load data
+  const { data: adminNotes, isLoading: notesLoading, error: notesError } = useLatestAdminNotes(3);
+  const { data: latestCards, isLoading: cardsLoading, error: cardsError } = useLatestCards(3);
+  const { data: featuredArtworks, isLoading: artworksLoading, error: artworksError } = useArtworks('all');
+  const { data: featuredProjects } = useFeaturedProjects();
+  
+  // Placeholder data for features not yet implemented
+  const featuredNostrProjects: never[] = [];
+  const customPages: never[] = [];
 
   const _displayName = metadata?.name ?? genUserName(ADMIN_HEX);
 
@@ -343,17 +356,7 @@ const Index = () => {
     return homepageSettings?.find(s => s.id === id) || null;
   };
 
-  // Get ordered section IDs based on settings
-  const orderedSections = homepageSettings?.filter(s => s.enabled).map(s => s.id) || [];
   console.log('[Homepage] Ordered sections:', orderedSections);
-  
-  // Helper to check if section is enabled
-  const isSectionEnabled = (id: string) => {
-    // If settings haven't loaded yet, show default sections
-    if (!homepageSettings) return ['nostr-projects', 'projects', 'art', 'cards', 'news'].includes(id);
-    // Otherwise only show if in enabled list
-    return orderedSections.includes(id);
-  };
 
   // Section renderer map
   const renderSection = (sectionId: string) => {

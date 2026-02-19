@@ -18,7 +18,7 @@ const DEFAULT_SECTIONS: HomepageSection[] = [
     title: 'Nostr Projects',
     subtitle: 'Join collaborative art - Select an image & pay in sats',
     icon: 'Users',
-    enabled: true,
+    enabled: false, // Disabled by default
     order: 0,
   },
   {

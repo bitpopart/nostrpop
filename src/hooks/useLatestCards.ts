@@ -15,11 +15,12 @@ interface CardData {
 // Card event kind - check what kind is used for cards in this project
 const CARD_KIND = 30402; // Using NIP-99 classified listings for cards
 
-export function useLatestCards(limit: number = 3) {
+export function useLatestCards(limit: number = 3, options?: { enabled?: boolean }) {
   const { nostr } = useNostr();
 
   return useQuery({
     queryKey: ['latest-cards', limit],
+    enabled: options?.enabled !== false,
     queryFn: async (c) => {
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(1500)]);
       const events = await nostr.query([

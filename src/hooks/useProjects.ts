@@ -31,12 +31,13 @@ const BUILTIN_PROJECTS = [
   },
 ];
 
-export function useFeaturedProjects() {
+export function useFeaturedProjects(options?: { enabled?: boolean }) {
   const { nostr } = useNostr();
   const adminPubkey = getAdminPubkeyHex();
 
   return useQuery({
     queryKey: ['projects-featured', adminPubkey],
+    enabled: options?.enabled !== false,
     queryFn: async (c) => {
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(3000)]);
       
