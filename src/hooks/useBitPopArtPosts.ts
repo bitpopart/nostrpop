@@ -67,22 +67,35 @@ export function useFeaturedBitPopArtPosts() {
   return useQuery({
     queryKey: ['featured-bitpopart-posts'],
     queryFn: () => {
-      // Get featured posts from localStorage
-      const stored = localStorage.getItem('featured-bitpopart-posts');
-      if (!stored) return [];
+      if (!allPosts) return [];
       
-      try {
-        const featuredIds: string[] = JSON.parse(stored);
-        if (!allPosts) return [];
-        
-        // Filter and return only posts that are in the featured list
-        // Maintain the order from the featured list
-        return featuredIds
-          .map(id => allPosts.find(post => post.id === id))
-          .filter((post): post is NostrEvent => post !== undefined);
-      } catch {
-        return [];
+      // Get selected posts from localStorage
+      const stored = localStorage.getItem('featured-bitpopart-posts');
+      let selectedIds: string[] = [];
+      
+      if (stored) {
+        try {
+          selectedIds = JSON.parse(stored);
+        } catch {
+          selectedIds = [];
+        }
       }
+      
+      // Find new posts that aren't in the selected list yet
+      const allPostIds = allPosts.map(post => post.id);
+      const newPostIds = allPostIds.filter(id => !selectedIds.includes(id));
+      
+      // Auto-select new posts (add them to the selected list)
+      if (newPostIds.length > 0) {
+        const updatedSelectedIds = [...selectedIds, ...newPostIds];
+        localStorage.setItem('featured-bitpopart-posts', JSON.stringify(updatedSelectedIds));
+        selectedIds = updatedSelectedIds;
+        console.log(`[BitPopArt] Auto-selected ${newPostIds.length} new posts`);
+      }
+      
+      // Return posts that are in the selected list
+      // Maintain the order from newest to oldest
+      return allPosts.filter(post => selectedIds.includes(post.id));
     },
     enabled: !!allPosts,
     staleTime: Infinity, // Don't refetch, rely on localStorage
