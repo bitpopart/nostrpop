@@ -17,19 +17,44 @@ export function useBitPopArtPosts() {
     queryFn: async (c) => {
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(3000)]);
       
-      // Query for kind 1 notes with #bitpopart tag from admin pubkey only
+      // Query for all kind 1 notes from admin pubkey
+      // We'll filter by hashtag in JavaScript to handle case variations
       const events = await nostr.query(
         [{
           kinds: [1],
           authors: [ADMIN_HEX],
-          '#t': ['bitpopart'],
-          limit: 100,
+          limit: 200,
         }],
         { signal }
       );
 
+      console.log(`[BitPopArt] Fetched ${events.length} total posts from admin`);
+
+      // Filter for posts with #bitpopart tag (case-insensitive)
+      // Check both in tags and in content
+      const filteredEvents = events.filter(event => {
+        // Check tags
+        const tags = event.tags.filter(tag => tag[0] === 't');
+        const hasTagMatch = tags.some(tag => 
+          tag[1]?.toLowerCase() === 'bitpopart'
+        );
+        
+        // Also check content for #bitpopart (case-insensitive)
+        const hasContentMatch = event.content.toLowerCase().includes('#bitpopart');
+        
+        return hasTagMatch || hasContentMatch;
+      });
+
+      console.log(`[BitPopArt] Found ${filteredEvents.length} posts with #bitpopart`);
+      
+      // Log details of found posts
+      filteredEvents.forEach(event => {
+        const tags = event.tags.filter(tag => tag[0] === 't').map(tag => tag[1]);
+        console.log(`[BitPopArt] Post ${event.id.substring(0, 8)}... tags:`, tags, 'has #bitpopart in content:', event.content.toLowerCase().includes('#bitpopart'));
+      });
+
       // Sort by created_at descending (newest first)
-      return events.sort((a, b) => b.created_at - a.created_at);
+      return filteredEvents.sort((a, b) => b.created_at - a.created_at);
     },
     staleTime: 30000, // 30 seconds
     refetchInterval: 60000, // Refetch every minute
