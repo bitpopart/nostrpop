@@ -451,6 +451,26 @@ const OrderConfirmation = () => {
             </CardContent>
           </Card>
 
+          {/* Support Contact Card */}
+          <Card className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-purple-200 dark:border-purple-800">
+            <CardContent className="pt-6">
+              <div className="text-center space-y-2">
+                <p className="text-sm font-medium text-purple-900 dark:text-purple-100">
+                  Any problems with your order?
+                </p>
+                <p className="text-base">
+                  Contact us at{' '}
+                  <a
+                    href="mailto:shop@bitpopart.com"
+                    className="font-semibold text-purple-700 dark:text-purple-300 hover:underline"
+                  >
+                    shop@bitpopart.com
+                  </a>
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Back to Shop/Gallery */}
           <div className="text-center">
             <Button
