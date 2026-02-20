@@ -310,7 +310,7 @@ export function ZapAnalytics() {
             Zap Analytics
           </h2>
           <p className="text-muted-foreground mt-1">
-            Track your lightning zaps and supporters
+            Track your lightning zaps and supporters from Nostr relays
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
@@ -341,15 +341,70 @@ export function ZapAnalytics() {
         </div>
       </div>
 
+      {/* NWC Info Card - Always visible */}
+      <Card className="border-purple-200 bg-purple-50 dark:bg-purple-900/20 dark:border-purple-800">
+        <CardContent className="pt-6">
+          <div className="flex items-start gap-3">
+            <Zap className="h-5 w-5 text-purple-600 mt-0.5 flex-shrink-0" />
+            <div className="space-y-2">
+              <p className="font-semibold text-purple-900 dark:text-purple-100">
+                💡 Need Complete Analytics?
+              </p>
+              <p className="text-sm text-purple-800 dark:text-purple-200">
+                This page shows zap receipts (kind 9735 events) from Nostr relays. For comprehensive analytics based on your actual wallet payments, visit{' '}
+                <a 
+                  href="https://zaplytics.app" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="font-semibold underline hover:no-underline"
+                >
+                  zaplytics.app
+                </a>
+                {' '}and connect your NWC (Nostr Wallet Connect) provider to see all payments directly from your Lightning wallet.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Info Alert */}
       {(!zaps || zaps.length === 0) && !isLoading && (
-        <Alert>
-          <Zap className="h-4 w-4" />
-          <AlertDescription>
-            No zaps found on this relay. Try switching to a different relay above. 
-            Relays like <strong>Primal</strong> or <strong>Damus</strong> typically store zap data well.
-          </AlertDescription>
-        </Alert>
+        <div className="space-y-4">
+          <Alert>
+            <Zap className="h-4 w-4" />
+            <AlertDescription>
+              No zaps found on this relay. Try switching to a different relay above. 
+              Relays like <strong>Primal</strong> or <strong>Damus</strong> typically store zap data well.
+            </AlertDescription>
+          </Alert>
+          
+          <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800">
+            <Zap className="h-4 w-4 text-blue-600" />
+            <AlertDescription className="text-blue-900 dark:text-blue-100">
+              <div className="space-y-2">
+                <p className="font-semibold">How Zap Analytics Works</p>
+                <p className="text-sm">
+                  This page queries Nostr relays for zap receipts (kind 9735 events). If you don't see data here:
+                </p>
+                <ul className="text-sm list-disc list-inside space-y-1 ml-2">
+                  <li>Try switching to different relays (Primal, Damus, Nostr.Band)</li>
+                  <li>Zap receipts might not be published to all relays</li>
+                  <li>For comprehensive analytics based on your actual wallet payments, use{' '}
+                    <a 
+                      href="https://zaplytics.app" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="font-semibold underline hover:no-underline"
+                    >
+                      zaplytics.app
+                    </a>
+                    {' '}which connects to your NWC (Nostr Wallet Connect) provider
+                  </li>
+                </ul>
+              </div>
+            </AlertDescription>
+          </Alert>
+        </div>
       )}
 
       {/* Stats Cards */}
