@@ -10,9 +10,11 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { RelaySelector } from '@/components/RelaySelector';
+import { NWCSetup } from './NWCSetup';
 import { useAuthor } from '@/hooks/useAuthor';
 import { genUserName } from '@/lib/genUserName';
 import { getAdminPubkeyHex } from '@/lib/adminUtils';
+import { useNWCConfig, useNWCTransactions } from '@/hooks/useNWC';
 import { 
   Zap, 
   TrendingUp, 
@@ -21,7 +23,8 @@ import {
   DollarSign,
   ArrowUpRight,
   ArrowDownRight,
-  Sparkles
+  Sparkles,
+  Wallet
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -122,9 +125,17 @@ function RecentZapRow({ zap }: { zap: ZapData }) {
 export function ZapAnalytics() {
   const { nostr } = useNostr();
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | 'all'>('30d');
+  const [dataSource, setDataSource] = useState<'relay' | 'nwc'>('relay');
   const adminPubkey = getAdminPubkeyHex();
+  const { config: nwcConfig } = useNWCConfig();
 
-  const { data: zaps, isLoading, error } = useQuery({
+  // Fetch NWC transactions
+  const { data: nwcTransactions, isLoading: nwcLoading, error: nwcError } = useNWCTransactions(
+    dataSource === 'nwc' && nwcConfig.isConnected
+  );
+
+  // Fetch relay-based zaps
+  const { data: relayZaps, isLoading: relayLoading, error: relayError } = useQuery({
     queryKey: ['zap-analytics', adminPubkey, timeRange],
     queryFn: async (c) => {
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(15000)]);
@@ -195,8 +206,38 @@ export function ZapAnalytics() {
 
       return zapData;
     },
-    enabled: !!adminPubkey,
+    enabled: !!adminPubkey && dataSource === 'relay',
   });
+
+  // Convert NWC transactions to ZapData format
+  const nwcZaps = useMemo(() => {
+    if (!nwcTransactions || dataSource !== 'nwc') return [];
+
+    // Apply time filter
+    const now = Math.floor(Date.now() / 1000);
+    const since = timeRange === '7d' 
+      ? now - (7 * 24 * 60 * 60)
+      : timeRange === '30d'
+      ? now - (30 * 24 * 60 * 60)
+      : 0;
+
+    return nwcTransactions
+      .filter(tx => tx.settled_at && (since === 0 || tx.settled_at >= since))
+      .map(tx => ({
+        event: {} as NostrEvent, // NWC transactions don't have associated events
+        amount: tx.amount,
+        senderPubkey: undefined, // NWC doesn't provide sender info
+        message: tx.description,
+        timestamp: tx.settled_at || tx.created_at,
+        bolt11: tx.invoice,
+      }))
+      .sort((a, b) => b.timestamp - a.timestamp);
+  }, [nwcTransactions, timeRange, dataSource]);
+
+  // Use the appropriate data source
+  const zaps = dataSource === 'nwc' ? nwcZaps : relayZaps;
+  const isLoading = dataSource === 'nwc' ? nwcLoading : relayLoading;
+  const error = dataSource === 'nwc' ? nwcError : relayError;
 
   const stats: ZapStats = useMemo(() => {
     if (!zaps || zaps.length === 0) {
@@ -341,31 +382,46 @@ export function ZapAnalytics() {
         </div>
       </div>
 
-      {/* NWC Info Card - Always visible */}
-      <Card className="border-purple-200 bg-purple-50 dark:bg-purple-900/20 dark:border-purple-800">
-        <CardContent className="pt-6">
-          <div className="flex items-start gap-3">
-            <Zap className="h-5 w-5 text-purple-600 mt-0.5 flex-shrink-0" />
-            <div className="space-y-2">
-              <p className="font-semibold text-purple-900 dark:text-purple-100">
-                💡 Need Complete Analytics?
-              </p>
-              <p className="text-sm text-purple-800 dark:text-purple-200">
-                This page shows zap receipts (kind 9735 events) from Nostr relays. For comprehensive analytics based on your actual wallet payments, visit{' '}
-                <a 
-                  href="https://zaplytics.app" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="font-semibold underline hover:no-underline"
+      {/* NWC Setup Card */}
+      <NWCSetup />
+
+      {/* Data Source Selector */}
+      {nwcConfig.isConnected && (
+        <Card className="border-green-200 bg-green-50 dark:bg-green-900/20 dark:border-green-800">
+          <CardContent className="pt-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <Wallet className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-semibold text-green-900 dark:text-green-100">
+                    Data Source
+                  </p>
+                  <p className="text-sm text-green-800 dark:text-green-200">
+                    Choose where to fetch analytics data from
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Badge
+                  variant={dataSource === 'relay' ? 'default' : 'outline'}
+                  className="cursor-pointer"
+                  onClick={() => setDataSource('relay')}
                 >
-                  zaplytics.app
-                </a>
-                {' '}and connect your NWC (Nostr Wallet Connect) provider to see all payments directly from your Lightning wallet.
-              </p>
+                  Nostr Relays
+                </Badge>
+                <Badge
+                  variant={dataSource === 'nwc' ? 'default' : 'outline'}
+                  className="cursor-pointer bg-green-500 hover:bg-green-600"
+                  onClick={() => setDataSource('nwc')}
+                >
+                  <Wallet className="h-3 w-3 mr-1" />
+                  NWC Wallet
+                </Badge>
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Info Alert */}
       {(!zaps || zaps.length === 0) && !isLoading && (
