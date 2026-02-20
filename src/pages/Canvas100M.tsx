@@ -327,7 +327,7 @@ function Canvas100M() {
       }
     });
 
-    // Draw image preview if uploaded
+    // Draw image preview as pixelated blocks if uploaded
     if (uploadedImage) {
       // Scale affects the actual canvas pixel size directly
       const finalWidth = Math.floor((uploadedImage.width * imageScale) / 100);
@@ -336,17 +336,64 @@ function Canvas100M() {
       // Check if image is in viewport
       if (imagePosition.x + finalWidth >= viewX && imagePosition.x < viewX + viewSize &&
           imagePosition.y + finalHeight >= viewY && imagePosition.y < viewY + viewSize) {
+        
+        // Create a temporary canvas to pixelate the image
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = finalWidth;
+        tempCanvas.height = finalHeight;
+        const tempCtx = tempCanvas.getContext('2d', { willReadFrequently: true });
+        if (!tempCtx) return;
+        
+        // Disable smoothing for sharp pixels
+        tempCtx.imageSmoothingEnabled = false;
+        
+        // Draw the scaled image to temp canvas
+        tempCtx.drawImage(uploadedImage, 0, 0, finalWidth, finalHeight);
+        const imageData = tempCtx.getImageData(0, 0, finalWidth, finalHeight);
+        
+        // Draw each pixel as a solid block (no transparency, no image overlay)
+        for (let y = 0; y < finalHeight; y++) {
+          for (let x = 0; x < finalWidth; x++) {
+            const canvasX = imagePosition.x + x;
+            const canvasY = imagePosition.y + y;
+            
+            // Only draw if in viewport
+            if (canvasX >= viewX && canvasX < viewX + viewSize && 
+                canvasY >= viewY && canvasY < viewY + viewSize) {
+              
+              const index = (y * finalWidth + x) * 4;
+              const r = imageData.data[index];
+              const g = imageData.data[index + 1];
+              const b = imageData.data[index + 2];
+              const a = imageData.data[index + 3];
+              
+              // Skip fully transparent pixels
+              if (a < 128) continue;
+              
+              // Check if this pixel is already painted
+              const isAlreadyPainted = pixels?.some(p => p.x === canvasX && p.y === canvasY) || 
+                                       pendingPixels.some(p => p.x === canvasX && p.y === canvasY);
+              if (isAlreadyPainted) continue;
+              
+              // Convert to hex color (keep original brightness)
+              const color = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase()}`;
+              
+              // Draw as solid pixel block (no transparency)
+              const localX = (canvasX - viewX) * scale;
+              const localY = (canvasY - viewY) * scale;
+              
+              ctx.fillStyle = color;
+              ctx.fillRect(localX, localY, scale, scale);
+            }
+          }
+        }
+        
+        // Draw bounding box around image area
         const imgX = (imagePosition.x - viewX) * scale;
         const imgY = (imagePosition.y - viewY) * scale;
         const imgW = finalWidth * scale;
         const imgH = finalHeight * scale;
         
-        // Draw semi-transparent image
-        ctx.globalAlpha = 0.7;
-        ctx.drawImage(uploadedImage, imgX, imgY, imgW, imgH);
-        ctx.globalAlpha = 1.0;
-        
-        // Draw bounding box around image
         ctx.strokeStyle = isDraggingImage ? '#8B5CF6' : '#A78BFA'; // Purple when dragging, lighter otherwise
         ctx.lineWidth = 2;
         ctx.setLineDash([5, 5]);
