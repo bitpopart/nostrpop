@@ -1,83 +1,59 @@
-import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { useNWCConfig } from '@/hooks/useNWC';
-import { useToast } from '@/hooks/useToast';
-import { Zap, Link as LinkIcon, CheckCircle, XCircle, ExternalLink } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useNWCDiscovery } from '@/hooks/useNWC';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { Zap, CheckCircle, XCircle, ExternalLink, RefreshCw } from 'lucide-react';
 
 export function NWCSetup() {
-  const { config, saveConfig, disconnect } = useNWCConfig();
-  const [connectionString, setConnectionString] = useState(config.connectionString);
-  const [isTesting, setIsTesting] = useState(false);
-  const { toast } = useToast();
+  const { user } = useCurrentUser();
+  const { data: nwcInfo, isLoading, refetch } = useNWCDiscovery();
 
-  const handleConnect = async () => {
-    if (!connectionString.trim()) {
-      toast({
-        title: 'Connection String Required',
-        description: 'Please enter your NWC connection string',
-        variant: 'destructive',
-      });
-      return;
-    }
+  if (!user) {
+    return (
+      <Card className="border-blue-200 dark:border-blue-800">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Zap className="h-5 w-5 text-yellow-500" />
+            Nostr Wallet Connect (NWC)
+          </CardTitle>
+          <CardDescription>
+            Login to automatically discover your wallet connection
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Alert>
+            <Zap className="h-4 w-4" />
+            <AlertDescription>
+              Please log in with your Nostr account to access wallet analytics.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
 
-    // Validate connection string format
-    if (!connectionString.startsWith('nostr+walletconnect://')) {
-      toast({
-        title: 'Invalid Format',
-        description: 'Connection string must start with nostr+walletconnect://',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setIsTesting(true);
-
-    try {
-      // Test the connection by parsing it
-      const url = new URL(connectionString);
-      const relay = url.searchParams.get('relay');
-      const secret = url.searchParams.get('secret');
-      const pubkey = url.host;
-
-      if (!relay || !secret || !pubkey) {
-        throw new Error('Missing required parameters in connection string');
-      }
-
-      // Save the config
-      saveConfig({
-        connectionString,
-        isConnected: true,
-      });
-
-      toast({
-        title: 'NWC Connected!',
-        description: 'Your wallet is now connected. Refresh to see analytics.',
-      });
-    } catch (error) {
-      console.error('NWC connection error:', error);
-      toast({
-        title: 'Connection Failed',
-        description: error instanceof Error ? error.message : 'Invalid connection string',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsTesting(false);
-    }
-  };
-
-  const handleDisconnect = () => {
-    disconnect();
-    setConnectionString('');
-    toast({
-      title: 'Disconnected',
-      description: 'NWC wallet disconnected',
-    });
-  };
+  if (isLoading) {
+    return (
+      <Card className="border-blue-200 dark:border-blue-800">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Zap className="h-5 w-5 text-yellow-500" />
+            Nostr Wallet Connect (NWC)
+          </CardTitle>
+          <CardDescription>
+            Discovering wallet connection...
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-3/4" />
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="border-blue-200 dark:border-blue-800">
@@ -89,110 +65,96 @@ export function NWCSetup() {
               Nostr Wallet Connect (NWC)
             </CardTitle>
             <CardDescription>
-              Connect your Lightning wallet to see payment analytics
+              Automatically discovered from your Nostr account
             </CardDescription>
           </div>
-          {config.isConnected && (
+          {nwcInfo ? (
             <Badge variant="default" className="bg-green-500">
               <CheckCircle className="h-3 w-3 mr-1" />
               Connected
             </Badge>
-          )}
-          {!config.isConnected && (
+          ) : (
             <Badge variant="outline">
               <XCircle className="h-3 w-3 mr-1" />
-              Not Connected
+              Not Found
             </Badge>
           )}
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {!config.isConnected ? (
+        {nwcInfo ? (
+          <>
+            <Alert className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <AlertDescription className="text-green-900 dark:text-green-100">
+                <div className="space-y-2">
+                  <p className="font-semibold">✅ Wallet Connected!</p>
+                  <p className="text-sm">
+                    Your NWC wallet info was automatically discovered from Nostr relays.
+                    Switch to "NWC Wallet" data source below to see your payment analytics.
+                  </p>
+                </div>
+              </AlertDescription>
+            </Alert>
+
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                <span className="text-muted-foreground">Relay:</span>
+                <span className="font-mono text-xs">{nwcInfo.relay}</span>
+              </div>
+              <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                <span className="text-muted-foreground">Wallet:</span>
+                <span className="font-mono text-xs">{nwcInfo.pubkey.slice(0, 16)}...{nwcInfo.pubkey.slice(-16)}</span>
+              </div>
+            </div>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => refetch()}
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh Discovery
+            </Button>
+          </>
+        ) : (
           <>
             <Alert className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
               <Zap className="h-4 w-4 text-blue-600" />
               <AlertDescription className="text-blue-900 dark:text-blue-100">
                 <div className="space-y-2">
-                  <p className="font-semibold">How to Connect:</p>
+                  <p className="font-semibold">No NWC Connection Found</p>
+                  <p className="text-sm">
+                    We couldn't find NWC wallet info on Nostr relays for your account.
+                  </p>
+                  <p className="text-sm font-semibold mt-3">How to set it up:</p>
                   <ol className="text-sm list-decimal list-inside space-y-1 ml-2">
-                    <li>Open your Lightning wallet (Alby, Mutiny, etc.)</li>
-                    <li>Go to Nostr Wallet Connect settings</li>
-                    <li>Copy the connection string (starts with <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded text-xs">nostr+walletconnect://</code>)</li>
-                    <li>Paste it below and click Connect</li>
+                    <li>Install and open the Alby browser extension</li>
+                    <li>Go to "Nostr Wallet Connect" in Alby settings</li>
+                    <li>Enable NWC and it will publish to relays automatically</li>
+                    <li>Come back here and click "Refresh Discovery"</li>
                   </ol>
                 </div>
               </AlertDescription>
             </Alert>
 
-            <div className="space-y-2">
-              <Label htmlFor="nwc-string">NWC Connection String</Label>
-              <Input
-                id="nwc-string"
-                type="password"
-                value={connectionString}
-                onChange={(e) => setConnectionString(e.target.value)}
-                placeholder="nostr+walletconnect://..."
-                className="font-mono text-xs"
-              />
-              <p className="text-xs text-muted-foreground">
-                Your connection string is stored locally and never sent to any server
-              </p>
-            </div>
-
             <div className="flex gap-2">
               <Button
-                onClick={handleConnect}
-                disabled={isTesting || !connectionString.trim()}
-                className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600"
+                variant="outline"
+                onClick={() => refetch()}
               >
-                {isTesting ? (
-                  <>
-                    <Zap className="h-4 w-4 mr-2 animate-spin" />
-                    Connecting...
-                  </>
-                ) : (
-                  <>
-                    <LinkIcon className="h-4 w-4 mr-2" />
-                    Connect Wallet
-                  </>
-                )}
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh Discovery
               </Button>
 
               <Button
                 variant="outline"
-                onClick={() => window.open('https://nwc.getalby.com/', '_blank')}
+                onClick={() => window.open('https://getalby.com/', '_blank')}
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
-                Get Alby NWC
+                Get Alby Wallet
               </Button>
             </div>
-          </>
-        ) : (
-          <>
-            <Alert className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              <AlertDescription className="text-green-900 dark:text-green-100">
-                Your Lightning wallet is connected! Analytics will now show payments from your wallet.
-              </AlertDescription>
-            </Alert>
-
-            <div className="space-y-2">
-              <Label>Connection String</Label>
-              <Input
-                type="password"
-                value={config.connectionString}
-                disabled
-                className="font-mono text-xs"
-              />
-            </div>
-
-            <Button
-              variant="destructive"
-              onClick={handleDisconnect}
-            >
-              <XCircle className="h-4 w-4 mr-2" />
-              Disconnect Wallet
-            </Button>
           </>
         )}
       </CardContent>

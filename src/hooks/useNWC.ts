@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useNostr } from '@nostrify/react';
+import { useCurrentUser } from './useCurrentUser';
 
 interface NWCTransaction {
   type: string;
@@ -16,68 +17,108 @@ interface NWCTransaction {
   metadata?: Record<string, unknown>;
 }
 
-interface NWCConfig {
-  connectionString: string;
-  isConnected: boolean;
+interface NWCInfo {
+  pubkey: string;
+  relay: string;
+  secret?: string;
+  connectionString?: string;
 }
 
-const NWC_STORAGE_KEY = 'bitpopart:nwc_config';
-
-export function useNWCConfig() {
-  const [config, setConfig] = useState<NWCConfig>(() => {
-    try {
-      const stored = localStorage.getItem(NWC_STORAGE_KEY);
-      if (stored) {
-        return JSON.parse(stored);
-      }
-    } catch {
-      // Ignore parse errors
-    }
-    return { connectionString: '', isConnected: false };
-  });
-
-  const saveConfig = (newConfig: NWCConfig) => {
-    setConfig(newConfig);
-    localStorage.setItem(NWC_STORAGE_KEY, JSON.stringify(newConfig));
-  };
-
-  const disconnect = () => {
-    saveConfig({ connectionString: '', isConnected: false });
-  };
-
-  return { config, saveConfig, disconnect };
-}
-
-export function useNWCTransactions(enabled: boolean = false) {
-  const { config } = useNWCConfig();
+// Discover NWC info from relays (kind 13194 events)
+export function useNWCDiscovery() {
+  const { nostr } = useNostr();
+  const { user } = useCurrentUser();
 
   return useQuery({
-    queryKey: ['nwc-transactions', config.connectionString],
+    queryKey: ['nwc-discovery', user?.pubkey],
     queryFn: async ({ signal }) => {
-      if (!config.connectionString || !config.isConnected) {
+      if (!user?.pubkey) {
+        return null;
+      }
+
+      console.log('[NWC] Discovering NWC info for user:', user.pubkey);
+
+      try {
+        // Query for NWC info events (kind 13194)
+        const events = await nostr.query(
+          [
+            {
+              kinds: [13194],
+              authors: [user.pubkey],
+              limit: 10,
+            }
+          ],
+          { signal: AbortSignal.any([signal, AbortSignal.timeout(5000)]) }
+        );
+
+        console.log('[NWC] Found NWC info events:', events.length);
+
+        if (events.length === 0) {
+          return null;
+        }
+
+        // Get the most recent event
+        const latestEvent = events.sort((a, b) => b.created_at - a.created_at)[0];
+
+        // Parse the event content
+        const content = JSON.parse(latestEvent.content);
+        
+        console.log('[NWC] NWC info content:', content);
+
+        // Extract relay and other info
+        const relay = content.relay || latestEvent.tags.find(([t]) => t === 'relay')?.[1];
+        const walletPubkey = content.walletPubkey || latestEvent.tags.find(([t]) => t === 'p')?.[1];
+
+        if (!relay || !walletPubkey) {
+          console.log('[NWC] Missing relay or wallet pubkey');
+          return null;
+        }
+
+        // Try to get secret from the event (some wallets include it)
+        const secret = content.secret;
+
+        const nwcInfo: NWCInfo = {
+          pubkey: walletPubkey,
+          relay,
+          secret,
+        };
+
+        // If we have the secret, construct connection string
+        if (secret) {
+          nwcInfo.connectionString = `nostr+walletconnect://${walletPubkey}?relay=${encodeURIComponent(relay)}&secret=${secret}`;
+        }
+
+        console.log('[NWC] Discovered NWC info:', { pubkey: walletPubkey, relay, hasSecret: !!secret });
+
+        return nwcInfo;
+      } catch (error) {
+        console.error('[NWC] Discovery error:', error);
+        return null;
+      }
+    },
+    enabled: !!user?.pubkey,
+    staleTime: 300000, // 5 minutes
+  });
+}
+
+export function useNWCTransactions(nwcInfo: NWCInfo | null | undefined, enabled: boolean = false) {
+  const { user } = useCurrentUser();
+
+  return useQuery({
+    queryKey: ['nwc-transactions', nwcInfo?.pubkey, nwcInfo?.relay],
+    queryFn: async ({ signal }) => {
+      if (!nwcInfo || !user?.signer) {
         return [];
       }
 
       try {
-        // Parse the NWC connection string
-        const url = new URL(config.connectionString);
-        const relay = url.searchParams.get('relay');
-        const secret = url.searchParams.get('secret');
-        const pubkey = url.host;
+        const { pubkey: walletPubkey, relay } = nwcInfo;
 
-        if (!relay || !secret || !pubkey) {
-          throw new Error('Invalid NWC connection string');
-        }
-
-        console.log('[NWC] Connecting to:', { relay, pubkey });
+        console.log('[NWC] Fetching transactions from wallet:', { walletPubkey, relay });
 
         // Import nostr-tools for NWC communication
-        const { SimplePool, nip04, generateSecretKey, getPublicKey, finalizeEvent } = await import('nostr-tools');
+        const { SimplePool, nip04 } = await import('nostr-tools');
         
-        // Generate ephemeral keypair for this session
-        const sessionSk = generateSecretKey();
-        const sessionPk = getPublicKey(sessionSk);
-
         // Create a connection to the relay
         const pool = new SimplePool();
 
@@ -94,16 +135,19 @@ export function useNWCTransactions(enabled: boolean = false) {
           }
         };
 
-        // Encrypt the request
-        const encryptedContent = await nip04.encrypt(sessionSk, pubkey, JSON.stringify(request));
+        // Encrypt the request using user's signer
+        const encryptedContent = await user.signer.nip04!.encrypt(
+          walletPubkey,
+          JSON.stringify(request)
+        );
 
         // Create the NWC request event
-        const requestEvent = finalizeEvent({
+        const requestEvent = await user.signer.signEvent({
           kind: 23194,
           created_at: Math.floor(Date.now() / 1000),
-          tags: [['p', pubkey]],
+          tags: [['p', walletPubkey]],
           content: encryptedContent,
-        }, sessionSk);
+        });
 
         console.log('[NWC] Sending request event:', requestEvent);
 
@@ -124,7 +168,7 @@ export function useNWCTransactions(enabled: boolean = false) {
             [
               {
                 kinds: [23195], // NWC response kind
-                authors: [pubkey],
+                authors: [walletPubkey],
                 '#e': [requestEvent.id],
                 since: Math.floor(Date.now() / 1000) - 60,
               }
@@ -161,7 +205,10 @@ export function useNWCTransactions(enabled: boolean = false) {
 
         // Decrypt the response
         const responseEvent = responseEvents[0];
-        const decryptedContent = await nip04.decrypt(sessionSk, pubkey, responseEvent.content);
+        const decryptedContent = await user.signer.nip04!.decrypt(
+          walletPubkey,
+          responseEvent.content
+        );
         const response = JSON.parse(decryptedContent);
 
         console.log('[NWC] Decrypted response:', response);
@@ -181,7 +228,7 @@ export function useNWCTransactions(enabled: boolean = false) {
         throw error;
       }
     },
-    enabled: enabled && !!config.connectionString && config.isConnected,
+    enabled: enabled && !!nwcInfo && !!user?.signer?.nip04,
     staleTime: 60000, // 1 minute
     retry: 1,
   });

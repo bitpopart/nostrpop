@@ -14,7 +14,7 @@ import { NWCSetup } from './NWCSetup';
 import { useAuthor } from '@/hooks/useAuthor';
 import { genUserName } from '@/lib/genUserName';
 import { getAdminPubkeyHex } from '@/lib/adminUtils';
-import { useNWCConfig, useNWCTransactions } from '@/hooks/useNWC';
+import { useNWCDiscovery, useNWCTransactions } from '@/hooks/useNWC';
 import { 
   Zap, 
   TrendingUp, 
@@ -127,11 +127,14 @@ export function ZapAnalytics() {
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | 'all'>('30d');
   const [dataSource, setDataSource] = useState<'relay' | 'nwc'>('relay');
   const adminPubkey = getAdminPubkeyHex();
-  const { config: nwcConfig } = useNWCConfig();
+
+  // Auto-discover NWC info from relays
+  const { data: nwcInfo } = useNWCDiscovery();
 
   // Fetch NWC transactions
   const { data: nwcTransactions, isLoading: nwcLoading, error: nwcError } = useNWCTransactions(
-    dataSource === 'nwc' && nwcConfig.isConnected
+    nwcInfo,
+    dataSource === 'nwc'
   );
 
   // Fetch relay-based zaps
@@ -386,7 +389,7 @@ export function ZapAnalytics() {
       <NWCSetup />
 
       {/* Data Source Selector */}
-      {nwcConfig.isConnected && (
+      {nwcInfo && (
         <Card className="border-green-200 bg-green-50 dark:bg-green-900/20 dark:border-green-800">
           <CardContent className="pt-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
