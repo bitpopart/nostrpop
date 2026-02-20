@@ -7,12 +7,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useNostr } from '@nostrify/react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/useToast';
 import { useUploadFile } from '@/hooks/useUploadFile';
 import { LoginArea } from '@/components/auth/LoginArea';
+import { useArtworks } from '@/hooks/useArtworks';
+import type { ArtworkData } from '@/lib/artTypes';
 import { 
   TrendingUp, 
   Upload, 
@@ -21,7 +24,10 @@ import {
   Bitcoin,
   Calendar,
   Sparkles,
-  Info
+  Info,
+  ShoppingCart,
+  Plus,
+  X
 } from 'lucide-react';
 
 // Admin configuration
@@ -30,6 +36,9 @@ const ADMIN_HEX = nip19.decode(ADMIN_NPUB).data as string;
 
 // Event kind for 21K Art entries
 const ART_21K_KIND = 30421;
+
+// Event kind for 21K Art for Sale selections (links to artworks from /art)
+const ART_21K_SALE_KIND = 30422;
 
 interface Art21KEntry {
   id: string;
@@ -59,6 +68,54 @@ function Art21K() {
   const [previewUrl, setPreviewUrl] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Art for Sale management
+  const [showArtSelectionDialog, setShowArtSelectionDialog] = useState(false);
+  const queryClient = useQueryClient();
+
+  // Fetch artworks from /art page for selection
+  const { data: availableArtworks, isLoading: artworksLoading } = useArtworks('for_sale');
+
+  // Fetch selected artworks for 21K art sale
+  const { data: selectedForSale, isLoading: selectedLoading, refetch: refetchSelected } = useQuery({
+    queryKey: ['21k-art-for-sale'],
+    queryFn: async (c) => {
+      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(5000)]);
+      
+      const events = await nostr.query([
+        {
+          kinds: [ART_21K_SALE_KIND],
+          authors: [ADMIN_HEX],
+          limit: 50
+        }
+      ], { signal });
+
+      // Extract artwork IDs and pubkeys from events
+      const selections = events.map(event => {
+        const artworkIdTag = event.tags.find(([name]) => name === 'artwork_id')?.[1];
+        const artistPubkeyTag = event.tags.find(([name]) => name === 'artist_pubkey')?.[1];
+        const dTag = event.tags.find(([name]) => name === 'd')?.[1];
+        
+        if (!artworkIdTag || !artistPubkeyTag || !dTag) return null;
+        
+        return {
+          id: dTag,
+          artworkId: artworkIdTag,
+          artistPubkey: artistPubkeyTag,
+          timestamp: event.created_at
+        };
+      }).filter(Boolean);
+
+      return selections;
+    },
+    staleTime: 30000,
+    refetchInterval: 60000,
+  });
+
+  // Fetch full artwork data for selected items
+  const selectedArtworks = availableArtworks?.filter(artwork => 
+    selectedForSale?.some(sel => sel?.artworkId === artwork.id && sel?.artistPubkey === artwork.artist_pubkey)
+  ) || [];
 
   // Fetch all 21K art entries
   const { data: artworks, isLoading, refetch } = useQuery({
@@ -105,6 +162,91 @@ function Art21K() {
     },
     staleTime: 30000,
     refetchInterval: 60000,
+  });
+
+  // Add artwork to 21K for sale
+  const addToSale = useMutation({
+    mutationFn: async (artwork: ArtworkData) => {
+      if (!user) throw new Error('User must be logged in');
+
+      const event = {
+        kind: ART_21K_SALE_KIND,
+        content: JSON.stringify({
+          artwork_title: artwork.title,
+          artwork_id: artwork.id,
+          artist_pubkey: artwork.artist_pubkey
+        }),
+        tags: [
+          ['d', `21k-sale-${artwork.id}`],
+          ['artwork_id', artwork.id],
+          ['artist_pubkey', artwork.artist_pubkey],
+          ['t', '21k-art-sale'],
+          ['alt', `${artwork.title} available for 21K sats`]
+        ],
+        created_at: Math.floor(Date.now() / 1000),
+      };
+
+      const signedEvent = await user.signer.signEvent(event);
+      await nostr.event(signedEvent, { signal: AbortSignal.timeout(5000) });
+
+      return artwork;
+    },
+    onSuccess: (artwork) => {
+      toast({
+        title: "Artwork Added to Sale",
+        description: `"${artwork.title}" is now displayed in the Art for Sale section.`,
+      });
+      refetchSelected();
+      queryClient.invalidateQueries({ queryKey: ['21k-art-for-sale'] });
+    },
+    onError: (error) => {
+      console.error('Failed to add artwork:', error);
+      toast({
+        title: "Failed to Add Artwork",
+        description: "Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Remove artwork from 21K for sale
+  const removeFromSale = useMutation({
+    mutationFn: async ({ artworkId, artistPubkey }: { artworkId: string; artistPubkey: string }) => {
+      if (!user) throw new Error('User must be logged in');
+
+      const selectionId = `21k-sale-${artworkId}`;
+      const artworkAddress = `${ART_21K_SALE_KIND}:${user.pubkey}:${selectionId}`;
+
+      const deletionEvent = {
+        kind: 5,
+        content: 'Removed from 21K art sale',
+        tags: [
+          ['a', artworkAddress]
+        ],
+        created_at: Math.floor(Date.now() / 1000),
+      };
+
+      const signedEvent = await user.signer.signEvent(deletionEvent);
+      await nostr.event(signedEvent, { signal: AbortSignal.timeout(5000) });
+
+      return { artworkId, artistPubkey };
+    },
+    onSuccess: () => {
+      toast({
+        title: "Artwork Removed",
+        description: "Artwork removed from the Art for Sale section.",
+      });
+      refetchSelected();
+      queryClient.invalidateQueries({ queryKey: ['21k-art-for-sale'] });
+    },
+    onError: (error) => {
+      console.error('Failed to remove artwork:', error);
+      toast({
+        title: "Failed to Remove Artwork",
+        description: "Please try again.",
+        variant: "destructive"
+      });
+    }
   });
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -540,8 +682,188 @@ function Art21K() {
                 </CardContent>
               </Card>
             )}
+
+            {/* Art for Sale */}
+            <Card className="border-green-200 dark:border-green-800 bg-gradient-to-br from-green-50/50 to-emerald-50/50 dark:from-green-900/10 dark:to-emerald-900/10">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center text-green-700 dark:text-green-300">
+                    <ShoppingCart className="h-5 w-5 mr-2" />
+                    Art for Sale ({selectedArtworks.length})
+                  </CardTitle>
+                  {isAdmin && (
+                    <Button
+                      size="sm"
+                      onClick={() => setShowArtSelectionDialog(true)}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Manage
+                    </Button>
+                  )}
+                </div>
+                <CardDescription className="text-green-600 dark:text-green-400">
+                  Available artworks from the gallery - Click to view details and purchase
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {selectedLoading ? (
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {[1, 2, 3].map((i) => (
+                      <Skeleton key={i} className="aspect-square rounded-lg" />
+                    ))}
+                  </div>
+                ) : selectedArtworks.length > 0 ? (
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {selectedArtworks.map((artwork) => (
+                      <div key={artwork.id} className="space-y-2 group">
+                        <a 
+                          href={`/art/${nip19.naddrEncode({
+                            identifier: artwork.id,
+                            pubkey: artwork.artist_pubkey,
+                            kind: 39239,
+                          })}`}
+                          className="block"
+                        >
+                          <div className="aspect-square rounded-lg overflow-hidden border-2 border-green-200 dark:border-green-800 relative">
+                            <img
+                              src={artwork.images[0]}
+                              alt={artwork.title}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                            />
+                            {isAdmin && (
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-7 w-7 p-0"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  removeFromSale.mutate({
+                                    artworkId: artwork.id,
+                                    artistPubkey: artwork.artist_pubkey
+                                  });
+                                }}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                          <div className="text-center">
+                            <div className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
+                              {artwork.title}
+                            </div>
+                            {artwork.price && artwork.currency && (
+                              <div className="text-sm font-bold text-green-600">
+                                {artwork.currency === 'SAT' 
+                                  ? `${artwork.price.toLocaleString()} sats`
+                                  : `₿${artwork.price.toFixed(6)}`
+                                }
+                              </div>
+                            )}
+                          </div>
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <ShoppingCart className="h-16 w-16 mx-auto text-green-300 dark:text-green-700 mb-4" />
+                    <p className="text-muted-foreground">
+                      {isAdmin 
+                        ? "No artworks selected yet. Click 'Manage' to add artworks from your gallery."
+                        : "No artworks available for sale at the moment."}
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </div>
+
+        {/* Art Selection Dialog (Admin Only) */}
+        {isAdmin && (
+          <Dialog open={showArtSelectionDialog} onOpenChange={setShowArtSelectionDialog}>
+            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Manage Art for Sale</DialogTitle>
+                <DialogDescription>
+                  Select artworks from your gallery to display in the "Art for Sale" section
+                </DialogDescription>
+              </DialogHeader>
+              
+              {artworksLoading ? (
+                <div className="grid grid-cols-3 gap-4 py-4">
+                  {[1, 2, 3, 4, 5, 6].map((i) => (
+                    <Skeleton key={i} className="aspect-square rounded-lg" />
+                  ))}
+                </div>
+              ) : availableArtworks && availableArtworks.length > 0 ? (
+                <div className="grid grid-cols-3 gap-4 py-4">
+                  {availableArtworks.map((artwork) => {
+                    const isSelected = selectedForSale?.some(
+                      sel => sel?.artworkId === artwork.id && sel?.artistPubkey === artwork.artist_pubkey
+                    );
+                    
+                    return (
+                      <div key={artwork.id} className="space-y-2">
+                        <div 
+                          className={`aspect-square rounded-lg overflow-hidden border-2 cursor-pointer transition-all ${
+                            isSelected 
+                              ? 'border-green-500 ring-2 ring-green-300' 
+                              : 'border-gray-200 dark:border-gray-700 hover:border-green-300'
+                          }`}
+                          onClick={() => {
+                            if (isSelected) {
+                              removeFromSale.mutate({
+                                artworkId: artwork.id,
+                                artistPubkey: artwork.artist_pubkey
+                              });
+                            } else {
+                              addToSale.mutate(artwork);
+                            }
+                          }}
+                        >
+                          <img
+                            src={artwork.images[0]}
+                            alt={artwork.title}
+                            className="w-full h-full object-cover"
+                          />
+                          {isSelected && (
+                            <div className="absolute inset-0 bg-green-500/20 flex items-center justify-center">
+                              <div className="bg-green-500 text-white rounded-full p-2">
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-center">
+                          <div className="text-xs font-medium truncate">{artwork.title}</div>
+                          {artwork.price && artwork.currency && (
+                            <div className="text-xs text-muted-foreground">
+                              {artwork.currency === 'SAT' 
+                                ? `${artwork.price.toLocaleString()} sats`
+                                : `₿${artwork.price.toFixed(6)}`
+                              }
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <ImageIcon className="h-16 w-16 mx-auto text-gray-300 mb-4" />
+                  <p className="text-muted-foreground">
+                    No artworks available. Create artworks in the <a href="/art?tab=admin" className="text-green-600 hover:underline">Art Gallery</a> first.
+                  </p>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
+        )}
 
         {/* About Section */}
         <Card className="max-w-4xl mx-auto mt-16 border-orange-200 dark:border-orange-800 bg-gradient-to-r from-orange-50/50 to-yellow-50/50 dark:from-orange-900/10 dark:to-yellow-900/10">

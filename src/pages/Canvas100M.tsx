@@ -244,7 +244,10 @@ function Canvas100M() {
     if (!canvasRef.current) return;
     
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', {
+      colorSpace: 'srgb',
+      alpha: false
+    });
     if (!ctx) return;
 
     // Disable image smoothing for pixelated rendering
@@ -341,11 +344,18 @@ function Canvas100M() {
         const tempCanvas = document.createElement('canvas');
         tempCanvas.width = finalWidth;
         tempCanvas.height = finalHeight;
-        const tempCtx = tempCanvas.getContext('2d', { willReadFrequently: true });
+        const tempCtx = tempCanvas.getContext('2d', { 
+          willReadFrequently: true,
+          colorSpace: 'srgb',
+          alpha: true
+        });
         if (!tempCtx) return;
         
-        // Disable smoothing for sharp pixels
+        // Disable smoothing for sharp pixels (use nearest-neighbor)
         tempCtx.imageSmoothingEnabled = false;
+        
+        // Set global composite to preserve exact colors without blending
+        tempCtx.globalCompositeOperation = 'source-over';
         
         // Draw the scaled image to temp canvas
         tempCtx.drawImage(uploadedImage, 0, 0, finalWidth, finalHeight);
@@ -686,6 +696,8 @@ function Canvas100M() {
     const reader = new FileReader();
     reader.onload = (event) => {
       const img = new Image();
+      // Prevent color space conversion issues
+      img.decoding = 'sync';
       img.onload = () => {
         setUploadedImage(img);
         setImagePosition({ x: viewX + 50, y: viewY + 50 }); // Start near current view
@@ -730,11 +742,18 @@ function Canvas100M() {
       tempCanvas.width = finalWidth;
       tempCanvas.height = finalHeight;
       
-      const tempCtx = tempCanvas.getContext('2d', { willReadFrequently: true });
+      const tempCtx = tempCanvas.getContext('2d', { 
+        willReadFrequently: true,
+        colorSpace: 'srgb',
+        alpha: true
+      });
       if (!tempCtx) return;
 
       // Disable image smoothing to preserve exact pixel colors (nearest-neighbor scaling)
       tempCtx.imageSmoothingEnabled = false;
+      
+      // Set global composite to preserve exact colors without blending
+      tempCtx.globalCompositeOperation = 'source-over';
       
       tempCtx.drawImage(uploadedImage, 0, 0, finalWidth, finalHeight);
       const imageData = tempCtx.getImageData(0, 0, finalWidth, finalHeight);
