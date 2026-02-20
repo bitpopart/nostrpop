@@ -189,6 +189,11 @@ export function ProductCard({ product, onViewDetails }: ProductCardProps) {
                     <span>{displayPriceInSats.toLocaleString()} sats</span>
                   </div>
                 )}
+                {(product.contact_url || product.product_url) && (
+                  <p className="text-xs text-muted-foreground italic mt-1">
+                    * Price available at reseller's site
+                  </p>
+                )}
               </>
             )}
           </div>

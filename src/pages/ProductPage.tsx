@@ -196,6 +196,13 @@ export function ProductPage() {
                 </div>
               )}
             </div>
+            {hasBuyUrl && (
+              <div className="mb-4">
+                <p className="text-sm text-muted-foreground italic">
+                  * Price available at reseller's site (prices may vary)
+                </p>
+              </div>
+            )}
             {hasShipping && shippingCost > 0 && (
               <div className="flex items-center text-sm text-muted-foreground mb-4">
                 <Truck className="w-4 h-4 mr-1" />
