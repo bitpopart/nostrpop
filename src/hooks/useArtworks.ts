@@ -71,7 +71,22 @@ export function useArtworks(filter: ArtworkFilter = 'all', options?: { enabled?:
 
       console.log(`Total deleted artwork addresses: ${deletedAddresses.size} (${locallyDeleted.size} local + ${deletedAddresses.size - locallyDeleted.size} from network)`);
 
-      const events = artworkEvents;
+      // Deduplicate events by d-tag + pubkey (prefer kind 39239 over legacy kind 30023)
+      const eventsByAddress = new Map<string, typeof artworkEvents[0]>();
+      artworkEvents.forEach(event => {
+        const dTag = event.tags.find(([name]) => name === 'd')?.[1];
+        if (!dTag) return;
+        
+        const address = `${event.pubkey}:${dTag}`;
+        const existing = eventsByAddress.get(address);
+        
+        // If no existing event, or existing is legacy kind and new one is 39239, replace
+        if (!existing || (existing.kind === 30023 && event.kind === 39239)) {
+          eventsByAddress.set(address, event);
+        }
+      });
+
+      const events = Array.from(eventsByAddress.values());
 
       // Process and validate artwork events, filtering out deleted ones
       const artworks = events

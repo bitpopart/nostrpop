@@ -1,6 +1,6 @@
 import { nip19 } from 'nostr-tools';
 
-// BitPopArt admin npub
+// BitPopArt admin npub (bitpopart)
 const ADMIN_NPUB = 'npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz';
 
 // Convert npub to hex format for comparison

@@ -16,6 +16,7 @@ import { useCreateArtwork } from '@/hooks/useArtworks';
 import { useUploadFile } from '@/hooks/useUploadFile';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useToast } from '@/hooks/useToast';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { nip19 } from 'nostr-tools';
 import {
   Palette,
@@ -93,6 +94,7 @@ export function CreateArtworkForm({ onSuccess, onCancel }: CreateArtworkFormProp
   const [isSharing, setIsSharing] = useState(false);
 
   const { user } = useCurrentUser();
+  const isAdmin = useIsAdmin();
   const { mutate: createArtwork, isPending: isCreating } = useCreateArtwork();
   const { mutate: createEvent } = useNostrPublish();
   const { mutateAsync: uploadFile } = useUploadFile();
@@ -416,6 +418,19 @@ export function CreateArtworkForm({ onSuccess, onCancel }: CreateArtworkFormProp
           <CardTitle>Authentication Required</CardTitle>
           <CardDescription>
             Please log in to create artwork.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <Card className="max-w-md mx-auto border-red-200 dark:border-red-800">
+        <CardHeader className="text-center">
+          <CardTitle className="text-red-600 dark:text-red-400">Admin Access Required</CardTitle>
+          <CardDescription>
+            Only the BitPopArt admin (bitpopart) can create artwork. If you think this is an error, please contact the site administrator.
           </CardDescription>
         </CardHeader>
       </Card>
