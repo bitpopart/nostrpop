@@ -9,7 +9,6 @@ import { useAuthor } from '@/hooks/useAuthor';
 import { useAdminNotes } from '@/hooks/useAdminNotes';
 import { genUserName } from '@/lib/genUserName';
 import { RelaySelector } from '@/components/RelaySelector';
-import { getFirstImage } from '@/lib/extractImages';
 import {
   MessageSquare,
   Calendar,
@@ -34,33 +33,11 @@ function NoteCard({ event }: { event: NostrEvent }) {
   const profileImage = metadata?.picture;
   const createdAt = new Date(event.created_at * 1000);
 
-  // Extract first image from the note
-  const firstImage = getFirstImage(event.content, event.tags);
-
   return (
     <Card 
       id={`event-${event.id}`} 
       className="hover:shadow-lg transition-shadow bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm overflow-hidden scroll-mt-8"
     >
-      {/* Note Image Thumbnail */}
-      {firstImage && (
-        <div className="aspect-video relative overflow-hidden">
-          <img
-            src={firstImage.url}
-            alt={firstImage.alt || 'Note image'}
-            className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-            onError={(e) => {
-              // Hide image if it fails to load
-              const container = e.currentTarget.parentElement;
-              if (container) {
-                container.style.display = 'none';
-              }
-            }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
-        </div>
-      )}
-
       <CardHeader className="pb-3">
         <div className="flex items-center space-x-3">
           <div className="flex-shrink-0">
@@ -106,10 +83,6 @@ function NoteCard({ event }: { event: NostrEvent }) {
 function NoteSkeleton() {
   return (
     <Card className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
-      {/* Potential image area */}
-      <div className="aspect-video">
-        <Skeleton className="w-full h-full" />
-      </div>
       <CardHeader className="pb-3">
         <div className="flex items-center space-x-3">
           <Skeleton className="h-10 w-10 rounded-full" />
