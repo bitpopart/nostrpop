@@ -926,89 +926,6 @@ function Art21K() {
               </Card>
             )}
 
-            {/* Collection Stats & Physical Gallery - Public */}
-            {artworks && artworks.length > 0 && (
-              <Card className="border-orange-200 dark:border-orange-800 bg-gradient-to-br from-orange-50/50 to-yellow-50/50 dark:from-orange-900/10 dark:to-yellow-900/10">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Sparkles className="h-5 w-5 mr-2 text-orange-600" />
-                    Collection Stats
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {/* Stats */}
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="text-center p-4 bg-white dark:bg-gray-800 rounded-lg border border-orange-200 dark:border-orange-700">
-                      <div className="text-2xl font-bold text-orange-600">{artworks.length}</div>
-                      <div className="text-xs text-muted-foreground mt-1">Total Artworks</div>
-                    </div>
-                    <div className="text-center p-4 bg-white dark:bg-gray-800 rounded-lg border border-orange-200 dark:border-orange-700">
-                      <div className="text-2xl font-bold text-green-600">
-                        ${(artworks.reduce((sum, a) => sum + a.usdPrice, 0) / artworks.length).toFixed(2)}
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-1">Avg USD Price</div>
-                    </div>
-                    <div className="text-center p-4 bg-white dark:bg-gray-800 rounded-lg border border-orange-200 dark:border-orange-700">
-                      <div className="text-lg font-bold text-orange-600">
-                        ${minPrice.toFixed(2)} - ${maxPrice.toFixed(2)}
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-1">Price Range</div>
-                    </div>
-                  </div>
-
-                  {/* Physical Gallery Section */}
-                  <div className="pt-6 border-t border-orange-200 dark:border-orange-700">
-                    <div className="flex items-center justify-between mb-4">
-                      <h4 className="text-lg font-semibold text-orange-700 dark:text-orange-300 flex items-center">
-                        <ImageIcon className="h-5 w-5 mr-2" />
-                        Physical Artworks Gallery
-                      </h4>
-                      <Badge variant="secondary">
-                        {galleryPhotos?.length || 0} photos
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      See how these digital artworks look as real, framed physical pieces!
-                    </p>
-
-                    {galleryLoading ? (
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        {[1, 2, 3].map((i) => (
-                          <Skeleton key={i} className="aspect-square rounded-lg" />
-                        ))}
-                      </div>
-                    ) : galleryPhotos && galleryPhotos.length > 0 ? (
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        {galleryPhotos.map((photo) => (
-                          <div key={photo.id} className="space-y-2">
-                            <div className="aspect-square rounded-lg overflow-hidden border-2 border-orange-200 dark:border-orange-700 bg-white dark:bg-gray-800 shadow-md">
-                              <img
-                                src={photo.imageUrl}
-                                alt={photo.caption || 'Physical artwork in frame'}
-                                className="w-full h-full object-cover hover:scale-105 transition-transform cursor-pointer"
-                              />
-                            </div>
-                            {photo.caption && (
-                              <p className="text-xs text-center text-muted-foreground">
-                                {photo.caption}
-                              </p>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-8 bg-white dark:bg-gray-800 rounded-lg border-2 border-dashed border-orange-200 dark:border-orange-700">
-                        <ImageIcon className="h-12 w-12 mx-auto text-orange-300 dark:text-orange-700 mb-2" />
-                        <p className="text-sm text-muted-foreground">
-                          Photos of physical artworks coming soon!
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
             {/* Art for Sale */}
             <Card className="border-green-200 dark:border-green-800 bg-gradient-to-br from-green-50/50 to-emerald-50/50 dark:from-green-900/10 dark:to-emerald-900/10">
               <CardHeader>
@@ -1103,6 +1020,89 @@ function Art21K() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Collection Stats & Physical Gallery - Public */}
+            {artworks && artworks.length > 0 && (
+              <Card className="border-orange-200 dark:border-orange-800 bg-gradient-to-br from-orange-50/50 to-yellow-50/50 dark:from-orange-900/10 dark:to-yellow-900/10">
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Sparkles className="h-5 w-5 mr-2 text-orange-600" />
+                    Collection Stats
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Stats */}
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="text-center p-4 bg-white dark:bg-gray-800 rounded-lg border border-orange-200 dark:border-orange-700">
+                      <div className="text-2xl font-bold text-orange-600">{artworks.length}</div>
+                      <div className="text-xs text-muted-foreground mt-1">Total Artworks</div>
+                    </div>
+                    <div className="text-center p-4 bg-white dark:bg-gray-800 rounded-lg border border-orange-200 dark:border-orange-700">
+                      <div className="text-2xl font-bold text-green-600">
+                        ${(artworks.reduce((sum, a) => sum + a.usdPrice, 0) / artworks.length).toFixed(2)}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">Avg USD Price</div>
+                    </div>
+                    <div className="text-center p-4 bg-white dark:bg-gray-800 rounded-lg border border-orange-200 dark:border-orange-700">
+                      <div className="text-lg font-bold text-orange-600">
+                        ${minPrice.toFixed(2)} - ${maxPrice.toFixed(2)}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">Price Range</div>
+                    </div>
+                  </div>
+
+                  {/* Physical Gallery Section */}
+                  <div className="pt-6 border-t border-orange-200 dark:border-orange-700">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="text-lg font-semibold text-orange-700 dark:text-orange-300 flex items-center">
+                        <ImageIcon className="h-5 w-5 mr-2" />
+                        Physical Artworks Gallery
+                      </h4>
+                      <Badge variant="secondary">
+                        {galleryPhotos?.length || 0} photos
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      See how these digital artworks look as real, framed physical pieces!
+                    </p>
+
+                    {galleryLoading ? (
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {[1, 2, 3].map((i) => (
+                          <Skeleton key={i} className="aspect-square rounded-lg" />
+                        ))}
+                      </div>
+                    ) : galleryPhotos && galleryPhotos.length > 0 ? (
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {galleryPhotos.map((photo) => (
+                          <div key={photo.id} className="space-y-2">
+                            <div className="aspect-square rounded-lg overflow-hidden border-2 border-orange-200 dark:border-orange-700 bg-white dark:bg-gray-800 shadow-md">
+                              <img
+                                src={photo.imageUrl}
+                                alt={photo.caption || 'Physical artwork in frame'}
+                                className="w-full h-full object-cover hover:scale-105 transition-transform cursor-pointer"
+                              />
+                            </div>
+                            {photo.caption && (
+                              <p className="text-xs text-center text-muted-foreground">
+                                {photo.caption}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 bg-white dark:bg-gray-800 rounded-lg border-2 border-dashed border-orange-200 dark:border-orange-700">
+                        <ImageIcon className="h-12 w-12 mx-auto text-orange-300 dark:text-orange-700 mb-2" />
+                        <p className="text-sm text-muted-foreground">
+                          Photos of physical artworks coming soon!
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
 
