@@ -45,6 +45,8 @@ const CURRENCIES = [
 
 const MEDIUMS = [
   'Digital Art',
+  'Digital Art & Original Painted Art Frame',
+  'Original Painted Art Frame',
   'Digital Painting',
   'Digital Illustration',
   'Photography',

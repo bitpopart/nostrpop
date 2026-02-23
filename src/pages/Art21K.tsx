@@ -40,6 +40,9 @@ const ART_21K_KIND = 30421;
 // Event kind for 21K Art for Sale selections (links to artworks from /art)
 const ART_21K_SALE_KIND = 30422;
 
+// Event kind for 21K Art physical gallery photos (framed artworks)
+const ART_21K_GALLERY_KIND = 30423;
+
 interface Art21KEntry {
   id: string;
   date: string;
@@ -47,6 +50,13 @@ interface Art21KEntry {
   usdPrice: number;
   imageUrl: string;
   artworkNumber: number;
+  timestamp: number;
+}
+
+interface GalleryPhoto {
+  id: string;
+  imageUrl: string;
+  caption?: string;
   timestamp: number;
 }
 
@@ -72,9 +82,57 @@ function Art21K() {
   // Art for Sale management
   const [showArtSelectionDialog, setShowArtSelectionDialog] = useState(false);
   const queryClient = useQueryClient();
+  
+  // Gallery photos management
+  const [selectedGalleryImage, setSelectedGalleryImage] = useState<File | null>(null);
+  const [galleryPreviewUrl, setGalleryPreviewUrl] = useState<string>('');
+  const [galleryCaption, setGalleryCaption] = useState<string>('');
+  const [isUploadingGallery, setIsUploadingGallery] = useState(false);
+  const galleryFileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch artworks from /art page for selection
   const { data: availableArtworks, isLoading: artworksLoading } = useArtworks('for_sale');
+
+  // Fetch gallery photos
+  const { data: galleryPhotos, isLoading: galleryLoading, refetch: refetchGallery } = useQuery({
+    queryKey: ['21k-gallery-photos'],
+    queryFn: async (c) => {
+      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(5000)]);
+      
+      const events = await nostr.query([
+        {
+          kinds: [ART_21K_GALLERY_KIND],
+          authors: [ADMIN_HEX],
+          limit: 20
+        }
+      ], { signal });
+
+      const photos: GalleryPhoto[] = events
+        .map(event => {
+          const dTag = event.tags.find(([name]) => name === 'd')?.[1];
+          const imageTag = event.tags.find(([name]) => name === 'image')?.[1];
+          
+          if (!dTag || !imageTag) return null;
+          
+          try {
+            const content = JSON.parse(event.content);
+            return {
+              id: dTag,
+              imageUrl: imageTag,
+              caption: content.caption,
+              timestamp: event.created_at
+            };
+          } catch (error) {
+            return null;
+          }
+        })
+        .filter(Boolean) as GalleryPhoto[];
+
+      return photos.sort((a, b) => b.timestamp - a.timestamp);
+    },
+    staleTime: 30000,
+    refetchInterval: 60000,
+  });
 
   // Fetch selected artworks for 21K art sale
   const { data: selectedForSale, isLoading: selectedLoading, refetch: refetchSelected } = useQuery({
@@ -268,6 +326,123 @@ function Art21K() {
       setPreviewUrl(e.target?.result as string);
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleGalleryImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid File",
+        description: "Please select an image file.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setSelectedGalleryImage(file);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setGalleryPreviewUrl(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleGalleryPhotoUpload = async () => {
+    if (!user || !selectedGalleryImage) {
+      toast({
+        title: "Error",
+        description: "Please select an image first.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsUploadingGallery(true);
+
+    try {
+      // Upload image
+      const [[_, imageUrl]] = await uploadFile(selectedGalleryImage);
+
+      // Create gallery photo entry
+      const photoId = `gallery-${Date.now()}`;
+
+      const event = {
+        kind: ART_21K_GALLERY_KIND,
+        content: JSON.stringify({
+          caption: galleryCaption || 'Physical artwork in frame'
+        }),
+        tags: [
+          ['d', photoId],
+          ['image', imageUrl],
+          ['t', '21k-gallery'],
+          ['alt', `21K Art Gallery - ${galleryCaption || 'Physical artwork in frame'}`]
+        ],
+        created_at: Math.floor(Date.now() / 1000),
+      };
+
+      const signedEvent = await user.signer.signEvent(event);
+      await nostr.event(signedEvent, { signal: AbortSignal.timeout(5000) });
+
+      toast({
+        title: "Photo Added! 📸",
+        description: "Gallery photo has been added successfully.",
+      });
+
+      // Reset form
+      setSelectedGalleryImage(null);
+      setGalleryPreviewUrl('');
+      setGalleryCaption('');
+      if (galleryFileInputRef.current) {
+        galleryFileInputRef.current.value = '';
+      }
+
+      refetchGallery();
+    } catch (error) {
+      console.error('Failed to add gallery photo:', error);
+      toast({
+        title: "Failed to Add Photo",
+        description: "Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUploadingGallery(false);
+    }
+  };
+
+  const handleDeleteGalleryPhoto = async (photoId: string) => {
+    if (!user) return;
+
+    try {
+      const photoAddress = `${ART_21K_GALLERY_KIND}:${user.pubkey}:${photoId}`;
+
+      const deletionEvent = {
+        kind: 5,
+        content: 'Removed gallery photo',
+        tags: [
+          ['a', photoAddress]
+        ],
+        created_at: Math.floor(Date.now() / 1000),
+      };
+
+      const signedEvent = await user.signer.signEvent(deletionEvent);
+      await nostr.event(signedEvent, { signal: AbortSignal.timeout(5000) });
+
+      toast({
+        title: "Photo Deleted",
+        description: "Gallery photo has been removed.",
+      });
+
+      refetchGallery();
+    } catch (error) {
+      console.error('Failed to delete gallery photo:', error);
+      toast({
+        title: "Failed to Delete Photo",
+        description: "Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -497,28 +672,133 @@ function Art21K() {
               </CardContent>
             </Card>
 
-            {/* Stats */}
+            {/* Stats and Gallery */}
             {artworks && artworks.length > 0 && (
               <Card className="mt-6 border-orange-200 dark:border-orange-800">
                 <CardHeader>
                   <CardTitle className="text-lg">Collection Stats</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Total Artworks</span>
-                    <span className="font-bold">{artworks.length}</span>
+                <CardContent className="space-y-4">
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Total Artworks</span>
+                      <span className="font-bold">{artworks.length}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Avg USD Price</span>
+                      <span className="font-bold text-green-600">
+                        ${(artworks.reduce((sum, a) => sum + a.usdPrice, 0) / artworks.length).toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Price Range</span>
+                      <span className="font-bold">
+                        ${minPrice.toFixed(2)} - ${maxPrice.toFixed(2)}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Avg USD Price</span>
-                    <span className="font-bold text-green-600">
-                      ${(artworks.reduce((sum, a) => sum + a.usdPrice, 0) / artworks.length).toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Price Range</span>
-                    <span className="font-bold">
-                      ${minPrice.toFixed(2)} - ${maxPrice.toFixed(2)}
-                    </span>
+
+                  {/* Physical Gallery Section */}
+                  <div className="pt-4 border-t border-orange-200 dark:border-orange-700">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-sm font-semibold text-orange-700 dark:text-orange-300">
+                        Physical Artworks Gallery
+                      </h4>
+                      {isAdmin && (
+                        <Badge variant="secondary" className="text-xs">
+                          {galleryPhotos?.length || 0} photos
+                        </Badge>
+                      )}
+                    </div>
+
+                    {isAdmin && (
+                      <div className="space-y-3 mb-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="galleryImage" className="text-xs">Add Photo</Label>
+                          <input
+                            ref={galleryFileInputRef}
+                            id="galleryImage"
+                            type="file"
+                            accept="image/*"
+                            onChange={handleGalleryImageSelect}
+                            disabled={!user || isUploadingGallery}
+                            className="w-full text-xs file:mr-2 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 dark:file:bg-orange-900/20 dark:file:text-orange-300"
+                          />
+                        </div>
+                        {galleryPreviewUrl && (
+                          <>
+                            <div className="border-2 border-orange-200 rounded-lg overflow-hidden">
+                              <img src={galleryPreviewUrl} alt="Preview" className="w-full h-32 object-cover" />
+                            </div>
+                            <Input
+                              placeholder="Caption (optional)"
+                              value={galleryCaption}
+                              onChange={(e) => setGalleryCaption(e.target.value)}
+                              className="text-xs"
+                              disabled={isUploadingGallery}
+                            />
+                            <Button
+                              onClick={handleGalleryPhotoUpload}
+                              size="sm"
+                              className="w-full bg-orange-500 hover:bg-orange-600 text-xs"
+                              disabled={!user || isUploadingGallery || !selectedGalleryImage}
+                            >
+                              {isUploadingGallery ? (
+                                <>
+                                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-2"></div>
+                                  Uploading...
+                                </>
+                              ) : (
+                                <>
+                                  <Plus className="w-3 h-3 mr-1" />
+                                  Add to Gallery
+                                </>
+                              )}
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    )}
+
+                    {galleryLoading ? (
+                      <div className="grid grid-cols-2 gap-2">
+                        <Skeleton className="aspect-square rounded-lg" />
+                        <Skeleton className="aspect-square rounded-lg" />
+                      </div>
+                    ) : galleryPhotos && galleryPhotos.length > 0 ? (
+                      <div className="grid grid-cols-2 gap-2">
+                        {galleryPhotos.map((photo) => (
+                          <div key={photo.id} className="relative group">
+                            <div className="aspect-square rounded-lg overflow-hidden border-2 border-orange-200 dark:border-orange-700">
+                              <img
+                                src={photo.imageUrl}
+                                alt={photo.caption || 'Gallery photo'}
+                                className="w-full h-full object-cover hover:scale-105 transition-transform"
+                              />
+                            </div>
+                            {isAdmin && (
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 p-0"
+                                onClick={() => handleDeleteGalleryPhoto(photo.id)}
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            )}
+                            {photo.caption && (
+                              <p className="text-xs text-center text-muted-foreground mt-1 truncate">
+                                {photo.caption}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-center text-muted-foreground py-4">
+                        {isAdmin ? 'Add photos of physical artworks to showcase them here.' : 'See how these digital artworks look in real life!'}
+                      </p>
+                    )}
                   </div>
                 </CardContent>
               </Card>
