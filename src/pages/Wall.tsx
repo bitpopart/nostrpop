@@ -128,12 +128,32 @@ export default function Wall() {
 
       {/* Photo Gallery */}
       <div className="container mx-auto px-4 py-12">
-        {isLoading ? (
+        {isLoading && isAdmin ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {Array.from({ length: 8 }).map((_, i) => (
               <Skeleton key={i} className="aspect-square rounded-lg" />
             ))}
           </div>
+        ) : isLoading && !isAdmin ? (
+          <Card className="border-dashed">
+            <CardContent className="py-16 px-8 text-center">
+              <div className="max-w-md mx-auto space-y-6">
+                <div className="flex justify-center">
+                  <img
+                    src="/spray_paint_icon.svg"
+                    alt="Spray Paint"
+                    className="h-16 w-16 opacity-30 dark:filter dark:brightness-0 dark:invert"
+                  />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold mb-2">Loading...</h3>
+                  <p className="text-muted-foreground">
+                    Checking for street art photos
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         ) : photos.length === 0 ? (
           <Card className="border-dashed">
             <CardContent className="py-16 px-8 text-center">
@@ -142,7 +162,7 @@ export default function Wall() {
                   <img
                     src="/spray_paint_icon.svg"
                     alt="Spray Paint"
-                    className="h-16 w-16 filter brightness-0 invert opacity-30"
+                    className="h-16 w-16 opacity-30 dark:filter dark:brightness-0 dark:invert"
                   />
                 </div>
                 <div>
