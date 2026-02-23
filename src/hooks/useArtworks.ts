@@ -3,6 +3,11 @@ import { useNostr } from '@nostrify/react';
 import { getArtworksByFilter, getArtworkById, type ArtworkData, type ArtworkFilter } from '@/lib/artTypes';
 import { useCurrentUser } from './useCurrentUser';
 import { useToast } from './useToast';
+import { nip19 } from 'nostr-tools';
+
+// ONLY show artworks from the BitPopArt admin
+const ADMIN_NPUB = 'npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz';
+const ADMIN_PUBKEY = nip19.decode(ADMIN_NPUB).data as string;
 
 // Local storage for deleted artworks (prevents them from reappearing)
 const DELETED_ARTWORKS_KEY = 'nostrpop_deleted_artworks';
@@ -33,10 +38,12 @@ export function useArtworks(filter: ArtworkFilter = 'all', options?: { enabled?:
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(5000)]);
 
       // Query for artwork events (kind 39239 and legacy kind 30023) and deletion events (kind 5)
+      // ONLY query artworks from the admin (BitPopArt)
       const [artworkEvents, deletionEvents] = await Promise.all([
         nostr.query([
           {
             kinds: [39239, 30023], // Support both new and legacy artwork kinds
+            authors: [ADMIN_PUBKEY], // ONLY show artworks from BitPopArt admin
             '#t': ['artwork'], // Tag to identify artwork posts
             limit: 50,
           }
@@ -92,6 +99,12 @@ export function useArtworks(filter: ArtworkFilter = 'all', options?: { enabled?:
       const artworks = events
         .map(event => {
           try {
+            // CRITICAL: Only process artworks from the admin (BitPopArt)
+            if (event.pubkey !== ADMIN_PUBKEY) {
+              console.log(`⛔ Filtering out artwork from non-admin pubkey: ${event.pubkey}`);
+              return null;
+            }
+
             const content = JSON.parse(event.content);
             const dTag = event.tags.find(([name]) => name === 'd')?.[1];
             const titleTag = event.tags.find(([name]) => name === 'title')?.[1];
@@ -223,13 +236,14 @@ export function useArtwork(artworkId: string, authorPubkey?: string) {
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(5000)]);
 
       // Query for the artwork and deletion events (support both new and legacy kinds)
+      // ONLY allow artworks from the admin (BitPopArt)
       const [artworkEvents, deletionEvents] = await Promise.all([
         nostr.query([
           {
             kinds: [39239, 30023],
             '#d': [artworkId],
             '#t': ['artwork'],
-            ...(authorPubkey && { authors: [authorPubkey] }),
+            authors: [ADMIN_PUBKEY], // ONLY show artworks from BitPopArt admin
             limit: 1
           }
         ], { signal }),
@@ -251,6 +265,12 @@ export function useArtwork(artworkId: string, authorPubkey?: string) {
       }
 
       const event = artworkEvents[0];
+
+      // CRITICAL: Only allow artworks from the admin (BitPopArt)
+      if (event.pubkey !== ADMIN_PUBKEY) {
+        console.log(`⛔ Blocking artwork from non-admin pubkey: ${event.pubkey}`);
+        throw new Error('Artwork not found');
+      }
 
       // Check if this artwork has been deleted (support both kinds)
       const artworkAddress = `${event.kind}:${event.pubkey}:${artworkId}`;
