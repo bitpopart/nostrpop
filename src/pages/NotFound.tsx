@@ -2,7 +2,10 @@ import { useSeoMeta } from "@unhead/react";
 import { useLocation, Link } from "react-router-dom";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Home } from "lucide-react";
+import { Home, Palette, ShoppingBag } from "lucide-react";
+
+// Get the base path from import.meta.env or default to '/'
+const basePath = import.meta.env.BASE_URL || '/';
 
 const NotFound = () => {
   const location = useLocation();
@@ -20,32 +23,65 @@ const NotFound = () => {
   }, [location.pathname]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20 flex items-center justify-center">
-      <div className="text-center max-w-md mx-auto px-4">
-        <div className="text-8xl mb-6">🎨</div>
-        <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-orange-50 dark:from-gray-900 dark:via-orange-900/20 dark:to-yellow-900/20 flex items-center justify-center">
+      <div className="text-center max-w-lg mx-auto px-4 py-12">
+        {/* Large B Logo */}
+        <div className="mb-8 animate-bounce">
+          <img 
+            src={`${basePath}B-Funny_avatar_orange.svg`}
+            alt="BitPopArt Logo" 
+            className="h-40 w-40 mx-auto"
+          />
+        </div>
+
+        {/* 404 Text */}
+        <h1 className="text-7xl font-bold mb-4 bg-gradient-to-r from-orange-600 via-yellow-600 to-orange-600 bg-clip-text text-transparent">
           404
         </h1>
-        <p className="text-xl text-muted-foreground mb-8">
-          Oops! This page seems to have wandered off into the digital void.
+
+        {/* Message */}
+        <p className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-8">
+          Nothing POPping up!?
         </p>
-        <div className="space-y-4">
-          <Button asChild className="w-full bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 hover:from-pink-600 hover:via-purple-600 hover:to-indigo-600">
-            <Link to="/cards">
-              <Home className="mr-2 h-4 w-4" />
-              Go to Cards
+
+        <p className="text-lg text-muted-foreground mb-8">
+          Go to:
+        </p>
+
+        {/* Buttons */}
+        <div className="space-y-4 max-w-sm mx-auto">
+          <Button 
+            asChild 
+            className="w-full bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white text-lg py-6"
+          >
+            <Link to="/">
+              <Home className="mr-2 h-5 w-5" />
+              Home
             </Link>
           </Button>
-          <Button asChild variant="outline" className="w-full">
+          
+          <Button 
+            asChild 
+            variant="outline"
+            className="w-full border-2 border-orange-500 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 text-lg py-6"
+          >
+            <Link to="/art">
+              <Palette className="mr-2 h-5 w-5" />
+              Art
+            </Link>
+          </Button>
+
+          <Button 
+            asChild 
+            variant="outline"
+            className="w-full border-2 border-orange-500 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 text-lg py-6"
+          >
             <Link to="/shop">
-              <ArrowLeft className="mr-2 h-4 w-4" />
+              <ShoppingBag className="mr-2 h-5 w-5" />
               Visit Shop
             </Link>
           </Button>
         </div>
-        <p className="text-sm text-muted-foreground mt-8">
-          Let's get you back to creating beautiful cards!
-        </p>
       </div>
     </div>
   );
