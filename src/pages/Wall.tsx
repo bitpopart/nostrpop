@@ -25,7 +25,7 @@ export default function Wall() {
 
   useSeoMeta({
     title: 'Wall - Street Art Gallery',
-    description: 'Art belongs to the streets - A gallery of street art photos from around the world',
+    description: 'Art belongs to the streets',
   });
 
   // Query street art photos from Nostr
@@ -80,15 +80,9 @@ export default function Wall() {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-pink-50 to-yellow-50 dark:from-gray-900 dark:via-orange-900/20 dark:to-yellow-900/20">
       {/* Header */}
       <div className="relative overflow-hidden">
-        {/* Graffiti-style background pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0" style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          }}/>
-        </div>
 
         <div className="container mx-auto px-4 py-16 relative">
           <div className="text-center max-w-4xl mx-auto">
@@ -107,17 +101,13 @@ export default function Wall() {
               </span>
             </h1>
 
-            <p className="text-2xl md:text-3xl font-bold text-white mb-4 tracking-wide">
+            <p className="text-2xl md:text-3xl font-bold tracking-wide">
               Art belongs to the streets
-            </p>
-
-            <p className="text-lg text-gray-400 mb-8">
-              A gallery of street art photos from around the world
             </p>
 
             {/* Admin Controls */}
             {isAdmin && (
-              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-8">
                 <Button
                   asChild
                   className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white"
@@ -127,7 +117,7 @@ export default function Wall() {
                     <span>Manage in Admin</span>
                   </Link>
                 </Button>
-                <p className="text-sm text-gray-400">
+                <p className="text-sm text-muted-foreground">
                   Post photos with #streetart on Nostr to add them here
                 </p>
               </div>
@@ -140,12 +130,12 @@ export default function Wall() {
       <div className="container mx-auto px-4 py-12">
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {Array.from({ length: 12 }).map((_, i) => (
+            {Array.from({ length: 8 }).map((_, i) => (
               <Skeleton key={i} className="aspect-square rounded-lg" />
             ))}
           </div>
         ) : photos.length === 0 ? (
-          <Card className="border-dashed border-2 border-gray-700 bg-gray-800/50">
+          <Card className="border-dashed">
             <CardContent className="py-16 px-8 text-center">
               <div className="max-w-md mx-auto space-y-6">
                 <div className="flex justify-center">
@@ -156,13 +146,13 @@ export default function Wall() {
                   />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-white mb-2">No Street Art Yet</h3>
-                  <p className="text-gray-400 mb-6">
+                  <h3 className="text-xl font-bold mb-2">No Street Art Yet</h3>
+                  <p className="text-muted-foreground mb-6">
                     Be the first to share street art! Post photos on Nostr with the #streetart tag.
                   </p>
                   {!isAdmin && (
                     <div className="space-y-4">
-                      <p className="text-sm text-gray-500">Login to start posting</p>
+                      <p className="text-sm text-muted-foreground">Login to start posting</p>
                       <LoginArea className="max-w-60 mx-auto" />
                     </div>
                   )}
@@ -176,7 +166,7 @@ export default function Wall() {
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center space-x-3">
                 <Sparkles className="h-5 w-5 text-orange-500" />
-                <p className="text-white font-semibold">
+                <p className="font-semibold">
                   {photos.length} {photos.length === 1 ? 'Photo' : 'Photos'}
                 </p>
               </div>
@@ -190,7 +180,7 @@ export default function Wall() {
                   className="group relative overflow-hidden rounded-lg cursor-pointer transform transition-all duration-300 hover:scale-105 hover:z-10"
                   onClick={() => setSelectedImage(photo.imageUrl)}
                 >
-                  <div className="aspect-square bg-gray-800">
+                  <div className="aspect-square bg-muted">
                     <img
                       src={photo.imageUrl}
                       alt={photo.description || 'Street art'}
@@ -248,9 +238,9 @@ export default function Wall() {
           <img
             src="/spray_paint_icon.svg"
             alt="Spray Paint"
-            className="h-12 w-12 filter brightness-0 invert opacity-30 mx-auto"
+            className="h-12 w-12 opacity-30 mx-auto dark:filter dark:brightness-0 dark:invert"
           />
-          <p className="text-gray-500 text-sm">
+          <p className="text-muted-foreground text-sm">
             Share your street art photos on Nostr with #streetart
           </p>
         </div>
