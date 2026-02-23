@@ -27,6 +27,7 @@ import { HomepageSettings } from '@/components/settings/HomepageSettings';
 import { ArtworkOrderManager } from '@/components/art/ArtworkOrderManager';
 import { ArtworkCleanupTool } from '@/components/art/ArtworkCleanupTool';
 import { ArtProgressManagement } from '@/components/artprogress/ArtProgressManagement';
+import { WallManagement } from '@/components/wall/WallManagement';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import {
   Plus,
@@ -199,6 +200,14 @@ const Admin = () => {
       badge: 'Bio'
     },
     {
+      title: 'Wall Gallery',
+      description: 'Street art photo gallery',
+      icon: Sparkles,
+      color: 'from-orange-500 to-red-500',
+      action: () => setActiveTab('wall'),
+      badge: 'Street Art'
+    },
+    {
       title: 'PopUp Events',
       description: 'Manage worldwide event schedule',
       icon: MapPin,
@@ -311,13 +320,14 @@ const Admin = () => {
 
         {/* Admin Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-9 lg:grid-cols-19 max-w-7xl mx-auto mb-8 text-xs">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-10 lg:grid-cols-20 max-w-7xl mx-auto mb-8 text-xs">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="homepage">Homepage</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
             <TabsTrigger value="art-progress">Art Progress</TabsTrigger>
             <TabsTrigger value="blog">News</TabsTrigger>
             <TabsTrigger value="artist">Artist</TabsTrigger>
+            <TabsTrigger value="wall">Wall</TabsTrigger>
             <TabsTrigger value="popup">PopUp</TabsTrigger>
             <TabsTrigger value="pages">Pages</TabsTrigger>
             <TabsTrigger value="social">Social</TabsTrigger>
@@ -413,7 +423,7 @@ const Admin = () => {
               {/* Content Management Section */}
               <div>
                 <h2 className="text-2xl font-semibold mb-6 text-center">Content Management</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-6 max-w-7xl mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
                   {contentActions.map((action, index) => (
                     <Card
                       key={index}
@@ -519,6 +529,10 @@ const Admin = () => {
 
           <TabsContent value="artist">
             <ArtistContentManagement />
+          </TabsContent>
+
+          <TabsContent value="wall">
+            <WallManagement />
           </TabsContent>
 
           <TabsContent value="projects">

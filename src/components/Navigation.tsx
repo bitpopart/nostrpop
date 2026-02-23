@@ -79,14 +79,20 @@ export function Navigation() {
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center space-x-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setSearchOpen(true)}
-              className="h-9 w-9 p-0"
-            >
-              <SearchIcon className="h-4 w-4" />
-            </Button>
+            <Link to="/wall">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 w-9 p-0 hover:opacity-80"
+                title="Wall - Street Art Gallery"
+              >
+                <img 
+                  src={`${basePath}spray_paint_icon.svg`} 
+                  alt="Wall" 
+                  className="h-5 w-5"
+                />
+              </Button>
+            </Link>
             <Link to="/vlog">
               <Button
                 variant="ghost"
@@ -127,6 +133,20 @@ export function Navigation() {
 
           {/* Mobile Menu Button */}
           <div className="md:hidden flex items-center space-x-2">
+            <Link to="/wall">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 w-9 p-0 hover:opacity-80"
+                title="Wall - Street Art Gallery"
+              >
+                <img 
+                  src={`${basePath}spray_paint_icon.svg`} 
+                  alt="Wall" 
+                  className="h-5 w-5"
+                />
+              </Button>
+            </Link>
             <Link to="/vlog">
               <Button
                 variant="ghost"
