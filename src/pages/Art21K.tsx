@@ -672,120 +672,87 @@ function Art21K() {
               </CardContent>
             </Card>
 
-            {/* Stats and Gallery */}
-            {artworks && artworks.length > 0 && (
+            {/* Gallery Photo Management - Admin Only */}
+            {isAdmin && (
               <Card className="mt-6 border-orange-200 dark:border-orange-800">
                 <CardHeader>
-                  <CardTitle className="text-lg">Collection Stats</CardTitle>
+                  <CardTitle className="text-lg">Manage Physical Gallery</CardTitle>
+                  <CardDescription>
+                    Upload photos of physical framed artworks
+                  </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent>
                   <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Total Artworks</span>
-                      <span className="font-bold">{artworks.length}</span>
+                    <div className="space-y-2">
+                      <Label htmlFor="galleryImage" className="text-sm">Add Photo</Label>
+                      <input
+                        ref={galleryFileInputRef}
+                        id="galleryImage"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleGalleryImageSelect}
+                        disabled={!user || isUploadingGallery}
+                        className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 dark:file:bg-orange-900/20 dark:file:text-orange-300"
+                      />
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Avg USD Price</span>
-                      <span className="font-bold text-green-600">
-                        ${(artworks.reduce((sum, a) => sum + a.usdPrice, 0) / artworks.length).toFixed(2)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Price Range</span>
-                      <span className="font-bold">
-                        ${minPrice.toFixed(2)} - ${maxPrice.toFixed(2)}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Physical Gallery Section */}
-                  <div className="pt-4 border-t border-orange-200 dark:border-orange-700">
-                    <div className="flex items-center justify-between mb-3">
-                      <h4 className="text-sm font-semibold text-orange-700 dark:text-orange-300">
-                        Physical Artworks Gallery
-                      </h4>
-                      {isAdmin && (
-                        <Badge variant="secondary" className="text-xs">
-                          {galleryPhotos?.length || 0} photos
-                        </Badge>
-                      )}
-                    </div>
-
-                    {isAdmin && (
-                      <div className="space-y-3 mb-4">
+                    {galleryPreviewUrl && (
+                      <>
+                        <div className="border-2 border-orange-200 rounded-lg overflow-hidden">
+                          <img src={galleryPreviewUrl} alt="Preview" className="w-full h-48 object-cover" />
+                        </div>
                         <div className="space-y-2">
-                          <Label htmlFor="galleryImage" className="text-xs">Add Photo</Label>
-                          <input
-                            ref={galleryFileInputRef}
-                            id="galleryImage"
-                            type="file"
-                            accept="image/*"
-                            onChange={handleGalleryImageSelect}
-                            disabled={!user || isUploadingGallery}
-                            className="w-full text-xs file:mr-2 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 dark:file:bg-orange-900/20 dark:file:text-orange-300"
+                          <Label htmlFor="galleryCaption" className="text-sm">Caption (optional)</Label>
+                          <Input
+                            id="galleryCaption"
+                            placeholder="e.g., Artwork #5 in custom painted frame"
+                            value={galleryCaption}
+                            onChange={(e) => setGalleryCaption(e.target.value)}
+                            disabled={isUploadingGallery}
                           />
                         </div>
-                        {galleryPreviewUrl && (
-                          <>
-                            <div className="border-2 border-orange-200 rounded-lg overflow-hidden">
-                              <img src={galleryPreviewUrl} alt="Preview" className="w-full h-32 object-cover" />
-                            </div>
-                            <Input
-                              placeholder="Caption (optional)"
-                              value={galleryCaption}
-                              onChange={(e) => setGalleryCaption(e.target.value)}
-                              className="text-xs"
-                              disabled={isUploadingGallery}
-                            />
-                            <Button
-                              onClick={handleGalleryPhotoUpload}
-                              size="sm"
-                              className="w-full bg-orange-500 hover:bg-orange-600 text-xs"
-                              disabled={!user || isUploadingGallery || !selectedGalleryImage}
-                            >
-                              {isUploadingGallery ? (
-                                <>
-                                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-2"></div>
-                                  Uploading...
-                                </>
-                              ) : (
-                                <>
-                                  <Plus className="w-3 h-3 mr-1" />
-                                  Add to Gallery
-                                </>
-                              )}
-                            </Button>
-                          </>
-                        )}
-                      </div>
+                        <Button
+                          onClick={handleGalleryPhotoUpload}
+                          className="w-full bg-orange-500 hover:bg-orange-600"
+                          disabled={!user || isUploadingGallery || !selectedGalleryImage}
+                        >
+                          {isUploadingGallery ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                              Uploading...
+                            </>
+                          ) : (
+                            <>
+                              <Plus className="w-4 h-4 mr-2" />
+                              Add to Gallery
+                            </>
+                          )}
+                        </Button>
+                      </>
                     )}
+                  </div>
 
-                    {galleryLoading ? (
-                      <div className="grid grid-cols-2 gap-2">
-                        <Skeleton className="aspect-square rounded-lg" />
-                        <Skeleton className="aspect-square rounded-lg" />
-                      </div>
-                    ) : galleryPhotos && galleryPhotos.length > 0 ? (
-                      <div className="grid grid-cols-2 gap-2">
+                  {/* Current Photos - Admin view with delete */}
+                  {galleryPhotos && galleryPhotos.length > 0 && (
+                    <div className="mt-6 pt-6 border-t border-orange-200 dark:border-orange-700">
+                      <h4 className="text-sm font-semibold mb-3">Current Photos ({galleryPhotos.length})</h4>
+                      <div className="grid grid-cols-2 gap-3">
                         {galleryPhotos.map((photo) => (
                           <div key={photo.id} className="relative group">
                             <div className="aspect-square rounded-lg overflow-hidden border-2 border-orange-200 dark:border-orange-700">
                               <img
                                 src={photo.imageUrl}
                                 alt={photo.caption || 'Gallery photo'}
-                                className="w-full h-full object-cover hover:scale-105 transition-transform"
+                                className="w-full h-full object-cover"
                               />
                             </div>
-                            {isAdmin && (
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 p-0"
-                                onClick={() => handleDeleteGalleryPhoto(photo.id)}
-                              >
-                                <X className="h-3 w-3" />
-                              </Button>
-                            )}
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-7 w-7 p-0"
+                              onClick={() => handleDeleteGalleryPhoto(photo.id)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
                             {photo.caption && (
                               <p className="text-xs text-center text-muted-foreground mt-1 truncate">
                                 {photo.caption}
@@ -794,12 +761,8 @@ function Art21K() {
                           </div>
                         ))}
                       </div>
-                    ) : (
-                      <p className="text-xs text-center text-muted-foreground py-4">
-                        {isAdmin ? 'Add photos of physical artworks to showcase them here.' : 'See how these digital artworks look in real life!'}
-                      </p>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}
@@ -958,6 +921,89 @@ function Art21K() {
                         </div>
                       </div>
                     ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Collection Stats & Physical Gallery - Public */}
+            {artworks && artworks.length > 0 && (
+              <Card className="border-orange-200 dark:border-orange-800 bg-gradient-to-br from-orange-50/50 to-yellow-50/50 dark:from-orange-900/10 dark:to-yellow-900/10">
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Sparkles className="h-5 w-5 mr-2 text-orange-600" />
+                    Collection Stats
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Stats */}
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="text-center p-4 bg-white dark:bg-gray-800 rounded-lg border border-orange-200 dark:border-orange-700">
+                      <div className="text-2xl font-bold text-orange-600">{artworks.length}</div>
+                      <div className="text-xs text-muted-foreground mt-1">Total Artworks</div>
+                    </div>
+                    <div className="text-center p-4 bg-white dark:bg-gray-800 rounded-lg border border-orange-200 dark:border-orange-700">
+                      <div className="text-2xl font-bold text-green-600">
+                        ${(artworks.reduce((sum, a) => sum + a.usdPrice, 0) / artworks.length).toFixed(2)}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">Avg USD Price</div>
+                    </div>
+                    <div className="text-center p-4 bg-white dark:bg-gray-800 rounded-lg border border-orange-200 dark:border-orange-700">
+                      <div className="text-lg font-bold text-orange-600">
+                        ${minPrice.toFixed(2)} - ${maxPrice.toFixed(2)}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">Price Range</div>
+                    </div>
+                  </div>
+
+                  {/* Physical Gallery Section */}
+                  <div className="pt-6 border-t border-orange-200 dark:border-orange-700">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="text-lg font-semibold text-orange-700 dark:text-orange-300 flex items-center">
+                        <ImageIcon className="h-5 w-5 mr-2" />
+                        Physical Artworks Gallery
+                      </h4>
+                      <Badge variant="secondary">
+                        {galleryPhotos?.length || 0} photos
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      See how these digital artworks look as real, framed physical pieces!
+                    </p>
+
+                    {galleryLoading ? (
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {[1, 2, 3].map((i) => (
+                          <Skeleton key={i} className="aspect-square rounded-lg" />
+                        ))}
+                      </div>
+                    ) : galleryPhotos && galleryPhotos.length > 0 ? (
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {galleryPhotos.map((photo) => (
+                          <div key={photo.id} className="space-y-2">
+                            <div className="aspect-square rounded-lg overflow-hidden border-2 border-orange-200 dark:border-orange-700 bg-white dark:bg-gray-800 shadow-md">
+                              <img
+                                src={photo.imageUrl}
+                                alt={photo.caption || 'Physical artwork in frame'}
+                                className="w-full h-full object-cover hover:scale-105 transition-transform cursor-pointer"
+                              />
+                            </div>
+                            {photo.caption && (
+                              <p className="text-xs text-center text-muted-foreground">
+                                {photo.caption}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 bg-white dark:bg-gray-800 rounded-lg border-2 border-dashed border-orange-200 dark:border-orange-700">
+                        <ImageIcon className="h-12 w-12 mx-auto text-orange-300 dark:text-orange-700 mb-2" />
+                        <p className="text-sm text-muted-foreground">
+                          Photos of physical artworks coming soon!
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
