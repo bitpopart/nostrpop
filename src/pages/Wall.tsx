@@ -23,22 +23,26 @@ export default function Wall() {
   const isAdmin = useIsAdmin();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
+  // BitPopArt's pubkey
+  const BITPOPART_PUBKEY = '43baaf0c28e6cfb195b17ee083e19eb3a4afdfac54d9b6baf170270ed193e34c';
+
   useSeoMeta({
     title: 'Wall - Street Art Gallery',
     description: 'Art belongs to the streets',
   });
 
-  // Query street art photos from Nostr
+  // Query street art photos from Nostr (only from BitPopArt)
   const { data: photos = [], isLoading } = useQuery({
     queryKey: ['street-art-photos'],
     queryFn: async (c) => {
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(5000)]);
 
-      // Query for kind 1 notes with #streetart tag
+      // Query for kind 1 notes with #streetart tag from BitPopArt only
       const events = await nostr.query(
         [
           {
             kinds: [1],
+            authors: [BITPOPART_PUBKEY],
             '#t': ['streetart'],
             limit: 100,
           },
@@ -46,7 +50,7 @@ export default function Wall() {
         { signal }
       );
 
-      console.log(`Found ${events.length} street art posts`);
+      console.log(`Found ${events.length} BitPopArt street art posts`);
 
       // Extract images from events
       const streetArtPhotos: StreetArtPhoto[] = [];
@@ -91,7 +95,7 @@ export default function Wall() {
               <img
                 src="/spray_paint_icon.svg"
                 alt="Spray Paint"
-                className="h-20 w-20 filter brightness-0 invert"
+                className="h-20 w-20 dark:filter dark:brightness-0 dark:invert"
               />
             </div>
 
@@ -128,32 +132,14 @@ export default function Wall() {
 
       {/* Photo Gallery */}
       <div className="container mx-auto px-4 py-12">
-        {isLoading && isAdmin ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <Skeleton key={i} className="aspect-square rounded-lg" />
-            ))}
-          </div>
-        ) : isLoading && !isAdmin ? (
-          <Card className="border-dashed">
-            <CardContent className="py-16 px-8 text-center">
-              <div className="max-w-md mx-auto space-y-6">
-                <div className="flex justify-center">
-                  <img
-                    src="/spray_paint_icon.svg"
-                    alt="Spray Paint"
-                    className="h-16 w-16 opacity-30 dark:filter dark:brightness-0 dark:invert"
-                  />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold mb-2">Loading...</h3>
-                  <p className="text-muted-foreground">
-                    Checking for street art photos
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        {isLoading ? (
+          isAdmin ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <Skeleton key={i} className="aspect-square rounded-lg" />
+              ))}
+            </div>
+          ) : null
         ) : photos.length === 0 ? (
           <Card className="border-dashed">
             <CardContent className="py-16 px-8 text-center">
