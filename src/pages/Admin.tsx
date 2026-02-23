@@ -25,6 +25,7 @@ import { ZapAnalytics } from '@/components/analytics/ZapAnalytics';
 import { SiteSettings } from '@/components/settings/SiteSettings';
 import { HomepageSettings } from '@/components/settings/HomepageSettings';
 import { ArtworkOrderManager } from '@/components/art/ArtworkOrderManager';
+import { ArtworkCleanupTool } from '@/components/art/ArtworkCleanupTool';
 import { ArtProgressManagement } from '@/components/artprogress/ArtProgressManagement';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import {
@@ -644,6 +645,8 @@ const Admin = () => {
                 </div>
               </CardContent>
             </Card>
+
+            <ArtworkCleanupTool />
 
             <ArtworkOrderManager />
           </TabsContent>
