@@ -16,6 +16,8 @@ import { ArtworkThumbnail } from '@/components/art/ArtworkThumbnail';
 import { TileGallery } from '@/components/art/TileGallery';
 import { CreateArtworkForm } from '@/components/art/CreateArtworkForm';
 import { EditArtworkForm } from '@/components/art/EditArtworkForm';
+import { ArtBanner } from '@/components/art/ArtBanner';
+import { ArtBannerAdmin } from '@/components/art/ArtBannerAdmin';
 import { PaymentDialog } from '@/components/marketplace/PaymentDialog';
 import { Label } from '@/components/ui/label';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
@@ -229,6 +231,11 @@ const Art = () => {
               Admin Access • Art Gallery Management
             </Badge>
           )}
+        </div>
+
+        {/* Art page banner (shipping delay / travel notice etc.) */}
+        <div className="max-w-6xl mx-auto mb-6">
+          <ArtBanner />
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full max-w-6xl mx-auto">
@@ -483,16 +490,22 @@ const Art = () => {
 
           {user && isAdmin && (
             <TabsContent value="admin">
-              <CreateArtworkForm
-                onSuccess={() => {
-                  setActiveTab('gallery');
-                  toast({
-                    title: "Artwork Created",
-                    description: "Your artwork has been added to the gallery.",
-                  });
-                }}
-                onCancel={() => setActiveTab('gallery')}
-              />
+              <div className="space-y-6">
+                {/* Banner management */}
+                <ArtBannerAdmin />
+
+                {/* Add new artwork */}
+                <CreateArtworkForm
+                  onSuccess={() => {
+                    setActiveTab('gallery');
+                    toast({
+                      title: "Artwork Created",
+                      description: "Your artwork has been added to the gallery.",
+                    });
+                  }}
+                  onCancel={() => setActiveTab('gallery')}
+                />
+              </div>
             </TabsContent>
           )}
         </Tabs>
