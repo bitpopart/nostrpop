@@ -26,6 +26,7 @@ import { SiteSettings } from '@/components/settings/SiteSettings';
 import { HomepageSettings } from '@/components/settings/HomepageSettings';
 import { ArtworkOrderManager } from '@/components/art/ArtworkOrderManager';
 import { ArtworkCleanupTool } from '@/components/art/ArtworkCleanupTool';
+import { ArtBannerAdmin } from '@/components/art/ArtBannerAdmin';
 import { ArtProgressManagement } from '@/components/artprogress/ArtProgressManagement';
 import { WallManagement } from '@/components/wall/WallManagement';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
@@ -636,6 +637,8 @@ const Admin = () => {
           </TabsContent>
 
           <TabsContent value="art" className="space-y-6">
+            <ArtBannerAdmin />
+
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
