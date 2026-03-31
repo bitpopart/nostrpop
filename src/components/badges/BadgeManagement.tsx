@@ -132,9 +132,9 @@ function ImportPanel({
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [importing, setImporting] = useState(false);
 
-  // Fetch all kind:30009 badges from the BitPopArt badges.page pubkey
+  // Fetch all kind:30009 badges from the BitPopArt pubkey (visible on ditto.pub/badges)
   const { data: sourceBadges = [], isLoading, refetch, isFetching } = useQuery({
-    queryKey: ['badges-page-import', BITPOPART_PUBKEY],
+    queryKey: ['ditto-badge-import', BITPOPART_PUBKEY],
     queryFn: async (c) => {
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(10000)]);
       const events = await nostr.query(
@@ -223,19 +223,19 @@ function ImportPanel({
           <div>
             <CardTitle className="flex items-center gap-2 text-base">
               <Download className="h-4 w-4 text-purple-600" />
-              Import from badges.page
+              Import from ditto.pub
             </CardTitle>
             <CardDescription className="text-xs mt-0.5">
-              Fetching badges published by{' '}
+              Fetching your badges from{' '}
               <a
-                href="https://badges.page/p/npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz"
+                href="https://ditto.pub/badges"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="underline hover:text-purple-600"
               >
-                BitPopArt
+                ditto.pub/badges
               </a>{' '}
-              (kind:30009 on Nostr)
+              — published as kind:30009 by BitPopArt
             </CardDescription>
           </div>
           <Button
@@ -856,7 +856,7 @@ export function BadgeManagement() {
             className={['gap-1.5', showImport ? 'bg-purple-50 border-purple-300 text-purple-700 dark:bg-purple-900/20 dark:border-purple-700 dark:text-purple-300' : ''].join(' ')}
           >
             <Download className="h-4 w-4" />
-            {showImport ? 'Hide Import' : 'Import from badges.page'}
+            {showImport ? 'Hide Import' : 'Import from ditto.pub'}
           </Button>
           <Button
             variant="outline"
@@ -925,7 +925,7 @@ export function BadgeManagement() {
               Create your first badge
             </button>{' '}or{' '}
             <button className="underline hover:text-foreground" onClick={() => setShowImport(true)}>
-              import from badges.page
+              import from ditto.pub
             </button>.
           </AlertDescription>
         </Alert>

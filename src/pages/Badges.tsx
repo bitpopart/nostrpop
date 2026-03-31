@@ -751,45 +751,6 @@ export default function Badges() {
           </div>
         )}
 
-        {/* ── About NIP-58 ── */}
-        <div className="mt-16 max-w-2xl mx-auto">
-          <Card className="bg-white/60 dark:bg-gray-800/40 border-purple-100 dark:border-purple-900/30">
-            <CardContent className="py-6 px-6 space-y-3">
-              <h2 className="font-semibold text-base flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-purple-500" />
-                About Nostr Badges (NIP-58)
-              </h2>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                Badges follow <strong>NIP-58</strong>. Each badge is a{' '}
-                <code className="bg-muted rounded px-1 py-0.5 text-xs">kind:30009</code> Badge Definition.
-                Awards are issued as <code className="bg-muted rounded px-1 py-0.5 text-xs">kind:8</code> events
-                referencing the definition and listing recipients.
-              </p>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                Profile badges use <code className="bg-muted rounded px-1 py-0.5 text-xs">kind:10008</code> per{' '}
-                <a href="https://github.com/nostr-protocol/nips/issues/2275" target="_blank" rel="noopener noreferrer" className="underline hover:text-purple-600">
-                  NIP proposal #2275
-                </a>
-                , replacing the older <code className="bg-muted rounded px-1 py-0.5 text-xs">kind:30008</code>.
-              </p>
-              <div className="flex gap-2 pt-1 flex-wrap">
-                <Button variant="outline" size="sm" asChild>
-                  <a href="https://github.com/nostr-protocol/nips/blob/master/58.md" target="_blank" rel="noopener noreferrer" className="gap-1.5">
-                    <ExternalLink className="h-3.5 w-3.5" />
-                    NIP-58 Spec
-                  </a>
-                </Button>
-                <Button variant="outline" size="sm" asChild>
-                  <a href="https://badges.page" target="_blank" rel="noopener noreferrer" className="gap-1.5">
-                    <ExternalLink className="h-3.5 w-3.5" />
-                    badges.page
-                  </a>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
         {/* ── Footer ── */}
         <div className="text-center mt-12 text-xs text-muted-foreground">
           <p>
