@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useNostr } from '@nostrify/react';
-import { NRelay1 } from '@nostrify/nostrify';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -32,13 +31,74 @@ import type { NostrEvent } from '@nostrify/nostrify';
 // BitPopArt admin pubkey (hex) — the account whose badges we import from ditto.pub
 const BITPOPART_PUBKEY = '43baaf0c28e6cfb195b17ee083e19eb3a4afdfac54d9b6baf170270ed193e34c';
 
-// Relays to query when importing — ditto.pub first, then broad fallbacks
+// Relays to query when importing — ditto.pub first (that's where the badges live)
 const IMPORT_RELAYS = [
   'wss://ditto.pub/relay',
   'wss://relay.damus.io',
   'wss://relay.primal.net',
   'wss://relay.nostr.band',
 ];
+
+// ─── Raw WebSocket relay query ────────────────────────────────────────────────
+// Connects directly to a single relay via WebSocket, sends a REQ, collects
+// all events until EOSE, then closes. Returns the raw event array.
+
+function queryRelayRaw(
+  relayUrl: string,
+  filters: Record<string, unknown>[],
+  timeoutMs = 10000,
+): Promise<NostrEvent[]> {
+  return new Promise((resolve) => {
+    const events: NostrEvent[] = [];
+    const subId = Math.random().toString(36).slice(2, 10);
+    let settled = false;
+    let ws: WebSocket;
+
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      try { ws.close(); } catch { /* ignore */ }
+      resolve(events);
+    };
+
+    const timer = setTimeout(finish, timeoutMs);
+
+    try {
+      ws = new WebSocket(relayUrl);
+    } catch {
+      clearTimeout(timer);
+      resolve([]);
+      return;
+    }
+
+    ws.onopen = () => {
+      ws.send(JSON.stringify(['REQ', subId, ...filters]));
+    };
+
+    ws.onmessage = (e) => {
+      try {
+        const msg = JSON.parse(e.data as string);
+        if (!Array.isArray(msg)) return;
+        if (msg[0] === 'EVENT' && msg[1] === subId) {
+          events.push(msg[2] as NostrEvent);
+        } else if (msg[0] === 'EOSE' && msg[1] === subId) {
+          clearTimeout(timer);
+          finish();
+        }
+      } catch { /* ignore malformed */ }
+    };
+
+    ws.onerror = () => {
+      clearTimeout(timer);
+      finish();
+    };
+
+    ws.onclose = () => {
+      clearTimeout(timer);
+      finish();
+    };
+  });
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -140,39 +200,35 @@ function ImportPanel({
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [importing, setImporting] = useState(false);
 
-  // Fetch all kind:30009 badges from the BitPopArt pubkey across multiple relays.
-  // We bypass the app pool and query each relay directly so we're not dependent
-  // on whichever relay the user happens to have selected.
+  // Fetch all kind:30009 badges from the BitPopArt pubkey.
+  // Uses raw WebSocket connections to each relay — bypasses the app pool
+  // entirely so we get results regardless of which relay the user has selected.
   const { data: sourceBadges = [], isLoading, refetch, isFetching } = useQuery({
     queryKey: ['ditto-badge-import', BITPOPART_PUBKEY],
-    queryFn: async (c) => {
-      const filter = [{ kinds: [30009], authors: [BITPOPART_PUBKEY], limit: 200 }];
+    queryFn: async () => {
+      const filter = { kinds: [30009], authors: [BITPOPART_PUBKEY], limit: 200 };
       const seenIds = new Set<string>();
       const allEvents: NostrEvent[] = [];
 
-      // Query all relays in parallel, collect everything that comes back
-      await Promise.allSettled(
-        IMPORT_RELAYS.map(async (url) => {
-          const relay = new NRelay1(url);
-          try {
-            const signal = AbortSignal.any([c.signal, AbortSignal.timeout(8000)]);
-            const events = await relay.query(filter, { signal });
-            for (const ev of events) {
-              if (!seenIds.has(ev.id)) {
-                seenIds.add(ev.id);
-                allEvents.push(ev);
-              }
-            }
-          } finally {
-            // Close the relay connection
-            relay[Symbol.asyncDispose]?.().catch(() => {});
-          }
-        })
+      // Query all relays in parallel via raw WebSocket
+      const results = await Promise.allSettled(
+        IMPORT_RELAYS.map(url => queryRelayRaw(url, [filter]))
       );
+
+      for (const result of results) {
+        if (result.status === 'fulfilled') {
+          for (const ev of result.value) {
+            if (!seenIds.has(ev.id)) {
+              seenIds.add(ev.id);
+              allEvents.push(ev);
+            }
+          }
+        }
+      }
 
       return parseNIP58Events(allEvents);
     },
-    staleTime: 0, // always fetch fresh when panel opens
+    staleTime: 0,
     gcTime: 0,
   });
 
