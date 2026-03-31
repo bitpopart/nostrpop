@@ -652,10 +652,77 @@ Analytics can be configured in Admin → Analytics tab:
 - Manual integration via index.html
 - Code generator provided in admin panel
 
+## NIP-58 Badge System (Kinds 30009, 8, 10008)
+
+The `/badges` page implements the standard **NIP-58** badge protocol. No custom kinds are used for badge definitions or awards.
+
+### Badge Definition (Kind 30009)
+
+Addressable event published by the badge issuer (admin pubkey):
+
+```json
+{
+  "kind": 30009,
+  "tags": [
+    ["d", "<unique-badge-id>"],
+    ["name", "<badge name>"],
+    ["description", "<what this badge means>"],
+    ["image", "<high-res-url>", "1024x1024"],
+    ["thumb", "<url>", "512x512"],
+    ["thumb", "<url>", "256x256"],
+    ["thumb", "<url>", "64x64"]
+  ]
+}
+```
+
+### Badge Award (Kind 8)
+
+Published by the issuer to award one or more pubkeys:
+
+```json
+{
+  "kind": 8,
+  "tags": [
+    ["a", "30009:<issuer-pubkey>:<badge-id>"],
+    ["p", "<recipient-pubkey>", "<relay>"],
+    ["p", "<recipient-pubkey>", "<relay>"]
+  ]
+}
+```
+
+### Profile Badges (Kind 10008 — per NIP proposal #2275)
+
+The profile badges list should use **kind 10008** (replaceable), **not** kind 30008 (addressable).
+
+Rationale: Profile badges belong to a single user and should behave like a contact list (replaceable). Using 30008 (addressable) was a historical mistake carried over from deprecated NIP-51 lists.
+
+Reference: https://github.com/nostr-protocol/nips/issues/2275
+
+```json
+{
+  "kind": 10008,
+  "pubkey": "<user-pubkey>",
+  "tags": [
+    ["a", "30009:<issuer-pubkey>:<badge-id>"],
+    ["e", "<badge-award-event-id>", "<relay>"],
+    ["a", "30009:<issuer-pubkey>:<badge-id-2>"],
+    ["e", "<badge-award-event-id-2>", "<relay>"]
+  ]
+}
+```
+
+The `/badges` page queries both kind 10008 and the legacy kind 30008, preferring 10008 when present.
+
+### Badge Sets (Kind 30008)
+
+Kind 30008 is now repurposed as "Badge Sets" — curated collections of badges (comparable to playlists). The BitPopArt platform does not currently use badge sets.
+
 ## References
 
 - [NIP-15: Nostr Marketplace](https://github.com/nostr-protocol/nips/blob/master/15.md)
 - [NIP-23: Long-form Content](https://github.com/nostr-protocol/nips/blob/master/23.md)
+- [NIP-58: Badges](https://github.com/nostr-protocol/nips/blob/master/58.md)
 - [NIP-94: File Metadata](https://github.com/nostr-protocol/nips/blob/master/94.md)
 - [NIP-99: Classified Listings](https://github.com/nostr-protocol/nips/blob/master/99.md)
 - [NIP-B7: Blossom](https://github.com/hzrd149/blossom)
+- [NIP proposal #2275 — kind 10008 for Profile Badges](https://github.com/nostr-protocol/nips/issues/2275)

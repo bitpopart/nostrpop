@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useSeoMeta } from '@unhead/react';
 import { useNostr } from '@nostrify/react';
 import { useQuery } from '@tanstack/react-query';
-import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,7 +15,7 @@ import { ZapButton } from '@/components/ZapButton';
 import { ShareDialog } from '@/components/share/ShareDialog';
 import { Sparkles, ArrowRight, Users, Zap, Award, Share2, Image as ImageIcon } from 'lucide-react';
 import { useNostrProjects } from '@/hooks/useNostrProjects';
-import { useBadges } from '@/hooks/useBadges';
+import { useNIP58BadgeDefinitions, useNIP58BadgeAwards } from '@/hooks/useNIP58Badges';
 import { nip19 } from 'nostr-tools';
 import type { ProjectData } from '@/lib/projectTypes';
 
@@ -65,8 +65,10 @@ export default function Projects() {
   // Fetch Nostr Projects (collaborative art)
   const { data: nostrProjects = [] } = useNostrProjects();
 
-  // Fetch POP Badges
-  const { data: badges = [] } = useBadges();
+  // Fetch NIP-58 badge definitions (kind 30009)
+  const { data: nip58Definitions = [] } = useNIP58BadgeDefinitions();
+  const badgeAddrs = nip58Definitions.map(d => `30009:${d.pubkey}:${d.id}`);
+  const { data: nip58Awards = [] } = useNIP58BadgeAwards(badgeAddrs);
 
   // Fetch built-in project customizations
   const { data: builtInCustomizations = [] } = useQuery({
@@ -511,65 +513,106 @@ export default function Projects() {
             </div>
           )}
 
-          {/* Badges Section */}
-          {badges.length > 0 && (
-            <div className="mt-16 max-w-6xl mx-auto">
-              <div className="text-center mb-8">
-                <div className="flex items-center justify-center mb-4">
-                  <Award className="h-8 w-8 text-yellow-600 mr-3" />
-                  <h2 className="text-4xl font-bold bg-gradient-to-r from-yellow-600 via-orange-600 to-red-600 bg-clip-text text-transparent">
-                    Badges
-                  </h2>
+          {/* Badges Section — always shown under Nostr Projects */}
+          <div className="mt-16 max-w-6xl mx-auto">
+            <div className="text-center mb-8">
+              <div className="flex items-center justify-center mb-4">
+                <Award className="h-8 w-8 text-purple-600 mr-3" />
+                <h2 className="text-4xl font-bold bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                  Nostr Badges
+                </h2>
+              </div>
+              <p className="text-lg text-gray-600 dark:text-gray-300">
+                Exclusive NIP-58 badges by BitPopArt — collect &amp; display on your Nostr profile
+              </p>
+            </div>
+
+            {nip58Definitions.length > 0 ? (
+              <>
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                  {nip58Definitions.slice(0, 6).map((def) => {
+                    const thumb =
+                      def.thumbs.find(t => t.size === '256x256')?.url ??
+                      def.thumbs[0]?.url ??
+                      def.image;
+                    const coord = `30009:${def.pubkey}:${def.id}`;
+                    const awardeeCount = new Set(
+                      nip58Awards.filter(a => a.badgeAddr === coord).flatMap(a => a.awardees)
+                    ).size;
+
+                    return (
+                      <Card
+                        key={def.id}
+                        className="group overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-300 bg-white dark:bg-gray-800"
+                        onClick={() => navigate('/badges')}
+                      >
+                        {/* Badge Image */}
+                        <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/20 dark:to-pink-900/20">
+                          {thumb ? (
+                            <img
+                              src={thumb}
+                              alt={def.name}
+                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Award className="h-10 w-10 text-purple-300" />
+                            </div>
+                          )}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                        </div>
+
+                        {/* Content */}
+                        <CardHeader className="pb-3 pt-3">
+                          <CardTitle className="text-sm group-hover:text-purple-600 transition-colors truncate">
+                            {def.name}
+                          </CardTitle>
+                          {awardeeCount > 0 && (
+                            <Badge variant="outline" className="gap-1 w-fit text-xs">
+                              <Users className="h-3 w-3" />
+                              {awardeeCount}
+                            </Badge>
+                          )}
+                        </CardHeader>
+                      </Card>
+                    );
+                  })}
                 </div>
-                <p className="text-lg text-gray-600 dark:text-gray-300">
-                  Collect exclusive badges - Buy with sats and add to your Nostr profile
-                </p>
-              </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {badges.slice(0, 6).map((badge) => (
-                  <Card
-                    key={badge.id}
-                    className="group overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-300 bg-white dark:bg-gray-800"
-                    onClick={() => navigate(`/badges#${badge.id}`)}
-                  >
-                    {/* Badge Image */}
-                    <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-yellow-100 to-orange-100 dark:from-yellow-900/20 dark:to-orange-900/20">
-                      <img
-                        src={badge.image_url}
-                        alt={badge.title}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                    </div>
-
-                    {/* Content */}
-                    <CardHeader className="pb-3 pt-3">
-                      <CardTitle className="text-sm group-hover:text-orange-600 transition-colors truncate">
-                        {badge.title}
-                      </CardTitle>
-                      <Badge variant="default" className="gap-1 w-fit">
-                        <Zap className="h-3 w-3" />
-                        <span className="text-xs">{badge.price_sats.toLocaleString()}</span>
-                      </Badge>
-                    </CardHeader>
-                  </Card>
-                ))}
-              </div>
-
-              {badges.length > 6 && (
                 <div className="text-center mt-6">
-                  <Button variant="outline" asChild>
-                    <a href="/badges" className="flex items-center space-x-2">
-                      <Award className="h-4 w-4" />
-                      <span>View All Badges</span>
-                      <ArrowRight className="h-4 w-4" />
-                    </a>
+                  <Button
+                    className="gap-2 bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 hover:from-pink-700 hover:via-purple-700 hover:to-indigo-700 text-white border-0"
+                    onClick={() => navigate('/badges')}
+                  >
+                    <Award className="h-4 w-4" />
+                    View All Badges
+                    <ArrowRight className="h-4 w-4" />
                   </Button>
                 </div>
-              )}
-            </div>
-          )}
+              </>
+            ) : (
+              <Card
+                className="group overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-300 bg-white/80 dark:bg-gray-800/80 border-dashed border-purple-200 dark:border-purple-800 max-w-sm mx-auto"
+                onClick={() => navigate('/badges')}
+              >
+                <CardContent className="py-10 text-center space-y-3">
+                  <Award className="h-12 w-12 mx-auto text-purple-400" />
+                  <p className="font-semibold text-purple-700 dark:text-purple-300">Nostr Badges</p>
+                  <p className="text-sm text-muted-foreground">
+                    Exclusive NIP-58 badges — collect &amp; show on your profile
+                  </p>
+                  <Badge
+                    variant="secondary"
+                    className="gap-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300"
+                  >
+                    <Sparkles className="h-3 w-3" />
+                    Explore Badges
+                    <ArrowRight className="h-3 w-3" />
+                  </Badge>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </>
         )}
 
