@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNostr } from '@nostrify/react';
+import { NRelay1 } from '@nostrify/nostrify';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -28,8 +29,16 @@ import type { NostrEvent } from '@nostrify/nostrify';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-// BitPopArt admin pubkey (hex) — the account whose badges.page badges we import
+// BitPopArt admin pubkey (hex) — the account whose badges we import from ditto.pub
 const BITPOPART_PUBKEY = '43baaf0c28e6cfb195b17ee083e19eb3a4afdfac54d9b6baf170270ed193e34c';
+
+// Relays to query when importing — ditto.pub first, then broad fallbacks
+const IMPORT_RELAYS = [
+  'wss://ditto.pub/relay',
+  'wss://relay.damus.io',
+  'wss://relay.primal.net',
+  'wss://relay.nostr.band',
+];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -125,25 +134,46 @@ function ImportPanel({
   existingIds: Set<string>;
   onImported: () => void;
 }) {
-  const { nostr } = useNostr();
   const { mutate: createEvent } = useNostrPublish();
   const queryClient = useQueryClient();
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [importing, setImporting] = useState(false);
 
-  // Fetch all kind:30009 badges from the BitPopArt pubkey (visible on ditto.pub/badges)
+  // Fetch all kind:30009 badges from the BitPopArt pubkey across multiple relays.
+  // We bypass the app pool and query each relay directly so we're not dependent
+  // on whichever relay the user happens to have selected.
   const { data: sourceBadges = [], isLoading, refetch, isFetching } = useQuery({
     queryKey: ['ditto-badge-import', BITPOPART_PUBKEY],
     queryFn: async (c) => {
-      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(10000)]);
-      const events = await nostr.query(
-        [{ kinds: [30009], authors: [BITPOPART_PUBKEY], limit: 200 }],
-        { signal }
+      const filter = [{ kinds: [30009], authors: [BITPOPART_PUBKEY], limit: 200 }];
+      const seenIds = new Set<string>();
+      const allEvents: NostrEvent[] = [];
+
+      // Query all relays in parallel, collect everything that comes back
+      await Promise.allSettled(
+        IMPORT_RELAYS.map(async (url) => {
+          const relay = new NRelay1(url);
+          try {
+            const signal = AbortSignal.any([c.signal, AbortSignal.timeout(8000)]);
+            const events = await relay.query(filter, { signal });
+            for (const ev of events) {
+              if (!seenIds.has(ev.id)) {
+                seenIds.add(ev.id);
+                allEvents.push(ev);
+              }
+            }
+          } finally {
+            // Close the relay connection
+            relay[Symbol.asyncDispose]?.().catch(() => {});
+          }
+        })
       );
-      return parseNIP58Events(events);
+
+      return parseNIP58Events(allEvents);
     },
-    staleTime: 30_000,
+    staleTime: 0, // always fetch fresh when panel opens
+    gcTime: 0,
   });
 
   const toggle = (id: string) => {
