@@ -58,7 +58,7 @@ export function useZap(lightningAddress?: string) {
           kind: 9734,
           content: options.comment || '',
           tags: [
-            ['relays', ...(options.relays || ['wss://relay.nostr.band'])],
+            ['relays', ...(options.relays || ['wss://relay.ditto.pub'])],
             ['amount', (options.amount * 1000).toString()], // Convert to millisats
             ['lnurl', lightningAddress],
             ['p', options.recipientPubkey],
@@ -122,7 +122,7 @@ export function useZap(lightningAddress?: string) {
       tags: [
         ['p', options.recipientPubkey],
         ['amount', (options.amount * 1000).toString()],
-        ['relays', 'wss://relay.nostr.band'],
+        ['relays', 'wss://relay.ditto.pub'],
         ...(options.eventId ? [['e', options.eventId]] : [])
       ]
     }, {

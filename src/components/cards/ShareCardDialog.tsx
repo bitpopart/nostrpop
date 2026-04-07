@@ -177,7 +177,7 @@ export function ShareCardDialog({ cardId, cardTitle, cardAuthor, cardUrl, childr
       amount,
       comment: zapContent,
       eventId: cardId,
-      relays: ['wss://relay.nostr.band']
+      relays: ['wss://relay.ditto.pub']
     });
 
     if (success) {
