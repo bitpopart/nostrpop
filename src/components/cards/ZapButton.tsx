@@ -66,7 +66,7 @@ export function ZapButton({
       amount,
       comment: zapContent,
       eventId,
-      relays: ['wss://relay.nostr.band']
+      relays: ['wss://relay.ditto.pub']
     });
 
     if (success) {

@@ -33,10 +33,10 @@ const BITPOPART_PUBKEY = '43baaf0c28e6cfb195b17ee083e19eb3a4afdfac54d9b6baf17027
 
 // Relays to query when importing — ditto.pub first (that's where the badges live)
 const IMPORT_RELAYS = [
-  'wss://ditto.pub/relay',
+  'wss://relay.ditto.pub',
+  'wss://relay.dreamith.to',
   'wss://relay.damus.io',
   'wss://relay.primal.net',
-  'wss://relay.nostr.band',
 ];
 
 // ─── Raw WebSocket relay query ────────────────────────────────────────────────
