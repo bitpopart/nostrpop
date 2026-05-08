@@ -166,8 +166,16 @@ export function PopUpManagement() {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    const isHtml = file.type === 'text/html' || /\.(html?|xhtml)$/i.test(file.name);
+
+    if (!isPdf && !isHtml) {
+      toast.error('Please upload a PDF or HTML file.');
+      return;
+    }
+
     if (file.size > 15 * 1024 * 1024) {
-      toast.error('PDF is larger than 15MB. Please choose a smaller file.');
+      toast.error('File is larger than 15MB. Please choose a smaller file.');
       return;
     }
 
@@ -177,11 +185,11 @@ export function PopUpManagement() {
       if (url) {
         setFormData(prev => ({ ...prev, brandSite: url }));
         setBrandSiteMode('url');
-        toast.success('PDF uploaded and linked to Event Brand Website.');
+        toast.success(`${isPdf ? 'PDF' : 'HTML file'} uploaded and linked to Event Brand Website.`);
       }
     } catch (error) {
-      console.error('Brand site PDF upload error:', error);
-      toast.error('Failed to upload PDF');
+      console.error('Brand site file upload error:', error);
+      toast.error('Failed to upload file');
     } finally {
       if (brandSitePdfInputRef.current) {
         brandSitePdfInputRef.current.value = '';
@@ -707,16 +715,16 @@ export function PopUpManagement() {
                     <input
                       ref={brandSitePdfInputRef}
                       type="file"
-                      accept="application/pdf"
+                      accept="application/pdf,text/html,.html,.htm,.xhtml"
                       className="hidden"
                       onChange={handleBrandSitePdfUpload}
                     />
                     <Button type="button" variant="outline" onClick={() => brandSitePdfInputRef.current?.click()}>
                       <Upload className="h-4 w-4 mr-2" />
-                      Upload PDF
+                      Upload PDF / HTML file
                     </Button>
                     <p className="text-xs text-muted-foreground">
-                      The uploaded PDF will be hosted and linked here automatically.
+                      The uploaded PDF or HTML file will be hosted and linked here automatically.
                     </p>
                   </div>
                 )}
