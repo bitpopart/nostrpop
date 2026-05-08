@@ -271,7 +271,7 @@ export function PopUpManagement() {
     const image = event.tags.find(t => t[0] === 'image')?.[1] || '';
     const galleryImages = event.tags.filter(t => t[0] === 'gallery').map(t => t[1]);
     const link = event.tags.find(t => t[0] === 'r')?.[1] || '';
-    const brandSite = event.tags.find(t => t[0] === 'brand-site')?.[1] || '';
+    const brandSite = event.tags.find(t => t[0] === 'brand-site')?.[1] || event.tags.find(t => t[0] === 'website')?.[1] || '';
     const type = event.tags.find(t => t[0] === 't' && ['art', 'shop', 'event'].includes(t[1]))?.[1] as PopUpType || 'art';
     const status = event.tags.find(t => t[0] === 'status')?.[1] as PopUpStatus || 'confirmed';
     const finished = event.tags.find(t => t[0] === 'finished')?.[1] === 'true';
