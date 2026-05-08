@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useMemo, useState, useRef } from 'react';
 import { useNostr } from '@nostrify/react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -23,7 +23,10 @@ import {
   Edit,
   X,
   Upload,
-  CheckCircle2
+  CheckCircle2,
+  Globe,
+  FileText,
+  Link as LinkIcon
 } from 'lucide-react';
 import { format } from 'date-fns';
 import type { NostrEvent } from '@nostrify/nostrify';
@@ -46,6 +49,8 @@ interface PopUpFormData {
   finished: boolean;
 }
 
+type BrandSiteInputMode = 'url' | 'html' | 'pdf';
+
 export function PopUpManagement() {
   const { nostr } = useNostr();
   const { user } = useCurrentUser();
@@ -58,7 +63,10 @@ export function PopUpManagement() {
   const [editingEvent, setEditingEvent] = useState<NostrEvent | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadingGallery, setUploadingGallery] = useState(false);
+  const [brandSiteMode, setBrandSiteMode] = useState<BrandSiteInputMode>('url');
+  const [brandSiteHtml, setBrandSiteHtml] = useState('');
   const galleryFileInputRef = useRef<HTMLInputElement>(null);
+  const brandSitePdfInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState<PopUpFormData>({
     title: '',
     description: '',
@@ -152,6 +160,46 @@ export function PopUpManagement() {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+  };
+
+  const handleBrandSitePdfUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error('PDF is larger than 15MB. Please choose a smaller file.');
+      return;
+    }
+
+    try {
+      const tags = await uploadFile(file);
+      const url = tags[0]?.[1];
+      if (url) {
+        setFormData(prev => ({ ...prev, brandSite: url }));
+        setBrandSiteMode('url');
+        toast.success('PDF uploaded and linked to Event Brand Website.');
+      }
+    } catch (error) {
+      console.error('Brand site PDF upload error:', error);
+      toast.error('Failed to upload PDF');
+    } finally {
+      if (brandSitePdfInputRef.current) {
+        brandSitePdfInputRef.current.value = '';
+      }
+    }
+  };
+
+  const applyBrandSiteHtml = () => {
+    if (!brandSiteHtml.trim()) {
+      toast.error('Paste your HTML code first.');
+      return;
+    }
+
+    const htmlBlob = new Blob([brandSiteHtml], { type: 'text/html' });
+    const url = URL.createObjectURL(htmlBlob);
+    setFormData(prev => ({ ...prev, brandSite: url }));
+    setBrandSiteMode('url');
+    toast.success('HTML page created for Event Brand Website.');
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -608,17 +656,73 @@ export function PopUpManagement() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="brandSite">Event Brand Website (optional)</Label>
-                <Input
-                  id="brandSite"
-                  type="url"
-                  placeholder="https://example.com/project-site-or-brochure.pdf"
-                  value={formData.brandSite}
-                  onChange={(e) => handleInputChange('brandSite', e.target.value)}
-                />
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <Label htmlFor="brandSite">Event Brand Website (optional)</Label>
+                  <div className="flex items-center gap-2 rounded-md border p-1">
+                    <Button type="button" size="sm" variant={brandSiteMode === 'url' ? 'default' : 'ghost'} onClick={() => setBrandSiteMode('url')}>
+                      URL
+                    </Button>
+                    <Button type="button" size="sm" variant={brandSiteMode === 'html' ? 'default' : 'ghost'} onClick={() => setBrandSiteMode('html')}>
+                      HTML
+                    </Button>
+                    <Button type="button" size="sm" variant={brandSiteMode === 'pdf' ? 'default' : 'ghost'} onClick={() => setBrandSiteMode('pdf')}>
+                      PDF
+                    </Button>
+                  </div>
+                </div>
+
+                {brandSiteMode === 'url' && (
+                  <Input
+                    id="brandSite"
+                    type="url"
+                    placeholder="https://example.com/project-site-or-brochure.pdf"
+                    value={formData.brandSite}
+                    onChange={(e) => handleInputChange('brandSite', e.target.value)}
+                  />
+                )}
+
+                {brandSiteMode === 'html' && (
+                  <div className="space-y-2">
+                    <Textarea
+                      value={brandSiteHtml}
+                      onChange={(e) => setBrandSiteHtml(e.target.value)}
+                      rows={10}
+                      placeholder="Paste full HTML code here (it will be converted into a page URL)."
+                    />
+                    <div className="flex flex-wrap gap-2">
+                      <Button type="button" variant="outline" onClick={applyBrandSiteHtml}>
+                        <FileText className="h-4 w-4 mr-2" />
+                        Create page from HTML
+                      </Button>
+                      <Button type="button" variant="ghost" onClick={() => setBrandSiteHtml('')}>
+                        Clear HTML
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {brandSiteMode === 'pdf' && (
+                  <div className="space-y-2">
+                    <input
+                      ref={brandSitePdfInputRef}
+                      type="file"
+                      accept="application/pdf"
+                      className="hidden"
+                      onChange={handleBrandSitePdfUpload}
+                    />
+                    <Button type="button" variant="outline" onClick={() => brandSitePdfInputRef.current?.click()}>
+                      <Upload className="h-4 w-4 mr-2" />
+                      Upload PDF
+                    </Button>
+                    <p className="text-xs text-muted-foreground">
+                      The uploaded PDF will be hosted and linked here automatically.
+                    </p>
+                  </div>
+                )}
+
                 <p className="text-xs text-muted-foreground">
-                  Add a URL for extra event info, brochure, brand downloads, a hosted PDF, or a full HTML page. It opens inside the BitPopArt site.
+                  Add a URL, upload a PDF, or create a page from full HTML code. It opens inside the BitPopArt site.
                 </p>
               </div>
 

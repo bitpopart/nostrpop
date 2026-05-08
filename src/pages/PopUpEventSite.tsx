@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useSeoMeta } from '@unhead/react';
 import { useNostr } from '@nostrify/react';
@@ -45,6 +45,8 @@ export default function PopUpEventSite() {
       return eventData.brandSite;
     }
   }, [eventData?.brandSite]);
+
+  const [iframeKey, setIframeKey] = useState(0);
 
   useSeoMeta({
     title: eventData ? `${eventData.title} - Event Project Site` : 'Event Project Site',
@@ -96,17 +98,23 @@ export default function PopUpEventSite() {
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Event Project Site</p>
             <h1 className="truncate font-semibold">{eventData.title}</h1>
           </div>
-          <Button asChild variant="outline">
-            <a href={frameUrl} target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Open
-            </a>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => setIframeKey((value) => value + 1)}>
+              Reload
+            </Button>
+            <Button asChild variant="outline">
+              <a href={frameUrl} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Open
+              </a>
+            </Button>
+          </div>
         </div>
       </div>
 
       <main className="h-[calc(100vh-65px)]">
-        <iframe
+          <iframe
+          key={iframeKey}
           title={`${eventData.title} project site`}
           src={frameUrl}
           className="h-full w-full border-0"
