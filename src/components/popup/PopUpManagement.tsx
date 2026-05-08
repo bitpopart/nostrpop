@@ -162,7 +162,7 @@ export function PopUpManagement() {
     }
   };
 
-  const handleBrandSitePdfUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBrandSiteFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -180,12 +180,21 @@ export function PopUpManagement() {
     }
 
     try {
+      if (isHtml) {
+        const html = await file.text();
+        const dataUrl = `data:text/html;charset=utf-8,${encodeURIComponent(html)}`;
+        setFormData(prev => ({ ...prev, brandSite: dataUrl }));
+        setBrandSiteMode('url');
+        toast.success('HTML file added to Event Brand Website.');
+        return;
+      }
+
       const tags = await uploadFile(file);
       const url = tags[0]?.[1];
       if (url) {
         setFormData(prev => ({ ...prev, brandSite: url }));
         setBrandSiteMode('url');
-        toast.success(`${isPdf ? 'PDF' : 'HTML file'} uploaded and linked to Event Brand Website.`);
+        toast.success('PDF uploaded and linked to Event Brand Website.');
       }
     } catch (error) {
       console.error('Brand site file upload error:', error);
@@ -717,7 +726,7 @@ export function PopUpManagement() {
                       type="file"
                       accept="application/pdf,text/html,.html,.htm,.xhtml"
                       className="hidden"
-                      onChange={handleBrandSitePdfUpload}
+                      onChange={handleBrandSiteFileUpload}
                     />
                     <Button type="button" variant="outline" onClick={() => brandSitePdfInputRef.current?.click()}>
                       <Upload className="h-4 w-4 mr-2" />

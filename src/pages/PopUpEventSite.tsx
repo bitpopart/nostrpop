@@ -38,13 +38,10 @@ export default function PopUpEventSite() {
 
   const frameUrl = useMemo(() => {
     if (!eventData?.brandSite) return '';
-
-    try {
-      return new URL(eventData.brandSite).toString();
-    } catch {
-      return eventData.brandSite;
-    }
+    return eventData.brandSite;
   }, [eventData?.brandSite]);
+
+  const isDataUrl = frameUrl.startsWith('data:text/html');
 
   const [iframeKey, setIframeKey] = useState(0);
 
@@ -118,7 +115,7 @@ export default function PopUpEventSite() {
           title={`${eventData.title} project site`}
           src={frameUrl}
           className="h-full w-full border-0"
-          sandbox="allow-downloads allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-presentation allow-same-origin allow-scripts"
+          sandbox={isDataUrl ? undefined : 'allow-downloads allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-presentation allow-same-origin allow-scripts'}
         />
       </main>
 
