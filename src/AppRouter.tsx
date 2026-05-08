@@ -17,6 +17,7 @@ import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
 import PopUp from "./pages/PopUp";
 import PopUpEventView from "./pages/PopUpEventView";
+import PopUpEventSite from "./pages/PopUpEventSite";
 import Artist from "./pages/Artist";
 import Projects from "./pages/Projects";
 import NostrProjects from "./pages/NostrProjects";
@@ -57,6 +58,7 @@ export function AppRouter() {
           <Route path="/blog/:articleId" element={<BlogPost />} />
           <Route path="/popup" element={<PopUp />} />
           <Route path="/popup/:eventId" element={<PopUpEventView />} />
+          <Route path="/popup/:eventId/site" element={<PopUpEventSite />} />
           <Route path="/artist" element={<Artist />} />
           <Route path="/projects" element={<Projects />} />
           <Route path="/nostr-projects" element={<NostrProjects />} />
