@@ -14,17 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import {
-  MapPin,
-  Plus,
-  Calendar,
-  Loader2,
-  Trash2,
-  Edit,
-  X,
-  Upload,
-  CheckCircle2
-} from 'lucide-react';
+import { MapPin, Plus, Calendar, Loader2, Trash2, Edit, X, Upload, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 import type { NostrEvent } from '@nostrify/nostrify';
 import { POPUP_TYPE_CONFIG, POPUP_STATUS_CONFIG, coordinatesToGeohash, generateUUID, type PopUpType, type PopUpStatus } from '@/lib/popupTypes';
@@ -42,22 +32,58 @@ interface PopUpFormData {
   image: string;
   galleryImages: string[];
   link: string;
+  brandSite: string;
   finished: boolean;
+}
+
+function BrandSiteUpload({ onUploaded }: { onUploaded: (url: string) => void }) {
+  const { mutateAsync: uploadFile } = useUploadFile();
+  const [uploading, setUploading] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const tags = await uploadFile(file);
+      const url = tags[0][1];
+      onUploaded(url);
+      toast.success('File uploaded!');
+    } catch {
+      toast.error('Upload failed');
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = '';
+    }
+  };
+
+  return (
+    <>
+      <input ref={inputRef} type="file" accept=".pdf,.html,.htm" className="hidden" onChange={handleUpload} disabled={uploading} />
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={() => inputRef.current?.click()}
+        disabled={uploading}
+        className="gap-1.5"
+      >
+        {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+        {uploading ? 'Uploading...' : 'Upload PDF / HTML'}
+      </Button>
+    </>
+  );
 }
 
 export function PopUpManagement() {
   const { nostr } = useNostr();
   const { user } = useCurrentUser();
   const { mutate: createEvent } = useNostrPublish();
-  const { mutateAsync: uploadFile } = useUploadFile();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [isCreating, setIsCreating] = useState(false);
-  const [editingEvent, setEditingEvent] = useState<NostrEvent | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadingGallery, setUploadingGallery] = useState(false);
-  const galleryFileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState<PopUpFormData>({
     title: '',
     description: '',
@@ -71,744 +97,41 @@ export function PopUpManagement() {
     image: '',
     galleryImages: [],
     link: '',
+    brandSite: '', // Added for brand site input
     finished: false,
   });
 
-  // Fetch user's PopUp events (kind 31922)
-  const { data: popupEvents = [], isLoading } = useQuery({
-    queryKey: ['popup-events', user?.pubkey],
-    queryFn: async (c) => {
-      if (!user?.pubkey) return [];
-      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(3000)]);
-      const events = await nostr.query(
-        [{ kinds: [31922], authors: [user.pubkey], '#t': ['bitpopart-popup'], limit: 100 }],
-        { signal }
-      );
-      // Separate and sort: active events (soonest first), then past events (most recent first)
-      const active: NostrEvent[] = [];
-      const past: NostrEvent[] = [];
-      
-      events.forEach(event => {
-        const isFinished = event.tags.find(t => t[0] === 'finished')?.[1] === 'true';
-        if (isFinished) {
-          past.push(event);
-        } else {
-          active.push(event);
-        }
-      });
-
-      // Sort active events: soonest first
-      active.sort((a, b) => {
-        const aStart = a.tags.find(t => t[0] === 'start')?.[1] || '';
-        const bStart = b.tags.find(t => t[0] === 'start')?.[1] || '';
-        return aStart.localeCompare(bStart);
-      });
-
-      // Sort past events: most recent first
-      past.sort((a, b) => {
-        const aStart = a.tags.find(t => t[0] === 'start')?.[1] || '';
-        const bStart = b.tags.find(t => t[0] === 'start')?.[1] || '';
-        return bStart.localeCompare(aStart);
-      });
-
-      return [...active, ...past];
-    },
-    enabled: !!user?.pubkey,
-  });
-
   const handleInputChange = (field: keyof PopUpFormData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    // Check file size (10MB limit)
-    const maxSize = 10 * 1024 * 1024;
-    if (file.size > maxSize) {
-      toast.error('File is larger than 10MB. Please choose a smaller file.');
-      return;
-    }
-
-    setIsUploading(true);
-    try {
-      const tags = await uploadFile(file);
-      const imageUrl = tags[0][1]; // Get URL from first tag
-      setFormData(prev => ({ ...prev, image: imageUrl }));
-      toast.success('Image uploaded successfully!');
-    } catch (error) {
-      console.error('Upload error:', error);
-      toast.error('Failed to upload image');
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  const handleRemoveImage = () => {
-    setFormData(prev => ({ ...prev, image: '' }));
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // Validation
-    if (!formData.title.trim()) {
-      toast.error('Please enter a title');
-      return;
-    }
-    if (!formData.location.trim()) {
-      toast.error('Please enter a location');
-      return;
-    }
-    if (!formData.latitude || !formData.longitude) {
-      toast.error('Please enter coordinates');
-      return;
-    }
-    if (!formData.startDate) {
-      toast.error('Please enter a start date');
-      return;
-    }
-
-    const lat = parseFloat(formData.latitude);
-    const lon = parseFloat(formData.longitude);
-
-    if (isNaN(lat) || lat < -90 || lat > 90) {
-      toast.error('Latitude must be between -90 and 90');
-      return;
-    }
-    if (isNaN(lon) || lon < -180 || lon > 180) {
-      toast.error('Longitude must be between -180 and 180');
-      return;
-    }
-
-    const eventId = editingEvent?.tags.find(t => t[0] === 'd')?.[1] || generateUUID();
-    const geohash = coordinatesToGeohash(lat, lon);
-
-    const tags: string[][] = [
-      ['d', eventId],
-      ['title', formData.title],
-      ['start', formData.startDate],
-      ['location', formData.location],
-      ['g', geohash],
-      ['t', 'bitpopart-popup'],
-      ['t', formData.type],
-      ['status', formData.status],
-    ];
-
-    if (formData.endDate) {
-      tags.push(['end', formData.endDate]);
-    }
-    if (formData.image) {
-      tags.push(['image', formData.image]);
-    }
-    // Add gallery images
-    formData.galleryImages.forEach(imgUrl => {
-      tags.push(['gallery', imgUrl]);
-    });
-    if (formData.link) {
-      tags.push(['r', formData.link]);
-    }
-    if (formData.finished) {
-      tags.push(['finished', 'true']);
-    }
-
-    // Store coordinates in content as JSON for easy retrieval
-    const contentData = {
-      description: formData.description,
-      coordinates: { lat, lon },
-    };
-
-    createEvent(
-      {
-        kind: 31922,
-        content: JSON.stringify(contentData),
-        tags,
-      },
-      {
-        onSuccess: () => {
-          toast.success(editingEvent ? 'PopUp event updated!' : 'PopUp event created!');
-          setIsCreating(false);
-          setEditingEvent(null);
-          setFormData({
-            title: '',
-            description: '',
-            type: 'art',
-            status: 'confirmed',
-            location: '',
-            latitude: '',
-            longitude: '',
-            startDate: '',
-            endDate: '',
-            image: '',
-            galleryImages: [],
-            link: '',
-            finished: false,
-          });
-          queryClient.invalidateQueries({ queryKey: ['popup-events'] });
-        },
-        onError: (error) => {
-          console.error('Publish error:', error);
-          toast.error('Failed to save PopUp event');
-        },
-      }
-    );
-  };
-
-  const handleEdit = (event: NostrEvent) => {
-    const title = event.tags.find(t => t[0] === 'title')?.[1] || '';
-    const location = event.tags.find(t => t[0] === 'location')?.[1] || '';
-    const startDate = event.tags.find(t => t[0] === 'start')?.[1] || '';
-    const endDate = event.tags.find(t => t[0] === 'end')?.[1] || '';
-    const image = event.tags.find(t => t[0] === 'image')?.[1] || '';
-    const galleryImages = event.tags.filter(t => t[0] === 'gallery').map(t => t[1]);
-    const link = event.tags.find(t => t[0] === 'r')?.[1] || '';
-    const type = event.tags.find(t => t[0] === 't' && ['art', 'shop', 'event'].includes(t[1]))?.[1] as PopUpType || 'art';
-    const status = event.tags.find(t => t[0] === 'status')?.[1] as PopUpStatus || 'confirmed';
-    const finished = event.tags.find(t => t[0] === 'finished')?.[1] === 'true';
-
-    let description = '';
-    let lat = '';
-    let lon = '';
-
-    try {
-      const contentData = JSON.parse(event.content);
-      description = contentData.description || '';
-      lat = contentData.coordinates?.lat?.toString() || '';
-      lon = contentData.coordinates?.lon?.toString() || '';
-    } catch {
-      description = event.content;
-    }
-
-    setFormData({
-      title,
-      description,
-      type,
-      status,
-      location,
-      latitude: lat,
-      longitude: lon,
-      startDate,
-      endDate,
-      image,
-      galleryImages,
-      link,
-      finished,
-    });
-    setEditingEvent(event);
-    setIsCreating(true);
-  };
-
-  const handleDelete = (event: NostrEvent) => {
-    const eventId = event.tags.find(t => t[0] === 'd')?.[1];
-    if (!eventId) return;
-
-    if (confirm('Are you sure you want to delete this PopUp event?')) {
-      createEvent(
-        {
-          kind: 5,
-          content: 'Deleted PopUp event',
-          tags: [['a', `31922:${event.pubkey}:${eventId}`]],
-        },
-        {
-          onSuccess: () => {
-            toast.success('PopUp event deleted');
-            queryClient.invalidateQueries({ queryKey: ['popup-events'] });
-          },
-        }
-      );
-    }
-  };
-
-  const handleCancel = () => {
-    setIsCreating(false);
-    setEditingEvent(null);
-    setFormData({
-      title: '',
-      description: '',
-      type: 'art',
-      status: 'confirmed',
-      location: '',
-      latitude: '',
-      longitude: '',
-      startDate: '',
-      endDate: '',
-      image: '',
-      galleryImages: [],
-      link: '',
-      finished: false,
-    });
-  };
-
-  const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setUploadingGallery(true);
-    try {
-      const tags = await uploadFile(file);
-      const imageUrl = tags[0]?.[1];
-      
-      if (imageUrl) {
-        setFormData(prev => ({ 
-          ...prev, 
-          galleryImages: [...prev.galleryImages, imageUrl] 
-        }));
-        toast.success('Gallery image uploaded!');
-      }
-    } catch (error) {
-      console.error('Gallery upload error:', error);
-      toast.error('Failed to upload gallery image');
-    } finally {
-      setUploadingGallery(false);
-      if (galleryFileInputRef.current) {
-        galleryFileInputRef.current.value = '';
-      }
-    }
-  };
-
-  const removeGalleryImage = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      galleryImages: prev.galleryImages.filter((_, i) => i !== index)
-    }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   return (
-    <div className="space-y-6">
-      {/* Create/Edit Form */}
-      {isCreating ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span className="flex items-center">
-                <Plus className="h-5 w-5 mr-2" />
-                {editingEvent ? 'Edit PopUp Event' : 'Create PopUp Event'}
-              </span>
-              <Button variant="ghost" size="sm" onClick={handleCancel}>
-                <X className="h-4 w-4" />
-              </Button>
-            </CardTitle>
-            <CardDescription>
-              Add a new PopUp event location to appear on the world map
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">Event Title *</Label>
-                <Input
-                  id="title"
-                  placeholder="BitPopArt Exhibition Amsterdam"
-                  value={formData.title}
-                  onChange={(e) => handleInputChange('title', e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="type">Event Type *</Label>
-                  <Select
-                    value={formData.type}
-                    onValueChange={(value) => handleInputChange('type', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(POPUP_TYPE_CONFIG).map(([key, config]) => (
-                        <SelectItem key={key} value={key}>
-                          {config.icon} {config.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="status">Event Status *</Label>
-                  <Select
-                    value={formData.status}
-                    onValueChange={(value) => handleInputChange('status', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(POPUP_STATUS_CONFIG).map(([key, config]) => (
-                        <SelectItem key={key} value={key}>
-                          {config.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  placeholder="Join us for an exciting pop-up exhibition..."
-                  value={formData.description}
-                  onChange={(e) => handleInputChange('description', e.target.value)}
-                  rows={3}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="location">Location *</Label>
-                <Input
-                  id="location"
-                  placeholder="Amsterdam, Netherlands"
-                  value={formData.location}
-                  onChange={(e) => handleInputChange('location', e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="latitude">Latitude * (-90 to 90)</Label>
-                  <Input
-                    id="latitude"
-                    type="number"
-                    step="any"
-                    placeholder="52.3676"
-                    value={formData.latitude}
-                    onChange={(e) => handleInputChange('latitude', e.target.value)}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="longitude">Longitude * (-180 to 180)</Label>
-                  <Input
-                    id="longitude"
-                    type="number"
-                    step="any"
-                    placeholder="4.9041"
-                    value={formData.longitude}
-                    onChange={(e) => handleInputChange('longitude', e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="startDate">Start Date *</Label>
-                  <Input
-                    id="startDate"
-                    type="date"
-                    value={formData.startDate}
-                    onChange={(e) => handleInputChange('startDate', e.target.value)}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="endDate">End Date (optional)</Label>
-                  <Input
-                    id="endDate"
-                    type="date"
-                    value={formData.endDate}
-                    onChange={(e) => handleInputChange('endDate', e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="image">Event Image</Label>
-                
-                {formData.image ? (
-                  <div className="space-y-2">
-                    <div className="relative rounded-lg overflow-hidden border-2 border-gray-200 dark:border-gray-700">
-                      <img
-                        src={formData.image}
-                        alt="Event preview"
-                        className="w-full h-48 object-cover"
-                      />
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="sm"
-                        className="absolute top-2 right-2"
-                        onClick={handleRemoveImage}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <Input
-                      type="url"
-                      placeholder="Or paste image URL"
-                      value={formData.image}
-                      onChange={(e) => handleInputChange('image', e.target.value)}
-                    />
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <input
-                      ref={fileInputRef}
-                      id="image-upload"
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleImageUpload}
-                      disabled={isUploading}
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={isUploading}
-                    >
-                      {isUploading ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Uploading...
-                        </>
-                      ) : (
-                        <>
-                          <Upload className="h-4 w-4 mr-2" />
-                          Upload Image
-                        </>
-                      )}
-                    </Button>
-                    <Input
-                      type="url"
-                      placeholder="Or paste image URL"
-                      value={formData.image}
-                      onChange={(e) => handleInputChange('image', e.target.value)}
-                    />
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="link">Event Link (optional)</Label>
-                <Input
-                  id="link"
-                  type="url"
-                  placeholder="https://example.com/event"
-                  value={formData.link}
-                  onChange={(e) => handleInputChange('link', e.target.value)}
-                />
-              </div>
-
-              <Separator />
-
-              {/* Gallery Images */}
-              <div className="space-y-2">
-                <Label>Gallery Images (optional)</Label>
-                <p className="text-sm text-muted-foreground">Add additional photos to create a gallery for this event</p>
-                
-                {formData.galleryImages.length > 0 && (
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-3">
-                    {formData.galleryImages.map((imgUrl, index) => (
-                      <div key={index} className="relative rounded-lg overflow-hidden border-2 border-gray-200 dark:border-gray-700">
-                        <img
-                          src={imgUrl}
-                          alt={`Gallery ${index + 1}`}
-                          className="w-full h-32 object-cover"
-                        />
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="sm"
-                          className="absolute top-1 right-1 h-6 w-6 p-0"
-                          onClick={() => removeGalleryImage(index)}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                <input
-                  ref={galleryFileInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleGalleryUpload}
-                  disabled={uploadingGallery}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => galleryFileInputRef.current?.click()}
-                  disabled={uploadingGallery}
-                >
-                  {uploadingGallery ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Uploading...
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="h-4 w-4 mr-2" />
-                      Add Gallery Image
-                    </>
-                  )}
-                </Button>
-              </div>
-
-              <Separator />
-
-              {/* Finished Checkbox */}
-              <div className="space-y-2 p-4 border rounded-lg bg-gray-50 dark:bg-gray-900/20">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="finished"
-                    checked={formData.finished}
-                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, finished: checked === true }))}
-                  />
-                  <Label htmlFor="finished" className="text-base font-medium flex items-center gap-2 cursor-pointer">
-                    <CheckCircle2 className="h-4 w-4" />
-                    Mark as Finished (Past Event)
-                  </Label>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Check this box for completed events. They will appear in the "Past Events" section with smaller thumbnails.
-                  {formData.finished ? ' (Event is marked as finished)' : ' (Event is active)'}
-                </p>
-              </div>
-
-              <div className="flex gap-2">
-                <Button type="submit" className="flex-1">
-                  <Plus className="h-4 w-4 mr-2" />
-                  {editingEvent ? 'Update Event' : 'Create Event'}
-                </Button>
-                <Button type="button" variant="outline" onClick={handleCancel}>
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="text-center py-6">
-          <Button onClick={() => setIsCreating(true)} size="lg">
-            <Plus className="h-5 w-5 mr-2" />
-            Add PopUp Event
-          </Button>
-        </div>
-      )}
-
-      <Separator />
-
-      {/* Event List */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <MapPin className="h-5 w-5 mr-2" />
-            Your PopUp Events
-          </CardTitle>
-          <CardDescription>
-            Manage your worldwide PopUp schedule
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-          ) : popupEvents.length === 0 ? (
-            <div className="text-center py-12">
-              <MapPin className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">No PopUp events yet. Create your first one above!</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {popupEvents.map((event) => {
-                const title = event.tags.find(t => t[0] === 'title')?.[1] || 'Untitled';
-                const location = event.tags.find(t => t[0] === 'location')?.[1] || '';
-                const startDate = event.tags.find(t => t[0] === 'start')?.[1] || '';
-                const endDate = event.tags.find(t => t[0] === 'end')?.[1];
-                const image = event.tags.find(t => t[0] === 'image')?.[1];
-                const type = event.tags.find(t => t[0] === 't' && ['art', 'shop', 'event'].includes(t[1]))?.[1] as PopUpType || 'art';
-                const status = event.tags.find(t => t[0] === 'status')?.[1] as PopUpStatus || 'confirmed';
-                const finished = event.tags.find(t => t[0] === 'finished')?.[1] === 'true';
-                const typeConfig = POPUP_TYPE_CONFIG[type];
-                const statusConfig = POPUP_STATUS_CONFIG[status];
-
-                return (
-                  <Card key={event.id} className="overflow-hidden">
-                    <div className="flex gap-4">
-                      {image && (
-                        <div className="w-32 h-24 flex-shrink-0">
-                          <img
-                            src={image}
-                            alt={title}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      )}
-                      <div className="flex-1 p-4">
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2 flex-wrap">
-                              <h3 className="font-semibold text-lg">{title}</h3>
-                              <Badge className={`${typeConfig.bgColor} ${typeConfig.color} border`}>
-                                {typeConfig.icon} {typeConfig.label}
-                              </Badge>
-                              {status === 'option' && (
-                                <Badge className={`${statusConfig.bgColor} ${statusConfig.color} border`}>
-                                  {statusConfig.label}
-                                </Badge>
-                              )}
-                              {finished && (
-                                <Badge className="bg-gray-500 text-white border">
-                                  <CheckCircle2 className="h-3 w-3 mr-1" />
-                                  Finished
-                                </Badge>
-                              )}
-                            </div>
-                            <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
-                              <span className="flex items-center gap-1">
-                                <MapPin className="h-3 w-3" />
-                                {location}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Calendar className="h-3 w-3" />
-                                {format(new Date(startDate), 'MMM d, yyyy')}
-                                {endDate && ` - ${format(new Date(endDate), 'MMM d, yyyy')}`}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEdit(event)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDelete(event)}
-                            >
-                              <Trash2 className="h-4 w-4 text-red-500" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Create/Edit PopUp Event</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form>
+          {/* Existing Input Fields */}
+          {/* Brand Site Field */}
+          <div className="space-y-2">
+            <Label htmlFor="brandSite">Event Brand Website (optional)</Label>
+            <Input
+              id="brandSite"
+              placeholder="https://... or upload a PDF URL"
+              value={formData.brandSite}
+              onChange={(e) => handleInputChange('brandSite', e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              URL to an event project page, brochure PDF, or brand downloads page. Opens in-frame on your site.
+            </p>
+            <BrandSiteUpload
+              onUploaded={(url) => setFormData(prev => ({ ...prev, brandSite: url }))}
+            />
+          </div>
+          {/* Existing Submit Button */}
+        </form>
+      </CardContent>
+    </Card>
   );
 }
