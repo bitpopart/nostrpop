@@ -3,11 +3,13 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useSeoMeta } from '@unhead/react';
 import { useNostr } from '@nostrify/react';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, ExternalLink, FileText, Globe } from 'lucide-react';
+import { AlertCircle, ArrowLeft, ExternalLink, FileText, Globe } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+
+const CORS_PROXY = 'https://proxy.shakespeare.diy/?url=';
 
 function resolveBrandSiteSource(value: string) {
   const trimmed = value.trim();
@@ -24,6 +26,58 @@ function resolveBrandSiteSource(value: string) {
   }
 
   return trimmed;
+}
+
+function isHtmlUrl(url: string) {
+  return /^https?:\/\//i.test(url) && /\.html?(?:[?#].*)?$/i.test(url);
+}
+
+function decodeHtmlDataUrl(dataUrl: string) {
+  const commaIndex = dataUrl.indexOf(',');
+  if (commaIndex === -1) return '';
+
+  const metadata = dataUrl.slice(0, commaIndex);
+  const payload = dataUrl.slice(commaIndex + 1);
+
+  if (metadata.includes(';base64')) {
+    try {
+      return atob(payload);
+    } catch {
+      return '';
+    }
+  }
+
+  try {
+    return decodeURIComponent(payload);
+  } catch {
+    return payload;
+  }
+}
+
+function addBaseTag(html: string, sourceUrl: string) {
+  if (!sourceUrl || sourceUrl.startsWith('data:') || /<base\s/i.test(html)) return html;
+
+  const baseTag = `<base href="${sourceUrl}">`;
+  if (/<head[^>]*>/i.test(html)) {
+    return html.replace(/<head([^>]*)>/i, `<head$1>${baseTag}`);
+  }
+
+  return `${baseTag}${html}`;
+}
+
+async function fetchHtmlDocument(url: string, signal: AbortSignal) {
+  const directResponse = await fetch(url, { signal }).catch(() => null);
+
+  if (directResponse?.ok) {
+    return directResponse.text();
+  }
+
+  const proxyResponse = await fetch(`${CORS_PROXY}${encodeURIComponent(url)}`, { signal });
+  if (!proxyResponse.ok) {
+    throw new Error(`Unable to load HTML page (${proxyResponse.status})`);
+  }
+
+  return proxyResponse.text();
 }
 
 export default function PopUpEventSite() {
@@ -54,7 +108,24 @@ export default function PopUpEventSite() {
   });
 
   const frameUrl = useMemo(() => resolveBrandSiteSource(eventData?.brandSite || ''), [eventData?.brandSite]);
-  const isDataUrl = frameUrl.startsWith('data:text/html');
+  const isDataHtml = frameUrl.startsWith('data:text/html');
+  const shouldFetchHtml = isHtmlUrl(frameUrl);
+
+  const { data: fetchedHtml, isLoading: isHtmlLoading, error: htmlError } = useQuery({
+    queryKey: ['popup-event-site-html', frameUrl],
+    queryFn: async (c) => {
+      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(10000)]);
+      return fetchHtmlDocument(frameUrl, signal);
+    },
+    enabled: shouldFetchHtml,
+    retry: false,
+  });
+
+  const iframeHtml = useMemo(() => {
+    if (isDataHtml) return decodeHtmlDataUrl(frameUrl);
+    if (fetchedHtml) return addBaseTag(fetchedHtml, frameUrl);
+    return undefined;
+  }, [fetchedHtml, frameUrl, isDataHtml]);
 
   const [iframeKey, setIframeKey] = useState(0);
 
@@ -123,13 +194,38 @@ export default function PopUpEventSite() {
       </div>
 
       <main className="h-[calc(100vh-65px)]">
-        <iframe
-          key={iframeKey}
-          title={`${eventData.title} project site`}
-          src={frameUrl}
-          className="h-full w-full border-0"
-          sandbox={isDataUrl ? undefined : 'allow-downloads allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-presentation allow-same-origin allow-scripts'}
-        />
+        {isHtmlLoading ? (
+          <div className="container mx-auto px-4 py-6">
+            <Skeleton className="h-full min-h-[70vh] w-full" />
+          </div>
+        ) : htmlError ? (
+          <div className="container mx-auto px-4 py-12">
+            <Card className="max-w-xl mx-auto">
+              <CardContent className="py-10 text-center">
+                <AlertCircle className="h-12 w-12 mx-auto text-destructive mb-4" />
+                <h2 className="text-xl font-semibold mb-2">Could not load HTML page</h2>
+                <p className="text-muted-foreground mb-6">
+                  The uploaded HTML file could not be loaded into the BitPopArt frame. You can still open it directly.
+                </p>
+                <Button asChild>
+                  <a href={frameUrl} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Open directly
+                  </a>
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        ) : (
+          <iframe
+            key={iframeKey}
+            title={`${eventData.title} project site`}
+            src={iframeHtml ? undefined : frameUrl}
+            srcDoc={iframeHtml}
+            className="h-full w-full border-0"
+            sandbox="allow-downloads allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-presentation allow-scripts"
+          />
+        )}
       </main>
 
       <noscript>
