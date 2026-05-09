@@ -9,6 +9,23 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 
+function resolveBrandSiteSource(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+
+  if (trimmed.startsWith('data:text/html')) return trimmed;
+  if (trimmed.startsWith('data:application/pdf')) return trimmed;
+  if (trimmed.startsWith('<!doctype') || trimmed.startsWith('<html') || trimmed.startsWith('<')) {
+    return `data:text/html;charset=utf-8,${encodeURIComponent(trimmed)}`;
+  }
+
+  if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith('blob:') || trimmed.startsWith('/') || trimmed.startsWith('file:')) {
+    return trimmed;
+  }
+
+  return trimmed;
+}
+
 export default function PopUpEventSite() {
   const { eventId } = useParams<{ eventId: string }>();
   const navigate = useNavigate();
@@ -29,18 +46,14 @@ export default function PopUpEventSite() {
       const event = events[0];
       const id = event.tags.find(t => t[0] === 'd')?.[1] || event.id;
       const title = event.tags.find(t => t[0] === 'title')?.[1] || 'Untitled';
-      const brandSite = event.tags.find(t => t[0] === 'brand-site')?.[1];
+      const brandSite = event.tags.find(t => t[0] === 'brand-site')?.[1] || event.tags.find(t => t[0] === 'website')?.[1] || '';
 
       return { id, title, brandSite };
     },
     enabled: !!eventId,
   });
 
-  const frameUrl = useMemo(() => {
-    if (!eventData?.brandSite) return '';
-    return eventData.brandSite;
-  }, [eventData?.brandSite]);
-
+  const frameUrl = useMemo(() => resolveBrandSiteSource(eventData?.brandSite || ''), [eventData?.brandSite]);
   const isDataUrl = frameUrl.startsWith('data:text/html');
 
   const [iframeKey, setIframeKey] = useState(0);
@@ -110,7 +123,7 @@ export default function PopUpEventSite() {
       </div>
 
       <main className="h-[calc(100vh-65px)]">
-          <iframe
+        <iframe
           key={iframeKey}
           title={`${eventData.title} project site`}
           src={frameUrl}
