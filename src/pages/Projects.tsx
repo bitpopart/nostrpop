@@ -452,7 +452,7 @@ export default function Projects() {
                       {/* Badge Thumbnail (top left) */}
                       {project.badge_naddr && project.badge_image && (
                         <a
-                          href={`https://badges.page/a/${project.badge_naddr}`}
+                          href="https://ditto.pub/badges"
                           target="_blank"
                           rel="noopener noreferrer"
                           className="absolute top-2 left-2 z-10"

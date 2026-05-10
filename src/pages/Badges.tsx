@@ -347,9 +347,9 @@ function BadgeDetailDialog({
             <div className="flex items-center gap-2 flex-wrap">
               <NAddrCopy naddr={badge.naddr} />
               <Button variant="outline" size="sm" asChild className="gap-1.5">
-                <a href={`https://badges.page/a/${badge.naddr}`} target="_blank" rel="noopener noreferrer">
+                <a href="https://ditto.pub/badges" target="_blank" rel="noopener noreferrer">
                   <ExternalLink className="h-3.5 w-3.5" />
-                  badges.page
+                  Ditto badges
                 </a>
               </Button>
             </div>
@@ -435,7 +435,7 @@ function BadgeCard({
         )}
         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
           <span className="text-white text-sm font-semibold px-3 py-1.5 rounded-full bg-black/40 backdrop-blur-sm">
-            View Details
+            Open on Ditto
           </span>
         </div>
 
@@ -673,12 +673,10 @@ export default function Badges() {
   }, [definitions, awards]);
 
   // Dialog state
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [awardingId, setAwardingId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const selectedDef = definitions.find(d => d.id === selectedId) ?? null;
   const awardingDef = definitions.find(d => d.id === awardingId) ?? null;
   const editingDef = definitions.find(d => d.id === editingId) ?? null;
   const deletingDef = definitions.find(d => d.id === deletingId) ?? null;
@@ -728,7 +726,7 @@ export default function Badges() {
                 key={definition.id}
                 definition={definition}
                 awardeeCount={awardeeCount}
-                onClick={() => setSelectedId(definition.id)}
+                onClick={() => window.open('https://ditto.pub/badges', '_blank', 'noopener,noreferrer')}
                 isAdmin={isAdmin}
                 onAward={() => setAwardingId(definition.id)}
                 onEdit={() => setEditingId(definition.id)}
@@ -764,16 +762,6 @@ export default function Badges() {
       </div>
 
       {/* ── Dialogs ── */}
-      <BadgeDetailDialog
-        badge={selectedDef}
-        awards={awards}
-        open={!!selectedId}
-        onClose={() => setSelectedId(null)}
-        isAdmin={isAdmin}
-        onAward={() => setAwardingId(selectedId)}
-        onEdit={() => setEditingId(selectedId)}
-        onDelete={() => setDeletingId(selectedId)}
-      />
       <AwardDialog
         badge={awardingDef}
         open={!!awardingId}
