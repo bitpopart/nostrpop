@@ -21,6 +21,57 @@ import type { ProjectData } from '@/lib/projectTypes';
 
 const ADMIN_NPUB = 'npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz'; // BitPopArt admin
 const ADMIN_PUBKEY = nip19.decode(ADMIN_NPUB).data as string;
+const CORS_PROXY = 'https://proxy.shakespeare.diy/?url=';
+
+function getFirstTagValue(tags: string[][], names: string[]) {
+  for (const name of names) {
+    const value = tags.find(t => t[0] === name)?.[1];
+    if (value) return value;
+  }
+  return '';
+}
+
+function getProjectThumbnail(tags: string[][], content: Record<string, unknown>) {
+  const tagImage = getFirstTagValue(tags, ['image', 'thumb', 'thumbnail', 'picture', 'cover']);
+  if (tagImage) return tagImage;
+
+  const candidates = [
+    content.thumbnail,
+    content.image,
+    content.picture,
+    content.cover,
+    content.header_image,
+  ];
+
+  const images = content.images;
+  if (Array.isArray(images) && typeof images[0] === 'string') {
+    candidates.push(images[0]);
+  }
+
+  return candidates.find((value): value is string => typeof value === 'string' && value.length > 0) || '';
+}
+
+function ProjectThumbnailImage({ src, alt, className }: { src: string; alt: string; className: string }) {
+  const [currentSrc, setCurrentSrc] = useState(src);
+  const [failed, setFailed] = useState(false);
+
+  if (failed) return null;
+
+  return (
+    <img
+      src={currentSrc}
+      alt={alt}
+      className={className}
+      onError={() => {
+        if (!currentSrc.startsWith(CORS_PROXY) && /^https?:\/\//i.test(currentSrc)) {
+          setCurrentSrc(`${CORS_PROXY}${encodeURIComponent(currentSrc)}`);
+        } else {
+          setFailed(true);
+        }
+      }}
+    />
+  );
+}
 
 // Built-in projects
 const BUILTIN_PROJECTS = [
@@ -86,7 +137,7 @@ export default function Projects() {
       console.log('[Projects] Found built-in customizations:', events.length);
       events.forEach(e => {
         const id = e.tags.find(t => t[0] === 'd')?.[1];
-        const image = e.tags.find(t => t[0] === 'image')?.[1];
+        const image = getProjectThumbnail(e.tags, {});
         console.log(`  - ${id}: ${image ? 'has thumbnail' : 'no thumbnail'}`);
       });
 
@@ -111,7 +162,7 @@ export default function Projects() {
             const content = JSON.parse(event.content);
             const id = event.tags.find(t => t[0] === 'd')?.[1];
             const name = event.tags.find(t => t[0] === 'name')?.[1] || content.name;
-            const thumbnail = event.tags.find(t => t[0] === 'image')?.[1] || content.thumbnail;
+            const thumbnail = getProjectThumbnail(event.tags, content);
             const url = event.tags.find(t => t[0] === 'r')?.[1] || content.url;
             const order = event.tags.find(t => t[0] === 'order')?.[1];
             const featured = event.tags.find(t => t[0] === 'featured')?.[1] === 'true';
@@ -146,7 +197,7 @@ export default function Projects() {
   // Apply custom thumbnails to built-in projects
   const builtInProjectsWithThumbnails = BUILTIN_PROJECTS.map(project => {
     const customization = builtInCustomizations.find(e => e.tags.find(t => t[0] === 'd')?.[1] === project.id);
-    const customThumbnail = customization?.tags.find(t => t[0] === 'image')?.[1];
+    const customThumbnail = customization ? getProjectThumbnail(customization.tags, {}) : '';
     
     console.log(`[Projects] Built-in project ${project.id}: ${customThumbnail ? 'custom thumbnail' : 'default gradient'}`);
     
@@ -226,7 +277,7 @@ export default function Projects() {
                 {/* Thumbnail */}
                 <div className="relative h-56 overflow-hidden">
                   {project.thumbnail ? (
-                    <img
+                    <ProjectThumbnailImage
                       src={project.thumbnail}
                       alt={project.name}
                       className={`w-full h-full object-cover transition-transform duration-500 ${
