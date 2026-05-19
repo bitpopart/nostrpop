@@ -99,6 +99,30 @@ const BUILTIN_PROJECTS = [
     url: '/cards',
     isBuiltIn: true,
   },
+  {
+    id: 'free-downloads',
+    name: 'Free Downloads',
+    description: 'Free images and art by BitPopArt — download and use them however you like!',
+    thumbnail: '',
+    url: '/free',
+    isBuiltIn: true,
+  },
+  {
+    id: 'games',
+    name: 'Games',
+    description: 'Bitcoin and pop art inspired games by BitPopArt',
+    thumbnail: '',
+    url: '/games',
+    isBuiltIn: true,
+  },
+  {
+    id: 'animations',
+    name: 'Animations',
+    description: 'Animated pop art and motion graphics by BitPopArt',
+    thumbnail: '',
+    url: '/animations',
+    isBuiltIn: true,
+  },
 ];
 
 export default function Projects() {
@@ -289,13 +313,13 @@ export default function Projects() {
                       className="w-full h-full bg-gradient-to-br from-purple-400 via-pink-400 to-indigo-400 dark:from-purple-600 dark:via-pink-600 dark:to-indigo-600 flex items-center justify-center"
                       style={{
                         backgroundImage: `linear-gradient(135deg, 
-                          ${['#a855f7', '#ec4899', '#6366f1', '#8b5cf6', '#f472b6'][index % 5]} 0%, 
-                          ${['#ec4899', '#6366f1', '#8b5cf6', '#f472b6', '#a855f7'][index % 5]} 100%)`,
+                          ${['#a855f7', '#ec4899', '#6366f1', '#14b8a6', '#8b5cf6', '#f59e0b', '#f472b6'][index % 7]} 0%, 
+                          ${['#ec4899', '#6366f1', '#8b5cf6', '#06b6d4', '#f472b6', '#ef4444', '#a855f7'][index % 7]} 100%)`,
                         opacity: isComingSoon ? 0.6 : 1
                       }}
                     >
                       <span className="text-6xl opacity-90">
-                        {index === 0 ? '⚡' : index === 1 ? '🎨' : index === 2 ? '💝' : '✨'}
+                        {['⚡', '🎨', '💝', '🎁', '🎮', '🎬', '✨'][index % 7]}
                       </span>
                     </div>
                   )}

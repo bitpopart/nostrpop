@@ -29,6 +29,30 @@ const BUILTIN_PROJECTS = [
     url: '/cards',
     order: 3,
   },
+  {
+    id: 'free-downloads',
+    name: 'Free Downloads',
+    description: 'Free images and art — download and use however you like!',
+    thumbnail: '',
+    url: '/free',
+    order: 4,
+  },
+  {
+    id: 'games',
+    name: 'Games',
+    description: 'Bitcoin and pop art inspired games',
+    thumbnail: '',
+    url: '/games',
+    order: 5,
+  },
+  {
+    id: 'animations',
+    name: 'Animations',
+    description: 'Animated pop art and motion graphics',
+    thumbnail: '',
+    url: '/animations',
+    order: 6,
+  },
 ];
 
 export function useFeaturedProjects(options?: { enabled?: boolean }) {

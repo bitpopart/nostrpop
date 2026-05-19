@@ -31,6 +31,9 @@ import { CategoryDemo } from "./pages/CategoryDemo";
 import { ProductPage } from "./pages/ProductPage";
 import { DeleteProductPage } from "./pages/DeleteProductPage";
 import OrderConfirmation from "./pages/OrderConfirmation";
+import FreeDownloads from "./pages/FreeDownloads";
+import Games from "./pages/Games";
+import Animations from "./pages/Animations";
 import NotFound from "./pages/NotFound";
 
 export function AppRouter() {
@@ -72,6 +75,9 @@ export function AppRouter() {
           <Route path="/shop/:productId/delete" element={<DeleteProductPage />} />
           <Route path="/shop/:productId" element={<ProductPage />} />
           <Route path="/order-confirmation" element={<OrderConfirmation />} />
+          <Route path="/free" element={<FreeDownloads />} />
+          <Route path="/games" element={<Games />} />
+          <Route path="/animations" element={<Animations />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

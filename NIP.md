@@ -717,6 +717,40 @@ The `/badges` page queries both kind 10008 and the legacy kind 30008, preferring
 
 Kind 30008 is now repurposed as "Badge Sets" — curated collections of badges (comparable to playlists). The BitPopArt platform does not currently use badge sets.
 
+## Free Downloads (Kind 34019)
+
+Free downloadable images published by the admin. Each event represents a single image available for public download.
+
+### Event Structure
+
+```json
+{
+  "kind": 34019,
+  "content": "",
+  "tags": [
+    ["d", "<unique_id>"],
+    ["title", "<image title>"],
+    ["image", "<image_url>"],
+    ["t", "free-download"],
+    ["alt", "Free download: <title>"]
+  ]
+}
+```
+
+### Fields
+
+- **d tag**: Unique identifier (auto-generated)
+- **title tag**: Optional human-readable title
+- **image tag**: URL of the downloadable image (hosted on Blossom)
+- **t tag**: Always includes `free-download` for filtering
+
+### Usage
+
+- Admin uploads images via the `/free` page
+- Public users browse the image gallery
+- Each image has a download button (top-right corner) that saves the file locally
+- Images are stored on Blossom servers via NIP-B7
+
 ## References
 
 - [NIP-15: Nostr Marketplace](https://github.com/nostr-protocol/nips/blob/master/15.md)
