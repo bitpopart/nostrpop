@@ -58,7 +58,7 @@ export function useMarketplaceProducts(category?: string) {
         nostr.query([
           {
             kinds: [30018], // NIP-15 product events
-            limit: 100,
+            limit: 500,
             ...(category && { '#t': [category.toLowerCase()] })
           }
         ], { signal }),
@@ -96,13 +96,18 @@ export function useMarketplaceProducts(category?: string) {
       const products = productEvents
         .map(event => {
           try {
-            const content = JSON.parse(event.content);
-            const dTag = event.tags.find(([name]) => name === 'd')?.[1];
+            const content = JSON.parse(event.content || '{}');
+            const dTag = event.tags.find(([name]) => name === 'd')?.[1] || content.id;
             const titleTag = event.tags.find(([name]) => name === 'title')?.[1];
+            const nameTag = event.tags.find(([name]) => name === 'name')?.[1];
+            const priceTag = event.tags.find(([name]) => name === 'price')?.[1];
+            const imageTags = event.tags.filter(([name]) => name === 'image' || name === 'thumb').map(([, value]) => value).filter(Boolean);
             const categoryTags = event.tags.filter(([name]) => name === 't').map(([, value]) => value);
+            const name = content.name || titleTag || nameTag || 'Untitled product';
+            const price = Number(content.price ?? priceTag ?? 0);
 
-            // Basic validation
-            if (!dTag || !titleTag || !content.name || !content.price) {
+            // Basic validation: NIP-15 requires d/content id and product name. Price may be 0 for freebies.
+            if (!dTag || !name) {
               return null;
             }
 
@@ -126,11 +131,11 @@ export function useMarketplaceProducts(category?: string) {
             return {
               id: dTag,
               event,
-              name: content.name,
-              description: content.description || '',
-              images: content.images || [],
-              currency: content.currency || 'USD',
-              price: content.price,
+              name,
+              description: content.description || event.tags.find(([tagName]) => tagName === 'summary')?.[1] || '',
+              images: Array.isArray(content.images) && content.images.length > 0 ? content.images : imageTags,
+              currency: content.currency || event.tags.find(([tagName]) => tagName === 'currency')?.[1] || 'USD',
+              price,
               quantity: content.quantity,
               category: mainCategory,
               type,
@@ -173,7 +178,7 @@ export function useMarketplaceProduct(productId: string) {
           {
             kinds: [30018],
             '#d': [productId],
-            limit: 1
+            limit: 10
           }
         ], { signal }),
         nostr.query([
@@ -210,8 +215,14 @@ export function useMarketplaceProduct(productId: string) {
         throw new Error('Product has been deleted');
       }
 
-      const content = JSON.parse(event.content);
+      const content = JSON.parse(event.content || '{}');
+      const titleTag = event.tags.find(([name]) => name === 'title')?.[1];
+      const nameTag = event.tags.find(([name]) => name === 'name')?.[1];
+      const priceTag = event.tags.find(([name]) => name === 'price')?.[1];
+      const imageTags = event.tags.filter(([name]) => name === 'image' || name === 'thumb').map(([, value]) => value).filter(Boolean);
       const categoryTags = event.tags.filter(([name]) => name === 't').map(([, value]) => value);
+      const name = content.name || titleTag || nameTag || 'Untitled product';
+      const price = Number(content.price ?? priceTag ?? 0);
 
       const isDigital = categoryTags.includes('digital');
       const isPhysical = categoryTags.includes('physical');
@@ -221,11 +232,11 @@ export function useMarketplaceProduct(productId: string) {
       return {
         id: productId,
         event,
-        name: content.name,
-        description: content.description || '',
-        images: content.images || [],
-        currency: content.currency || 'USD',
-        price: content.price,
+        name,
+        description: content.description || event.tags.find(([tagName]) => tagName === 'summary')?.[1] || '',
+        images: Array.isArray(content.images) && content.images.length > 0 ? content.images : imageTags,
+        currency: content.currency || event.tags.find(([tagName]) => tagName === 'currency')?.[1] || 'USD',
+        price,
         quantity: content.quantity,
         category: mainCategory,
         type,
