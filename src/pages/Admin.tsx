@@ -1,8 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSeoMeta } from '@unhead/react';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { useNavigate } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -29,6 +28,7 @@ import { ArtworkCleanupTool } from '@/components/art/ArtworkCleanupTool';
 import { ArtBannerAdmin } from '@/components/art/ArtBannerAdmin';
 import { ArtProgressManagement } from '@/components/artprogress/ArtProgressManagement';
 import { WallManagement } from '@/components/wall/WallManagement';
+import { AppContentManagement } from '@/components/app/AppContentManagement';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import {
   Plus,
@@ -52,13 +52,15 @@ import {
   Settings,
   Zap,
   Home,
-  Award
+  Award,
+  Smartphone
 } from 'lucide-react';
 
 const Admin = () => {
   const { user } = useCurrentUser();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('overview');
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(() => searchParams.get('tab') || 'overview');
 
   // Check if current user is admin
   const isAdmin = useIsAdmin();
@@ -241,6 +243,14 @@ const Admin = () => {
       badge: 'Email'
     },
     {
+      title: 'Fan App',
+      description: 'Manage app content for fans',
+      icon: Smartphone,
+      color: 'from-orange-500 to-amber-500',
+      action: () => setActiveTab('app'),
+      badge: 'App'
+    },
+    {
       title: 'Analytics',
       description: 'Track site visitors',
       icon: BarChart3,
@@ -342,6 +352,7 @@ const Admin = () => {
             <TabsTrigger value="badges">Badges</TabsTrigger>
             <TabsTrigger value="shop">Shop</TabsTrigger>
             <TabsTrigger value="art">Art</TabsTrigger>
+            <TabsTrigger value="app">App</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-8">
@@ -666,6 +677,23 @@ const Admin = () => {
             <ArtworkCleanupTool />
 
             <ArtworkOrderManager />
+          </TabsContent>
+
+          <TabsContent value="app">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Smartphone className="h-6 w-6 mr-2" />
+                  Fan App Content
+                </CardTitle>
+                <CardDescription>
+                  Manage the content shown on the <a href="/app" className="underline text-orange-600">BitPopArt App</a> page — welcome message, wallpapers, GIFs, and more.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <AppContentManagement />
+              </CardContent>
+            </Card>
           </TabsContent>
 
         </Tabs>

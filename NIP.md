@@ -751,6 +751,18 @@ Free downloadable images published by the admin. Each event represents a single 
 - Each image has a download button (top-right corner) that saves the file locally
 - Images are stored on Blossom servers via NIP-B7
 
+### App Content (also Kind 34019)
+
+The Fan App page (`/app`) reuses kind 34019 with distinct `t` tags:
+
+| t tag | d tag | Description |
+|---|---|---|
+| `app-welcome` | `app-welcome` (singleton) | Welcome message shown at the top of the app. Content field contains the message text. |
+| `app-wallpaper` | auto-generated | Wallpaper images available for download. |
+| `app-gif` | auto-generated | Animated GIFs available for download. |
+
+Wallpaper and GIF events share the same structure as free downloads (title + image tags).
+
 ## References
 
 - [NIP-15: Nostr Marketplace](https://github.com/nostr-protocol/nips/blob/master/15.md)
