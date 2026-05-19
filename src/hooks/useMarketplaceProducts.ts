@@ -3,6 +3,7 @@ import { useNostr } from '@nostrify/react';
 import type { NostrEvent } from '@nostrify/nostrify';
 import { useCurrentUser } from './useCurrentUser';
 import { useToast } from './useToast';
+import { getAdminPubkeyHex } from '@/lib/adminUtils';
 
 // Local storage for deleted products (prevents them from reappearing)
 const DELETED_PRODUCTS_KEY = 'nostrpop_deleted_products';
@@ -47,28 +48,30 @@ interface MarketplaceProduct {
 export function useMarketplaceProducts(category?: string) {
   const { nostr } = useNostr();
   const { user: _user } = useCurrentUser();
+  const adminPubkey = getAdminPubkeyHex();
 
   return useQuery({
     queryKey: ['marketplace-products', category],
     queryFn: async (c) => {
-      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(5000)]);
+      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(15000)]);
 
       // Query for NIP-15 product events (kind 30018) and deletion events (kind 5)
-      const [productEvents, deletionEvents] = await Promise.all([
-        nostr.query([
-          {
-            kinds: [30018], // NIP-15 product events
-            limit: 500,
-            ...(category && { '#t': [category.toLowerCase()] })
-          }
-        ], { signal }),
-        nostr.query([
-          {
-            kinds: [5], // Deletion events
-            limit: 1000,
-          }
-        ], { signal })
-      ]);
+      // from the admin pubkey. Use a single combined query to reduce relay load.
+      const allEvents = await nostr.query([
+        {
+          kinds: [30018], // NIP-15 product events
+          authors: [adminPubkey],
+          limit: 500,
+        },
+        {
+          kinds: [5], // Deletion events
+          authors: [adminPubkey],
+          limit: 1000,
+        }
+      ], { signal });
+
+      const productEvents = allEvents.filter(e => e.kind === 30018);
+      const deletionEvents = allEvents.filter(e => e.kind === 5);
 
       console.log(`Found ${productEvents.length} products and ${deletionEvents.length} deletion events`);
 
@@ -155,39 +158,48 @@ export function useMarketplaceProducts(category?: string) {
         })
         .filter(Boolean) as MarketplaceProduct[];
 
+      // Apply category filter if specified
+      const filteredProducts = category
+        ? products.filter(p => p.category.toLowerCase() === category.toLowerCase())
+        : products;
+
       // Sort by creation date (newest first)
-      const sortedProducts = products.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      const sortedProducts = filteredProducts.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
       return sortedProducts;
     },
+    enabled: !!adminPubkey,
     staleTime: 30000, // 30 seconds
     refetchInterval: 60000, // Refetch every minute
+    retry: 2, // Retry up to 2 times on failure
   });
 }
 
 export function useMarketplaceProduct(productId: string) {
   const { nostr } = useNostr();
+  const adminPubkey = getAdminPubkeyHex();
 
   return useQuery({
     queryKey: ['marketplace-product', productId],
     queryFn: async (c) => {
-      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(5000)]);
+      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(15000)]);
 
-      const [events, deletionEvents] = await Promise.all([
-        nostr.query([
-          {
-            kinds: [30018],
-            '#d': [productId],
-            limit: 10
-          }
-        ], { signal }),
-        nostr.query([
-          {
-            kinds: [5], // Deletion events
-            limit: 500,
-          }
-        ], { signal })
-      ]);
+      // Use a single combined query to fetch both the product and deletion events
+      const allEvents = await nostr.query([
+        {
+          kinds: [30018],
+          '#d': [productId],
+          limit: 10
+        },
+        {
+          kinds: [5], // Deletion events
+          authors: adminPubkey ? [adminPubkey] : undefined,
+          limit: 500,
+        }
+      ], { signal });
+
+      const events = allEvents.filter(e => e.kind === 30018);
+      const deletionEvents = allEvents.filter(e => e.kind === 5);
 
       if (events.length === 0) {
         throw new Error('Product not found');
@@ -252,6 +264,7 @@ export function useMarketplaceProduct(productId: string) {
     },
     enabled: !!productId,
     staleTime: 30000,
+    retry: 2,
   });
 }
 
