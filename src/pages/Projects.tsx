@@ -13,7 +13,7 @@ import { ShareToNostrButton } from '@/components/ShareToNostrButton';
 import { ClawstrShare } from '@/components/ClawstrShare';
 import { ZapButton } from '@/components/ZapButton';
 import { ShareDialog } from '@/components/share/ShareDialog';
-import { Sparkles, ArrowRight, Users, Zap, Award, Share2, Image as ImageIcon } from 'lucide-react';
+import { Sparkles, ArrowRight, Users, Zap, Award, Share2, Image as ImageIcon, Gamepad2, Clapperboard, Globe } from 'lucide-react';
 import { useNostrProjects } from '@/hooks/useNostrProjects';
 import { useNIP58BadgeDefinitions, useNIP58BadgeAwards } from '@/hooks/useNIP58Badges';
 import { nip19 } from 'nostr-tools';
@@ -73,7 +73,38 @@ function ProjectThumbnailImage({ src, alt, className }: { src: string; alt: stri
   );
 }
 
-// Built-in projects
+// Main category sections shown as large thumbnails at top
+const CATEGORY_SECTIONS = [
+  {
+    id: 'games',
+    name: 'Games',
+    description: 'Bitcoin and pop art inspired games by BitPopArt',
+    url: '/games',
+    icon: Gamepad2,
+    gradient: 'from-violet-500 via-fuchsia-500 to-pink-500',
+    emoji: '🎮',
+  },
+  {
+    id: 'animations',
+    name: 'Animations',
+    description: 'Animated pop art and motion graphics by BitPopArt',
+    url: '/animations',
+    icon: Clapperboard,
+    gradient: 'from-amber-500 via-orange-500 to-rose-500',
+    emoji: '🎬',
+  },
+  {
+    id: 'frl',
+    name: 'POPArt.frl',
+    description: 'POPArt.frl collection — pop art for the real world',
+    url: '/frl',
+    icon: Globe,
+    gradient: 'from-pink-500 via-rose-500 to-red-500',
+    emoji: '🌍',
+  },
+];
+
+// Built-in projects (general category only — Games/Animations/FRL are top-level sections)
 const BUILTIN_PROJECTS = [
   {
     id: '21k-art',
@@ -107,22 +138,6 @@ const BUILTIN_PROJECTS = [
     url: '/free',
     isBuiltIn: true,
   },
-  {
-    id: 'games',
-    name: 'Games',
-    description: 'Bitcoin and pop art inspired games by BitPopArt',
-    thumbnail: '',
-    url: '/games',
-    isBuiltIn: true,
-  },
-  {
-    id: 'animations',
-    name: 'Animations',
-    description: 'Animated pop art and motion graphics by BitPopArt',
-    thumbnail: '',
-    url: '/animations',
-    isBuiltIn: true,
-  },
 ];
 
 export default function Projects() {
@@ -145,25 +160,16 @@ export default function Projects() {
   const badgeAddrs = nip58Definitions.map(d => `30009:${d.pubkey}:${d.id}`);
   const { data: nip58Awards = [] } = useNIP58BadgeAwards(badgeAddrs);
 
-  // Fetch built-in project customizations
+  // Fetch built-in project customizations (includes category section thumbnails)
   const { data: builtInCustomizations = [] } = useQuery({
     queryKey: ['builtin-projects'],
     queryFn: async (c) => {
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(3000)]);
       
-      console.log('[Projects] Fetching built-in project customizations...');
-      
       const events = await nostr.query(
-        [{ kinds: [36171], authors: [ADMIN_PUBKEY], '#t': ['builtin-project'], limit: 10 }],
+        [{ kinds: [36171], authors: [ADMIN_PUBKEY], '#t': ['builtin-project'], limit: 20 }],
         { signal }
       );
-
-      console.log('[Projects] Found built-in customizations:', events.length);
-      events.forEach(e => {
-        const id = e.tags.find(t => t[0] === 'd')?.[1];
-        const image = getProjectThumbnail(e.tags, {});
-        console.log(`  - ${id}: ${image ? 'has thumbnail' : 'no thumbnail'}`);
-      });
 
       return events;
     },
@@ -191,8 +197,12 @@ export default function Projects() {
             const order = event.tags.find(t => t[0] === 'order')?.[1];
             const featured = event.tags.find(t => t[0] === 'featured')?.[1] === 'true';
             const comingSoon = event.tags.find(t => t[0] === 'coming-soon')?.[1] === 'true';
+            const category = event.tags.find(t => t[0] === 'category')?.[1] || 'general';
 
             if (!id || !name) return null;
+
+            // On the main projects page, only show 'general' category projects
+            if (category !== 'general') return null;
 
             return {
               id,
@@ -222,12 +232,19 @@ export default function Projects() {
   const builtInProjectsWithThumbnails = BUILTIN_PROJECTS.map(project => {
     const customization = builtInCustomizations.find(e => e.tags.find(t => t[0] === 'd')?.[1] === project.id);
     const customThumbnail = customization ? getProjectThumbnail(customization.tags, {}) : '';
-    
-    console.log(`[Projects] Built-in project ${project.id}: ${customThumbnail ? 'custom thumbnail' : 'default gradient'}`);
-    
     return {
       ...project,
       thumbnail: customThumbnail || project.thumbnail,
+    };
+  });
+
+  // Apply custom thumbnails to category sections
+  const categorySectionsWithThumbnails = CATEGORY_SECTIONS.map(section => {
+    const customization = builtInCustomizations.find(e => e.tags.find(t => t[0] === 'd')?.[1] === `category-${section.id}`);
+    const customThumbnail = customization ? getProjectThumbnail(customization.tags, {}) : '';
+    return {
+      ...section,
+      thumbnail: customThumbnail,
     };
   });
 
@@ -266,6 +283,49 @@ export default function Projects() {
               Projects
             </h1>
           </div>
+        </div>
+
+        {/* Main Category Sections — 3 large thumbnails at the top */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto mb-12">
+          {categorySectionsWithThumbnails.map((section) => (
+            <Card
+              key={section.id}
+              className="group overflow-hidden cursor-pointer hover:shadow-2xl transition-all duration-300 bg-white dark:bg-gray-800 border-2 border-transparent hover:border-orange-300 dark:hover:border-orange-600"
+              onClick={() => navigate(section.url)}
+            >
+              <div className="relative h-64 overflow-hidden">
+                {section.thumbnail ? (
+                  <ProjectThumbnailImage
+                    src={section.thumbnail}
+                    alt={section.name}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+                ) : (
+                  <div
+                    className={`w-full h-full bg-gradient-to-br ${section.gradient} flex items-center justify-center`}
+                  >
+                    <span className="text-8xl opacity-90 group-hover:scale-125 transition-transform duration-500">
+                      {section.emoji}
+                    </span>
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+                <div className="absolute bottom-0 left-0 right-0 p-6">
+                  <div className="flex items-center gap-2 mb-2">
+                    <section.icon className="h-6 w-6 text-white" />
+                    <h2 className="text-2xl font-bold text-white">{section.name}</h2>
+                  </div>
+                  <p className="text-white/80 text-sm">{section.description}</p>
+                </div>
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <Button variant="secondary" size="lg" className="gap-2 shadow-lg">
+                    Explore
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          ))}
         </div>
 
         {/* Regular Projects Grid */}

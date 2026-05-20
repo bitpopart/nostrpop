@@ -34,6 +34,7 @@ import OrderConfirmation from "./pages/OrderConfirmation";
 import FreeDownloads from "./pages/FreeDownloads";
 import Games from "./pages/Games";
 import Animations from "./pages/Animations";
+import Frl from "./pages/Frl";
 import AppPage from "./pages/AppPage";
 import NotFound from "./pages/NotFound";
 
@@ -79,6 +80,7 @@ export function AppRouter() {
           <Route path="/free" element={<FreeDownloads />} />
           <Route path="/games" element={<Games />} />
           <Route path="/animations" element={<Animations />} />
+          <Route path="/frl" element={<Frl />} />
           <Route path="/app" element={<AppPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

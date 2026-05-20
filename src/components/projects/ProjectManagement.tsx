@@ -14,6 +14,13 @@ import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   FolderKanban,
   Plus,
   Loader2,
@@ -25,9 +32,21 @@ import {
   ExternalLink,
   Star,
   Sparkles,
+  Gamepad2,
+  Clapperboard,
+  Globe,
 } from 'lucide-react';
 import type { NostrEvent } from '@nostrify/nostrify';
 import { generateProjectUUID } from '@/lib/projectTypes';
+
+export type ProjectCategory = 'general' | 'games' | 'animations' | 'frl';
+
+export const PROJECT_CATEGORIES: { value: ProjectCategory; label: string; icon: typeof Gamepad2; color: string }[] = [
+  { value: 'general', label: 'General', icon: FolderKanban, color: 'text-orange-600' },
+  { value: 'games', label: 'Games', icon: Gamepad2, color: 'text-violet-600' },
+  { value: 'animations', label: 'Animations', icon: Clapperboard, color: 'text-amber-600' },
+  { value: 'frl', label: 'POPArt.frl', icon: Globe, color: 'text-pink-600' },
+];
 
 interface ProjectFormData {
   name: string;
@@ -37,9 +56,15 @@ interface ProjectFormData {
   order: string;
   featured: boolean;
   coming_soon: boolean;
+  category: ProjectCategory;
 }
 
-export function ProjectManagement() {
+interface ProjectManagementProps {
+  /** Pre-select a category and filter the list to that category only */
+  filterCategory?: ProjectCategory;
+}
+
+export function ProjectManagement({ filterCategory }: ProjectManagementProps = {}) {
   const { nostr } = useNostr();
   const { user } = useCurrentUser();
   const { mutate: createEvent } = useNostrPublish();
@@ -58,11 +83,12 @@ export function ProjectManagement() {
     order: '',
     featured: false,
     coming_soon: false,
+    category: filterCategory || 'general',
   });
 
   // Fetch user's projects (kind 36171)
   const { data: projects = [], isLoading } = useQuery({
-    queryKey: ['projects-admin', user?.pubkey],
+    queryKey: ['projects-admin', user?.pubkey, filterCategory],
     queryFn: async (c) => {
       if (!user?.pubkey) return [];
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(3000)]);
@@ -70,7 +96,14 @@ export function ProjectManagement() {
         [{ kinds: [36171], authors: [user.pubkey], '#t': ['bitpopart-project'], limit: 100 }],
         { signal }
       );
-      return events.sort((a, b) => {
+      // Filter by category if filterCategory is set
+      const filtered = filterCategory
+        ? events.filter(e => {
+            const cat = e.tags.find(t => t[0] === 'category')?.[1] || 'general';
+            return cat === filterCategory;
+          })
+        : events;
+      return filtered.sort((a, b) => {
         const aOrder = parseInt(a.tags.find(t => t[0] === 'order')?.[1] || '999');
         const bOrder = parseInt(b.tags.find(t => t[0] === 'order')?.[1] || '999');
         return aOrder - bOrder;
@@ -134,6 +167,7 @@ export function ProjectManagement() {
       ['d', projectId],
       ['name', formData.name],
       ['t', 'bitpopart-project'],
+      ['category', formData.category],
     ];
 
     if (formData.thumbnail) {
@@ -178,6 +212,7 @@ export function ProjectManagement() {
             order: '',
             featured: false,
             coming_soon: false,
+            category: filterCategory || 'general',
           });
           queryClient.invalidateQueries({ queryKey: ['projects'] });
           queryClient.invalidateQueries({ queryKey: ['projects-admin'] });
@@ -198,6 +233,7 @@ export function ProjectManagement() {
     const orderTag = event.tags.find(t => t[0] === 'order')?.[1];
     const featuredTag = event.tags.find(t => t[0] === 'featured')?.[1] === 'true';
     const comingSoonTag = event.tags.find(t => t[0] === 'coming-soon')?.[1] === 'true';
+    const categoryTag = (event.tags.find(t => t[0] === 'category')?.[1] || 'general') as ProjectCategory;
 
     setFormData({
       name: nameTag || content.name || '',
@@ -207,6 +243,7 @@ export function ProjectManagement() {
       order: orderTag || '',
       featured: featuredTag,
       coming_soon: comingSoonTag,
+      category: categoryTag,
     });
     setEditingProject(event);
     setIsCreating(true);
@@ -245,6 +282,7 @@ export function ProjectManagement() {
       order: '',
       featured: false,
       coming_soon: false,
+      category: filterCategory || 'general',
     });
   };
 
@@ -375,6 +413,32 @@ export function ProjectManagement() {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="category">Category</Label>
+                <Select
+                  value={formData.category}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, category: value as ProjectCategory }))}
+                  disabled={!!filterCategory}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PROJECT_CATEGORIES.map((cat) => (
+                      <SelectItem key={cat.value} value={cat.value}>
+                        <span className="flex items-center gap-2">
+                          <cat.icon className={`h-4 w-4 ${cat.color}`} />
+                          {cat.label}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Choose which section this project belongs to
+                </p>
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="order">Display Order (optional)</Label>
                 <Input
                   id="order"
@@ -434,7 +498,9 @@ export function ProjectManagement() {
         <div className="text-center py-6">
           <Button onClick={() => setIsCreating(true)} size="lg">
             <Plus className="h-5 w-5 mr-2" />
-            Add New Project
+            {filterCategory
+              ? `Add New ${PROJECT_CATEGORIES.find(c => c.value === filterCategory)?.label || ''} Project`
+              : 'Add New Project'}
           </Button>
         </div>
       )}
@@ -472,6 +538,8 @@ export function ProjectManagement() {
                 const order = event.tags.find(t => t[0] === 'order')?.[1];
                 const featured = event.tags.find(t => t[0] === 'featured')?.[1] === 'true';
                 const comingSoon = event.tags.find(t => t[0] === 'coming-soon')?.[1] === 'true';
+                const category = (event.tags.find(t => t[0] === 'category')?.[1] || 'general') as ProjectCategory;
+                const categoryInfo = PROJECT_CATEGORIES.find(c => c.value === category);
 
                 return (
                   <Card key={event.id} className="overflow-hidden">
@@ -503,6 +571,12 @@ export function ProjectManagement() {
                               {comingSoon && (
                                 <Badge className="bg-gradient-to-r from-orange-100 to-pink-100 dark:from-orange-900/30 dark:to-pink-900/30 text-orange-700 dark:text-orange-300 border-orange-300 dark:border-pink-700 text-xs">
                                   Coming Soon
+                                </Badge>
+                              )}
+                              {categoryInfo && category !== 'general' && (
+                                <Badge variant="outline" className={`text-xs ${categoryInfo.color}`}>
+                                  <categoryInfo.icon className="h-3 w-3 mr-1" />
+                                  {categoryInfo.label}
                                 </Badge>
                               )}
                               {order && (
@@ -580,18 +654,10 @@ function BuiltInProjectsManager() {
   const { mutate: createEvent } = useNostrPublish();
   const { mutateAsync: uploadFile } = useUploadFile();
   const queryClient = useQueryClient();
-  const fileInputRefs = {
-    '21k-art': useRef<HTMLInputElement>(null),
-    '100m-canvas': useRef<HTMLInputElement>(null),
-    'cards': useRef<HTMLInputElement>(null),
-  };
+  const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const [isUploading, setIsUploading] = useState<string | null>(null);
-  const [thumbnails, setThumbnails] = useState({
-    '21k-art': '',
-    '100m-canvas': '',
-    'cards': '',
-  });
+  const [thumbnails, setThumbnails] = useState<Record<string, string>>({});
 
   // Fetch built-in project thumbnails
   const { data: builtInProjects } = useQuery({
@@ -613,12 +679,12 @@ function BuiltInProjectsManager() {
   // Load thumbnails from events
   useEffect(() => {
     if (builtInProjects) {
-      const newThumbnails = { ...thumbnails };
+      const newThumbnails: Record<string, string> = {};
       builtInProjects.forEach(event => {
         const projectId = event.tags.find(t => t[0] === 'd')?.[1];
         const thumbnail = event.tags.find(t => t[0] === 'image')?.[1];
         if (projectId && thumbnail) {
-          newThumbnails[projectId as keyof typeof thumbnails] = thumbnail;
+          newThumbnails[projectId] = thumbnail;
         }
       });
       setThumbnails(newThumbnails);
@@ -693,83 +759,176 @@ function BuiltInProjectsManager() {
   };
 
   const projects = [
-    { id: '21k-art', name: '21K Art', description: 'Exclusive artwork collection priced at 21,000 sats' },
-    { id: '100m-canvas', name: '100M Canvas', description: 'Collaborative pixel art project' },
-    { id: 'cards', name: 'POP Cards', description: 'Create and share Good Vibes cards' },
+    { id: '21k-art', name: '21K Art', description: 'Exclusive artwork collection priced at 21,000 sats', type: 'built-in' as const },
+    { id: '100m-canvas', name: '100M Canvas', description: 'Collaborative pixel art project', type: 'built-in' as const },
+    { id: 'cards', name: 'POP Cards', description: 'Create and share Good Vibes cards', type: 'built-in' as const },
+    { id: 'category-games', name: 'Games Section', description: 'Thumbnail for the Games category on the Projects page', type: 'category' as const },
+    { id: 'category-animations', name: 'Animations Section', description: 'Thumbnail for the Animations category on the Projects page', type: 'category' as const },
+    { id: 'category-frl', name: 'POPArt.frl Section', description: 'Thumbnail for the POPArt.frl category on the Projects page', type: 'category' as const },
   ];
 
+  const builtInItems = projects.filter(p => p.type === 'built-in');
+  const categoryItems = projects.filter(p => p.type === 'category');
+
   return (
-    <div className="space-y-4">
-      {projects.map((project) => (
-        <Card key={project.id} className="overflow-hidden">
-          <div className="flex gap-4">
-            {thumbnails[project.id as keyof typeof thumbnails] ? (
-              <div className="w-32 h-24 flex-shrink-0 relative group">
-                <img
-                  src={thumbnails[project.id as keyof typeof thumbnails]}
-                  alt={project.name}
-                  className="w-full h-full object-cover"
-                />
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="sm"
-                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                  onClick={() => handleRemoveImage(project.id)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            ) : (
-              <div className="w-32 h-24 flex-shrink-0 bg-gradient-to-br from-purple-200 via-pink-200 to-indigo-200 dark:from-purple-800 dark:via-pink-800 dark:to-indigo-800 flex items-center justify-center">
-                <ImageIcon className="h-8 w-8 text-white opacity-50" />
-              </div>
-            )}
-            <div className="flex-1 p-4">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <h3 className="font-semibold text-lg mb-2">{project.name}</h3>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    {project.description}
-                  </p>
-                  <Badge variant="outline" className="text-xs">
-                    <Sparkles className="h-3 w-3 mr-1" />
-                    Built-in Project
-                  </Badge>
-                </div>
-                <div className="flex gap-2">
-                  <input
-                    ref={fileInputRefs[project.id as keyof typeof fileInputRefs]}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => handleImageUpload(project.id, e)}
-                    disabled={isUploading === project.id}
+    <div className="space-y-6">
+      {/* Built-in Projects */}
+      <div className="space-y-4">
+        {builtInItems.map((project) => (
+          <Card key={project.id} className="overflow-hidden">
+            <div className="flex gap-4">
+              {thumbnails[project.id] ? (
+                <div className="w-32 h-24 flex-shrink-0 relative group">
+                  <img
+                    src={thumbnails[project.id]}
+                    alt={project.name}
+                    className="w-full h-full object-cover"
                   />
                   <Button
-                    variant="outline"
+                    type="button"
+                    variant="destructive"
                     size="sm"
-                    onClick={() => fileInputRefs[project.id as keyof typeof fileInputRefs].current?.click()}
-                    disabled={isUploading === project.id}
+                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={() => handleRemoveImage(project.id)}
                   >
-                    {isUploading === project.id ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Uploading...
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="h-4 w-4 mr-2" />
-                        {thumbnails[project.id as keyof typeof thumbnails] ? 'Change' : 'Add'} Thumbnail
-                      </>
-                    )}
+                    <X className="h-4 w-4" />
                   </Button>
+                </div>
+              ) : (
+                <div className="w-32 h-24 flex-shrink-0 bg-gradient-to-br from-purple-200 via-pink-200 to-indigo-200 dark:from-purple-800 dark:via-pink-800 dark:to-indigo-800 flex items-center justify-center">
+                  <ImageIcon className="h-8 w-8 text-white opacity-50" />
+                </div>
+              )}
+              <div className="flex-1 p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-lg mb-2">{project.name}</h3>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      {project.description}
+                    </p>
+                    <Badge variant="outline" className="text-xs">
+                      <Sparkles className="h-3 w-3 mr-1" />
+                      Built-in Project
+                    </Badge>
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      ref={(el) => { fileInputRefs.current[project.id] = el; }}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => handleImageUpload(project.id, e)}
+                      disabled={isUploading === project.id}
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fileInputRefs.current[project.id]?.click()}
+                      disabled={isUploading === project.id}
+                    >
+                      {isUploading === project.id ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="h-4 w-4 mr-2" />
+                          {thumbnails[project.id] ? 'Change' : 'Add'} Thumbnail
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </Card>
-      ))}
+          </Card>
+        ))}
+      </div>
+
+      {/* Category Section Thumbnails */}
+      <Separator />
+      <div>
+        <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+          <FolderKanban className="h-5 w-5" />
+          Category Section Thumbnails
+        </h3>
+        <p className="text-sm text-muted-foreground mb-4">
+          Upload thumbnails for the 3 main category sections shown at the top of the Projects page
+        </p>
+        <div className="space-y-4">
+          {categoryItems.map((project) => (
+            <Card key={project.id} className="overflow-hidden">
+              <div className="flex gap-4">
+                {thumbnails[project.id] ? (
+                  <div className="w-32 h-24 flex-shrink-0 relative group">
+                    <img
+                      src={thumbnails[project.id]}
+                      alt={project.name}
+                      className="w-full h-full object-cover"
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => handleRemoveImage(project.id)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="w-32 h-24 flex-shrink-0 bg-gradient-to-br from-orange-200 via-pink-200 to-rose-200 dark:from-orange-800 dark:via-pink-800 dark:to-rose-800 flex items-center justify-center">
+                    <ImageIcon className="h-8 w-8 text-white opacity-50" />
+                  </div>
+                )}
+                <div className="flex-1 p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-lg mb-2">{project.name}</h3>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        {project.description}
+                      </p>
+                      <Badge variant="outline" className="text-xs text-orange-600">
+                        <Globe className="h-3 w-3 mr-1" />
+                        Category Thumbnail
+                      </Badge>
+                    </div>
+                    <div className="flex gap-2">
+                      <input
+                        ref={(el) => { fileInputRefs.current[project.id] = el; }}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handleImageUpload(project.id, e)}
+                        disabled={isUploading === project.id}
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => fileInputRefs.current[project.id]?.click()}
+                        disabled={isUploading === project.id}
+                      >
+                        {isUploading === project.id ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Uploading...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="h-4 w-4 mr-2" />
+                            {thumbnails[project.id] ? 'Change' : 'Add'} Thumbnail
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

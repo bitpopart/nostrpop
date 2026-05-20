@@ -53,7 +53,10 @@ import {
   Zap,
   Home,
   Award,
-  Smartphone
+  Smartphone,
+  Gamepad2,
+  Clapperboard,
+  Globe
 } from 'lucide-react';
 
 const Admin = () => {
@@ -131,6 +134,30 @@ const Admin = () => {
       color: 'from-orange-500 to-red-500',
       action: () => setActiveTab('projects'),
       badge: 'Projects'
+    },
+    {
+      title: 'Games',
+      description: 'Add game projects',
+      icon: Gamepad2,
+      color: 'from-violet-500 to-fuchsia-500',
+      action: () => setActiveTab('games-projects'),
+      badge: 'Games'
+    },
+    {
+      title: 'Animations',
+      description: 'Add animation projects',
+      icon: Clapperboard,
+      color: 'from-amber-500 to-orange-500',
+      action: () => setActiveTab('animations-projects'),
+      badge: 'Animations'
+    },
+    {
+      title: 'POPArt.frl',
+      description: 'Add FRL projects',
+      icon: Globe,
+      color: 'from-pink-500 to-rose-500',
+      action: () => setActiveTab('frl-projects'),
+      badge: 'FRL'
     },
     {
       title: 'Nostr Projects',
@@ -331,7 +358,7 @@ const Admin = () => {
 
         {/* Admin Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-10 lg:grid-cols-20 max-w-7xl mx-auto mb-8 text-xs">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-10 lg:grid-cols-12 max-w-7xl mx-auto mb-8 text-xs flex-wrap h-auto gap-1">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="homepage">Homepage</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
@@ -346,6 +373,9 @@ const Admin = () => {
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
             <TabsTrigger value="zaps">Zaps</TabsTrigger>
             <TabsTrigger value="projects">Projects</TabsTrigger>
+            <TabsTrigger value="games-projects">Games</TabsTrigger>
+            <TabsTrigger value="animations-projects">Animations</TabsTrigger>
+            <TabsTrigger value="frl-projects">FRL</TabsTrigger>
             <TabsTrigger value="nostr-projects">Nostr</TabsTrigger>
             <TabsTrigger value="fundraisers">Fundraisers</TabsTrigger>
             <TabsTrigger value="cards">Cards</TabsTrigger>
@@ -361,7 +391,7 @@ const Admin = () => {
               {/* Projects Section */}
               <div>
                 <h2 className="text-2xl font-semibold mb-6 text-center">Projects</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
                   {projectsActions.map((action, index) => (
                     <Card
                       key={index}
@@ -560,6 +590,57 @@ const Admin = () => {
               </CardHeader>
               <CardContent>
                 <ProjectManagement />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="games-projects">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Gamepad2 className="h-6 w-6 mr-2" />
+                  Games Projects
+                </CardTitle>
+                <CardDescription>
+                  Add and manage game projects that appear on the <a href="/games" className="underline text-orange-600">/games</a> page
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ProjectManagement filterCategory="games" />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="animations-projects">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Clapperboard className="h-6 w-6 mr-2" />
+                  Animations Projects
+                </CardTitle>
+                <CardDescription>
+                  Add and manage animation projects that appear on the <a href="/animations" className="underline text-orange-600">/animations</a> page
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ProjectManagement filterCategory="animations" />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="frl-projects">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Globe className="h-6 w-6 mr-2" />
+                  POPArt.frl Projects
+                </CardTitle>
+                <CardDescription>
+                  Add and manage projects that appear on the <a href="/frl" className="underline text-orange-600">/frl</a> page
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ProjectManagement filterCategory="frl" />
               </CardContent>
             </Card>
           </TabsContent>
