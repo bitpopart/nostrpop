@@ -311,11 +311,10 @@ export default function Projects() {
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
                 <div className="absolute bottom-0 left-0 right-0 p-6">
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center gap-2">
                     <section.icon className="h-6 w-6 text-white" />
                     <h2 className="text-2xl font-bold text-white">{section.name}</h2>
                   </div>
-                  <p className="text-white/80 text-sm">{section.description}</p>
                 </div>
                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                   <Button variant="secondary" size="lg" className="gap-2 shadow-lg">
