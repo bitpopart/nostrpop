@@ -531,6 +531,15 @@ export default function Projects() {
                           </Badge>
                         </div>
                       )}
+
+                      {/* Finished Badge Overlay */}
+                      {project.status === 'completed' && !isComingSoon && (
+                        <div className="absolute top-3 right-3">
+                          <Badge className="bg-green-600 text-white border-0 shadow-md text-xs px-2 py-1">
+                            Finished
+                          </Badge>
+                        </div>
+                      )}
                       
                       {/* Badge Thumbnail (top left) */}
                       {project.badge_naddr && project.badge_image && (

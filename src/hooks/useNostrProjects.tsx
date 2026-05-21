@@ -102,10 +102,10 @@ export function useNostrProjects() {
             return null;
           }
         })
-        .filter((p): p is NostrProjectData => p !== null && p.status === 'active')
+        .filter((p): p is NostrProjectData => p !== null && p.status !== 'archived')
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-      console.log(`[useNostrProjects] Returning ${projects.length} active projects:`, projects.map(p => p.title));
+      console.log(`[useNostrProjects] Returning ${projects.length} projects (active + completed):`, projects.map(p => p.title));
 
       return projects;
     },
@@ -158,7 +158,7 @@ export function useFeaturedNostrProjects() {
             const badgeNaddr = event.tags.find(t => t[0] === 'badge-naddr')?.[1];
             const badgeImage = event.tags.find(t => t[0] === 'badge-image')?.[1];
             
-            if (!id || !title || status !== 'active') return null;
+            if (!id || !title || status === 'archived') return null;
 
             return {
               id,

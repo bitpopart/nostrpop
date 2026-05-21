@@ -214,6 +214,105 @@ export default function NostrProjectView() {
     );
   }
 
+  // Finished / Completed view
+  if (project.status === 'completed') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20">
+        <div className="container mx-auto px-4 py-12">
+          <Button
+            variant="ghost"
+            className="mb-6"
+            onClick={() => navigate('/nostr-projects')}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Projects
+          </Button>
+
+          <Card className="max-w-4xl mx-auto">
+            {project.header_image && (
+              <div className="relative h-64 md:h-96 overflow-hidden">
+                <img
+                  src={project.header_image}
+                  alt={project.title}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute top-4 right-4">
+                  <Badge className="bg-green-600 text-white border-0 shadow-lg text-base px-4 py-1.5">
+                    Finished
+                  </Badge>
+                </div>
+              </div>
+            )}
+
+            <CardHeader>
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <CardTitle className="text-3xl">{project.title}</CardTitle>
+                <div className="flex items-center gap-2">
+                  {!project.header_image && (
+                    <Badge className="bg-green-600 text-white border-0 text-base px-4 py-1.5">
+                      Finished
+                    </Badge>
+                  )}
+                  {isAdmin && project.event && (
+                    <>
+                      <ShareToNostrButton
+                        url={`/nostr-projects/${project.id}`}
+                        title={project.title}
+                        description={project.description}
+                        image={project.header_image || project.images[0]}
+                        variant="ghost"
+                        size="icon"
+                      />
+                      <ClawstrShare
+                        event={project.event}
+                        contentType="project"
+                        trigger={
+                          <Button variant="ghost" size="icon">
+                            <Share2 className="h-4 w-4" />
+                          </Button>
+                        }
+                      />
+                    </>
+                  )}
+                </div>
+              </div>
+              <CardDescription className="text-base">{project.description}</CardDescription>
+              <div className="flex items-center gap-2 pt-2">
+                <Badge variant="outline" className="gap-1">
+                  <Users className="h-4 w-4" />
+                  {participants.length} participants
+                </Badge>
+              </div>
+            </CardHeader>
+
+            {project.images.length > 0 && (
+              <CardContent className="space-y-4">
+                <h3 className="font-semibold text-lg">Project Artwork</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {project.images.map((img, index) => (
+                    <div key={index} className="relative overflow-hidden rounded-lg aspect-square">
+                      <img
+                        src={img}
+                        alt={`Artwork ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ))}
+                </div>
+                <div className="flex justify-center pt-4">
+                  <Button onClick={() => navigate('/nostr-projects')}>
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Back to All Projects
+                  </Button>
+                </div>
+              </CardContent>
+            )}
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   if (showSuccess) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20">
