@@ -21,6 +21,9 @@ import {
   Clapperboard,
   ArrowRight,
   Settings,
+  Gift,
+  Send,
+  ExternalLink,
 } from 'lucide-react';
 
 // ── Helpers ───────────────────────────────────────────────
@@ -172,6 +175,42 @@ export default function AppPage() {
           </CardContent>
         </Card>
 
+        {/* ── Social Links ──────────────────────────────── */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <a
+            href="https://primal.net/p/npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-1"
+          >
+            <Button
+              variant="outline"
+              className="w-full gap-2 border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-700 dark:text-purple-300 dark:hover:bg-purple-900/20 font-semibold"
+              size="lg"
+            >
+              <img src="https://primal.net/favicon.ico" alt="" className="h-4 w-4 rounded" onError={(e) => { e.currentTarget.style.display='none'; }} />
+              BitPopArt on Nostr
+              <ExternalLink className="h-4 w-4 ml-auto" />
+            </Button>
+          </a>
+          <a
+            href="https://t.me/bitpopart"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-1"
+          >
+            <Button
+              variant="outline"
+              className="w-full gap-2 border-sky-300 text-sky-700 hover:bg-sky-50 dark:border-sky-700 dark:text-sky-300 dark:hover:bg-sky-900/20 font-semibold"
+              size="lg"
+            >
+              <Send className="h-4 w-4 text-sky-500" />
+              BitPopArt Telegram
+              <ExternalLink className="h-4 w-4 ml-auto" />
+            </Button>
+          </a>
+        </div>
+
         {/* ── Wallpapers ────────────────────────────────── */}
         <section>
           <CardHeader className="px-0">
@@ -261,6 +300,33 @@ export default function AppPage() {
               </CardContent>
             </Card>
           )}
+        </section>
+
+        {/* ── Free Images ───────────────────────────────── */}
+        <section>
+          <CardHeader className="px-0">
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <Gift className="h-5 w-5 text-teal-600" />
+              Free Images
+            </CardTitle>
+          </CardHeader>
+          <Card className="overflow-hidden border-0 shadow-md bg-gradient-to-br from-teal-50 via-cyan-50 to-green-50 dark:from-teal-900/20 dark:via-cyan-900/20 dark:to-green-900/20">
+            <CardContent className="py-8 text-center space-y-4">
+              <Gift className="h-14 w-14 mx-auto text-teal-400" />
+              <div>
+                <p className="font-semibold text-teal-800 dark:text-teal-300 text-lg">Free art for everyone</p>
+                <p className="text-sm text-teal-700 dark:text-teal-400 italic mt-1">Digital art is free — feel free to zap ⚡</p>
+              </div>
+              <Button
+                className="gap-2 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white border-0 shadow"
+                onClick={() => navigate('/free')}
+              >
+                <Download className="h-4 w-4" />
+                Browse Free Downloads
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </CardContent>
+          </Card>
         </section>
 
         {/* ── Footer ────────────────────────────────────── */}
