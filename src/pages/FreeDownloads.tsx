@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { useSeoMeta } from '@unhead/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,6 +30,7 @@ import {
   Gift,
   X,
   CheckCircle2,
+  Heart,
 } from 'lucide-react';
 
 const ADMIN_PUBKEY = getAdminPubkeyHex();
@@ -174,16 +176,27 @@ export default function FreeDownloads() {
           <p className="text-lg font-semibold text-teal-700 dark:text-teal-400 italic mb-6">
             Digital art is free — feel free to zap ⚡
           </p>
-          {/* Big Zap Button */}
-          <ZapButton
-            authorPubkey={ADMIN_PUBKEY}
-            lightningAddress="traveltelly@primal.net"
-            eventTitle="BitPopArt Free Downloads"
-            size="lg"
-            variant="outline"
-            showLabel={true}
-            className="h-14 px-10 text-lg font-bold border-2 border-orange-400 hover:border-orange-500"
-          />
+          {/* Zap + Community buttons */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <ZapButton
+              authorPubkey={ADMIN_PUBKEY}
+              lightningAddress="traveltelly@primal.net"
+              eventTitle="BitPopArt Free Downloads"
+              size="lg"
+              variant="outline"
+              showLabel={true}
+              className="h-14 px-10 text-lg font-bold border-2 border-orange-400 hover:border-orange-500"
+            />
+            <Link to="/app">
+              <Button
+                size="lg"
+                className="h-14 px-8 text-base font-bold gap-2 bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 hover:from-pink-600 hover:via-rose-600 hover:to-orange-600 text-white border-0 shadow-md"
+              >
+                <Heart className="h-5 w-5 fill-white" />
+                Join the POP Community
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* Admin Upload Section */}
