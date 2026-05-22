@@ -9,7 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ShareDialog } from '@/components/share/ShareDialog';
-import { ArrowRight, Share2, Image as ImageIcon, ArrowLeft } from 'lucide-react';
+import { ArrowRight, Share2, Image as ImageIcon, ArrowLeft, Globe } from 'lucide-react';
 import { nip19 } from 'nostr-tools';
 import type { ProjectData } from '@/lib/projectTypes';
 import type { ProjectCategory } from '@/components/projects/ProjectManagement';
@@ -115,6 +115,7 @@ export function CategoryProjectsPage({
             const featured = event.tags.find(t => t[0] === 'featured')?.[1] === 'true';
             const comingSoon = event.tags.find(t => t[0] === 'coming-soon')?.[1] === 'true';
             const eventCategory = event.tags.find(t => t[0] === 'category')?.[1] || 'general';
+            const brandSite = event.tags.find(t => t[0] === 'brand-site')?.[1];
 
             if (!id || !name) return null;
             if (eventCategory !== category) return null;
@@ -131,6 +132,7 @@ export function CategoryProjectsPage({
               order: order ? parseInt(order) : undefined,
               featured,
               coming_soon: comingSoon,
+              brand_site: brandSite,
             };
           } catch {
             return null;
@@ -297,10 +299,25 @@ export function CategoryProjectsPage({
                     <CardDescription className="line-clamp-3 text-base">
                       {project.description}
                     </CardDescription>
+                    {/* Project Website Button */}
+                    {!isComingSoon && project.brand_site && (
+                      <div className="pt-2" onClick={(e) => e.stopPropagation()}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full gap-2 border-blue-300 text-blue-700 hover:bg-blue-50 dark:border-blue-700 dark:text-blue-300 dark:hover:bg-blue-900/20"
+                          onClick={() => window.open(project.brand_site, '_blank')}
+                        >
+                          <Globe className="h-4 w-4" />
+                          View Project Site
+                        </Button>
+                      </div>
+                    )}
+
                     {/* Share Button */}
-                    {!isComingSoon && (
-                      <div className="pt-3" onClick={(e) => e.stopPropagation()}>
-                        <ShareDialog
+                     {!isComingSoon && (
+                       <div className="pt-3" onClick={(e) => e.stopPropagation()}>
+                         <ShareDialog
                           title={project.name}
                           description={project.description}
                           url={project.url?.startsWith('http') ? project.url : `${window.location.origin}${project.url || `/projects#${project.id}`}`}

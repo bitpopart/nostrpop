@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNostr } from '@nostrify/react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -35,6 +35,7 @@ import {
   Gamepad2,
   Clapperboard,
   Globe,
+  FileText,
 } from 'lucide-react';
 import type { NostrEvent } from '@nostrify/nostrify';
 import { generateProjectUUID } from '@/lib/projectTypes';
@@ -53,6 +54,7 @@ interface ProjectFormData {
   description: string;
   thumbnail: string;
   url: string;
+  brand_site: string;
   order: string;
   featured: boolean;
   coming_soon: boolean;
@@ -71,15 +73,19 @@ export function ProjectManagement({ filterCategory }: ProjectManagementProps = {
   const { mutateAsync: uploadFile } = useUploadFile();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const brandSitePdfRef = useRef<HTMLInputElement>(null);
 
   const [isCreating, setIsCreating] = useState(false);
   const [editingProject, setEditingProject] = useState<NostrEvent | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [brandSiteMode, setBrandSiteMode] = useState<'url' | 'html' | 'pdf'>('url');
+  const [brandSiteHtml, setBrandSiteHtml] = useState('');
   const [formData, setFormData] = useState<ProjectFormData>({
     name: '',
     description: '',
     thumbnail: '',
     url: '',
+    brand_site: '',
     order: '',
     featured: false,
     coming_soon: false,
@@ -148,6 +154,36 @@ export function ProjectManagement({ filterCategory }: ProjectManagementProps = {
     }
   };
 
+  const handleBrandSiteFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    const isHtml = file.type === 'text/html' || /\.(html?|xhtml)$/i.test(file.name);
+    if (!isPdf && !isHtml) { toast.error('Please upload a PDF or HTML file.'); return; }
+    if (file.size > 15 * 1024 * 1024) { toast.error('File too large (max 15MB).'); return; }
+    try {
+      if (isHtml) {
+        const html = await file.text();
+        setFormData(prev => ({ ...prev, brand_site: `data:text/html;charset=utf-8,${encodeURIComponent(html)}` }));
+        setBrandSiteMode('url');
+        toast.success('HTML file added as project site.');
+        return;
+      }
+      const tags = await uploadFile(file);
+      const url = tags[0]?.[1];
+      if (url) { setFormData(prev => ({ ...prev, brand_site: url })); setBrandSiteMode('url'); toast.success('PDF uploaded and linked.'); }
+    } catch { toast.error('Failed to upload file.'); }
+    finally { if (brandSitePdfRef.current) brandSitePdfRef.current.value = ''; }
+  }, [uploadFile]);
+
+  const applyBrandSiteHtml = useCallback(() => {
+    if (!brandSiteHtml.trim()) { toast.error('Paste HTML first.'); return; }
+    const blob = new Blob([brandSiteHtml], { type: 'text/html' });
+    setFormData(prev => ({ ...prev, brand_site: URL.createObjectURL(blob) }));
+    setBrandSiteMode('url');
+    toast.success('HTML page created for project site.');
+  }, [brandSiteHtml]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -185,6 +221,9 @@ export function ProjectManagement({ filterCategory }: ProjectManagementProps = {
     if (formData.coming_soon) {
       tags.push(['coming-soon', 'true']);
     }
+    if (formData.brand_site) {
+      tags.push(['brand-site', formData.brand_site]);
+    }
 
     const contentData = {
       name: formData.name,
@@ -204,11 +243,14 @@ export function ProjectManagement({ filterCategory }: ProjectManagementProps = {
           toast.success(editingProject ? 'Project updated!' : 'Project created!');
           setIsCreating(false);
           setEditingProject(null);
+          setBrandSiteMode('url');
+          setBrandSiteHtml('');
           setFormData({
             name: '',
             description: '',
             thumbnail: '',
             url: '',
+            brand_site: '',
             order: '',
             featured: false,
             coming_soon: false,
@@ -230,6 +272,7 @@ export function ProjectManagement({ filterCategory }: ProjectManagementProps = {
     const nameTag = event.tags.find(t => t[0] === 'name')?.[1];
     const imageTag = event.tags.find(t => t[0] === 'image')?.[1];
     const urlTag = event.tags.find(t => t[0] === 'r')?.[1];
+    const brandSiteTag = event.tags.find(t => t[0] === 'brand-site')?.[1];
     const orderTag = event.tags.find(t => t[0] === 'order')?.[1];
     const featuredTag = event.tags.find(t => t[0] === 'featured')?.[1] === 'true';
     const comingSoonTag = event.tags.find(t => t[0] === 'coming-soon')?.[1] === 'true';
@@ -240,11 +283,14 @@ export function ProjectManagement({ filterCategory }: ProjectManagementProps = {
       description: content.description || '',
       thumbnail: imageTag || content.thumbnail || '',
       url: urlTag || content.url || '',
+      brand_site: brandSiteTag || '',
       order: orderTag || '',
       featured: featuredTag,
       coming_soon: comingSoonTag,
       category: categoryTag,
     });
+    setBrandSiteMode('url');
+    setBrandSiteHtml('');
     setEditingProject(event);
     setIsCreating(true);
   };
@@ -274,11 +320,14 @@ export function ProjectManagement({ filterCategory }: ProjectManagementProps = {
   const handleCancel = () => {
     setIsCreating(false);
     setEditingProject(null);
+    setBrandSiteMode('url');
+    setBrandSiteHtml('');
     setFormData({
       name: '',
       description: '',
       thumbnail: '',
       url: '',
+      brand_site: '',
       order: '',
       featured: false,
       coming_soon: false,
@@ -479,6 +528,79 @@ export function ProjectManagement({ filterCategory }: ProjectManagementProps = {
                 </div>
                 <p className="text-sm text-muted-foreground">
                   Mark this project as "Coming Soon" - it will be displayed with a special badge
+                </p>
+              </div>
+
+              {/* Project Website */}
+              <div className="space-y-3 p-4 border rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <Label className="flex items-center gap-2 font-medium">
+                    <Globe className="h-4 w-4 text-blue-600" />
+                    Project Website (optional)
+                  </Label>
+                  <div className="flex items-center gap-1 rounded-md border bg-white dark:bg-gray-900 p-1">
+                    <Button type="button" size="sm" variant={brandSiteMode === 'url' ? 'default' : 'ghost'} onClick={() => setBrandSiteMode('url')}>URL</Button>
+                    <Button type="button" size="sm" variant={brandSiteMode === 'html' ? 'default' : 'ghost'} onClick={() => setBrandSiteMode('html')}>HTML</Button>
+                    <Button type="button" size="sm" variant={brandSiteMode === 'pdf' ? 'default' : 'ghost'} onClick={() => setBrandSiteMode('pdf')}>PDF</Button>
+                  </div>
+                </div>
+
+                {brandSiteMode === 'url' && (
+                  <Input
+                    type="url"
+                    placeholder="https://example.com/project-page-or-brochure.pdf"
+                    value={formData.brand_site}
+                    onChange={(e) => handleInputChange('brand_site', e.target.value)}
+                  />
+                )}
+
+                {brandSiteMode === 'html' && (
+                  <div className="space-y-2">
+                    <Textarea
+                      value={brandSiteHtml}
+                      onChange={(e) => setBrandSiteHtml(e.target.value)}
+                      rows={8}
+                      placeholder="Paste full HTML code here — it will be converted into a page URL."
+                    />
+                    <div className="flex gap-2 flex-wrap">
+                      <Button type="button" variant="outline" size="sm" onClick={applyBrandSiteHtml}>
+                        <FileText className="h-4 w-4 mr-2" />
+                        Create page from HTML
+                      </Button>
+                      <Button type="button" variant="ghost" size="sm" onClick={() => setBrandSiteHtml('')}>Clear</Button>
+                    </div>
+                  </div>
+                )}
+
+                {brandSiteMode === 'pdf' && (
+                  <div className="space-y-2">
+                    <input
+                      ref={brandSitePdfRef}
+                      type="file"
+                      accept="application/pdf,text/html,.html,.htm,.xhtml"
+                      className="hidden"
+                      onChange={handleBrandSiteFileUpload}
+                    />
+                    <Button type="button" variant="outline" size="sm" onClick={() => brandSitePdfRef.current?.click()}>
+                      <Upload className="h-4 w-4 mr-2" />
+                      Upload PDF / HTML file
+                    </Button>
+                    <p className="text-xs text-muted-foreground">PDF or HTML file will be hosted and linked automatically.</p>
+                  </div>
+                )}
+
+                {formData.brand_site && (
+                  <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 rounded px-3 py-2">
+                    <Globe className="h-4 w-4 flex-shrink-0" />
+                    <span className="truncate flex-1">{formData.brand_site.startsWith('data:') ? 'HTML page ready' : formData.brand_site}</span>
+                    <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={() => setFormData(prev => ({ ...prev, brand_site: '' }))}>
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                )}
+
+                <p className="text-xs text-muted-foreground">
+                  Add a URL, upload a PDF, or paste HTML. A "View Project Site" button will appear on the project card.
                 </p>
               </div>
 

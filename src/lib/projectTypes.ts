@@ -12,6 +12,7 @@ export interface ProjectData {
   order?: number; // Display order
   featured?: boolean; // Show on homepage
   coming_soon?: boolean; // Shows thumbnail only, no link
+  brand_site?: string; // Optional extra site/page URL
 }
 
 /**

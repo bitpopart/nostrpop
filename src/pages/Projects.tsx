@@ -14,6 +14,7 @@ import { ClawstrShare } from '@/components/ClawstrShare';
 import { ZapButton } from '@/components/ZapButton';
 import { ShareDialog } from '@/components/share/ShareDialog';
 import { Sparkles, ArrowRight, Users, Zap, Award, Share2, Image as ImageIcon, Gamepad2, Clapperboard, Globe } from 'lucide-react';
+
 import { useNostrProjects } from '@/hooks/useNostrProjects';
 import { useNIP58BadgeDefinitions, useNIP58BadgeAwards } from '@/hooks/useNIP58Badges';
 import { nip19 } from 'nostr-tools';
@@ -191,6 +192,7 @@ export default function Projects() {
             const featured = event.tags.find(t => t[0] === 'featured')?.[1] === 'true';
             const comingSoon = event.tags.find(t => t[0] === 'coming-soon')?.[1] === 'true';
             const category = event.tags.find(t => t[0] === 'category')?.[1] || 'general';
+            const brandSite = event.tags.find(t => t[0] === 'brand-site')?.[1];
 
             if (!id || !name) return null;
 
@@ -209,6 +211,7 @@ export default function Projects() {
               order: order ? parseInt(order) : undefined,
               featured,
               coming_soon: comingSoon,
+              brand_site: brandSite,
             };
           } catch {
             return null;
@@ -423,6 +426,21 @@ export default function Projects() {
                   <CardDescription className="line-clamp-3 text-base">
                     {project.description}
                   </CardDescription>
+                  {/* Project Website Button */}
+                  {!isComingSoon && 'brand_site' in project && project.brand_site && (
+                    <div className="pt-2" onClick={(e) => e.stopPropagation()}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full gap-2 border-blue-300 text-blue-700 hover:bg-blue-50 dark:border-blue-700 dark:text-blue-300 dark:hover:bg-blue-900/20"
+                        onClick={() => window.open(project.brand_site as string, '_blank')}
+                      >
+                        <Globe className="h-4 w-4" />
+                        View Project Site
+                      </Button>
+                    </div>
+                  )}
+
                   {/* Share Button */}
                   {!isComingSoon && (
                     <div className="pt-3" onClick={(e) => e.stopPropagation()}>
