@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useSeoMeta } from '@unhead/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,10 +28,20 @@ import {
   Image as ImageIcon,
   Gift,
   X,
-  Zap,
+  CheckCircle2,
 } from 'lucide-react';
 
 const ADMIN_PUBKEY = getAdminPubkeyHex();
+
+interface PendingImage {
+  id: string;          // local key
+  file: File;
+  previewUrl: string;  // object URL for preview
+  title: string;
+  uploadedUrl: string | null;  // set after upload
+  uploading: boolean;
+  error: boolean;
+}
 
 export default function FreeDownloads() {
   const { user } = useCurrentUser();
@@ -43,44 +53,89 @@ export default function FreeDownloads() {
   const { mutateAsync: uploadFile } = useUploadFile();
 
   const [showUploadForm, setShowUploadForm] = useState(false);
-  const [title, setTitle] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
-  const [isUploading, setIsUploading] = useState(false);
+  const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useSeoMeta({
     title: 'Free Downloads - BitPopArt',
     description: 'Free images and art downloads by BitPopArt. Download and use them however you like!',
   });
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
+  const handleFilesSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
 
-    setIsUploading(true);
-    try {
-      const tags = await uploadFile(files[0]);
-      const url = tags[0][1];
-      setImageUrl(url);
-    } catch (error) {
-      console.error('Upload failed:', error);
-    } finally {
-      setIsUploading(false);
-    }
+    // Add all files to pending list immediately (with previews)
+    const newPending: PendingImage[] = files.map(file => ({
+      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      file,
+      previewUrl: URL.createObjectURL(file),
+      title: '',
+      uploadedUrl: null,
+      uploading: true,
+      error: false,
+    }));
+
+    setPendingImages(prev => [...prev, ...newPending]);
+
+    // Reset input so same files can be re-selected
+    if (fileInputRef.current) fileInputRef.current.value = '';
+
+    // Upload all files in parallel
+    await Promise.all(newPending.map(async (pending) => {
+      try {
+        const tags = await uploadFile(pending.file);
+        const url = tags[0][1];
+        setPendingImages(prev =>
+          prev.map(p => p.id === pending.id ? { ...p, uploadedUrl: url, uploading: false } : p)
+        );
+      } catch {
+        setPendingImages(prev =>
+          prev.map(p => p.id === pending.id ? { ...p, uploading: false, error: true } : p)
+        );
+      }
+    }));
   };
 
-  const handlePublish = () => {
-    if (!imageUrl) return;
-    createDownload(
-      { title: title || 'Free Download', imageUrl },
-      {
-        onSuccess: () => {
-          setTitle('');
-          setImageUrl('');
-          setShowUploadForm(false);
-        },
-      },
-    );
+  const updateTitle = (id: string, title: string) => {
+    setPendingImages(prev => prev.map(p => p.id === id ? { ...p, title } : p));
+  };
+
+  const removePending = (id: string) => {
+    setPendingImages(prev => {
+      const item = prev.find(p => p.id === id);
+      if (item) URL.revokeObjectURL(item.previewUrl);
+      return prev.filter(p => p.id !== id);
+    });
+  };
+
+  const handlePublishAll = async () => {
+    const ready = pendingImages.filter(p => p.uploadedUrl && !p.uploading && !p.error);
+    if (ready.length === 0) return;
+
+    setIsSubmitting(true);
+    let published = 0;
+
+    // Publish sequentially to avoid relay flooding
+    for (const item of ready) {
+      await new Promise<void>((resolve) => {
+        createDownload(
+          { title: item.title.trim() || 'Free Download', imageUrl: item.uploadedUrl! },
+          {
+            onSuccess: () => { published++; resolve(); },
+            onError: () => resolve(),
+          }
+        );
+      });
+    }
+
+    // Clean up previews
+    pendingImages.forEach(p => URL.revokeObjectURL(p.previewUrl));
+    setPendingImages([]);
+    setIsSubmitting(false);
+    if (published > 0) setShowUploadForm(false);
   };
 
   const handleDownload = async (url: string, filename: string) => {
@@ -133,7 +188,7 @@ export default function FreeDownloads() {
 
         {/* Admin Upload Section */}
         {user && isAdmin && (
-          <div className="max-w-2xl mx-auto mb-10">
+          <div className="max-w-4xl mx-auto mb-10">
             {!showUploadForm ? (
               <Button
                 onClick={() => setShowUploadForm(true)}
@@ -141,7 +196,7 @@ export default function FreeDownloads() {
                 style={getGradientStyle('primary')}
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Add Free Download Image
+                Add Free Download Images
               </Button>
             ) : (
               <Card>
@@ -149,78 +204,123 @@ export default function FreeDownloads() {
                   <CardTitle className="flex items-center justify-between">
                     <span className="flex items-center gap-2">
                       <Upload className="h-5 w-5" />
-                      Upload Image
+                      Upload Images
+                      {pendingImages.length > 0 && (
+                        <Badge variant="secondary">{pendingImages.length} selected</Badge>
+                      )}
                     </span>
-                    <Button variant="ghost" size="icon" onClick={() => setShowUploadForm(false)}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        pendingImages.forEach(p => URL.revokeObjectURL(p.previewUrl));
+                        setPendingImages([]);
+                        setShowUploadForm(false);
+                      }}
+                    >
                       <X className="h-4 w-4" />
                     </Button>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="dl-title">Title (optional)</Label>
-                    <Input
-                      id="dl-title"
-                      placeholder="e.g. Bitcoin Pop Art Wallpaper"
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
+                <CardContent className="space-y-5">
+
+                  {/* Drop zone */}
+                  <label className="flex flex-col items-center justify-center w-full h-36 border-2 border-dashed rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors border-teal-300 dark:border-teal-700">
+                    <ImageIcon className="h-8 w-8 text-teal-500 mb-2" />
+                    <span className="text-sm font-medium text-teal-700 dark:text-teal-400">
+                      Click to select images
+                    </span>
+                    <span className="text-xs text-muted-foreground mt-1">
+                      Select multiple files at once — all will upload in parallel
+                    </span>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={handleFilesSelected}
                     />
-                  </div>
+                  </label>
 
-                  <div className="space-y-2">
-                    <Label>Image</Label>
-                    {imageUrl ? (
-                      <div className="relative">
-                        <img
-                          src={imageUrl}
-                          alt="Preview"
-                          className="w-full max-h-64 object-contain rounded-lg border"
-                        />
-                        <Button
-                          variant="destructive"
-                          size="icon"
-                          className="absolute top-2 right-2 h-8 w-8"
-                          onClick={() => setImageUrl('')}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                        {isUploading ? (
-                          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                        ) : (
-                          <>
-                            <ImageIcon className="h-8 w-8 text-muted-foreground mb-2" />
-                            <span className="text-sm text-muted-foreground">
-                              Click to upload an image
-                            </span>
-                          </>
-                        )}
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={handleFileUpload}
-                          disabled={isUploading}
-                        />
-                      </label>
-                    )}
-                  </div>
+                  {/* Pending images grid */}
+                  {pendingImages.length > 0 && (
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {pendingImages.map(item => (
+                        <div key={item.id} className="relative rounded-xl overflow-hidden border bg-white dark:bg-gray-800 shadow-sm">
+                          {/* Preview */}
+                          <div className="aspect-square relative">
+                            <img
+                              src={item.previewUrl}
+                              alt="preview"
+                              className="w-full h-full object-cover"
+                            />
+                            {/* Upload status overlay */}
+                            {item.uploading && (
+                              <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                <Loader2 className="h-8 w-8 text-white animate-spin" />
+                              </div>
+                            )}
+                            {item.error && (
+                              <div className="absolute inset-0 bg-red-900/60 flex items-center justify-center">
+                                <span className="text-white text-xs font-medium px-2 text-center">Upload failed</span>
+                              </div>
+                            )}
+                            {item.uploadedUrl && (
+                              <div className="absolute top-2 left-2">
+                                <CheckCircle2 className="h-5 w-5 text-green-400 drop-shadow" />
+                              </div>
+                            )}
+                            {/* Remove button */}
+                            <Button
+                              size="icon"
+                              variant="destructive"
+                              className="absolute top-2 right-2 h-7 w-7 rounded-full"
+                              onClick={() => removePending(item.id)}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                          {/* Title input */}
+                          <div className="p-2">
+                            <Input
+                              placeholder="Title (optional)"
+                              value={item.title}
+                              onChange={(e) => updateTitle(item.id, e.target.value)}
+                              className="text-xs h-8"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
 
-                  <Button
-                    onClick={handlePublish}
-                    disabled={!imageUrl || isPublishing}
-                    className="w-full text-white border-0"
-                    style={getGradientStyle('primary')}
-                  >
-                    {isPublishing ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    ) : (
-                      <Plus className="h-4 w-4 mr-2" />
-                    )}
-                    Publish
-                  </Button>
+                  {/* Publish all button */}
+                  {pendingImages.length > 0 && (
+                    <Button
+                      onClick={handlePublishAll}
+                      disabled={
+                        isSubmitting ||
+                        isPublishing ||
+                        pendingImages.every(p => p.uploading || p.error)
+                      }
+                      className="w-full text-white border-0"
+                      style={getGradientStyle('primary')}
+                    >
+                      {isSubmitting || isPublishing ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Publishing…
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="h-4 w-4 mr-2" />
+                          Publish {pendingImages.filter(p => p.uploadedUrl).length} Image{pendingImages.filter(p => p.uploadedUrl).length !== 1 ? 's' : ''}
+                        </>
+                      )}
+                    </Button>
+                  )}
+
                 </CardContent>
               </Card>
             )}
