@@ -35,7 +35,8 @@ import {
   Users,
   Zap,
   FileText,
-  MapPin
+  MapPin,
+  Heart,
 } from 'lucide-react';
 import type { NostrEvent, NostrMetadata } from '@nostrify/nostrify';
 import type { ArtworkData } from '@/lib/artTypes';
@@ -991,6 +992,51 @@ const Index = () => {
             </div>
           </div>
         </div>
+
+        {/* Love PopArt Community App Banner */}
+        <Link to="/app" className="block mb-12 group">
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 p-[2px] shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <div className="relative rounded-2xl bg-gradient-to-r from-pink-50 via-rose-50 to-orange-50 dark:from-pink-950/80 dark:via-rose-950/80 dark:to-orange-950/80 px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-4 overflow-hidden">
+              {/* Decorative background hearts */}
+              <div className="absolute inset-0 pointer-events-none select-none overflow-hidden opacity-10">
+                <span className="absolute top-1 left-8 text-5xl">❤️</span>
+                <span className="absolute bottom-1 right-16 text-4xl">🎨</span>
+                <span className="absolute top-2 right-40 text-3xl">✨</span>
+              </div>
+
+              {/* Left: icon + text */}
+              <div className="flex items-center gap-4 z-10">
+                <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300">
+                  <Heart className="h-6 w-6 text-white fill-white" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xl font-extrabold bg-gradient-to-r from-pink-600 via-rose-600 to-orange-600 bg-clip-text text-transparent">
+                      Love PopArt
+                    </span>
+                    <Badge className="bg-gradient-to-r from-pink-500 to-orange-500 text-white border-0 text-xs">
+                      Community App
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mt-0.5">
+                    Share, explore & celebrate pop art together — join the community
+                  </p>
+                </div>
+              </div>
+
+              {/* Right: CTA */}
+              <div className="flex-shrink-0 z-10">
+                <Button
+                  size="sm"
+                  className="bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 hover:from-pink-600 hover:via-rose-600 hover:to-orange-600 text-white border-0 shadow gap-2 group-hover:shadow-md transition-all"
+                >
+                  Open App
+                  <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </Link>
 
         {/* Conditional Content Based on View Mode */}
         {viewMode === 'progress' ? (
