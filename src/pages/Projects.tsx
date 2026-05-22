@@ -130,14 +130,7 @@ const BUILTIN_PROJECTS = [
     url: '/cards',
     isBuiltIn: true,
   },
-  {
-    id: 'free-downloads',
-    name: 'Free Downloads',
-    description: 'Free images and art by BitPopArt — download and use them however you like!',
-    thumbnail: '',
-    url: '/free',
-    isBuiltIn: true,
-  },
+
 ];
 
 export default function Projects() {

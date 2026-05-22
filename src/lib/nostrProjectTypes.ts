@@ -21,6 +21,7 @@ export interface NostrProjectData {
   coming_soon?: boolean; // Shows thumbnail only, no join functionality
   badge_naddr?: string; // Optional: NIP-19 naddr of associated badge (naddr1...)
   badge_image?: string; // Optional: Badge thumbnail image URL
+  brand_site?: string; // Optional: Extra site/page URL (URL, data URL, or hosted file)
 }
 
 /**

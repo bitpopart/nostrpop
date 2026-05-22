@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowLeft, Zap, Users, Check, Share2 } from 'lucide-react';
+import { ArrowLeft, Zap, Users, Check, Share2, Globe } from 'lucide-react';
 import { ShareToNostrButton } from '@/components/ShareToNostrButton';
 import { ClawstrShare } from '@/components/ClawstrShare';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
@@ -277,12 +277,25 @@ export default function NostrProjectView() {
                 </div>
               </div>
               <CardDescription className="text-base">{project.description}</CardDescription>
-              <div className="flex items-center gap-2 pt-2">
+              <div className="flex items-center gap-2 pt-2 flex-wrap">
                 <Badge variant="outline" className="gap-1">
                   <Users className="h-4 w-4" />
                   {participants.length} participants
                 </Badge>
               </div>
+              {project.brand_site && (
+                <div className="pt-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2 border-blue-300 text-blue-700 hover:bg-blue-50 dark:border-blue-700 dark:text-blue-300 dark:hover:bg-blue-900/20"
+                    onClick={() => window.open(project.brand_site, '_blank')}
+                  >
+                    <Globe className="h-4 w-4" />
+                    View Project Site
+                  </Button>
+                </div>
+              )}
             </CardHeader>
 
             {project.images.length > 0 && (
@@ -408,18 +421,31 @@ export default function NostrProjectView() {
                 <CardDescription className="text-base">
                   {project.description}
                 </CardDescription>
-                <div className="flex items-center gap-2 pt-2">
-                  <Badge variant="default" className="gap-1 text-base px-3 py-1">
-                    <Zap className="h-4 w-4" />
-                    {project.price_sats.toLocaleString()} sats
-                  </Badge>
-                  <Badge variant="outline" className="gap-1">
-                    <Users className="h-4 w-4" />
-                    {participants.length} joined
-                  </Badge>
-                </div>
-              </CardHeader>
-            </Card>
+                <div className="flex items-center gap-2 pt-2 flex-wrap">
+                   <Badge variant="default" className="gap-1 text-base px-3 py-1">
+                     <Zap className="h-4 w-4" />
+                     {project.price_sats.toLocaleString()} sats
+                   </Badge>
+                   <Badge variant="outline" className="gap-1">
+                     <Users className="h-4 w-4" />
+                     {participants.length} joined
+                   </Badge>
+                 </div>
+                 {project.brand_site && (
+                   <div className="pt-3">
+                     <Button
+                       variant="outline"
+                       size="sm"
+                       className="gap-2 border-blue-300 text-blue-700 hover:bg-blue-50 dark:border-blue-700 dark:text-blue-300 dark:hover:bg-blue-900/20"
+                       onClick={() => window.open(project.brand_site, '_blank')}
+                     >
+                       <Globe className="h-4 w-4" />
+                       View Project Site
+                     </Button>
+                   </div>
+                 )}
+               </CardHeader>
+             </Card>
 
             <Card>
               <CardHeader>
