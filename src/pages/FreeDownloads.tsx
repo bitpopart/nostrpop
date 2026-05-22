@@ -8,10 +8,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { RelaySelector } from '@/components/RelaySelector';
+import { ZapButton } from '@/components/ZapButton';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useUploadFile } from '@/hooks/useUploadFile';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { getAdminPubkeyHex } from '@/lib/adminUtils';
 import {
   useFreeDownloads,
   useCreateFreeDownload,
@@ -26,7 +28,10 @@ import {
   Image as ImageIcon,
   Gift,
   X,
+  Zap,
 } from 'lucide-react';
+
+const ADMIN_PUBKEY = getAdminPubkeyHex();
 
 export default function FreeDownloads() {
   const { user } = useCurrentUser();
@@ -107,9 +112,23 @@ export default function FreeDownloads() {
               Free Downloads
             </h1>
           </div>
-          <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+          <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto mb-3">
             Free images and art by BitPopArt — download and use them however you like!
           </p>
+          {/* Slogan */}
+          <p className="text-lg font-semibold text-teal-700 dark:text-teal-400 italic mb-6">
+            Digital art is free — feel free to zap ⚡
+          </p>
+          {/* Big Zap Button */}
+          <ZapButton
+            authorPubkey={ADMIN_PUBKEY}
+            lightningAddress="traveltelly@primal.net"
+            eventTitle="BitPopArt Free Downloads"
+            size="lg"
+            variant="outline"
+            showLabel={true}
+            className="h-14 px-10 text-lg font-bold border-2 border-orange-400 hover:border-orange-500"
+          />
         </div>
 
         {/* Admin Upload Section */}
@@ -268,34 +287,70 @@ export default function FreeDownloads() {
                       />
                     </div>
 
-                    {/* Download button (top-right corner) */}
-                    <Button
-                      size="icon"
-                      className="absolute top-2 right-2 h-9 w-9 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-white border-0"
-                      style={getGradientStyle('primary')}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDownload(dl.image_url, filename);
-                      }}
-                      title="Download"
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
+                    {/* Non-admin: Zap (top-left) + Download (top-right) — always visible */}
+                    {!isAdmin && (
+                      <>
+                        {/* Zap button — top-left */}
+                        <div
+                          className="absolute top-2 left-2 z-10"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <ZapButton
+                            authorPubkey={ADMIN_PUBKEY}
+                            lightningAddress="traveltelly@primal.net"
+                            event={dl.event}
+                            eventTitle={dl.title}
+                            size="icon"
+                            variant="default"
+                            showLabel={false}
+                            className="h-9 w-9 rounded-full shadow-lg bg-orange-500 hover:bg-orange-600 text-white border-0"
+                          />
+                        </div>
 
-                    {/* Admin delete button */}
+                        {/* Download button — top-right */}
+                        <Button
+                          size="icon"
+                          className="absolute top-2 right-2 h-9 w-9 rounded-full shadow-lg text-white border-0 z-10"
+                          style={getGradientStyle('primary')}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDownload(dl.image_url, filename);
+                          }}
+                          title="Download"
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
+
+                    {/* Admin controls — delete top-left, download top-right (hover only) */}
                     {isAdmin && (
-                      <Button
-                        size="icon"
-                        variant="destructive"
-                        className="absolute top-2 left-2 h-8 w-8 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteDownload(dl.id);
-                        }}
-                        title="Delete"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
+                      <>
+                        <Button
+                          size="icon"
+                          variant="destructive"
+                          className="absolute top-2 left-2 h-8 w-8 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteDownload(dl.id);
+                          }}
+                          title="Delete"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          className="absolute top-2 right-2 h-9 w-9 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-white border-0 z-10"
+                          style={getGradientStyle('primary')}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDownload(dl.image_url, filename);
+                          }}
+                          title="Download"
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
+                      </>
                     )}
 
                     {/* Title overlay */}

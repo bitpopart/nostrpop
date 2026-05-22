@@ -20,6 +20,7 @@ import { FundraiserManagement } from '@/components/fundraiser/FundraiserManageme
 import { useFundraisers } from '@/hooks/useFundraisers';
 import { Label } from '@/components/ui/label';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
+import { useNavigate } from 'react-router-dom';
 import {
   ShoppingCart,
   Plus,
@@ -27,13 +28,16 @@ import {
   Grid3X3,
   List,
   Zap,
-  Target
+  Target,
+  Download,
+  Gift,
 } from 'lucide-react';
 
 import { useCategories } from '@/hooks/useCategories';
 
 const Shop = () => {
   const { user } = useCurrentUser();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { getGradientStyle } = useThemeColors();
 
@@ -120,6 +124,22 @@ const Shop = () => {
             </div>
             <LightningStatusIndicator />
           </div>
+          {/* Free Downloads Button */}
+          <div className="mt-6">
+            <Button
+              size="lg"
+              onClick={() => navigate('/free')}
+              className="gap-2 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white border-0 shadow-md text-base px-8"
+            >
+              <Gift className="h-5 w-5" />
+              Free Downloads
+              <Download className="h-4 w-4 ml-1" />
+            </Button>
+            <p className="text-sm text-muted-foreground mt-2">
+              Free digital art — download &amp; zap what you like
+            </p>
+          </div>
+
           {user && isAdmin && (
             <Badge 
               className="mt-4 text-white border-0"
