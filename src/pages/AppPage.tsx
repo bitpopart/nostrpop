@@ -10,6 +10,7 @@ import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useMarketplaceProducts } from '@/hooks/useMarketplaceProducts';
 import { useAppWelcome, useAppMedia } from '@/hooks/useAppContent';
+import { useFreeDownloads } from '@/hooks/useFreeDownloads';
 import { ProductCard } from '@/components/marketplace/ProductCard';
 import { LoginArea } from '@/components/auth/LoginArea';
 import {
@@ -121,6 +122,7 @@ export default function AppPage() {
   const { data: wallpapers = [], isLoading: wpLoading } = useAppMedia('app-wallpaper');
   const { data: gifs = [], isLoading: gifLoading } = useAppMedia('app-gif');
   const { data: products = [], isLoading: productsLoading } = useMarketplaceProducts();
+  const { data: freeDownloads = [], isLoading: freeLoading } = useFreeDownloads();
 
   const displayName = metadata?.display_name || metadata?.name || (user ? 'friend' : undefined);
   const greeting = getGreeting();
@@ -310,23 +312,54 @@ export default function AppPage() {
               Free Images
             </CardTitle>
           </CardHeader>
-          <Card className="overflow-hidden border-0 shadow-md bg-gradient-to-br from-teal-50 via-cyan-50 to-green-50 dark:from-teal-900/20 dark:via-cyan-900/20 dark:to-green-900/20">
-            <CardContent className="py-8 text-center space-y-4">
-              <Gift className="h-14 w-14 mx-auto text-teal-400" />
-              <div>
-                <p className="font-semibold text-teal-800 dark:text-teal-300 text-lg">Free art for everyone</p>
-                <p className="text-sm text-teal-700 dark:text-teal-400 italic mt-1">Digital art is free — feel free to zap ⚡</p>
-              </div>
-              <Button
-                className="gap-2 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white border-0 shadow"
-                onClick={() => navigate('/free')}
-              >
-                <Download className="h-4 w-4" />
-                Browse Free Downloads
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </CardContent>
-          </Card>
+
+          {freeLoading ? (
+            <div className="grid grid-cols-3 gap-3">
+              {[...Array(3)].map((_, i) => (
+                <Skeleton key={i} className="aspect-square rounded-xl" />
+              ))}
+            </div>
+          ) : freeDownloads.length > 0 ? (
+            <div
+              className="grid grid-cols-3 gap-3 cursor-pointer"
+              onClick={() => navigate('/free')}
+            >
+              {freeDownloads.slice(0, 3).map(dl => (
+                <div
+                  key={dl.id}
+                  className="group relative rounded-xl overflow-hidden bg-white dark:bg-gray-800 shadow-md hover:shadow-xl transition-all duration-300"
+                >
+                  <div className="aspect-square">
+                    <img
+                      src={dl.image_url}
+                      alt={dl.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      loading="lazy"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-3">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="aspect-square rounded-xl bg-gradient-to-br from-teal-100 to-cyan-100 dark:from-teal-900/30 dark:to-cyan-900/30 flex items-center justify-center">
+                  <Gift className="h-8 w-8 text-teal-300" />
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="mt-3">
+            <Button
+              className="w-full gap-2 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white border-0 shadow"
+              onClick={() => navigate('/free')}
+            >
+              <Download className="h-4 w-4" />
+              Browse All Free Downloads
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </div>
         </section>
 
         {/* ── Footer ────────────────────────────────────── */}
