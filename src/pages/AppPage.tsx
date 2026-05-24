@@ -10,11 +10,9 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { useMarketplaceProducts } from '@/hooks/useMarketplaceProducts';
 import { useAppWelcome, useAppMedia } from '@/hooks/useAppContent';
 import { useFreeDownloads } from '@/hooks/useFreeDownloads';
-import { useNostr } from '@nostrify/react';
-import { useQuery } from '@tanstack/react-query';
+import { useAnimations } from '@/hooks/useAnimations';
 import { ProductCard } from '@/components/marketplace/ProductCard';
 import { LoginArea } from '@/components/auth/LoginArea';
-import { nip19 } from 'nostr-tools';
 import {
   Download,
   Gamepad2,
@@ -26,12 +24,7 @@ import {
   Gift,
   Send,
   ExternalLink,
-  Sparkles,
 } from 'lucide-react';
-
-// BitPopArt admin pubkey
-const ADMIN_NPUB = 'npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz';
-const ADMIN_PUBKEY = nip19.decode(ADMIN_NPUB).data as string;
 
 // 3 columns × 3 rows = 9 items max shown in preview
 const PREVIEW_COLS = 3;
@@ -144,72 +137,29 @@ function PreviewGallery({
   );
 }
 
-// ── Animations preview (from Nostr projects) ──────────────
-
-function useAnimationProjects() {
-  const { nostr } = useNostr();
-
-  return useQuery({
-    queryKey: ['projects', 'animations', 'preview'],
-    queryFn: async (c) => {
-      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(4000)]);
-
-      const events = await nostr.query(
-        [{ kinds: [36171], authors: [ADMIN_PUBKEY], '#t': ['bitpopart-project'], limit: 50 }],
-        { signal }
-      );
-
-      return events
-        .map(event => {
-          try {
-            const content = JSON.parse(event.content);
-            const id = event.tags.find(t => t[0] === 'd')?.[1];
-            const name = event.tags.find(t => t[0] === 'name')?.[1] || content.name;
-            const category = event.tags.find(t => t[0] === 'category')?.[1];
-            const thumbnail =
-              event.tags.find(t => t[0] === 'image')?.[1] ||
-              event.tags.find(t => t[0] === 'thumb')?.[1] ||
-              content.thumbnail || content.image || '';
-            const url = event.tags.find(t => t[0] === 'r')?.[1] || content.url || '';
-            const order = event.tags.find(t => t[0] === 'order')?.[1];
-            const comingSoon = event.tags.find(t => t[0] === 'coming-soon')?.[1] === 'true';
-
-            if (!id || !name || category !== 'animations') return null;
-
-            return { id, name, thumbnail, url, order: order ? parseInt(order) : 999, comingSoon };
-          } catch {
-            return null;
-          }
-        })
-        .filter((p): p is NonNullable<typeof p> => p !== null)
-        .sort((a, b) => a.order - b.order);
-    },
-    staleTime: 60000,
-  });
-}
+// ── Animations preview (from real animation events) ───────
 
 function AnimationsPreview({ onMoreClick }: { onMoreClick: () => void }) {
-  const navigate = useNavigate();
   const { getGradientStyle } = useThemeColors();
-  const { data: projects = [], isLoading } = useAnimationProjects();
-  const preview = projects.slice(0, PREVIEW_LIMIT);
+  const { data: animations = [], isLoading } = useAnimations();
+  const preview = animations.slice(0, PREVIEW_LIMIT);
 
   if (isLoading) {
     return (
       <div className="space-y-3">
         <div className="grid grid-cols-3 gap-3">
-          {[...Array(3)].map((_, i) => <Skeleton key={i} className="aspect-square rounded-xl" />)}
+          {[...Array(3)].map((_, i) => <Skeleton key={i} className="aspect-video rounded-xl" />)}
         </div>
       </div>
     );
   }
 
-  if (projects.length === 0) {
+  if (animations.length === 0) {
     return (
       <div className="space-y-3">
         <div className="grid grid-cols-3 gap-3">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="aspect-square rounded-xl bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/30 dark:to-orange-900/30 flex items-center justify-center">
+            <div key={i} className="aspect-video rounded-xl bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/30 dark:to-orange-900/30 flex items-center justify-center">
               <Clapperboard className="h-8 w-8 text-amber-300" />
             </div>
           ))}
@@ -224,58 +174,44 @@ function AnimationsPreview({ onMoreClick }: { onMoreClick: () => void }) {
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-3 gap-3">
-        {preview.map((project, index) => (
+        {preview.map(anim => (
           <div
-            key={project.id}
-            className="group relative rounded-xl overflow-hidden bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-            onClick={() => {
-              if (project.comingSoon) return;
-              if (project.url?.startsWith('http')) {
-                window.open(project.url, '_blank');
-              } else if (project.url) {
-                navigate(project.url);
-              }
-            }}
+            key={anim.id}
+            className="group relative rounded-xl overflow-hidden bg-black shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+            onClick={onMoreClick}
           >
-            <div className="aspect-square">
-              {project.thumbnail ? (
+            <div className="aspect-video">
+              {anim.thumb_url ? (
                 <img
-                  src={project.thumbnail}
-                  alt={project.name}
+                  src={anim.thumb_url}
+                  alt={anim.title}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   loading="lazy"
                 />
               ) : (
-                <div
-                  className="w-full h-full flex items-center justify-center"
-                  style={{
-                    background: `linear-gradient(135deg, ${['#f59e0b','#fb923c','#f472b6','#a78bfa','#34d399','#60a5fa','#f87171'][index % 7]}, ${['#ef4444','#a855f7','#f59e0b','#06b6d4','#ec4899','#8b5cf6','#14b8a6'][index % 7]})`
-                  }}
-                >
-                  <Sparkles className="h-8 w-8 text-white/80" />
+                <div className="w-full h-full bg-gradient-to-br from-amber-900 to-orange-900 flex items-center justify-center">
+                  <Clapperboard className="h-8 w-8 text-amber-400 opacity-50" />
                 </div>
               )}
             </div>
-            {project.comingSoon && (
-              <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                <Badge className="text-white text-xs border-0" style={getGradientStyle('coming-soon')}>
-                  Coming Soon
-                </Badge>
+            {/* Play overlay on hover */}
+            <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/30 transition-colors">
+              <div className="w-8 h-8 rounded-full bg-white/90 flex items-center justify-center shadow opacity-0 group-hover:opacity-100 transition-opacity">
+                <Clapperboard className="w-4 h-4 text-gray-900" />
               </div>
-            )}
-            {!project.comingSoon && (
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <p className="text-white text-xs font-medium truncate">{project.name}</p>
-              </div>
-            )}
+            </div>
+            {/* Title on hover */}
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+              <p className="text-white text-[10px] font-medium truncate">{anim.title}</p>
+            </div>
           </div>
         ))}
       </div>
 
       <Button variant="outline" className="w-full gap-2 font-semibold" onClick={onMoreClick}>
         More Animations
-        {projects.length > PREVIEW_LIMIT && (
-          <Badge variant="secondary" className="text-xs">{projects.length}</Badge>
+        {animations.length > PREVIEW_LIMIT && (
+          <Badge variant="secondary" className="text-xs">{animations.length}</Badge>
         )}
         <ArrowRight className="h-4 w-4 ml-auto" />
       </Button>
