@@ -10,7 +10,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { RelaySelector } from '@/components/RelaySelector';
-import { ZapButton } from '@/components/ZapButton';
 import { useAnimations } from '@/hooks/useAnimations';
 import { useAuthor } from '@/hooks/useAuthor';
 import { useZap } from '@/hooks/useZap';
@@ -30,12 +29,21 @@ const ADMIN_PUBKEY = getAdminPubkeyHex();
 const ADMIN_NPUB = 'npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz';
 const LIGHTNING_ADDRESS = 'bitpopart@rizful.com';
 
-// ── Always-visible Zap button (no self-check) ─────────────
+// ── Always-visible Zap dialog (no self-check) ─────────────
 // ZapButton hides itself when the logged-in user is the author.
-// This version always shows so the page looks complete for everyone.
+// InlineZapButton uses useZap directly and always renders.
 const PRESET_AMOUNTS = [21, 100, 500, 1000, 5000, 10000];
 
-function BannerZapButton() {
+interface InlineZapButtonProps {
+  /** Title shown in the dialog header */
+  label: string;
+  /** Optional event id to attach the zap to */
+  eventId?: string;
+  /** Button appearance variant */
+  variant?: 'banner' | 'card' | 'dialog';
+}
+
+function InlineZapButton({ label, eventId, variant = 'card' }: InlineZapButtonProps) {
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState(210);
   const [customAmount, setCustomAmount] = useState('');
@@ -49,6 +57,7 @@ function BannerZapButton() {
       recipientPubkey: ADMIN_PUBKEY,
       amount: finalAmount,
       comment: comment.trim(),
+      eventId,
     });
     if (success) {
       setOpen(false);
@@ -58,15 +67,23 @@ function BannerZapButton() {
     }
   };
 
+  const triggerClass =
+    variant === 'banner'
+      ? 'w-full sm:w-auto bg-white text-orange-600 border-white hover:bg-white/90 font-bold px-8 py-3 text-base shadow-md'
+      : variant === 'dialog'
+      ? 'flex-1 text-orange-600 border-orange-300 hover:bg-orange-50 dark:hover:bg-orange-900/20'
+      : 'w-full h-8 gap-1.5 text-xs font-semibold text-orange-600 border-orange-300 hover:bg-orange-50 dark:hover:bg-orange-900/20';
+
   return (
     <>
       <Button
-        size="lg"
+        size={variant === 'banner' ? 'lg' : 'sm'}
+        variant="outline"
         onClick={() => setOpen(true)}
-        className="w-full sm:w-auto bg-white text-orange-600 border-white hover:bg-white/90 font-bold px-8 py-3 text-base shadow-md"
+        className={triggerClass}
       >
-        <Zap className="h-5 w-5 mr-2 fill-current" />
-        ⚡ Zap
+        <Zap className={`fill-current ${variant === 'banner' ? 'h-5 w-5 mr-2' : 'h-3.5 w-3.5 mr-1'}`} />
+        {variant === 'banner' ? '⚡ Zap' : 'Zap ⚡'}
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
@@ -74,12 +91,11 @@ function BannerZapButton() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Zap className="w-5 h-5 text-orange-500" />
-              Send Lightning Tip to BitPopArt
+              Zap: {label}
             </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-5">
-            {/* Amount presets */}
             <div className="space-y-2">
               <Label>Amount (sats)</Label>
               <div className="grid grid-cols-3 gap-2">
@@ -99,12 +115,15 @@ function BannerZapButton() {
                 type="number"
                 placeholder="Custom amount"
                 value={customAmount}
-                onChange={e => { setCustomAmount(e.target.value); if (parseInt(e.target.value) > 0) setAmount(parseInt(e.target.value)); }}
+                onChange={e => {
+                  setCustomAmount(e.target.value);
+                  const n = parseInt(e.target.value);
+                  if (!isNaN(n) && n > 0) setAmount(n);
+                }}
                 min="1"
               />
             </div>
 
-            {/* Comment */}
             <div className="space-y-2">
               <Label>Comment (optional)</Label>
               <Textarea
@@ -116,7 +135,6 @@ function BannerZapButton() {
               />
             </div>
 
-            {/* Summary */}
             <div className="p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800 flex justify-between items-center">
               <span className="text-sm font-medium">Total:</span>
               <Badge variant="secondary" className="text-orange-700 dark:text-orange-300">
@@ -125,7 +143,6 @@ function BannerZapButton() {
               </Badge>
             </div>
 
-            {/* Actions */}
             <div className="flex gap-3">
               <Button variant="outline" onClick={() => setOpen(false)} className="flex-1" disabled={isZapping}>
                 Cancel
@@ -135,11 +152,10 @@ function BannerZapButton() {
                 className="flex-1 bg-orange-600 hover:bg-orange-700 text-white"
                 disabled={isZapping || !canZap || finalAmount <= 0}
               >
-                {isZapping ? (
-                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Sending…</>
-                ) : (
-                  <><Zap className="w-4 h-4 mr-2" />Send Tip</>
-                )}
+                {isZapping
+                  ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Sending…</>
+                  : <><Zap className="w-4 h-4 mr-2" />Send Tip</>
+                }
               </Button>
             </div>
 
@@ -236,16 +252,7 @@ function WatchDialog({ anim, open, onOpenChange }: WatchDialogProps) {
               <Download className="h-3.5 w-3.5" />
               Download Free
             </Button>
-            <ZapButton
-              authorPubkey={ADMIN_PUBKEY}
-              lightningAddress={LIGHTNING_ADDRESS}
-              event={anim.event}
-              eventTitle={anim.title}
-              size="sm"
-              variant="outline"
-              showLabel={true}
-              className="flex-1"
-            />
+            <InlineZapButton label={anim.title} eventId={anim.event.id} variant="dialog" />
           </div>
         </div>
       </DialogContent>
@@ -313,28 +320,17 @@ function AnimationCard({ anim }: { anim: NonNullable<ReturnType<typeof useAnimat
         </div>
 
         {/* Card action row */}
-        <div className="mt-2 flex gap-1.5">
+        <div className="mt-2 space-y-1.5" onClick={e => e.stopPropagation()}>
           <Button
             size="sm"
             variant="outline"
-            className="flex-1 text-xs h-7 gap-1"
-            onClick={(e) => { e.stopPropagation(); triggerDownload(anim.video_url, filename); }}
+            className="w-full text-xs h-8 gap-1.5"
+            onClick={() => triggerDownload(anim.video_url, filename)}
           >
-            <Download className="h-3 w-3" />
-            Download
+            <Download className="h-3.5 w-3.5" />
+            Download Free
           </Button>
-          <div onClick={e => e.stopPropagation()}>
-            <ZapButton
-              authorPubkey={ADMIN_PUBKEY}
-              lightningAddress={LIGHTNING_ADDRESS}
-              event={anim.event}
-              eventTitle={anim.title}
-              size="sm"
-              variant="outline"
-              showLabel={false}
-              className="h-7 w-7 p-0"
-            />
-          </div>
+          <InlineZapButton label={anim.title} eventId={anim.event.id} variant="card" />
         </div>
       </div>
 
@@ -430,7 +426,7 @@ export default function Animations() {
 
             {/* Zap button — always visible */}
             <div className="flex-shrink-0">
-              <BannerZapButton />
+              <InlineZapButton label="BitPopArt Animations" variant="banner" />
             </div>
           </div>
         </div>
