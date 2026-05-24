@@ -5,17 +5,18 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { useAuthor } from '@/hooks/useAuthor';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useMarketplaceProducts } from '@/hooks/useMarketplaceProducts';
 import { useAppWelcome, useAppMedia } from '@/hooks/useAppContent';
 import { useFreeDownloads } from '@/hooks/useFreeDownloads';
+import { useNostr } from '@nostrify/react';
+import { useQuery } from '@tanstack/react-query';
 import { ProductCard } from '@/components/marketplace/ProductCard';
 import { LoginArea } from '@/components/auth/LoginArea';
+import { nip19 } from 'nostr-tools';
 import {
   Download,
-  Sparkles,
   Gamepad2,
   ShoppingBag,
   Image as ImageIcon,
@@ -25,7 +26,17 @@ import {
   Gift,
   Send,
   ExternalLink,
+  Sparkles,
 } from 'lucide-react';
+
+// BitPopArt admin pubkey
+const ADMIN_NPUB = 'npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz';
+const ADMIN_PUBKEY = nip19.decode(ADMIN_NPUB).data as string;
+
+// 3 columns × 3 rows = 9 items max shown in preview
+const PREVIEW_COLS = 3;
+const PREVIEW_ROWS = 3;
+const PREVIEW_LIMIT = PREVIEW_COLS * PREVIEW_ROWS;
 
 // ── Helpers ───────────────────────────────────────────────
 
@@ -59,52 +70,215 @@ function deriveFilename(url: string, title: string): string {
   return url.split('/').pop() || `download.${ext}`;
 }
 
-// ── Download gallery card ─────────────────────────────────
+// ── Preview gallery — exactly 3 rows of 3 ─────────────────
 
-function DownloadGallery({
+function PreviewGallery({
   items,
   isLoading,
   emptyText,
+  onMoreClick,
+  moreLabel,
 }: {
   items: { id: string; title: string; image_url: string }[];
   isLoading: boolean;
   emptyText: string;
+  onMoreClick: () => void;
+  moreLabel: string;
 }) {
   const { getGradientStyle } = useThemeColors();
+  const preview = items.slice(0, PREVIEW_LIMIT);
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-        {[...Array(3)].map((_, i) => <Skeleton key={i} className="aspect-square rounded-xl" />)}
+      <div className="space-y-3">
+        <div className="grid grid-cols-3 gap-3">
+          {[...Array(6)].map((_, i) => <Skeleton key={i} className="aspect-square rounded-xl" />)}
+        </div>
       </div>
     );
   }
 
   if (items.length === 0) {
-    return <p className="text-center text-muted-foreground py-6">{emptyText}</p>;
+    return <p className="text-center text-muted-foreground py-6 text-sm">{emptyText}</p>;
   }
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-      {items.map(item => (
-        <div key={item.id} className="rounded-xl overflow-hidden bg-white dark:bg-gray-800 shadow-md">
-          <img src={item.image_url} alt={item.title} className="w-full aspect-square object-cover" loading="lazy" />
-          <div className="p-2 space-y-1.5">
-            {item.title !== 'Untitled' && (
-              <p className="text-xs font-medium truncate">{item.title}</p>
-            )}
+    <div className="space-y-3">
+      <div className="grid grid-cols-3 gap-3">
+        {preview.map(item => (
+          <div key={item.id} className="group relative rounded-xl overflow-hidden bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow">
+            <div className="aspect-square">
+              <img
+                src={item.image_url}
+                alt={item.title}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                loading="lazy"
+              />
+            </div>
             <Button
-              size="sm"
-              className="w-full text-white border-0 text-xs h-8"
+              size="icon"
+              className="absolute top-1.5 right-1.5 h-7 w-7 rounded-full shadow text-white border-0 opacity-0 group-hover:opacity-100 transition-opacity"
               style={getGradientStyle('primary')}
               onClick={() => handleDownload(item.image_url, deriveFilename(item.image_url, item.title))}
+              title="Download"
             >
-              <Download className="h-3 w-3 mr-1" />
-              Download
+              <Download className="h-3 w-3" />
             </Button>
           </div>
+        ))}
+      </div>
+
+      {/* "More" button */}
+      <Button
+        variant="outline"
+        className="w-full gap-2 font-semibold"
+        onClick={onMoreClick}
+      >
+        {moreLabel}
+        {items.length > PREVIEW_LIMIT && (
+          <Badge variant="secondary" className="text-xs">{items.length}</Badge>
+        )}
+        <ArrowRight className="h-4 w-4 ml-auto" />
+      </Button>
+    </div>
+  );
+}
+
+// ── Animations preview (from Nostr projects) ──────────────
+
+function useAnimationProjects() {
+  const { nostr } = useNostr();
+
+  return useQuery({
+    queryKey: ['projects', 'animations', 'preview'],
+    queryFn: async (c) => {
+      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(4000)]);
+
+      const events = await nostr.query(
+        [{ kinds: [36171], authors: [ADMIN_PUBKEY], '#t': ['bitpopart-project'], limit: 50 }],
+        { signal }
+      );
+
+      return events
+        .map(event => {
+          try {
+            const content = JSON.parse(event.content);
+            const id = event.tags.find(t => t[0] === 'd')?.[1];
+            const name = event.tags.find(t => t[0] === 'name')?.[1] || content.name;
+            const category = event.tags.find(t => t[0] === 'category')?.[1];
+            const thumbnail =
+              event.tags.find(t => t[0] === 'image')?.[1] ||
+              event.tags.find(t => t[0] === 'thumb')?.[1] ||
+              content.thumbnail || content.image || '';
+            const url = event.tags.find(t => t[0] === 'r')?.[1] || content.url || '';
+            const order = event.tags.find(t => t[0] === 'order')?.[1];
+            const comingSoon = event.tags.find(t => t[0] === 'coming-soon')?.[1] === 'true';
+
+            if (!id || !name || category !== 'animations') return null;
+
+            return { id, name, thumbnail, url, order: order ? parseInt(order) : 999, comingSoon };
+          } catch {
+            return null;
+          }
+        })
+        .filter((p): p is NonNullable<typeof p> => p !== null)
+        .sort((a, b) => a.order - b.order);
+    },
+    staleTime: 60000,
+  });
+}
+
+function AnimationsPreview({ onMoreClick }: { onMoreClick: () => void }) {
+  const navigate = useNavigate();
+  const { getGradientStyle } = useThemeColors();
+  const { data: projects = [], isLoading } = useAnimationProjects();
+  const preview = projects.slice(0, PREVIEW_LIMIT);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        <div className="grid grid-cols-3 gap-3">
+          {[...Array(3)].map((_, i) => <Skeleton key={i} className="aspect-square rounded-xl" />)}
         </div>
-      ))}
+      </div>
+    );
+  }
+
+  if (projects.length === 0) {
+    return (
+      <div className="space-y-3">
+        <div className="grid grid-cols-3 gap-3">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="aspect-square rounded-xl bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/30 dark:to-orange-900/30 flex items-center justify-center">
+              <Clapperboard className="h-8 w-8 text-amber-300" />
+            </div>
+          ))}
+        </div>
+        <Button variant="outline" className="w-full gap-2 font-semibold" onClick={onMoreClick}>
+          More Animations <ArrowRight className="h-4 w-4 ml-auto" />
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-3 gap-3">
+        {preview.map((project, index) => (
+          <div
+            key={project.id}
+            className="group relative rounded-xl overflow-hidden bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+            onClick={() => {
+              if (project.comingSoon) return;
+              if (project.url?.startsWith('http')) {
+                window.open(project.url, '_blank');
+              } else if (project.url) {
+                navigate(project.url);
+              }
+            }}
+          >
+            <div className="aspect-square">
+              {project.thumbnail ? (
+                <img
+                  src={project.thumbnail}
+                  alt={project.name}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  loading="lazy"
+                />
+              ) : (
+                <div
+                  className="w-full h-full flex items-center justify-center"
+                  style={{
+                    background: `linear-gradient(135deg, ${['#f59e0b','#fb923c','#f472b6','#a78bfa','#34d399','#60a5fa','#f87171'][index % 7]}, ${['#ef4444','#a855f7','#f59e0b','#06b6d4','#ec4899','#8b5cf6','#14b8a6'][index % 7]})`
+                  }}
+                >
+                  <Sparkles className="h-8 w-8 text-white/80" />
+                </div>
+              )}
+            </div>
+            {project.comingSoon && (
+              <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                <Badge className="text-white text-xs border-0" style={getGradientStyle('coming-soon')}>
+                  Coming Soon
+                </Badge>
+              </div>
+            )}
+            {!project.comingSoon && (
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <p className="text-white text-xs font-medium truncate">{project.name}</p>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <Button variant="outline" className="w-full gap-2 font-semibold" onClick={onMoreClick}>
+        More Animations
+        {projects.length > PREVIEW_LIMIT && (
+          <Badge variant="secondary" className="text-xs">{projects.length}</Badge>
+        )}
+        <ArrowRight className="h-4 w-4 ml-auto" />
+      </Button>
     </div>
   );
 }
@@ -129,7 +303,7 @@ export default function AppPage() {
 
   useSeoMeta({
     title: 'BitPopArt App',
-    description: 'The BitPopArt fan app — wallpapers, GIFs, games, merch and more!',
+    description: 'The BitPopArt fan app — wallpapers, GIFs, animations, games, merch and more!',
   });
 
   return (
@@ -164,7 +338,7 @@ export default function AppPage() {
                 <p className="text-muted-foreground mt-2 whitespace-pre-line">{welcome.message}</p>
               ) : (
                 <p className="text-muted-foreground mt-2">
-                  Welcome to the BitPopArt fan app! Explore wallpapers, GIFs, games and merch.
+                  Welcome to the BitPopArt fan app! Explore wallpapers, GIFs, animations, games and merch.
                 </p>
               )}
             </div>
@@ -215,37 +389,66 @@ export default function AppPage() {
 
         {/* ── Wallpapers ────────────────────────────────── */}
         <section>
-          <CardHeader className="px-0">
+          <CardHeader className="px-0 pb-3">
             <CardTitle className="flex items-center gap-2 text-xl">
               <ImageIcon className="h-5 w-5 text-teal-600" />
               Wallpapers
+              {!wpLoading && wallpapers.length > 0 && (
+                <span className="text-sm font-normal text-muted-foreground ml-1">· Latest {Math.min(wallpapers.length, PREVIEW_LIMIT)} of {wallpapers.length}</span>
+              )}
             </CardTitle>
           </CardHeader>
-          <DownloadGallery items={wallpapers} isLoading={wpLoading} emptyText="No wallpapers yet — check back soon!" />
+          <PreviewGallery
+            items={wallpapers}
+            isLoading={wpLoading}
+            emptyText="No wallpapers yet — check back soon!"
+            onMoreClick={() => navigate('/wallpapers')}
+            moreLabel="More Wallpapers"
+          />
         </section>
 
         {/* ── Animated GIFs ─────────────────────────────── */}
         <section>
-          <CardHeader className="px-0">
+          <CardHeader className="px-0 pb-3">
             <CardTitle className="flex items-center gap-2 text-xl">
               <Clapperboard className="h-5 w-5 text-amber-600" />
               Animated GIFs
+              {!gifLoading && gifs.length > 0 && (
+                <span className="text-sm font-normal text-muted-foreground ml-1">· Latest {Math.min(gifs.length, PREVIEW_LIMIT)} of {gifs.length}</span>
+              )}
             </CardTitle>
           </CardHeader>
-          <DownloadGallery items={gifs} isLoading={gifLoading} emptyText="No GIFs yet — check back soon!" />
+          <PreviewGallery
+            items={gifs}
+            isLoading={gifLoading}
+            emptyText="No GIFs yet — check back soon!"
+            onMoreClick={() => navigate('/gifs')}
+            moreLabel="More Animated GIFs"
+          />
+        </section>
+
+        {/* ── Animations ────────────────────────────────── */}
+        <section>
+          <CardHeader className="px-0 pb-3">
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <Sparkles className="h-5 w-5 text-rose-500" />
+              Animations
+            </CardTitle>
+          </CardHeader>
+          <AnimationsPreview onMoreClick={() => navigate('/animations')} />
         </section>
 
         {/* ── Games ─────────────────────────────────────── */}
         <section>
-          <CardHeader className="px-0">
+          <CardHeader className="px-0 pb-3">
             <CardTitle className="flex items-center gap-2 text-xl">
               <Gamepad2 className="h-5 w-5 text-violet-600" />
               Games
             </CardTitle>
           </CardHeader>
           <Card className="border-dashed">
-            <CardContent className="py-10 text-center space-y-4">
-              <Gamepad2 className="h-14 w-14 mx-auto text-violet-300" />
+            <CardContent className="py-8 text-center space-y-3">
+              <Gamepad2 className="h-12 w-12 mx-auto text-violet-300" />
               <Badge className="text-white border-0" style={getGradientStyle('coming-soon')}>Coming Soon</Badge>
               <p className="text-muted-foreground text-sm">Fun Bitcoin & pop art games are on the way!</p>
               <Button variant="outline" size="sm" onClick={() => navigate('/games')}>
@@ -257,7 +460,7 @@ export default function AppPage() {
 
         {/* ── Merch ─────────────────────────────────────── */}
         <section>
-          <CardHeader className="px-0">
+          <CardHeader className="px-0 pb-3">
             <CardTitle className="flex items-center gap-2 text-xl">
               <ShoppingBag className="h-5 w-5 text-orange-600" />
               Merch
@@ -284,11 +487,11 @@ export default function AppPage() {
                 ))}
               </div>
               {products.length > 6 && (
-                <div className="text-center">
-                  <Button variant="outline" onClick={() => navigate('/shop')}>
-                    View all {products.length} products <ArrowRight className="h-4 w-4 ml-1" />
-                  </Button>
-                </div>
+                <Button variant="outline" className="w-full gap-2 font-semibold" onClick={() => navigate('/shop')}>
+                  More Merch
+                  <Badge variant="secondary" className="text-xs">{products.length}</Badge>
+                  <ArrowRight className="h-4 w-4 ml-auto" />
+                </Button>
               )}
             </div>
           ) : (
@@ -306,60 +509,77 @@ export default function AppPage() {
 
         {/* ── Free Images ───────────────────────────────── */}
         <section>
-          <CardHeader className="px-0">
+          <CardHeader className="px-0 pb-3">
             <CardTitle className="flex items-center gap-2 text-xl">
               <Gift className="h-5 w-5 text-teal-600" />
               Free Images
+              {!freeLoading && freeDownloads.length > 0 && (
+                <span className="text-sm font-normal text-muted-foreground ml-1">· Latest {Math.min(freeDownloads.length, PREVIEW_LIMIT)} of {freeDownloads.length}</span>
+              )}
             </CardTitle>
           </CardHeader>
 
           {freeLoading ? (
-            <div className="grid grid-cols-3 gap-3">
-              {[...Array(3)].map((_, i) => (
-                <Skeleton key={i} className="aspect-square rounded-xl" />
-              ))}
+            <div className="space-y-3">
+              <div className="grid grid-cols-3 gap-3">
+                {[...Array(3)].map((_, i) => <Skeleton key={i} className="aspect-square rounded-xl" />)}
+              </div>
             </div>
           ) : freeDownloads.length > 0 ? (
-            <div
-              className="grid grid-cols-3 gap-3 cursor-pointer"
-              onClick={() => navigate('/free')}
-            >
-              {freeDownloads.slice(0, 3).map(dl => (
-                <div
-                  key={dl.id}
-                  className="group relative rounded-xl overflow-hidden bg-white dark:bg-gray-800 shadow-md hover:shadow-xl transition-all duration-300"
-                >
-                  <div className="aspect-square">
-                    <img
-                      src={dl.image_url}
-                      alt={dl.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      loading="lazy"
-                    />
+            <div className="space-y-3">
+              <div
+                className="grid grid-cols-3 gap-3 cursor-pointer"
+                onClick={() => navigate('/free')}
+              >
+                {freeDownloads.slice(0, PREVIEW_LIMIT).map(dl => (
+                  <div
+                    key={dl.id}
+                    className="group relative rounded-xl overflow-hidden bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow"
+                  >
+                    <div className="aspect-square">
+                      <img
+                        src={dl.image_url}
+                        alt={dl.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        loading="lazy"
+                      />
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
+              <Button
+                className="w-full gap-2 font-semibold text-white border-0 shadow"
+                style={getGradientStyle('primary')}
+                onClick={() => navigate('/free')}
+              >
+                <Download className="h-4 w-4" />
+                More Free Downloads
+                {freeDownloads.length > PREVIEW_LIMIT && (
+                  <Badge className="bg-white/20 text-white text-xs ml-1">{freeDownloads.length}</Badge>
+                )}
+                <ArrowRight className="h-4 w-4 ml-auto" />
+              </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-3 gap-3">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="aspect-square rounded-xl bg-gradient-to-br from-teal-100 to-cyan-100 dark:from-teal-900/30 dark:to-cyan-900/30 flex items-center justify-center">
-                  <Gift className="h-8 w-8 text-teal-300" />
-                </div>
-              ))}
+            <div className="space-y-3">
+              <div className="grid grid-cols-3 gap-3">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="aspect-square rounded-xl bg-gradient-to-br from-teal-100 to-cyan-100 dark:from-teal-900/30 dark:to-cyan-900/30 flex items-center justify-center">
+                    <Gift className="h-8 w-8 text-teal-300" />
+                  </div>
+                ))}
+              </div>
+              <Button
+                className="w-full gap-2 font-semibold text-white border-0"
+                style={getGradientStyle('primary')}
+                onClick={() => navigate('/free')}
+              >
+                <Download className="h-4 w-4" />
+                Browse Free Downloads
+                <ArrowRight className="h-4 w-4 ml-auto" />
+              </Button>
             </div>
           )}
-
-          <div className="mt-3">
-            <Button
-              className="w-full gap-2 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white border-0 shadow"
-              onClick={() => navigate('/free')}
-            >
-              <Download className="h-4 w-4" />
-              Browse All Free Downloads
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </div>
         </section>
 
         {/* ── Footer ────────────────────────────────────── */}
