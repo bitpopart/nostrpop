@@ -4,12 +4,16 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { RelaySelector } from '@/components/RelaySelector';
 import { ZapButton } from '@/components/ZapButton';
 import { useAnimations } from '@/hooks/useAnimations';
 import { useAuthor } from '@/hooks/useAuthor';
+import { useZap } from '@/hooks/useZap';
 import { getAdminPubkeyHex } from '@/lib/adminUtils';
 import {
   Clapperboard,
@@ -18,12 +22,136 @@ import {
   Zap,
   Sparkles,
   Heart,
+  Loader2,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 const ADMIN_PUBKEY = getAdminPubkeyHex();
 const ADMIN_NPUB = 'npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz';
 const LIGHTNING_ADDRESS = 'bitpopart@rizful.com';
+
+// ── Always-visible Zap button (no self-check) ─────────────
+// ZapButton hides itself when the logged-in user is the author.
+// This version always shows so the page looks complete for everyone.
+const PRESET_AMOUNTS = [21, 100, 500, 1000, 5000, 10000];
+
+function BannerZapButton() {
+  const [open, setOpen] = useState(false);
+  const [amount, setAmount] = useState(210);
+  const [customAmount, setCustomAmount] = useState('');
+  const [comment, setComment] = useState('');
+  const { sendZap, isZapping, canZap } = useZap(LIGHTNING_ADDRESS);
+
+  const finalAmount = customAmount ? parseInt(customAmount) : amount;
+
+  const handleSend = async () => {
+    const success = await sendZap({
+      recipientPubkey: ADMIN_PUBKEY,
+      amount: finalAmount,
+      comment: comment.trim(),
+    });
+    if (success) {
+      setOpen(false);
+      setComment('');
+      setCustomAmount('');
+      setAmount(210);
+    }
+  };
+
+  return (
+    <>
+      <Button
+        size="lg"
+        onClick={() => setOpen(true)}
+        className="w-full sm:w-auto bg-white text-orange-600 border-white hover:bg-white/90 font-bold px-8 py-3 text-base shadow-md"
+      >
+        <Zap className="h-5 w-5 mr-2 fill-current" />
+        ⚡ Zap
+      </Button>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Zap className="w-5 h-5 text-orange-500" />
+              Send Lightning Tip to BitPopArt
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-5">
+            {/* Amount presets */}
+            <div className="space-y-2">
+              <Label>Amount (sats)</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {PRESET_AMOUNTS.map(p => (
+                  <Button
+                    key={p}
+                    variant={amount === p && !customAmount ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => { setAmount(p); setCustomAmount(''); }}
+                    className="text-xs"
+                  >
+                    {p.toLocaleString()}
+                  </Button>
+                ))}
+              </div>
+              <Input
+                type="number"
+                placeholder="Custom amount"
+                value={customAmount}
+                onChange={e => { setCustomAmount(e.target.value); if (parseInt(e.target.value) > 0) setAmount(parseInt(e.target.value)); }}
+                min="1"
+              />
+            </div>
+
+            {/* Comment */}
+            <div className="space-y-2">
+              <Label>Comment (optional)</Label>
+              <Textarea
+                placeholder="Love your animations! ⚡"
+                value={comment}
+                onChange={e => setComment(e.target.value)}
+                rows={2}
+                maxLength={280}
+              />
+            </div>
+
+            {/* Summary */}
+            <div className="p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800 flex justify-between items-center">
+              <span className="text-sm font-medium">Total:</span>
+              <Badge variant="secondary" className="text-orange-700 dark:text-orange-300">
+                <Zap className="w-3 h-3 mr-1" />
+                {(customAmount || amount).toLocaleString()} sats
+              </Badge>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={() => setOpen(false)} className="flex-1" disabled={isZapping}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSend}
+                className="flex-1 bg-orange-600 hover:bg-orange-700 text-white"
+                disabled={isZapping || !canZap || finalAmount <= 0}
+              >
+                {isZapping ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Sending…</>
+                ) : (
+                  <><Zap className="w-4 h-4 mr-2" />Send Tip</>
+                )}
+              </Button>
+            </div>
+
+            <p className="text-xs text-muted-foreground text-center">
+              ⚡ Sent via Lightning · NIP-57 zap receipt published on Nostr
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
 
 // ── Download helper ────────────────────────────────────────
 function triggerDownload(url: string, filename: string) {
@@ -300,17 +428,9 @@ export default function Animations() {
               </div>
             </div>
 
-            {/* Zap button — prominent, right side */}
+            {/* Zap button — always visible */}
             <div className="flex-shrink-0">
-              <ZapButton
-                authorPubkey={ADMIN_PUBKEY}
-                lightningAddress={LIGHTNING_ADDRESS}
-                eventTitle="BitPopArt Animations"
-                size="lg"
-                variant="outline"
-                showLabel={true}
-                className="w-full sm:w-auto bg-white text-orange-600 border-white hover:bg-white/90 hover:border-white font-bold px-8 py-3 text-base shadow-md"
-              />
+              <BannerZapButton />
             </div>
           </div>
         </div>
