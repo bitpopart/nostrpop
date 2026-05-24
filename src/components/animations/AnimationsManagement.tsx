@@ -28,38 +28,66 @@ import {
 
 // ── Shared video-load helpers ──────────────────────────────
 
+/** Load video, wait until dimensions are known and a frame is decodable. */
 function loadVideo(src: string): Promise<HTMLVideoElement> {
   return new Promise((resolve, reject) => {
     const vid = document.createElement('video');
     vid.crossOrigin = 'anonymous';
     vid.preload = 'auto';
     vid.muted = true;
-    const onReady = () => { vid.removeEventListener('canplay', onReady); vid.removeEventListener('error', onError); resolve(vid); };
-    const onError = () => { vid.removeEventListener('canplay', onReady); vid.removeEventListener('error', onError); reject(new Error('Video failed to load')); };
-    vid.addEventListener('canplay', onReady);
+    vid.playsInline = true;
+
+    const cleanup = () => {
+      vid.removeEventListener('loadeddata', onData);
+      vid.removeEventListener('error', onError);
+    };
+
+    const onData = () => {
+      cleanup();
+      // loadeddata fires when the first frame is available
+      // Give the browser a tick to decode it before we draw
+      setTimeout(() => resolve(vid), 80);
+    };
+    const onError = () => { cleanup(); reject(new Error('Video failed to load')); };
+
+    vid.addEventListener('loadeddata', onData);
     vid.addEventListener('error', onError);
     vid.src = src;
     vid.load();
   });
 }
 
+/** Seek to a timestamp and wait for the frame to be ready. */
 function seekVideo(vid: HTMLVideoElement, time: number): Promise<void> {
   return new Promise(resolve => {
-    if (Math.abs(vid.currentTime - time) < 0.05) { resolve(); return; }
-    const onSeeked = () => { vid.removeEventListener('seeked', onSeeked); resolve(); };
+    const target = Math.max(0, time);
+    if (Math.abs(vid.currentTime - target) < 0.05) {
+      // Already there — small delay so the frame is rendered
+      setTimeout(resolve, 80);
+      return;
+    }
+    const onSeeked = () => {
+      vid.removeEventListener('seeked', onSeeked);
+      // Extra tick after seek so the decoder paints the frame
+      setTimeout(resolve, 80);
+    };
     vid.addEventListener('seeked', onSeeked);
-    vid.currentTime = time;
+    vid.currentTime = target;
   });
 }
 
+/** Draw the current video frame to a canvas and return a JPEG blob. */
 function captureFrame(vid: HTMLVideoElement): Promise<Blob> {
   return new Promise((resolve, reject) => {
+    const w = vid.videoWidth;
+    const h = vid.videoHeight;
+    if (!w || !h) { reject(new Error(`Bad dimensions: ${w}×${h}`)); return; }
     const canvas = document.createElement('canvas');
-    canvas.width = vid.videoWidth || 640;
-    canvas.height = vid.videoHeight || 360;
+    canvas.width = w;
+    canvas.height = h;
     const ctx = canvas.getContext('2d');
-    if (!ctx) { reject(new Error('No canvas context')); return; }
-    ctx.drawImage(vid, 0, 0, canvas.width, canvas.height);
+    if (!ctx) { reject(new Error('No 2d context')); return; }
+    ctx.drawImage(vid, 0, 0, w, h);
     canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob failed')), 'image/jpeg', 0.88);
   });
 }
@@ -349,55 +377,62 @@ export function AnimationsManagement() {
 
     await Promise.all(newItems.map(async (item) => {
       try {
-        // 1. Load video metadata + generate thumbnail
+        // ── Step 1: Load video metadata + capture thumbnail frame ──
+        // Do this FIRST while the blob URL is freshly created and
+        // the browser has the file in memory — before the upload starts.
         let duration = 0;
         let thumbBlob: Blob | null = null;
-        let thumbPreview: string | null = null;
 
         try {
           const vid = await loadVideo(item.previewUrl);
           duration = isNaN(vid.duration) ? 0 : vid.duration;
-          const seekTime = duration > 0 ? Math.min(duration * 0.1, duration - 0.05) : 0;
+
+          // Seek to 10% of the clip (or 1 second, whichever is smaller)
+          const seekTime = duration > 1 ? Math.min(duration * 0.1, 5) : 0;
           await seekVideo(vid, seekTime);
           thumbBlob = await captureFrame(vid);
-          thumbPreview = URL.createObjectURL(thumbBlob);
 
+          // Show the thumbnail preview immediately
+          const thumbPreview = URL.createObjectURL(thumbBlob);
           setPending(prev => prev.map(p =>
-            p.id === item.id ? { ...p, duration, thumbPreview, thumbStatus: 'generating' } : p
+            p.id === item.id
+              ? { ...p, duration, thumbPreview, thumbStatus: 'generating' }
+              : p
           ));
-        } catch {
-          // thumbnail generation failed — continue without it
+        } catch (thumbErr) {
+          console.warn('Thumbnail capture failed:', thumbErr);
+          // Not fatal — continue without thumbnail
         }
 
-        // 2. Upload video
+        // ── Step 2: Upload video + thumbnail in parallel ──
         setPending(prev => prev.map(p =>
-          p.id === item.id ? { ...p, statusMsg: 'Uploading video…' } : p
+          p.id === item.id ? { ...p, statusMsg: 'Uploading…' } : p
         ));
 
-        const videoUrl = await uploadVideo(item.file);
+        const uploadPromises: [Promise<string>, Promise<string | null>] = [
+          uploadVideo(item.file),
+          thumbBlob
+            ? uploadImage(
+                new File([thumbBlob], `thumb-${Date.now()}.jpg`, { type: 'image/jpeg' })
+              ).then(tags => tags[0][1])
+            : Promise.resolve(null),
+        ];
+
+        const [videoUrl, thumbUrl] = await Promise.all(uploadPromises);
 
         setPending(prev => prev.map(p =>
-          p.id === item.id ? { ...p, videoUrl, duration, status: 'ready', statusMsg: 'Video uploaded ✓' } : p
+          p.id === item.id
+            ? {
+                ...p,
+                videoUrl,
+                duration,
+                status: 'ready',
+                statusMsg: 'Ready ✓',
+                thumbUrl: thumbUrl ?? p.thumbUrl,
+                thumbStatus: thumbUrl ? 'ready' : (thumbBlob ? 'error' : 'none'),
+              }
+            : p
         ));
-
-        // 3. Upload thumbnail if we captured one
-        if (thumbBlob) {
-          setPending(prev => prev.map(p =>
-            p.id === item.id ? { ...p, thumbStatus: 'uploading' } : p
-          ));
-          try {
-            const thumbFile = new File([thumbBlob], `thumb-${Date.now()}.jpg`, { type: 'image/jpeg' });
-            const tags = await uploadImage(thumbFile);
-            const thumbUrl = tags[0][1];
-            setPending(prev => prev.map(p =>
-              p.id === item.id ? { ...p, thumbUrl, thumbStatus: 'ready' } : p
-            ));
-          } catch {
-            setPending(prev => prev.map(p =>
-              p.id === item.id ? { ...p, thumbStatus: 'error' } : p
-            ));
-          }
-        }
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Upload failed';
         setPending(prev => prev.map(p =>
