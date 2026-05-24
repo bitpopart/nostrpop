@@ -44,68 +44,60 @@ import {
 async function generateThumbnail(file: File): Promise<Blob> {
   const src = URL.createObjectURL(file);
 
-  // Keep the element tiny but visible in the DOM.
-  // DO NOT set crossOrigin on blob: URLs — it triggers CORS errors.
+  // The video element MUST be visible to the browser compositor for frame
+  // decoding to work. Opacity:0 or visibility:hidden prevents GPU decoding.
+  // We render it at 1×1px in the bottom-right corner, fully opaque but tiny.
   const vid = document.createElement('video');
   vid.muted = true;
   vid.playsInline = true;
   vid.preload = 'auto';
-  // No crossOrigin — blob: URLs don't need it and it causes failures.
   vid.style.cssText =
-    'position:fixed;top:0;left:0;width:320px;height:180px;opacity:0.001;pointer-events:none;z-index:-9999;';
+    'position:fixed;bottom:0;right:0;width:1px;height:1px;opacity:1;pointer-events:none;z-index:-1;';
   document.body.appendChild(vid);
 
   try {
-    // ── 1. Assign src BEFORE attaching listeners so no events are missed ─
+    // ── 1. Assign src first, then attach listeners ─────────────────────
     vid.src = src;
 
-    // ── 2. Wait for loadeddata (first frame decoded) ────────────────────
-    // Fall back to a plain timeout so we still attempt capture even if
-    // the event never fires (e.g. some codecs in restricted environments).
+    // ── 2. Wait until the first frame is decoded ───────────────────────
     await new Promise<void>((resolve) => {
-      // Resolve no matter what after 12 s
-      const giveUp = setTimeout(resolve, 12000);
+      // Already has frame data — proceed immediately
+      if (vid.readyState >= 2) { resolve(); return; }
 
-      const done = () => {
-        clearTimeout(giveUp);
-        resolve();
-      };
+      // 'canplay' fires once the browser has enough data to start playing
+      // (i.e. at least one frame is decoded). More reliable than loadeddata
+      // across browsers.
+      vid.addEventListener('canplay', () => resolve(), { once: true });
 
-      if (vid.readyState >= 2 /* HAVE_CURRENT_DATA */) {
-        // Already ready — no need to wait
-        done();
-        return;
-      }
-
-      vid.addEventListener('loadeddata', done, { once: true });
+      // Fallback: if canplay never fires, proceed after loadedmetadata + 800ms
       vid.addEventListener('loadedmetadata', () => {
-        // If loadeddata never comes, settle after metadata + extra time
-        setTimeout(done, 500);
+        setTimeout(resolve, 800);
       }, { once: true });
+
+      // Last-resort timeout
+      setTimeout(resolve, 10000);
 
       vid.load();
     });
 
-    // ── 3. Determine seek target ────────────────────────────────────────
+    // ── 3. Seek to 15% of duration for a more interesting frame ────────
     const duration = isFinite(vid.duration) && vid.duration > 0 ? vid.duration : 0;
     const seekTo = duration > 2 ? Math.min(duration * 0.15, 10) : 0;
 
-    // ── 4. Seek and wait ────────────────────────────────────────────────
     if (seekTo > 0) {
       await new Promise<void>((resolve) => {
-        const timer = setTimeout(resolve, 6000); // always resolve
-        vid.addEventListener('seeked', () => {
-          clearTimeout(timer);
-          resolve();
-        }, { once: true });
+        const timer = setTimeout(resolve, 5000);
+        vid.addEventListener('seeked', () => { clearTimeout(timer); resolve(); }, { once: true });
         vid.currentTime = seekTo;
       });
     }
 
-    // One extra tick for the decoder to paint the frame
-    await new Promise(r => setTimeout(r, 200));
+    // Give the compositor one rAF cycle to paint the new frame
+    await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+    // Plus a small buffer for slower decoders
+    await new Promise(r => setTimeout(r, 100));
 
-    // ── 5. Draw to canvas ───────────────────────────────────────────────
+    // ── 4. Draw to canvas ───────────────────────────────────────────────
     const w = vid.videoWidth || 640;
     const h = vid.videoHeight || 360;
 
@@ -116,7 +108,7 @@ async function generateThumbnail(file: File): Promise<Blob> {
     if (!ctx) throw new Error('Could not get 2D canvas context');
     ctx.drawImage(vid, 0, 0, w, h);
 
-    // ── 6. Export as JPEG blob ──────────────────────────────────────────
+    // ── 5. Export as JPEG blob ──────────────────────────────────────────
     return await new Promise<Blob>((resolve, reject) => {
       canvas.toBlob(
         blob => (blob ? resolve(blob) : reject(new Error('canvas.toBlob returned null'))),
