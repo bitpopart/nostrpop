@@ -284,9 +284,6 @@ export default function Animations() {
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 dark:from-gray-900 dark:via-amber-900/20 dark:to-rose-900/20">
       <div className="container mx-auto px-4 py-8 max-w-7xl">
 
-        {/* Profile banner */}
-        <ProfileBanner />
-
         {/* Free download notice */}
         <div className="mb-8 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 p-5 md:p-6 shadow-lg text-white">
           <div className="flex flex-col sm:flex-row sm:items-center gap-5">
