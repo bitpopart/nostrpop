@@ -6,9 +6,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useUploadFile } from '@/hooks/useUploadFile';
+import { useUploadVideo } from '@/hooks/useUploadVideo';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { useAnimations, usePublishAnimation, useDeleteAnimation } from '@/hooks/useAnimations';
+import { useAnimations, usePublishAnimation, useUpdateAnimation, useDeleteAnimation } from '@/hooks/useAnimations';
+import type { AnimationItem } from '@/hooks/useAnimations';
 import {
   Upload,
   Plus,
@@ -19,7 +22,49 @@ import {
   Image as ImageIcon,
   CheckCircle2,
   Sparkles,
+  Edit,
+  AlertCircle,
 } from 'lucide-react';
+
+// ── Shared video-load helpers ──────────────────────────────
+
+function loadVideo(src: string): Promise<HTMLVideoElement> {
+  return new Promise((resolve, reject) => {
+    const vid = document.createElement('video');
+    vid.crossOrigin = 'anonymous';
+    vid.preload = 'auto';
+    vid.muted = true;
+    const onReady = () => { vid.removeEventListener('canplay', onReady); vid.removeEventListener('error', onError); resolve(vid); };
+    const onError = () => { vid.removeEventListener('canplay', onReady); vid.removeEventListener('error', onError); reject(new Error('Video failed to load')); };
+    vid.addEventListener('canplay', onReady);
+    vid.addEventListener('error', onError);
+    vid.src = src;
+    vid.load();
+  });
+}
+
+function seekVideo(vid: HTMLVideoElement, time: number): Promise<void> {
+  return new Promise(resolve => {
+    if (Math.abs(vid.currentTime - time) < 0.05) { resolve(); return; }
+    const onSeeked = () => { vid.removeEventListener('seeked', onSeeked); resolve(); };
+    vid.addEventListener('seeked', onSeeked);
+    vid.currentTime = time;
+  });
+}
+
+function captureFrame(vid: HTMLVideoElement): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = vid.videoWidth || 640;
+    canvas.height = vid.videoHeight || 360;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) { reject(new Error('No canvas context')); return; }
+    ctx.drawImage(vid, 0, 0, canvas.width, canvas.height);
+    canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob failed')), 'image/jpeg', 0.88);
+  });
+}
+
+// ── Types ──────────────────────────────────────────────────
 
 interface PendingVideo {
   id: string;
@@ -34,69 +79,237 @@ interface PendingVideo {
   duration: number;
   mimeType: string;
   fileSize: number;
-  uploading: boolean;
-  thumbGenerating: boolean;
-  error: boolean;
+  status: 'uploading' | 'ready' | 'error';
+  statusMsg: string;
+  thumbStatus: 'none' | 'generating' | 'uploading' | 'ready' | 'error';
 }
 
-/** Load a video element fully before returning it */
-function loadVideo(src: string): Promise<HTMLVideoElement> {
-  return new Promise((resolve, reject) => {
-    const vid = document.createElement('video');
-    vid.crossOrigin = 'anonymous';
-    vid.preload = 'auto';
-    vid.muted = true;
+// ── Edit dialog ────────────────────────────────────────────
 
-    const onReady = () => {
-      vid.removeEventListener('canplay', onReady);
-      vid.removeEventListener('error', onError);
-      resolve(vid);
-    };
-    const onError = () => {
-      vid.removeEventListener('canplay', onReady);
-      vid.removeEventListener('error', onError);
-      reject(new Error('Video failed to load'));
-    };
-
-    vid.addEventListener('canplay', onReady);
-    vid.addEventListener('error', onError);
-    vid.src = src;
-    vid.load();
-  });
+interface EditDialogProps {
+  anim: AnimationItem;
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
 }
 
-/** Seek a loaded video to a timestamp and wait for the seek to settle */
-function seekVideo(vid: HTMLVideoElement, time: number): Promise<void> {
-  return new Promise((resolve) => {
-    if (Math.abs(vid.currentTime - time) < 0.05) { resolve(); return; }
-    const onSeeked = () => { vid.removeEventListener('seeked', onSeeked); resolve(); };
-    vid.addEventListener('seeked', onSeeked);
-    vid.currentTime = time;
-  });
+function EditDialog({ anim, open, onOpenChange }: EditDialogProps) {
+  const { mutateAsync: uploadImage } = useUploadFile();
+  const { mutateAsync: uploadVideo } = useUploadVideo();
+  const { mutate: updateAnim, isPending: isSaving } = useUpdateAnimation();
+  const { getGradientStyle } = useThemeColors();
+
+  const [title, setTitle] = useState(anim.title);
+  const [description, setDescription] = useState(anim.description);
+  const [videoUrl, setVideoUrl] = useState(anim.video_url);
+  const [thumbUrl, setThumbUrl] = useState(anim.thumb_url);
+  const [thumbPreview, setThumbPreview] = useState(anim.thumb_url);
+  const [duration, setDuration] = useState(
+    // convert "m:ss" back to seconds
+    (() => {
+      const parts = anim.duration.split(':');
+      return parts.length === 2 ? parseInt(parts[0]) * 60 + parseInt(parts[1]) : 0;
+    })()
+  );
+  const [mimeType, setMimeType] = useState('video/mp4');
+  const [fileSize, setFileSize] = useState(0);
+  const [videoUploading, setVideoUploading] = useState(false);
+  const [thumbUploading, setThumbUploading] = useState(false);
+  const [videoError, setVideoError] = useState('');
+  const thumbInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
+
+  const handleNewVideo = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (videoInputRef.current) videoInputRef.current.value = '';
+
+    setVideoError('');
+    setVideoUploading(true);
+    const previewUrl = URL.createObjectURL(file);
+
+    try {
+      // Get duration from the new file
+      const vid = await loadVideo(previewUrl);
+      const dur = isNaN(vid.duration) ? 0 : vid.duration;
+      setDuration(dur);
+      setMimeType(file.type || 'video/mp4');
+      setFileSize(file.size);
+
+      const url = await uploadVideo(file);
+      setVideoUrl(url);
+    } catch (err) {
+      setVideoError(err instanceof Error ? err.message : 'Upload failed');
+    } finally {
+      URL.revokeObjectURL(previewUrl);
+      setVideoUploading(false);
+    }
+  };
+
+  const handleNewThumb = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const preview = URL.createObjectURL(file);
+    setThumbPreview(preview);
+    setThumbUploading(true);
+    try {
+      const tags = await uploadImage(file);
+      setThumbUrl(tags[0][1]);
+    } catch { /* preview still shown */ }
+    setThumbUploading(false);
+  };
+
+  const handleSave = () => {
+    if (!title.trim() || !videoUrl) return;
+    updateAnim({
+      dTag: anim.id,
+      kind: anim.event.kind,
+      title: title.trim(),
+      description: description.trim(),
+      videoUrl,
+      thumbUrl: thumbUrl || '',
+      duration,
+      mimeType,
+      fileSize,
+    }, { onSuccess: () => onOpenChange(false) });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Edit className="h-5 w-5 text-amber-600" />
+            Edit Animation
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-5">
+          {/* Current video preview */}
+          <div className="space-y-2">
+            <Label>Video</Label>
+            <div className="rounded-xl overflow-hidden bg-black aspect-video relative">
+              <video src={videoUrl} className="w-full h-full object-contain" controls muted />
+              {videoUploading && (
+                <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center gap-2">
+                  <Loader2 className="h-8 w-8 text-white animate-spin" />
+                  <p className="text-white text-sm">Uploading new video…</p>
+                </div>
+              )}
+            </div>
+            {videoError && (
+              <div className="flex items-start gap-2 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 rounded-lg p-3">
+                <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                <span className="break-all">{videoError}</span>
+              </div>
+            )}
+            <div>
+              <input ref={videoInputRef} type="file" accept="video/*" className="hidden" onChange={handleNewVideo} />
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                disabled={videoUploading}
+                onClick={() => videoInputRef.current?.click()}
+              >
+                <Upload className="h-4 w-4" />
+                Replace video file
+              </Button>
+            </div>
+          </div>
+
+          {/* Thumbnail */}
+          <div className="space-y-2">
+            <Label>Thumbnail</Label>
+            <div className="flex items-center gap-3">
+              <div className="relative w-24 h-16 rounded-lg overflow-hidden border bg-muted flex-shrink-0">
+                {thumbPreview ? (
+                  <>
+                    <img src={thumbPreview} alt="thumb" className="w-full h-full object-cover" />
+                    {thumbUploading && (
+                      <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                        <Loader2 className="h-4 w-4 text-white animate-spin" />
+                      </div>
+                    )}
+                    {thumbUrl && !thumbUploading && (
+                      <div className="absolute top-0.5 left-0.5">
+                        <CheckCircle2 className="h-3.5 w-3.5 text-green-400 drop-shadow" />
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                )}
+              </div>
+              <div>
+                <input ref={thumbInputRef} type="file" accept="image/*" className="hidden" onChange={handleNewThumb} />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                  disabled={thumbUploading}
+                  onClick={() => thumbInputRef.current?.click()}
+                >
+                  <Upload className="h-4 w-4" />
+                  Replace thumbnail
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Title */}
+          <div className="space-y-2">
+            <Label htmlFor="edit-title">Title *</Label>
+            <Input
+              id="edit-title"
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+              placeholder="Animation title"
+            />
+          </div>
+
+          {/* Description */}
+          <div className="space-y-2">
+            <Label htmlFor="edit-desc">Description</Label>
+            <Textarea
+              id="edit-desc"
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              placeholder="Short description (optional)"
+              rows={3}
+            />
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-3 pt-2">
+            <Button
+              onClick={handleSave}
+              disabled={isSaving || videoUploading || !title.trim() || !videoUrl}
+              className="flex-1 text-white border-0"
+              style={getGradientStyle('primary')}
+            >
+              {isSaving
+                ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Saving…</>
+                : <><CheckCircle2 className="h-4 w-4 mr-2" />Save Changes</>
+              }
+            </Button>
+            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSaving}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 }
 
-/** Capture a JPEG blob from a loaded + seeked video element */
-function captureFrame(vid: HTMLVideoElement): Promise<Blob> {
-  return new Promise((resolve, reject) => {
-    const w = vid.videoWidth || 640;
-    const h = vid.videoHeight || 360;
-    const canvas = document.createElement('canvas');
-    canvas.width = w;
-    canvas.height = h;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) { reject(new Error('No canvas context')); return; }
-    ctx.drawImage(vid, 0, 0, w, h);
-    canvas.toBlob(
-      blob => blob ? resolve(blob) : reject(new Error('Canvas toBlob failed')),
-      'image/jpeg',
-      0.88,
-    );
-  });
-}
+// ── Main management component ──────────────────────────────
 
 export function AnimationsManagement() {
   const { getGradientStyle } = useThemeColors();
-  const { mutateAsync: uploadFile } = useUploadFile();
+  const { mutateAsync: uploadImage } = useUploadFile();
+  const { mutateAsync: uploadVideo } = useUploadVideo();
   const { mutate: publish, isPending: isPublishing } = usePublishAnimation();
   const { mutate: deleteAnim } = useDeleteAnimation();
   const { data: animations = [], isLoading } = useAnimations();
@@ -104,6 +317,7 @@ export function AnimationsManagement() {
   const [showForm, setShowForm] = useState(false);
   const [pending, setPending] = useState<PendingVideo[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingAnim, setEditingAnim] = useState<AnimationItem | null>(null);
 
   const videoInputRef = useRef<HTMLInputElement>(null);
 
@@ -126,49 +340,68 @@ export function AnimationsManagement() {
       duration: 0,
       mimeType: file.type || 'video/mp4',
       fileSize: file.size,
-      uploading: true,
-      thumbGenerating: false,
-      error: false,
+      status: 'uploading',
+      statusMsg: 'Uploading video…',
+      thumbStatus: 'none',
     }));
 
     setPending(prev => [...prev, ...newItems]);
 
-    // For each file: extract duration, generate thumbnail, upload video — all in parallel
     await Promise.all(newItems.map(async (item) => {
       try {
-        // 1. Load video to get metadata
-        const vid = await loadVideo(item.previewUrl);
-        const duration = isNaN(vid.duration) ? 0 : vid.duration;
+        // 1. Load video metadata + generate thumbnail
+        let duration = 0;
+        let thumbBlob: Blob | null = null;
+        let thumbPreview: string | null = null;
 
-        // 2. Auto-generate thumbnail right away (seek to 10% into the clip)
-        const seekTime = duration > 0 ? Math.min(duration * 0.1, duration - 0.05) : 0;
-        await seekVideo(vid, seekTime);
-        const thumbBlob = await captureFrame(vid);
-        const thumbPreview = URL.createObjectURL(thumbBlob);
-        const thumbFile = new File([thumbBlob], `thumb-${Date.now()}.jpg`, { type: 'image/jpeg' });
+        try {
+          const vid = await loadVideo(item.previewUrl);
+          duration = isNaN(vid.duration) ? 0 : vid.duration;
+          const seekTime = duration > 0 ? Math.min(duration * 0.1, duration - 0.05) : 0;
+          await seekVideo(vid, seekTime);
+          thumbBlob = await captureFrame(vid);
+          thumbPreview = URL.createObjectURL(thumbBlob);
 
-        // Set preview immediately so user sees it
+          setPending(prev => prev.map(p =>
+            p.id === item.id ? { ...p, duration, thumbPreview, thumbStatus: 'generating' } : p
+          ));
+        } catch {
+          // thumbnail generation failed — continue without it
+        }
+
+        // 2. Upload video
         setPending(prev => prev.map(p =>
-          p.id === item.id ? { ...p, duration, thumbFile, thumbPreview, thumbGenerating: true } : p
+          p.id === item.id ? { ...p, statusMsg: 'Uploading video…' } : p
         ));
 
-        // 3. Upload video + thumbnail in parallel
-        const [videoTags, thumbTags] = await Promise.all([
-          uploadFile(item.file),
-          uploadFile(thumbFile),
-        ]);
-
-        const videoUrl = videoTags[0][1];
-        const thumbUrl = thumbTags[0][1];
+        const videoUrl = await uploadVideo(item.file);
 
         setPending(prev => prev.map(p =>
-          p.id === item.id
-            ? { ...p, videoUrl, thumbUrl, uploading: false, thumbGenerating: false }
-            : p
+          p.id === item.id ? { ...p, videoUrl, duration, status: 'ready', statusMsg: 'Video uploaded ✓' } : p
         ));
-      } catch {
+
+        // 3. Upload thumbnail if we captured one
+        if (thumbBlob) {
+          setPending(prev => prev.map(p =>
+            p.id === item.id ? { ...p, thumbStatus: 'uploading' } : p
+          ));
+          try {
+            const thumbFile = new File([thumbBlob], `thumb-${Date.now()}.jpg`, { type: 'image/jpeg' });
+            const tags = await uploadImage(thumbFile);
+            const thumbUrl = tags[0][1];
+            setPending(prev => prev.map(p =>
+              p.id === item.id ? { ...p, thumbUrl, thumbStatus: 'ready' } : p
+            ));
+          } catch {
+            setPending(prev => prev.map(p =>
+              p.id === item.id ? { ...p, thumbStatus: 'error' } : p
+            ));
+          }
+        }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Upload failed';
         setPending(prev => prev.map(p =>
-          p.id === item.id ? { ...p, uploading: false, thumbGenerating: false, error: true } : p
+          p.id === item.id ? { ...p, status: 'error', statusMsg: msg } : p
         ));
       }
     }));
@@ -179,23 +412,26 @@ export function AnimationsManagement() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Revoke previous thumb preview
     const prev = pending.find(p => p.id === itemId);
-    if (prev?.thumbPreview) URL.revokeObjectURL(prev.thumbPreview);
+    if (prev?.thumbPreview && prev.thumbPreview.startsWith('blob:')) {
+      URL.revokeObjectURL(prev.thumbPreview);
+    }
 
     const previewUrl = URL.createObjectURL(file);
-    setPending(p => p.map(x => x.id === itemId ? { ...x, thumbFile: file, thumbPreview: previewUrl, thumbUrl: null } : x));
+    setPending(p => p.map(x => x.id === itemId
+      ? { ...x, thumbFile: file, thumbPreview: previewUrl, thumbUrl: null, thumbStatus: 'uploading' }
+      : x
+    ));
 
     try {
-      const tags = await uploadFile(file);
+      const tags = await uploadImage(file);
       const thumbUrl = tags[0][1];
-      setPending(p => p.map(x => x.id === itemId ? { ...x, thumbUrl } : x));
+      setPending(p => p.map(x => x.id === itemId ? { ...x, thumbUrl, thumbStatus: 'ready' } : x));
     } catch {
-      // Preview still shows, just no remote URL yet
+      setPending(p => p.map(x => x.id === itemId ? { ...x, thumbStatus: 'error' } : x));
     }
   };
 
-  // ── Field updates ───────────────────────────────────────
   const updateField = (id: string, field: 'title' | 'description', value: string) =>
     setPending(prev => prev.map(p => p.id === id ? { ...p, [field]: value } : p));
 
@@ -204,20 +440,19 @@ export function AnimationsManagement() {
       const item = prev.find(p => p.id === id);
       if (item) {
         URL.revokeObjectURL(item.previewUrl);
-        if (item.thumbPreview) URL.revokeObjectURL(item.thumbPreview);
+        if (item.thumbPreview?.startsWith('blob:')) URL.revokeObjectURL(item.thumbPreview);
       }
       return prev.filter(p => p.id !== id);
     });
   };
 
-  // ── Publish ─────────────────────────────────────────────
   const handlePublishAll = async () => {
-    const ready = pending.filter(p => p.videoUrl && !p.uploading && !p.error);
+    const ready = pending.filter(p => p.videoUrl && p.status === 'ready');
     if (ready.length === 0) return;
     setIsSubmitting(true);
 
     for (const item of ready) {
-      await new Promise<void>((resolve) => {
+      await new Promise<void>(resolve => {
         publish({
           title: item.title.trim() || 'BitPopArt Animation',
           description: item.description.trim(),
@@ -232,7 +467,7 @@ export function AnimationsManagement() {
 
     pending.forEach(p => {
       URL.revokeObjectURL(p.previewUrl);
-      if (p.thumbPreview) URL.revokeObjectURL(p.thumbPreview);
+      if (p.thumbPreview?.startsWith('blob:')) URL.revokeObjectURL(p.thumbPreview);
     });
     setPending([]);
     setIsSubmitting(false);
@@ -242,13 +477,13 @@ export function AnimationsManagement() {
   const handleClose = () => {
     pending.forEach(p => {
       URL.revokeObjectURL(p.previewUrl);
-      if (p.thumbPreview) URL.revokeObjectURL(p.thumbPreview);
+      if (p.thumbPreview?.startsWith('blob:')) URL.revokeObjectURL(p.thumbPreview);
     });
     setPending([]);
     setShowForm(false);
   };
 
-  const readyCount = pending.filter(p => p.videoUrl && !p.uploading && !p.error).length;
+  const readyCount = pending.filter(p => p.status === 'ready').length;
 
   return (
     <div className="space-y-6">
@@ -273,7 +508,7 @@ export function AnimationsManagement() {
               </Button>
             </CardTitle>
             <CardDescription>
-              Upload video files — thumbnails are generated automatically. You can replace any thumbnail after upload.
+              Select video files — thumbnails are auto-generated. You can replace any thumbnail manually.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
@@ -297,24 +532,25 @@ export function AnimationsManagement() {
             {pending.length > 0 && (
               <div className="space-y-4">
                 {pending.map(item => (
-                  <Card key={item.id} className="overflow-hidden border-amber-200 dark:border-amber-800">
+                  <Card key={item.id} className={`overflow-hidden ${item.status === 'error' ? 'border-red-300 dark:border-red-800' : 'border-amber-200 dark:border-amber-800'}`}>
                     <CardContent className="p-4 space-y-3">
                       <div className="flex gap-3">
                         {/* Video preview */}
                         <div className="relative w-32 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-black">
                           <video src={item.previewUrl} className="w-full h-full object-cover" muted />
-                          {item.uploading && (
-                            <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center gap-1">
+                          {item.status === 'uploading' && (
+                            <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center gap-1">
                               <Loader2 className="h-5 w-5 text-white animate-spin" />
-                              <span className="text-white text-[10px]">Uploading…</span>
+                              <span className="text-white text-[10px] text-center px-1">{item.statusMsg}</span>
                             </div>
                           )}
-                          {item.error && (
-                            <div className="absolute inset-0 bg-red-900/70 flex items-center justify-center">
-                              <span className="text-white text-xs font-medium px-1 text-center">Upload failed</span>
+                          {item.status === 'error' && (
+                            <div className="absolute inset-0 bg-red-900/80 flex flex-col items-center justify-center gap-1 p-1">
+                              <AlertCircle className="h-5 w-5 text-white" />
+                              <span className="text-white text-[9px] text-center leading-tight">{item.statusMsg}</span>
                             </div>
                           )}
-                          {item.videoUrl && (
+                          {item.status === 'ready' && (
                             <div className="absolute top-1 left-1">
                               <CheckCircle2 className="h-4 w-4 text-green-400 drop-shadow" />
                             </div>
@@ -349,38 +585,40 @@ export function AnimationsManagement() {
 
                       {/* Thumbnail row */}
                       <div className="flex items-center gap-3 pt-1 border-t">
-                        {/* Thumb preview */}
                         <div className="relative w-20 h-14 rounded-lg overflow-hidden border flex-shrink-0 bg-muted">
                           {item.thumbPreview ? (
                             <>
                               <img src={item.thumbPreview} alt="thumbnail" className="w-full h-full object-cover" />
-                              {item.thumbGenerating && (
+                              {(item.thumbStatus === 'generating' || item.thumbStatus === 'uploading') && (
                                 <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                                   <Loader2 className="h-4 w-4 text-white animate-spin" />
                                 </div>
                               )}
-                              {item.thumbUrl && !item.thumbGenerating && (
+                              {item.thumbStatus === 'ready' && (
                                 <div className="absolute top-0.5 left-0.5">
                                   <CheckCircle2 className="h-3.5 w-3.5 text-green-400 drop-shadow" />
                                 </div>
                               )}
                             </>
-                          ) : item.uploading ? (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <Loader2 className="h-4 w-4 text-muted-foreground animate-spin" />
-                            </div>
                           ) : (
                             <div className="w-full h-full flex items-center justify-center">
-                              <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                              {item.status === 'uploading'
+                                ? <Loader2 className="h-4 w-4 text-muted-foreground animate-spin" />
+                                : <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                              }
                             </div>
                           )}
                         </div>
 
                         <div className="flex-1 space-y-1">
-                          <p className="text-xs font-medium text-muted-foreground">
-                            {item.thumbUrl ? '✅ Thumbnail ready' : item.thumbGenerating ? '⏳ Generating…' : item.uploading ? '⏳ Processing…' : '📷 No thumbnail'}
+                          <p className="text-xs text-muted-foreground">
+                            {item.thumbStatus === 'ready' ? '✅ Thumbnail ready'
+                              : item.thumbStatus === 'generating' ? '⏳ Capturing frame…'
+                              : item.thumbStatus === 'uploading' ? '⏳ Uploading thumbnail…'
+                              : item.thumbStatus === 'error' ? '⚠️ Thumbnail failed'
+                              : item.status === 'uploading' ? '⏳ Waiting for video…'
+                              : '📷 No thumbnail'}
                           </p>
-                          {/* Replace thumbnail */}
                           <Label className="cursor-pointer inline-flex items-center gap-1 px-2 py-1 text-xs border rounded-md hover:bg-muted transition-colors">
                             <Upload className="h-3 w-3" />
                             Replace thumbnail
@@ -403,11 +641,10 @@ export function AnimationsManagement() {
                   className="w-full gap-2 text-white border-0"
                   style={getGradientStyle('primary')}
                 >
-                  {isSubmitting || isPublishing ? (
-                    <><Loader2 className="h-4 w-4 animate-spin" />Publishing…</>
-                  ) : (
-                    <><Plus className="h-4 w-4" />Publish {readyCount} Animation{readyCount !== 1 ? 's' : ''}</>
-                  )}
+                  {isSubmitting || isPublishing
+                    ? <><Loader2 className="h-4 w-4 animate-spin" />Publishing…</>
+                    : <><Plus className="h-4 w-4" />Publish {readyCount} Animation{readyCount !== 1 ? 's' : ''}</>
+                  }
                 </Button>
               </div>
             )}
@@ -415,7 +652,7 @@ export function AnimationsManagement() {
         </Card>
       )}
 
-      {/* Existing animations list */}
+      {/* Published animations grid */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -453,14 +690,27 @@ export function AnimationsManagement() {
                         {anim.duration}
                       </span>
                     )}
-                    <Button
-                      variant="destructive"
-                      size="icon"
-                      className="absolute top-1 right-1 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => deleteAnim({ id: anim.id, kind: anim.event.kind })}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
+                    {/* Hover controls */}
+                    <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button
+                        variant="secondary"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => setEditingAnim(anim)}
+                        title="Edit"
+                      >
+                        <Edit className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => deleteAnim({ id: anim.id, kind: anim.event.kind })}
+                        title="Delete"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   </div>
                   <div className="p-2">
                     <p className="text-xs font-medium truncate">{anim.title}</p>
@@ -474,6 +724,15 @@ export function AnimationsManagement() {
           )}
         </CardContent>
       </Card>
+
+      {/* Edit dialog */}
+      {editingAnim && (
+        <EditDialog
+          anim={editingAnim}
+          open={!!editingAnim}
+          onOpenChange={open => { if (!open) setEditingAnim(null); }}
+        />
+      )}
     </div>
   );
 }

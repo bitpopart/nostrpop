@@ -198,6 +198,81 @@ export function usePublishAnimation() {
   });
 }
 
+/**
+ * Update an existing animation (republish with same d-tag, updated fields).
+ * Since kind 34235 is addressable, publishing with the same d-tag replaces the old event.
+ */
+export function useUpdateAnimation() {
+  const { nostr } = useNostr();
+  const { user } = useCurrentUser();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      dTag,
+      kind,
+      title,
+      description,
+      videoUrl,
+      thumbUrl,
+      duration,
+      mimeType,
+      fileSize,
+    }: {
+      dTag: string;
+      kind: number;
+      title: string;
+      description: string;
+      videoUrl: string;
+      thumbUrl: string;
+      duration: number;
+      mimeType: string;
+      fileSize: number;
+    }) => {
+      if (!user) throw new Error('Must be logged in');
+
+      const imetaParts = [
+        `url ${videoUrl}`,
+        `m ${mimeType}`,
+        `size ${fileSize}`,
+        `duration ${duration.toFixed(2)}`,
+      ];
+      if (thumbUrl) imetaParts.push(`image ${thumbUrl}`);
+
+      const tags: string[][] = [
+        ['d', dTag],
+        ['title', title],
+        ['t', 'bitpopart-animation'],
+        ['t', 'bitpopart'],
+        ['alt', `BitPopArt animation: ${title}`],
+        ['imeta', ...imetaParts],
+      ];
+
+      if (description.trim()) tags.push(['summary', description.trim()]);
+      if (thumbUrl) tags.push(['thumb', thumbUrl]);
+
+      const event = {
+        kind,
+        content: '',
+        tags,
+        created_at: Math.floor(Date.now() / 1000),
+      };
+
+      const signed = await user.signer.signEvent(event);
+      await nostr.event(signed, { signal: AbortSignal.timeout(10000) });
+      return { dTag, title };
+    },
+    onSuccess: (data) => {
+      toast({ title: 'Animation updated!', description: `"${data.title}" has been updated.` });
+      queryClient.invalidateQueries({ queryKey: ['bitpopart-animations'] });
+    },
+    onError: () => {
+      toast({ title: 'Update failed', variant: 'destructive' });
+    },
+  });
+}
+
 /** Delete an animation (admin only, NIP-09 deletion). */
 export function useDeleteAnimation() {
   const { nostr } = useNostr();
