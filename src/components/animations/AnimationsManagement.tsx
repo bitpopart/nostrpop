@@ -41,66 +41,52 @@ import {
  * createImageBitmap(videoElement) is intentionally avoided — it is unreliable
  * on Firefox/Safari and throws if the video has not rendered a frame yet.
  */
-async function generateThumbnail(file: File): Promise<Blob> {
-  const src = URL.createObjectURL(file);
-
-  // The video element MUST be visible to the browser compositor for frame
-  // decoding to work. Opacity:0 or visibility:hidden prevents GPU decoding.
-  // We render it at 1×1px in the bottom-right corner, fully opaque but tiny.
+/**
+ * Generate a JPEG thumbnail by loading a video from a URL (remote or blob).
+ * The video element is rendered at full opacity so the browser compositor
+ * actually decodes frames — invisible elements produce black captures.
+ */
+async function generateThumbnailFromUrl(url: string): Promise<Blob> {
   const vid = document.createElement('video');
   vid.muted = true;
   vid.playsInline = true;
   vid.preload = 'auto';
+  vid.crossOrigin = 'anonymous';
+  // Must be visible (opacity:1) for the GPU to decode frames.
+  // 1×1px in the corner — imperceptible but compositor-visible.
   vid.style.cssText =
     'position:fixed;bottom:0;right:0;width:1px;height:1px;opacity:1;pointer-events:none;z-index:-1;';
   document.body.appendChild(vid);
 
   try {
-    // ── 1. Assign src first, then attach listeners ─────────────────────
-    vid.src = src;
+    vid.src = url;
 
-    // ── 2. Wait until the first frame is decoded ───────────────────────
+    // Wait for canplay — guarantees at least one decoded frame
     await new Promise<void>((resolve) => {
-      // Already has frame data — proceed immediately
-      if (vid.readyState >= 2) { resolve(); return; }
-
-      // 'canplay' fires once the browser has enough data to start playing
-      // (i.e. at least one frame is decoded). More reliable than loadeddata
-      // across browsers.
+      if (vid.readyState >= 3) { resolve(); return; }
       vid.addEventListener('canplay', () => resolve(), { once: true });
-
-      // Fallback: if canplay never fires, proceed after loadedmetadata + 800ms
-      vid.addEventListener('loadedmetadata', () => {
-        setTimeout(resolve, 800);
-      }, { once: true });
-
-      // Last-resort timeout
-      setTimeout(resolve, 10000);
-
+      vid.addEventListener('loadedmetadata', () => setTimeout(resolve, 1000), { once: true });
+      setTimeout(resolve, 15000);
       vid.load();
     });
 
-    // ── 3. Seek to 15% of duration for a more interesting frame ────────
+    // Seek to 15% for a more representative frame
     const duration = isFinite(vid.duration) && vid.duration > 0 ? vid.duration : 0;
     const seekTo = duration > 2 ? Math.min(duration * 0.15, 10) : 0;
-
     if (seekTo > 0) {
       await new Promise<void>((resolve) => {
-        const timer = setTimeout(resolve, 5000);
+        const timer = setTimeout(resolve, 6000);
         vid.addEventListener('seeked', () => { clearTimeout(timer); resolve(); }, { once: true });
         vid.currentTime = seekTo;
       });
     }
 
-    // Give the compositor one rAF cycle to paint the new frame
+    // One rAF + small buffer so the compositor paints the new frame
     await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
-    // Plus a small buffer for slower decoders
     await new Promise(r => setTimeout(r, 100));
 
-    // ── 4. Draw to canvas ───────────────────────────────────────────────
     const w = vid.videoWidth || 640;
     const h = vid.videoHeight || 360;
-
     const canvas = document.createElement('canvas');
     canvas.width = w;
     canvas.height = h;
@@ -108,7 +94,6 @@ async function generateThumbnail(file: File): Promise<Blob> {
     if (!ctx) throw new Error('Could not get 2D canvas context');
     ctx.drawImage(vid, 0, 0, w, h);
 
-    // ── 5. Export as JPEG blob ──────────────────────────────────────────
     return await new Promise<Blob>((resolve, reject) => {
       canvas.toBlob(
         blob => (blob ? resolve(blob) : reject(new Error('canvas.toBlob returned null'))),
@@ -120,7 +105,6 @@ async function generateThumbnail(file: File): Promise<Blob> {
     vid.pause();
     vid.src = '';
     if (vid.parentNode) document.body.removeChild(vid);
-    URL.revokeObjectURL(src);
   }
 }
 
@@ -428,28 +412,14 @@ export function AnimationsManagement() {
     await Promise.all(newItems.map(async (item) => {
       try {
         // ── Step 1: Generate thumbnail from the file ──────────
-        let thumbBlob: Blob | null = null;
-
+        // ── Step 1: Upload video first ────────────────────────
         setPending(prev => prev.map(p =>
-          p.id === item.id ? { ...p, thumbStatus: 'generating', statusMsg: 'Generating thumbnail…' } : p
+          p.id === item.id ? { ...p, status: 'uploading', statusMsg: 'Uploading video…' } : p
         ));
 
-        try {
-          thumbBlob = await generateThumbnail(item.file);
-          const thumbPreview = URL.createObjectURL(thumbBlob);
-          setPending(prev => prev.map(p =>
-            p.id === item.id ? { ...p, thumbPreview, thumbStatus: 'uploading', statusMsg: 'Uploading…' } : p
-          ));
-        } catch (thumbErr) {
-          const msg = thumbErr instanceof Error ? thumbErr.message : String(thumbErr);
-          console.error('[thumbnail] FAILED:', msg, thumbErr);
-          setPending(prev => prev.map(p =>
-            p.id === item.id ? { ...p, thumbStatus: 'error', statusMsg: 'Uploading…' } : p
-          ));
-        }
+        const videoUrl = await uploadVideo(item.file);
 
-        // ── Step 2: Upload video + thumbnail in parallel ──────
-        // Get duration from the previewUrl blob (already created, safe to use)
+        // Get duration from the local preview blob
         let duration = 0;
         try {
           const tmp = document.createElement('video');
@@ -463,14 +433,25 @@ export function AnimationsManagement() {
           duration = isFinite(tmp.duration) ? tmp.duration : 0;
         } catch { /* duration stays 0 */ }
 
-        const [videoUrl, thumbUrl] = await Promise.all([
-          uploadVideo(item.file),
-          thumbBlob
-            ? uploadImage(new File([thumbBlob], `thumb-${Date.now()}.jpg`, { type: 'image/jpeg' }))
-                .then(tags => tags[0][1] as string)
-                .catch(() => null)
-            : Promise.resolve(null),
-        ]);
+        // ── Step 2: Generate thumbnail from the uploaded video URL ────
+        // Using the remote URL avoids competing with the local preview
+        // video element, which caused black frames when decoding in parallel.
+        setPending(prev => prev.map(p =>
+          p.id === item.id ? { ...p, thumbStatus: 'generating', statusMsg: 'Generating thumbnail…' } : p
+        ));
+
+        let thumbUrl: string | null = null;
+        try {
+          const thumbBlob = await generateThumbnailFromUrl(videoUrl);
+          const thumbPreview = URL.createObjectURL(thumbBlob);
+          setPending(prev => prev.map(p =>
+            p.id === item.id ? { ...p, thumbPreview, thumbStatus: 'uploading', statusMsg: 'Uploading thumbnail…' } : p
+          ));
+          const tags = await uploadImage(new File([thumbBlob], `thumb-${Date.now()}.jpg`, { type: 'image/jpeg' }));
+          thumbUrl = tags[0][1] as string;
+        } catch (thumbErr) {
+          console.error('[thumbnail] FAILED:', thumbErr);
+        }
 
         setPending(prev => prev.map(p =>
           p.id === item.id
@@ -481,7 +462,7 @@ export function AnimationsManagement() {
                 status: 'ready',
                 statusMsg: 'Ready ✓',
                 thumbUrl: thumbUrl ?? p.thumbUrl,
-                thumbStatus: thumbUrl ? 'ready' : (p.thumbStatus === 'error' ? 'error' : 'none'),
+                thumbStatus: thumbUrl ? 'ready' : 'error',
               }
             : p
         ));
