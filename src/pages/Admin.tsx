@@ -29,6 +29,7 @@ import { ArtBannerAdmin } from '@/components/art/ArtBannerAdmin';
 import { ArtProgressManagement } from '@/components/artprogress/ArtProgressManagement';
 import { WallManagement } from '@/components/wall/WallManagement';
 import { AppContentManagement } from '@/components/app/AppContentManagement';
+import { AnimationsManagement } from '@/components/animations/AnimationsManagement';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import {
   Plus,
@@ -374,7 +375,8 @@ const Admin = () => {
             <TabsTrigger value="zaps">Zaps</TabsTrigger>
             <TabsTrigger value="projects">Projects</TabsTrigger>
             <TabsTrigger value="games-projects">Games</TabsTrigger>
-            <TabsTrigger value="animations-projects">Animations</TabsTrigger>
+            <TabsTrigger value="animations-projects">Anim.Projects</TabsTrigger>
+            <TabsTrigger value="animations-videos">Animations</TabsTrigger>
             <TabsTrigger value="frl-projects">FRL</TabsTrigger>
             <TabsTrigger value="nostr-projects">Nostr</TabsTrigger>
             <TabsTrigger value="fundraisers">Fundraisers</TabsTrigger>
@@ -624,6 +626,23 @@ const Admin = () => {
               </CardHeader>
               <CardContent>
                 <ProjectManagement filterCategory="animations" />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="animations-videos">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Clapperboard className="h-6 w-6 mr-2" />
+                  Animation Videos
+                </CardTitle>
+                <CardDescription>
+                  Upload short animation videos that appear on the <a href="/animations" className="underline text-orange-600">/animations</a> page. Visitors can watch, download, and zap.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <AnimationsManagement />
               </CardContent>
             </Card>
           </TabsContent>
