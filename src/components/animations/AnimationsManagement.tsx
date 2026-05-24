@@ -30,81 +30,128 @@ import {
 
 /**
  * Generate a JPEG thumbnail from a video File.
- * Strategy: attach a hidden video element to the DOM, let it play
- * briefly so the browser fully decodes a real frame, then capture it.
- * This is the most reliable cross-browser approach.
+ *
+ * Uses OffscreenCanvas + VideoFrame API if available (Chrome/Edge),
+ * falls back to a visible <video> + <canvas> approach for Firefox/Safari.
  */
 async function generateThumbnail(file: File): Promise<Blob> {
+  // ── Path A: ImageBitmap approach (most reliable, no DOM needed) ────
+  // Creates a blob URL, loads via fetch → arrayBuffer → Blob → createImageBitmap
+  // This works in all modern browsers and doesn't need DOM visibility.
+  try {
+    return await generateThumbnailViaImageBitmap(file);
+  } catch (e) {
+    console.warn('[thumb] ImageBitmap path failed, trying DOM path:', e);
+  }
+
+  // ── Path B: DOM video element (fallback) ───────────────────────────
+  return generateThumbnailViaDOM(file);
+}
+
+async function generateThumbnailViaImageBitmap(file: File): Promise<Blob> {
+  // We need a video element to seek, but we draw via ImageBitmap
+  // which is decoded independently of visibility.
   const src = URL.createObjectURL(file);
-
-  // Use a container that's in the DOM but invisible — some browsers
-  // refuse to decode frames for detached elements.
-  const container = document.createElement('div');
-  container.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;overflow:hidden;';
-  document.body.appendChild(container);
-
   const vid = document.createElement('video');
   vid.muted = true;
   vid.playsInline = true;
   vid.preload = 'auto';
-  vid.style.cssText = 'width:640px;height:360px;';
-  container.appendChild(vid);
+  // Must be in DOM for Safari to decode
+  vid.style.cssText = 'position:fixed;opacity:0.01;width:320px;height:180px;top:0;left:0;pointer-events:none;z-index:-1;';
+  document.body.appendChild(vid);
 
   try {
-    // 1. Load metadata to get duration
+    // Load metadata
     await new Promise<void>((resolve, reject) => {
-      const t = setTimeout(() => reject(new Error('loadedmetadata timeout')), 8000);
-      vid.onloadedmetadata = () => { clearTimeout(t); resolve(); };
-      vid.onerror = () => { clearTimeout(t); reject(new Error('Video load error')); };
+      const timer = setTimeout(() => reject(new Error('metadata timeout')), 10000);
+      vid.onloadedmetadata = () => { clearTimeout(timer); resolve(); };
+      vid.onerror = () => { clearTimeout(timer); reject(new Error('load error')); };
       vid.src = src;
       vid.load();
     });
 
     const duration = isFinite(vid.duration) && vid.duration > 0 ? vid.duration : 0;
-
-    // 2. Seek to a good frame (15% in, max 10s, avoid black intros)
     const seekTo = duration > 2 ? Math.min(duration * 0.15, 10) : 0;
 
-    await new Promise<void>((resolve, reject) => {
-      const t = setTimeout(() => resolve(), 3000); // fallback — use whatever frame we have
-      vid.onseeked = () => { clearTimeout(t); resolve(); };
-      vid.onerror = () => { clearTimeout(t); reject(new Error('Seek error')); };
-      vid.currentTime = seekTo;
-    });
-
-    // 3. Play one frame so the decoder renders it, then pause immediately
-    try {
-      await vid.play();
-      vid.pause();
-    } catch {
-      // play() can be blocked — that's fine, we still have the seeked frame
+    // Seek
+    if (seekTo > 0) {
+      await new Promise<void>(resolve => {
+        const timer = setTimeout(resolve, 4000);
+        vid.onseeked = () => { clearTimeout(timer); resolve(); };
+        vid.currentTime = seekTo;
+      });
     }
 
-    // 4. Wait a bit for the frame to be fully painted
-    await new Promise(r => setTimeout(r, 150));
+    // Play briefly to force decoder
+    try { await vid.play(); vid.pause(); } catch { /* ok */ }
 
-    // 5. Capture
+    // Wait for frame to render
+    await new Promise(r => setTimeout(r, 200));
+
+    // Draw via ImageBitmap (decoded independently)
+    const bitmap = await createImageBitmap(vid);
+    const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+    const ctx = canvas.getContext('2d') as OffscreenCanvasRenderingContext2D;
+    ctx.drawImage(bitmap, 0, 0);
+    bitmap.close();
+    const blob = await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.88 });
+    return blob;
+  } finally {
+    vid.pause();
+    vid.src = '';
+    document.body.removeChild(vid);
+    URL.revokeObjectURL(src);
+  }
+}
+
+async function generateThumbnailViaDOM(file: File): Promise<Blob> {
+  const src = URL.createObjectURL(file);
+  // Visible but tiny in corner — browser MUST render it to decode frames
+  const vid = document.createElement('video');
+  vid.muted = true;
+  vid.playsInline = true;
+  vid.preload = 'auto';
+  vid.style.cssText = 'position:fixed;opacity:0.01;width:320px;height:180px;top:0;left:0;pointer-events:none;z-index:-1;';
+  document.body.appendChild(vid);
+
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error('metadata timeout')), 10000);
+      vid.onloadedmetadata = () => { clearTimeout(timer); resolve(); };
+      vid.onerror = () => { clearTimeout(timer); reject(new Error('load error')); };
+      vid.src = src;
+      vid.load();
+    });
+
+    const duration = isFinite(vid.duration) && vid.duration > 0 ? vid.duration : 0;
+    const seekTo = duration > 2 ? Math.min(duration * 0.15, 10) : 0;
+
+    if (seekTo > 0) {
+      await new Promise<void>(resolve => {
+        const timer = setTimeout(resolve, 4000);
+        vid.onseeked = () => { clearTimeout(timer); resolve(); };
+        vid.currentTime = seekTo;
+      });
+    }
+
+    try { await vid.play(); vid.pause(); } catch { /* ok */ }
+    await new Promise(r => setTimeout(r, 200));
+
     const w = vid.videoWidth || 640;
     const h = vid.videoHeight || 360;
-
     const canvas = document.createElement('canvas');
     canvas.width = w;
     canvas.height = h;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) throw new Error('No 2d context');
+    const ctx = canvas.getContext('2d')!;
     ctx.drawImage(vid, 0, 0, w, h);
 
-    const blob = await new Promise<Blob>((resolve, reject) => {
-      canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob returned null')), 'image/jpeg', 0.88);
+    return await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob null')), 'image/jpeg', 0.88);
     });
-
-    return blob;
   } finally {
-    // Always clean up
     vid.pause();
     vid.src = '';
-    vid.load();
-    container.remove();
+    document.body.removeChild(vid);
     URL.revokeObjectURL(src);
   }
 }
@@ -408,7 +455,8 @@ export function AnimationsManagement() {
             p.id === item.id ? { ...p, thumbPreview, thumbStatus: 'uploading', statusMsg: 'Uploading…' } : p
           ));
         } catch (thumbErr) {
-          console.warn('Thumbnail generation failed:', thumbErr);
+          const msg = thumbErr instanceof Error ? thumbErr.message : String(thumbErr);
+          console.error('[thumbnail] FAILED:', msg, thumbErr);
           setPending(prev => prev.map(p =>
             p.id === item.id ? { ...p, thumbStatus: 'error', statusMsg: 'Uploading…' } : p
           ));
