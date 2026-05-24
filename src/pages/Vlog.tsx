@@ -210,36 +210,22 @@ function useVlogs() {
   const { nostr } = useNostr();
 
   return useQuery({
-    queryKey: ['bitpopart-vlogs-v2', BITPOPART_PUBKEY],
+    queryKey: ['bitpopart-vlogs', BITPOPART_PUBKEY],
     queryFn: async (c) => {
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(5000)]);
 
-      // Query only vlog/earth-journey tagged NIP-71 video events by BitPopArt.
-      // Using relay-level #t filters so animation events (bitpopart-animation)
-      // are NEVER fetched — they live exclusively on /animations.
+      // Query all NIP-71 video events by BitPopArt, then exclude animations.
       const events = await nostr.query([
         {
           kinds: [34235, 34236],
           authors: [BITPOPART_PUBKEY],
-          '#t': ['vlog'],
           limit: 200,
-        },
-        {
-          kinds: [34235, 34236],
-          authors: [BITPOPART_PUBKEY],
-          '#t': ['earth-journey'],
-          limit: 200,
-        },
+        }
       ], { signal });
 
-      // Deduplicate (an event could match both filters) and sort newest first.
-      const seen = new Set<string>();
+      // Exclude animation events — they belong on /animations only.
       return events
-        .filter(e => {
-          if (seen.has(e.id)) return false;
-          seen.add(e.id);
-          return true;
-        })
+        .filter(e => !e.tags.some(([name, value]) => name === 't' && value === 'bitpopart-animation'))
         .sort((a, b) => b.created_at - a.created_at);
     },
     staleTime: 30000,
