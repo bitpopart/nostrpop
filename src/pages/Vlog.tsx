@@ -214,16 +214,19 @@ function useVlogs() {
     queryFn: async (c) => {
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(5000)]);
 
-      // Query NIP-71 video events (landscape + portrait) by BitPopArt
+      // Query NIP-71 video events (landscape + portrait) by BitPopArt.
+      // Exclude animation events (tagged bitpopart-animation) — those live on /animations.
       const events = await nostr.query([
         {
           kinds: [34235, 34236],
           authors: [BITPOPART_PUBKEY],
-          limit: 100,
+          limit: 200,
         }
       ], { signal });
 
-      return events.sort((a, b) => b.created_at - a.created_at);
+      return events
+        .filter(e => !e.tags.some(([name, value]) => name === 't' && value === 'bitpopart-animation'))
+        .sort((a, b) => b.created_at - a.created_at);
     },
     staleTime: 30000,
     refetchInterval: 60000,
