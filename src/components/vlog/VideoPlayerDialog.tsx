@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useAuthor } from '@/hooks/useAuthor';
 import { genUserName } from '@/lib/genUserName';
-import { Calendar, Share2 } from 'lucide-react';
+import { Calendar, Share2, Link2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { nip19 } from 'nostr-tools';
 import { useToast } from '@/hooks/useToast';
@@ -54,7 +54,7 @@ export function VideoPlayerDialog({ video, open, onOpenChange }: VideoPlayerDial
   const topicTags = video.tags
     .filter(([name]) => name === 't')
     .map(([, value]) => value)
-    .filter((tag): tag is string => typeof tag === 'string' && tag.length > 0 && !['earth-journey', 'vlog'].includes(tag))
+    .filter((tag): tag is string => typeof tag === 'string' && tag.length > 0 && !['earth-journey', 'vlog', 'bitpopart'].includes(tag))
     .slice(0, 5);
 
   const handleShareToDevine = () => {
@@ -67,13 +67,8 @@ export function VideoPlayerDialog({ video, open, onOpenChange }: VideoPlayerDial
       identifier,
     });
 
-    const devineUrl = `https://www.devine.video/v/nostr:${naddr}`;
-    window.open(devineUrl, '_blank', 'noopener,noreferrer');
-
-    toast({
-      title: 'Opening divine.video',
-      description: 'Share your video to divine.video',
-    });
+    window.open(`https://www.devine.video/v/nostr:${naddr}`, '_blank', 'noopener,noreferrer');
+    toast({ title: 'Opening divine.video', description: 'Viewing on divine.video' });
   };
 
   const handleCopyLink = () => {
@@ -88,64 +83,62 @@ export function VideoPlayerDialog({ video, open, onOpenChange }: VideoPlayerDial
 
     const url = `${window.location.origin}/vlog?v=${naddr}`;
     navigator.clipboard.writeText(url);
-
-    toast({
-      title: 'Link Copied',
-      description: 'Video link copied to clipboard',
-    });
+    toast({ title: 'Link Copied', description: 'Video link copied to clipboard' });
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
-        <div className="space-y-4 p-6">
-          {/* Video Player */}
-          {videoUrl && (
-            <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
-              <video
-                src={videoUrl}
-                controls
-                autoPlay
-                className="w-full h-full"
-              />
-            </div>
-          )}
+      {/* Narrow, tall dialog — portrait-first */}
+      <DialogContent className="max-w-sm w-full p-0 overflow-hidden rounded-2xl bg-black border-0 gap-0">
 
-          {/* Author Info */}
-          <div className="flex items-start justify-between">
-            <div className="flex items-center space-x-3">
-              <Avatar className="h-12 w-12">
+        {/* Video — no fixed aspect ratio, just fills naturally */}
+        {videoUrl && (
+          <video
+            src={videoUrl}
+            controls
+            autoPlay
+            playsInline
+            className="w-full block"
+            style={{ maxHeight: '75vh', background: '#000' }}
+          />
+        )}
+
+        {/* Info panel below the video */}
+        <div className="bg-background px-4 pt-3 pb-4 space-y-3">
+
+          {/* Author + duration */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Avatar className="h-8 w-8">
                 <AvatarImage src={profileImage} alt={displayName} />
-                <AvatarFallback>
-                  {displayName[0]?.toUpperCase()}
-                </AvatarFallback>
+                <AvatarFallback className="text-xs">{displayName[0]?.toUpperCase()}</AvatarFallback>
               </Avatar>
               <div>
-                <p className="font-semibold">{displayName}</p>
-                <p className="text-sm text-muted-foreground flex items-center gap-1">
+                <p className="text-sm font-semibold leading-tight">{displayName}</p>
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
                   <Calendar className="w-3 h-3" />
                   {formatDistanceToNow(new Date(video.created_at * 1000), { addSuffix: true })}
                 </p>
               </div>
             </div>
             {duration && (
-              <Badge variant="outline">{duration}</Badge>
+              <Badge variant="outline" className="text-xs">{duration}</Badge>
             )}
           </div>
 
-          {/* Title and Description */}
+          {/* Title */}
           <div>
-            <h2 className="text-2xl font-bold mb-2">{title}</h2>
+            <h2 className="font-bold text-base leading-tight">{title}</h2>
             {summary && (
-              <p className="text-muted-foreground">{summary}</p>
+              <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{summary}</p>
             )}
           </div>
 
           {/* Tags */}
           {topicTags.length > 0 && (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5">
               {topicTags.map(tag => (
-                <Badge key={tag} variant="outline" className="bg-orange-50 dark:bg-orange-900/20">
+                <Badge key={tag} variant="outline" className="text-xs bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800 text-orange-700 dark:text-orange-300">
                   #{tag}
                 </Badge>
               ))}
@@ -153,19 +146,22 @@ export function VideoPlayerDialog({ video, open, onOpenChange }: VideoPlayerDial
           )}
 
           {/* Action Buttons */}
-          <div className="flex gap-2 pt-4 border-t">
+          <div className="flex gap-2 pt-1">
             <Button
               onClick={handleShareToDevine}
-              className="flex-1 bg-purple-600 hover:bg-purple-700 text-white"
+              size="sm"
+              className="flex-1 bg-purple-600 hover:bg-purple-700 text-white text-xs"
             >
-              <Share2 className="mr-2 h-4 w-4" />
-              Share to divine.video
+              <Share2 className="mr-1.5 h-3.5 w-3.5" />
+              divine.video
             </Button>
             <Button
               onClick={handleCopyLink}
               variant="outline"
-              className="flex-1"
+              size="sm"
+              className="flex-1 text-xs"
             >
+              <Link2 className="mr-1.5 h-3.5 w-3.5" />
               Copy Link
             </Button>
           </div>
