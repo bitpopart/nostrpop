@@ -24,6 +24,7 @@ import {
   Gift,
   Send,
   ExternalLink,
+  Sparkles,
 } from 'lucide-react';
 
 // 3 columns × 3 rows = 9 items max shown in preview
