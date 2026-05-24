@@ -36,7 +36,10 @@ import {
   Clapperboard,
   Globe,
   FileText,
+  House,
+  TreePine,
 } from 'lucide-react';
+import type { GameMode } from '@/lib/projectTypes';
 import type { NostrEvent } from '@nostrify/nostrify';
 import { generateProjectUUID } from '@/lib/projectTypes';
 
@@ -59,6 +62,7 @@ interface ProjectFormData {
   featured: boolean;
   coming_soon: boolean;
   category: ProjectCategory;
+  game_mode: GameMode;
 }
 
 interface ProjectManagementProps {
@@ -90,6 +94,7 @@ export function ProjectManagement({ filterCategory }: ProjectManagementProps = {
     featured: false,
     coming_soon: false,
     category: filterCategory || 'general',
+    game_mode: 'indoor',
   });
 
   // Fetch user's projects (kind 36171)
@@ -224,6 +229,9 @@ export function ProjectManagement({ filterCategory }: ProjectManagementProps = {
     if (formData.brand_site) {
       tags.push(['brand-site', formData.brand_site]);
     }
+    if (formData.category === 'games') {
+      tags.push(['game-mode', formData.game_mode]);
+    }
 
     const contentData = {
       name: formData.name,
@@ -255,6 +263,7 @@ export function ProjectManagement({ filterCategory }: ProjectManagementProps = {
             featured: false,
             coming_soon: false,
             category: filterCategory || 'general',
+            game_mode: 'indoor',
           });
           queryClient.invalidateQueries({ queryKey: ['projects'] });
           queryClient.invalidateQueries({ queryKey: ['projects-admin'] });
@@ -277,6 +286,7 @@ export function ProjectManagement({ filterCategory }: ProjectManagementProps = {
     const featuredTag = event.tags.find(t => t[0] === 'featured')?.[1] === 'true';
     const comingSoonTag = event.tags.find(t => t[0] === 'coming-soon')?.[1] === 'true';
     const categoryTag = (event.tags.find(t => t[0] === 'category')?.[1] || 'general') as ProjectCategory;
+    const gameModeTag = (event.tags.find(t => t[0] === 'game-mode')?.[1] || 'indoor') as GameMode;
 
     setFormData({
       name: nameTag || content.name || '',
@@ -288,6 +298,7 @@ export function ProjectManagement({ filterCategory }: ProjectManagementProps = {
       featured: featuredTag,
       coming_soon: comingSoonTag,
       category: categoryTag,
+      game_mode: gameModeTag,
     });
     setBrandSiteMode('url');
     setBrandSiteHtml('');
@@ -332,6 +343,7 @@ export function ProjectManagement({ filterCategory }: ProjectManagementProps = {
       featured: false,
       coming_soon: false,
       category: filterCategory || 'general',
+      game_mode: 'indoor',
     });
   };
 
@@ -486,6 +498,38 @@ export function ProjectManagement({ filterCategory }: ProjectManagementProps = {
                   Choose which section this project belongs to
                 </p>
               </div>
+
+              {/* Game Mode — only shown when category is games */}
+              {formData.category === 'games' && (
+                <div className="space-y-3 p-4 border rounded-lg bg-gradient-to-r from-violet-50 to-fuchsia-50 dark:from-violet-900/20 dark:to-fuchsia-900/20">
+                  <Label className="flex items-center gap-2 font-medium text-base">
+                    <Gamepad2 className="h-4 w-4 text-violet-600" />
+                    Where can this game be played?
+                  </Label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {([
+                      { value: 'indoor', label: 'Indoor', emoji: '🎮', icon: House, desc: 'Played inside' },
+                      { value: 'outdoor', label: 'Outdoor', emoji: '🗺️', icon: TreePine, desc: 'Played outside' },
+                      { value: 'both', label: 'Both', emoji: '🎮🗺️', icon: Gamepad2, desc: 'Indoor & outdoor' },
+                    ] as const).map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, game_mode: option.value }))}
+                        className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all text-center ${
+                          formData.game_mode === option.value
+                            ? 'border-violet-500 bg-violet-100 dark:bg-violet-900/40 shadow-md'
+                            : 'border-border bg-background hover:border-violet-300 hover:bg-violet-50 dark:hover:bg-violet-900/20'
+                        }`}
+                      >
+                        <span className="text-2xl">{option.emoji}</span>
+                        <span className="font-semibold text-sm">{option.label}</span>
+                        <span className="text-xs text-muted-foreground">{option.desc}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="order">Display Order (optional)</Label>
@@ -662,6 +706,7 @@ export function ProjectManagement({ filterCategory }: ProjectManagementProps = {
                 const comingSoon = event.tags.find(t => t[0] === 'coming-soon')?.[1] === 'true';
                 const category = (event.tags.find(t => t[0] === 'category')?.[1] || 'general') as ProjectCategory;
                 const categoryInfo = PROJECT_CATEGORIES.find(c => c.value === category);
+                const gameMode = event.tags.find(t => t[0] === 'game-mode')?.[1] as GameMode | undefined;
 
                 return (
                   <Card key={event.id} className="overflow-hidden">
@@ -699,6 +744,15 @@ export function ProjectManagement({ filterCategory }: ProjectManagementProps = {
                                 <Badge variant="outline" className={`text-xs ${categoryInfo.color}`}>
                                   <categoryInfo.icon className="h-3 w-3 mr-1" />
                                   {categoryInfo.label}
+                                </Badge>
+                              )}
+                              {category === 'games' && gameMode && (
+                                <Badge variant="outline" className={`text-xs ${
+                                  gameMode === 'outdoor' ? 'text-green-700 border-green-300 bg-green-50 dark:text-green-400 dark:border-green-700 dark:bg-green-900/20'
+                                  : gameMode === 'both' ? 'text-blue-700 border-blue-300 bg-blue-50 dark:text-blue-400 dark:border-blue-700 dark:bg-blue-900/20'
+                                  : 'text-violet-700 border-violet-300 bg-violet-50 dark:text-violet-400 dark:border-violet-700 dark:bg-violet-900/20'
+                                }`}>
+                                  {gameMode === 'indoor' ? '🎮 Indoor' : gameMode === 'outdoor' ? '🗺️ Outdoor' : '🎮🗺️ Indoor & Outdoor'}
                                 </Badge>
                               )}
                               {order && (

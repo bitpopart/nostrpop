@@ -9,9 +9,9 @@ import { useNavigate } from 'react-router-dom';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ShareDialog } from '@/components/share/ShareDialog';
-import { ArrowRight, Share2, Image as ImageIcon, ArrowLeft, Globe } from 'lucide-react';
+import { ArrowRight, Share2, Image as ImageIcon, ArrowLeft, Globe, House, TreePine } from 'lucide-react';
 import { nip19 } from 'nostr-tools';
-import type { ProjectData } from '@/lib/projectTypes';
+import type { ProjectData, GameMode } from '@/lib/projectTypes';
 import type { ProjectCategory } from '@/components/projects/ProjectManagement';
 
 const ADMIN_NPUB = 'npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz';
@@ -116,6 +116,7 @@ export function CategoryProjectsPage({
             const comingSoon = event.tags.find(t => t[0] === 'coming-soon')?.[1] === 'true';
             const eventCategory = event.tags.find(t => t[0] === 'category')?.[1] || 'general';
             const brandSite = event.tags.find(t => t[0] === 'brand-site')?.[1];
+            const gameMode = event.tags.find(t => t[0] === 'game-mode')?.[1] as GameMode | undefined;
 
             if (!id || !name) return null;
             if (eventCategory !== category) return null;
@@ -133,6 +134,7 @@ export function CategoryProjectsPage({
               featured,
               coming_soon: comingSoon,
               brand_site: brandSite,
+              game_mode: gameMode,
             };
           } catch {
             return null;
@@ -290,11 +292,32 @@ export function CategoryProjectsPage({
                   <CardHeader>
                     <CardTitle className="text-2xl group-hover:text-orange-600 transition-colors flex items-center justify-between gap-2 flex-wrap">
                       <span>{project.name}</span>
-                      {isComingSoon && (
-                        <Badge className="bg-gradient-to-r from-orange-100 to-pink-100 dark:from-orange-900/30 dark:to-pink-900/30 text-orange-700 dark:text-orange-300 border-orange-300 dark:border-pink-700 text-xs">
-                          Coming Soon
-                        </Badge>
-                      )}
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {isComingSoon && (
+                          <Badge className="bg-gradient-to-r from-orange-100 to-pink-100 dark:from-orange-900/30 dark:to-pink-900/30 text-orange-700 dark:text-orange-300 border-orange-300 dark:border-pink-700 text-xs">
+                            Coming Soon
+                          </Badge>
+                        )}
+                        {project.game_mode === 'indoor' && (
+                          <Badge variant="outline" className="text-xs text-violet-700 border-violet-300 bg-violet-50 dark:text-violet-300 dark:border-violet-700 dark:bg-violet-900/20 gap-1">
+                            <House className="h-3 w-3" />
+                            Indoor
+                          </Badge>
+                        )}
+                        {project.game_mode === 'outdoor' && (
+                          <Badge variant="outline" className="text-xs text-green-700 border-green-300 bg-green-50 dark:text-green-300 dark:border-green-700 dark:bg-green-900/20 gap-1">
+                            <TreePine className="h-3 w-3" />
+                            Outdoor
+                          </Badge>
+                        )}
+                        {project.game_mode === 'both' && (
+                          <Badge variant="outline" className="text-xs text-blue-700 border-blue-300 bg-blue-50 dark:text-blue-300 dark:border-blue-700 dark:bg-blue-900/20 gap-1">
+                            <House className="h-3 w-3" />
+                            <TreePine className="h-3 w-3" />
+                            Indoor & Outdoor
+                          </Badge>
+                        )}
+                      </div>
                     </CardTitle>
                     <CardDescription className="line-clamp-3 text-base">
                       {project.description}

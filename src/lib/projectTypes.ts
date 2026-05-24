@@ -1,5 +1,7 @@
 import type { NostrEvent } from '@nostrify/nostrify';
 
+export type GameMode = 'indoor' | 'outdoor' | 'both';
+
 export interface ProjectData {
   id: string;
   event?: NostrEvent;
@@ -13,6 +15,7 @@ export interface ProjectData {
   featured?: boolean; // Show on homepage
   coming_soon?: boolean; // Shows thumbnail only, no link
   brand_site?: string; // Optional extra site/page URL
+  game_mode?: GameMode; // For games: indoor, outdoor, or both
 }
 
 /**
