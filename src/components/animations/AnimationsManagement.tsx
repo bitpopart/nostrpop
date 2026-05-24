@@ -26,70 +26,87 @@ import {
   AlertCircle,
 } from 'lucide-react';
 
-// ── Shared video-load helpers ──────────────────────────────
+// ── Thumbnail generation ───────────────────────────────────
 
-/** Load video, wait until dimensions are known and a frame is decodable. */
-function loadVideo(src: string): Promise<HTMLVideoElement> {
-  return new Promise((resolve, reject) => {
-    const vid = document.createElement('video');
-    vid.crossOrigin = 'anonymous';
-    vid.preload = 'auto';
-    vid.muted = true;
-    vid.playsInline = true;
+/**
+ * Generate a JPEG thumbnail from a video File.
+ * Strategy: attach a hidden video element to the DOM, let it play
+ * briefly so the browser fully decodes a real frame, then capture it.
+ * This is the most reliable cross-browser approach.
+ */
+async function generateThumbnail(file: File): Promise<Blob> {
+  const src = URL.createObjectURL(file);
 
-    const cleanup = () => {
-      vid.removeEventListener('loadeddata', onData);
-      vid.removeEventListener('error', onError);
-    };
+  // Use a container that's in the DOM but invisible — some browsers
+  // refuse to decode frames for detached elements.
+  const container = document.createElement('div');
+  container.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;overflow:hidden;';
+  document.body.appendChild(container);
 
-    const onData = () => {
-      cleanup();
-      // loadeddata fires when the first frame is available
-      // Give the browser a tick to decode it before we draw
-      setTimeout(() => resolve(vid), 80);
-    };
-    const onError = () => { cleanup(); reject(new Error('Video failed to load')); };
+  const vid = document.createElement('video');
+  vid.muted = true;
+  vid.playsInline = true;
+  vid.preload = 'auto';
+  vid.style.cssText = 'width:640px;height:360px;';
+  container.appendChild(vid);
 
-    vid.addEventListener('loadeddata', onData);
-    vid.addEventListener('error', onError);
-    vid.src = src;
-    vid.load();
-  });
-}
+  try {
+    // 1. Load metadata to get duration
+    await new Promise<void>((resolve, reject) => {
+      const t = setTimeout(() => reject(new Error('loadedmetadata timeout')), 8000);
+      vid.onloadedmetadata = () => { clearTimeout(t); resolve(); };
+      vid.onerror = () => { clearTimeout(t); reject(new Error('Video load error')); };
+      vid.src = src;
+      vid.load();
+    });
 
-/** Seek to a timestamp and wait for the frame to be ready. */
-function seekVideo(vid: HTMLVideoElement, time: number): Promise<void> {
-  return new Promise(resolve => {
-    const target = Math.max(0, time);
-    if (Math.abs(vid.currentTime - target) < 0.05) {
-      // Already there — small delay so the frame is rendered
-      setTimeout(resolve, 80);
-      return;
+    const duration = isFinite(vid.duration) && vid.duration > 0 ? vid.duration : 0;
+
+    // 2. Seek to a good frame (15% in, max 10s, avoid black intros)
+    const seekTo = duration > 2 ? Math.min(duration * 0.15, 10) : 0;
+
+    await new Promise<void>((resolve, reject) => {
+      const t = setTimeout(() => resolve(), 3000); // fallback — use whatever frame we have
+      vid.onseeked = () => { clearTimeout(t); resolve(); };
+      vid.onerror = () => { clearTimeout(t); reject(new Error('Seek error')); };
+      vid.currentTime = seekTo;
+    });
+
+    // 3. Play one frame so the decoder renders it, then pause immediately
+    try {
+      await vid.play();
+      vid.pause();
+    } catch {
+      // play() can be blocked — that's fine, we still have the seeked frame
     }
-    const onSeeked = () => {
-      vid.removeEventListener('seeked', onSeeked);
-      // Extra tick after seek so the decoder paints the frame
-      setTimeout(resolve, 80);
-    };
-    vid.addEventListener('seeked', onSeeked);
-    vid.currentTime = target;
-  });
-}
 
-/** Draw the current video frame to a canvas and return a JPEG blob. */
-function captureFrame(vid: HTMLVideoElement): Promise<Blob> {
-  return new Promise((resolve, reject) => {
-    const w = vid.videoWidth;
-    const h = vid.videoHeight;
-    if (!w || !h) { reject(new Error(`Bad dimensions: ${w}×${h}`)); return; }
+    // 4. Wait a bit for the frame to be fully painted
+    await new Promise(r => setTimeout(r, 150));
+
+    // 5. Capture
+    const w = vid.videoWidth || 640;
+    const h = vid.videoHeight || 360;
+
     const canvas = document.createElement('canvas');
     canvas.width = w;
     canvas.height = h;
     const ctx = canvas.getContext('2d');
-    if (!ctx) { reject(new Error('No 2d context')); return; }
+    if (!ctx) throw new Error('No 2d context');
     ctx.drawImage(vid, 0, 0, w, h);
-    canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob failed')), 'image/jpeg', 0.88);
-  });
+
+    const blob = await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob returned null')), 'image/jpeg', 0.88);
+    });
+
+    return blob;
+  } finally {
+    // Always clean up
+    vid.pause();
+    vid.src = '';
+    vid.load();
+    container.remove();
+    URL.revokeObjectURL(src);
+  }
 }
 
 // ── Types ──────────────────────────────────────────────────
@@ -377,48 +394,49 @@ export function AnimationsManagement() {
 
     await Promise.all(newItems.map(async (item) => {
       try {
-        // ── Step 1: Load video metadata + capture thumbnail frame ──
-        // Do this FIRST while the blob URL is freshly created and
-        // the browser has the file in memory — before the upload starts.
-        let duration = 0;
+        // ── Step 1: Generate thumbnail from the file ──────────
         let thumbBlob: Blob | null = null;
 
-        try {
-          const vid = await loadVideo(item.previewUrl);
-          duration = isNaN(vid.duration) ? 0 : vid.duration;
-
-          // Seek to 10% of the clip (or 1 second, whichever is smaller)
-          const seekTime = duration > 1 ? Math.min(duration * 0.1, 5) : 0;
-          await seekVideo(vid, seekTime);
-          thumbBlob = await captureFrame(vid);
-
-          // Show the thumbnail preview immediately
-          const thumbPreview = URL.createObjectURL(thumbBlob);
-          setPending(prev => prev.map(p =>
-            p.id === item.id
-              ? { ...p, duration, thumbPreview, thumbStatus: 'generating' }
-              : p
-          ));
-        } catch (thumbErr) {
-          console.warn('Thumbnail capture failed:', thumbErr);
-          // Not fatal — continue without thumbnail
-        }
-
-        // ── Step 2: Upload video + thumbnail in parallel ──
         setPending(prev => prev.map(p =>
-          p.id === item.id ? { ...p, statusMsg: 'Uploading…' } : p
+          p.id === item.id ? { ...p, thumbStatus: 'generating', statusMsg: 'Generating thumbnail…' } : p
         ));
 
-        const uploadPromises: [Promise<string>, Promise<string | null>] = [
+        try {
+          thumbBlob = await generateThumbnail(item.file);
+          const thumbPreview = URL.createObjectURL(thumbBlob);
+          setPending(prev => prev.map(p =>
+            p.id === item.id ? { ...p, thumbPreview, thumbStatus: 'uploading', statusMsg: 'Uploading…' } : p
+          ));
+        } catch (thumbErr) {
+          console.warn('Thumbnail generation failed:', thumbErr);
+          setPending(prev => prev.map(p =>
+            p.id === item.id ? { ...p, thumbStatus: 'error', statusMsg: 'Uploading…' } : p
+          ));
+        }
+
+        // ── Step 2: Upload video + thumbnail in parallel ──────
+        // Get duration from the previewUrl blob (already created, safe to use)
+        let duration = 0;
+        try {
+          const tmp = document.createElement('video');
+          tmp.preload = 'metadata';
+          await new Promise<void>(resolve => {
+            tmp.onloadedmetadata = () => resolve();
+            setTimeout(resolve, 3000);
+            tmp.src = item.previewUrl;
+            tmp.load();
+          });
+          duration = isFinite(tmp.duration) ? tmp.duration : 0;
+        } catch { /* duration stays 0 */ }
+
+        const [videoUrl, thumbUrl] = await Promise.all([
           uploadVideo(item.file),
           thumbBlob
-            ? uploadImage(
-                new File([thumbBlob], `thumb-${Date.now()}.jpg`, { type: 'image/jpeg' })
-              ).then(tags => tags[0][1])
+            ? uploadImage(new File([thumbBlob], `thumb-${Date.now()}.jpg`, { type: 'image/jpeg' }))
+                .then(tags => tags[0][1] as string)
+                .catch(() => null)
             : Promise.resolve(null),
-        ];
-
-        const [videoUrl, thumbUrl] = await Promise.all(uploadPromises);
+        ]);
 
         setPending(prev => prev.map(p =>
           p.id === item.id
@@ -429,7 +447,7 @@ export function AnimationsManagement() {
                 status: 'ready',
                 statusMsg: 'Ready ✓',
                 thumbUrl: thumbUrl ?? p.thumbUrl,
-                thumbStatus: thumbUrl ? 'ready' : (thumbBlob ? 'error' : 'none'),
+                thumbStatus: thumbUrl ? 'ready' : (p.thumbStatus === 'error' ? 'error' : 'none'),
               }
             : p
         ));
