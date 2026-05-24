@@ -289,19 +289,22 @@ export default function Animations() {
 
         {/* Free download notice */}
         <div className="mb-8 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 p-5 md:p-6 shadow-lg text-white">
-          <div className="flex flex-col md:flex-row md:items-center gap-4">
-            <div className="flex items-center gap-3 flex-shrink-0">
-              <div className="p-2.5 rounded-xl bg-white/20">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-5">
+            {/* Icon + text */}
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              <div className="p-2.5 rounded-xl bg-white/20 flex-shrink-0">
                 <Sparkles className="h-7 w-7 text-white" />
               </div>
               <div>
-                <h2 className="text-xl font-bold">All animations are free to download!</h2>
+                <h2 className="text-xl font-bold leading-tight">All animations are free to download!</h2>
                 <p className="text-white/85 text-sm mt-0.5">
-                  A donation (⚡ Zap) is welcome to keep creating more and more animations.
+                  A donation ⚡ Zap is welcome to keep creating more and more animations.
                 </p>
               </div>
             </div>
-            <div className="md:ml-auto flex-shrink-0">
+
+            {/* Zap button — prominent, right side */}
+            <div className="flex-shrink-0">
               <ZapButton
                 authorPubkey={ADMIN_PUBKEY}
                 lightningAddress={LIGHTNING_ADDRESS}
@@ -309,7 +312,7 @@ export default function Animations() {
                 size="lg"
                 variant="outline"
                 showLabel={true}
-                className="bg-white/10 border-white/40 text-white hover:bg-white/20 hover:border-white/60 font-bold px-6"
+                className="w-full sm:w-auto bg-white text-orange-600 border-white hover:bg-white/90 hover:border-white font-bold px-8 py-3 text-base shadow-md"
               />
             </div>
           </div>
