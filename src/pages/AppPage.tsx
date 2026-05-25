@@ -25,6 +25,7 @@ import {
   Send,
   ExternalLink,
   Sparkles,
+  UserCircle2,
 } from 'lucide-react';
 
 // 3 columns × 3 rows = 9 items max shown in preview
@@ -138,6 +139,80 @@ function PreviewGallery({
   );
 }
 
+// ── Avatars preview ───────────────────────────────────────
+
+function AvatarsPreview({
+  items,
+  isLoading,
+  onMoreClick,
+}: {
+  items: { id: string; title: string; image_url: string }[];
+  isLoading: boolean;
+  onMoreClick: () => void;
+}) {
+  const preview = items.slice(0, PREVIEW_LIMIT);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        <div className="grid grid-cols-3 gap-4">
+          {[...Array(3)].map((_, i) => (
+            <Skeleton key={i} className="aspect-square rounded-full" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (items.length === 0) {
+    return (
+      <div className="space-y-3">
+        <div className="grid grid-cols-3 gap-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="aspect-square rounded-full bg-gradient-to-br from-violet-100 to-purple-100 dark:from-violet-900/30 dark:to-purple-900/30 flex items-center justify-center">
+              <UserCircle2 className="h-8 w-8 text-violet-300" />
+            </div>
+          ))}
+        </div>
+        <Button variant="outline" className="w-full gap-2 font-semibold" onClick={onMoreClick}>
+          Browse Avatars <ArrowRight className="h-4 w-4 ml-auto" />
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-3 gap-4">
+        {preview.map(item => (
+          <div
+            key={item.id}
+            className="group relative aspect-square rounded-full overflow-hidden ring-2 ring-violet-100 dark:ring-violet-900 group-hover:ring-violet-400 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer"
+            onClick={onMoreClick}
+            title={item.title}
+          >
+            <img
+              src={item.image_url}
+              alt={item.title}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              loading="lazy"
+            />
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 rounded-full transition-colors" />
+          </div>
+        ))}
+      </div>
+
+      <Button variant="outline" className="w-full gap-2 font-semibold" onClick={onMoreClick}>
+        More Avatars
+        {items.length > PREVIEW_LIMIT && (
+          <Badge variant="secondary" className="text-xs">{items.length}</Badge>
+        )}
+        <ArrowRight className="h-4 w-4 ml-auto" />
+      </Button>
+    </div>
+  );
+}
+
 // ── Animations preview (from real animation events) ───────
 
 function AnimationsPreview({ onMoreClick }: { onMoreClick: () => void }) {
@@ -232,6 +307,7 @@ export default function AppPage() {
   const { data: welcome, isLoading: welcomeLoading } = useAppWelcome();
   const { data: wallpapers = [], isLoading: wpLoading } = useAppMedia('app-wallpaper');
   const { data: gifs = [], isLoading: gifLoading } = useAppMedia('app-gif');
+  const { data: avatars = [], isLoading: avatarLoading } = useAppMedia('app-avatar');
   const { data: products = [], isLoading: productsLoading } = useMarketplaceProducts();
   const { data: freeDownloads = [], isLoading: freeLoading } = useFreeDownloads();
 
@@ -361,6 +437,24 @@ export default function AppPage() {
             emptyText="No GIFs yet — check back soon!"
             onMoreClick={() => navigate('/gifs')}
             moreLabel="More Animated GIFs"
+          />
+        </section>
+
+        {/* ── Avatars ───────────────────────────────────── */}
+        <section>
+          <CardHeader className="px-0 pb-3">
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <UserCircle2 className="h-5 w-5 text-violet-600" />
+              Avatars
+              {!avatarLoading && avatars.length > 0 && (
+                <span className="text-sm font-normal text-muted-foreground ml-1">· Latest {Math.min(avatars.length, PREVIEW_LIMIT)} of {avatars.length}</span>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <AvatarsPreview
+            items={avatars}
+            isLoading={avatarLoading}
+            onMoreClick={() => navigate('/avatars')}
           />
         </section>
 

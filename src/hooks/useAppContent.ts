@@ -64,9 +64,9 @@ export function useAppWelcome() {
 }
 
 /**
- * Fetch app media items (wallpapers or gifs).
+ * Fetch app media items (wallpapers, gifs, or avatars).
  */
-export function useAppMedia(type: 'app-wallpaper' | 'app-gif') {
+export function useAppMedia(type: 'app-wallpaper' | 'app-gif' | 'app-avatar') {
   const { nostr } = useNostr();
   const adminPubkey = getAdminPubkeyHex();
 
@@ -115,7 +115,7 @@ export function useAppMedia(type: 'app-wallpaper' | 'app-gif') {
             if (!imageTag) return null;
 
             // Collect hashtags: all t-tags excluding system ones
-            const systemTypeTags = new Set(['app-wallpaper', 'app-gif']);
+            const systemTypeTags = new Set(['app-wallpaper', 'app-gif', 'app-avatar']);
             const hashtags = event.tags
               .filter(([n, v]) => n === 't' && v && !systemTypeTags.has(v))
               .map(([, v]) => v);
@@ -193,7 +193,7 @@ export function usePublishAppMedia() {
       imageUrl,
       hashtags = [],
     }: {
-      type: 'app-wallpaper' | 'app-gif';
+      type: 'app-wallpaper' | 'app-gif' | 'app-avatar';
       title: string;
       imageUrl: string;
       hashtags?: string[];
@@ -202,10 +202,12 @@ export function usePublishAppMedia() {
 
       const dTag = `${type}-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
 
-      const systemTypeTags = new Set(['app-wallpaper', 'app-gif']);
+      const systemTypeTags = new Set(['app-wallpaper', 'app-gif', 'app-avatar']);
       const extraTags: string[][] = hashtags
         .filter(t => t && !systemTypeTags.has(t))
         .map(t => ['t', t]);
+
+      const typeLabel = type === 'app-wallpaper' ? 'Wallpaper' : type === 'app-gif' ? 'Animated GIF' : 'Avatar';
 
       const event = {
         kind: 34019,
@@ -215,7 +217,7 @@ export function usePublishAppMedia() {
           ['title', title],
           ['image', imageUrl],
           ['t', type],
-          ['alt', `${type === 'app-wallpaper' ? 'Wallpaper' : 'Animated GIF'}: ${title}`],
+          ['alt', `${typeLabel}: ${title}`],
           ...extraTags,
         ],
         created_at: Math.floor(Date.now() / 1000),
@@ -250,17 +252,19 @@ export function useUpdateAppMedia() {
       hashtags = [],
     }: {
       dTag: string;
-      type: 'app-wallpaper' | 'app-gif';
+      type: 'app-wallpaper' | 'app-gif' | 'app-avatar';
       title: string;
       imageUrl: string;
       hashtags?: string[];
     }) => {
       if (!user) throw new Error('Must be logged in');
 
-      const systemTypeTags = new Set(['app-wallpaper', 'app-gif']);
+      const systemTypeTags = new Set(['app-wallpaper', 'app-gif', 'app-avatar']);
       const extraTags: string[][] = hashtags
         .filter(t => t && !systemTypeTags.has(t))
         .map(t => ['t', t]);
+
+      const typeLabel = type === 'app-wallpaper' ? 'Wallpaper' : type === 'app-gif' ? 'Animated GIF' : 'Avatar';
 
       const event = {
         kind: 34019,
@@ -270,7 +274,7 @@ export function useUpdateAppMedia() {
           ['title', title],
           ['image', imageUrl],
           ['t', type],
-          ['alt', `${type === 'app-wallpaper' ? 'Wallpaper' : 'Animated GIF'}: ${title}`],
+          ['alt', `${typeLabel}: ${title}`],
           ...extraTags,
         ],
         created_at: Math.floor(Date.now() / 1000),
@@ -297,7 +301,7 @@ export function useDeleteAppMedia() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, type }: { id: string; type: 'app-wallpaper' | 'app-gif' }) => {
+    mutationFn: async ({ id, type }: { id: string; type: 'app-wallpaper' | 'app-gif' | 'app-avatar' }) => {
       if (!user) throw new Error('Must be logged in');
 
       const address = `34019:${user.pubkey}:${id}`;

@@ -33,6 +33,7 @@ import {
   CheckCircle2,
   Edit,
   AlertCircle,
+  UserCircle2,
 } from 'lucide-react';
 
 interface PendingMedia {
@@ -50,7 +51,7 @@ interface PendingMedia {
 
 interface EditMediaDialogProps {
   item: AppMedia;
-  type: 'app-wallpaper' | 'app-gif';
+  type: 'app-wallpaper' | 'app-gif' | 'app-avatar';
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }
@@ -105,7 +106,7 @@ function EditMediaDialog({ item, type, open, onOpenChange }: EditMediaDialogProp
     );
   };
 
-  const typeLabel = type === 'app-wallpaper' ? 'Wallpaper' : 'GIF';
+  const typeLabel = type === 'app-wallpaper' ? 'Wallpaper' : type === 'app-gif' ? 'GIF' : 'Avatar';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -151,7 +152,7 @@ function EditMediaDialog({ item, type, open, onOpenChange }: EditMediaDialogProp
               <input
                 ref={fileInputRef}
                 type="file"
-                accept={type === 'app-gif' ? 'image/gif,image/webp,image/*' : 'image/*'}
+                accept="image/*"
                 className="hidden"
                 onChange={handleNewImage}
               />
@@ -215,7 +216,7 @@ function MediaUploader({
   type,
   label,
 }: {
-  type: 'app-wallpaper' | 'app-gif';
+  type: 'app-wallpaper' | 'app-gif' | 'app-avatar';
   label: string;
 }) {
   const { mutateAsync: uploadFile } = useUploadFile();
@@ -227,7 +228,7 @@ function MediaUploader({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const accept = type === 'app-gif' ? 'image/gif,image/webp,image/*' : 'image/*';
+  const accept = 'image/*';
 
   const handleFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -410,7 +411,7 @@ function MediaUploader({
 }
 
 // ── Media list with edit + delete ─────────────────────────
-function MediaList({ type }: { type: 'app-wallpaper' | 'app-gif' }) {
+function MediaList({ type }: { type: 'app-wallpaper' | 'app-gif' | 'app-avatar' }) {
   const { data: items = [], isLoading } = useAppMedia(type);
   const { mutate: deleteItem } = useDeleteAppMedia();
   const [editingItem, setEditingItem] = useState<AppMedia | null>(null);
@@ -580,6 +581,25 @@ export function AppContentManagement() {
         <CardContent className="space-y-4">
           <MediaUploader type="app-gif" label="GIF" />
           <MediaList type="app-gif" />
+        </CardContent>
+      </Card>
+
+      <Separator />
+
+      {/* Avatars */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <UserCircle2 className="h-5 w-5 text-violet-600" />
+            Avatars
+          </CardTitle>
+          <CardDescription>
+            Free profile avatars fans can download and use. Hover any item to edit or delete it.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <MediaUploader type="app-avatar" label="Avatar" />
+          <MediaList type="app-avatar" />
         </CardContent>
       </Card>
     </div>
