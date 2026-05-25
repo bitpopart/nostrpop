@@ -3,13 +3,14 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppMedia, type AppMedia } from '@/hooks/useAppContent';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { Download, Image as ImageIcon, ArrowLeft } from 'lucide-react';
 import { RelaySelector } from '@/components/RelaySelector';
+import { HashtagCloud } from '@/components/HashtagCloud';
 
 function handleDownload(url: string, filename: string) {
   fetch(url)
@@ -39,6 +40,13 @@ export default function Wallpapers() {
   const { getGradientStyle } = useThemeColors();
   const { data: wallpapers = [], isLoading } = useAppMedia('app-wallpaper');
   const [lightbox, setLightbox] = useState<AppMedia | null>(null);
+  const [activeTag, setActiveTag] = useState<string | undefined>(undefined);
+
+  const filtered = useMemo(() =>
+    activeTag ? wallpapers.filter(w => w.hashtags.includes(activeTag)) : wallpapers,
+    [wallpapers, activeTag],
+  );
+  const tagSets = useMemo(() => wallpapers.map(w => w.hashtags), [wallpapers]);
 
   useSeoMeta({
     title: 'Wallpapers - BitPopArt',
@@ -61,7 +69,7 @@ export default function Wallpapers() {
         </Button>
 
         {/* Header */}
-        <div className="text-center mb-10">
+        <div className="text-center mb-6">
           <div className="flex items-center justify-center gap-3 mb-3">
             <ImageIcon className="h-10 w-10 text-teal-600" />
             <h1 className="text-4xl font-bold gradient-header-text">Wallpapers</h1>
@@ -70,6 +78,15 @@ export default function Wallpapers() {
             Bitcoin PopArt wallpapers by BitPopArt — free to download and use!
           </p>
         </div>
+
+        {/* Hashtag cloud */}
+        <HashtagCloud
+          tagSets={tagSets}
+          activeTag={activeTag}
+          onTagChange={setActiveTag}
+          isLoading={isLoading}
+          accent="teal"
+        />
 
         {/* Grid */}
         {isLoading ? (
@@ -84,13 +101,23 @@ export default function Wallpapers() {
               <RelaySelector className="w-full" />
             </CardContent>
           </Card>
+        ) : filtered.length === 0 ? (
+          <Card className="border-dashed max-w-md mx-auto">
+            <CardContent className="py-12 text-center space-y-3">
+              <ImageIcon className="h-10 w-10 mx-auto text-teal-300" />
+              <p className="text-muted-foreground text-sm">No wallpapers tagged <strong>#{activeTag}</strong>.</p>
+              <button onClick={() => setActiveTag(undefined)} className="text-xs text-teal-600 underline">Clear filter</button>
+            </CardContent>
+          </Card>
         ) : (
           <>
             <p className="text-sm text-muted-foreground mb-4 text-center">
-              {wallpapers.length} wallpaper{wallpapers.length !== 1 ? 's' : ''} available
+              {activeTag
+                ? `${filtered.length} of ${wallpapers.length} wallpaper${wallpapers.length !== 1 ? 's' : ''} · #${activeTag}`
+                : `${wallpapers.length} wallpaper${wallpapers.length !== 1 ? 's' : ''} available`}
             </p>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {wallpapers.map(item => (
+              {filtered.map(item => (
                 <div
                   key={item.id}
                   className="group relative rounded-xl overflow-hidden bg-white dark:bg-gray-800 shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer"

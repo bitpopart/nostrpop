@@ -3,12 +3,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppMedia, type AppMedia } from '@/hooks/useAppContent';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { Download, Clapperboard, ArrowLeft } from 'lucide-react';
 import { RelaySelector } from '@/components/RelaySelector';
+import { HashtagCloud } from '@/components/HashtagCloud';
 
 function handleDownload(url: string, filename: string) {
   fetch(url)
@@ -38,6 +39,13 @@ export default function Gifs() {
   const { getGradientStyle } = useThemeColors();
   const { data: gifs = [], isLoading } = useAppMedia('app-gif');
   const [lightbox, setLightbox] = useState<AppMedia | null>(null);
+  const [activeTag, setActiveTag] = useState<string | undefined>(undefined);
+
+  const filtered = useMemo(() =>
+    activeTag ? gifs.filter(g => g.hashtags.includes(activeTag)) : gifs,
+    [gifs, activeTag],
+  );
+  const tagSets = useMemo(() => gifs.map(g => g.hashtags), [gifs]);
 
   useSeoMeta({
     title: 'Animated GIFs - BitPopArt',
@@ -60,7 +68,7 @@ export default function Gifs() {
         </Button>
 
         {/* Header */}
-        <div className="text-center mb-10">
+        <div className="text-center mb-6">
           <div className="flex items-center justify-center gap-3 mb-3">
             <Clapperboard className="h-10 w-10 text-amber-600" />
             <h1 className="text-4xl font-bold gradient-header-text">Animated GIFs</h1>
@@ -69,6 +77,15 @@ export default function Gifs() {
             Animated Bitcoin PopArt GIFs by BitPopArt — free to share and download!
           </p>
         </div>
+
+        {/* Hashtag cloud */}
+        <HashtagCloud
+          tagSets={tagSets}
+          activeTag={activeTag}
+          onTagChange={setActiveTag}
+          isLoading={isLoading}
+          accent="orange"
+        />
 
         {/* Grid */}
         {isLoading ? (
@@ -83,13 +100,23 @@ export default function Gifs() {
               <RelaySelector className="w-full" />
             </CardContent>
           </Card>
+        ) : filtered.length === 0 ? (
+          <Card className="border-dashed max-w-md mx-auto">
+            <CardContent className="py-12 text-center space-y-3">
+              <Clapperboard className="h-10 w-10 mx-auto text-amber-300" />
+              <p className="text-muted-foreground text-sm">No GIFs tagged <strong>#{activeTag}</strong>.</p>
+              <button onClick={() => setActiveTag(undefined)} className="text-xs text-amber-600 underline">Clear filter</button>
+            </CardContent>
+          </Card>
         ) : (
           <>
             <p className="text-sm text-muted-foreground mb-4 text-center">
-              {gifs.length} animated GIF{gifs.length !== 1 ? 's' : ''} available
+              {activeTag
+                ? `${filtered.length} of ${gifs.length} GIF${gifs.length !== 1 ? 's' : ''} · #${activeTag}`
+                : `${gifs.length} animated GIF${gifs.length !== 1 ? 's' : ''} available`}
             </p>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {gifs.map(item => (
+              {filtered.map(item => (
                 <div
                   key={item.id}
                   className="group relative rounded-xl overflow-hidden bg-white dark:bg-gray-800 shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer"

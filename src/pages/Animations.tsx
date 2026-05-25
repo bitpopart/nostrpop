@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useSeoMeta } from '@unhead/react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { RelaySelector } from '@/components/RelaySelector';
+import { HashtagCloud } from '@/components/HashtagCloud';
 import { useAnimations } from '@/hooks/useAnimations';
 import { useAuthor } from '@/hooks/useAuthor';
 import { useZap } from '@/hooks/useZap';
@@ -416,6 +417,18 @@ function ProfileBanner() {
 // ── Main page ──────────────────────────────────────────────
 export default function Animations() {
   const { data: animations = [], isLoading, error } = useAnimations();
+  const [activeTag, setActiveTag] = useState<string | undefined>(undefined);
+
+  // Filtered list based on active hashtag
+  const filtered = useMemo(() =>
+    activeTag
+      ? animations.filter(a => a.hashtags.includes(activeTag))
+      : animations,
+    [animations, activeTag],
+  );
+
+  // Tag sets for the cloud
+  const tagSets = useMemo(() => animations.map(a => a.hashtags), [animations]);
 
   useSeoMeta({
     title: 'Animations - BitPopArt',
@@ -450,7 +463,7 @@ export default function Animations() {
         </div>
 
         {/* Header row */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-amber-500/20">
               <Clapperboard className="h-6 w-6 text-amber-600" />
@@ -458,11 +471,24 @@ export default function Animations() {
             <div>
               <h2 className="text-2xl font-bold">Animations</h2>
               {!isLoading && animations.length > 0 && (
-                <p className="text-sm text-muted-foreground">{animations.length} animation{animations.length !== 1 ? 's' : ''}</p>
+                <p className="text-sm text-muted-foreground">
+                  {activeTag
+                    ? `${filtered.length} of ${animations.length} animation${animations.length !== 1 ? 's' : ''} · #${activeTag}`
+                    : `${animations.length} animation${animations.length !== 1 ? 's' : ''}`}
+                </p>
               )}
             </div>
           </div>
         </div>
+
+        {/* Hashtag cloud */}
+        <HashtagCloud
+          tagSets={tagSets}
+          activeTag={activeTag}
+          onTagChange={setActiveTag}
+          isLoading={isLoading}
+          accent="amber"
+        />
 
         {/* Grid */}
         {error ? (
@@ -477,7 +503,7 @@ export default function Animations() {
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {[...Array(8)].map((_, i) => <AnimationSkeleton key={i} />)}
           </div>
-        ) : animations.length === 0 ? (
+        ) : filtered.length === 0 && animations.length === 0 ? (
           <Card className="border-dashed max-w-md mx-auto">
             <CardContent className="py-16 text-center space-y-4">
               <div className="relative inline-flex">
@@ -493,9 +519,17 @@ export default function Animations() {
               <RelaySelector className="w-full" />
             </CardContent>
           </Card>
+        ) : filtered.length === 0 ? (
+          <Card className="border-dashed max-w-md mx-auto">
+            <CardContent className="py-12 text-center space-y-3">
+              <Clapperboard className="h-10 w-10 mx-auto text-amber-300" />
+              <p className="text-muted-foreground text-sm">No animations tagged <strong>#{activeTag}</strong>.</p>
+              <button onClick={() => setActiveTag(undefined)} className="text-xs text-amber-600 underline">Clear filter</button>
+            </CardContent>
+          </Card>
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {animations.map(anim => (
+            {filtered.map(anim => (
               <AnimationCard key={anim.id} anim={anim} />
             ))}
           </div>
