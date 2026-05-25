@@ -3,13 +3,17 @@ import { useNostr } from '@nostrify/react';
 import type { ProjectData } from '@/lib/projectTypes';
 import { getAdminPubkeyHex } from '@/lib/adminUtils';
 
+const BASE = typeof import.meta !== 'undefined' ? (import.meta.env?.BASE_URL ?? '/') : '/';
+
 // Built-in projects
 const BUILTIN_PROJECTS = [
   {
     id: '21k-art',
     name: '21K Art',
     description: 'Exclusive artwork collection priced at 21,000 sats',
-    thumbnail: '',
+    thumbnail: `${BASE}Art_button_1.svg`,
+    gradient: 'from-yellow-400 via-orange-400 to-pink-500',
+    emoji: '₿',
     url: '/21k-art',
     order: 1,
   },
@@ -17,7 +21,9 @@ const BUILTIN_PROJECTS = [
     id: '100m-canvas',
     name: '100M Canvas',
     description: 'Collaborative pixel art on a massive canvas',
-    thumbnail: '',
+    thumbnail: `${BASE}spray_paint_icon.svg`,
+    gradient: 'from-cyan-400 via-blue-500 to-purple-600',
+    emoji: '🎨',
     url: '/canvas',
     order: 2,
   },
@@ -25,7 +31,9 @@ const BUILTIN_PROJECTS = [
     id: 'cards',
     name: 'POP Cards',
     description: 'Create and share beautiful Good Vibes cards',
-    thumbnail: '',
+    thumbnail: `${BASE}PopUP_button_1.svg`,
+    gradient: 'from-pink-400 via-rose-400 to-fuchsia-500',
+    emoji: '💝',
     url: '/cards',
     order: 3,
   },
@@ -33,7 +41,9 @@ const BUILTIN_PROJECTS = [
     id: 'free-downloads',
     name: 'Free Downloads',
     description: 'Free images and art — download and use however you like!',
-    thumbnail: '',
+    thumbnail: `${BASE}Art_button_1.svg`,
+    gradient: 'from-green-400 via-teal-400 to-cyan-500',
+    emoji: '🎁',
     url: '/free',
     order: 4,
   },
@@ -41,7 +51,9 @@ const BUILTIN_PROJECTS = [
     id: 'games',
     name: 'Games',
     description: 'Bitcoin and pop art inspired games',
-    thumbnail: '',
+    thumbnail: `${BASE}projects_button_1.svg`,
+    gradient: 'from-violet-500 via-fuchsia-500 to-pink-500',
+    emoji: '🎮',
     url: '/games',
     order: 5,
   },
@@ -49,7 +61,9 @@ const BUILTIN_PROJECTS = [
     id: 'animations',
     name: 'Animations',
     description: 'Animated pop art and motion graphics',
-    thumbnail: '',
+    thumbnail: `${BASE}projects_button_1.svg`,
+    gradient: 'from-amber-500 via-orange-500 to-rose-500',
+    emoji: '🎬',
     url: '/animations',
     order: 6,
   },

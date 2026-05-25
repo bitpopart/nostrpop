@@ -553,20 +553,47 @@ const Index = () => {
                 style={{ animationDelay: `${index * 100}ms` }}
                 onClick={handleClick}
               >
-                {project.thumbnail ? (
-                  <div className="aspect-square relative overflow-hidden">
-                    <img
-                      src={project.thumbnail}
-                      alt={project.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  </div>
-                ) : (
-                  <div className="aspect-square relative overflow-hidden bg-gradient-to-br from-orange-100 via-pink-100 to-yellow-100 dark:from-orange-900/20 dark:via-pink-900/20 dark:to-yellow-900/20 flex items-center justify-center">
-                    <FolderKanban className="h-12 w-12 text-orange-400 dark:text-orange-500" />
-                  </div>
-                )}
+                {(() => {
+                  const thumb = project.thumbnail ?? '';
+                  const gradient = ('gradient' in project ? project.gradient : '') as string;
+                  const emoji = ('emoji' in project ? project.emoji : '') as string;
+                  const isSvg = thumb.endsWith('.svg');
+
+                  if (thumb && isSvg && gradient) {
+                    // SVG icon on coloured gradient background
+                    return (
+                      <div className={`aspect-square relative overflow-hidden bg-gradient-to-br ${gradient} flex items-center justify-center`}>
+                        <img
+                          src={thumb}
+                          alt={project.name}
+                          className="h-20 w-20 object-contain drop-shadow-lg group-hover:scale-110 transition-transform duration-300"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      </div>
+                    );
+                  } else if (thumb) {
+                    return (
+                      <div className="aspect-square relative overflow-hidden">
+                        <img
+                          src={thumb}
+                          alt={project.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      </div>
+                    );
+                  } else {
+                    return (
+                      <div className={`aspect-square relative overflow-hidden bg-gradient-to-br ${gradient || 'from-orange-100 via-pink-100 to-yellow-100 dark:from-orange-900/20 dark:via-pink-900/20 dark:to-yellow-900/20'} flex items-center justify-center`}>
+                        {emoji ? (
+                          <span className="text-5xl opacity-90">{emoji}</span>
+                        ) : (
+                          <FolderKanban className="h-12 w-12 text-orange-400 dark:text-orange-500" />
+                        )}
+                      </div>
+                    );
+                  }
+                })()}
 
                 <CardHeader className="pb-3">
                   <div className="flex items-center space-x-2">

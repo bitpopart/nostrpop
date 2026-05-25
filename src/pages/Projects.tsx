@@ -111,7 +111,9 @@ const BUILTIN_PROJECTS = [
     id: '21k-art',
     name: '21K Art',
     description: 'Exclusive artwork collection priced at 21,000 sats - celebrating Bitcoin\'s 21 million supply cap',
-    thumbnail: '', // Will use default gradient
+    thumbnail: `${import.meta.env.BASE_URL || '/'}Art_button_1.svg`,
+    gradient: 'from-yellow-400 via-orange-400 to-pink-500',
+    emoji: '₿',
     url: '/21k-art',
     isBuiltIn: true,
   },
@@ -119,7 +121,9 @@ const BUILTIN_PROJECTS = [
     id: '100m-canvas',
     name: '100M Canvas',
     description: 'Collaborative pixel art project on a massive 100 million pixel canvas',
-    thumbnail: '',
+    thumbnail: `${import.meta.env.BASE_URL || '/'}spray_paint_icon.svg`,
+    gradient: 'from-cyan-400 via-blue-500 to-purple-600',
+    emoji: '🎨',
     url: '/canvas',
     isBuiltIn: true,
   },
@@ -127,11 +131,12 @@ const BUILTIN_PROJECTS = [
     id: 'cards',
     name: 'POP Cards',
     description: 'Create and share beautiful Good Vibes cards for any occasion',
-    thumbnail: '',
+    thumbnail: `${import.meta.env.BASE_URL || '/'}PopUP_button_1.svg`,
+    gradient: 'from-pink-400 via-rose-400 to-fuchsia-500',
+    emoji: '💝',
     url: '/cards',
     isBuiltIn: true,
   },
-
 ];
 
 export default function Projects() {
@@ -354,30 +359,50 @@ export default function Projects() {
                 onClick={() => handleProjectClick(project)}
               >
                 {/* Thumbnail */}
-                <div className="relative h-56 overflow-hidden">
-                  {project.thumbnail ? (
-                    <ProjectThumbnailImage
-                      src={project.thumbnail}
-                      alt={project.name}
-                      className={`w-full h-full object-cover transition-transform duration-500 ${
-                        isComingSoon ? 'opacity-60' : 'group-hover:scale-110'
-                      }`}
-                    />
-                  ) : (
-                    <div 
-                      className="w-full h-full bg-gradient-to-br from-purple-400 via-pink-400 to-indigo-400 dark:from-purple-600 dark:via-pink-600 dark:to-indigo-600 flex items-center justify-center"
-                      style={{
-                        backgroundImage: `linear-gradient(135deg, 
-                          ${['#a855f7', '#ec4899', '#6366f1', '#14b8a6', '#8b5cf6', '#f59e0b', '#f472b6'][index % 7]} 0%, 
-                          ${['#ec4899', '#6366f1', '#8b5cf6', '#06b6d4', '#f472b6', '#ef4444', '#a855f7'][index % 7]} 100%)`,
-                        opacity: isComingSoon ? 0.6 : 1
-                      }}
-                    >
-                      <span className="text-6xl opacity-90">
-                        {['⚡', '🎨', '💝', '🎁', '🎮', '🎬', '✨'][index % 7]}
-                      </span>
-                    </div>
-                  )}
+                 <div className="relative h-56 overflow-hidden">
+                   {(() => {
+                     const isBuiltIn = 'isBuiltIn' in project && project.isBuiltIn;
+                     const builtInGradient = 'gradient' in project ? (project.gradient as string) : '';
+                     const builtInEmoji = 'emoji' in project ? (project.emoji as string) : '';
+                     const builtInThumb = 'thumbnail' in project && project.thumbnail ? (project.thumbnail as string) : '';
+                     const isSvgThumb = builtInThumb.endsWith('.svg');
+
+                     if (isBuiltIn && isSvgThumb && builtInGradient) {
+                       // Built-in project: show SVG icon centred on gradient background
+                       return (
+                         <div
+                           className={`w-full h-full bg-gradient-to-br ${builtInGradient} flex items-center justify-center transition-transform duration-500 ${isComingSoon ? 'opacity-60' : 'group-hover:scale-105'}`}
+                         >
+                           <img
+                             src={builtInThumb}
+                             alt={project.name}
+                             className="h-28 w-28 object-contain drop-shadow-lg transition-transform duration-500 group-hover:scale-110"
+                           />
+                         </div>
+                       );
+                     } else if (project.thumbnail) {
+                       return (
+                         <ProjectThumbnailImage
+                           src={project.thumbnail}
+                           alt={project.name}
+                           className={`w-full h-full object-cover transition-transform duration-500 ${
+                             isComingSoon ? 'opacity-60' : 'group-hover:scale-110'
+                           }`}
+                         />
+                       );
+                     } else {
+                       return (
+                         <div
+                           className={`w-full h-full bg-gradient-to-br ${builtInGradient || 'from-purple-400 via-pink-400 to-indigo-400'} flex items-center justify-center`}
+                           style={{ opacity: isComingSoon ? 0.6 : 1 }}
+                         >
+                           <span className="text-6xl opacity-90">
+                             {builtInEmoji || ['⚡', '🎨', '💝', '🎁', '🎮', '🎬', '✨'][index % 7]}
+                           </span>
+                         </div>
+                       );
+                     }
+                   })()}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   
                   {/* Coming Soon Badge Overlay */}
