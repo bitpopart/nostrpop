@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useUploadFile } from '@/hooks/useUploadFile';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { HashtagInput } from '@/components/HashtagInput';
@@ -15,7 +16,9 @@ import {
   useAppMedia,
   usePublishAppWelcome,
   usePublishAppMedia,
+  useUpdateAppMedia,
   useDeleteAppMedia,
+  type AppMedia,
 } from '@/hooks/useAppContent';
 import {
   MessageSquare,
@@ -28,6 +31,8 @@ import {
   X,
   Save,
   CheckCircle2,
+  Edit,
+  AlertCircle,
 } from 'lucide-react';
 
 interface PendingMedia {
@@ -39,6 +44,170 @@ interface PendingMedia {
   uploadedUrl: string | null;
   uploading: boolean;
   error: boolean;
+}
+
+// ── Edit dialog ───────────────────────────────────────────
+
+interface EditMediaDialogProps {
+  item: AppMedia;
+  type: 'app-wallpaper' | 'app-gif';
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+}
+
+function EditMediaDialog({ item, type, open, onOpenChange }: EditMediaDialogProps) {
+  const { mutateAsync: uploadFile } = useUploadFile();
+  const { mutate: updateItem, isPending: isSaving } = useUpdateAppMedia();
+  const { getGradientStyle } = useThemeColors();
+
+  const [title, setTitle] = useState(item.title === 'Untitled' ? '' : item.title);
+  const [imageUrl, setImageUrl] = useState(item.image_url);
+  const [imagePreview, setImagePreview] = useState(item.image_url);
+  const [hashtags, setHashtags] = useState<string[]>(item.hashtags);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleNewImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (fileInputRef.current) fileInputRef.current.value = '';
+
+    setUploadError('');
+    setUploading(true);
+    const blobUrl = URL.createObjectURL(file);
+    setImagePreview(blobUrl);
+
+    try {
+      const tags = await uploadFile(file);
+      const url = tags[0][1];
+      setImageUrl(url);
+      // Keep the blob preview until dialog closes, then revoke
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : 'Upload failed');
+      setImagePreview(imageUrl); // revert preview
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleSave = () => {
+    if (!imageUrl) return;
+    updateItem(
+      {
+        dTag: item.id,
+        type,
+        title: title.trim() || 'Untitled',
+        imageUrl,
+        hashtags,
+      },
+      { onSuccess: () => onOpenChange(false) },
+    );
+  };
+
+  const typeLabel = type === 'app-wallpaper' ? 'Wallpaper' : 'GIF';
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md max-h-[92vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Edit className="h-5 w-5 text-teal-600" />
+            Edit {typeLabel}
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-5">
+          {/* Image preview + replace */}
+          <div className="space-y-2">
+            <Label>Image</Label>
+            <div className="relative aspect-square w-full max-w-xs mx-auto rounded-xl overflow-hidden border bg-muted">
+              <img
+                src={imagePreview}
+                alt="preview"
+                className="w-full h-full object-cover"
+              />
+              {uploading && (
+                <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center gap-2">
+                  <Loader2 className="h-8 w-8 text-white animate-spin" />
+                  <p className="text-white text-sm">Uploading…</p>
+                </div>
+              )}
+              {!uploading && imageUrl !== item.image_url && (
+                <div className="absolute top-2 left-2">
+                  <CheckCircle2 className="h-5 w-5 text-green-400 drop-shadow" />
+                </div>
+              )}
+            </div>
+
+            {uploadError && (
+              <div className="flex items-start gap-2 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 rounded-lg p-3">
+                <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                <span>{uploadError}</span>
+              </div>
+            )}
+
+            <div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept={type === 'app-gif' ? 'image/gif,image/webp,image/*' : 'image/*'}
+                className="hidden"
+                onChange={handleNewImage}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                disabled={uploading}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Upload className="h-4 w-4" />
+                Replace image
+              </Button>
+            </div>
+          </div>
+
+          {/* Title */}
+          <div className="space-y-2">
+            <Label htmlFor="edit-media-title">Title</Label>
+            <Input
+              id="edit-media-title"
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+              placeholder={`${typeLabel} title`}
+            />
+          </div>
+
+          {/* Hashtags */}
+          <HashtagInput
+            tags={hashtags}
+            onChange={setHashtags}
+            title={title}
+            description=""
+          />
+
+          {/* Actions */}
+          <div className="flex gap-3 pt-2">
+            <Button
+              onClick={handleSave}
+              disabled={isSaving || uploading || !imageUrl}
+              className="flex-1 text-white border-0"
+              style={getGradientStyle('primary')}
+            >
+              {isSaving
+                ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Saving…</>
+                : <><CheckCircle2 className="h-4 w-4 mr-2" />Save Changes</>
+              }
+            </Button>
+            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSaving}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 // ── Shared multi-upload helper ────────────────────────────
@@ -240,33 +409,97 @@ function MediaUploader({
   );
 }
 
-// ── Media list with delete ────────────────────────────────
+// ── Media list with edit + delete ─────────────────────────
 function MediaList({ type }: { type: 'app-wallpaper' | 'app-gif' }) {
   const { data: items = [], isLoading } = useAppMedia(type);
   const { mutate: deleteItem } = useDeleteAppMedia();
+  const [editingItem, setEditingItem] = useState<AppMedia | null>(null);
 
-  if (isLoading) return <p className="text-sm text-muted-foreground">Loading…</p>;
-  if (items.length === 0) return <p className="text-sm text-muted-foreground">No items yet.</p>;
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="aspect-square rounded-lg bg-muted animate-pulse" />
+        ))}
+      </div>
+    );
+  }
+
+  if (items.length === 0) {
+    return <p className="text-sm text-muted-foreground">No items yet.</p>;
+  }
 
   return (
-    <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
-      {items.map(item => (
-        <div key={item.id} className="group relative rounded-lg overflow-hidden border">
-          <img src={item.image_url} alt={item.title} className="w-full aspect-square object-cover" loading="lazy" />
-          <Button
-            variant="destructive"
-            size="icon"
-            className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-            onClick={() => deleteItem({ id: item.id, type })}
-          >
-            <Trash2 className="h-3 w-3" />
-          </Button>
-          {item.title !== 'Untitled' && (
-            <p className="text-[10px] truncate px-1 py-0.5 bg-black/50 text-white absolute bottom-0 left-0 right-0">{item.title}</p>
-          )}
-        </div>
-      ))}
-    </div>
+    <>
+      <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
+        {items.map(item => (
+          <div key={item.id} className="group relative rounded-lg overflow-hidden border bg-white dark:bg-gray-800 shadow-sm">
+            <div className="aspect-square relative">
+              <img
+                src={item.image_url}
+                alt={item.title}
+                className="w-full h-full object-cover"
+                loading="lazy"
+              />
+
+              {/* Hover action buttons */}
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors" />
+              <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="h-6 w-6 shadow"
+                  onClick={() => setEditingItem(item)}
+                  title="Edit"
+                >
+                  <Edit className="h-3 w-3" />
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  className="h-6 w-6 shadow"
+                  onClick={() => deleteItem({ id: item.id, type })}
+                  title="Delete"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Title + hashtag strip */}
+            <div className="p-1.5">
+              <p className="text-[10px] font-medium truncate text-foreground">
+                {item.title !== 'Untitled' ? item.title : <span className="text-muted-foreground italic">Untitled</span>}
+              </p>
+              {item.hashtags.length > 0 && (
+                <div className="flex flex-wrap gap-0.5 mt-0.5">
+                  {item.hashtags.slice(0, 3).map(tag => (
+                    <span key={tag} className="text-[9px] px-1 py-0.5 rounded bg-muted text-muted-foreground">
+                      #{tag}
+                    </span>
+                  ))}
+                  {item.hashtags.length > 3 && (
+                    <span className="text-[9px] px-1 py-0.5 rounded bg-muted text-muted-foreground">
+                      +{item.hashtags.length - 3}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Edit dialog */}
+      {editingItem && (
+        <EditMediaDialog
+          item={editingItem}
+          type={type}
+          open={!!editingItem}
+          onOpenChange={open => { if (!open) setEditingItem(null); }}
+        />
+      )}
+    </>
   );
 }
 
@@ -321,7 +554,9 @@ export function AppContentManagement() {
             <ImageIcon className="h-5 w-5" />
             Wallpapers
           </CardTitle>
-          <CardDescription>Images shown in the Wallpapers section of the App page.</CardDescription>
+          <CardDescription>
+            Images shown in the Wallpapers section. Hover any item to edit or delete it.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <MediaUploader type="app-wallpaper" label="Wallpaper" />
@@ -338,7 +573,9 @@ export function AppContentManagement() {
             <Clapperboard className="h-5 w-5" />
             Animated GIFs
           </CardTitle>
-          <CardDescription>GIFs shown in the Animated GIFs section of the App page.</CardDescription>
+          <CardDescription>
+            GIFs shown in the Animated GIFs section. Hover any item to edit or delete it.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <MediaUploader type="app-gif" label="GIF" />

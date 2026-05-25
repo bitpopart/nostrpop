@@ -235,6 +235,61 @@ export function usePublishAppMedia() {
   });
 }
 
+export function useUpdateAppMedia() {
+  const { nostr } = useNostr();
+  const { user } = useCurrentUser();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      dTag,
+      type,
+      title,
+      imageUrl,
+      hashtags = [],
+    }: {
+      dTag: string;
+      type: 'app-wallpaper' | 'app-gif';
+      title: string;
+      imageUrl: string;
+      hashtags?: string[];
+    }) => {
+      if (!user) throw new Error('Must be logged in');
+
+      const systemTypeTags = new Set(['app-wallpaper', 'app-gif']);
+      const extraTags: string[][] = hashtags
+        .filter(t => t && !systemTypeTags.has(t))
+        .map(t => ['t', t]);
+
+      const event = {
+        kind: 34019,
+        content: '',
+        tags: [
+          ['d', dTag],
+          ['title', title],
+          ['image', imageUrl],
+          ['t', type],
+          ['alt', `${type === 'app-wallpaper' ? 'Wallpaper' : 'Animated GIF'}: ${title}`],
+          ...extraTags,
+        ],
+        created_at: Math.floor(Date.now() / 1000),
+      };
+
+      const signed = await user.signer.signEvent(event);
+      await nostr.event(signed, { signal: AbortSignal.timeout(10000) });
+      return { dTag, title, imageUrl, type, hashtags };
+    },
+    onSuccess: (data) => {
+      toast({ title: 'Updated', description: `"${data.title}" has been updated.` });
+      queryClient.invalidateQueries({ queryKey: ['app-media', data.type] });
+    },
+    onError: () => {
+      toast({ title: 'Update Failed', variant: 'destructive' });
+    },
+  });
+}
+
 export function useDeleteAppMedia() {
   const { nostr } = useNostr();
   const { user } = useCurrentUser();
