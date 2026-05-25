@@ -114,17 +114,34 @@ async function generateThumbnailFromUrl(url: string): Promise<Blob> {
 
 /**
  * Load a video from a blob URL and return the element once metadata is ready.
- * Used to read duration/dimensions before uploading.
+ * Uses `canplay` (not just `loadedmetadata`) so that videoWidth/videoHeight
+ * are populated — some browsers (especially for vertical/portrait videos)
+ * set those values only after the first frame is decoded.
  */
 function loadVideo(src: string): Promise<HTMLVideoElement> {
   return new Promise((resolve, reject) => {
     const vid = document.createElement('video');
     vid.muted = true;
     vid.playsInline = true;
-    vid.preload = 'metadata';
-    const timer = setTimeout(() => reject(new Error('Video metadata timeout')), 10000);
-    vid.onloadedmetadata = () => { clearTimeout(timer); resolve(vid); };
+    // 'auto' so the browser fetches enough data to decode the first frame
+    vid.preload = 'auto';
+    vid.crossOrigin = 'anonymous';
+
+    let resolved = false;
+    const done = () => {
+      if (!resolved) { resolved = true; clearTimeout(timer); resolve(vid); }
+    };
+
+    const timer = setTimeout(() => {
+      if (!resolved) { resolved = true; reject(new Error('Video metadata timeout')); }
+    }, 12000);
+
+    // canplay guarantees a decoded frame → videoWidth/videoHeight are correct
+    vid.addEventListener('canplay', done, { once: true });
+    // loadedmetadata as a faster fallback for duration (may still have 0 dims)
+    vid.addEventListener('loadedmetadata', () => setTimeout(done, 500), { once: true });
     vid.onerror = () => { clearTimeout(timer); reject(new Error('Video load error')); };
+
     vid.src = src;
     vid.load();
   });
@@ -182,11 +199,39 @@ function EditDialog({ anim, open, onOpenChange }: EditDialogProps) {
   );
   const [mimeType, setMimeType] = useState('video/mp4');
   const [fileSize, setFileSize] = useState(0);
+  // Initialize dimensions from stored values; if missing (0), we'll detect below
+  const [videoWidth, setVideoWidth] = useState(anim.video_width);
+  const [videoHeight, setVideoHeight] = useState(anim.video_height);
   const [videoUploading, setVideoUploading] = useState(false);
   const [thumbUploading, setThumbUploading] = useState(false);
   const [videoError, setVideoError] = useState('');
   const thumbInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-detect dimensions from the existing video URL when they're missing
+  // (e.g. videos uploaded before the dim tag was stored, or uploaded with 0 dims).
+  // This runs once when the dialog opens.
+  const dimDetectedRef = useRef(false);
+  if (!dimDetectedRef.current && open && anim.video_url && (anim.video_width === 0 || anim.video_height === 0)) {
+    dimDetectedRef.current = true;
+    loadVideo(anim.video_url)
+      .then(async (tmp) => {
+        let w = tmp.videoWidth;
+        let h = tmp.videoHeight;
+        // Poll briefly for non-zero values
+        for (let i = 0; i < 20 && (w === 0 || h === 0); i++) {
+          await new Promise(r => setTimeout(r, 100));
+          w = tmp.videoWidth;
+          h = tmp.videoHeight;
+        }
+        tmp.src = '';
+        if (w > 0 && h > 0) {
+          setVideoWidth(w);
+          setVideoHeight(h);
+        }
+      })
+      .catch(() => { /* keep 0 */ });
+  }
 
   const handleNewVideo = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -198,12 +243,24 @@ function EditDialog({ anim, open, onOpenChange }: EditDialogProps) {
     const previewUrl = URL.createObjectURL(file);
 
     try {
-      // Get duration from the new file
+      // Get duration + dimensions from the new file
       const vid = await loadVideo(previewUrl);
       const dur = isNaN(vid.duration) ? 0 : vid.duration;
       setDuration(dur);
       setMimeType(file.type || 'video/mp4');
       setFileSize(file.size);
+
+      // Poll for non-zero dimensions
+      let w = vid.videoWidth;
+      let h = vid.videoHeight;
+      for (let i = 0; i < 20 && (w === 0 || h === 0); i++) {
+        await new Promise(r => setTimeout(r, 100));
+        w = vid.videoWidth;
+        h = vid.videoHeight;
+      }
+      vid.src = '';
+      setVideoWidth(w);
+      setVideoHeight(h);
 
       const url = await uploadVideo(file);
       setVideoUrl(url);
@@ -241,6 +298,8 @@ function EditDialog({ anim, open, onOpenChange }: EditDialogProps) {
       mimeType,
       fileSize,
       hashtags,
+      videoWidth,
+      videoHeight,
     }, { onSuccess: () => onOpenChange(false) });
   };
 
@@ -442,23 +501,47 @@ export function AnimationsManagement() {
 
         const videoUrl = await uploadVideo(item.file);
 
-        // Get duration + dimensions from the local preview blob
+        // Get duration + dimensions from the local preview blob.
+        // Uses loadVideo() which waits for loadedmetadata with a 10 s timeout.
+        // After metadata fires, videoWidth/videoHeight may still be 0 on some
+        // browsers (especially for vertical/portrait mobile videos) until the
+        // first frame is decoded.  We poll for up to 2 s to get real values,
+        // then fall back to the uploaded URL if still zero.
         let duration = 0;
         let videoWidth = 0;
         let videoHeight = 0;
         try {
-          const tmp = document.createElement('video');
-          tmp.preload = 'metadata';
-          await new Promise<void>(resolve => {
-            tmp.onloadedmetadata = () => resolve();
-            setTimeout(resolve, 3000);
-            tmp.src = item.previewUrl;
-            tmp.load();
-          });
+          const tmp = await loadVideo(item.previewUrl);
           duration = isFinite(tmp.duration) ? tmp.duration : 0;
-          videoWidth = tmp.videoWidth || 0;
-          videoHeight = tmp.videoHeight || 0;
+
+          // Poll briefly for non-zero dimensions (some browsers need a decoded frame)
+          for (let attempt = 0; attempt < 20; attempt++) {
+            if (tmp.videoWidth > 0 && tmp.videoHeight > 0) {
+              videoWidth = tmp.videoWidth;
+              videoHeight = tmp.videoHeight;
+              break;
+            }
+            await new Promise(r => setTimeout(r, 100));
+          }
+
+          tmp.src = '';
         } catch { /* stays 0 */ }
+
+        // If still zero, try reading dimensions from the uploaded URL
+        if ((videoWidth === 0 || videoHeight === 0) && videoUrl) {
+          try {
+            const tmp2 = await loadVideo(videoUrl);
+            for (let attempt = 0; attempt < 20; attempt++) {
+              if (tmp2.videoWidth > 0 && tmp2.videoHeight > 0) {
+                videoWidth = tmp2.videoWidth;
+                videoHeight = tmp2.videoHeight;
+                break;
+              }
+              await new Promise(r => setTimeout(r, 100));
+            }
+            tmp2.src = '';
+          } catch { /* stays 0 */ }
+        }
 
         // ── Step 2: Generate thumbnail from the uploaded video URL ────
         // Using the remote URL avoids competing with the local preview
