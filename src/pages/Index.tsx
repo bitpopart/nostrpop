@@ -341,7 +341,7 @@ const Index = () => {
   // Helper to check if section is enabled
   const isSectionEnabled = (id: string) => {
     // If settings haven't loaded yet, show only essential sections (not nostr-projects)
-    if (!homepageSettings) return ['projects', 'art', 'cards', 'news'].includes(id);
+    if (!homepageSettings) return ['projects', 'art', 'cards', 'free-downloads', 'news'].includes(id);
     // Otherwise only show if in enabled list
     return orderedSections.includes(id);
   };

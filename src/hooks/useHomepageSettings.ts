@@ -93,8 +93,21 @@ export function useHomepageSettings() {
           try {
             const parsed = JSON.parse(events[0].content) as HomepageSection[];
             console.log('[useHomepageSettings] Loaded settings from Nostr:', parsed);
-            // Sort by order
-            return parsed.sort((a, b) => a.order - b.order);
+
+            // Merge: keep saved sections, then append any DEFAULT sections not yet saved.
+            // This ensures newly added sections (e.g. free-downloads) always appear even
+            // when the admin hasn't re-saved their homepage settings after a code update.
+            const savedIds = new Set(parsed.map(s => s.id));
+            const maxOrder = parsed.reduce((m, s) => Math.max(m, s.order), -1);
+            let nextOrder = maxOrder + 1;
+            const merged = [...parsed];
+            for (const def of DEFAULT_SECTIONS) {
+              if (!savedIds.has(def.id)) {
+                merged.push({ ...def, order: nextOrder++ });
+              }
+            }
+
+            return merged.sort((a, b) => a.order - b.order);
           } catch (e) {
             console.error('[useHomepageSettings] Failed to parse settings from Nostr:', e);
           }
