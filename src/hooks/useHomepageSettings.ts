@@ -46,12 +46,20 @@ const DEFAULT_SECTIONS: HomepageSection[] = [
     order: 3,
   },
   {
+    id: 'free-downloads',
+    title: 'Free Downloads',
+    subtitle: 'Wallpapers, GIFs & Animations — all free',
+    icon: 'Download',
+    enabled: true,
+    order: 4,
+  },
+  {
     id: 'news',
     title: 'Nostr News',
     subtitle: 'Latest updates and articles',
     icon: 'Rss',
     enabled: true,
-    order: 4,
+    order: 5,
   },
   {
     id: 'pages',
@@ -59,7 +67,7 @@ const DEFAULT_SECTIONS: HomepageSection[] = [
     subtitle: 'Explore custom content',
     icon: 'FileText',
     enabled: false,
-    order: 5,
+    order: 6,
   },
 ];
 

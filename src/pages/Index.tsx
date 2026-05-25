@@ -14,6 +14,8 @@ import { useFeaturedProjects } from '@/hooks/useProjects';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useHomepageSettings } from '@/hooks/useHomepageSettings';
 import { useBitPopArtPosts, useFeaturedBitPopArtPosts } from '@/hooks/useBitPopArtPosts';
+import { useAppMedia } from '@/hooks/useAppContent';
+import { useAnimations } from '@/hooks/useAnimations';
 import { genUserName } from '@/lib/genUserName';
 import { RelaySelector } from '@/components/RelaySelector';
 import { ArtProgressToggle } from '@/components/ArtProgressToggle';
@@ -37,6 +39,10 @@ import {
   FileText,
   MapPin,
   Heart,
+  Download,
+  Image as ImageIcon,
+  Clapperboard,
+  Play,
 } from 'lucide-react';
 import type { NostrEvent, NostrMetadata } from '@nostrify/nostrify';
 import type { ArtworkData } from '@/lib/artTypes';
@@ -355,6 +361,11 @@ const Index = () => {
   const artProgressPosts = selectedArtProgressPosts || [];
   const artProgressLoading = allArtProgressLoading;
   
+  // Free Downloads — latest wallpaper, gif, animation
+  const { data: wallpapers = [] } = useAppMedia('app-wallpaper');
+  const { data: gifs = [] } = useAppMedia('app-gif');
+  const { data: animations = [] } = useAnimations();
+
   // Placeholder data for features not yet implemented
   const featuredNostrProjects: never[] = [];
   const customPages: never[] = [];
@@ -388,6 +399,8 @@ const Index = () => {
         return renderArtSection(settings);
       case 'cards':
         return renderCardsSection(settings);
+      case 'free-downloads':
+        return renderFreeDownloadsSection(settings);
       case 'pages':
         return renderPagesSection(settings);
       case 'news':
@@ -780,6 +793,168 @@ const Index = () => {
                 </Link>
               );
             })}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderFreeDownloadsSection = (settings: ReturnType<typeof getSectionSettings>) => {
+    // Pick the most-recently uploaded item from each category
+    const latestWallpaper = wallpapers[0] ?? null;
+    const latestGif = gifs[0] ?? null;
+    const latestAnimation = animations[0] ?? null;
+
+    const isLoading = !wallpapers.length && !gifs.length && !animations.length;
+
+    const items = [
+      {
+        key: 'wallpaper',
+        label: 'Wallpaper',
+        to: '/wallpapers',
+        btnLabel: 'All Wallpapers',
+        icon: <ImageIcon className="h-8 w-8 text-teal-400" />,
+        accentFrom: 'from-teal-500',
+        accentTo: 'to-cyan-500',
+        borderColor: 'border-teal-200 dark:border-teal-800',
+        bgColor: 'from-teal-100 to-cyan-100 dark:from-teal-900/30 dark:to-cyan-900/30',
+        badgeBg: 'bg-teal-600/90',
+        item: latestWallpaper,
+        thumb: latestWallpaper?.image_url ?? null,
+        title: latestWallpaper?.title ?? null,
+        isVideo: false,
+      },
+      {
+        key: 'gif',
+        label: 'GIF',
+        to: '/gifs',
+        btnLabel: 'All GIFs',
+        icon: <Clapperboard className="h-8 w-8 text-amber-400" />,
+        accentFrom: 'from-amber-500',
+        accentTo: 'to-orange-500',
+        borderColor: 'border-amber-200 dark:border-amber-800',
+        bgColor: 'from-amber-100 to-orange-100 dark:from-amber-900/30 dark:to-orange-900/30',
+        badgeBg: 'bg-amber-600/90',
+        item: latestGif,
+        thumb: latestGif?.image_url ?? null,
+        title: latestGif?.title ?? null,
+        isVideo: false,
+      },
+      {
+        key: 'animation',
+        label: 'Animation',
+        to: '/animations',
+        btnLabel: 'All Animations',
+        icon: <Play className="h-8 w-8 text-violet-400" />,
+        accentFrom: 'from-violet-500',
+        accentTo: 'to-purple-500',
+        borderColor: 'border-violet-200 dark:border-violet-800',
+        bgColor: 'from-violet-100 to-purple-100 dark:from-violet-900/30 dark:to-purple-900/30',
+        badgeBg: 'bg-violet-600/90',
+        item: latestAnimation,
+        thumb: latestAnimation?.thumb_url ?? null,
+        title: latestAnimation?.title ?? null,
+        isVideo: true,
+      },
+    ];
+
+    return (
+      <div key="free-downloads" className="mb-16">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h2 className="text-3xl font-bold mb-2">{settings?.title || 'Free Downloads'}</h2>
+            <p className="text-gray-600 dark:text-gray-300">
+              {settings?.subtitle || 'Wallpapers, GIFs & Animations — all free to download'}
+            </p>
+          </div>
+          <Button variant="outline" asChild>
+            <Link to="/wallpapers" className="flex items-center space-x-2">
+              <Download className="h-4 w-4" />
+              <span>Browse All</span>
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
+
+        {/* Three-column grid */}
+        {isLoading ? (
+          <div className="grid md:grid-cols-3 gap-6">
+            {[0, 1, 2].map(i => (
+              <Card key={i} className="overflow-hidden">
+                <Skeleton className="aspect-video w-full" />
+                <div className="p-4 space-y-2">
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-8 w-full" />
+                </div>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-3 gap-6">
+            {items.map((col, index) => (
+              <div
+                key={col.key}
+                className="animate-in fade-in slide-in-from-bottom-4 flex flex-col"
+                style={{ animationDelay: `${index * 100}ms` }}
+              >
+                <Card className={`overflow-hidden border ${col.borderColor} bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm group flex-1 flex flex-col`}>
+                  {/* Thumbnail */}
+                  <div className="aspect-video relative overflow-hidden">
+                    {col.thumb ? (
+                      <>
+                        <img
+                          src={col.thumb}
+                          alt={col.title ?? col.label}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          loading="lazy"
+                        />
+                        {/* Play overlay for animations */}
+                        {col.isVideo && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/35 transition-colors">
+                            <div className="w-12 h-12 rounded-full bg-white/90 group-hover:bg-white flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-all duration-300">
+                              <Play className="w-5 h-5 text-gray-900 ml-0.5" fill="currentColor" />
+                            </div>
+                          </div>
+                        )}
+                        {/* Category badge top-left */}
+                        <span className={`absolute top-2 left-2 ${col.badgeBg} text-white text-[10px] font-bold px-2 py-0.5 rounded-md`}>
+                          {col.label}
+                        </span>
+                        {/* Gradient hover overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      </>
+                    ) : (
+                      <div className={`w-full h-full bg-gradient-to-br ${col.bgColor} flex items-center justify-center`}>
+                        {col.icon}
+                        <span className="absolute bottom-2 left-0 right-0 text-center text-xs text-muted-foreground">Coming soon</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Info */}
+                  <div className="p-4 flex flex-col gap-3 flex-1">
+                    {col.title && (
+                      <p className="text-sm font-semibold line-clamp-2 leading-tight group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                        {col.title}
+                      </p>
+                    )}
+
+                    {/* CTA button */}
+                    <Button
+                      asChild
+                      size="sm"
+                      className={`w-full mt-auto gap-2 text-white border-0 bg-gradient-to-r ${col.accentFrom} ${col.accentTo} hover:opacity-90`}
+                    >
+                      <Link to={col.to}>
+                        <Download className="h-3.5 w-3.5" />
+                        {col.btnLabel}
+                      </Link>
+                    </Button>
+                  </div>
+                </Card>
+              </div>
+            ))}
           </div>
         )}
       </div>
