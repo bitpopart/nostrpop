@@ -184,14 +184,14 @@ function BannersPreview({
       {preview.map(item => (
         <div
           key={item.id}
-          className="group relative w-full aspect-video rounded-xl overflow-hidden bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer"
+          className="group relative w-full rounded-xl overflow-hidden bg-black/5 dark:bg-black/30 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer"
           onClick={onMoreClick}
           title={item.title}
         >
           <img
             src={item.image_url}
             alt={item.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            className="w-full h-auto block"
             loading="lazy"
           />
           <Button

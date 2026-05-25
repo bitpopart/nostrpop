@@ -122,18 +122,16 @@ export default function Banners() {
               {filtered.map(item => (
                 <div
                   key={item.id}
-                  className="group relative rounded-2xl overflow-hidden bg-white dark:bg-gray-800 shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer"
+                  className="group relative rounded-2xl overflow-hidden bg-black/5 dark:bg-black/20 shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer"
                   onClick={() => setLightbox(item)}
                 >
-                  {/* Banner image — landscape aspect */}
-                  <div className="aspect-video overflow-hidden">
-                    <img
-                      src={item.image_url}
-                      alt={item.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      loading="lazy"
-                    />
-                  </div>
+                  {/* Banner image — full natural ratio, no cropping */}
+                  <img
+                    src={item.image_url}
+                    alt={item.title}
+                    className="w-full h-auto block"
+                    loading="lazy"
+                  />
 
                   {/* Download icon on hover (top-right) */}
                   <Button
