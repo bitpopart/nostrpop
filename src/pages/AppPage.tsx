@@ -26,6 +26,7 @@ import {
   ExternalLink,
   Sparkles,
   UserCircle2,
+  PanelTop,
 } from 'lucide-react';
 
 // 3 columns × 3 rows = 9 items max shown in preview
@@ -131,6 +132,91 @@ function PreviewGallery({
       >
         {moreLabel}
         {items.length > PREVIEW_LIMIT && (
+          <Badge variant="secondary" className="text-xs">{items.length}</Badge>
+        )}
+        <ArrowRight className="h-4 w-4 ml-auto" />
+      </Button>
+    </div>
+  );
+}
+
+// ── Banners preview ───────────────────────────────────────
+
+function BannersPreview({
+  items,
+  isLoading,
+  onMoreClick,
+}: {
+  items: { id: string; title: string; image_url: string }[];
+  isLoading: boolean;
+  onMoreClick: () => void;
+}) {
+  const { getGradientStyle } = useThemeColors();
+  const preview = items.slice(0, 3); // show 3 landscape banners stacked
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        {[...Array(2)].map((_, i) => (
+          <Skeleton key={i} className="w-full aspect-video rounded-xl" />
+        ))}
+      </div>
+    );
+  }
+
+  if (items.length === 0) {
+    return (
+      <div className="space-y-3">
+        {[...Array(2)].map((_, i) => (
+          <div key={i} className="w-full aspect-video rounded-xl bg-gradient-to-br from-sky-100 to-cyan-100 dark:from-sky-900/30 dark:to-cyan-900/30 flex items-center justify-center">
+            <PanelTop className="h-8 w-8 text-sky-300" />
+          </div>
+        ))}
+        <Button variant="outline" className="w-full gap-2 font-semibold" onClick={onMoreClick}>
+          Browse Banners <ArrowRight className="h-4 w-4 ml-auto" />
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {preview.map(item => (
+        <div
+          key={item.id}
+          className="group relative w-full aspect-video rounded-xl overflow-hidden bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer"
+          onClick={onMoreClick}
+          title={item.title}
+        >
+          <img
+            src={item.image_url}
+            alt={item.title}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            loading="lazy"
+          />
+          <Button
+            size="icon"
+            className="absolute top-1.5 right-1.5 h-7 w-7 rounded-full shadow text-white border-0 opacity-0 group-hover:opacity-100 transition-opacity"
+            style={getGradientStyle('primary')}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDownload(item.image_url, deriveFilename(item.image_url, item.title));
+            }}
+            title="Download"
+          >
+            <Download className="h-3 w-3" />
+          </Button>
+          {item.title !== 'Untitled' && (
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <p className="text-white text-[10px] font-medium truncate">{item.title}</p>
+            </div>
+          )}
+        </div>
+      ))}
+
+      <Button variant="outline" className="w-full gap-2 font-semibold" onClick={onMoreClick}>
+        More Banners
+        {items.length > 3 && (
           <Badge variant="secondary" className="text-xs">{items.length}</Badge>
         )}
         <ArrowRight className="h-4 w-4 ml-auto" />
@@ -308,6 +394,7 @@ export default function AppPage() {
   const { data: wallpapers = [], isLoading: wpLoading } = useAppMedia('app-wallpaper');
   const { data: gifs = [], isLoading: gifLoading } = useAppMedia('app-gif');
   const { data: avatars = [], isLoading: avatarLoading } = useAppMedia('app-avatar');
+  const { data: banners = [], isLoading: bannerLoading } = useAppMedia('app-banner');
   const { data: products = [], isLoading: productsLoading } = useMarketplaceProducts();
   const { data: freeDownloads = [], isLoading: freeLoading } = useFreeDownloads();
 
@@ -455,6 +542,24 @@ export default function AppPage() {
             items={avatars}
             isLoading={avatarLoading}
             onMoreClick={() => navigate('/avatars')}
+          />
+        </section>
+
+        {/* ── Header Banners ────────────────────────────── */}
+        <section>
+          <CardHeader className="px-0 pb-3">
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <PanelTop className="h-5 w-5 text-sky-600" />
+              Header Banners
+              {!bannerLoading && banners.length > 0 && (
+                <span className="text-sm font-normal text-muted-foreground ml-1">· {banners.length} available</span>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <BannersPreview
+            items={banners}
+            isLoading={bannerLoading}
+            onMoreClick={() => navigate('/banners')}
           />
         </section>
 

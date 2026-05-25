@@ -37,6 +37,7 @@ import Animations from "./pages/Animations";
 import Wallpapers from "./pages/Wallpapers";
 import Gifs from "./pages/Gifs";
 import Avatars from "./pages/Avatars";
+import Banners from "./pages/Banners";
 import Frl from "./pages/Frl";
 import AppPage from "./pages/AppPage";
 import NotFound from "./pages/NotFound";
@@ -86,6 +87,7 @@ export function AppRouter() {
           <Route path="/wallpapers" element={<Wallpapers />} />
           <Route path="/gifs" element={<Gifs />} />
           <Route path="/avatars" element={<Avatars />} />
+          <Route path="/banners" element={<Banners />} />
           <Route path="/frl" element={<Frl />} />
           <Route path="/app" element={<AppPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

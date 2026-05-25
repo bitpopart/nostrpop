@@ -34,6 +34,7 @@ import {
   Edit,
   AlertCircle,
   UserCircle2,
+  PanelTop,
 } from 'lucide-react';
 
 interface PendingMedia {
@@ -51,7 +52,7 @@ interface PendingMedia {
 
 interface EditMediaDialogProps {
   item: AppMedia;
-  type: 'app-wallpaper' | 'app-gif' | 'app-avatar';
+  type: 'app-wallpaper' | 'app-gif' | 'app-avatar' | 'app-banner';
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }
@@ -106,7 +107,10 @@ function EditMediaDialog({ item, type, open, onOpenChange }: EditMediaDialogProp
     );
   };
 
-  const typeLabel = type === 'app-wallpaper' ? 'Wallpaper' : type === 'app-gif' ? 'GIF' : 'Avatar';
+  const typeLabel =
+    type === 'app-wallpaper' ? 'Wallpaper' :
+    type === 'app-gif' ? 'GIF' :
+    type === 'app-avatar' ? 'Avatar' : 'Banner';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -216,7 +220,7 @@ function MediaUploader({
   type,
   label,
 }: {
-  type: 'app-wallpaper' | 'app-gif' | 'app-avatar';
+  type: 'app-wallpaper' | 'app-gif' | 'app-avatar' | 'app-banner';
   label: string;
 }) {
   const { mutateAsync: uploadFile } = useUploadFile();
@@ -411,7 +415,7 @@ function MediaUploader({
 }
 
 // ── Media list with edit + delete ─────────────────────────
-function MediaList({ type }: { type: 'app-wallpaper' | 'app-gif' | 'app-avatar' }) {
+function MediaList({ type, aspectClass = 'aspect-square' }: { type: 'app-wallpaper' | 'app-gif' | 'app-avatar' | 'app-banner'; aspectClass?: string }) {
   const { data: items = [], isLoading } = useAppMedia(type);
   const { mutate: deleteItem } = useDeleteAppMedia();
   const [editingItem, setEditingItem] = useState<AppMedia | null>(null);
@@ -432,10 +436,10 @@ function MediaList({ type }: { type: 'app-wallpaper' | 'app-gif' | 'app-avatar' 
 
   return (
     <>
-      <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
+      <div className={`grid gap-3 ${aspectClass === 'aspect-video' ? 'grid-cols-2 md:grid-cols-3' : 'grid-cols-3 md:grid-cols-4'}`}>
         {items.map(item => (
           <div key={item.id} className="group relative rounded-lg overflow-hidden border bg-white dark:bg-gray-800 shadow-sm">
-            <div className="aspect-square relative">
+            <div className={`${aspectClass} relative`}>
               <img
                 src={item.image_url}
                 alt={item.title}
@@ -600,6 +604,25 @@ export function AppContentManagement() {
         <CardContent className="space-y-4">
           <MediaUploader type="app-avatar" label="Avatar" />
           <MediaList type="app-avatar" />
+        </CardContent>
+      </Card>
+
+      <Separator />
+
+      {/* Header Banners */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <PanelTop className="h-5 w-5 text-sky-600" />
+            Header Banners
+          </CardTitle>
+          <CardDescription>
+            Wide landscape banners fans can download and use as their profile header. Hover any item to edit or delete it.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <MediaUploader type="app-banner" label="Banner" />
+          <MediaList type="app-banner" aspectClass="aspect-video" />
         </CardContent>
       </Card>
     </div>
