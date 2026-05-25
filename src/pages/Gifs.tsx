@@ -2,7 +2,7 @@ import { useSeoMeta } from '@unhead/react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppMedia, type AppMedia } from '@/hooks/useAppContent';
@@ -171,31 +171,53 @@ export default function Gifs() {
 
       {/* Lightbox */}
       <Dialog open={!!lightbox} onOpenChange={() => setLightbox(null)}>
-        <DialogContent className="max-w-2xl p-0 overflow-hidden">
+        <DialogContent className="max-w-2xl w-full p-0 overflow-hidden bg-background rounded-2xl shadow-2xl">
           {lightbox && (
-            <div className="relative">
-              <img src={lightbox.image_url} alt={lightbox.title} className="w-full h-auto" />
-              <Button
-                size="icon"
-                className="absolute top-2 right-2 rounded-full text-white border-0"
-                style={getGradientStyle('primary')}
-                onClick={() => handleDownload(lightbox.image_url, deriveFilename(lightbox.image_url, lightbox.title))}
-              >
-                <Download className="h-4 w-4" />
-              </Button>
-              {/* Hashtag overlay */}
-              {lightbox.hashtags.length > 0 && (
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
-                  <div className="flex flex-wrap gap-1.5">
-                    {lightbox.hashtags.map(tag => (
-                      <span key={tag} className="text-xs text-white bg-white/20 px-2 py-0.5 rounded-full font-medium">
-                        #{tag}
-                      </span>
-                    ))}
-                  </div>
+            <>
+              <DialogTitle className="sr-only">{lightbox.title}</DialogTitle>
+
+              {/* GIF — natural ratio, max height capped so it never overflows the viewport */}
+              <div className="flex items-center justify-center bg-black/5 dark:bg-black/30 w-full">
+                <img
+                  src={lightbox.image_url}
+                  alt={lightbox.title}
+                  className="max-w-full max-h-[70vh] w-auto h-auto object-contain"
+                  style={{ display: 'block' }}
+                />
+              </div>
+
+              {/* Info + download bar */}
+              <div className="px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
+                {/* Title + hashtags */}
+                <div className="flex-1 min-w-0">
+                  {lightbox.title !== 'Untitled' && (
+                    <p className="font-semibold text-sm truncate">{lightbox.title}</p>
+                  )}
+                  {lightbox.hashtags.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {lightbox.hashtags.map(tag => (
+                        <span
+                          key={tag}
+                          className="text-[11px] px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 font-medium"
+                        >
+                          #{tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+
+                {/* Download button */}
+                <Button
+                  className="shrink-0 gap-2 text-white border-0 font-semibold shadow"
+                  style={getGradientStyle('primary')}
+                  onClick={() => handleDownload(lightbox.image_url, deriveFilename(lightbox.image_url, lightbox.title))}
+                >
+                  <Download className="h-4 w-4" />
+                  Download Free
+                </Button>
+              </div>
+            </>
           )}
         </DialogContent>
       </Dialog>
