@@ -35,7 +35,6 @@ const BITPOPART_PUBKEY = '43baaf0c28e6cfb195b17ee083e19eb3a4afdfac54d9b6baf17027
 const IMPORT_RELAYS = [
   'wss://relay.ditto.pub',
   'wss://relay.dreamith.to',
-  'wss://relay.damus.io',
   'wss://relay.primal.net',
 ];
 

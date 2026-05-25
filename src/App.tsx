@@ -39,7 +39,6 @@ const defaultConfig: AppConfig = {
 const presetRelays = [
   { url: 'wss://relay.ditto.pub', name: 'Ditto' },
   { url: 'wss://relay.dreamith.to', name: 'Dreamith' },
-  { url: 'wss://relay.damus.io', name: 'Damus' },
   { url: 'wss://relay.primal.net', name: 'Primal' },
 ];
 
