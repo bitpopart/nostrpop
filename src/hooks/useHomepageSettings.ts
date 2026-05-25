@@ -94,16 +94,35 @@ export function useHomepageSettings() {
             const parsed = JSON.parse(events[0].content) as HomepageSection[];
             console.log('[useHomepageSettings] Loaded settings from Nostr:', parsed);
 
-            // Merge: keep saved sections, then append any DEFAULT sections not yet saved.
-            // This ensures newly added sections (e.g. free-downloads) always appear even
-            // when the admin hasn't re-saved their homepage settings after a code update.
+            // Merge: keep saved sections, then splice in any DEFAULT sections not yet
+            // saved at their intended default position (not just appended at the end).
+            // This ensures newly added sections always appear in the right place even
+            // when the admin hasn't re-saved homepage settings after a code update.
             const savedIds = new Set(parsed.map(s => s.id));
-            const maxOrder = parsed.reduce((m, s) => Math.max(m, s.order), -1);
-            let nextOrder = maxOrder + 1;
             const merged = [...parsed];
+
             for (const def of DEFAULT_SECTIONS) {
-              if (!savedIds.has(def.id)) {
-                merged.push({ ...def, order: nextOrder++ });
+              if (savedIds.has(def.id)) continue;
+
+              // Find the default section that should come right after this one,
+              // and look for that section in the merged list to insert before it.
+              const defaultOrder = DEFAULT_SECTIONS.map(s => s.id);
+              const defPos = defaultOrder.indexOf(def.id);
+              const followingIds = defaultOrder.slice(defPos + 1);
+              const insertBeforeIdx = merged.findIndex(s => followingIds.includes(s.id));
+
+              if (insertBeforeIdx !== -1) {
+                // Give it an order value just below the section it precedes
+                const beforeOrder = merged[insertBeforeIdx].order;
+                const prevOrder = insertBeforeIdx > 0 ? merged[insertBeforeIdx - 1].order : beforeOrder - 2;
+                merged.splice(insertBeforeIdx, 0, {
+                  ...def,
+                  order: (prevOrder + beforeOrder) / 2,
+                });
+              } else {
+                // No following section found — append at end
+                const maxOrder = merged.reduce((m, s) => Math.max(m, s.order), -1);
+                merged.push({ ...def, order: maxOrder + 1 });
               }
             }
 
