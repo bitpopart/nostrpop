@@ -15,6 +15,9 @@ export interface AnimationItem {
   duration: string;    // formatted "m:ss"
   created_at: string;
   hashtags: string[];  // t-tags (excluding system tags)
+  orientation: 'horizontal' | 'vertical'; // derived from event kind
+  video_width: number;   // 0 if unknown
+  video_height: number;  // 0 if unknown
 }
 
 /** Parse duration seconds → "m:ss" */
@@ -81,6 +84,9 @@ export function useAnimations() {
             let thumbUrl = '';
             let duration = '';
 
+            let videoWidth = 0;
+            let videoHeight = 0;
+
             if (imetaTag) {
               for (let i = 1; i < imetaTag.length; i++) {
                 const part = imetaTag[i];
@@ -88,6 +94,13 @@ export function useAnimations() {
                 else if (part.startsWith('image ')) thumbUrl = part.substring(6);
                 else if (part.startsWith('duration ')) {
                   duration = formatDuration(parseFloat(part.substring(9)));
+                } else if (part.startsWith('dim ')) {
+                  // NIP-71 dim format: "WxH" e.g. "1920x1080"
+                  const dim = part.substring(4).split('x');
+                  if (dim.length === 2) {
+                    videoWidth = parseInt(dim[0]) || 0;
+                    videoHeight = parseInt(dim[1]) || 0;
+                  }
                 }
               }
             }
@@ -108,6 +121,13 @@ export function useAnimations() {
               .filter(([n, v]) => n === 't' && v && !systemTags.has(v))
               .map(([, v]) => v);
 
+            // Orientation: kind 34236 = vertical (portrait), 34235 = horizontal
+            // Also infer from stored dim if kind is ambiguous
+            let orientation: 'horizontal' | 'vertical' = event.kind === 34236 ? 'vertical' : 'horizontal';
+            if (videoWidth > 0 && videoHeight > 0) {
+              orientation = videoHeight > videoWidth ? 'vertical' : 'horizontal';
+            }
+
             return {
               id: dTag,
               event,
@@ -118,6 +138,9 @@ export function useAnimations() {
               duration,
               created_at: new Date(event.created_at * 1000).toISOString(),
               hashtags,
+              orientation,
+              video_width: videoWidth,
+              video_height: videoHeight,
             };
           } catch {
             return null;
@@ -153,6 +176,8 @@ export function usePublishAnimation() {
       mimeType,
       fileSize,
       hashtags = [],
+      videoWidth = 0,
+      videoHeight = 0,
     }: {
       title: string;
       description: string;
@@ -162,10 +187,16 @@ export function usePublishAnimation() {
       mimeType: string;
       fileSize: number;
       hashtags?: string[];
+      videoWidth?: number;
+      videoHeight?: number;
     }) => {
       if (!user) throw new Error('Must be logged in');
 
       const dTag = `animation-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+
+      // Pick kind: 34236 = vertical (portrait), 34235 = horizontal/landscape
+      const isVertical = videoHeight > 0 && videoWidth > 0 && videoHeight > videoWidth;
+      const kind = isVertical ? 34236 : 34235;
 
       const imetaParts = [
         `url ${videoUrl}`,
@@ -174,6 +205,7 @@ export function usePublishAnimation() {
         `duration ${duration.toFixed(2)}`,
       ];
       if (thumbUrl) imetaParts.push(`image ${thumbUrl}`);
+      if (videoWidth > 0 && videoHeight > 0) imetaParts.push(`dim ${videoWidth}x${videoHeight}`);
 
       const tags: string[][] = [
         ['d', dTag],
@@ -196,7 +228,7 @@ export function usePublishAnimation() {
       if (thumbUrl) tags.push(['thumb', thumbUrl]);
 
       const event = {
-        kind: 34235, // NIP-71 horizontal video
+        kind, // 34235 horizontal or 34236 vertical
         content: '',
         tags,
         created_at: Math.floor(Date.now() / 1000),
@@ -238,6 +270,8 @@ export function useUpdateAnimation() {
       mimeType,
       fileSize,
       hashtags = [],
+      videoWidth = 0,
+      videoHeight = 0,
     }: {
       dTag: string;
       kind: number;
@@ -249,8 +283,15 @@ export function useUpdateAnimation() {
       mimeType: string;
       fileSize: number;
       hashtags?: string[];
+      videoWidth?: number;
+      videoHeight?: number;
     }) => {
       if (!user) throw new Error('Must be logged in');
+
+      // Re-derive kind from dimensions if we have them, else preserve original
+      const resolvedKind = (videoWidth > 0 && videoHeight > 0)
+        ? (videoHeight > videoWidth ? 34236 : 34235)
+        : kind;
 
       const imetaParts = [
         `url ${videoUrl}`,
@@ -259,6 +300,7 @@ export function useUpdateAnimation() {
         `duration ${duration.toFixed(2)}`,
       ];
       if (thumbUrl) imetaParts.push(`image ${thumbUrl}`);
+      if (videoWidth > 0 && videoHeight > 0) imetaParts.push(`dim ${videoWidth}x${videoHeight}`);
 
       const tags: string[][] = [
         ['d', dTag],
@@ -281,7 +323,7 @@ export function useUpdateAnimation() {
       if (thumbUrl) tags.push(['thumb', thumbUrl]);
 
       const event = {
-        kind,
+        kind: resolvedKind,
         content: '',
         tags,
         created_at: Math.floor(Date.now() / 1000),

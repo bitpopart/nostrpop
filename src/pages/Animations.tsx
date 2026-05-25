@@ -23,6 +23,9 @@ import {
   Sparkles,
   Heart,
   Loader2,
+  RectangleHorizontal,
+  RectangleVertical,
+  LayoutGrid,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -199,26 +202,37 @@ function WatchDialog({ anim, open, onOpenChange }: WatchDialogProps) {
   const name = metadata?.name || 'BitPopArt';
   const picture = metadata?.picture || '';
 
+  const isVertical = anim.orientation === 'vertical';
   const filename = `${anim.title.replace(/[^a-zA-Z0-9_-]/g, '_')}.${anim.video_url.split('.').pop()?.split('?')[0] || 'mp4'}`;
+
+  // Vertical → narrow dialog centred; horizontal → wide dialog
+  const dialogMaxW = isVertical ? 'max-w-sm' : 'max-w-3xl';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl p-0 overflow-hidden rounded-2xl bg-black border-0">
+      <DialogContent className={`${dialogMaxW} p-0 overflow-hidden rounded-2xl bg-black border-0`}>
         <DialogTitle className="sr-only">{anim.title}</DialogTitle>
 
-        {/* Video */}
+        {/* Video — fills dialog width; vertical videos naturally stay narrow */}
         <video
           src={anim.video_url}
           controls
           autoPlay
           playsInline
           className="w-full block"
-          style={{ maxHeight: '65vh', background: '#000' }}
+          style={{
+            maxHeight: isVertical ? '75vh' : '65vh',
+            background: '#000',
+            // If we have exact dimensions, hint the browser for correct intrinsic ratio
+            aspectRatio: anim.video_width && anim.video_height
+              ? `${anim.video_width} / ${anim.video_height}`
+              : undefined,
+          }}
         />
 
         {/* Info panel */}
         <div className="bg-background px-5 pt-4 pb-5 space-y-3">
-          {/* Author + time */}
+          {/* Author + time + orientation badge */}
           <div className="flex items-center gap-2">
             <Avatar className="h-8 w-8 flex-shrink-0">
               <AvatarImage src={picture} alt={name} />
@@ -230,9 +244,20 @@ function WatchDialog({ anim, open, onOpenChange }: WatchDialogProps) {
                 {formatDistanceToNow(new Date(anim.created_at), { addSuffix: true })}
               </p>
             </div>
-            {anim.duration && (
-              <Badge variant="outline" className="text-xs flex-shrink-0">{anim.duration}</Badge>
-            )}
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              {anim.duration && (
+                <Badge variant="outline" className="text-xs">{anim.duration}</Badge>
+              )}
+              {isVertical ? (
+                <Badge className="gap-1 text-[10px] bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300 border-0">
+                  <RectangleVertical className="h-3 w-3" /> Vertical
+                </Badge>
+              ) : (
+                <Badge className="gap-1 text-[10px] bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 border-0">
+                  <RectangleHorizontal className="h-3 w-3" /> Horizontal
+                </Badge>
+              )}
+            </div>
           </div>
 
           {/* Title + description */}
@@ -307,6 +332,19 @@ function AnimationCard({ anim }: { anim: NonNullable<ReturnType<typeof useAnimat
               {anim.duration}
             </span>
           )}
+
+          {/* Orientation badge — top-left */}
+          <span className={`absolute top-2 left-2 flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-md ${
+            anim.orientation === 'vertical'
+              ? 'bg-violet-600/90 text-white'
+              : 'bg-blue-600/90 text-white'
+          }`}>
+            {anim.orientation === 'vertical'
+              ? <RectangleVertical className="w-2.5 h-2.5" />
+              : <RectangleHorizontal className="w-2.5 h-2.5" />
+            }
+            {anim.orientation === 'vertical' ? 'Vertical' : 'Horizontal'}
+          </span>
 
           {/* Download button — hover */}
           <button
@@ -415,20 +453,31 @@ function ProfileBanner() {
 }
 
 // ── Main page ──────────────────────────────────────────────
+type OrientationFilter = 'all' | 'horizontal' | 'vertical';
+
 export default function Animations() {
   const { data: animations = [], isLoading, error } = useAnimations();
   const [activeTag, setActiveTag] = useState<string | undefined>(undefined);
+  const [orientationFilter, setOrientationFilter] = useState<OrientationFilter>('all');
 
-  // Filtered list based on active hashtag
-  const filtered = useMemo(() =>
-    activeTag
-      ? animations.filter(a => a.hashtags.includes(activeTag))
-      : animations,
-    [animations, activeTag],
-  );
+  // Apply both orientation + hashtag filters
+  const filtered = useMemo(() => {
+    let list = animations;
+    if (orientationFilter !== 'all') {
+      list = list.filter(a => a.orientation === orientationFilter);
+    }
+    if (activeTag) {
+      list = list.filter(a => a.hashtags.includes(activeTag));
+    }
+    return list;
+  }, [animations, activeTag, orientationFilter]);
 
-  // Tag sets for the cloud
+  // Tag sets for the cloud (from all animations, not filtered, so cloud stays stable)
   const tagSets = useMemo(() => animations.map(a => a.hashtags), [animations]);
+
+  // Count per orientation for the toggle buttons
+  const hCount = useMemo(() => animations.filter(a => a.orientation === 'horizontal').length, [animations]);
+  const vCount = useMemo(() => animations.filter(a => a.orientation === 'vertical').length, [animations]);
 
   useSeoMeta({
     title: 'Animations - BitPopArt',
@@ -463,7 +512,7 @@ export default function Animations() {
         </div>
 
         {/* Header row */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-amber-500/20">
               <Clapperboard className="h-6 w-6 text-amber-600" />
@@ -472,13 +521,55 @@ export default function Animations() {
               <h2 className="text-2xl font-bold">Animations</h2>
               {!isLoading && animations.length > 0 && (
                 <p className="text-sm text-muted-foreground">
-                  {activeTag
-                    ? `${filtered.length} of ${animations.length} animation${animations.length !== 1 ? 's' : ''} · #${activeTag}`
+                  {filtered.length !== animations.length
+                    ? `${filtered.length} of ${animations.length} animation${animations.length !== 1 ? 's' : ''}`
                     : `${animations.length} animation${animations.length !== 1 ? 's' : ''}`}
                 </p>
               )}
             </div>
           </div>
+
+          {/* Orientation toggle — only show when content is loaded */}
+          {!isLoading && animations.length > 0 && (
+            <div className="flex items-center gap-1 p-1 bg-muted rounded-xl self-start sm:self-auto">
+              <button
+                onClick={() => setOrientationFilter('all')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  orientationFilter === 'all'
+                    ? 'bg-background shadow text-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <LayoutGrid className="h-3.5 w-3.5" />
+                All
+                <span className="opacity-60">({animations.length})</span>
+              </button>
+              <button
+                onClick={() => setOrientationFilter('horizontal')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  orientationFilter === 'horizontal'
+                    ? 'bg-blue-600 shadow text-white'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <RectangleHorizontal className="h-3.5 w-3.5" />
+                Horizontal
+                <span className="opacity-60">({hCount})</span>
+              </button>
+              <button
+                onClick={() => setOrientationFilter('vertical')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  orientationFilter === 'vertical'
+                    ? 'bg-violet-600 shadow text-white'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <RectangleVertical className="h-3.5 w-3.5" />
+                Vertical
+                <span className="opacity-60">({vCount})</span>
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Hashtag cloud */}

@@ -24,6 +24,8 @@ import {
   Sparkles,
   Edit,
   AlertCircle,
+  RectangleHorizontal,
+  RectangleVertical,
 } from 'lucide-react';
 import { HashtagInput } from '@/components/HashtagInput';
 import { generateHashtagsFromText } from '@/lib/hashtags';
@@ -142,6 +144,8 @@ interface PendingVideo {
   thumbUrl: string | null;
   videoUrl: string | null;
   duration: number;
+  videoWidth: number;
+  videoHeight: number;
   mimeType: string;
   fileSize: number;
   status: 'uploading' | 'ready' | 'error';
@@ -416,6 +420,8 @@ export function AnimationsManagement() {
         thumbUrl: null,
         videoUrl: null,
         duration: 0,
+        videoWidth: 0,
+        videoHeight: 0,
         mimeType: file.type || 'video/mp4',
         fileSize: file.size,
         status: 'uploading',
@@ -436,8 +442,10 @@ export function AnimationsManagement() {
 
         const videoUrl = await uploadVideo(item.file);
 
-        // Get duration from the local preview blob
+        // Get duration + dimensions from the local preview blob
         let duration = 0;
+        let videoWidth = 0;
+        let videoHeight = 0;
         try {
           const tmp = document.createElement('video');
           tmp.preload = 'metadata';
@@ -448,7 +456,9 @@ export function AnimationsManagement() {
             tmp.load();
           });
           duration = isFinite(tmp.duration) ? tmp.duration : 0;
-        } catch { /* duration stays 0 */ }
+          videoWidth = tmp.videoWidth || 0;
+          videoHeight = tmp.videoHeight || 0;
+        } catch { /* stays 0 */ }
 
         // ── Step 2: Generate thumbnail from the uploaded video URL ────
         // Using the remote URL avoids competing with the local preview
@@ -476,6 +486,8 @@ export function AnimationsManagement() {
                 ...p,
                 videoUrl,
                 duration,
+                videoWidth,
+                videoHeight,
                 status: 'ready',
                 statusMsg: 'Ready ✓',
                 thumbUrl: thumbUrl ?? p.thumbUrl,
@@ -550,6 +562,8 @@ export function AnimationsManagement() {
           mimeType: item.mimeType,
           fileSize: item.fileSize,
           hashtags: item.hashtags,
+          videoWidth: item.videoWidth,
+          videoHeight: item.videoHeight,
         }, { onSuccess: () => resolve(), onError: () => resolve() });
       });
     }
@@ -700,6 +714,22 @@ export function AnimationsManagement() {
                         </div>
 
                         <div className="flex-1 space-y-1">
+                          {/* Orientation badge — shown once dimensions are known */}
+                          {item.videoWidth > 0 && item.videoHeight > 0 && (
+                            <div className="flex items-center gap-1">
+                              {item.videoHeight > item.videoWidth ? (
+                                <Badge variant="secondary" className="gap-1 text-[10px] px-1.5 py-0.5 bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300">
+                                  <RectangleVertical className="h-3 w-3" />
+                                  Vertical {item.videoWidth}×{item.videoHeight}
+                                </Badge>
+                              ) : (
+                                <Badge variant="secondary" className="gap-1 text-[10px] px-1.5 py-0.5 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                                  <RectangleHorizontal className="h-3 w-3" />
+                                  Horizontal {item.videoWidth}×{item.videoHeight}
+                                </Badge>
+                              )}
+                            </div>
+                          )}
                           <p className="text-xs text-muted-foreground">
                             {item.thumbStatus === 'ready' ? '✅ Thumbnail ready'
                               : item.thumbStatus === 'generating' ? '⏳ Capturing frame…'
