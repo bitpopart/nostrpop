@@ -240,6 +240,15 @@ function WatchDialog({ anim, open, onOpenChange }: WatchDialogProps) {
             {anim.description && (
               <p className="text-sm text-muted-foreground mt-1">{anim.description}</p>
             )}
+            {anim.hashtags.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {anim.hashtags.map(tag => (
+                  <span key={tag} className="text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 px-2 py-0.5 rounded-full font-medium">
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Action buttons */}
@@ -316,6 +325,15 @@ function AnimationCard({ anim }: { anim: NonNullable<ReturnType<typeof useAnimat
           </h3>
           {anim.description && (
             <p className="text-xs text-muted-foreground line-clamp-2">{anim.description}</p>
+          )}
+          {anim.hashtags.length > 0 && (
+            <div className="flex flex-wrap gap-1 pt-0.5">
+              {anim.hashtags.slice(0, 5).map(tag => (
+                <span key={tag} className="text-[10px] text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-1.5 py-0.5 rounded-full font-medium">
+                  #{tag}
+                </span>
+              ))}
+            </div>
           )}
         </div>
 

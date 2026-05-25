@@ -14,6 +14,7 @@ export interface AnimationItem {
   thumb_url: string;
   duration: string;    // formatted "m:ss"
   created_at: string;
+  hashtags: string[];  // t-tags (excluding system tags)
 }
 
 /** Parse duration seconds → "m:ss" */
@@ -101,6 +102,12 @@ export function useAnimations() {
 
             if (!videoUrl) return null;
 
+            // Collect hashtags: all t-tags excluding system ones
+            const systemTags = new Set(['bitpopart-animation', 'bitpopart']);
+            const hashtags = event.tags
+              .filter(([n, v]) => n === 't' && v && !systemTags.has(v))
+              .map(([, v]) => v);
+
             return {
               id: dTag,
               event,
@@ -110,6 +117,7 @@ export function useAnimations() {
               thumb_url: thumbUrl,
               duration,
               created_at: new Date(event.created_at * 1000).toISOString(),
+              hashtags,
             };
           } catch {
             return null;
@@ -144,6 +152,7 @@ export function usePublishAnimation() {
       duration,
       mimeType,
       fileSize,
+      hashtags = [],
     }: {
       title: string;
       description: string;
@@ -152,6 +161,7 @@ export function usePublishAnimation() {
       duration: number;
       mimeType: string;
       fileSize: number;
+      hashtags?: string[];
     }) => {
       if (!user) throw new Error('Must be logged in');
 
@@ -173,6 +183,14 @@ export function usePublishAnimation() {
         ['alt', `BitPopArt animation: ${title}`],
         ['imeta', ...imetaParts],
       ];
+
+      // Add user-defined hashtags (skip system tags already added above)
+      const systemTags = new Set(['bitpopart-animation', 'bitpopart']);
+      for (const tag of hashtags) {
+        if (tag && !systemTags.has(tag)) {
+          tags.push(['t', tag]);
+        }
+      }
 
       if (description.trim()) tags.push(['summary', description.trim()]);
       if (thumbUrl) tags.push(['thumb', thumbUrl]);
@@ -219,6 +237,7 @@ export function useUpdateAnimation() {
       duration,
       mimeType,
       fileSize,
+      hashtags = [],
     }: {
       dTag: string;
       kind: number;
@@ -229,6 +248,7 @@ export function useUpdateAnimation() {
       duration: number;
       mimeType: string;
       fileSize: number;
+      hashtags?: string[];
     }) => {
       if (!user) throw new Error('Must be logged in');
 
@@ -248,6 +268,14 @@ export function useUpdateAnimation() {
         ['alt', `BitPopArt animation: ${title}`],
         ['imeta', ...imetaParts],
       ];
+
+      // Add user-defined hashtags (skip system tags already added above)
+      const systemTags = new Set(['bitpopart-animation', 'bitpopart']);
+      for (const tag of hashtags) {
+        if (tag && !systemTags.has(tag)) {
+          tags.push(['t', tag]);
+        }
+      }
 
       if (description.trim()) tags.push(['summary', description.trim()]);
       if (thumbUrl) tags.push(['thumb', thumbUrl]);

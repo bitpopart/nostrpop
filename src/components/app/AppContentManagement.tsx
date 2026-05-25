@@ -8,6 +8,8 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { useUploadFile } from '@/hooks/useUploadFile';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { HashtagInput } from '@/components/HashtagInput';
+import { generateHashtagsFromText } from '@/lib/hashtags';
 import {
   useAppWelcome,
   useAppMedia,
@@ -33,6 +35,7 @@ interface PendingMedia {
   file: File;
   previewUrl: string;
   title: string;
+  hashtags: string[];
   uploadedUrl: string | null;
   uploading: boolean;
   error: boolean;
@@ -61,15 +64,19 @@ function MediaUploader({
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
-    const newItems: PendingMedia[] = files.map(file => ({
-      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-      file,
-      previewUrl: URL.createObjectURL(file),
-      title: '',
-      uploadedUrl: null,
-      uploading: true,
-      error: false,
-    }));
+    const newItems: PendingMedia[] = files.map(file => {
+      const cleanTitle = file.name.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ');
+      return {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        file,
+        previewUrl: URL.createObjectURL(file),
+        title: cleanTitle,
+        hashtags: generateHashtagsFromText(cleanTitle, ''),
+        uploadedUrl: null,
+        uploading: true,
+        error: false,
+      };
+    });
 
     setPending(prev => [...prev, ...newItems]);
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -88,6 +95,9 @@ function MediaUploader({
   const updateTitle = (id: string, title: string) =>
     setPending(prev => prev.map(p => p.id === id ? { ...p, title } : p));
 
+  const updateHashtags = (id: string, hashtags: string[]) =>
+    setPending(prev => prev.map(p => p.id === id ? { ...p, hashtags } : p));
+
   const removePending = (id: string) => {
     setPending(prev => {
       const item = prev.find(p => p.id === id);
@@ -104,7 +114,7 @@ function MediaUploader({
     for (const item of ready) {
       await new Promise<void>((resolve) => {
         publish(
-          { type, title: item.title.trim() || label, imageUrl: item.uploadedUrl! },
+          { type, title: item.title.trim() || label, imageUrl: item.uploadedUrl!, hashtags: item.hashtags },
           { onSuccess: () => resolve(), onError: () => resolve() }
         );
       });
@@ -190,12 +200,18 @@ function MediaUploader({
                     <X className="h-3 w-3" />
                   </Button>
                 </div>
-                <div className="p-1.5">
+                <div className="p-1.5 space-y-1.5">
                   <Input
                     placeholder="Title (optional)"
                     value={item.title}
                     onChange={(e) => updateTitle(item.id, e.target.value)}
                     className="text-xs h-7"
+                  />
+                  <HashtagInput
+                    tags={item.hashtags}
+                    onChange={htags => updateHashtags(item.id, htags)}
+                    title={item.title}
+                    description=""
                   />
                 </div>
               </div>

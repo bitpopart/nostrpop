@@ -25,6 +25,8 @@ import {
   Edit,
   AlertCircle,
 } from 'lucide-react';
+import { HashtagInput } from '@/components/HashtagInput';
+import { generateHashtagsFromText } from '@/lib/hashtags';
 
 // ── Thumbnail generation ───────────────────────────────────
 
@@ -134,6 +136,7 @@ interface PendingVideo {
   previewUrl: string;
   title: string;
   description: string;
+  hashtags: string[];
   thumbFile: File | null;
   thumbPreview: string | null;
   thumbUrl: string | null;
@@ -162,6 +165,7 @@ function EditDialog({ anim, open, onOpenChange }: EditDialogProps) {
 
   const [title, setTitle] = useState(anim.title);
   const [description, setDescription] = useState(anim.description);
+  const [hashtags, setHashtags] = useState<string[]>(anim.hashtags ?? []);
   const [videoUrl, setVideoUrl] = useState(anim.video_url);
   const [thumbUrl, setThumbUrl] = useState(anim.thumb_url);
   const [thumbPreview, setThumbPreview] = useState(anim.thumb_url);
@@ -232,6 +236,7 @@ function EditDialog({ anim, open, onOpenChange }: EditDialogProps) {
       duration,
       mimeType,
       fileSize,
+      hashtags,
     }, { onSuccess: () => onOpenChange(false) });
   };
 
@@ -343,6 +348,14 @@ function EditDialog({ anim, open, onOpenChange }: EditDialogProps) {
             />
           </div>
 
+          {/* Hashtags */}
+          <HashtagInput
+            tags={hashtags}
+            onChange={setHashtags}
+            title={title}
+            description={description}
+          />
+
           {/* Actions */}
           <div className="flex gap-3 pt-2">
             <Button
@@ -389,23 +402,27 @@ export function AnimationsManagement() {
     if (files.length === 0) return;
     if (videoInputRef.current) videoInputRef.current.value = '';
 
-    const newItems: PendingVideo[] = files.map(file => ({
-      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-      file,
-      previewUrl: URL.createObjectURL(file),
-      title: file.name.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' '),
-      description: '',
-      thumbFile: null,
-      thumbPreview: null,
-      thumbUrl: null,
-      videoUrl: null,
-      duration: 0,
-      mimeType: file.type || 'video/mp4',
-      fileSize: file.size,
-      status: 'uploading',
-      statusMsg: 'Uploading video…',
-      thumbStatus: 'none',
-    }));
+    const newItems: PendingVideo[] = files.map(file => {
+      const cleanTitle = file.name.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ');
+      return {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        file,
+        previewUrl: URL.createObjectURL(file),
+        title: cleanTitle,
+        description: '',
+        hashtags: generateHashtagsFromText(cleanTitle, ''),
+        thumbFile: null,
+        thumbPreview: null,
+        thumbUrl: null,
+        videoUrl: null,
+        duration: 0,
+        mimeType: file.type || 'video/mp4',
+        fileSize: file.size,
+        status: 'uploading',
+        statusMsg: 'Uploading video…',
+        thumbStatus: 'none',
+      };
+    });
 
     setPending(prev => [...prev, ...newItems]);
 
@@ -503,6 +520,9 @@ export function AnimationsManagement() {
   const updateField = (id: string, field: 'title' | 'description', value: string) =>
     setPending(prev => prev.map(p => p.id === id ? { ...p, [field]: value } : p));
 
+  const updateHashtags = (id: string, hashtags: string[]) =>
+    setPending(prev => prev.map(p => p.id === id ? { ...p, hashtags } : p));
+
   const removePending = (id: string) => {
     setPending(prev => {
       const item = prev.find(p => p.id === id);
@@ -529,6 +549,7 @@ export function AnimationsManagement() {
           duration: item.duration,
           mimeType: item.mimeType,
           fileSize: item.fileSize,
+          hashtags: item.hashtags,
         }, { onSuccess: () => resolve(), onError: () => resolve() });
       });
     }
@@ -699,6 +720,14 @@ export function AnimationsManagement() {
                           </Label>
                         </div>
                       </div>
+
+                      {/* Hashtags */}
+                      <HashtagInput
+                        tags={item.hashtags}
+                        onChange={htags => updateHashtags(item.id, htags)}
+                        title={item.title}
+                        description={item.description}
+                      />
                     </CardContent>
                   </Card>
                 ))}

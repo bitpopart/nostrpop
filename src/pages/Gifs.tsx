@@ -5,7 +5,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAppMedia } from '@/hooks/useAppContent';
+import { useAppMedia, type AppMedia } from '@/hooks/useAppContent';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { Download, Clapperboard, ArrowLeft } from 'lucide-react';
 import { RelaySelector } from '@/components/RelaySelector';
@@ -37,7 +37,7 @@ export default function Gifs() {
   const navigate = useNavigate();
   const { getGradientStyle } = useThemeColors();
   const { data: gifs = [], isLoading } = useAppMedia('app-gif');
-  const [lightbox, setLightbox] = useState<string | null>(null);
+  const [lightbox, setLightbox] = useState<AppMedia | null>(null);
 
   useSeoMeta({
     title: 'Animated GIFs - BitPopArt',
@@ -93,7 +93,7 @@ export default function Gifs() {
                 <div
                   key={item.id}
                   className="group relative rounded-xl overflow-hidden bg-white dark:bg-gray-800 shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer"
-                  onClick={() => setLightbox(item.image_url)}
+                  onClick={() => setLightbox(item)}
                 >
                   <div className="aspect-square">
                     <img
@@ -116,12 +116,21 @@ export default function Gifs() {
                   >
                     <Download className="h-4 w-4" />
                   </Button>
-                  {/* Title overlay */}
-                  {item.title !== 'Untitled' && (
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                  {/* Title + hashtags overlay */}
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {item.title !== 'Untitled' && (
                       <p className="text-white text-xs font-medium truncate">{item.title}</p>
-                    </div>
-                  )}
+                    )}
+                    {item.hashtags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {item.hashtags.slice(0, 4).map(tag => (
+                          <span key={tag} className="text-[10px] text-white/90 bg-white/20 px-1.5 py-0.5 rounded-full">
+                            #{tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -138,15 +147,27 @@ export default function Gifs() {
         <DialogContent className="max-w-2xl p-0 overflow-hidden">
           {lightbox && (
             <div className="relative">
-              <img src={lightbox} alt="Animated GIF" className="w-full h-auto" />
+              <img src={lightbox.image_url} alt={lightbox.title} className="w-full h-auto" />
               <Button
                 size="icon"
                 className="absolute top-2 right-2 rounded-full text-white border-0"
                 style={getGradientStyle('primary')}
-                onClick={() => handleDownload(lightbox, lightbox.split('/').pop() || 'bitpopart.gif')}
+                onClick={() => handleDownload(lightbox.image_url, deriveFilename(lightbox.image_url, lightbox.title))}
               >
                 <Download className="h-4 w-4" />
               </Button>
+              {/* Hashtag overlay */}
+              {lightbox.hashtags.length > 0 && (
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
+                  <div className="flex flex-wrap gap-1.5">
+                    {lightbox.hashtags.map(tag => (
+                      <span key={tag} className="text-xs text-white bg-white/20 px-2 py-0.5 rounded-full font-medium">
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </DialogContent>

@@ -20,6 +20,7 @@ export interface AppMedia {
   title: string;
   image_url: string;
   created_at: string;
+  hashtags: string[];
 }
 
 /**
@@ -113,12 +114,19 @@ export function useAppMedia(type: 'app-wallpaper' | 'app-gif') {
             const imageTag = event.tags.find(([n]) => n === 'image')?.[1];
             if (!imageTag) return null;
 
+            // Collect hashtags: all t-tags excluding system ones
+            const systemTypeTags = new Set(['app-wallpaper', 'app-gif']);
+            const hashtags = event.tags
+              .filter(([n, v]) => n === 't' && v && !systemTypeTags.has(v))
+              .map(([, v]) => v);
+
             return {
               id: dTag,
               event,
               title: titleTag || 'Untitled',
               image_url: imageTag,
               created_at: new Date(event.created_at * 1000).toISOString(),
+              hashtags,
             };
           } catch {
             return null;
@@ -179,10 +187,25 @@ export function usePublishAppMedia() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ type, title, imageUrl }: { type: 'app-wallpaper' | 'app-gif'; title: string; imageUrl: string }) => {
+    mutationFn: async ({
+      type,
+      title,
+      imageUrl,
+      hashtags = [],
+    }: {
+      type: 'app-wallpaper' | 'app-gif';
+      title: string;
+      imageUrl: string;
+      hashtags?: string[];
+    }) => {
       if (!user) throw new Error('Must be logged in');
 
       const dTag = `${type}-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+
+      const systemTypeTags = new Set(['app-wallpaper', 'app-gif']);
+      const extraTags: string[][] = hashtags
+        .filter(t => t && !systemTypeTags.has(t))
+        .map(t => ['t', t]);
 
       const event = {
         kind: 34019,
@@ -193,13 +216,14 @@ export function usePublishAppMedia() {
           ['image', imageUrl],
           ['t', type],
           ['alt', `${type === 'app-wallpaper' ? 'Wallpaper' : 'Animated GIF'}: ${title}`],
+          ...extraTags,
         ],
         created_at: Math.floor(Date.now() / 1000),
       };
 
       const signed = await user.signer.signEvent(event);
       await nostr.event(signed, { signal: AbortSignal.timeout(10000) });
-      return { id: dTag, title, imageUrl, type };
+      return { id: dTag, title, imageUrl, type, hashtags };
     },
     onSuccess: (data) => {
       toast({ title: 'Added', description: `"${data.title}" published.` });
