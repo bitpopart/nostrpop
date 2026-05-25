@@ -29,6 +29,11 @@ import { ArtBannerAdmin } from '@/components/art/ArtBannerAdmin';
 import { ArtProgressManagement } from '@/components/artprogress/ArtProgressManagement';
 import { WallManagement } from '@/components/wall/WallManagement';
 import { AppContentManagement } from '@/components/app/AppContentManagement';
+import { AppContentDashboard } from '@/components/app/AppContentDashboard';
+import { WallpapersAdmin } from '@/components/app/WallpapersAdmin';
+import { GifsAdmin } from '@/components/app/GifsAdmin';
+import { AvatarsAdmin } from '@/components/app/AvatarsAdmin';
+import { BannersAdmin } from '@/components/app/BannersAdmin';
 import { AnimationsManagement } from '@/components/animations/AnimationsManagement';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import {
@@ -385,6 +390,10 @@ const Admin = () => {
             <TabsTrigger value="shop">Shop</TabsTrigger>
             <TabsTrigger value="art">Art</TabsTrigger>
             <TabsTrigger value="app">App</TabsTrigger>
+            <TabsTrigger value="app-wallpapers">Wallpapers</TabsTrigger>
+            <TabsTrigger value="app-gifs">GIFs</TabsTrigger>
+            <TabsTrigger value="app-avatars">Avatars</TabsTrigger>
+            <TabsTrigger value="app-banners">Banners</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-8">
@@ -780,20 +789,36 @@ const Admin = () => {
           </TabsContent>
 
           <TabsContent value="app">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Smartphone className="h-6 w-6 mr-2" />
-                  Fan App Content
-                </CardTitle>
-                <CardDescription>
-                  Manage the content shown on the <a href="/app" className="underline text-orange-600">BitPopArt App</a> page — welcome message, wallpapers, GIFs, and more.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <AppContentManagement />
-              </CardContent>
-            </Card>
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 mb-2">
+                <Smartphone className="h-6 w-6 text-orange-600" />
+                <div>
+                  <h2 className="text-xl font-bold">Fan App Content</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Quick-upload and preview all content for the{' '}
+                    <a href="/app" className="underline text-orange-600">BitPopArt App</a>.
+                    Click <strong>Manage</strong> on any section for full edit/delete controls.
+                  </p>
+                </div>
+              </div>
+              <AppContentDashboard onNavigate={setActiveTab} />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="app-wallpapers">
+            <WallpapersAdmin onBack={() => setActiveTab('app')} />
+          </TabsContent>
+
+          <TabsContent value="app-gifs">
+            <GifsAdmin onBack={() => setActiveTab('app')} />
+          </TabsContent>
+
+          <TabsContent value="app-avatars">
+            <AvatarsAdmin onBack={() => setActiveTab('app')} />
+          </TabsContent>
+
+          <TabsContent value="app-banners">
+            <BannersAdmin onBack={() => setActiveTab('app')} />
           </TabsContent>
 
         </Tabs>

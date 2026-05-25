@@ -216,7 +216,7 @@ function EditMediaDialog({ item, type, open, onOpenChange }: EditMediaDialogProp
 }
 
 // ── Shared multi-upload helper ────────────────────────────
-function MediaUploader({
+export function MediaUploader({
   type,
   label,
 }: {
@@ -415,7 +415,7 @@ function MediaUploader({
 }
 
 // ── Media list with edit + delete ─────────────────────────
-function MediaList({ type, aspectClass = 'aspect-square' }: { type: 'app-wallpaper' | 'app-gif' | 'app-avatar' | 'app-banner'; aspectClass?: string }) {
+export function MediaList({ type, aspectClass = 'aspect-square' }: { type: 'app-wallpaper' | 'app-gif' | 'app-avatar' | 'app-banner'; aspectClass?: string }) {
   const { data: items = [], isLoading } = useAppMedia(type);
   const { mutate: deleteItem } = useDeleteAppMedia();
   const [editingItem, setEditingItem] = useState<AppMedia | null>(null);
