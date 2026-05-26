@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { usePages } from '@/hooks/usePages';
@@ -12,10 +12,11 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, X, Upload, FileText, Edit, Image as ImageIcon, ExternalLink, GripVertical, Trash2, Loader2 } from 'lucide-react';
+import { Plus, X, Upload, FileText, Edit, Image as ImageIcon, ExternalLink, GripVertical, Trash2, Loader2, Globe, Code2, FileDown } from 'lucide-react';
 import { generateSlug } from '@/lib/pageTypes';
 import type { PageData } from '@/lib/pageTypes';
 import ReactMarkdown from 'react-markdown';
+import { toast } from 'sonner';
 
 // Content block types
 interface ContentBlock {
@@ -36,6 +37,7 @@ export function PageManagement() {
   
   const [isCreating, setIsCreating] = useState(false);
   const [editingPage, setEditingPage] = useState<PageData | null>(null);
+  const brandSiteFileRef = useRef<HTMLInputElement>(null);
   
   // Form state
   const [title, setTitle] = useState('');
@@ -49,6 +51,11 @@ export function PageManagement() {
   const [activeTab, setActiveTab] = useState<'edit' | 'preview'>('edit');
   const [isUploading, setIsUploading] = useState(false);
   const [uploadingBlockId, setUploadingBlockId] = useState<string | null>(null);
+
+  // Project Website (brand_site)
+  const [brandSite, setBrandSite] = useState('');
+  const [brandSiteMode, setBrandSiteMode] = useState<'url' | 'html' | 'pdf'>('url');
+  const [brandSiteHtml, setBrandSiteHtml] = useState('');
   
   const resetForm = () => {
     setTitle('');
@@ -57,6 +64,9 @@ export function PageManagement() {
     setShowInFooter(false);
     setOrder('');
     setContentBlocks([{ id: '1', type: 'markdown', content: '', images: [] }]);
+    setBrandSite('');
+    setBrandSiteMode('url');
+    setBrandSiteHtml('');
     setEditingPage(null);
     setIsCreating(false);
   };
@@ -68,6 +78,9 @@ export function PageManagement() {
     setExternalUrl(page.external_url || '');
     setShowInFooter(page.show_in_footer);
     setOrder(page.order?.toString() || '');
+    setBrandSite(page.event?.tags.find(t => t[0] === 'brand-site')?.[1] || '');
+    setBrandSiteMode('url');
+    setBrandSiteHtml('');
     
     // Parse content blocks from description
     try {
@@ -188,6 +201,36 @@ export function PageManagement() {
     ));
   };
 
+  const handleBrandSiteFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    const isHtml = file.type === 'text/html' || /\.(html?|xhtml)$/i.test(file.name);
+    if (!isPdf && !isHtml) { toast.error('Please upload a PDF or HTML file.'); return; }
+    if (file.size > 15 * 1024 * 1024) { toast.error('File too large (max 15MB).'); return; }
+    try {
+      if (isHtml) {
+        const html = await file.text();
+        setBrandSite(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
+        setBrandSiteMode('url');
+        toast.success('HTML file added as page site.');
+        return;
+      }
+      const tags = await uploadFile(file);
+      const url = tags[0]?.[1];
+      if (url) { setBrandSite(url); setBrandSiteMode('url'); toast.success('PDF uploaded and linked.'); }
+    } catch { toast.error('Failed to upload file.'); }
+    finally { if (brandSiteFileRef.current) brandSiteFileRef.current.value = ''; }
+  }, [uploadFile]);
+
+  const applyBrandSiteHtml = useCallback(() => {
+    if (!brandSiteHtml.trim()) { toast.error('Paste HTML first.'); return; }
+    setBrandSite(`data:text/html;charset=utf-8,${encodeURIComponent(brandSiteHtml)}`);
+    setBrandSiteMode('url');
+    setBrandSiteHtml('');
+    toast.success('HTML page created for site.');
+  }, [brandSiteHtml]);
+
   const handleSubmit = () => {
     if (!user || !title.trim()) return;
 
@@ -221,6 +264,7 @@ export function PageManagement() {
         ...(externalUrl ? [['r', externalUrl]] : []),
         ...(showInFooter ? [['footer', 'true']] : []),
         ...(order ? [['order', order]] : []),
+        ...(brandSite ? [['brand-site', brandSite]] : []),
         ...allGalleryImages.map((img) => ['image', img]),
       ],
     });
@@ -283,7 +327,7 @@ export function PageManagement() {
                 placeholder="About Us, Contact, Privacy Policy..."
               />
               <p className="text-sm text-muted-foreground">
-                URL will be: /page/{editingPage?.id || generateSlug(title) || 'page-slug'}
+                URL will be: /{editingPage?.id || generateSlug(title) || 'page-slug'}
               </p>
             </div>
 
@@ -367,6 +411,121 @@ export function PageManagement() {
               <p className="text-sm text-muted-foreground">
                 Link to external website or resource
               </p>
+            </div>
+
+            {/* Project Website */}
+            <div className="space-y-3 border rounded-lg p-4 bg-muted/30">
+              <Label className="text-sm font-semibold flex items-center gap-2">
+                <Globe className="h-4 w-4" />
+                Page Website (optional)
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Add a URL, upload a PDF, or paste HTML. A &quot;View Page Site&quot; button will appear on the page.
+              </p>
+
+              {/* Mode tabs */}
+              <div className="flex gap-1 p-1 bg-muted rounded-lg w-fit">
+                <button
+                  type="button"
+                  onClick={() => setBrandSiteMode('url')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-colors ${brandSiteMode === 'url' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                  <Globe className="h-3.5 w-3.5" />
+                  URL
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBrandSiteMode('html')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-colors ${brandSiteMode === 'html' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                  <Code2 className="h-3.5 w-3.5" />
+                  HTML
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBrandSiteMode('pdf')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-colors ${brandSiteMode === 'pdf' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                  <FileDown className="h-3.5 w-3.5" />
+                  PDF
+                </button>
+              </div>
+
+              {brandSiteMode === 'url' && (
+                <div className="space-y-2">
+                  <Input
+                    type="url"
+                    placeholder="https://example.com"
+                    value={brandSite.startsWith('data:') ? '' : brandSite}
+                    onChange={(e) => setBrandSite(e.target.value)}
+                  />
+                  {brandSite && (
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary" className="text-xs truncate max-w-xs">
+                        {brandSite.startsWith('data:') ? 'Custom HTML/PDF page' : brandSite}
+                      </Badge>
+                      <Button type="button" variant="ghost" size="sm" onClick={() => setBrandSite('')}>
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {brandSiteMode === 'html' && (
+                <div className="space-y-2">
+                  <Textarea
+                    placeholder="Paste your HTML here..."
+                    value={brandSiteHtml}
+                    onChange={(e) => setBrandSiteHtml(e.target.value)}
+                    rows={6}
+                    className="font-mono text-xs"
+                  />
+                  <Button type="button" variant="outline" size="sm" onClick={applyBrandSiteHtml} disabled={!brandSiteHtml.trim()}>
+                    <Code2 className="h-4 w-4 mr-2" />
+                    Apply HTML
+                  </Button>
+                  {brandSite && (
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary" className="text-xs">HTML page saved</Badge>
+                      <Button type="button" variant="ghost" size="sm" onClick={() => setBrandSite('')}>
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {brandSiteMode === 'pdf' && (
+                <div className="space-y-2">
+                  <input
+                    ref={brandSiteFileRef}
+                    type="file"
+                    accept=".pdf,.html,.htm"
+                    className="hidden"
+                    onChange={handleBrandSiteFileUpload}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => brandSiteFileRef.current?.click()}
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload PDF or HTML file
+                  </Button>
+                  {brandSite && (
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary" className="text-xs truncate max-w-xs">
+                        {brandSite.startsWith('data:') ? 'File uploaded' : brandSite}
+                      </Badge>
+                      <Button type="button" variant="ghost" size="sm" onClick={() => setBrandSite('')}>
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Content Blocks */}
@@ -739,7 +898,7 @@ export function PageManagement() {
                     </p>
                     <div className="flex items-center gap-2 flex-wrap">
                       <Badge variant="outline" className="text-xs">
-                        /page/{page.id}
+                        /{page.id}
                       </Badge>
                       {page.show_in_footer && (
                         <Badge variant="secondary" className="text-xs">
@@ -756,6 +915,12 @@ export function PageManagement() {
                         <Badge variant="outline" className="text-xs">
                           <ExternalLink className="h-3 w-3 mr-1" />
                           External
+                        </Badge>
+                      )}
+                      {page.event?.tags.find(t => t[0] === 'brand-site') && (
+                        <Badge variant="outline" className="text-xs">
+                          <Globe className="h-3 w-3 mr-1" />
+                          Page Site
                         </Badge>
                       )}
                     </div>

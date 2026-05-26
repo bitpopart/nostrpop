@@ -173,7 +173,7 @@ export function Footer() {
                 {footerPages.map((page) => (
                   <li key={page.id}>
                     <Link
-                      to={`/page/${page.id}`}
+                      to={`/${page.id}`}
                       className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                     >
                       {page.title}

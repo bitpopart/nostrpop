@@ -1005,7 +1005,7 @@ const Index = () => {
             {featuredPagesList.map((page, index) => (
             <Link
               key={page.id}
-              to={`/page/${page.id}`}
+              to={`/${page.id}`}
               className="block animate-in fade-in slide-in-from-bottom-4"
               style={{ animationDelay: `${index * 100}ms` }}
             >
@@ -1613,7 +1613,7 @@ const Index = () => {
               {featuredPagesList.map((page, index) => (
                 <Link
                   key={page.id}
-                  to={`/page/${page.id}`}
+                  to={`/${page.id}`}
                   className="block animate-in fade-in slide-in-from-bottom-4"
                   style={{ animationDelay: `${index * 100}ms` }}
                 >

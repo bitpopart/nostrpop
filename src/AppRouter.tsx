@@ -76,7 +76,7 @@ export function AppRouter() {
           <Route path="/fundraising" element={<Fundraising />} />
           <Route path="/vlog" element={<Vlog />} />
           <Route path="/wall" element={<Wall />} />
-          <Route path="/page/:slug" element={<CustomPage />} />
+          <Route path="/:slug" element={<CustomPage />} />
           <Route path="/categories" element={<CategoryDemo />} />
           <Route path="/shop/:productId/delete" element={<DeleteProductPage />} />
           <Route path="/shop/:productId" element={<ProductPage />} />

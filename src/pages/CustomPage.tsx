@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, ExternalLink, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Globe, Image as ImageIcon } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
 // Content block types
@@ -128,19 +128,28 @@ export default function CustomPage() {
               <h1 className="text-4xl md:text-5xl font-bold gradient-header-text mb-4">
                 {page.title}
               </h1>
-              {page.external_url && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  asChild
-                  className="mt-4"
-                >
-                  <a href={page.external_url} target="_blank" rel="noopener noreferrer">
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    Visit External Site
-                  </a>
-                </Button>
-              )}
+              <div className="flex items-center justify-center gap-3 flex-wrap mt-4">
+                {page.brand_site && (
+                  <Button size="sm" asChild>
+                    <a href={page.brand_site} target="_blank" rel="noopener noreferrer">
+                      <Globe className="h-4 w-4 mr-2" />
+                      View Page Site
+                    </a>
+                  </Button>
+                )}
+                {page.external_url && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    asChild
+                  >
+                    <a href={page.external_url} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Visit External Site
+                    </a>
+                  </Button>
+                )}
+              </div>
             </div>
           )}
 
@@ -229,17 +238,29 @@ export default function CustomPage() {
             </div>
           ))}
 
-          {/* External URL Button (when there's a header image) */}
-          {page.external_url && page.header_image && (
+          {/* Page Site / External URL Buttons (when there's a header image) */}
+          {page.header_image && (page.brand_site || page.external_url) && (
             <Card className="bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800">
-              <CardContent className="py-6 text-center">
-                <Button
-                  size="lg"
-                  onClick={() => window.open(page.external_url, '_blank')}
-                >
-                  Visit External Link
-                  <ExternalLink className="h-4 w-4 ml-2" />
-                </Button>
+              <CardContent className="py-6 flex items-center justify-center gap-3 flex-wrap">
+                {page.brand_site && (
+                  <Button
+                    size="lg"
+                    onClick={() => window.open(page.brand_site, '_blank')}
+                  >
+                    <Globe className="h-4 w-4 mr-2" />
+                    View Page Site
+                  </Button>
+                )}
+                {page.external_url && (
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    onClick={() => window.open(page.external_url, '_blank')}
+                  >
+                    Visit External Link
+                    <ExternalLink className="h-4 w-4 ml-2" />
+                  </Button>
+                )}
               </CardContent>
             </Card>
           )}
