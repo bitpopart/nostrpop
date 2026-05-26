@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { usePages } from '@/hooks/usePages';
@@ -32,6 +33,7 @@ export function PageManagement() {
   const { mutate: createEvent } = useNostrPublish();
   const { mutateAsync: uploadFile } = useUploadFile();
   const { data: pages, isLoading } = usePages();
+  const queryClient = useQueryClient();
   const headerImageInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
   
@@ -199,6 +201,29 @@ export function PageManagement() {
         ? { ...block, images: block.images.filter((_, i) => i !== imageIndex) }
         : block
     ));
+  };
+
+  const handleDelete = (page: PageData) => {
+    if (!page.event) return;
+    if (!confirm(`Delete "${page.title}"? This cannot be undone.`)) return;
+
+    createEvent(
+      {
+        kind: 5,
+        content: 'Deleted page',
+        tags: [['a', `38175:${page.event.pubkey}:${page.id}`]],
+      },
+      {
+        onSuccess: () => {
+          toast.success('Page deleted');
+          queryClient.invalidateQueries({ queryKey: ['pages'] });
+          queryClient.invalidateQueries({ queryKey: ['footer-pages'] });
+        },
+        onError: () => {
+          toast.error('Failed to delete page');
+        },
+      }
+    );
   };
 
   const handleBrandSiteFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -925,13 +950,23 @@ export function PageManagement() {
                       )}
                     </div>
                   </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleEdit(page)}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
+                  <div className="flex gap-2 flex-shrink-0">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleEdit(page)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 border-red-200 dark:border-red-800"
+                      onClick={() => handleDelete(page)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
