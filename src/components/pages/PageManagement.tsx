@@ -58,6 +58,7 @@ export function PageManagement() {
   const [brandSite, setBrandSite] = useState('');
   const [brandSiteMode, setBrandSiteMode] = useState<'url' | 'html' | 'pdf'>('url');
   const [brandSiteHtml, setBrandSiteHtml] = useState('');
+  const [brandSiteInline, setBrandSiteInline] = useState(false);
   
   const resetForm = () => {
     setTitle('');
@@ -69,6 +70,7 @@ export function PageManagement() {
     setBrandSite('');
     setBrandSiteMode('url');
     setBrandSiteHtml('');
+    setBrandSiteInline(false);
     setEditingPage(null);
     setIsCreating(false);
   };
@@ -83,6 +85,7 @@ export function PageManagement() {
     setBrandSite(page.event?.tags.find(t => t[0] === 'brand-site')?.[1] || '');
     setBrandSiteMode('url');
     setBrandSiteHtml('');
+    setBrandSiteInline(page.event?.tags.find(t => t[0] === 'brand-site-inline')?.[1] === 'true');
     
     // Parse content blocks from description
     try {
@@ -290,6 +293,7 @@ export function PageManagement() {
         ...(showInFooter ? [['footer', 'true']] : []),
         ...(order ? [['order', order]] : []),
         ...(brandSite ? [['brand-site', brandSite]] : []),
+        ...(brandSite && brandSiteInline ? [['brand-site-inline', 'true']] : []),
         ...allGalleryImages.map((img) => ['image', img]),
       ],
     });
@@ -551,6 +555,25 @@ export function PageManagement() {
                   )}
                 </div>
               )}
+
+              {/* Inline / button toggle */}
+              <div className="flex items-start gap-3 pt-2 border-t mt-2">
+                <Checkbox
+                  id="brand-site-inline"
+                  checked={brandSiteInline}
+                  onCheckedChange={(v) => setBrandSiteInline(v as boolean)}
+                  disabled={!brandSite}
+                />
+                <div>
+                  <Label htmlFor="brand-site-inline" className={`text-sm font-medium cursor-pointer ${!brandSite ? 'text-muted-foreground' : ''}`}>
+                    Show as full page (inline)
+                  </Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    When checked, the site is embedded directly on the page as a full iframe — no button, visitors see it immediately.
+                    When unchecked, a &quot;View Page Site&quot; button opens it in a new tab.
+                  </p>
+                </div>
+              </div>
             </div>
 
             {/* Content Blocks */}

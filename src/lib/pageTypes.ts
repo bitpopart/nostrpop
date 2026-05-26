@@ -13,6 +13,7 @@ export interface PageData {
   gallery_images: string[]; // Array of gallery images
   external_url?: string; // Optional external link
   brand_site?: string; // Optional project website (URL, PDF, or HTML)
+  brand_site_inline?: boolean; // If true, embed brand_site as iframe instead of button
   author_pubkey: string;
   created_at: string;
   show_in_footer: boolean; // Show link in footer

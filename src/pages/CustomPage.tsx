@@ -91,6 +91,39 @@ export default function CustomPage() {
 
   const contentBlocks = getContentBlocks();
 
+  // Full-screen inline iframe mode — render nothing except the iframe itself
+  if (page.brand_site && page.brand_site_inline) {
+    return (
+      <div className="fixed inset-0 flex flex-col" style={{ zIndex: 0 }}>
+        {/* Thin top bar with back button */}
+        <div className="flex items-center gap-3 px-4 py-2 bg-background/90 backdrop-blur border-b shrink-0">
+          <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            Back
+          </Button>
+          <span className="text-sm font-medium text-muted-foreground truncate">{page.title}</span>
+          <a
+            href={page.brand_site}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ml-auto"
+          >
+            <Button variant="ghost" size="sm">
+              <ExternalLink className="h-4 w-4 mr-1" />
+              Open
+            </Button>
+          </a>
+        </div>
+        <iframe
+          src={page.brand_site}
+          title={page.title}
+          className="flex-1 w-full border-0"
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20">
       <div className="container mx-auto px-4 py-12">
