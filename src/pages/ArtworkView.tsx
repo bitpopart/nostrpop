@@ -2,6 +2,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useSeoMeta } from '@unhead/react';
 import { nip19 } from 'nostr-tools';
+
+// Admin pubkey — artworks only come from this author
+const ADMIN_NPUB = 'npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz';
+const ADMIN_PUBKEY = nip19.decode(ADMIN_NPUB).data as string;
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -68,7 +72,8 @@ function formatCountdown(totalSeconds: number): { text: string; isLastMinute: bo
 }
 
 const ArtworkView = () => {
-  const { naddr } = useParams<{ naddr: string }>();
+  // Support both short slug (/art/artwork-xxx) and legacy naddr (/art/naddr1...)
+  const { naddr: slug } = useParams<{ naddr: string }>();
   const navigate = useNavigate();
   const { user } = useCurrentUser();
   const isAdmin = useIsAdmin();
@@ -80,11 +85,13 @@ const ArtworkView = () => {
   const [showBidDialog, setShowBidDialog] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(0);
 
-  // Decode naddr to get artwork ID and artist pubkey
+  // Resolve artwork ID and artist pubkey from either a plain slug (d-tag) or a legacy naddr
   useEffect(() => {
-    if (naddr) {
+    if (!slug) return;
+    if (slug.startsWith('naddr1')) {
+      // Legacy long naddr — decode it
       try {
-        const decoded = nip19.decode(naddr);
+        const decoded = nip19.decode(slug);
         if (decoded.type === 'naddr') {
           setArtworkId(decoded.data.identifier);
           setArtistPubkey(decoded.data.pubkey);
@@ -92,8 +99,12 @@ const ArtworkView = () => {
       } catch (error) {
         console.error('Failed to decode naddr:', error);
       }
+    } else {
+      // Short slug — just the d-tag, always by the admin
+      setArtworkId(slug);
+      setArtistPubkey(ADMIN_PUBKEY);
     }
-  }, [naddr]);
+  }, [slug]);
 
   const { data: artwork, isLoading, error } = useArtwork(artworkId, artistPubkey);
   const { mutate: deleteArtwork } = useDeleteArtwork();
@@ -575,7 +586,7 @@ const ArtworkView = () => {
                     <ShareDialog
                       title={artwork.title}
                       description={artwork.description}
-                      url={`${window.location.origin}/art/${naddr}`}
+                      url={`${window.location.origin}/art/${artworkId}`}
                       imageUrl={artwork.images[0]}
                       category={artwork.medium}
                       contentType="artwork"

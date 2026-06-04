@@ -35,7 +35,6 @@ import {
   Eye,
   CheckCircle
 } from 'lucide-react';
-import { nip19 } from 'nostr-tools';
 
 const Art = () => {
   const { user } = useCurrentUser();
@@ -92,13 +91,8 @@ const Art = () => {
   });
 
   const handleViewDetails = (artwork: ArtworkData) => {
-    // Navigate to artwork detail page
-    const naddr = nip19.naddrEncode({
-      identifier: artwork.id,
-      pubkey: artwork.artist_pubkey,
-      kind: 30023,
-    });
-    window.location.href = `/art/${naddr}`;
+    // Navigate to artwork detail page using short slug (d-tag)
+    window.location.href = `/art/${artwork.id}`;
   };
 
   const handleBuy = (artwork: ArtworkData) => {

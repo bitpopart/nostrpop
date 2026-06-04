@@ -708,24 +708,16 @@ const Index = () => {
 
         {featuredArtworksList.length > 0 && (
           <div className="grid md:grid-cols-3 gap-6">
-            {featuredArtworksList.map((artwork, index) => {
-              const naddr = nip19.naddrEncode({
-                identifier: artwork.id,
-                pubkey: artwork.artist_pubkey,
-                kind: 30023,
-              });
-
-              return (
-                <Link
-                  key={artwork.id}
-                  to={`/art/${naddr}`}
-                  className="block animate-in fade-in slide-in-from-bottom-4"
-                  style={{ animationDelay: `${index * 100}ms` }}
-                >
-                  <ArtworkThumbnail artwork={artwork} />
-                </Link>
-              );
-            })}
+            {featuredArtworksList.map((artwork, index) => (
+              <Link
+                key={artwork.id}
+                to={`/art/${artwork.id}`}
+                className="block animate-in fade-in slide-in-from-bottom-4"
+                style={{ animationDelay: `${index * 100}ms` }}
+              >
+                <ArtworkThumbnail artwork={artwork} />
+              </Link>
+            ))}
           </div>
         )}
       </div>
@@ -1481,24 +1473,16 @@ const Index = () => {
 
           {featuredArtworksList.length > 0 && (
             <div className="grid md:grid-cols-3 gap-6">
-              {featuredArtworksList.map((artwork, index) => {
-                const naddr = nip19.naddrEncode({
-                  identifier: artwork.id,
-                  pubkey: artwork.artist_pubkey,
-                  kind: 30023,
-                });
-
-                return (
-                  <Link
-                    key={artwork.id}
-                    to={`/art/${naddr}`}
-                    className="block animate-in fade-in slide-in-from-bottom-4"
-                    style={{ animationDelay: `${index * 100}ms` }}
-                  >
-                    <ArtworkThumbnail artwork={artwork} />
-                  </Link>
-                );
-              })}
+              {featuredArtworksList.map((artwork, index) => (
+                <Link
+                  key={artwork.id}
+                  to={`/art/${artwork.id}`}
+                  className="block animate-in fade-in slide-in-from-bottom-4"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  <ArtworkThumbnail artwork={artwork} />
+                </Link>
+              ))}
             </div>
           )}
           </div>
