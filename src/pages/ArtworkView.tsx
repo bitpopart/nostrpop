@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useSeoMeta } from '@unhead/react';
 import { nip19 } from 'nostr-tools';
@@ -12,12 +12,15 @@ import { useAuthor } from '@/hooks/useAuthor';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useToast } from '@/hooks/useToast';
+import { useBids, getEffectiveAuctionEnd } from '@/hooks/useBids';
 import { genUserName } from '@/lib/genUserName';
-import { formatPrice, isAuctionActive, getTimeRemaining } from '@/lib/artTypes';
+import { formatPrice, isAuctionActive } from '@/lib/artTypes';
 import { ImageGallery } from '@/components/marketplace/ImageGallery';
 import { EditArtworkForm } from '@/components/art/EditArtworkForm';
 import { PaymentDialog } from '@/components/marketplace/PaymentDialog';
 import { ShareArtworkToNostrDialog } from '@/components/art/ShareArtworkToNostrDialog';
+import { PlaceBidDialog } from '@/components/art/PlaceBidDialog';
+import { BidHistory } from '@/components/art/BidHistory';
 import { ClawstrShare } from '@/components/ClawstrShare';
 import { ShareDialog } from '@/components/share/ShareDialog';
 import {
@@ -36,10 +39,33 @@ import {
   Award,
   Edit,
   Share2,
-  Trash2
+  Trash2,
+  AlertTriangle,
+  Crown,
 } from 'lucide-react';
 import type { NostrMetadata } from '@nostrify/nostrify';
 import type { ArtworkData } from '@/lib/artTypes';
+
+/** Format seconds as countdown string */
+function formatCountdown(totalSeconds: number): { text: string; isLastMinute: boolean; isUrgent: boolean } {
+  if (totalSeconds <= 0) return { text: 'Auction ended', isLastMinute: false, isUrgent: false };
+
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  const isLastMinute = totalSeconds <= 60;
+  const isUrgent = totalSeconds <= 300;
+
+  let text = '';
+  if (days > 0) text = `${days}d ${hours}h ${minutes}m`;
+  else if (hours > 0) text = `${hours}h ${minutes}m ${seconds}s`;
+  else if (minutes > 0) text = `${minutes}m ${seconds}s`;
+  else text = `${seconds}s`;
+
+  return { text, isLastMinute, isUrgent };
+}
 
 const ArtworkView = () => {
   const { naddr } = useParams<{ naddr: string }>();
@@ -51,6 +77,8 @@ const ArtworkView = () => {
   const [artistPubkey, setArtistPubkey] = useState<string>('');
   const [isEditing, setIsEditing] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [showBidDialog, setShowBidDialog] = useState(false);
+  const [secondsLeft, setSecondsLeft] = useState(0);
 
   // Decode naddr to get artwork ID and artist pubkey
   useEffect(() => {
@@ -75,6 +103,43 @@ const ArtworkView = () => {
   const artistName = metadata?.name ?? genUserName(artistPubkey);
   const artistImage = metadata?.picture;
 
+  // Bids data for live auction
+  const { data: bidsData } = useBids(artwork?.event?.id);
+  const bids = bidsData?.bids ?? [];
+  const confirmations = bidsData?.confirmations ?? [];
+
+  // Get effective auction end (base + extensions)
+  const effectiveEnd = artwork?.auction_end
+    ? getEffectiveAuctionEnd(artwork.auction_end, confirmations)
+    : null;
+
+  // Total extension seconds
+  const totalExtensionSeconds = confirmations.reduce(
+    (sum, c) => sum + (c.duration_extended ?? 0),
+    0
+  );
+
+  // Live countdown
+  const updateCountdown = useCallback(() => {
+    if (!effectiveEnd) return;
+    const diff = Math.max(0, Math.floor((effectiveEnd.getTime() - Date.now()) / 1000));
+    setSecondsLeft(diff);
+  }, [effectiveEnd]);
+
+  useEffect(() => {
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+    return () => clearInterval(interval);
+  }, [updateCountdown]);
+
+  // Determine highest accepted bid
+  const acceptedBids = bids.filter(bid => {
+    const confirmation = confirmations.find(c => c.bid_event_id === bid.id);
+    return !confirmation || confirmation.status === 'accepted' || confirmation.status === 'winner';
+  });
+  const highestBid = acceptedBids[0];
+  const currentBidAmount = highestBid?.amount ?? artwork?.starting_bid;
+
   useSeoMeta({
     title: artwork ? `${artwork.title} - Art Gallery` : 'Artwork - Art Gallery',
     description: artwork?.description || 'View this unique digital artwork on BitPop Cards',
@@ -89,9 +154,7 @@ const ArtworkView = () => {
       });
       return;
     }
-
     if (!artwork) return;
-
     setShowPaymentDialog(true);
   };
 
@@ -104,12 +167,7 @@ const ArtworkView = () => {
       });
       return;
     }
-
-    // TODO: Implement bidding flow
-    toast({
-      title: "Bidding Feature",
-      description: "Bidding functionality will be implemented soon.",
-    });
+    setShowBidDialog(true);
   };
 
   const handleEdit = () => {
@@ -121,7 +179,6 @@ const ArtworkView = () => {
       });
       return;
     }
-
     setIsEditing(true);
   };
 
@@ -139,10 +196,7 @@ const ArtworkView = () => {
 
   const handleDelete = () => {
     if (!artwork || !user) return;
-
-    // Check if user is admin or the artwork owner
     const canDelete = isAdmin || artwork.artist_pubkey === user.pubkey;
-    
     if (!canDelete) {
       toast({
         title: "Access Denied",
@@ -151,33 +205,28 @@ const ArtworkView = () => {
       });
       return;
     }
-
     if (confirm(`Are you sure you want to delete "${artwork.title}"? This action cannot be undone.`)) {
       deleteArtwork({ artworkId: artwork.id, artistPubkey: artwork.artist_pubkey }, {
-        onSuccess: () => {
-          navigate('/art');
-        }
+        onSuccess: () => { navigate('/art'); }
       });
     }
   };
 
   // Convert artwork to marketplace product format for payment
-  const convertArtworkToProduct = (artwork: ArtworkData) => {
-    return {
-      id: artwork.id,
-      name: artwork.title,
-      description: artwork.description,
-      images: artwork.images || [],
-      currency: artwork.currency || 'SAT',
-      price: artwork.price || 0,
-      category: 'Artwork',
-      type: 'digital' as const, // Artworks are treated as digital products
-      stall_id: 'art-gallery',
-      created_at: artwork.created_at,
-      digital_files: artwork.images || [], // Use artwork images as digital files
-      digital_file_names: artwork.images?.map((_, index) => `${artwork.title}_${index + 1}.jpg`) || []
-    };
-  };
+  const convertArtworkToProduct = (artwork: ArtworkData) => ({
+    id: artwork.id,
+    name: artwork.title,
+    description: artwork.description,
+    images: artwork.images || [],
+    currency: artwork.currency || 'SAT',
+    price: artwork.price || 0,
+    category: 'Artwork',
+    type: 'digital' as const,
+    stall_id: 'art-gallery',
+    created_at: artwork.created_at,
+    digital_files: artwork.images || [],
+    digital_file_names: artwork.images?.map((_, index) => `${artwork.title}_${index + 1}.jpg`) || []
+  });
 
   if (error) {
     return (
@@ -187,9 +236,7 @@ const ArtworkView = () => {
             <Card className="border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-900/10">
               <CardContent className="py-12 px-8 text-center">
                 <Palette className="h-12 w-12 mx-auto text-red-500 mb-4" />
-                <CardTitle className="text-red-600 dark:text-red-400 mb-2">
-                  Artwork Not Found
-                </CardTitle>
+                <CardTitle className="text-red-600 dark:text-red-400 mb-2">Artwork Not Found</CardTitle>
                 <CardDescription className="mb-6">
                   The artwork you're looking for doesn't exist or has been removed.
                 </CardDescription>
@@ -212,18 +259,9 @@ const ArtworkView = () => {
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20">
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-6xl mx-auto">
-            {/* Back Button Skeleton */}
-            <div className="mb-6">
-              <Skeleton className="h-10 w-32" />
-            </div>
-
+            <div className="mb-6"><Skeleton className="h-10 w-32" /></div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Image Skeleton */}
-              <div className="space-y-4">
-                <Skeleton className="aspect-square w-full rounded-lg" />
-              </div>
-
-              {/* Info Skeleton */}
+              <div className="space-y-4"><Skeleton className="aspect-square w-full rounded-lg" /></div>
               <div className="space-y-6">
                 <div className="space-y-4">
                   <Skeleton className="h-8 w-3/4" />
@@ -247,15 +285,17 @@ const ArtworkView = () => {
     );
   }
 
-  if (!artwork) {
-    return null;
-  }
+  if (!artwork) return null;
 
   const isAuction = artwork.sale_type === 'auction';
   const isForSale = artwork.sale_type === 'fixed';
   const isSold = artwork.sale_type === 'sold';
-  const auctionActive = isAuction && isAuctionActive(artwork);
+
+  // Auction active uses effective end (including extensions)
+  const auctionActive = isAuction && (effectiveEnd ? effectiveEnd > new Date() : isAuctionActive(artwork));
+
   const createdAt = new Date(artwork.created_at);
+  const { text: countdownText, isLastMinute, isUrgent } = formatCountdown(secondsLeft);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20">
@@ -288,6 +328,19 @@ const ArtworkView = () => {
                   )}
                 </CardContent>
               </Card>
+
+              {/* Bid History below image on desktop */}
+              {isAuction && artwork.event && (
+                <BidHistory
+                  artwork={{
+                    id: artwork.id,
+                    event: artwork.event,
+                    starting_bid: artwork.starting_bid,
+                    currency: artwork.currency,
+                    auction_end: artwork.auction_end,
+                  }}
+                />
+              )}
             </div>
 
             {/* Artwork Information */}
@@ -300,11 +353,7 @@ const ArtworkView = () => {
                       <CardTitle className="text-2xl">{artwork.title}</CardTitle>
                       <div className="flex items-center space-x-3">
                         {artistImage ? (
-                          <img
-                            src={artistImage}
-                            alt={artistName}
-                            className="h-8 w-8 rounded-full object-cover"
-                          />
+                          <img src={artistImage} alt={artistName} className="h-8 w-8 rounded-full object-cover" />
                         ) : (
                           <div className="h-8 w-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center">
                             <User className="h-4 w-4 text-white" />
@@ -319,33 +368,21 @@ const ArtworkView = () => {
 
                     {/* Actions and Status */}
                     <div className="flex items-center space-x-3">
-                      {/* Edit and Delete Buttons for Admins/Owners */}
                       {user && (isAdmin || artwork.artist_pubkey === user.pubkey) && (
                         <div className="flex items-center space-x-2">
                           {isAdmin && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={handleEdit}
-                              className="flex items-center space-x-2"
-                            >
+                            <Button variant="outline" size="sm" onClick={handleEdit} className="flex items-center space-x-2">
                               <Edit className="w-4 h-4" />
                               <span>Edit</span>
                             </Button>
                           )}
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={handleDelete}
-                            className="flex items-center space-x-2"
-                          >
+                          <Button variant="destructive" size="sm" onClick={handleDelete} className="flex items-center space-x-2">
                             <Trash2 className="w-4 h-4" />
                             <span>Delete</span>
                           </Button>
                         </div>
                       )}
 
-                      {/* Sale Status Badge */}
                       <div>
                         {isSold && (
                           <Badge variant="secondary" className="flex items-center space-x-1">
@@ -379,9 +416,7 @@ const ArtworkView = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                    {artwork.description}
-                  </p>
+                  <p className="text-gray-600 dark:text-gray-300 leading-relaxed">{artwork.description}</p>
                 </CardContent>
               </Card>
 
@@ -396,7 +431,8 @@ const ArtworkView = () => {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {/* Price Information */}
+
+                    {/* Fixed Price */}
                     {isForSale && artwork.price && (
                       <div className="flex items-center justify-between">
                         <span className="text-muted-foreground">Price:</span>
@@ -406,37 +442,78 @@ const ArtworkView = () => {
                       </div>
                     )}
 
+                    {/* Auction Info */}
                     {isAuction && (
                       <div className="space-y-3">
-                        {artwork.current_bid && (
-                          <div className="flex items-center justify-between">
-                            <span className="text-muted-foreground">Current bid:</span>
-                            <span className="text-2xl font-bold text-red-600">
-                              {formatPrice(artwork.current_bid, artwork.currency)}
-                            </span>
-                          </div>
-                        )}
-                        {artwork.starting_bid && !artwork.current_bid && (
-                          <div className="flex items-center justify-between">
-                            <span className="text-muted-foreground">Starting bid:</span>
-                            <span className="text-2xl font-bold">
-                              {formatPrice(artwork.starting_bid, artwork.currency)}
-                            </span>
+                        {/* Live countdown */}
+                        {artwork.auction_end && (
+                          <div className={`rounded-lg p-3 text-center ${
+                            !auctionActive
+                              ? 'bg-gray-100 dark:bg-gray-800'
+                              : isLastMinute
+                              ? 'bg-red-50 dark:bg-red-950 border-2 border-red-400 animate-pulse'
+                              : isUrgent
+                              ? 'bg-orange-50 dark:bg-orange-950 border border-orange-300'
+                              : 'bg-blue-50 dark:bg-blue-950 border border-blue-200'
+                          }`}>
+                            <div className="flex items-center justify-center gap-2 mb-1">
+                              {!auctionActive ? (
+                                <CheckCircle className="w-4 h-4 text-gray-500" />
+                              ) : isLastMinute ? (
+                                <AlertTriangle className="w-4 h-4 text-red-500" />
+                              ) : (
+                                <Timer className="w-4 h-4 text-blue-500" />
+                              )}
+                              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                                {!auctionActive ? 'Auction Ended' : isLastMinute ? '⚡ LAST MINUTE!' : 'Time Remaining'}
+                              </span>
+                            </div>
+                            <div className={`text-3xl font-bold tabular-nums ${
+                              !auctionActive ? 'text-gray-500' : isLastMinute ? 'text-red-600' : isUrgent ? 'text-orange-600' : 'text-blue-600'
+                            }`}>
+                              {auctionActive ? countdownText : 'Ended'}
+                            </div>
+                            {isLastMinute && auctionActive && (
+                              <p className="text-xs text-red-600 dark:text-red-400 mt-1 font-medium">
+                                A bid now extends the auction by 5 minutes!
+                              </p>
+                            )}
+                            {totalExtensionSeconds > 0 && (
+                              <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
+                                ⏱️ Extended by {Math.round(totalExtensionSeconds / 60)}m total due to last-minute bids
+                              </p>
+                            )}
                           </div>
                         )}
 
-                        {auctionActive && artwork.auction_end && (
-                          <div className="flex items-center justify-between">
-                            <span className="text-muted-foreground">Time remaining:</span>
-                            <Badge variant="destructive" className="flex items-center space-x-1">
-                              <Timer className="w-3 h-3" />
-                              <span>{getTimeRemaining(artwork.auction_end)}</span>
-                            </Badge>
+                        {/* Current Bid Display */}
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="bg-muted/50 rounded-lg p-3">
+                            <p className="text-xs text-muted-foreground mb-1">
+                              {highestBid ? 'Highest Bid' : 'Starting Bid'}
+                            </p>
+                            <p className="text-2xl font-bold text-red-600">
+                              {currentBidAmount
+                                ? formatPrice(currentBidAmount, artwork.currency)
+                                : '—'}
+                            </p>
+                            {highestBid && (
+                              <div className="flex items-center gap-1 mt-1">
+                                <Crown className="w-3 h-3 text-yellow-500" />
+                                <p className="text-xs text-muted-foreground">Leading bidder</p>
+                              </div>
+                            )}
                           </div>
-                        )}
+                          <div className="bg-muted/50 rounded-lg p-3">
+                            <p className="text-xs text-muted-foreground mb-1">Total Bids</p>
+                            <p className="text-2xl font-bold">{bids.length}</p>
+                            <p className="text-xs text-muted-foreground">participants</p>
+                          </div>
+                        </div>
                       </div>
                     )}
 
+                    {/* Sold info */}
                     {isSold && artwork.price && (
                       <div className="flex items-center justify-between">
                         <span className="text-muted-foreground">Sold for:</span>
@@ -447,7 +524,7 @@ const ArtworkView = () => {
                     )}
 
                     {/* Action Buttons */}
-                    <div className="pt-4">
+                    <div className="pt-4 space-y-2">
                       {isForSale && (
                         <Button
                           onClick={handleBuy}
@@ -466,12 +543,20 @@ const ArtworkView = () => {
                           size="lg"
                         >
                           <Gavel className="w-4 h-4 mr-2" />
-                          Place Bid
+                          {isLastMinute ? '⚡ Place Bid (extends auction!)' : 'Place Bid'}
                         </Button>
                       )}
 
+                      {isAuction && !auctionActive && bids.length > 0 && (
+                        <div className="text-center py-2">
+                          <p className="text-sm text-muted-foreground">
+                            Auction has ended. Winner will be contacted via Nostr.
+                          </p>
+                        </div>
+                      )}
+
                       {!user && (isForSale || (isAuction && auctionActive)) && (
-                        <p className="text-xs text-center text-muted-foreground mt-2">
+                        <p className="text-xs text-center text-muted-foreground">
                           Please log in to {isForSale ? 'purchase' : 'bid on'} this artwork
                         </p>
                       )}
@@ -492,7 +577,7 @@ const ArtworkView = () => {
                       description={artwork.description}
                       url={`${window.location.origin}/art/${naddr}`}
                       imageUrl={artwork.images[0]}
-                      category={artwork.medium || artwork.type}
+                      category={artwork.medium}
                       contentType="artwork"
                       eventRef={{
                         id: artwork.event.id,
@@ -511,14 +596,8 @@ const ArtworkView = () => {
                     </ShareDialog>
                     {isAdmin && (
                       <>
-                        <ShareArtworkToNostrDialog
-                          artworkEvent={artwork.event}
-                          artworkData={artwork}
-                        >
-                          <Button
-                            variant="outline"
-                            className="w-full bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 border-purple-200 dark:border-purple-800"
-                          >
+                        <ShareArtworkToNostrDialog artworkEvent={artwork.event} artworkData={artwork}>
+                          <Button variant="outline" className="w-full bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 border-purple-200 dark:border-purple-800">
                             <Share2 className="mr-2 h-4 w-4 text-purple-600 dark:text-purple-400" />
                             Share to Nostr (Admin)
                           </Button>
@@ -527,10 +606,7 @@ const ArtworkView = () => {
                           event={artwork.event}
                           contentType="artwork"
                           trigger={
-                            <Button
-                              variant="outline"
-                              className="w-full bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 border-purple-200 dark:border-purple-800"
-                            >
+                            <Button variant="outline" className="w-full bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 border-purple-200 dark:border-purple-800">
                               <Share2 className="mr-2 h-4 w-4 text-purple-600 dark:text-purple-400" />
                               Share to Clawstr (Admin)
                             </Button>
@@ -561,7 +637,6 @@ const ArtworkView = () => {
                         </div>
                       </div>
                     )}
-
                     {artwork.dimensions && (
                       <div className="flex items-center space-x-2">
                         <Ruler className="w-4 h-4 text-muted-foreground" />
@@ -571,7 +646,6 @@ const ArtworkView = () => {
                         </div>
                       </div>
                     )}
-
                     {artwork.year && (
                       <div className="flex items-center space-x-2">
                         <Calendar className="w-4 h-4 text-muted-foreground" />
@@ -581,7 +655,6 @@ const ArtworkView = () => {
                         </div>
                       </div>
                     )}
-
                     {artwork.edition && (
                       <div className="flex items-center space-x-2">
                         <Award className="w-4 h-4 text-muted-foreground" />
@@ -628,9 +701,7 @@ const ArtworkView = () => {
                   <CardContent>
                     <div className="flex flex-wrap gap-2">
                       {artwork.tags.map((tag) => (
-                        <Badge key={tag} variant="secondary">
-                          {tag}
-                        </Badge>
+                        <Badge key={tag} variant="secondary">{tag}</Badge>
                       ))}
                     </div>
                   </CardContent>
@@ -663,6 +734,15 @@ const ArtworkView = () => {
           open={showPaymentDialog}
           onOpenChange={setShowPaymentDialog}
           product={convertArtworkToProduct(artwork)}
+        />
+      )}
+
+      {/* Place Bid Dialog */}
+      {artwork && showBidDialog && (
+        <PlaceBidDialog
+          open={showBidDialog}
+          onOpenChange={setShowBidDialog}
+          artwork={artwork}
         />
       )}
     </div>

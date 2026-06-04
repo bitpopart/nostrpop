@@ -763,6 +763,71 @@ The Fan App page (`/app`) reuses kind 34019 with distinct `t` tags:
 
 Wallpaper and GIF events share the same structure as free downloads (title + image tags).
 
+## Artwork Bidding (Kinds 1021 & 1022)
+
+Artwork auctions use the standard **NIP-15** bidding protocol. Bids are published as kind 1021 events and confirmed by the artist as kind 1022 events.
+
+### Bid Event (Kind 1021)
+
+Published by a bidder to place a bid on an auction:
+
+```json
+{
+  "kind": 1021,
+  "content": "<amount in sats as string>",
+  "tags": [
+    ["e", "<event ID of the artwork auction event>"],
+    ["currency", "SAT"]
+  ]
+}
+```
+
+### Fields
+
+- **content**: Bid amount as a string integer (in satoshis)
+- **e tag**: References the specific Nostr event ID of the artwork being bid on
+- **currency tag**: Currency of the bid (SAT)
+
+### Bid Confirmation (Kind 1022)
+
+Published by the artist/admin to accept, reject, or declare a winner:
+
+```json
+{
+  "kind": 1022,
+  "content": "{\"status\": \"accepted\", \"duration_extended\": 300}",
+  "tags": [
+    ["e", "<event ID of the bid being confirmed>"],
+    ["e", "<event ID of the auction>"]
+  ]
+}
+```
+
+### Content Object
+
+- **status**: One of `"accepted"`, `"rejected"`, `"pending"`, or `"winner"`
+- **message** (optional): Human-readable message explaining the decision
+- **duration_extended** (optional): Number of seconds to extend the auction
+
+### Last-Minute Extension Rule
+
+When a bid is placed within the **last 60 seconds** of the auction and the artist confirms it, the confirmation event includes `"duration_extended": 300` (5 minutes), extending the auction. This ensures the highest bidder truly wins and prevents sniping.
+
+The effective auction end time is calculated as:
+```
+effective_end = auction_start + duration + SUM(duration_extended FOR all confirmations)
+```
+
+### Usage
+
+1. Users place bids via the "Place Bid" button on the artwork detail page
+2. Bids are published to Nostr as kind 1021 events
+3. The artist sees new bids in the Bid History panel with admin controls
+4. Artist accepts/rejects each bid using the ✓/✗ buttons
+5. If a last-minute bid is accepted, the auction automatically extends by 5 minutes
+6. Artist marks the winning bid with the 🏆 button after auction ends
+7. Winner is contacted via Nostr DM
+
 ## References
 
 - [NIP-15: Nostr Marketplace](https://github.com/nostr-protocol/nips/blob/master/15.md)

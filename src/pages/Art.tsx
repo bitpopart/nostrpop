@@ -18,6 +18,7 @@ import { CreateArtworkForm } from '@/components/art/CreateArtworkForm';
 import { EditArtworkForm } from '@/components/art/EditArtworkForm';
 import { ArtBanner } from '@/components/art/ArtBanner';
 import { PaymentDialog } from '@/components/marketplace/PaymentDialog';
+import { PlaceBidDialog } from '@/components/art/PlaceBidDialog';
 import { Label } from '@/components/ui/label';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -76,6 +77,7 @@ const Art = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [editingArtwork, setEditingArtwork] = useState<ArtworkData | null>(null);
   const [buyingArtwork, setBuyingArtwork] = useState<ArtworkData | null>(null);
+  const [biddingArtwork, setBiddingArtwork] = useState<ArtworkData | null>(null);
 
   // Fetch artworks
   const { data: artworks, isLoading: artworksLoading, error: artworksError } = useArtworks(selectedFilter);
@@ -112,7 +114,7 @@ const Art = () => {
     setBuyingArtwork(artwork);
   };
 
-  const handleBid = (_artwork: ArtworkData) => {
+  const handleBid = (artwork: ArtworkData) => {
     if (!user) {
       toast({
         title: "Login Required",
@@ -121,12 +123,7 @@ const Art = () => {
       });
       return;
     }
-
-    // TODO: Implement bidding flow
-    toast({
-      title: "Bidding Feature",
-      description: "Bidding functionality will be implemented soon.",
-    });
+    setBiddingArtwork(artwork);
   };
 
   const handleEdit = (artwork: ArtworkData) => {
@@ -531,6 +528,15 @@ const Art = () => {
           open={!!buyingArtwork}
           onOpenChange={(open) => !open && setBuyingArtwork(null)}
           product={convertArtworkToProduct(buyingArtwork)}
+        />
+      )}
+
+      {/* Place Bid Dialog */}
+      {biddingArtwork && (
+        <PlaceBidDialog
+          open={!!biddingArtwork}
+          onOpenChange={(open) => !open && setBiddingArtwork(null)}
+          artwork={biddingArtwork}
         />
       )}
     </div>
