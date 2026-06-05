@@ -109,14 +109,7 @@ const Art = () => {
   };
 
   const handleBid = (artwork: ArtworkData) => {
-    if (!user) {
-      toast({
-        title: "Login Required",
-        description: "Please log in to place bids.",
-        variant: "destructive"
-      });
-      return;
-    }
+    // No login required — Zap Bid (Lightning + email) works without a Nostr account
     setBiddingArtwork(artwork);
   };
 
