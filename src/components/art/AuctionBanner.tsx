@@ -9,7 +9,12 @@ import type { ArtworkData } from '@/lib/artTypes';
 // ─── Per-auction countdown cell ───────────────────────────────────────────────
 
 function AuctionCountdown({ artwork }: { artwork: ArtworkData }) {
-  const { data: bidsData } = useBids(artwork.event?.id);
+  // Build stable a-tag so bids against old event versions are included
+  const aTag = artwork.event && artwork.artist_pubkey
+    ? `${artwork.event.kind ?? 39239}:${artwork.artist_pubkey}:${artwork.id}`
+    : undefined;
+
+  const { data: bidsData } = useBids(artwork.event?.id, aTag);
   const confirmations = bidsData?.confirmations ?? [];
   const bids = bidsData?.bids ?? [];
 

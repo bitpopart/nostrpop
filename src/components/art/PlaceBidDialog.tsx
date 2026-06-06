@@ -10,9 +10,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuthor } from '@/hooks/useAuthor';
 import { usePlaceBid, useBids, getEffectiveAuctionEnd } from '@/hooks/useBids';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useNostr } from '@nostrify/react';
 import { useLNURL } from '@/hooks/useLNURL';
 import { formatPrice } from '@/lib/artTypes';
 import { genUserName } from '@/lib/genUserName';
+import { generateSecretKey, getPublicKey, finalizeEvent } from 'nostr-tools';
 import QRCode from 'qrcode';
 import {
   Gavel,
@@ -25,7 +27,6 @@ import {
   Clock,
   Copy,
   Mail,
-  QrCode,
   Loader2,
 } from 'lucide-react';
 import type { ArtworkData } from '@/lib/artTypes';
@@ -33,13 +34,13 @@ import type { NostrMetadata } from '@nostrify/nostrify';
 
 // The artist lightning address for receiving the 21-sat bid deposit
 const ARTIST_LIGHTNING_ADDRESS = 'traveltelly@primal.net';
-const ZAP_BID_AMOUNT = 21; // sats — the entry fee / bid proof
+const ZAP_BID_AMOUNT = 21; // sats — the entry fee / proof of intent
 
 interface PlaceBidDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   artwork: ArtworkData;
-  artworkATag?: string; // stable "kind:pubkey:d-tag" coordinate
+  artworkATag?: string;
 }
 
 /** Format seconds into human-readable countdown */
@@ -63,10 +64,11 @@ function formatCountdown(totalSeconds: number): { text: string; isLastMinute: bo
   return { text, isLastMinute, isUrgent };
 }
 
-// ─── Zap Bid Tab ────────────────────────────────────────────────────────────
+// ─── Zap Bid Tab ─────────────────────────────────────────────────────────────
 
 interface ZapBidTabProps {
   artwork: ArtworkData;
+  artworkATag?: string;
   currentHighest: number;
   minNextBid: number;
   minIncrement: number;
@@ -74,7 +76,8 @@ interface ZapBidTabProps {
   isLastMinute: boolean;
 }
 
-function ZapBidTab({ artwork, currentHighest, minNextBid, minIncrement, auctionEnded, isLastMinute }: ZapBidTabProps) {
+function ZapBidTab({ artwork, artworkATag, currentHighest, minNextBid, minIncrement, auctionEnded, isLastMinute }: ZapBidTabProps) {
+  const { nostr } = useNostr();
   const [email, setEmail] = useState('');
   const [bidAmount, setBidAmount] = useState(String(minNextBid));
   const [emailError, setEmailError] = useState('');
@@ -82,19 +85,16 @@ function ZapBidTab({ artwork, currentHighest, minNextBid, minIncrement, auctionE
   const [invoice, setInvoice] = useState<string | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
   const [copied, setCopied] = useState(false);
   const [zapPaid, setZapPaid] = useState(false);
 
-  const { getZapInvoice, lnurlData, isLoading: lnurlLoading } = useLNURL(ARTIST_LIGHTNING_ADDRESS);
+  const { getZapInvoice, isLoading: lnurlLoading } = useLNURL(ARTIST_LIGHTNING_ADDRESS);
 
   const validateEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 
   const handleGenerateInvoice = async () => {
-    // Validate
-    if (!validateEmail(email)) {
-      setEmailError('Please enter a valid email address');
-      return;
-    }
+    if (!validateEmail(email)) { setEmailError('Please enter a valid email address'); return; }
     setEmailError('');
 
     const amount = parseInt(bidAmount);
@@ -106,31 +106,58 @@ function ZapBidTab({ artwork, currentHighest, minNextBid, minIncrement, auctionE
 
     setIsGenerating(true);
     try {
-      // The invoice memo encodes the bid amount and email so the artist knows who bid
-      const memo = `BID:${amount}:${artwork.id}:${email}`;
-
-      // We charge 21 sats as the "bid entry" proof — the actual bid amount is in the memo
       const pr = await getZapInvoice(ZAP_BID_AMOUNT);
-      if (!pr) {
-        setIsGenerating(false);
-        return;
-      }
-
+      if (!pr) { setIsGenerating(false); return; }
       setInvoice(pr);
 
-      // Generate QR code
       const qr = await QRCode.toDataURL(`lightning:${pr}`, {
-        errorCorrectionLevel: 'M',
-        margin: 1,
-        width: 280,
+        errorCorrectionLevel: 'M', margin: 1, width: 280,
         color: { dark: '#000000', light: '#ffffff' },
       });
       setQrDataUrl(qr);
-      console.log('Bid memo (artist reference):', memo);
     } catch (err) {
       console.error('Failed to generate invoice:', err);
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  // After user confirms payment: publish kind 1021 with the REAL bid amount
+  // using an ephemeral keypair — no Nostr account needed
+  const handlePaidConfirm = async () => {
+    if (!artwork.event?.id) return;
+
+    const amount = parseInt(bidAmount);
+    setIsPublishing(true);
+    try {
+      // Generate a one-time ephemeral keypair for this anonymous bid
+      const sk = generateSecretKey();
+      const pk = getPublicKey(sk);
+
+      const tags: string[][] = [
+        ['e', artwork.event.id],
+        ['currency', 'SAT'],
+        ['email', email], // stored so artist can contact winner
+      ];
+      if (artworkATag) tags.push(['a', artworkATag]);
+
+      const unsigned = {
+        kind: 1021,
+        content: String(amount), // ← REAL bid amount, not 21
+        tags,
+        created_at: Math.floor(Date.now() / 1000),
+        pubkey: pk,
+      };
+
+      const signed = finalizeEvent(unsigned, sk);
+      await nostr.event(signed, { signal: AbortSignal.timeout(5000) });
+
+      console.log('[ZapBid] Published bid event:', signed.id, 'amount:', amount, 'email:', email);
+      setZapPaid(true);
+    } catch (err) {
+      console.error('Failed to publish bid event:', err);
+    } finally {
+      setIsPublishing(false);
     }
   };
 
@@ -141,16 +168,6 @@ function ZapBidTab({ artwork, currentHighest, minNextBid, minIncrement, auctionE
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleOpenWallet = () => {
-    if (!invoice) return;
-    window.open(`lightning:${invoice}`, '_blank');
-  };
-
-  const handlePaidConfirm = () => {
-    setZapPaid(true);
-  };
-
-  // Quick amounts
   const quickAmounts = [minNextBid, minNextBid + minIncrement, minNextBid + minIncrement * 2];
 
   if (auctionEnded) {
@@ -166,13 +183,13 @@ function ZapBidTab({ artwork, currentHighest, minNextBid, minIncrement, auctionE
     return (
       <div className="text-center py-6 space-y-3">
         <CheckCircle className="w-12 h-12 mx-auto text-green-500" />
-        <p className="font-semibold text-green-700 dark:text-green-400">Bid received! ⚡</p>
+        <p className="font-semibold text-green-700 dark:text-green-400">Bid placed! ⚡</p>
         <p className="text-sm text-muted-foreground">
-          Your bid of <strong>{parseInt(bidAmount).toLocaleString()} sats</strong> has been submitted.<br />
+          Your bid of <strong>{parseInt(bidAmount).toLocaleString()} sats</strong> is now live.<br />
           The artist will contact you at <strong>{email}</strong> if you win.
         </p>
         <p className="text-xs text-muted-foreground bg-muted/40 rounded p-2">
-          Note: Last-minute bids extend the auction by 5 minutes.
+          Last-minute bids extend the auction by 5 minutes.
         </p>
       </div>
     );
@@ -186,7 +203,7 @@ function ZapBidTab({ artwork, currentHighest, minNextBid, minIncrement, auctionE
           <Zap className="w-4 h-4 text-yellow-600 mt-0.5 flex-shrink-0" />
           <div className="text-xs text-yellow-800 dark:text-yellow-300 space-y-1">
             <p className="font-semibold">No Nostr account needed!</p>
-            <p>Pay <strong>{ZAP_BID_AMOUNT} sats</strong> via Lightning to register your bid. The artist will contact you by email if you win.</p>
+            <p>Set your bid amount, pay <strong>{ZAP_BID_AMOUNT} sats</strong> via Lightning to confirm it. The artist contacts you by email if you win.</p>
           </div>
         </div>
       </div>
@@ -252,23 +269,26 @@ function ZapBidTab({ artwork, currentHighest, minNextBid, minIncrement, auctionE
             disabled={isGenerating || lnurlLoading}
             size="lg"
           >
-            {isGenerating || lnurlLoading ? (
-              <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Generating Invoice…</>
-            ) : (
-              <><Zap className="w-4 h-4 mr-2" />Generate Lightning Invoice ({ZAP_BID_AMOUNT} sats)</>
-            )}
+            {isGenerating || lnurlLoading
+              ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Generating Invoice…</>
+              : <><Zap className="w-4 h-4 mr-2" />Get Lightning Invoice ({ZAP_BID_AMOUNT} sats)</>
+            }
           </Button>
 
           <p className="text-xs text-center text-muted-foreground">
-            You pay {ZAP_BID_AMOUNT} sats to register your bid of {bidAmount ? parseInt(bidAmount).toLocaleString() : '?'} sats
+            Pay {ZAP_BID_AMOUNT} sats to confirm your bid of{' '}
+            <strong>{bidAmount ? parseInt(bidAmount).toLocaleString() : '?'} sats</strong>
           </p>
         </div>
       ) : (
-        /* Invoice / QR step */
+        /* QR / invoice step */
         <div className="space-y-3">
           <div className="text-center">
-            <p className="text-sm font-medium mb-1">Pay {ZAP_BID_AMOUNT} sats to register your bid</p>
-            <p className="text-xs text-muted-foreground mb-3">Bid: <strong>{parseInt(bidAmount).toLocaleString()} sats</strong> · Email: <strong>{email}</strong></p>
+            <p className="text-sm font-medium mb-1">Pay {ZAP_BID_AMOUNT} sats to confirm</p>
+            <p className="text-xs text-muted-foreground mb-3">
+              Bid: <strong>{parseInt(bidAmount).toLocaleString()} sats</strong>
+              {' · '}Email: <strong>{email}</strong>
+            </p>
 
             {qrDataUrl && (
               <div className="flex justify-center mb-3">
@@ -280,12 +300,17 @@ function ZapBidTab({ artwork, currentHighest, minNextBid, minIncrement, auctionE
 
             <div className="flex gap-2">
               <Button size="sm" variant="outline" className="flex-1" onClick={handleCopy}>
-                {copied ? <CheckCircle className="w-4 h-4 mr-1 text-green-500" /> : <Copy className="w-4 h-4 mr-1" />}
-                {copied ? 'Copied!' : 'Copy Invoice'}
+                {copied
+                  ? <><CheckCircle className="w-4 h-4 mr-1 text-green-500" />Copied!</>
+                  : <><Copy className="w-4 h-4 mr-1" />Copy Invoice</>
+                }
               </Button>
-              <Button size="sm" className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white" onClick={handleOpenWallet}>
-                <Zap className="w-4 h-4 mr-1" />
-                Open Wallet
+              <Button
+                size="sm"
+                className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white"
+                onClick={() => window.open(`lightning:${invoice}`, '_blank')}
+              >
+                <Zap className="w-4 h-4 mr-1" />Open Wallet
               </Button>
             </div>
           </div>
@@ -293,10 +318,17 @@ function ZapBidTab({ artwork, currentHighest, minNextBid, minIncrement, auctionE
           <Separator />
 
           <div className="space-y-2">
-            <p className="text-xs text-center text-muted-foreground">After paying, click the button below to confirm</p>
-            <Button variant="outline" className="w-full border-green-500 text-green-700 hover:bg-green-50" onClick={handlePaidConfirm}>
-              <CheckCircle className="w-4 h-4 mr-2" />
-              I've Paid — Confirm My Bid
+            <p className="text-xs text-center text-muted-foreground">After paying, click below to register your bid</p>
+            <Button
+              className="w-full border-green-500 text-green-700 hover:bg-green-50 dark:hover:bg-green-950"
+              variant="outline"
+              onClick={handlePaidConfirm}
+              disabled={isPublishing}
+            >
+              {isPublishing
+                ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Registering bid…</>
+                : <><CheckCircle className="w-4 h-4 mr-2" />I've Paid — Register My Bid of {parseInt(bidAmount).toLocaleString()} sats</>
+              }
             </Button>
             <button
               className="text-xs text-muted-foreground underline w-full text-center"
@@ -331,13 +363,13 @@ export function PlaceBidDialog({ open, onOpenChange, artwork, artworkATag }: Pla
     : null;
 
   const totalExtensionSeconds = confirmations.reduce(
-    (sum, c) => sum + (c.duration_extended ?? 0),
-    0
+    (sum, c) => sum + (c.duration_extended ?? 0), 0
   );
 
+  // Filter to accepted/winner bids only for display
   const acceptedBids = bids.filter(bid => {
-    const confirmation = confirmations.find(c => c.bid_event_id === bid.id);
-    return !confirmation || confirmation.status === 'accepted' || confirmation.status === 'winner';
+    const c = confirmations.find(c => c.bid_event_id === bid.id);
+    return !c || c.status === 'accepted' || c.status === 'winner';
   });
   const highestBid = acceptedBids[0];
 
@@ -384,14 +416,8 @@ export function PlaceBidDialog({ open, onOpenChange, artwork, artworkATag }: Pla
     }
   };
 
-  const handleQuickBid = (amount: number) => {
-    setBidAmount(String(amount));
-    setError('');
-  };
-
   const handleNostrSubmit = () => {
-    if (!user) return;
-    if (!artwork.event?.id) {
+    if (!user || !artwork.event?.id) {
       setError('Artwork auction data not available. Please try refreshing.');
       return;
     }
@@ -407,7 +433,6 @@ export function PlaceBidDialog({ open, onOpenChange, artwork, artworkATag }: Pla
   };
 
   const quickBidOptions = [minNextBid, minNextBid + minIncrement, minNextBid + minIncrement * 2];
-
   const topBidder = useAuthor(highestBid?.bidder_pubkey ?? '');
   const topBidderMeta: NostrMetadata | undefined = topBidder.data?.metadata;
   const topBidderName = topBidderMeta?.name ?? (highestBid ? genUserName(highestBid.bidder_pubkey) : null);
@@ -427,12 +452,9 @@ export function PlaceBidDialog({ open, onOpenChange, artwork, artworkATag }: Pla
           {/* Countdown */}
           {artwork.auction_end && (
             <div className={`rounded-lg p-3 text-center ${
-              auctionEnded
-                ? 'bg-gray-100 dark:bg-gray-800'
-                : isLastMinute
-                ? 'bg-red-50 dark:bg-red-950 border-2 border-red-400 animate-pulse'
-                : isUrgent
-                ? 'bg-orange-50 dark:bg-orange-950 border border-orange-300'
+              auctionEnded ? 'bg-gray-100 dark:bg-gray-800'
+                : isLastMinute ? 'bg-red-50 dark:bg-red-950 border-2 border-red-400 animate-pulse'
+                : isUrgent ? 'bg-orange-50 dark:bg-orange-950 border border-orange-300'
                 : 'bg-blue-50 dark:bg-blue-950 border border-blue-200'
             }`}>
               <div className="flex items-center justify-center gap-2 mb-1">
@@ -471,7 +493,7 @@ export function PlaceBidDialog({ open, onOpenChange, artwork, artworkATag }: Pla
             </Alert>
           )}
 
-          {/* Current bid */}
+          {/* Current bid stats */}
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-muted/50 rounded-lg p-3">
               <p className="text-xs text-muted-foreground mb-1">{highestBid ? 'Highest Bid' : 'Starting Bid'}</p>
@@ -511,7 +533,7 @@ export function PlaceBidDialog({ open, onOpenChange, artwork, artworkATag }: Pla
                 </TabsTrigger>
               </TabsList>
 
-              {/* ── Nostr Bid Tab ── */}
+              {/* Nostr Bid Tab */}
               <TabsContent value="nostr" className="space-y-3 pt-2">
                 {user ? (
                   <>
@@ -537,7 +559,13 @@ export function PlaceBidDialog({ open, onOpenChange, artwork, artworkATag }: Pla
                       <p className="text-xs text-muted-foreground">Quick bid:</p>
                       <div className="flex gap-2 flex-wrap">
                         {quickBidOptions.map((amount) => (
-                          <Button key={amount} variant="outline" size="sm" onClick={() => handleQuickBid(amount)} className="text-xs">
+                          <Button
+                            key={amount}
+                            variant="outline"
+                            size="sm"
+                            onClick={() => { setBidAmount(String(amount)); setError(''); }}
+                            className="text-xs"
+                          >
                             {amount.toLocaleString()} sats
                           </Button>
                         ))}
@@ -559,11 +587,10 @@ export function PlaceBidDialog({ open, onOpenChange, artwork, artworkATag }: Pla
                       className="w-full bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600"
                       size="lg"
                     >
-                      {isPending ? (
-                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Placing Bid...</>
-                      ) : (
-                        <><Gavel className="w-4 h-4 mr-2" />Place Bid{bidAmount && !isNaN(parseInt(bidAmount)) ? ` — ${parseInt(bidAmount).toLocaleString()} sats` : ''}</>
-                      )}
+                      {isPending
+                        ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Placing Bid...</>
+                        : <><Gavel className="w-4 h-4 mr-2" />Place Bid{bidAmount && !isNaN(parseInt(bidAmount)) ? ` — ${parseInt(bidAmount).toLocaleString()} sats` : ''}</>
+                      }
                     </Button>
 
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -581,10 +608,11 @@ export function PlaceBidDialog({ open, onOpenChange, artwork, artworkATag }: Pla
                 )}
               </TabsContent>
 
-              {/* ── Zap Bid Tab ── */}
+              {/* Zap Bid Tab */}
               <TabsContent value="zap" className="pt-2">
                 <ZapBidTab
                   artwork={artwork}
+                  artworkATag={artworkATag}
                   currentHighest={currentHighest}
                   minNextBid={minNextBid}
                   minIncrement={minIncrement}
@@ -611,11 +639,10 @@ export function PlaceBidDialog({ open, onOpenChange, artwork, artworkATag }: Pla
           <div className="bg-muted/30 rounded-lg p-3 space-y-1">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">How it works</p>
             <ul className="text-xs text-muted-foreground space-y-0.5 list-disc list-inside">
-              <li><strong>Nostr Bid:</strong> Published on-chain, confirmed by the artist</li>
-              <li><strong>⚡ Zap Bid:</strong> Pay 21 sats + email — no account needed</li>
+              <li><strong>Nostr Bid:</strong> Published on-chain with your Nostr identity</li>
+              <li><strong>⚡ Zap Bid:</strong> Pay 21 sats + email — no account needed, bid goes on-chain anonymously</li>
               <li>Last-minute bids extend the auction by 5 minutes</li>
-              <li>Highest confirmed bid wins the artwork</li>
-              <li>Winner contacted via Nostr DM or email</li>
+              <li>Highest bid wins — winner contacted via Nostr DM or email</li>
             </ul>
           </div>
         </div>
