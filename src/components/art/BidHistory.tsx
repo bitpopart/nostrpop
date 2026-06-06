@@ -228,14 +228,20 @@ function BidRow({ bid, currency, confirmation, rank, isAdmin, artworkEventId, ef
 }
 
 interface BidHistoryProps {
-  artwork: { id: string; event?: { id: string }; starting_bid?: number; currency?: string; auction_end?: string };
+  artwork: { id: string; event?: { id: string; kind?: number; pubkey?: string }; starting_bid?: number; currency?: string; auction_end?: string; artist_pubkey?: string };
   className?: string;
 }
 
 export function BidHistory({ artwork, className }: BidHistoryProps) {
   const { user } = useCurrentUser();
   const isAdmin = useIsAdmin();
-  const { data: bidsData, isLoading } = useBids(artwork.event?.id);
+
+  // Build stable addressable coordinate so we catch bids on old event versions too
+  const eventKind = artwork.event?.kind ?? 39239;
+  const pubkey = artwork.event?.pubkey ?? artwork.artist_pubkey ?? '';
+  const aTag = pubkey ? `${eventKind}:${pubkey}:${artwork.id}` : undefined;
+
+  const { data: bidsData, isLoading } = useBids(artwork.event?.id, aTag);
 
   const bids = bidsData?.bids ?? [];
   const confirmations = bidsData?.confirmations ?? [];

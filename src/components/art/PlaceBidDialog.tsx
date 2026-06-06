@@ -39,6 +39,7 @@ interface PlaceBidDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   artwork: ArtworkData;
+  artworkATag?: string; // stable "kind:pubkey:d-tag" coordinate
 }
 
 /** Format seconds into human-readable countdown */
@@ -312,7 +313,7 @@ function ZapBidTab({ artwork, currentHighest, minNextBid, minIncrement, auctionE
 
 // ─── Main Dialog ─────────────────────────────────────────────────────────────
 
-export function PlaceBidDialog({ open, onOpenChange, artwork }: PlaceBidDialogProps) {
+export function PlaceBidDialog({ open, onOpenChange, artwork, artworkATag }: PlaceBidDialogProps) {
   const { user } = useCurrentUser();
   const [bidAmount, setBidAmount] = useState('');
   const [error, setError] = useState('');
@@ -320,7 +321,7 @@ export function PlaceBidDialog({ open, onOpenChange, artwork }: PlaceBidDialogPr
   const [extensionNotice, setExtensionNotice] = useState<string | null>(null);
 
   const { mutate: placeBid, isPending } = usePlaceBid();
-  const { data: bidsData } = useBids(artwork.event?.id);
+  const { data: bidsData } = useBids(artwork.event?.id, artworkATag);
 
   const bids = bidsData?.bids ?? [];
   const confirmations = bidsData?.confirmations ?? [];
@@ -400,7 +401,7 @@ export function PlaceBidDialog({ open, onOpenChange, artwork }: PlaceBidDialogPr
     if (amount < minNextBid) { setError(`Minimum bid is ${formatPrice(minNextBid, currency)}`); return; }
 
     placeBid(
-      { artworkEventId: artwork.event.id, amount, currency },
+      { artworkEventId: artwork.event.id, artworkATag, amount, currency },
       { onSuccess: () => { setBidAmount(''); setError(''); } }
     );
   };

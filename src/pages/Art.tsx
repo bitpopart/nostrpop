@@ -524,6 +524,11 @@ const Art = () => {
           open={!!biddingArtwork}
           onOpenChange={(open) => !open && setBiddingArtwork(null)}
           artwork={biddingArtwork}
+          artworkATag={
+            biddingArtwork.event
+              ? `${biddingArtwork.event.kind ?? 39239}:${biddingArtwork.artist_pubkey}:${biddingArtwork.id}`
+              : undefined
+          }
         />
       )}
     </div>

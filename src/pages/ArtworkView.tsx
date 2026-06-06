@@ -114,8 +114,13 @@ const ArtworkView = () => {
   const artistName = metadata?.name ?? genUserName(artistPubkey);
   const artistImage = metadata?.picture;
 
-  // Bids data for live auction
-  const { data: bidsData } = useBids(artwork?.event?.id);
+  // Stable addressable coordinate — never changes even when the artwork event is updated
+  const artworkATag = artworkId && artistPubkey
+    ? `${artwork?.event?.kind ?? 39239}:${artistPubkey}:${artworkId}`
+    : undefined;
+
+  // Bids data — query by both event ID and stable a-tag to catch all bids
+  const { data: bidsData } = useBids(artwork?.event?.id, artworkATag);
   const bids = bidsData?.bids ?? [];
   const confirmations = bidsData?.confirmations ?? [];
 
@@ -339,6 +344,7 @@ const ArtworkView = () => {
                   artwork={{
                     id: artwork.id,
                     event: artwork.event,
+                    artist_pubkey: artwork.artist_pubkey,
                     starting_bid: artwork.starting_bid,
                     currency: artwork.currency,
                     auction_end: artwork.auction_end,
@@ -747,6 +753,7 @@ const ArtworkView = () => {
           open={showBidDialog}
           onOpenChange={setShowBidDialog}
           artwork={artwork}
+          artworkATag={artworkATag}
         />
       )}
     </div>
