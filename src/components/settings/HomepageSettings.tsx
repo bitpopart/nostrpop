@@ -126,10 +126,91 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   Download,
 };
 
+const VARIANT_LABEL: Record<HomepageButton['variant'], string> = {
+  primary: 'Primary (filled)',
+  outline: 'Outline',
+  accent: 'Accent (orange)',
+};
+
 function generateId() {
   return `btn-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 }
 
+// ─── ButtonEditor is a TOP-LEVEL component so React never remounts it on parent re-renders ───
+interface ButtonEditorProps {
+  btn: HomepageButton;
+  onUpdate: (id: string, changes: Partial<HomepageButton>) => void;
+  onDelete: (id: string) => void;
+  onMove: (id: string, dir: 'up' | 'down') => void;
+}
+
+function ButtonEditor({ btn, onUpdate, onDelete, onMove }: ButtonEditorProps) {
+  return (
+    <div className="border rounded-lg p-3 space-y-2 bg-white dark:bg-gray-900">
+      <div className="flex items-center justify-between gap-2">
+        <Badge variant="outline" className="text-xs shrink-0">
+          {btn.isHero ? 'Hero' : 'Between sections'}
+        </Badge>
+        <div className="flex gap-1 ml-auto">
+          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => onMove(btn.id, 'up')}>
+            <ChevronUp className="h-3 w-3" />
+          </Button>
+          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => onMove(btn.id, 'down')}>
+            <ChevronDown className="h-3 w-3" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+            onClick={() => onDelete(btn.id)}
+          >
+            <Trash2 className="h-3 w-3" />
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <div>
+          <Label className="text-xs text-muted-foreground">Button Label</Label>
+          <Input
+            value={btn.label}
+            onChange={e => onUpdate(btn.id, { label: e.target.value })}
+            placeholder="e.g. Start Painting"
+            className="h-8 text-sm"
+          />
+        </div>
+        <div>
+          <Label className="text-xs text-muted-foreground">URL / Link</Label>
+          <Input
+            value={btn.url}
+            onChange={e => onUpdate(btn.id, { url: e.target.value })}
+            placeholder="e.g. /nostr or https://..."
+            className="h-8 text-sm"
+          />
+        </div>
+      </div>
+
+      <div>
+        <Label className="text-xs text-muted-foreground">Style</Label>
+        <Select
+          value={btn.variant}
+          onValueChange={v => onUpdate(btn.id, { variant: v as HomepageButton['variant'] })}
+        >
+          <SelectTrigger className="h-8 text-sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {(Object.keys(VARIANT_LABEL) as HomepageButton['variant'][]).map(v => (
+              <SelectItem key={v} value={v}>{VARIANT_LABEL[v]}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
 export function HomepageSettings() {
   const { user } = useCurrentUser();
   const { nostr } = useNostr();
@@ -141,7 +222,7 @@ export function HomepageSettings() {
     queryKey: ['homepage-settings', adminPubkey],
     queryFn: async (c) => {
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(5000)]);
-      
+
       const events = await nostr.query([{
         kinds: [30078],
         authors: [adminPubkey],
@@ -153,7 +234,6 @@ export function HomepageSettings() {
         try {
           const parsed = JSON.parse(events[0].content);
           if (Array.isArray(parsed)) {
-            // Legacy format
             return { sections: parsed as HomepageSection[], buttons: DEFAULT_BUTTONS };
           } else if (parsed && 'sections' in parsed) {
             return parsed as HomepageSettings;
@@ -178,11 +258,9 @@ export function HomepageSettings() {
     }
   }, [nostrSettings]);
 
-  // --- Section handlers ---
+  // ─── Section handlers ────────────────────────────────────────────────────
   const handleToggle = (id: string) => {
-    setSections(prev =>
-      prev.map(s => s.id === id ? { ...s, enabled: !s.enabled } : s)
-    );
+    setSections(prev => prev.map(s => s.id === id ? { ...s, enabled: !s.enabled } : s));
   };
 
   const handleSectionField = (id: string, field: 'title' | 'subtitle', value: string) => {
@@ -207,7 +285,7 @@ export function HomepageSettings() {
     });
   };
 
-  // --- Button handlers ---
+  // ─── Button handlers ─────────────────────────────────────────────────────
   const addHeroButton = () => {
     const newBtn: HomepageButton = {
       id: generateId(),
@@ -247,7 +325,6 @@ export function HomepageSettings() {
       const btn = prev.find(b => b.id === id);
       if (!btn) return prev;
 
-      // Get siblings (same isHero + same afterSectionId)
       const isSameGroup = (b: HomepageButton) =>
         b.isHero === btn.isHero && b.afterSectionId === btn.afterSectionId;
 
@@ -266,16 +343,13 @@ export function HomepageSettings() {
     });
   };
 
-  // --- Save ---
+  // ─── Save / Reset ─────────────────────────────────────────────────────────
   const handleSave = () => {
-    if (!user) {
-      toast.error('Please log in to save homepage settings');
-      return;
-    }
+    if (!user) { toast.error('Please log in to save homepage settings'); return; }
 
     const payload: HomepageSettings = {
       sections: sections.map((s, i) => ({ ...s, order: i })),
-      buttons: buttons,
+      buttons,
     };
 
     publishEvent({
@@ -290,17 +364,12 @@ export function HomepageSettings() {
         window.dispatchEvent(new CustomEvent('homepage-settings-updated', { detail: payload }));
         refetch();
       },
-      onError: (error) => {
-        toast.error('Failed to save settings: ' + error.message);
-      }
+      onError: (error) => toast.error('Failed to save settings: ' + error.message),
     });
   };
 
   const handleReset = () => {
-    if (!user) {
-      toast.error('Please log in to reset homepage settings');
-      return;
-    }
+    if (!user) { toast.error('Please log in to reset homepage settings'); return; }
     setSections(DEFAULT_SECTIONS);
     setButtons(DEFAULT_BUTTONS);
     const payload: HomepageSettings = { sections: DEFAULT_SECTIONS, buttons: DEFAULT_BUTTONS };
@@ -315,9 +384,7 @@ export function HomepageSettings() {
         queryClient.invalidateQueries({ queryKey: ['homepage-settings-public', adminPubkey] });
         refetch();
       },
-      onError: (error) => {
-        toast.error('Failed to reset settings: ' + error.message);
-      }
+      onError: (error) => toast.error('Failed to reset settings: ' + error.message),
     });
   };
 
@@ -336,66 +403,6 @@ export function HomepageSettings() {
   const interButtons = (sectionId: string) =>
     buttons.filter(b => !b.isHero && b.afterSectionId === sectionId).sort((a, b) => a.order - b.order);
 
-  const variantLabel: Record<HomepageButton['variant'], string> = {
-    primary: 'Primary (filled)',
-    outline: 'Outline',
-    accent: 'Accent (orange)',
-  };
-
-  const ButtonEditor = ({ btn }: { btn: HomepageButton }) => (
-    <div className="border rounded-lg p-3 space-y-2 bg-white dark:bg-gray-900">
-      <div className="flex items-center justify-between gap-2">
-        <Badge variant="outline" className="text-xs shrink-0">
-          {btn.isHero ? 'Hero' : 'Between sections'}
-        </Badge>
-        <div className="flex gap-1 ml-auto">
-          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => moveButton(btn.id, 'up')}>
-            <ChevronUp className="h-3 w-3" />
-          </Button>
-          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => moveButton(btn.id, 'down')}>
-            <ChevronDown className="h-3 w-3" />
-          </Button>
-          <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive hover:text-destructive" onClick={() => deleteButton(btn.id)}>
-            <Trash2 className="h-3 w-3" />
-          </Button>
-        </div>
-      </div>
-      <div className="grid grid-cols-2 gap-2">
-        <div>
-          <Label className="text-xs text-muted-foreground">Button Label</Label>
-          <Input
-            value={btn.label}
-            onChange={e => updateButton(btn.id, { label: e.target.value })}
-            placeholder="e.g. Start Painting"
-            className="h-8 text-sm"
-          />
-        </div>
-        <div>
-          <Label className="text-xs text-muted-foreground">URL / Link</Label>
-          <Input
-            value={btn.url}
-            onChange={e => updateButton(btn.id, { url: e.target.value })}
-            placeholder="e.g. /nostr or https://..."
-            className="h-8 text-sm"
-          />
-        </div>
-      </div>
-      <div>
-        <Label className="text-xs text-muted-foreground">Style</Label>
-        <Select value={btn.variant} onValueChange={v => updateButton(btn.id, { variant: v as HomepageButton['variant'] })}>
-          <SelectTrigger className="h-8 text-sm">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {(Object.keys(variantLabel) as HomepageButton['variant'][]).map(v => (
-              <SelectItem key={v} value={v}>{variantLabel[v]}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-    </div>
-  );
-
   return (
     <Card>
       <CardHeader>
@@ -408,6 +415,7 @@ export function HomepageSettings() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+
         {/* Tab switcher */}
         <div className="flex gap-2 border-b pb-3">
           <Button
@@ -433,7 +441,6 @@ export function HomepageSettings() {
           <div className="space-y-4">
             {sections.map((section, index) => {
               const Icon = ICON_MAP[section.icon];
-
               return (
                 <Card key={section.id} className={!section.enabled ? 'opacity-60' : ''}>
                   <CardContent className="p-4">
@@ -442,7 +449,6 @@ export function HomepageSettings() {
                         <GripVertical className="h-5 w-5 text-muted-foreground cursor-move" />
                         {Icon && <Icon className="h-5 w-5 text-purple-600" />}
                       </div>
-
                       <div className="flex-1 space-y-3">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
@@ -451,36 +457,19 @@ export function HomepageSettings() {
                               onCheckedChange={() => handleToggle(section.id)}
                             />
                             <div className="flex items-center gap-2">
-                              {section.enabled ? (
-                                <Eye className="h-4 w-4 text-green-600" />
-                              ) : (
-                                <EyeOff className="h-4 w-4 text-gray-400" />
-                              )}
+                              {section.enabled
+                                ? <Eye className="h-4 w-4 text-green-600" />
+                                : <EyeOff className="h-4 w-4 text-gray-400" />}
                               <span className="text-sm font-medium">
                                 {section.enabled ? 'Visible' : 'Hidden'}
                               </span>
                             </div>
                           </div>
                           <div className="flex gap-1">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => moveSectionUp(index)}
-                              disabled={index === 0}
-                            >
-                              ↑
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => moveSectionDown(index)}
-                              disabled={index === sections.length - 1}
-                            >
-                              ↓
-                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => moveSectionUp(index)} disabled={index === 0}>↑</Button>
+                            <Button variant="outline" size="sm" onClick={() => moveSectionDown(index)} disabled={index === sections.length - 1}>↓</Button>
                           </div>
                         </div>
-
                         <div className="space-y-2">
                           <div>
                             <Label className="text-xs text-muted-foreground">Section Title</Label>
@@ -513,12 +502,15 @@ export function HomepageSettings() {
         {/* ===== BUTTONS TAB ===== */}
         {activeTab === 'buttons' && (
           <div className="space-y-6">
+
             {/* Hero buttons */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="font-semibold text-sm">Top Hero Buttons</h3>
-                  <p className="text-xs text-muted-foreground">Shown at the very top of the homepage (e.g. Start Painting, Visit Shop)</p>
+                  <p className="text-xs text-muted-foreground">
+                    Shown at the very top of the homepage (e.g. Start Painting, Visit Shop)
+                  </p>
                 </div>
                 <Button size="sm" variant="outline" onClick={addHeroButton}>
                   <Plus className="h-3 w-3 mr-1" />
@@ -531,7 +523,13 @@ export function HomepageSettings() {
               )}
 
               {heroButtons.map(btn => (
-                <ButtonEditor key={btn.id} btn={btn} />
+                <ButtonEditor
+                  key={btn.id}
+                  btn={btn}
+                  onUpdate={updateButton}
+                  onDelete={deleteButton}
+                  onMove={moveButton}
+                />
               ))}
             </div>
 
@@ -541,13 +539,14 @@ export function HomepageSettings() {
             <div className="space-y-4">
               <div>
                 <h3 className="font-semibold text-sm">Between-Section Buttons</h3>
-                <p className="text-xs text-muted-foreground">Add buttons that appear between homepage section boxes (e.g. after Art, before Cards)</p>
+                <p className="text-xs text-muted-foreground">
+                  Add buttons that appear between homepage section boxes (e.g. after Art, before Cards)
+                </p>
               </div>
 
               {sections.map(section => {
                 const sectionInterButtons = interButtons(section.id);
                 const Icon = ICON_MAP[section.icon];
-
                 return (
                   <div key={section.id} className="border rounded-lg p-3 space-y-2 bg-gray-50 dark:bg-gray-900/50">
                     <div className="flex items-center justify-between">
@@ -564,15 +563,19 @@ export function HomepageSettings() {
                       </Button>
                     </div>
 
-                    {sectionInterButtons.length > 0 && (
+                    {sectionInterButtons.length > 0 ? (
                       <div className="space-y-2 mt-2">
                         {sectionInterButtons.map(btn => (
-                          <ButtonEditor key={btn.id} btn={btn} />
+                          <ButtonEditor
+                            key={btn.id}
+                            btn={btn}
+                            onUpdate={updateButton}
+                            onDelete={deleteButton}
+                            onMove={moveButton}
+                          />
                         ))}
                       </div>
-                    )}
-
-                    {sectionInterButtons.length === 0 && (
+                    ) : (
                       <p className="text-xs text-muted-foreground italic">No buttons after this section.</p>
                     )}
                   </div>
@@ -587,15 +590,9 @@ export function HomepageSettings() {
         <div className="flex gap-2">
           <Button onClick={handleSave} disabled={isPublishing}>
             {isPublishing ? (
-              <>
-                <Save className="h-4 w-4 mr-2 animate-pulse" />
-                Saving...
-              </>
+              <><Save className="h-4 w-4 mr-2 animate-pulse" />Saving...</>
             ) : (
-              <>
-                <Save className="h-4 w-4 mr-2" />
-                Save to Nostr
-              </>
+              <><Save className="h-4 w-4 mr-2" />Save to Nostr</>
             )}
           </Button>
           <Button variant="outline" onClick={handleReset} disabled={isPublishing}>
@@ -613,6 +610,7 @@ export function HomepageSettings() {
             <li>Changes are saved to Nostr and visible to all visitors</li>
           </ul>
         </div>
+
       </CardContent>
     </Card>
   );
