@@ -43,9 +43,11 @@ import {
   Image as ImageIcon,
   Clapperboard,
   Play,
+  ExternalLink,
 } from 'lucide-react';
 import type { NostrEvent, NostrMetadata } from '@nostrify/nostrify';
 import type { ArtworkData } from '@/lib/artTypes';
+import type { HomepageButton } from '@/hooks/useHomepageSettings';
 import { nip19 } from 'nostr-tools';
 
 const ADMIN_NPUB = 'npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz';
@@ -297,6 +299,58 @@ function ArtworkThumbnail({ artwork }: { artwork: ArtworkData }) {
   );
 }
 
+function DynamicButton({ btn, size = 'default' }: { btn: HomepageButton; size?: 'default' | 'lg' | 'sm' }) {
+  const isExternal = btn.url.startsWith('http://') || btn.url.startsWith('https://');
+
+  const variantProps = btn.variant === 'primary'
+    ? { variant: 'default' as const }
+    : btn.variant === 'accent'
+    ? { variant: 'outline' as const }
+    : { variant: 'outline' as const };
+
+  const accentClass = btn.variant === 'accent'
+    ? 'border-orange-300 hover:bg-orange-50 dark:border-orange-700 dark:hover:bg-orange-900/20'
+    : '';
+
+  const primaryStyle = btn.variant === 'primary' ? { style: { background: 'linear-gradient(135deg, #ec4899, #8b5cf6)', border: 'none' } } : {};
+
+  if (isExternal) {
+    return (
+      <Button size={size} {...variantProps} className={`rounded-full ${accentClass}`} {...primaryStyle} asChild>
+        <a href={btn.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
+          {btn.variant === 'primary' && <Sparkles className="h-4 w-4" />}
+          {btn.variant === 'accent' && <MapPin className="h-4 w-4 text-orange-600 dark:text-orange-400" />}
+          {btn.variant === 'outline' && <Gift className="h-4 w-4" />}
+          {btn.label}
+          <ExternalLink className="h-3 w-3 opacity-60" />
+        </a>
+      </Button>
+    );
+  }
+
+  return (
+    <Button size={size} {...variantProps} className={`rounded-full ${accentClass}`} {...primaryStyle} asChild>
+      <Link to={btn.url} className="flex items-center gap-2">
+        {btn.variant === 'primary' && <Sparkles className="h-4 w-4" />}
+        {btn.variant === 'accent' && <MapPin className="h-4 w-4 text-orange-600 dark:text-orange-400" />}
+        {btn.variant === 'outline' && <Gift className="h-4 w-4" />}
+        {btn.label}
+      </Link>
+    </Button>
+  );
+}
+
+function InterSectionButtons({ buttons }: { buttons: HomepageButton[] }) {
+  if (!buttons || buttons.length === 0) return null;
+  return (
+    <div className="flex flex-wrap justify-center gap-3 mb-12 -mt-8">
+      {buttons.map(btn => (
+        <DynamicButton key={btn.id} btn={btn} size="default" />
+      ))}
+    </div>
+  );
+}
+
 function ThumbnailSkeleton() {
   return (
     <Card className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
@@ -335,13 +389,24 @@ const Index = () => {
   // View mode toggle state
   const [viewMode, setViewMode] = useState<'gallery' | 'progress'>('gallery');
   
+  // Extract sections and buttons from the new settings shape
+  const sections = homepageSettings?.sections;
+  const allButtons = homepageSettings?.buttons || [];
+
   // Get ordered section IDs based on settings
-  const orderedSections = homepageSettings?.filter(s => s.enabled).map(s => s.id) || [];
+  const orderedSections = sections?.filter(s => s.enabled).map(s => s.id) || [];
   
+  // Hero buttons (top of page) sorted by order
+  const heroButtons = allButtons.filter(b => b.isHero).sort((a, b) => a.order - b.order);
+  
+  // Inter-section buttons (after a specific section)
+  const getInterButtons = (sectionId: string) =>
+    allButtons.filter(b => !b.isHero && b.afterSectionId === sectionId).sort((a, b) => a.order - b.order);
+
   // Helper to check if section is enabled
   const isSectionEnabled = (id: string) => {
     // If settings haven't loaded yet, show only essential sections (not nostr-projects)
-    if (!homepageSettings) return ['projects', 'art', 'cards', 'free-downloads', 'news'].includes(id);
+    if (!sections) return ['projects', 'art', 'cards', 'free-downloads', 'news'].includes(id);
     // Otherwise only show if in enabled list
     return orderedSections.includes(id);
   };
@@ -381,7 +446,7 @@ const Index = () => {
 
   // Get section settings
   const getSectionSettings = (id: string) => {
-    return homepageSettings?.find(s => s.id === id) || null;
+    return sections?.find(s => s.id === id) || null;
   };
 
   console.log('[Homepage] Ordered sections:', orderedSections);
@@ -1145,36 +1210,45 @@ const Index = () => {
         {/* Hero Section */}
         <div className="text-center mb-16 pt-8">
           <div className="flex flex-col gap-4 items-center">
-            {/* Main Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button 
-                size="lg" 
-                asChild 
-                className="rounded-full text-white border-0"
-                style={getGradientStyle('primary')}
-              >
-                <Link to="/canvas">
-                  <Sparkles className="mr-2 h-5 w-5" />
-                  Start Painting
-                </Link>
-              </Button>
-              <Button size="lg" variant="outline" asChild className="rounded-full">
-                <Link to="/shop">
-                  <Gift className="mr-2 h-5 w-5" />
-                  Visit Shop
-                </Link>
-              </Button>
-              <Button 
-                size="lg" 
-                variant="outline" 
-                asChild 
-                className="rounded-full border-orange-300 hover:bg-orange-50 dark:border-orange-700 dark:hover:bg-orange-900/20"
-              >
-                <Link to="/popup">
-                  <MapPin className="mr-2 h-5 w-5 text-orange-600 dark:text-orange-400" />
-                  Pop Tour
-                </Link>
-              </Button>
+            {/* Dynamic Hero Buttons from settings (fall back to defaults if not loaded) */}
+            <div className="flex flex-col sm:flex-row flex-wrap gap-4 justify-center">
+              {heroButtons.length > 0 ? (
+                heroButtons.map(btn => (
+                  <DynamicButton key={btn.id} btn={btn} size="lg" />
+                ))
+              ) : (
+                /* Default buttons while settings load */
+                <>
+                  <Button 
+                    size="lg" 
+                    asChild 
+                    className="rounded-full text-white border-0"
+                    style={getGradientStyle('primary')}
+                  >
+                    <Link to="/canvas">
+                      <Sparkles className="mr-2 h-5 w-5" />
+                      Start Painting
+                    </Link>
+                  </Button>
+                  <Button size="lg" variant="outline" asChild className="rounded-full">
+                    <Link to="/shop">
+                      <Gift className="mr-2 h-5 w-5" />
+                      Visit Shop
+                    </Link>
+                  </Button>
+                  <Button 
+                    size="lg" 
+                    variant="outline" 
+                    asChild 
+                    className="rounded-full border-orange-300 hover:bg-orange-50 dark:border-orange-700 dark:hover:bg-orange-900/20"
+                  >
+                    <Link to="/popup">
+                      <MapPin className="mr-2 h-5 w-5 text-orange-600 dark:text-orange-400" />
+                      Pop Tour
+                    </Link>
+                  </Button>
+                </>
+              )}
             </div>
             
             {/* Art Progress Toggle - desktop: next to buttons, mobile: below */}
@@ -1250,8 +1324,15 @@ const Index = () => {
             />
           </div>
         ) : (
-          /* Gallery View - Dynamic Sections based on settings */
-          orderedSections.map(renderSection)
+          /* Gallery View - Dynamic Sections with inter-section buttons */
+          <>
+            {orderedSections.map(sectionId => (
+              <div key={sectionId}>
+                {renderSection(sectionId)}
+                <InterSectionButtons buttons={getInterButtons(sectionId)} />
+              </div>
+            ))}
+          </>
         )}
 
         {/* LEGACY: Featured Nostr Projects Section (keep as fallback) */}

@@ -5,12 +5,15 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNostr } from '@nostrify/react';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { getAdminPubkeyHex } from '@/lib/adminUtils';
+import type { HomepageSection, HomepageButton, HomepageSettings } from '@/hooks/useHomepageSettings';
 import {
   Home,
   GripVertical,
@@ -23,17 +26,14 @@ import {
   Rss,
   FolderKanban,
   Users,
-  FileText
+  FileText,
+  Download,
+  Plus,
+  Trash2,
+  MousePointerClick,
+  ChevronUp,
+  ChevronDown,
 } from 'lucide-react';
-
-interface HomepageSection {
-  id: string;
-  title: string;
-  subtitle: string;
-  icon: string;
-  enabled: boolean;
-  order: number;
-}
 
 const DEFAULT_SECTIONS: HomepageSection[] = [
   {
@@ -86,14 +86,49 @@ const DEFAULT_SECTIONS: HomepageSection[] = [
   },
 ];
 
-const ICON_MAP: Record<string, any> = {
+const DEFAULT_BUTTONS: HomepageButton[] = [
+  {
+    id: 'btn-start-painting',
+    label: 'Start Painting',
+    url: '/canvas',
+    variant: 'primary',
+    isHero: true,
+    afterSectionId: null,
+    order: 0,
+  },
+  {
+    id: 'btn-visit-shop',
+    label: 'Visit Shop',
+    url: '/shop',
+    variant: 'outline',
+    isHero: true,
+    afterSectionId: null,
+    order: 1,
+  },
+  {
+    id: 'btn-pop-tour',
+    label: 'Pop Tour',
+    url: '/popup',
+    variant: 'accent',
+    isHero: true,
+    afterSectionId: null,
+    order: 2,
+  },
+];
+
+const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   Users,
   FolderKanban,
   Palette,
   CreditCard,
   Rss,
   FileText,
+  Download,
 };
+
+function generateId() {
+  return `btn-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+}
 
 export function HomepageSettings() {
   const { user } = useCurrentUser();
@@ -102,8 +137,7 @@ export function HomepageSettings() {
   const adminPubkey = getAdminPubkeyHex();
   const queryClient = useQueryClient();
 
-  // Query homepage settings from Nostr
-  const { data: nostrSections, refetch } = useQuery({
+  const { data: nostrSettings, refetch } = useQuery({
     queryKey: ['homepage-settings', adminPubkey],
     queryFn: async (c) => {
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(5000)]);
@@ -117,90 +151,143 @@ export function HomepageSettings() {
 
       if (events.length > 0 && events[0].content) {
         try {
-          return JSON.parse(events[0].content) as HomepageSection[];
+          const parsed = JSON.parse(events[0].content);
+          if (Array.isArray(parsed)) {
+            // Legacy format
+            return { sections: parsed as HomepageSection[], buttons: DEFAULT_BUTTONS };
+          } else if (parsed && 'sections' in parsed) {
+            return parsed as HomepageSettings;
+          }
         } catch (e) {
           console.error('Failed to parse homepage settings from Nostr:', e);
         }
       }
-      return DEFAULT_SECTIONS;
+      return { sections: DEFAULT_SECTIONS, buttons: DEFAULT_BUTTONS };
     },
     enabled: !!adminPubkey,
   });
 
-  const [sections, setSections] = useState<HomepageSection[]>(nostrSections || DEFAULT_SECTIONS);
+  const [sections, setSections] = useState<HomepageSection[]>(nostrSettings?.sections || DEFAULT_SECTIONS);
+  const [buttons, setButtons] = useState<HomepageButton[]>(nostrSettings?.buttons || DEFAULT_BUTTONS);
+  const [activeTab, setActiveTab] = useState<'sections' | 'buttons'>('sections');
 
-  // Update sections when nostr data changes
   useEffect(() => {
-    if (nostrSections) {
-      setSections(nostrSections);
+    if (nostrSettings) {
+      setSections(nostrSettings.sections || DEFAULT_SECTIONS);
+      setButtons(nostrSettings.buttons || DEFAULT_BUTTONS);
     }
-  }, [nostrSections]);
+  }, [nostrSettings]);
 
+  // --- Section handlers ---
   const handleToggle = (id: string) => {
     setSections(prev =>
-      prev.map(section =>
-        section.id === id ? { ...section, enabled: !section.enabled } : section
-      )
+      prev.map(s => s.id === id ? { ...s, enabled: !s.enabled } : s)
     );
   };
 
-  const handleTitleChange = (id: string, title: string) => {
-    setSections(prev =>
-      prev.map(section =>
-        section.id === id ? { ...section, title } : section
-      )
-    );
+  const handleSectionField = (id: string, field: 'title' | 'subtitle', value: string) => {
+    setSections(prev => prev.map(s => s.id === id ? { ...s, [field]: value } : s));
   };
 
-  const handleSubtitleChange = (id: string, subtitle: string) => {
-    setSections(prev =>
-      prev.map(section =>
-        section.id === id ? { ...section, subtitle } : section
-      )
-    );
-  };
-
-  const moveUp = (index: number) => {
+  const moveSectionUp = (index: number) => {
     if (index === 0) return;
     setSections(prev => {
-      const newSections = [...prev];
-      [newSections[index - 1], newSections[index]] = [newSections[index], newSections[index - 1]];
-      return newSections.map((section, i) => ({ ...section, order: i }));
+      const next = [...prev];
+      [next[index - 1], next[index]] = [next[index], next[index - 1]];
+      return next.map((s, i) => ({ ...s, order: i }));
     });
   };
 
-  const moveDown = (index: number) => {
+  const moveSectionDown = (index: number) => {
     if (index === sections.length - 1) return;
     setSections(prev => {
-      const newSections = [...prev];
-      [newSections[index], newSections[index + 1]] = [newSections[index + 1], newSections[index]];
-      return newSections.map((section, i) => ({ ...section, order: i }));
+      const next = [...prev];
+      [next[index], next[index + 1]] = [next[index + 1], next[index]];
+      return next.map((s, i) => ({ ...s, order: i }));
     });
   };
 
+  // --- Button handlers ---
+  const addHeroButton = () => {
+    const newBtn: HomepageButton = {
+      id: generateId(),
+      label: 'New Button',
+      url: '/',
+      variant: 'outline',
+      isHero: true,
+      afterSectionId: null,
+      order: buttons.filter(b => b.isHero).length,
+    };
+    setButtons(prev => [...prev, newBtn]);
+  };
+
+  const addInterButton = (afterSectionId: string) => {
+    const newBtn: HomepageButton = {
+      id: generateId(),
+      label: 'New Button',
+      url: '/',
+      variant: 'outline',
+      isHero: false,
+      afterSectionId,
+      order: buttons.filter(b => b.afterSectionId === afterSectionId).length,
+    };
+    setButtons(prev => [...prev, newBtn]);
+  };
+
+  const updateButton = (id: string, changes: Partial<HomepageButton>) => {
+    setButtons(prev => prev.map(b => b.id === id ? { ...b, ...changes } : b));
+  };
+
+  const deleteButton = (id: string) => {
+    setButtons(prev => prev.filter(b => b.id !== id));
+  };
+
+  const moveButton = (id: string, dir: 'up' | 'down') => {
+    setButtons(prev => {
+      const btn = prev.find(b => b.id === id);
+      if (!btn) return prev;
+
+      // Get siblings (same isHero + same afterSectionId)
+      const isSameGroup = (b: HomepageButton) =>
+        b.isHero === btn.isHero && b.afterSectionId === btn.afterSectionId;
+
+      const group = prev.filter(isSameGroup).sort((a, b) => a.order - b.order);
+      const idx = group.findIndex(b => b.id === id);
+
+      if (dir === 'up' && idx === 0) return prev;
+      if (dir === 'down' && idx === group.length - 1) return prev;
+
+      const swapIdx = dir === 'up' ? idx - 1 : idx + 1;
+      [group[idx], group[swapIdx]] = [group[swapIdx], group[idx]];
+
+      const updatedGroup = group.map((b, i) => ({ ...b, order: i }));
+      const others = prev.filter(b => !isSameGroup(b));
+      return [...others, ...updatedGroup];
+    });
+  };
+
+  // --- Save ---
   const handleSave = () => {
     if (!user) {
       toast.error('Please log in to save homepage settings');
       return;
     }
 
-    // Publish to Nostr
+    const payload: HomepageSettings = {
+      sections: sections.map((s, i) => ({ ...s, order: i })),
+      buttons: buttons,
+    };
+
     publishEvent({
       kind: 30078,
-      content: JSON.stringify(sections),
+      content: JSON.stringify(payload),
       tags: [['d', 'com.bitpopart.homepage-settings']],
     }, {
       onSuccess: () => {
-        toast.success('Homepage settings saved to Nostr! Changes are now visible to everyone.');
-        
-        // Invalidate both query keys to force fresh data
+        toast.success('Homepage settings saved to Nostr!');
         queryClient.invalidateQueries({ queryKey: ['homepage-settings', adminPubkey] });
         queryClient.invalidateQueries({ queryKey: ['homepage-settings-public', adminPubkey] });
-        
-        // Also dispatch custom event for any other listeners
-        window.dispatchEvent(new CustomEvent('homepage-settings-updated', { detail: sections }));
-        
-        // Refetch this component's data
+        window.dispatchEvent(new CustomEvent('homepage-settings-updated', { detail: payload }));
         refetch();
       },
       onError: (error) => {
@@ -214,23 +301,18 @@ export function HomepageSettings() {
       toast.error('Please log in to reset homepage settings');
       return;
     }
-
     setSections(DEFAULT_SECTIONS);
-    
-    // Publish default settings to Nostr
+    setButtons(DEFAULT_BUTTONS);
+    const payload: HomepageSettings = { sections: DEFAULT_SECTIONS, buttons: DEFAULT_BUTTONS };
     publishEvent({
       kind: 30078,
-      content: JSON.stringify(DEFAULT_SECTIONS),
+      content: JSON.stringify(payload),
       tags: [['d', 'com.bitpopart.homepage-settings']],
     }, {
       onSuccess: () => {
         toast.success('Homepage settings reset to default!');
-        
-        // Invalidate both query keys to force fresh data
         queryClient.invalidateQueries({ queryKey: ['homepage-settings', adminPubkey] });
         queryClient.invalidateQueries({ queryKey: ['homepage-settings-public', adminPubkey] });
-        
-        // Refetch this component's data
         refetch();
       },
       onError: (error) => {
@@ -250,98 +332,255 @@ export function HomepageSettings() {
     );
   }
 
+  const heroButtons = buttons.filter(b => b.isHero).sort((a, b) => a.order - b.order);
+  const interButtons = (sectionId: string) =>
+    buttons.filter(b => !b.isHero && b.afterSectionId === sectionId).sort((a, b) => a.order - b.order);
+
+  const variantLabel: Record<HomepageButton['variant'], string> = {
+    primary: 'Primary (filled)',
+    outline: 'Outline',
+    accent: 'Accent (orange)',
+  };
+
+  const ButtonEditor = ({ btn }: { btn: HomepageButton }) => (
+    <div className="border rounded-lg p-3 space-y-2 bg-white dark:bg-gray-900">
+      <div className="flex items-center justify-between gap-2">
+        <Badge variant="outline" className="text-xs shrink-0">
+          {btn.isHero ? 'Hero' : 'Between sections'}
+        </Badge>
+        <div className="flex gap-1 ml-auto">
+          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => moveButton(btn.id, 'up')}>
+            <ChevronUp className="h-3 w-3" />
+          </Button>
+          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => moveButton(btn.id, 'down')}>
+            <ChevronDown className="h-3 w-3" />
+          </Button>
+          <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive hover:text-destructive" onClick={() => deleteButton(btn.id)}>
+            <Trash2 className="h-3 w-3" />
+          </Button>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <div>
+          <Label className="text-xs text-muted-foreground">Button Label</Label>
+          <Input
+            value={btn.label}
+            onChange={e => updateButton(btn.id, { label: e.target.value })}
+            placeholder="e.g. Start Painting"
+            className="h-8 text-sm"
+          />
+        </div>
+        <div>
+          <Label className="text-xs text-muted-foreground">URL / Link</Label>
+          <Input
+            value={btn.url}
+            onChange={e => updateButton(btn.id, { url: e.target.value })}
+            placeholder="e.g. /nostr or https://..."
+            className="h-8 text-sm"
+          />
+        </div>
+      </div>
+      <div>
+        <Label className="text-xs text-muted-foreground">Style</Label>
+        <Select value={btn.variant} onValueChange={v => updateButton(btn.id, { variant: v as HomepageButton['variant'] })}>
+          <SelectTrigger className="h-8 text-sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {(Object.keys(variantLabel) as HomepageButton['variant'][]).map(v => (
+              <SelectItem key={v} value={v}>{variantLabel[v]}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  );
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Home className="h-5 w-5" />
-          Homepage Sections
+          Homepage Settings
         </CardTitle>
         <CardDescription>
-          Customize which sections appear on your homepage and in what order
+          Customize sections, order, and buttons on your homepage
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="space-y-4">
-          {sections.map((section, index) => {
-            const Icon = ICON_MAP[section.icon];
-            
-            return (
-              <Card key={section.id} className={!section.enabled ? 'opacity-60' : ''}>
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-4">
-                    {/* Drag Handle & Icon */}
-                    <div className="flex flex-col items-center gap-2 pt-1">
-                      <GripVertical className="h-5 w-5 text-muted-foreground cursor-move" />
-                      {Icon && <Icon className="h-5 w-5 text-purple-600" />}
-                    </div>
+        {/* Tab switcher */}
+        <div className="flex gap-2 border-b pb-3">
+          <Button
+            variant={activeTab === 'sections' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setActiveTab('sections')}
+          >
+            <Home className="h-4 w-4 mr-2" />
+            Sections
+          </Button>
+          <Button
+            variant={activeTab === 'buttons' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setActiveTab('buttons')}
+          >
+            <MousePointerClick className="h-4 w-4 mr-2" />
+            Buttons
+          </Button>
+        </div>
 
-                    {/* Content */}
-                    <div className="flex-1 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <Switch
-                            checked={section.enabled}
-                            onCheckedChange={() => handleToggle(section.id)}
-                          />
-                          <div className="flex items-center gap-2">
-                            {section.enabled ? (
-                              <Eye className="h-4 w-4 text-green-600" />
-                            ) : (
-                              <EyeOff className="h-4 w-4 text-gray-400" />
-                            )}
-                            <span className="text-sm font-medium">
-                              {section.enabled ? 'Visible' : 'Hidden'}
-                            </span>
+        {/* ===== SECTIONS TAB ===== */}
+        {activeTab === 'sections' && (
+          <div className="space-y-4">
+            {sections.map((section, index) => {
+              const Icon = ICON_MAP[section.icon];
+
+              return (
+                <Card key={section.id} className={!section.enabled ? 'opacity-60' : ''}>
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-4">
+                      <div className="flex flex-col items-center gap-2 pt-1">
+                        <GripVertical className="h-5 w-5 text-muted-foreground cursor-move" />
+                        {Icon && <Icon className="h-5 w-5 text-purple-600" />}
+                      </div>
+
+                      <div className="flex-1 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <Switch
+                              checked={section.enabled}
+                              onCheckedChange={() => handleToggle(section.id)}
+                            />
+                            <div className="flex items-center gap-2">
+                              {section.enabled ? (
+                                <Eye className="h-4 w-4 text-green-600" />
+                              ) : (
+                                <EyeOff className="h-4 w-4 text-gray-400" />
+                              )}
+                              <span className="text-sm font-medium">
+                                {section.enabled ? 'Visible' : 'Hidden'}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex gap-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => moveSectionUp(index)}
+                              disabled={index === 0}
+                            >
+                              ↑
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => moveSectionDown(index)}
+                              disabled={index === sections.length - 1}
+                            >
+                              ↓
+                            </Button>
                           </div>
                         </div>
-                        <div className="flex gap-1">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => moveUp(index)}
-                            disabled={index === 0}
-                          >
-                            ↑
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => moveDown(index)}
-                            disabled={index === sections.length - 1}
-                          >
-                            ↓
-                          </Button>
-                        </div>
-                      </div>
 
-                      <div className="space-y-2">
-                        <div>
-                          <Label className="text-xs text-muted-foreground">Section Title</Label>
-                          <Input
-                            value={section.title}
-                            onChange={(e) => handleTitleChange(section.id, e.target.value)}
-                            placeholder="Section title"
-                            disabled={!section.enabled}
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-xs text-muted-foreground">Section Subtitle</Label>
-                          <Input
-                            value={section.subtitle}
-                            onChange={(e) => handleSubtitleChange(section.id, e.target.value)}
-                            placeholder="Section subtitle"
-                            disabled={!section.enabled}
-                          />
+                        <div className="space-y-2">
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Section Title</Label>
+                            <Input
+                              value={section.title}
+                              onChange={e => handleSectionField(section.id, 'title', e.target.value)}
+                              placeholder="Section title"
+                              disabled={!section.enabled}
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Section Subtitle</Label>
+                            <Input
+                              value={section.subtitle}
+                              onChange={e => handleSectionField(section.id, 'subtitle', e.target.value)}
+                              placeholder="Section subtitle"
+                              disabled={!section.enabled}
+                            />
+                          </div>
                         </div>
                       </div>
                     </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ===== BUTTONS TAB ===== */}
+        {activeTab === 'buttons' && (
+          <div className="space-y-6">
+            {/* Hero buttons */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold text-sm">Top Hero Buttons</h3>
+                  <p className="text-xs text-muted-foreground">Shown at the very top of the homepage (e.g. Start Painting, Visit Shop)</p>
+                </div>
+                <Button size="sm" variant="outline" onClick={addHeroButton}>
+                  <Plus className="h-3 w-3 mr-1" />
+                  Add
+                </Button>
+              </div>
+
+              {heroButtons.length === 0 && (
+                <p className="text-sm text-muted-foreground italic">No hero buttons yet. Add one above.</p>
+              )}
+
+              {heroButtons.map(btn => (
+                <ButtonEditor key={btn.id} btn={btn} />
+              ))}
+            </div>
+
+            <Separator />
+
+            {/* Inter-section buttons */}
+            <div className="space-y-4">
+              <div>
+                <h3 className="font-semibold text-sm">Between-Section Buttons</h3>
+                <p className="text-xs text-muted-foreground">Add buttons that appear between homepage section boxes (e.g. after Art, before Cards)</p>
+              </div>
+
+              {sections.map(section => {
+                const sectionInterButtons = interButtons(section.id);
+                const Icon = ICON_MAP[section.icon];
+
+                return (
+                  <div key={section.id} className="border rounded-lg p-3 space-y-2 bg-gray-50 dark:bg-gray-900/50">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        {Icon && <Icon className="h-4 w-4 text-purple-500" />}
+                        <span className="text-sm font-medium">After "{section.title}"</span>
+                        {!section.enabled && (
+                          <Badge variant="secondary" className="text-xs">Hidden</Badge>
+                        )}
+                      </div>
+                      <Button size="sm" variant="outline" onClick={() => addInterButton(section.id)}>
+                        <Plus className="h-3 w-3 mr-1" />
+                        Add button here
+                      </Button>
+                    </div>
+
+                    {sectionInterButtons.length > 0 && (
+                      <div className="space-y-2 mt-2">
+                        {sectionInterButtons.map(btn => (
+                          <ButtonEditor key={btn.id} btn={btn} />
+                        ))}
+                      </div>
+                    )}
+
+                    {sectionInterButtons.length === 0 && (
+                      <p className="text-xs text-muted-foreground italic">No buttons after this section.</p>
+                    )}
                   </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <Separator />
 
@@ -365,25 +604,14 @@ export function HomepageSettings() {
           </Button>
         </div>
 
-        <div className="space-y-4">
-          <div className="text-sm bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 space-y-2">
-            <p className="font-semibold">💡 How It Works:</p>
-            <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-              <li>Toggle sections on/off to show/hide them on the homepage</li>
-              <li>Customize the title and subtitle for each section</li>
-              <li>Settings are saved to Nostr and visible to all visitors</li>
-              <li>Hidden sections won't appear on the homepage for anyone</li>
-              <li>Refresh the page after saving to see changes</li>
-            </ul>
-          </div>
-
-          <div className="text-sm bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 space-y-2">
-            <p className="font-semibold">⚠️ Section Ordering:</p>
-            <p className="text-muted-foreground">
-              The ↑↓ buttons change the order in this list, but section ordering on the homepage is currently fixed in this sequence: Nostr Projects → Projects → Art → Cards → Pages → News. 
-              This will be updated in a future version to respect custom ordering.
-            </p>
-          </div>
+        <div className="text-sm bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 space-y-2">
+          <p className="font-semibold">💡 Tips:</p>
+          <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+            <li>Use <strong>Sections</strong> tab to show/hide and reorder homepage sections</li>
+            <li>Use <strong>Buttons</strong> tab to manage hero buttons (top of page) and buttons between sections</li>
+            <li>Button URLs can be internal paths like <code>/nostr</code> or full URLs like <code>https://bitpopart.com/nostr</code></li>
+            <li>Changes are saved to Nostr and visible to all visitors</li>
+          </ul>
         </div>
       </CardContent>
     </Card>

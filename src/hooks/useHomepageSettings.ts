@@ -3,6 +3,18 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNostr } from '@nostrify/react';
 import { getAdminPubkeyHex } from '@/lib/adminUtils';
 
+export interface HomepageButton {
+  id: string;
+  label: string;
+  url: string;
+  variant: 'primary' | 'outline' | 'accent';
+  /** If set, this button appears between the section with this id and the next */
+  afterSectionId?: string | null;
+  /** True = shown in the top hero button row */
+  isHero?: boolean;
+  order: number;
+}
+
 export interface HomepageSection {
   id: string;
   title: string;
@@ -10,6 +22,11 @@ export interface HomepageSection {
   icon: string;
   enabled: boolean;
   order: number;
+}
+
+export interface HomepageSettings {
+  sections: HomepageSection[];
+  buttons: HomepageButton[];
 }
 
 const DEFAULT_SECTIONS: HomepageSection[] = [
@@ -71,6 +88,36 @@ const DEFAULT_SECTIONS: HomepageSection[] = [
   },
 ];
 
+const DEFAULT_BUTTONS: HomepageButton[] = [
+  {
+    id: 'btn-start-painting',
+    label: 'Start Painting',
+    url: '/canvas',
+    variant: 'primary',
+    isHero: true,
+    afterSectionId: null,
+    order: 0,
+  },
+  {
+    id: 'btn-visit-shop',
+    label: 'Visit Shop',
+    url: '/shop',
+    variant: 'outline',
+    isHero: true,
+    afterSectionId: null,
+    order: 1,
+  },
+  {
+    id: 'btn-pop-tour',
+    label: 'Pop Tour',
+    url: '/popup',
+    variant: 'accent',
+    isHero: true,
+    afterSectionId: null,
+    order: 2,
+  },
+];
+
 export function useHomepageSettings() {
   const { nostr } = useNostr();
   const adminPubkey = getAdminPubkeyHex();
@@ -91,28 +138,39 @@ export function useHomepageSettings() {
 
         if (events.length > 0 && events[0].content) {
           try {
-            const parsed = JSON.parse(events[0].content) as HomepageSection[];
+            const parsed = JSON.parse(events[0].content);
             console.log('[useHomepageSettings] Loaded settings from Nostr:', parsed);
+
+            // Handle both old format (array) and new format (object with sections + buttons)
+            let sections: HomepageSection[];
+            let buttons: HomepageButton[];
+
+            if (Array.isArray(parsed)) {
+              // Legacy format: just sections array
+              sections = parsed as HomepageSection[];
+              buttons = DEFAULT_BUTTONS;
+            } else if (parsed && typeof parsed === 'object' && 'sections' in parsed) {
+              sections = (parsed as HomepageSettings).sections || [];
+              buttons = (parsed as HomepageSettings).buttons || DEFAULT_BUTTONS;
+            } else {
+              sections = DEFAULT_SECTIONS;
+              buttons = DEFAULT_BUTTONS;
+            }
 
             // Merge: keep saved sections, then splice in any DEFAULT sections not yet
             // saved at their intended default position (not just appended at the end).
-            // This ensures newly added sections always appear in the right place even
-            // when the admin hasn't re-saved homepage settings after a code update.
-            const savedIds = new Set(parsed.map(s => s.id));
-            const merged = [...parsed];
+            const savedIds = new Set(sections.map(s => s.id));
+            const merged = [...sections];
 
             for (const def of DEFAULT_SECTIONS) {
               if (savedIds.has(def.id)) continue;
 
-              // Find the default section that should come right after this one,
-              // and look for that section in the merged list to insert before it.
               const defaultOrder = DEFAULT_SECTIONS.map(s => s.id);
               const defPos = defaultOrder.indexOf(def.id);
               const followingIds = defaultOrder.slice(defPos + 1);
               const insertBeforeIdx = merged.findIndex(s => followingIds.includes(s.id));
 
               if (insertBeforeIdx !== -1) {
-                // Give it an order value just below the section it precedes
                 const beforeOrder = merged[insertBeforeIdx].order;
                 const prevOrder = insertBeforeIdx > 0 ? merged[insertBeforeIdx - 1].order : beforeOrder - 2;
                 merged.splice(insertBeforeIdx, 0, {
@@ -120,13 +178,15 @@ export function useHomepageSettings() {
                   order: (prevOrder + beforeOrder) / 2,
                 });
               } else {
-                // No following section found — append at end
                 const maxOrder = merged.reduce((m, s) => Math.max(m, s.order), -1);
                 merged.push({ ...def, order: maxOrder + 1 });
               }
             }
 
-            return merged.sort((a, b) => a.order - b.order);
+            return {
+              sections: merged.sort((a, b) => a.order - b.order),
+              buttons: buttons.sort((a, b) => a.order - b.order),
+            } as HomepageSettings;
           } catch (e) {
             console.error('[useHomepageSettings] Failed to parse settings from Nostr:', e);
           }
@@ -135,18 +195,20 @@ export function useHomepageSettings() {
         console.error('[useHomepageSettings] Failed to fetch settings:', error);
       }
       
-      return DEFAULT_SECTIONS.sort((a, b) => a.order - b.order);
+      return {
+        sections: DEFAULT_SECTIONS.sort((a, b) => a.order - b.order),
+        buttons: DEFAULT_BUTTONS.sort((a, b) => a.order - b.order),
+      } as HomepageSettings;
     },
     enabled: !!adminPubkey,
-    staleTime: 0, // Don't cache - always fresh data
-    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes but allow refetching
+    staleTime: 0,
+    gcTime: 5 * 60 * 1000,
   });
 
   // Listen for custom events from admin settings to refetch immediately
   useEffect(() => {
     const handleSettingsUpdate = () => {
       console.log('[useHomepageSettings] Received settings update event, invalidating cache and refetching...');
-      // Invalidate the cache to force a fresh fetch
       queryClient.invalidateQueries({ queryKey: ['homepage-settings-public', adminPubkey] });
     };
 
