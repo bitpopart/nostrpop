@@ -24,14 +24,18 @@ export interface BidConfirmation {
   duration_extended?: number; // seconds to extend auction
 }
 
+// Minimum real bid amount — the 21-sat Lightning entry fee is not a bid
+const MIN_REAL_BID = 22;
+
 /**
  * Parse a raw Nostr event into a BidData object.
  * Returns null if the event is not a valid bid.
+ * Ignores amounts ≤ 21 sats (those are Lightning proof-of-intent payments, not bids).
  */
 function parseBidEvent(event: NostrEvent, artworkEventId: string): BidData | null {
   try {
     const amount = parseInt(event.content);
-    if (isNaN(amount) || amount <= 0) return null;
+    if (isNaN(amount) || amount < MIN_REAL_BID) return null;
 
     return {
       id: event.id,
