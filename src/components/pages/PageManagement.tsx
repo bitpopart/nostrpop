@@ -13,11 +13,12 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Plus, X, Upload, FileText, Edit, Image as ImageIcon,
   ExternalLink, Trash2, Loader2, Globe, Zap, Coffee,
   MoveUp, MoveDown, Type, Film, UserCircle2, LayoutPanelTop,
-  GalleryHorizontal, Eye,
+  GalleryHorizontal, Eye, Code2, FileCode,
 } from 'lucide-react';
 import { generateSlug } from '@/lib/pageTypes';
 import type { PageData } from '@/lib/pageTypes';
@@ -310,6 +311,8 @@ export function PageManagement() {
 
   const [isCreating, setIsCreating] = useState(false);
   const [editingPage, setEditingPage] = useState<PageData | null>(null);
+  // 'static' = normal content blocks page, 'html' = full HTML upload page
+  const [pageTab, setPageTab] = useState<'static' | 'html'>('static');
 
   // Basic fields
   const [title, setTitle] = useState('');
@@ -353,6 +356,7 @@ export function PageManagement() {
     setEditingPage(null);
     setIsCreating(false);
     setShowPreview(false);
+    setPageTab('static');
   }
 
   function openCreate() {
@@ -373,9 +377,11 @@ export function PageManagement() {
     if (page.brand_site_is_srcdoc && page.brand_site) {
       setBrandSiteHtml(page.brand_site);
       setBrandSiteUrl('');
+      setPageTab('html');
     } else {
       setBrandSiteUrl(page.brand_site ?? '');
       setBrandSiteHtml('');
+      setPageTab('static');
     }
 
     // Parse blocks from description
@@ -479,6 +485,11 @@ export function PageManagement() {
         return;
       }
 
+      if (pageTab === 'html' && !brandSiteHtml.trim()) {
+        toast.error('Please upload an HTML file');
+        return;
+      }
+
       const slug = editingPage?.id ?? generateSlug(title);
 
       if (!editingPage) {
@@ -493,7 +504,8 @@ export function PageManagement() {
         }
       }
 
-      const isHtml = !!brandSiteHtml.trim();
+      // HTML tab pages use brandSiteHtml; static pages never use it
+      const isHtml = pageTab === 'html' && !!brandSiteHtml.trim();
 
       // Collect all gallery images from gallery blocks for legacy gallery_images field
       const allGalleryImages = blocks
@@ -597,169 +609,223 @@ export function PageManagement() {
           </CardHeader>
           <CardContent className="space-y-6">
 
-            {/* ── Title ── */}
+            {/* ── Page Title — always visible ── */}
             <div className="space-y-2">
               <Label>Page Title *</Label>
               <Input
                 value={title}
                 onChange={e => setTitle(e.target.value)}
-                placeholder="About Us, Contact, Nostr..."
+                placeholder="About Us, Contact, Download..."
               />
               {title && (
-                <p className="text-xs text-muted-foreground">URL: /{editingPage?.id ?? generateSlug(title)}</p>
+                <p className="text-xs text-muted-foreground">
+                  URL: <span className="font-mono">/{editingPage?.id ?? generateSlug(title)}</span>
+                </p>
               )}
             </div>
 
-            {/* ── Header Image ── */}
-            <div className="space-y-2">
-              <Label>Header Image (optional)</Label>
-              {headerImage ? (
-                <div className="space-y-2">
-                  <img src={headerImage} className="w-full h-40 object-cover rounded" />
-                  <Button type="button" variant="outline" size="sm" onClick={() => setHeaderImage('')}>
-                    <X className="h-4 w-4 mr-1" /> Remove
-                  </Button>
+            {/* ── Page Type Tabs ── */}
+            <Tabs value={pageTab} onValueChange={v => setPageTab(v as 'static' | 'html')}>
+              <TabsList className="w-full h-auto p-1 grid grid-cols-2">
+                <TabsTrigger value="static" className="flex flex-col items-center gap-1 py-3 h-auto">
+                  <FileText className="h-4 w-4" />
+                  <span className="font-semibold text-sm">Static Page</span>
+                  <span className="text-xs font-normal opacity-70 leading-tight text-center">Text, images &amp; content blocks</span>
+                </TabsTrigger>
+                <TabsTrigger value="html" className="flex flex-col items-center gap-1 py-3 h-auto">
+                  <FileCode className="h-4 w-4" />
+                  <span className="font-semibold text-sm">HTML Upload</span>
+                  <span className="text-xs font-normal opacity-70 leading-tight text-center">Upload &amp; edit a custom HTML file</span>
+                </TabsTrigger>
+              </TabsList>
+
+              {/* ════════════════════════════════
+                  STATIC PAGE TAB
+              ════════════════════════════════ */}
+              <TabsContent value="static" className="space-y-6 mt-6">
+
+                <div className="rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-900/10 dark:border-blue-800 px-4 py-3 text-xs text-blue-700 dark:text-blue-300 flex items-start gap-2">
+                  <FileText className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                  <span>A <strong>Static Page</strong> is built with content blocks — text, galleries, and media. It uses your site's header menu and style. Perfect for About, Contact, or any regular page.</span>
                 </div>
-              ) : (
+
+                {/* Header Image */}
                 <div className="space-y-2">
-                  <input ref={headerImageRef} type="file" accept="image/*" className="hidden" onChange={handleHeaderImageUpload} />
-                  <Button type="button" variant="outline" className="w-full" onClick={() => headerImageRef.current?.click()} disabled={isUploading}>
-                    {isUploading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Uploading...</> : <><Upload className="h-4 w-4 mr-2" />Upload Header Image</>}
-                  </Button>
-                  <Input type="url" placeholder="Or paste image URL" value={headerImage} onChange={e => setHeaderImage(e.target.value)} />
+                  <Label>Header Image (optional)</Label>
+                  {headerImage ? (
+                    <div className="space-y-2">
+                      <img src={headerImage} className="w-full h-40 object-cover rounded" />
+                      <Button type="button" variant="outline" size="sm" onClick={() => setHeaderImage('')}>
+                        <X className="h-4 w-4 mr-1" /> Remove
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <input ref={headerImageRef} type="file" accept="image/*" className="hidden" onChange={handleHeaderImageUpload} />
+                      <Button type="button" variant="outline" className="w-full" onClick={() => headerImageRef.current?.click()} disabled={isUploading}>
+                        {isUploading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Uploading...</> : <><Upload className="h-4 w-4 mr-2" />Upload Header Image</>}
+                      </Button>
+                      <Input type="url" placeholder="Or paste image URL" value={headerImage} onChange={e => setHeaderImage(e.target.value)} />
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
 
-            {/* ── Content Blocks ── */}
-            <div className="space-y-3">
-              <Label className="text-base font-semibold">Content Blocks</Label>
-              <p className="text-xs text-muted-foreground -mt-1">
-                Build your page with text, image galleries, and media showcases. Drag to reorder using the arrows.
-              </p>
-
-              {blocks.length === 0 && (
-                <div className="border border-dashed rounded-xl p-6 text-center text-sm text-muted-foreground">
-                  No content blocks yet. Add one below.
+                {/* Content Blocks */}
+                <div className="space-y-3">
+                  <Label className="text-base font-semibold">Content Blocks</Label>
+                  <p className="text-xs text-muted-foreground -mt-1">
+                    Build your page with text, image galleries, and media showcases.
+                  </p>
+                  {blocks.length === 0 && (
+                    <div className="border border-dashed rounded-xl p-6 text-center text-sm text-muted-foreground">
+                      No content blocks yet. Add one below.
+                    </div>
+                  )}
+                  {blocks.map((block, idx) => (
+                    <BlockEditor
+                      key={block.id}
+                      block={block}
+                      index={idx}
+                      total={blocks.length}
+                      onChange={updated => updateBlock(idx, updated)}
+                      onRemove={() => removeBlock(idx)}
+                      onMoveUp={() => moveBlock(idx, -1)}
+                      onMoveDown={() => moveBlock(idx, 1)}
+                      uploadFile={uploadFile}
+                    />
+                  ))}
+                  <AddBlockPicker onAdd={addBlock} />
                 </div>
-              )}
 
-              {blocks.map((block, idx) => (
-                <BlockEditor
-                  key={block.id}
-                  block={block}
-                  index={idx}
-                  total={blocks.length}
-                  onChange={updated => updateBlock(idx, updated)}
-                  onRemove={() => removeBlock(idx)}
-                  onMoveUp={() => moveBlock(idx, -1)}
-                  onMoveDown={() => moveBlock(idx, 1)}
-                  uploadFile={uploadFile}
-                />
-              ))}
-
-              <AddBlockPicker onAdd={addBlock} />
-            </div>
-
-            {/* ── Page Website ── */}
-            <div className="space-y-3 border rounded-lg p-4 bg-muted/30">
-              <Label className="font-semibold flex items-center gap-2">
-                <Globe className="h-4 w-4" /> Page Website (optional)
-              </Label>
-
-              {!brandSiteHtml && (
+                {/* Page Website URL (for static pages) */}
                 <div className="space-y-2">
-                  <Label className="text-xs text-muted-foreground">Website URL</Label>
+                  <Label className="flex items-center gap-2"><Globe className="h-4 w-4" /> Link to external website (optional)</Label>
                   <Input
                     type="url"
                     placeholder="https://example.com"
                     value={brandSiteUrl}
                     onChange={e => setBrandSiteUrl(e.target.value)}
                   />
+                  <p className="text-xs text-muted-foreground">Shows a "View Page Site" button on the page.</p>
                 </div>
-              )}
 
-              <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">Or upload an HTML file</Label>
-                <input ref={htmlFileRef} type="file" accept=".html,.htm" className="hidden" onChange={handleHtmlFileUpload} />
-                {brandSiteHtml ? (
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                        ✓ HTML file loaded
-                      </Badge>
-                      <Button type="button" variant="ghost" size="sm" onClick={() => setBrandSiteHtml('')}>
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </div>
+                {/* External URL */}
+                <div className="space-y-2">
+                  <Label>External URL (optional)</Label>
+                  <Input type="url" value={externalUrl} onChange={e => setExternalUrl(e.target.value)} placeholder="https://example.com" />
+                </div>
+
+                {/* Footer */}
+                <div className="flex items-center gap-2">
+                  <Checkbox id="footer-static" checked={showInFooter} onCheckedChange={v => setShowInFooter(v as boolean)} />
+                  <Label htmlFor="footer-static">Show in footer</Label>
+                </div>
+                {showInFooter && (
+                  <div className="space-y-2">
+                    <Label>Display Order</Label>
+                    <Input type="number" value={order} onChange={e => setOrder(e.target.value)} placeholder="1" min="1" />
+                  </div>
+                )}
+
+                {/* Zap + Coffee */}
+                <div className="flex items-center gap-2">
+                  <Checkbox id="zap-static" checked={showZapButton} onCheckedChange={v => setShowZapButton(v as boolean)} />
+                  <Label htmlFor="zap-static" className="flex items-center gap-1"><Zap className="h-3.5 w-3.5 text-orange-500" /> Show Zap button</Label>
+                </div>
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1"><Coffee className="h-3.5 w-3.5" /> Buy Me a Coffee URL (optional)</Label>
+                  <Input type="url" value={buyMeCoffeeUrl} onChange={e => setBuyMeCoffeeUrl(e.target.value)} placeholder="https://buymeacoffee.com/..." />
+                </div>
+
+              </TabsContent>
+
+              {/* ════════════════════════════════
+                  HTML UPLOAD TAB
+              ════════════════════════════════ */}
+              <TabsContent value="html" className="space-y-6 mt-6">
+
+                <div className="rounded-lg border border-purple-200 bg-purple-50 dark:bg-purple-900/10 dark:border-purple-800 px-4 py-3 text-xs text-purple-700 dark:text-purple-300 flex items-start gap-2">
+                  <FileCode className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                  <span><strong>HTML Upload</strong> shows <em>only</em> your HTML file below the header menu — no other content blocks, no page title, no footer extras. The HTML file is the entire page. Use this for fully custom designs, landing pages, or download pages.</span>
+                </div>
+
+                {/* HTML upload / editor */}
+                <div className="space-y-3">
+                  <input ref={htmlFileRef} type="file" accept=".html,.htm" className="hidden" onChange={handleHtmlFileUpload} />
+                  {brandSiteHtml ? (
                     <HtmlEditor
                       html={brandSiteHtml}
                       onChange={setBrandSiteHtml}
                       uploadFile={uploadFile}
                     />
-                  </div>
-                ) : (
-                  <Button type="button" variant="outline" size="sm" onClick={() => htmlFileRef.current?.click()}>
-                    <Upload className="h-4 w-4 mr-2" /> Upload HTML file
-                  </Button>
-                )}
-              </div>
-
-              {(brandSiteUrl.trim() || brandSiteHtml.trim()) && (
-                <div className="flex items-start gap-3 pt-2 border-t">
-                  <Checkbox
-                    id="brand-inline"
-                    checked={brandSiteInline}
-                    onCheckedChange={v => setBrandSiteInline(v as boolean)}
-                  />
-                  <div>
-                    <Label htmlFor="brand-inline" className="cursor-pointer">Show as full page (inline)</Label>
-                    <p className="text-xs text-muted-foreground">Embed directly on the page. When unchecked, shows a button link.</p>
-                  </div>
+                  ) : (
+                    <div
+                      className="border-2 border-dashed rounded-xl p-10 flex flex-col items-center gap-4 text-center cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/10 transition-colors"
+                      onClick={() => htmlFileRef.current?.click()}
+                    >
+                      <div className="h-14 w-14 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+                        <Upload className="h-7 w-7 text-indigo-500" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-sm">Click to upload your HTML file</p>
+                        <p className="text-xs text-muted-foreground mt-1">Accepts .html and .htm files</p>
+                      </div>
+                      <Button type="button" variant="outline">
+                        <Upload className="h-4 w-4 mr-2" /> Choose HTML file
+                      </Button>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
 
-            {/* ── External URL ── */}
-            <div className="space-y-2">
-              <Label>External URL (optional)</Label>
-              <Input type="url" value={externalUrl} onChange={e => setExternalUrl(e.target.value)} placeholder="https://example.com" />
-            </div>
+                {/* Show as full page toggle */}
+                {brandSiteHtml && (
+                  <div className="flex items-start gap-3 p-4 rounded-lg border bg-muted/30">
+                    <Checkbox
+                      id="brand-inline-html"
+                      checked={brandSiteInline}
+                      onCheckedChange={v => setBrandSiteInline(v as boolean)}
+                    />
+                    <div>
+                      <Label htmlFor="brand-inline-html" className="cursor-pointer font-medium">Show as full page (fills screen below header)</Label>
+                      <p className="text-xs text-muted-foreground mt-0.5">When checked, the HTML fills the full viewport under the menu. Recommended for custom pages.</p>
+                    </div>
+                  </div>
+                )}
 
-            {/* ── Footer ── */}
-            <div className="flex items-center gap-2">
-              <Checkbox id="footer" checked={showInFooter} onCheckedChange={v => setShowInFooter(v as boolean)} />
-              <Label htmlFor="footer">Show in footer</Label>
-            </div>
+                {/* Footer */}
+                <div className="flex items-center gap-2">
+                  <Checkbox id="footer-html" checked={showInFooter} onCheckedChange={v => setShowInFooter(v as boolean)} />
+                  <Label htmlFor="footer-html">Show in footer</Label>
+                </div>
+                {showInFooter && (
+                  <div className="space-y-2">
+                    <Label>Display Order</Label>
+                    <Input type="number" value={order} onChange={e => setOrder(e.target.value)} placeholder="1" min="1" />
+                  </div>
+                )}
 
-            {showInFooter && (
-              <div className="space-y-2">
-                <Label>Display Order</Label>
-                <Input type="number" value={order} onChange={e => setOrder(e.target.value)} placeholder="1" min="1" />
-              </div>
-            )}
+                {/* Zap + Coffee */}
+                <div className="flex items-center gap-2">
+                  <Checkbox id="zap-html" checked={showZapButton} onCheckedChange={v => setShowZapButton(v as boolean)} />
+                  <Label htmlFor="zap-html" className="flex items-center gap-1"><Zap className="h-3.5 w-3.5 text-orange-500" /> Show Zap button (floating)</Label>
+                </div>
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1"><Coffee className="h-3.5 w-3.5" /> Buy Me a Coffee URL (optional)</Label>
+                  <Input type="url" value={buyMeCoffeeUrl} onChange={e => setBuyMeCoffeeUrl(e.target.value)} placeholder="https://buymeacoffee.com/..." />
+                </div>
 
-            {/* ── Zap button ── */}
-            <div className="flex items-center gap-2">
-              <Checkbox id="zap" checked={showZapButton} onCheckedChange={v => setShowZapButton(v as boolean)} />
-              <Label htmlFor="zap" className="flex items-center gap-1"><Zap className="h-3.5 w-3.5 text-orange-500" /> Show Zap button</Label>
-            </div>
+              </TabsContent>
+            </Tabs>
 
-            {/* ── Buy Me a Coffee ── */}
-            <div className="space-y-2">
-              <Label className="flex items-center gap-1"><Coffee className="h-3.5 w-3.5" /> Buy Me a Coffee URL (optional)</Label>
-              <Input type="url" value={buyMeCoffeeUrl} onChange={e => setBuyMeCoffeeUrl(e.target.value)} placeholder="https://buymeacoffee.com/..." />
-            </div>
-
-            {/* ── Actions ── */}
-            <div className="flex gap-2 pt-2 flex-wrap">
-              <Button type="button" onClick={handleSave}>
+            {/* ── Actions — always visible ── */}
+            <div className="flex gap-2 pt-2 flex-wrap border-t">
+              <Button type="button" onClick={handleSave} className="mt-2">
                 {editingPage ? 'Update Page' : 'Create Page'}
               </Button>
-              <Button type="button" variant="outline" onClick={() => setShowPreview(true)} disabled={!title.trim()}>
+              <Button type="button" variant="outline" className="mt-2" onClick={() => setShowPreview(true)} disabled={!title.trim()}>
                 <Eye className="h-4 w-4 mr-2" /> Preview Page
               </Button>
-              <Button type="button" variant="ghost" onClick={resetForm}>
+              <Button type="button" variant="ghost" className="mt-2" onClick={resetForm}>
                 Cancel
               </Button>
             </div>
@@ -823,7 +889,8 @@ export function PageManagement() {
                           </Badge>
                         )}
                         {page.show_in_footer && <Badge variant="secondary" className="text-xs">Footer</Badge>}
-                        {page.brand_site && <Badge variant="outline" className="text-xs"><Globe className="h-3 w-3 mr-1" />Site</Badge>}
+                        {page.brand_site_is_srcdoc && <Badge variant="outline" className="text-xs text-purple-600 border-purple-300"><FileCode className="h-3 w-3 mr-1" />HTML</Badge>}
+                        {page.brand_site && !page.brand_site_is_srcdoc && <Badge variant="outline" className="text-xs"><Globe className="h-3 w-3 mr-1" />Site</Badge>}
                         {page.external_url && <Badge variant="outline" className="text-xs"><ExternalLink className="h-3 w-3 mr-1" />External</Badge>}
                         {page.show_zap_button && <Badge variant="outline" className="text-xs text-orange-600"><Zap className="h-3 w-3 mr-1" />Zap</Badge>}
                         {page.buy_me_coffee_url && <Badge variant="outline" className="text-xs"><Coffee className="h-3 w-3 mr-1" />BMAC</Badge>}
