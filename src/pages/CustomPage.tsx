@@ -168,7 +168,7 @@ export default function CustomPage() {
           srcDoc={srcDoc}
           title={page.title}
           className={className}
-          sandbox="allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
+          sandbox="allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads"
         />
       );
     }
