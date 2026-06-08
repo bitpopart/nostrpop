@@ -131,6 +131,24 @@ export default function CustomPage() {
     </div>
   ) : null;
 
+  // Helper: render the brand_site iframe (srcdoc for local HTML, src for URLs)
+  const renderBrandSiteIframe = (className = 'flex-1 w-full border-0') =>
+    page.brand_site_is_srcdoc ? (
+      <iframe
+        srcDoc={page.brand_site}
+        title={page.title}
+        className={className}
+        sandbox="allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
+      />
+    ) : (
+      <iframe
+        src={page.brand_site}
+        title={page.title}
+        className={className}
+        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
+      />
+    );
+
   // Full-screen inline iframe mode — render iframe + floating buttons
   if (page.brand_site && page.brand_site_inline) {
     return (
@@ -157,22 +175,7 @@ export default function CustomPage() {
             </a>
           )}
         </div>
-        {/* Use srcdoc for inline HTML to bypass data: URI browser restrictions */}
-        {page.brand_site_is_srcdoc ? (
-          <iframe
-            srcDoc={page.brand_site}
-            title={page.title}
-            className="flex-1 w-full border-0"
-            sandbox="allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
-          />
-        ) : (
-          <iframe
-            src={page.brand_site}
-            title={page.title}
-            className="flex-1 w-full border-0"
-            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
-          />
-        )}
+        {renderBrandSiteIframe()}
         {floatingButtons}
       </div>
     );
@@ -238,6 +241,15 @@ export default function CustomPage() {
                 )}
               </div>
             </div>
+          )}
+
+          {/* Inline HTML brand site (non-fullscreen mode) — embed below the title */}
+          {page.brand_site && page.brand_site_is_srcdoc && !page.brand_site_inline && (
+            <Card className="overflow-hidden">
+              <CardContent className="p-0">
+                {renderBrandSiteIframe('w-full border-0 min-h-[600px]')}
+              </CardContent>
+            </Card>
           )}
 
           {/* Content Blocks */}
@@ -337,8 +349,17 @@ export default function CustomPage() {
             </div>
           ))}
 
+          {/* Inline HTML brand site (non-fullscreen, with header image) */}
+          {page.header_image && page.brand_site && page.brand_site_is_srcdoc && !page.brand_site_inline && (
+            <Card className="overflow-hidden">
+              <CardContent className="p-0">
+                {renderBrandSiteIframe('w-full border-0 min-h-[600px]')}
+              </CardContent>
+            </Card>
+          )}
+
           {/* Page Site / External URL Buttons (when there's a header image) */}
-          {page.header_image && (page.brand_site || page.external_url) && (
+          {page.header_image && (page.external_url || (page.brand_site && !page.brand_site_is_srcdoc)) && (
             <Card className="bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800">
               <CardContent className="py-6 flex items-center justify-center gap-3 flex-wrap">
                 {page.brand_site && !page.brand_site_is_srcdoc && (

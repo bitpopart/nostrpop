@@ -45,16 +45,20 @@ export function usePages() {
             if (brandSiteTag?.startsWith('__local__:')) {
               const localKey = `page-html:${brandSiteTag.slice('__local__:'.length)}`;
               const localHtml = localStorage.getItem(localKey);
-              resolvedBrandSite = localHtml || undefined;
-              brandSiteIsHtmlSrcdoc = true;
+              if (localHtml) {
+                resolvedBrandSite = localHtml;
+                brandSiteIsHtmlSrcdoc = true;
+              }
             } else if (brandSiteTag === '__html__') {
               // Legacy: HTML was stored inline in the event content
               try {
                 const parsed = JSON.parse(event.content);
-                resolvedBrandSite = parsed.brand_site_html || undefined;
-                brandSiteIsHtmlSrcdoc = true;
+                if (parsed.brand_site_html) {
+                  resolvedBrandSite = parsed.brand_site_html;
+                  brandSiteIsHtmlSrcdoc = true;
+                }
               } catch {
-                resolvedBrandSite = undefined;
+                // ignore
               }
             } else {
               resolvedBrandSite = brandSiteTag;
@@ -181,16 +185,20 @@ export function usePage(slug: string) {
         if (brandSiteTag?.startsWith('__local__:')) {
           const localKey = `page-html:${brandSiteTag.slice('__local__:'.length)}`;
           const localHtml = localStorage.getItem(localKey);
-          resolvedBrandSite = localHtml || undefined;
-          brandSiteIsHtmlSrcdoc = true;
+          if (localHtml) {
+            resolvedBrandSite = localHtml;
+            brandSiteIsHtmlSrcdoc = true;
+          }
         } else if (brandSiteTag === '__html__') {
           // Legacy: HTML was stored inline in the event content
           try {
             const parsed = JSON.parse(event.content);
-            resolvedBrandSite = parsed.brand_site_html || undefined;
-            brandSiteIsHtmlSrcdoc = true;
+            if (parsed.brand_site_html) {
+              resolvedBrandSite = parsed.brand_site_html;
+              brandSiteIsHtmlSrcdoc = true;
+            }
           } catch {
-            resolvedBrandSite = undefined;
+            // ignore
           }
         } else {
           resolvedBrandSite = brandSiteTag;
