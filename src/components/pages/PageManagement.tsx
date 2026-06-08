@@ -333,7 +333,6 @@ export function PageManagement() {
       if (isHtml) {
         // Read HTML text and embed via srcdoc — works on all devices, no external hosting needed
         const html = await file.text();
-        if (html.length > 500_000) { toast.error('HTML file too large (max ~500KB).'); return; }
         setBrandSiteHtml(html);
         setBrandSite('__html__');
         setBrandSiteMode('html');
