@@ -340,12 +340,12 @@ export function PageManagement() {
         setBrandSite('__html__');
         setBrandSiteMode('html');
         toast.success('HTML file loaded. Save the page to publish it.');
-        return;
+      } else {
+        // PDF: upload to Blossom and get a real URL
+        const tags = await uploadFile(file);
+        const url = tags[0]?.[1];
+        if (url) { setBrandSite(url); setBrandSiteMode('url'); toast.success('PDF uploaded and linked.'); }
       }
-      // PDF: upload to Blossom and get a real URL
-      const tags = await uploadFile(file);
-      const url = tags[0]?.[1];
-      if (url) { setBrandSite(url); setBrandSiteMode('url'); toast.success('PDF uploaded and linked.'); }
     } catch { toast.error('Failed to process file.'); }
     finally {
       setIsUploading(false);
