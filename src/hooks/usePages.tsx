@@ -12,6 +12,8 @@ export function usePages() {
 
   return useQuery({
     queryKey: ['pages'],
+    staleTime: 0,
+    gcTime: 0,
     queryFn: async (c) => {
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(3000)]);
       
@@ -154,7 +156,9 @@ export function usePage(slug: string) {
 
   return useQuery({
     queryKey: ['page', slug],
-    staleTime: 0, // Always fetch fresh — ensures edits (zap button, etc.) show immediately
+    staleTime: 0,          // Always treat as stale — refetch from relay on every mount
+    gcTime: 0,             // Don't keep stale page data in cache at all
+    refetchOnMount: true,  // Always refetch when the component mounts
     queryFn: async (c) => {
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(3000)]);
       

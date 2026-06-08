@@ -202,7 +202,7 @@ export function useHomepageSettings() {
     },
     enabled: !!adminPubkey,
     staleTime: 0,
-    gcTime: 5 * 60 * 1000,
+    gcTime: 0,
   });
 
   // Listen for custom events from admin settings to refetch immediately

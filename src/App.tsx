@@ -24,9 +24,9 @@ const head = createHead({
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      refetchOnWindowFocus: false,
-      staleTime: 60000, // 1 minute
-      gcTime: Infinity,
+      refetchOnWindowFocus: true,  // Re-check when user returns to the tab
+      staleTime: 0,                // Always consider data stale — hit the relay every time
+      gcTime: 60000,               // Keep unused cache for 1 min, then discard
     },
   },
 });
