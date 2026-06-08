@@ -1,5 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+
+// Module-level cache — survives React re-renders and navigation within the same session
+const htmlCache = new Map<string, string>();
 import { useSeoMeta } from '@unhead/react';
 import { usePage } from '@/hooks/usePages';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -33,22 +36,38 @@ export default function CustomPage() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   // For HTML pages stored on Blossom: fetch the HTML and render via srcDoc
   // to avoid cross-origin iframe blocking (Blossom doesn't send X-Frame-Options: ALLOWALL)
-  const [fetchedHtml, setFetchedHtml] = useState<string | null>(null);
-  const [fetchingHtml, setFetchingHtml] = useState(false);
-
   const isRemoteHtml = !!(
     page?.brand_site &&
     !page.brand_site_is_srcdoc &&
     /\.html?(\?|$)/i.test(page.brand_site)
   );
 
+  // Initialise from cache immediately so there's zero delay on repeat visits
+  const [fetchedHtml, setFetchedHtml] = useState<string | null>(
+    () => (page?.brand_site ? htmlCache.get(page.brand_site) ?? null : null)
+  );
+  const [fetchingHtml, setFetchingHtml] = useState(false);
+  const fetchedUrlRef = useRef<string | null>(null);
+
   useEffect(() => {
     if (!isRemoteHtml || !page?.brand_site) return;
-    setFetchedHtml(null);
+    const url = page.brand_site;
+    // Already cached — nothing to do
+    if (htmlCache.has(url)) {
+      setFetchedHtml(htmlCache.get(url)!);
+      return;
+    }
+    // Already fetching this URL
+    if (fetchedUrlRef.current === url) return;
+    fetchedUrlRef.current = url;
     setFetchingHtml(true);
-    fetch(page.brand_site)
+    fetch(url)
       .then(r => r.text())
-      .then(html => { setFetchedHtml(html); setFetchingHtml(false); })
+      .then(html => {
+        htmlCache.set(url, html);
+        setFetchedHtml(html);
+        setFetchingHtml(false);
+      })
       .catch(() => setFetchingHtml(false));
   }, [page?.brand_site, isRemoteHtml]);
 
@@ -163,8 +182,8 @@ export default function CustomPage() {
       ? page.brand_site                  // legacy inline HTML
       : (fetchedHtml ?? undefined);      // fetched from Blossom URL
     if (srcDoc) {
-      // Inject a script that ensures all download links trigger a real download
-      // and never navigate away or open a new window/tab.
+      // Inject a script that ensures download links always have the download attribute
+      // so allow-downloads handles them in-place — no navigation, no new window.
       const downloadScript = `
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -172,19 +191,15 @@ document.addEventListener('DOMContentLoaded', function() {
     var a = e.target.closest('a[href]');
     if (!a) return;
     var href = a.getAttribute('href') || '';
-    // Force download attribute on any link that looks like a file
-    if (a.hasAttribute('download') || /\\.(pdf|zip|docx?|xlsx?|pptx?|mp4|mp3|png|jpe?g|gif|svg|webp|exe|dmg|apk|html?)(\?|$)/i.test(href)) {
-      e.preventDefault();
-      e.stopPropagation();
-      var link = document.createElement('a');
-      link.href = href;
-      link.download = a.getAttribute('download') || href.split('/').pop() || 'download';
-      link.target = '_blank';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+    if (a.hasAttribute('download') || /\\.(pdf|zip|docx?|xlsx?|pptx?|mp4|mp3|png|jpe?g|gif|svg|webp|exe|dmg|apk)(\?|$)/i.test(href)) {
+      // Ensure the download attribute is set — browser will download in-place
+      if (!a.hasAttribute('download')) {
+        a.setAttribute('download', href.split('/').pop() || 'download');
+      }
+      // Remove target so it never opens a new window
+      a.removeAttribute('target');
     }
-  });
+  }, true);
 });
 </script>`;
       const injected = srcDoc.replace(/<\/body>/i, downloadScript + '</body>') || srcDoc + downloadScript;
