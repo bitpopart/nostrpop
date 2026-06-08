@@ -18,36 +18,44 @@ const ADMIN_PUBKEY = '43baaf0c28e6cfb195b17ee083e19eb3a4afdfac54d9b6baf170270ed1
 // Module-level HTML cache — persists across re-renders and same-session navigation
 const htmlCache = new Map<string, string>();
 
-// Download script injected into srcDoc iframes — intercepts file link clicks
-// and posts them to the parent window so the parent can fetch+blob-download
-// without any page navigation or cross-origin errors.
-const DOWNLOAD_SCRIPT = `
-<script>
-(function() {
-  var RE = /\\.(pdf|zip|docx?|xlsx?|pptx?|mp4|mp3|png|jpe?g|gif|svg|webp|exe|dmg|apk)(\?|$)/i;
-  function handle(e) {
-    var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
-    if (!a) return;
-    var href = a.getAttribute('href') || '';
-    if (!href || href.charAt(0) === '#') return;
-    if (a.hasAttribute('download') || RE.test(href)) {
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      window.parent.postMessage({
-        type: '__download__',
-        url: href,
-        filename: a.getAttribute('download') || href.split('/').pop() || 'download'
-      }, '*');
+const FILE_RE = /\.(pdf|zip|docx?|xlsx?|pptx?|mp4|mp3|png|jpe?g|gif|svg|webp|exe|dmg|apk)(\?|$)/i;
+
+// Rewrites all download/file links in raw HTML before rendering as srcDoc.
+// Replaces the real href with "#" and stores the URL in data-dl so the browser
+// never navigates away. A small inline script handles the click via postMessage.
+function injectDownloadScript(html: string): string {
+  // Step 1 — rewrite <a href="...file" ...> or <a ... download ...> so href="#"
+  // and stash the real URL in data-dl="..."
+  const rewritten = html.replace(
+    /<a\s([^>]*)>/gi,
+    (match, attrs: string) => {
+      const hrefMatch = attrs.match(/href=["']([^"']+)["']/i);
+      if (!hrefMatch) return match;
+      const href = hrefMatch[1];
+      const hasDownload = /\bdownload\b/i.test(attrs);
+      if (!hasDownload && !FILE_RE.test(href)) return match;
+      // Replace href with "#", add data-dl with real URL
+      const newAttrs = attrs
+        .replace(/href=["'][^"']*["']/i, `href="#"`)
+        .replace(/\btarget=["'][^"']*["']/i, ''); // remove any target
+      return `<a ${newAttrs} data-dl="${href}">`;
     }
-  }
-  document.addEventListener('click', handle, true);
-})();
+  );
+
+  // Step 2 — inject a tiny script that listens for clicks on [data-dl] and
+  // posts the URL to the parent, which fetches it as a blob
+  const script = `<script>
+document.addEventListener('click',function(e){
+  var a=e.target&&e.target.closest?e.target.closest('[data-dl]'):null;
+  if(!a)return;
+  e.preventDefault();e.stopImmediatePropagation();
+  window.parent.postMessage({type:'__download__',url:a.getAttribute('data-dl'),filename:a.getAttribute('download')||a.getAttribute('data-dl').split('/').pop()||'download'},'*');
+},true);
 </script>`;
 
-function injectDownloadScript(html: string): string {
-  if (html.includes('</head>')) return html.replace('</head>', DOWNLOAD_SCRIPT + '</head>');
-  if (html.includes('<body')) return html.replace('<body', DOWNLOAD_SCRIPT + '<body');
-  return DOWNLOAD_SCRIPT + html;
+  if (rewritten.includes('</head>')) return rewritten.replace('</head>', script + '</head>');
+  if (rewritten.includes('<body')) return rewritten.replace('<body', script + '<body');
+  return script + rewritten;
 }
 
 // Content block types
@@ -202,7 +210,7 @@ export default function CustomPage() {
           srcDoc={injectDownloadScript(htmlSrcDoc)}
           title={page.title}
           className={className}
-          sandbox="allow-scripts allow-forms"
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads"
         />
       );
     }
