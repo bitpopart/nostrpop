@@ -140,25 +140,15 @@ export function PageManagement() {
     setBrandSite(storedBrandSite);
     setBrandSiteInline(page.event?.tags.find(t => t[0] === 'brand-site-inline')?.[1] === 'true');
 
-    // Restore inline HTML: new format stores in localStorage, legacy stored in event content
-    if (storedBrandSite?.startsWith('__local__:')) {
-      const localKey = `page-html:${storedBrandSite.slice('__local__:'.length)}`;
-      const localHtml = localStorage.getItem(localKey) || '';
-      setBrandSiteHtml(localHtml);
-      setBrandSiteMode('html');
-      // Normalise to the sentinel used by handleSubmit so the save path works
-      setBrandSite('__html__');
-    } else if (storedBrandSite === '__html__') {
-      // Legacy: HTML was stored inline in the event content
+    // Restore inline HTML from event content
+    if (storedBrandSite === '__html__') {
       try {
         const parsed = JSON.parse(page.description);
-        const html = parsed.brand_site_html || '';
-        setBrandSiteHtml(html);
-        setBrandSiteMode('html');
+        setBrandSiteHtml(parsed.brand_site_html || '');
       } catch {
         setBrandSiteHtml('');
-        setBrandSiteMode('html');
       }
+      setBrandSiteMode('html');
     } else {
       setBrandSiteMode('url');
       setBrandSiteHtml('');
@@ -340,46 +330,32 @@ export function PageManagement() {
     if (file.size > 15 * 1024 * 1024) { toast.error('File too large (max 15MB).'); return; }
     setIsUploading(true);
     try {
-      // Upload both HTML and PDF to Blossom so the URL is stored in the Nostr event
-      // and works on every device — no localStorage dependency
-      const uploadableFile = isHtml
-        ? new File([file], file.name, { type: 'text/html' })
-        : file;
-      const tags = await uploadFile(uploadableFile);
-      const url = tags[0]?.[1];
-      if (url) {
-        setBrandSite(url);
-        setBrandSiteMode('url');
-        // Also keep HTML text in state so the preview works locally
-        if (isHtml) {
-          const html = await file.text();
-          setBrandSiteHtml(html);
-        }
-        toast.success(isHtml ? 'HTML uploaded. Save the page to publish it.' : 'PDF uploaded and linked.');
+      if (isHtml) {
+        // Read HTML text and embed via srcdoc — works on all devices, no external hosting needed
+        const html = await file.text();
+        if (html.length > 500_000) { toast.error('HTML file too large (max ~500KB).'); return; }
+        setBrandSiteHtml(html);
+        setBrandSite('__html__');
+        setBrandSiteMode('html');
+        toast.success('HTML file loaded. Save the page to publish it.');
+      } else {
+        // PDF: upload to Blossom and store URL
+        const tags = await uploadFile(file);
+        const url = tags[0]?.[1];
+        if (url) { setBrandSite(url); setBrandSiteMode('url'); toast.success('PDF uploaded and linked.'); }
       }
-    } catch { toast.error('Failed to upload file. Please try again.'); }
+    } catch { toast.error('Failed to process file. Please try again.'); }
     finally {
       setIsUploading(false);
       if (brandSiteFileRef.current) brandSiteFileRef.current.value = '';
     }
   }, [uploadFile]);
 
-  const applyBrandSiteHtml = useCallback(async () => {
+  const applyBrandSiteHtml = useCallback(() => {
     if (!brandSiteHtml.trim()) { toast.error('Paste HTML first.'); return; }
-    setIsUploading(true);
-    try {
-      // Upload the pasted HTML as a file to Blossom so it works on all devices
-      const blob = new Blob([brandSiteHtml.trim()], { type: 'text/html' });
-      const file = new File([blob], 'page.html', { type: 'text/html' });
-      const tags = await uploadFile(file);
-      const url = tags[0]?.[1];
-      if (url) {
-        setBrandSite(url);
-        toast.success('HTML uploaded and ready. Save the page to publish it.');
-      }
-    } catch { toast.error('Failed to upload HTML. Please try again.'); }
-    finally { setIsUploading(false); }
-  }, [brandSiteHtml, uploadFile]);
+    setBrandSite('__html__');
+    toast.success('HTML ready. Save the page to publish it.');
+  }, [brandSiteHtml]);
 
   const handleSubmit = () => {
     if (!user || !title.trim()) return;
@@ -420,10 +396,14 @@ export function PageManagement() {
       }
     });
 
+    // HTML is stored directly in the event content as srcdoc — works on all devices
+    const isInlineHtml = brandSite === '__html__' && brandSiteHtml.trim();
+
     createEvent({
       kind: 38175,
       content: JSON.stringify({
         blocks: contentBlocks,
+        ...(isInlineHtml ? { brand_site_html: brandSiteHtml.trim() } : {}),
       }),
       tags: [
         ['d', pageSlug],
@@ -433,8 +413,7 @@ export function PageManagement() {
         ...(externalUrl ? [['r', externalUrl]] : []),
         ...(showInFooter ? [['footer', 'true']] : []),
         ...(order ? [['order', order]] : []),
-        // brand-site is always a plain URL now (HTML files are uploaded to Blossom)
-        ...(brandSite && brandSite !== '__html__' ? [['brand-site', brandSite]] : []),
+        ...(isInlineHtml ? [['brand-site', '__html__']] : brandSite ? [['brand-site', brandSite]] : []),
         ...(brandSite && brandSiteInline ? [['brand-site-inline', 'true']] : []),
         ...(showZapButton ? [['zap-button', 'true']] : []),
         ...(buyMeCoffeeUrl.trim() ? [['buy-me-coffee', buyMeCoffeeUrl.trim()]] : []),

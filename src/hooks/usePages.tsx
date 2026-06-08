@@ -37,10 +37,23 @@ export function usePages() {
             // Get all gallery images from tags
             const galleryImages = event.tags.filter(t => t[0] === 'image').map(t => t[1]);
 
-            // brand-site is always a plain URL (HTML files are uploaded to Blossom).
-            // Legacy sentinels (__local__, __html__) are ignored — those pages need re-saving.
+            // Resolve brand_site:
+            // '__html__' → HTML is in event content (brand_site_html key), render via srcdoc
+            // anything else → treat as a plain URL
             const brandSiteTag = event.tags.find(t => t[0] === 'brand-site')?.[1];
-            const resolvedBrandSite = (brandSiteTag && !brandSiteTag.startsWith('__')) ? brandSiteTag : undefined;
+            let resolvedBrandSite: string | undefined;
+            let brandSiteIsHtmlSrcdoc = false;
+            if (brandSiteTag === '__html__') {
+              try {
+                const parsed = JSON.parse(event.content);
+                if (parsed.brand_site_html) {
+                  resolvedBrandSite = parsed.brand_site_html;
+                  brandSiteIsHtmlSrcdoc = true;
+                }
+              } catch { /* ignore */ }
+            } else if (brandSiteTag && !brandSiteTag.startsWith('__')) {
+              resolvedBrandSite = brandSiteTag;
+            }
 
             return {
               id,
@@ -51,7 +64,7 @@ export function usePages() {
               external_url: externalUrl,
               brand_site: resolvedBrandSite,
               brand_site_inline: event.tags.find(t => t[0] === 'brand-site-inline')?.[1] === 'true',
-              brand_site_is_srcdoc: false, // URLs are always rendered as src, never srcdoc
+              brand_site_is_srcdoc: brandSiteIsHtmlSrcdoc,
               author_pubkey: event.pubkey,
               created_at: new Date(event.created_at * 1000).toISOString(),
               show_in_footer: showInFooter,
@@ -155,10 +168,23 @@ export function usePage(slug: string) {
         // Get all gallery images from tags
         const galleryImages = event.tags.filter(t => t[0] === 'image').map(t => t[1]);
 
-        // brand-site is always a plain URL (HTML files are uploaded to Blossom).
-        // Legacy sentinels (__local__, __html__) are ignored — those pages need re-saving.
+        // Resolve brand_site:
+        // '__html__' → HTML is in event content (brand_site_html key), render via srcdoc
+        // anything else → treat as a plain URL
         const brandSiteTag = event.tags.find(t => t[0] === 'brand-site')?.[1];
-        const resolvedBrandSite = (brandSiteTag && !brandSiteTag.startsWith('__')) ? brandSiteTag : undefined;
+        let resolvedBrandSite: string | undefined;
+        let brandSiteIsHtmlSrcdoc = false;
+        if (brandSiteTag === '__html__') {
+          try {
+            const parsed = JSON.parse(event.content);
+            if (parsed.brand_site_html) {
+              resolvedBrandSite = parsed.brand_site_html;
+              brandSiteIsHtmlSrcdoc = true;
+            }
+          } catch { /* ignore */ }
+        } else if (brandSiteTag && !brandSiteTag.startsWith('__')) {
+          resolvedBrandSite = brandSiteTag;
+        }
 
         return {
           id,
@@ -170,7 +196,7 @@ export function usePage(slug: string) {
           external_url: event.tags.find(t => t[0] === 'r')?.[1],
           brand_site: resolvedBrandSite,
           brand_site_inline: event.tags.find(t => t[0] === 'brand-site-inline')?.[1] === 'true',
-          brand_site_is_srcdoc: false, // URLs are always rendered as src, never srcdoc
+          brand_site_is_srcdoc: brandSiteIsHtmlSrcdoc,
           author_pubkey: event.pubkey,
           created_at: new Date(event.created_at * 1000).toISOString(),
           show_in_footer: event.tags.find(t => t[0] === 'footer')?.[1] === 'true',
