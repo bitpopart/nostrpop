@@ -16,6 +16,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, X, Upload, FileText, Edit, Image as ImageIcon, ExternalLink, GripVertical, Trash2, Loader2, Globe, Code2, FileDown, Zap, Coffee } from 'lucide-react';
 import { generateSlug } from '@/lib/pageTypes';
 import type { PageData } from '@/lib/pageTypes';
+
+// Routes reserved by the app router — cannot be used as page slugs
+const RESERVED_SLUGS = new Set([
+  'cards', 'card', 'share', 'art', '21k-art', 'canvas', 'shop', 'admin',
+  'feed', 'blog', 'popup', 'artist', 'projects', 'nostr-projects', 'badges',
+  'fundraising', 'vlog', 'wall', 'categories', 'order-confirmation', 'free',
+  'games', 'animations', 'wallpapers', 'gifs', 'avatars', 'banners', 'frl', 'app',
+]);
 import ReactMarkdown from 'react-markdown';
 import { toast } from 'sonner';
 
@@ -222,13 +230,22 @@ export function PageManagement() {
       {
         kind: 5,
         content: 'Deleted page',
-        tags: [['a', `38175:${page.event.pubkey}:${page.id}`]],
+        tags: [
+          ['e', page.event.id],
+          ['a', `38175:${page.event.pubkey}:${page.id}`],
+          ['k', '38175'],
+        ],
       },
       {
         onSuccess: () => {
           toast.success('Page deleted');
+          // Immediately remove from cache so UI updates without waiting for relay
+          queryClient.setQueryData(['pages'], (old: PageData[] | undefined) =>
+            old ? old.filter(p => p.id !== page.id) : []
+          );
           queryClient.invalidateQueries({ queryKey: ['pages'] });
           queryClient.invalidateQueries({ queryKey: ['footer-pages'] });
+          queryClient.removeQueries({ queryKey: ['page', page.id] });
         },
         onError: () => {
           toast.error('Failed to delete page');
@@ -279,6 +296,19 @@ export function PageManagement() {
 
     const pageSlug = editingPage?.id || generateSlug(title);
 
+    // Only validate slug uniqueness when creating a new page (not editing)
+    if (!editingPage) {
+      if (RESERVED_SLUGS.has(pageSlug)) {
+        toast.error(`"/${pageSlug}" is a reserved route. Please use a different page title.`);
+        return;
+      }
+      const slugExists = pages?.some(p => p.id === pageSlug);
+      if (slugExists) {
+        toast.error(`A page at "/${pageSlug}" already exists. Please use a different title.`);
+        return;
+      }
+    }
+
     // Collect all gallery images from blocks
     const allGalleryImages: string[] = [];
     contentBlocks.forEach(block => {
@@ -306,6 +336,17 @@ export function PageManagement() {
         ...(buyMeCoffeeUrl.trim() ? [['buy-me-coffee', buyMeCoffeeUrl.trim()]] : []),
         ...allGalleryImages.map((img) => ['image', img]),
       ],
+    }, {
+      onSuccess: () => {
+        toast.success(editingPage ? 'Page updated!' : 'Page created!');
+        // Refresh all page queries so the list and individual page show updated data
+        queryClient.invalidateQueries({ queryKey: ['pages'] });
+        queryClient.invalidateQueries({ queryKey: ['footer-pages'] });
+        queryClient.invalidateQueries({ queryKey: ['page', pageSlug] });
+      },
+      onError: () => {
+        toast.error('Failed to save page. Please try again.');
+      },
     });
 
     resetForm();
@@ -365,9 +406,19 @@ export function PageManagement() {
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="About Us, Contact, Privacy Policy..."
               />
-              <p className="text-sm text-muted-foreground">
-                URL will be: /{editingPage?.id || generateSlug(title) || 'page-slug'}
-              </p>
+              {(() => {
+                const slug = editingPage?.id || generateSlug(title) || 'page-slug';
+                const isReserved = !editingPage && RESERVED_SLUGS.has(slug);
+                const isDuplicate = !editingPage && !!pages?.some(p => p.id === slug);
+                const hasConflict = isReserved || isDuplicate;
+                return (
+                  <p className={`text-sm ${hasConflict ? 'text-red-500 font-medium' : 'text-muted-foreground'}`}>
+                    URL will be: /{slug}
+                    {isReserved && ' — ⚠ this path is reserved by the app'}
+                    {isDuplicate && ' — ⚠ a page with this URL already exists'}
+                  </p>
+                );
+              })()}
             </div>
 
             {/* Header Image */}
