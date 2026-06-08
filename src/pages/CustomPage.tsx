@@ -149,58 +149,11 @@ export default function CustomPage() {
       />
     );
 
-  // Full-screen inline iframe mode — render iframe + floating buttons
+  // Full-screen inline iframe mode — HTML fills everything below the header menu
   if (page.brand_site && page.brand_site_inline) {
     return (
-      <div className="flex flex-col" style={{ height: 'calc(100vh - 64px)' }}>
-        {/* Thin top bar with back button */}
-        <div className="flex items-center gap-3 px-4 py-2 bg-background/90 backdrop-blur border-b shrink-0">
-          <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            Back
-          </Button>
-          <span className="text-sm font-medium text-muted-foreground truncate">{page.title}</span>
-          {/* Floating action buttons moved into the top bar for inline mode */}
-          <div className="ml-auto flex items-center gap-2">
-            {page.buy_me_coffee_url && (
-              <a
-                href={page.buy_me_coffee_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-yellow-400 hover:bg-yellow-300 text-yellow-900 font-semibold text-sm shadow transition-all duration-200 whitespace-nowrap"
-                title="Buy Me a Coffee"
-              >
-                <Coffee className="h-4 w-4 flex-shrink-0" />
-                <span className="hidden sm:inline">Buy Me a Coffee</span>
-              </a>
-            )}
-            {page.show_zap_button && (
-              <ZapButton
-                authorPubkey={ADMIN_PUBKEY}
-                eventTitle={page.title}
-                variant="default"
-                size="sm"
-                showLabel={false}
-                alwaysShow={true}
-                className="rounded-full"
-              />
-            )}
-            {/* Only show "Open" link for real URLs, not inline HTML */}
-            {!page.brand_site_is_srcdoc && (
-              <a
-                href={page.brand_site}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Button variant="ghost" size="sm">
-                  <ExternalLink className="h-4 w-4 mr-1" />
-                  Open
-                </Button>
-              </a>
-            )}
-          </div>
-        </div>
-        {renderBrandSiteIframe()}
+      <div style={{ height: 'calc(100vh - 64px)' }}>
+        {renderBrandSiteIframe('w-full h-full border-0')}
       </div>
     );
   }
