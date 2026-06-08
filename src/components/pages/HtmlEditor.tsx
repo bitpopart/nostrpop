@@ -27,10 +27,10 @@ interface HtmlEditorProps {
 }
 
 type EditTarget =
-  | { kind: 'text';     xpath: string; current: string }
-  | { kind: 'link';     xpath: string; currentHref: string; currentText: string }
-  | { kind: 'image';    xpath: string; currentSrc: string; currentAlt: string }
-  | { kind: 'download'; xpath: string; currentHref: string; currentLabel: string };
+  | { kind: 'text';           xpath: string; current: string }
+  | { kind: 'link';           xpath: string; currentHref: string; currentText: string }
+  | { kind: 'image';          xpath: string; currentSrc: string; currentAlt: string; currentDownloadHref?: string }
+  | { kind: 'download';       xpath: string; currentHref: string; currentLabel: string };
 
 // ─── XPath helpers ────────────────────────────────────────────────────────────
 
@@ -139,6 +139,14 @@ const INJECTED_SCRIPT = `
       e.stopPropagation();
       var kind = target.getAttribute('data-he-editable');
       var xpath = getXPath(target);
+      // For images, also check if a parent <a download> wraps them
+      var downloadHref = '';
+      if (kind === 'image') {
+        var parentA = target.closest('a');
+        if (parentA && (parentA.hasAttribute('download') || parentA.getAttribute('href'))) {
+          downloadHref = parentA.href || parentA.getAttribute('href') || '';
+        }
+      }
       window.parent.postMessage({
         type: '__he_click__',
         kind: kind,
@@ -147,6 +155,7 @@ const INJECTED_SCRIPT = `
         href: target.href || target.getAttribute('href') || '',
         src: target.src || target.getAttribute('src') || '',
         alt: target.alt || target.getAttribute('alt') || '',
+        downloadHref: downloadHref,
       }, '*');
     });
   });
@@ -187,6 +196,29 @@ function applyEdit(html: string, target: EditTarget, values: Record<string, stri
   } else if (target.kind === 'image') {
     if (values.src !== undefined) (el as HTMLImageElement).src = values.src;
     if (values.alt !== undefined) (el as HTMLImageElement).alt = values.alt;
+    // Wrap / unwrap image in a download <a> tag
+    if (values.downloadHref !== undefined) {
+      const parentA = el.closest('a');
+      if (values.downloadHref.trim()) {
+        if (parentA) {
+          // Update existing wrapper
+          parentA.setAttribute('href', values.downloadHref.trim());
+          parentA.setAttribute('download', '');
+        } else {
+          // Wrap the image in a new <a download>
+          const wrapper = doc.createElement('a');
+          wrapper.href = values.downloadHref.trim();
+          wrapper.setAttribute('download', '');
+          el.parentNode!.insertBefore(wrapper, el);
+          wrapper.appendChild(el);
+        }
+      } else if (parentA && parentA.hasAttribute('download')) {
+        // Remove download wrapper — unwrap the image
+        const parent = parentA.parentNode!;
+        parent.insertBefore(el, parentA);
+        parent.removeChild(parentA);
+      }
+    }
   } else if (target.kind === 'download') {
     if (values.href !== undefined) {
       (el as HTMLAnchorElement).href = values.href;
@@ -217,44 +249,62 @@ function EditDialog({ target, onClose, onSave, uploadFile }: EditDialogProps) {
   const [href, setHref] = useState('');
   const [src, setSrc] = useState('');
   const [alt, setAlt] = useState('');
+  const [downloadHref, setDownloadHref] = useState('');
+  // For images: which mode are we editing — 'image' (replace) or 'download' (make download btn)
+  const [imageMode, setImageMode] = useState<'image' | 'download'>('image');
   const [isUploading, setIsUploading] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
+  const [isUploadingDownload, setIsUploadingDownload] = useState(false);
+  const imageFileRef = useRef<HTMLInputElement>(null);
+  const downloadFileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!target) return;
     if (target.kind === 'text') setText(target.current);
     if (target.kind === 'link') { setHref(target.currentHref); setText(target.currentText); }
-    if (target.kind === 'image') { setSrc(target.currentSrc); setAlt(target.currentAlt); }
+    if (target.kind === 'image') {
+      setSrc(target.currentSrc);
+      setAlt(target.currentAlt);
+      setDownloadHref(target.currentDownloadHref ?? '');
+      // If image is already wrapped in a download link, default to download mode
+      setImageMode(target.currentDownloadHref ? 'download' : 'image');
+    }
     if (target.kind === 'download') { setHref(target.currentHref); setText(target.currentLabel); }
   }, [target]);
 
-  const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setIsUploading(true);
     try {
       const tags = await uploadFile(file);
-      const url = tags[0][1];
-      if (target?.kind === 'image') {
-        setSrc(url);
-        if (!alt) setAlt(file.name.replace(/\.[^.]+$/, ''));
-      } else {
-        setHref(url);
-      }
-      toast.success('Uploaded!');
-    } catch {
-      toast.error('Upload failed');
-    } finally {
-      setIsUploading(false);
-      if (fileRef.current) fileRef.current.value = '';
-    }
-  }, [target, alt, uploadFile]);
+      setSrc(tags[0][1]);
+      if (!alt) setAlt(file.name.replace(/\.[^.]+$/, ''));
+      toast.success('Image uploaded!');
+    } catch { toast.error('Upload failed'); }
+    finally { setIsUploading(false); if (imageFileRef.current) imageFileRef.current.value = ''; }
+  }, [alt, uploadFile]);
+
+  const handleDownloadUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingDownload(true);
+    try {
+      const tags = await uploadFile(file);
+      setDownloadHref(tags[0][1]);
+      if (target?.kind === 'download') setHref(tags[0][1]);
+      toast.success('File uploaded!');
+    } catch { toast.error('Upload failed'); }
+    finally { setIsUploadingDownload(false); if (downloadFileRef.current) downloadFileRef.current.value = ''; }
+  }, [target, uploadFile]);
 
   const handleSave = () => {
     if (!target) return;
     if (target.kind === 'text') onSave({ text });
     else if (target.kind === 'link') onSave({ href, text });
-    else if (target.kind === 'image') onSave({ src, alt });
+    else if (target.kind === 'image') {
+      // Always pass both src/alt + downloadHref (empty string = remove download wrapper)
+      onSave({ src, alt, downloadHref: imageMode === 'download' ? downloadHref : '' });
+    }
     else if (target.kind === 'download') onSave({ href, text });
   };
 
@@ -268,7 +318,7 @@ function EditDialog({ target, onClose, onSave, uploadFile }: EditDialogProps) {
   const title =
     isText ? 'Edit Text' :
     isLink ? 'Edit Link' :
-    isImage ? 'Replace Image' :
+    isImage ? 'Edit Image' :
     'Upload Downloadable File';
 
   const Icon = isText ? Type : isLink ? Link2 : isImage ? ImageIcon : Download;
@@ -284,42 +334,41 @@ function EditDialog({ target, onClose, onSave, uploadFile }: EditDialogProps) {
         </DialogHeader>
 
         <div className="space-y-4 py-2">
-          {/* Text field */}
-          {(isText || isLink || isDownload) && (
-            <div className="space-y-1.5">
-              <Label className="text-sm">{isText ? 'Text content' : 'Button / link label'}</Label>
-              <Input
-                value={text}
-                onChange={e => setText(e.target.value)}
-                placeholder="Enter text..."
-              />
-            </div>
-          )}
 
-          {/* URL / href */}
-          {(isLink) && (
-            <div className="space-y-1.5">
-              <Label className="text-sm">Link URL</Label>
-              <Input
-                type="url"
-                value={href}
-                onChange={e => setHref(e.target.value)}
-                placeholder="https://..."
-              />
-            </div>
-          )}
-
-          {/* Image URL + upload */}
+          {/* ── Image: mode toggle ── */}
           {isImage && (
+            <div className="flex rounded-lg border overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setImageMode('image')}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium transition-colors ${
+                  imageMode === 'image'
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-muted/30 text-muted-foreground hover:bg-muted/60'
+                }`}
+              >
+                <ImageIcon className="h-3.5 w-3.5" /> Replace image
+              </button>
+              <button
+                type="button"
+                onClick={() => setImageMode('download')}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium transition-colors ${
+                  imageMode === 'download'
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-muted/30 text-muted-foreground hover:bg-muted/60'
+                }`}
+              >
+                <Download className="h-3.5 w-3.5" /> Make download button
+              </button>
+            </div>
+          )}
+
+          {/* ── Replace image ── */}
+          {isImage && imageMode === 'image' && (
             <>
               <div className="space-y-1.5">
                 <Label className="text-sm">Image URL</Label>
-                <Input
-                  type="url"
-                  value={src}
-                  onChange={e => setSrc(e.target.value)}
-                  placeholder="https://..."
-                />
+                <Input type="url" value={src} onChange={e => setSrc(e.target.value)} placeholder="https://..." />
               </div>
               {src && (
                 <img src={src} alt={alt} className="w-full max-h-40 object-contain rounded border bg-muted" />
@@ -328,24 +377,78 @@ function EditDialog({ target, onClose, onSave, uploadFile }: EditDialogProps) {
                 <Label className="text-sm">Alt text</Label>
                 <Input value={alt} onChange={e => setAlt(e.target.value)} placeholder="Describe the image..." />
               </div>
-              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
-              <Button type="button" variant="outline" className="w-full" onClick={() => fileRef.current?.click()} disabled={isUploading}>
+              <input ref={imageFileRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+              <Button type="button" variant="outline" className="w-full" onClick={() => imageFileRef.current?.click()} disabled={isUploading}>
                 {isUploading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Uploading...</> : <><Upload className="h-4 w-4 mr-2" />Upload new image</>}
               </Button>
             </>
           )}
 
-          {/* Download file upload */}
+          {/* ── Make image a download button ── */}
+          {isImage && imageMode === 'download' && (
+            <>
+              {src && (
+                <img src={src} alt={alt} className="w-full max-h-32 object-contain rounded border bg-muted" />
+              )}
+              <p className="text-xs text-muted-foreground flex items-start gap-1.5">
+                <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                This image will become a clickable download button. Upload the file you want visitors to download when they click it.
+              </p>
+              <div className="space-y-1.5">
+                <Label className="text-sm">Download file URL</Label>
+                <Input
+                  type="url"
+                  value={downloadHref}
+                  onChange={e => setDownloadHref(e.target.value)}
+                  placeholder="https://... (auto-filled after upload)"
+                />
+              </div>
+              {downloadHref && (
+                <div className="flex items-center gap-2 text-xs text-green-600 bg-green-50 dark:bg-green-900/20 dark:text-green-400 px-3 py-2 rounded-lg">
+                  <Check className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate">{downloadHref}</span>
+                </div>
+              )}
+              <input ref={downloadFileRef} type="file" className="hidden" onChange={handleDownloadUpload} />
+              <Button type="button" variant="outline" className="w-full" onClick={() => downloadFileRef.current?.click()} disabled={isUploadingDownload}>
+                {isUploadingDownload
+                  ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Uploading...</>
+                  : <><Upload className="h-4 w-4 mr-2" />Upload file for download</>}
+              </Button>
+              {downloadHref && (
+                <button
+                  type="button"
+                  className="text-xs text-red-500 hover:underline flex items-center gap-1"
+                  onClick={() => setDownloadHref('')}
+                >
+                  <X className="h-3 w-3" /> Remove download link
+                </button>
+              )}
+            </>
+          )}
+
+          {/* ── Text field ── */}
+          {(isText || isLink || isDownload) && (
+            <div className="space-y-1.5">
+              <Label className="text-sm">{isText ? 'Text content' : 'Button / link label'}</Label>
+              <Input value={text} onChange={e => setText(e.target.value)} placeholder="Enter text..." />
+            </div>
+          )}
+
+          {/* ── Link URL ── */}
+          {isLink && (
+            <div className="space-y-1.5">
+              <Label className="text-sm">Link URL</Label>
+              <Input type="url" value={href} onChange={e => setHref(e.target.value)} placeholder="https://..." />
+            </div>
+          )}
+
+          {/* ── Download (non-image) ── */}
           {isDownload && (
             <>
               <div className="space-y-1.5">
                 <Label className="text-sm">File URL (auto-filled after upload)</Label>
-                <Input
-                  type="url"
-                  value={href}
-                  onChange={e => setHref(e.target.value)}
-                  placeholder="https://..."
-                />
+                <Input type="url" value={href} onChange={e => setHref(e.target.value)} placeholder="https://..." />
               </div>
               {href && (
                 <div className="flex items-center gap-2 text-xs text-green-600 bg-green-50 dark:bg-green-900/20 dark:text-green-400 px-3 py-2 rounded-lg">
@@ -353,9 +456,9 @@ function EditDialog({ target, onClose, onSave, uploadFile }: EditDialogProps) {
                   <span className="truncate">{href}</span>
                 </div>
               )}
-              <input ref={fileRef} type="file" className="hidden" onChange={handleFileUpload} />
-              <Button type="button" variant="outline" className="w-full" onClick={() => fileRef.current?.click()} disabled={isUploading}>
-                {isUploading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Uploading...</> : <><Upload className="h-4 w-4 mr-2" />Upload file for download</>}
+              <input ref={downloadFileRef} type="file" className="hidden" onChange={handleDownloadUpload} />
+              <Button type="button" variant="outline" className="w-full" onClick={() => downloadFileRef.current?.click()} disabled={isUploadingDownload}>
+                {isUploadingDownload ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Uploading...</> : <><Upload className="h-4 w-4 mr-2" />Upload file for download</>}
               </Button>
               <p className="text-xs text-muted-foreground flex items-start gap-1.5">
                 <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" />
@@ -363,6 +466,7 @@ function EditDialog({ target, onClose, onSave, uploadFile }: EditDialogProps) {
               </p>
             </>
           )}
+
         </div>
 
         <DialogFooter className="gap-2">
@@ -395,7 +499,7 @@ export function HtmlEditor({ html, onChange, uploadFile }: HtmlEditorProps) {
       } else if (kind === 'link') {
         setEditTarget({ kind: 'link', xpath, currentHref: href, currentText: text });
       } else if (kind === 'image') {
-        setEditTarget({ kind: 'image', xpath, currentSrc: src, currentAlt: alt });
+        setEditTarget({ kind: 'image', xpath, currentSrc: src, currentAlt: alt, currentDownloadHref: e.data.downloadHref || '' });
       } else if (kind === 'download') {
         setEditTarget({ kind: 'download', xpath, currentHref: href, currentLabel: text });
       }
