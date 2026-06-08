@@ -163,12 +163,37 @@ export default function CustomPage() {
       ? page.brand_site                  // legacy inline HTML
       : (fetchedHtml ?? undefined);      // fetched from Blossom URL
     if (srcDoc) {
+      // Inject a script that ensures all download links trigger a real download
+      // and never navigate away or open a new window/tab.
+      const downloadScript = `
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('click', function(e) {
+    var a = e.target.closest('a[href]');
+    if (!a) return;
+    var href = a.getAttribute('href') || '';
+    // Force download attribute on any link that looks like a file
+    if (a.hasAttribute('download') || /\\.(pdf|zip|docx?|xlsx?|pptx?|mp4|mp3|png|jpe?g|gif|svg|webp|exe|dmg|apk|html?)(\?|$)/i.test(href)) {
+      e.preventDefault();
+      e.stopPropagation();
+      var link = document.createElement('a');
+      link.href = href;
+      link.download = a.getAttribute('download') || href.split('/').pop() || 'download';
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  });
+});
+</script>`;
+      const injected = srcDoc.replace(/<\/body>/i, downloadScript + '</body>') || srcDoc + downloadScript;
       return (
         <iframe
-          srcDoc={srcDoc}
+          srcDoc={injected}
           title={page.title}
           className={className}
-          sandbox="allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads"
+          sandbox="allow-scripts allow-forms allow-downloads"
         />
       );
     }
@@ -178,7 +203,7 @@ export default function CustomPage() {
         src={page.brand_site}
         title={page.title}
         className={className}
-        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
+        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads"
       />
     );
   };
