@@ -170,6 +170,32 @@ export default function CustomPage() {
     </div>
   ) : null;
 
+  // Listen for download requests posted from inside the iframe.
+  // The iframe cannot download cross-origin files itself, so it asks the parent page to do it.
+  useEffect(() => {
+    const handler = async (e: MessageEvent) => {
+      if (!e.data || e.data.type !== '__download__') return;
+      const { url, filename } = e.data as { type: string; url: string; filename: string };
+      try {
+        const res = await fetch(url);
+        const blob = await res.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = filename || url.split('/').pop() || 'download';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+      } catch {
+        // If fetch fails, open the URL directly in a new tab as last resort
+        window.open(url, '_blank');
+      }
+    };
+    window.addEventListener('message', handler);
+    return () => window.removeEventListener('message', handler);
+  }, []);
+
   // Render the brand_site iframe.
   // Remote .html files (Blossom) are fetched and rendered via srcDoc to avoid
   // cross-origin iframe blocking — browsers won't load cross-origin HTML in iframes
@@ -179,40 +205,47 @@ export default function CustomPage() {
       return <div className={className + ' flex items-center justify-center bg-muted/20'}><Skeleton className="w-full h-full" /></div>;
     }
     const srcDoc = page.brand_site_is_srcdoc
-      ? page.brand_site                  // legacy inline HTML
-      : (fetchedHtml ?? undefined);      // fetched from Blossom URL
+      ? page.brand_site
+      : (fetchedHtml ?? undefined);
     if (srcDoc) {
-      // Inject a script that ensures download links always have the download attribute
-      // so allow-downloads handles them in-place — no navigation, no new window.
+      // Inject a script that intercepts ALL download-like link clicks,
+      // prevents any navigation, and asks the parent page to handle the download.
+      // This way the /nostr page never leaves — the parent fetches the file as a blob.
       const downloadScript = `
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-  document.addEventListener('click', function(e) {
-    var a = e.target.closest('a[href]');
+(function() {
+  var DOWNLOAD_RE = /\\.(pdf|zip|docx?|xlsx?|pptx?|mp4|mp3|png|jpe?g|gif|svg|webp|exe|dmg|apk)(\?|$)/i;
+  function handle(e) {
+    var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
     if (!a) return;
     var href = a.getAttribute('href') || '';
-    if (a.hasAttribute('download') || /\\.(pdf|zip|docx?|xlsx?|pptx?|mp4|mp3|png|jpe?g|gif|svg|webp|exe|dmg|apk)(\?|$)/i.test(href)) {
-      // Ensure the download attribute is set — browser will download in-place
-      if (!a.hasAttribute('download')) {
-        a.setAttribute('download', href.split('/').pop() || 'download');
-      }
-      // Remove target so it never opens a new window
-      a.removeAttribute('target');
+    if (!href || href.startsWith('#') || href.startsWith('javascript')) return;
+    if (a.hasAttribute('download') || DOWNLOAD_RE.test(href)) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      var filename = a.getAttribute('download') || href.split('/').pop() || 'download';
+      window.parent.postMessage({ type: '__download__', url: href, filename: filename }, '*');
     }
-  }, true);
-});
+  }
+  document.addEventListener('click', handle, true);
+  document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('click', handle, true);
+  });
+})();
 </script>`;
-      const injected = srcDoc.replace(/<\/body>/i, downloadScript + '</body>') || srcDoc + downloadScript;
+      const injected = srcDoc.includes('</head>')
+        ? srcDoc.replace('</head>', downloadScript + '</head>')
+        : downloadScript + srcDoc;
       return (
         <iframe
           srcDoc={injected}
           title={page.title}
           className={className}
-          sandbox="allow-scripts allow-forms allow-downloads"
+          sandbox="allow-scripts allow-forms"
         />
       );
     }
-    // Fallback: plain external URL (non-HTML, e.g. a website)
+    // Fallback: plain external website URL (not an HTML file)
     return (
       <iframe
         src={page.brand_site}
