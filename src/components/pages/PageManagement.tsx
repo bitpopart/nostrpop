@@ -331,7 +331,10 @@ export function PageManagement() {
   }, [brandSiteHtml]);
 
   const handleSubmit = () => {
-    if (!title.trim()) return;
+    if (!title.trim()) {
+      toast.error('Please enter a page title.');
+      return;
+    }
 
     const pageSlug = editingPage?.id || generateSlug(title);
 
@@ -1111,7 +1114,6 @@ export function PageManagement() {
             <div className="flex gap-2">
               <Button
                 onClick={handleSubmit}
-                disabled={!title.trim()}
               >
                 {editingPage ? 'Update' : 'Create'} Page
               </Button>
