@@ -374,18 +374,28 @@ export function PageManagement() {
     setShowZapButton(page.show_zap_button ?? false);
     setBuyMeCoffeeUrl(page.buy_me_coffee_url ?? '');
 
-    // Detect HTML page: either old srcdoc style OR a Blossom URL from the new flow
-    // The raw HTML is always stored in localStorage under pageSrcdocKey for the editor
-    const localHtml = localStorage.getItem(`bitpopart:page-srcdoc:${page.id}`);
-    const isHtmlPage = !!(page.brand_site_is_srcdoc || localHtml);
+    // Detect HTML page: srcdoc (legacy) OR brand_site is a URL ending in .html (new Blossom flow)
+    const isHtmlPage = !!(
+      page.brand_site_is_srcdoc ||
+      (page.brand_site && /\.html?(\?|$)/i.test(page.brand_site))
+    );
 
     if (isHtmlPage) {
-      const htmlForEditor = localHtml
-        ?? (page.brand_site_is_srcdoc ? page.brand_site : '') ?? '';
-      setBrandSiteHtml(htmlForEditor);
       setBrandSiteUrl('');
-      setBrandSiteInline(true); // HTML pages are always full-page inline
+      setBrandSiteInline(true);
       setPageTab('html');
+
+      if (page.brand_site_is_srcdoc && page.brand_site) {
+        // Legacy: HTML is inline in brand_site
+        setBrandSiteHtml(page.brand_site);
+      } else if (page.brand_site) {
+        // New flow: fetch HTML from Blossom URL
+        setBrandSiteHtml(''); // show loading state in editor
+        fetch(page.brand_site)
+          .then(r => r.text())
+          .then(html => setBrandSiteHtml(html))
+          .catch(() => toast.error('Could not load HTML from server for editing'));
+      }
     } else {
       setBrandSiteUrl(page.brand_site ?? '');
       setBrandSiteHtml('');
@@ -542,13 +552,13 @@ export function PageManagement() {
 
       const descriptionJson = JSON.stringify({ blocks });
 
-      // brand_site: for HTML pages use the Blossom URL (so visitors can load it);
-      // fall back to srcdoc only if upload failed
-      const brandSiteValue = isHtml
-        ? (publishedHtmlUrl ?? brandSiteHtml.trim())
-        : (brandSiteUrl.trim() || undefined);
-
-      const brandSiteIsSrcdoc = isHtml && !publishedHtmlUrl;
+      // For HTML pages: brand_site is always the Blossom URL.
+      // Never store raw HTML in localStorage — it's too large and causes QuotaExceededError.
+      // If the Blossom upload failed, abort rather than trying to save HTML locally.
+      if (isHtml && !publishedHtmlUrl) {
+        toast.error('Cannot save page: HTML upload to Blossom failed. Please try again.');
+        return;
+      }
 
       const pageData: PageData = {
         id: slug,
@@ -557,11 +567,9 @@ export function PageManagement() {
         header_image: headerImage || undefined,
         gallery_images: allGalleryImages,
         external_url: externalUrl || undefined,
-        brand_site: brandSiteValue,
+        brand_site: isHtml ? publishedHtmlUrl : (brandSiteUrl.trim() || undefined),
         brand_site_inline: brandSiteInline,
-        brand_site_is_srcdoc: brandSiteIsSrcdoc,
-        // Keep local HTML for the editor
-        ...(isHtml ? { _localHtml: brandSiteHtml.trim() } as object : {}),
+        brand_site_is_srcdoc: false, // always false — HTML lives on Blossom, not inline
         author_pubkey: '',
         created_at: editingPage?.created_at ?? new Date().toISOString(),
         show_in_footer: showInFooter,
@@ -570,12 +578,8 @@ export function PageManagement() {
         buy_me_coffee_url: buyMeCoffeeUrl.trim() || undefined,
       };
 
-      // Save to localStorage
+      // Save lightweight metadata to localStorage — NO HTML content, only the Blossom URL
       const allPages = loadPagesFromStorage();
-      // Store the local HTML separately so the editor can load it back
-      if (isHtml) {
-        try { localStorage.setItem(`bitpopart:page-srcdoc:${slug}`, brandSiteHtml.trim()); } catch { /* quota */ }
-      }
       savePagesToStorage(
         editingPage
           ? allPages.map(p => p.id === slug ? pageData : p)

@@ -21,20 +21,25 @@ function pageSrcdocKey(slug: string) {
  */
 export function loadPagesFromStorage(): PageData[] {
   try {
+    // One-time cleanup: remove any large srcdoc keys left over from old saves
+    // These were the cause of QuotaExceededError
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const key = localStorage.key(i);
+      if (key?.startsWith('bitpopart:page-srcdoc:')) {
+        localStorage.removeItem(key);
+      }
+    }
+
     const raw = localStorage.getItem(PAGES_STORAGE_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
 
-    // Re-hydrate heavy fields from their own keys
+    // Re-hydrate description from separate body key
     return parsed.map((p: PageData) => {
       const body = localStorage.getItem(pageBodyKey(p.id));
       if (body !== null) p.description = body;
-
-      if (p.brand_site_is_srcdoc) {
-        const srcdoc = localStorage.getItem(pageSrcdocKey(p.id));
-        if (srcdoc !== null) p.brand_site = srcdoc;
-      }
+      // brand_site is always a URL now — no re-hydration needed
       return p;
     });
   } catch { return []; }
@@ -45,30 +50,28 @@ export function loadPagesFromStorage(): PageData[] {
  * Heavy fields are stored under separate keys to avoid hitting the quota.
  */
 export function savePagesToStorage(pages: PageData[]): void {
-  // Build lightweight index (strip heavy fields)
+  // Build a lightweight index — strip ALL heavy content from it.
+  // brand_site is only kept if it's a short URL (not raw HTML).
   const index = pages.map(p => {
     const { description: _desc, ...rest } = p;
-    // Also strip brand_site HTML from index if it's srcdoc
+    // Never store raw HTML in the index — it blows the quota
     if (rest.brand_site_is_srcdoc) {
       return { ...rest, brand_site: undefined };
     }
     return rest;
   });
 
-  // Save each page's heavy content separately
+  // Save each page's block description separately (small for HTML pages — just { blocks: [] })
   pages.forEach(p => {
     try {
       localStorage.setItem(pageBodyKey(p.id), p.description ?? '');
-    } catch { /* ignore individual failures */ }
+    } catch { /* quota — skip, not critical */ }
 
-    if (p.brand_site_is_srcdoc && p.brand_site) {
-      try {
-        localStorage.setItem(pageSrcdocKey(p.id), p.brand_site);
-      } catch { /* ignore */ }
-    }
+    // Never write raw HTML to localStorage under any key
+    // (HTML pages use Blossom URLs now — nothing large to store)
   });
 
-  // Remove orphaned body/srcdoc keys for deleted pages
+  // Remove orphaned body keys for deleted pages
   const currentIds = new Set(pages.map(p => p.id));
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
@@ -77,7 +80,7 @@ export function savePagesToStorage(pages: PageData[]): void {
       const slug = key.split(':').slice(2).join(':');
       if (!currentIds.has(slug)) {
         localStorage.removeItem(key);
-        i--; // key removed, adjust index
+        i--;
       }
     }
   }
