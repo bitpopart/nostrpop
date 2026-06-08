@@ -125,6 +125,7 @@ export function usePage(slug: string) {
 
   return useQuery({
     queryKey: ['page', slug],
+    staleTime: 0, // Always fetch fresh — ensures edits (zap button, etc.) show immediately
     queryFn: async (c) => {
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(3000)]);
       

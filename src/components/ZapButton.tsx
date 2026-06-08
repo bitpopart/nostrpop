@@ -23,6 +23,8 @@ interface ZapButtonProps {
   variant?: 'default' | 'outline' | 'ghost';
   size?: 'sm' | 'default' | 'lg' | 'icon';
   showLabel?: boolean;
+  /** When true, always show the button even if the viewer is the author (e.g. page tip buttons) */
+  alwaysShow?: boolean;
 }
 
 const PRESET_AMOUNTS = [21, 100, 500, 1000, 5000, 10000];
@@ -36,6 +38,7 @@ export function ZapButton({
   variant = 'outline',
   size = 'sm',
   showLabel = true,
+  alwaysShow = false,
 }: ZapButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [amount, setAmount] = useState(21);
@@ -91,8 +94,8 @@ export function ZapButton({
     }
   };
 
-  // Don't show zap button if zapping yourself
-  if (user && user.pubkey === authorPubkey) {
+  // Don't show zap button if zapping yourself (unless alwaysShow is set, e.g. page tip buttons)
+  if (!alwaysShow && user && user.pubkey === authorPubkey) {
     return null;
   }
 

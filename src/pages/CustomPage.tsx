@@ -120,6 +120,7 @@ export default function CustomPage() {
           variant="default"
           size="default"
           showLabel={true}
+          alwaysShow={true}
           className="rounded-full shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:scale-95 transition-all duration-200 px-5"
         />
       )}
