@@ -132,25 +132,20 @@ export function PageManagement() {
     setExternalUrl(page.external_url || '');
     setShowInFooter(page.show_in_footer);
     setOrder(page.order?.toString() || '');
-    const storedBrandSite = page.event?.tags.find(t => t[0] === 'brand-site')?.[1] || '';
-    setBrandSite(storedBrandSite);
-    setBrandSiteInline(page.event?.tags.find(t => t[0] === 'brand-site-inline')?.[1] === 'true');
+    setBrandSiteInline(page.brand_site_inline ?? false);
+    setShowZapButton(page.show_zap_button ?? false);
+    setBuyMeCoffeeUrl(page.buy_me_coffee_url || '');
 
-    // Restore inline HTML from event content
-    if (storedBrandSite === '__html__') {
-      try {
-        const parsed = JSON.parse(page.description);
-        setBrandSiteHtml(parsed.brand_site_html || '');
-      } catch {
-        setBrandSiteHtml('');
-      }
+    // Restore brand_site: if it's srcdoc HTML, put it in brandSiteHtml and set sentinel
+    if (page.brand_site_is_srcdoc && page.brand_site) {
+      setBrandSite('__html__');
+      setBrandSiteHtml(page.brand_site);
       setBrandSiteMode('html');
     } else {
-      setBrandSiteMode('url');
+      setBrandSite(page.brand_site || '');
       setBrandSiteHtml('');
+      setBrandSiteMode('url');
     }
-    setShowZapButton(page.event?.tags.find(t => t[0] === 'zap-button')?.[1] === 'true');
-    setBuyMeCoffeeUrl(page.event?.tags.find(t => t[0] === 'buy-me-coffee')?.[1] || '');
     
     // Parse content blocks from description
     try {
