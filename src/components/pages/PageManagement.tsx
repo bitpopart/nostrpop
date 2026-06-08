@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, X, Upload, FileText, Edit, Image as ImageIcon, ExternalLink, GripVertical, Trash2, Loader2, Globe, Code2, FileDown } from 'lucide-react';
+import { Plus, X, Upload, FileText, Edit, Image as ImageIcon, ExternalLink, GripVertical, Trash2, Loader2, Globe, Code2, FileDown, Zap, Coffee } from 'lucide-react';
 import { generateSlug } from '@/lib/pageTypes';
 import type { PageData } from '@/lib/pageTypes';
 import ReactMarkdown from 'react-markdown';
@@ -59,6 +59,10 @@ export function PageManagement() {
   const [brandSiteMode, setBrandSiteMode] = useState<'url' | 'html' | 'pdf'>('url');
   const [brandSiteHtml, setBrandSiteHtml] = useState('');
   const [brandSiteInline, setBrandSiteInline] = useState(false);
+
+  // Page Buttons
+  const [showZapButton, setShowZapButton] = useState(false);
+  const [buyMeCoffeeUrl, setBuyMeCoffeeUrl] = useState('');
   
   const resetForm = () => {
     setTitle('');
@@ -71,6 +75,8 @@ export function PageManagement() {
     setBrandSiteMode('url');
     setBrandSiteHtml('');
     setBrandSiteInline(false);
+    setShowZapButton(false);
+    setBuyMeCoffeeUrl('');
     setEditingPage(null);
     setIsCreating(false);
   };
@@ -86,6 +92,8 @@ export function PageManagement() {
     setBrandSiteMode('url');
     setBrandSiteHtml('');
     setBrandSiteInline(page.event?.tags.find(t => t[0] === 'brand-site-inline')?.[1] === 'true');
+    setShowZapButton(page.event?.tags.find(t => t[0] === 'zap-button')?.[1] === 'true');
+    setBuyMeCoffeeUrl(page.event?.tags.find(t => t[0] === 'buy-me-coffee')?.[1] || '');
     
     // Parse content blocks from description
     try {
@@ -294,6 +302,8 @@ export function PageManagement() {
         ...(order ? [['order', order]] : []),
         ...(brandSite ? [['brand-site', brandSite]] : []),
         ...(brandSite && brandSiteInline ? [['brand-site-inline', 'true']] : []),
+        ...(showZapButton ? [['zap-button', 'true']] : []),
+        ...(buyMeCoffeeUrl.trim() ? [['buy-me-coffee', buyMeCoffeeUrl.trim()]] : []),
         ...allGalleryImages.map((img) => ['image', img]),
       ],
     });
@@ -845,6 +855,53 @@ export function PageManagement() {
               </Tabs>
             </div>
 
+            {/* Page Buttons */}
+            <div className="space-y-4 border rounded-lg p-4 bg-muted/30">
+              <Label className="text-sm font-semibold flex items-center gap-2">
+                <Zap className="h-4 w-4 text-orange-500" />
+                Page Buttons (floating corner)
+              </Label>
+              <p className="text-xs text-muted-foreground -mt-2">
+                Add a floating ⚡ Zap button and/or a ☕ Buy Me a Coffee button that appears in the bottom-right corner of the page.
+              </p>
+
+              {/* Zap Button toggle */}
+              <div className="flex items-start gap-3 p-3 border rounded-lg bg-orange-50/60 dark:bg-orange-900/10 border-orange-200 dark:border-orange-800">
+                <Checkbox
+                  id="show-zap-button"
+                  checked={showZapButton}
+                  onCheckedChange={(v) => setShowZapButton(v as boolean)}
+                />
+                <div className="flex-1">
+                  <Label htmlFor="show-zap-button" className="text-sm font-medium cursor-pointer flex items-center gap-1.5">
+                    <Zap className="h-3.5 w-3.5 text-orange-500 fill-orange-500" />
+                    ⚡ Zap Button
+                  </Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Show a floating Lightning Zap button so visitors can tip you directly via Nostr. Requires your Nostr Lightning address to be set in your profile.
+                  </p>
+                </div>
+              </div>
+
+              {/* Buy Me a Coffee */}
+              <div className="space-y-2 p-3 border rounded-lg bg-yellow-50/60 dark:bg-yellow-900/10 border-yellow-200 dark:border-yellow-800">
+                <Label className="text-sm font-medium flex items-center gap-1.5">
+                  <Coffee className="h-3.5 w-3.5 text-yellow-700 dark:text-yellow-400" />
+                  ☕ Buy Me a Coffee Button
+                </Label>
+                <Input
+                  type="url"
+                  placeholder="https://buymeacoffee.com/your-username"
+                  value={buyMeCoffeeUrl}
+                  onChange={(e) => setBuyMeCoffeeUrl(e.target.value)}
+                  className="text-sm"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Paste your Buy Me a Coffee (or Ko-fi, Patreon, etc.) URL. Leave empty to hide this button.
+                </p>
+              </div>
+            </div>
+
             {/* Footer Display */}
             <div className="flex items-center space-x-2 border-t pt-4">
               <Checkbox
@@ -969,6 +1026,18 @@ export function PageManagement() {
                         <Badge variant="outline" className="text-xs">
                           <Globe className="h-3 w-3 mr-1" />
                           Page Site
+                        </Badge>
+                      )}
+                      {page.event?.tags.find(t => t[0] === 'zap-button')?.[1] === 'true' && (
+                        <Badge variant="outline" className="text-xs border-orange-300 text-orange-600">
+                          <Zap className="h-3 w-3 mr-1 fill-orange-500" />
+                          Zap
+                        </Badge>
+                      )}
+                      {page.event?.tags.find(t => t[0] === 'buy-me-coffee')?.[1] && (
+                        <Badge variant="outline" className="text-xs border-yellow-400 text-yellow-700 dark:text-yellow-400">
+                          <Coffee className="h-3 w-3 mr-1" />
+                          BMAC
                         </Badge>
                       )}
                     </div>

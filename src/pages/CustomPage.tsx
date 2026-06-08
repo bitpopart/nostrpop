@@ -6,8 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, ExternalLink, Globe, Image as ImageIcon } from 'lucide-react';
+import { ZapButton } from '@/components/ZapButton';
+import { ArrowLeft, ExternalLink, Globe, Image as ImageIcon, Coffee } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+
+// Admin pubkey (page author for Zap recipient)
+const ADMIN_PUBKEY = '43baaf0c28e6cfb195b17ee083e19eb3a4afdfac54d9b6baf170270ed193e34c';
 
 // Content block types
 interface ContentBlock {
@@ -299,6 +303,37 @@ export default function CustomPage() {
           )}
         </div>
       </div>
+
+      {/* Floating Page Buttons (bottom-right corner) */}
+      {(page.show_zap_button || page.buy_me_coffee_url) && (
+        <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
+          {/* Buy Me a Coffee button */}
+          {page.buy_me_coffee_url && (
+            <a
+              href={page.buy_me_coffee_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-yellow-400 hover:bg-yellow-300 text-yellow-900 font-semibold text-sm shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 active:scale-95 whitespace-nowrap"
+              title="Buy Me a Coffee"
+            >
+              <Coffee className="h-4 w-4 flex-shrink-0" />
+              <span>Buy Me a Coffee</span>
+            </a>
+          )}
+
+          {/* Zap Button */}
+          {page.show_zap_button && (
+            <ZapButton
+              authorPubkey={ADMIN_PUBKEY}
+              eventTitle={page.title}
+              variant="default"
+              size="default"
+              showLabel={true}
+              className="rounded-full shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:scale-95 transition-all duration-200 px-5"
+            />
+          )}
+        </div>
+      )}
 
       {/* Image Lightbox */}
       <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>

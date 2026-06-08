@@ -18,6 +18,10 @@ export interface PageData {
   created_at: string;
   show_in_footer: boolean; // Show link in footer
   order?: number; // Display order in footer
+  /** If true, shows a floating ⚡ Zap button on the page */
+  show_zap_button?: boolean;
+  /** If set, shows a floating "Buy Me a Coffee" button linking to this URL */
+  buy_me_coffee_url?: string;
 }
 
 /**

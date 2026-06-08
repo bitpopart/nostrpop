@@ -49,6 +49,8 @@ export function usePages() {
               created_at: new Date(event.created_at * 1000).toISOString(),
               show_in_footer: showInFooter,
               order: order ? parseInt(order) : undefined,
+              show_zap_button: event.tags.find(t => t[0] === 'zap-button')?.[1] === 'true',
+              buy_me_coffee_url: event.tags.find(t => t[0] === 'buy-me-coffee')?.[1],
             };
           } catch {
             return null;
@@ -156,6 +158,8 @@ export function usePage(slug: string) {
           author_pubkey: event.pubkey,
           created_at: new Date(event.created_at * 1000).toISOString(),
           show_in_footer: event.tags.find(t => t[0] === 'footer')?.[1] === 'true',
+          show_zap_button: event.tags.find(t => t[0] === 'zap-button')?.[1] === 'true',
+          buy_me_coffee_url: event.tags.find(t => t[0] === 'buy-me-coffee')?.[1],
         } as PageData;
       } catch {
         return null;
