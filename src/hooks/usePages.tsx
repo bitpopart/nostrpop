@@ -210,13 +210,17 @@ export function usePage(slug: string) {
   return useQuery({
     queryKey: ['page', slug],
     staleTime: 0,
-    gcTime: 0,
+    gcTime: 30000,
     refetchOnMount: true,
     enabled: !!slug,
+    // Return localStorage immediately as initial data so the page never shows
+    // "not found" while waiting for the relay
+    initialData: () => loadPagesFromStorage().find(p => p.id === slug) ?? undefined,
+    initialDataUpdatedAt: 0, // treat as immediately stale so Nostr is still queried
     queryFn: async (c) => {
-      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(4000)]);
+      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(5000)]);
 
-      // Try Nostr first
+      // Try Nostr — it is the source of truth for all visitors
       try {
         const events = await nostr.query(
           [{ kinds: [38175], authors: [ADMIN_PUBKEY], '#d': [slug], limit: 1 }],
@@ -226,9 +230,9 @@ export function usePage(slug: string) {
           const page = eventToPageData(events[0]);
           if (page) return page;
         }
-      } catch { /* ignore */ }
+      } catch { /* relay unavailable */ }
 
-      // Fall back to localStorage
+      // Fall back to localStorage (works for admin's own browser)
       return loadPagesFromStorage().find(p => p.id === slug) ?? null;
     },
   });

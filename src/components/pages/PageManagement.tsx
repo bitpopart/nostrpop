@@ -380,11 +380,11 @@ export function PageManagement() {
     const isHtmlPage = !!(page.brand_site_is_srcdoc || localHtml);
 
     if (isHtmlPage) {
-      // Prefer local HTML for editing; fall back to brand_site if it's srcdoc
       const htmlForEditor = localHtml
         ?? (page.brand_site_is_srcdoc ? page.brand_site : '') ?? '';
       setBrandSiteHtml(htmlForEditor);
       setBrandSiteUrl('');
+      setBrandSiteInline(true); // HTML pages are always full-page inline
       setPageTab('html');
     } else {
       setBrandSiteUrl(page.brand_site ?? '');
@@ -676,12 +676,12 @@ export function PageManagement() {
             {/* ── Page Type Tabs ── */}
             <Tabs value={pageTab} onValueChange={v => setPageTab(v as 'static' | 'html')}>
               <TabsList className="w-full h-auto p-1 grid grid-cols-2">
-                <TabsTrigger value="static" className="flex flex-col items-center gap-1 py-3 h-auto">
+                <TabsTrigger value="static" className="flex flex-col items-center gap-1 py-3 h-auto" onClick={() => setBrandSiteInline(false)}>
                   <FileText className="h-4 w-4" />
                   <span className="font-semibold text-sm">Static Page</span>
                   <span className="text-xs font-normal opacity-70 leading-tight text-center">Text, images &amp; content blocks</span>
                 </TabsTrigger>
-                <TabsTrigger value="html" className="flex flex-col items-center gap-1 py-3 h-auto">
+                <TabsTrigger value="html" className="flex flex-col items-center gap-1 py-3 h-auto" onClick={() => setBrandSiteInline(true)}>
                   <FileCode className="h-4 w-4" />
                   <span className="font-semibold text-sm">HTML Upload</span>
                   <span className="text-xs font-normal opacity-70 leading-tight text-center">Upload &amp; edit a custom HTML file</span>
@@ -826,20 +826,7 @@ export function PageManagement() {
                   )}
                 </div>
 
-                {/* Show as full page toggle */}
-                {brandSiteHtml && (
-                  <div className="flex items-start gap-3 p-4 rounded-lg border bg-muted/30">
-                    <Checkbox
-                      id="brand-inline-html"
-                      checked={brandSiteInline}
-                      onCheckedChange={v => setBrandSiteInline(v as boolean)}
-                    />
-                    <div>
-                      <Label htmlFor="brand-inline-html" className="cursor-pointer font-medium">Show as full page (fills screen below header)</Label>
-                      <p className="text-xs text-muted-foreground mt-0.5">When checked, the HTML fills the full viewport under the menu. Recommended for custom pages.</p>
-                    </div>
-                  </div>
-                )}
+                {/* HTML pages always fill the full screen below the header — no toggle needed */}
 
                 {/* Footer */}
                 <div className="flex items-center gap-2">
