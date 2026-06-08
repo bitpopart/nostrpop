@@ -16,6 +16,39 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, X, Upload, FileText, Edit, Image as ImageIcon, ExternalLink, GripVertical, Trash2, Loader2, Globe, Code2, FileDown, Zap, Coffee, LayoutGrid } from 'lucide-react';
 import { generateSlug } from '@/lib/pageTypes';
 import type { PageData } from '@/lib/pageTypes';
+
+// All static route slugs in AppRouter.tsx — prevent custom pages from shadowing them
+const RESERVED_SLUGS = new Set([
+  'cards',
+  'card',
+  'share',
+  'art',
+  '21k-art',
+  'canvas',
+  'shop',
+  'admin',
+  'feed',
+  'blog',
+  'popup',
+  'artist',
+  'projects',
+  'nostr-projects',
+  'badges',
+  'fundraising',
+  'vlog',
+  'wall',
+  'categories',
+  'order-confirmation',
+  'free',
+  'games',
+  'animations',
+  'wallpapers',
+  'gifs',
+  'avatars',
+  'banners',
+  'frl',
+  'app',
+]);
 import { MediaPicker } from './MediaPicker';
 import type { MediaShowcaseType } from './MediaShowcaseBlock';
 import ReactMarkdown from 'react-markdown';
