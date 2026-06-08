@@ -1,85 +1,36 @@
-import { useNostr } from '@nostrify/react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { PageData, SocialMediaLink } from '@/lib/pageTypes';
+import { useNostr } from '@nostrify/react';
 
-const ADMIN_PUBKEY = '43baaf0c28e6cfb195b17ee083e19eb3a4afdfac54d9b6baf170270ed193e34c';
+const PAGES_KEY = 'bitpopart:pages';
+
+/** Read all pages from localStorage */
+export function loadPagesFromStorage(): PageData[] {
+  try {
+    const raw = localStorage.getItem(PAGES_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Write all pages to localStorage and return the new list */
+export function savePagesToStorage(pages: PageData[]): void {
+  localStorage.setItem(PAGES_KEY, JSON.stringify(pages));
+}
 
 /**
- * Fetch all pages
+ * Fetch all pages from localStorage
  */
 export function usePages() {
-  const { nostr } = useNostr();
-
   return useQuery({
     queryKey: ['pages'],
     staleTime: 0,
     gcTime: 0,
-    queryFn: async (c) => {
-      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(3000)]);
-      
-      const events = await nostr.query(
-        [{ kinds: [38175], authors: [ADMIN_PUBKEY], limit: 50 }],
-        { signal }
-      );
-
-      const pages: PageData[] = events
-        .map((event): PageData | null => {
-          try {
-            const id = event.tags.find(t => t[0] === 'd')?.[1];
-            const title = event.tags.find(t => t[0] === 'title')?.[1];
-            const headerImage = event.tags.find(t => t[0] === 'header')?.[1];
-            const externalUrl = event.tags.find(t => t[0] === 'r')?.[1];
-            const showInFooter = event.tags.find(t => t[0] === 'footer')?.[1] === 'true';
-            const order = event.tags.find(t => t[0] === 'order')?.[1];
-            
-            if (!id || !title) return null;
-
-            // Get all gallery images from tags
-            const galleryImages = event.tags.filter(t => t[0] === 'image').map(t => t[1]);
-
-            // Resolve brand_site:
-            // '__html__' → HTML is in event content (brand_site_html key), render via srcdoc
-            // anything else → treat as a plain URL
-            const brandSiteTag = event.tags.find(t => t[0] === 'brand-site')?.[1];
-            let resolvedBrandSite: string | undefined;
-            let brandSiteIsHtmlSrcdoc = false;
-            if (brandSiteTag === '__html__') {
-              try {
-                const parsed = JSON.parse(event.content);
-                if (parsed.brand_site_html) {
-                  resolvedBrandSite = parsed.brand_site_html;
-                  brandSiteIsHtmlSrcdoc = true;
-                }
-              } catch { /* ignore */ }
-            } else if (brandSiteTag && !brandSiteTag.startsWith('__')) {
-              resolvedBrandSite = brandSiteTag;
-            }
-
-            return {
-              id,
-              event,
-              title,
-              description: event.content, // Store as-is (could be JSON with blocks or plain text)
-              gallery_images: galleryImages,
-              external_url: externalUrl,
-              brand_site: resolvedBrandSite,
-              brand_site_inline: event.tags.find(t => t[0] === 'brand-site-inline')?.[1] === 'true',
-              brand_site_is_srcdoc: brandSiteIsHtmlSrcdoc,
-              author_pubkey: event.pubkey,
-              created_at: new Date(event.created_at * 1000).toISOString(),
-              show_in_footer: showInFooter,
-              order: order ? parseInt(order) : undefined,
-              show_zap_button: event.tags.find(t => t[0] === 'zap-button')?.[1] === 'true',
-              buy_me_coffee_url: event.tags.find(t => t[0] === 'buy-me-coffee')?.[1],
-            };
-          } catch {
-            return null;
-          }
-        })
-        .filter((p): p is PageData => p !== null)
-        .sort((a, b) => (a.order || 999) - (b.order || 999));
-
-      return pages;
+    queryFn: () => {
+      return loadPagesFromStorage().sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
     },
   });
 }
@@ -88,51 +39,14 @@ export function usePages() {
  * Fetch footer pages only
  */
 export function useFooterPages() {
-  const { nostr } = useNostr();
-
   return useQuery({
     queryKey: ['footer-pages'],
-    queryFn: async (c) => {
-      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(3000)]);
-      
-      const events = await nostr.query(
-        [{ kinds: [38175], authors: [ADMIN_PUBKEY], '#footer': ['true'], limit: 20 }],
-        { signal }
-      );
-
-      const pages: PageData[] = events
-        .map((event): PageData | null => {
-          try {
-            const id = event.tags.find(t => t[0] === 'd')?.[1];
-            const title = event.tags.find(t => t[0] === 'title')?.[1];
-            const order = event.tags.find(t => t[0] === 'order')?.[1];
-            
-            if (!id || !title) return null;
-
-            // Get all gallery images from tags
-            const galleryImages = event.tags.filter(t => t[0] === 'image').map(t => t[1]);
-
-            return {
-              id,
-              event,
-              title,
-              description: event.content, // Store as-is (could be JSON with blocks or plain text)
-              header_image: event.tags.find(t => t[0] === 'header')?.[1],
-              gallery_images: galleryImages,
-              external_url: event.tags.find(t => t[0] === 'r')?.[1],
-              author_pubkey: event.pubkey,
-              created_at: new Date(event.created_at * 1000).toISOString(),
-              show_in_footer: true,
-              order: order ? parseInt(order) : undefined,
-            };
-          } catch {
-            return null;
-          }
-        })
-        .filter((p): p is PageData => p !== null)
-        .sort((a, b) => (a.order || 999) - (b.order || 999));
-
-      return pages;
+    staleTime: 0,
+    gcTime: 0,
+    queryFn: () => {
+      return loadPagesFromStorage()
+        .filter(p => p.show_in_footer)
+        .sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
     },
   });
 }
@@ -141,78 +55,23 @@ export function useFooterPages() {
  * Fetch a single page by slug
  */
 export function usePage(slug: string) {
-  const { nostr } = useNostr();
-
   return useQuery({
     queryKey: ['page', slug],
-    staleTime: 0,          // Always treat as stale — refetch from relay on every mount
-    gcTime: 0,             // Don't keep stale page data in cache at all
-    refetchOnMount: true,  // Always refetch when the component mounts
-    queryFn: async (c) => {
-      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(3000)]);
-      
-      const events = await nostr.query(
-        [{ kinds: [38175], authors: [ADMIN_PUBKEY], '#d': [slug], limit: 1 }],
-        { signal }
-      );
-
-      if (events.length === 0) return null;
-
-      const event = events[0];
-      try {
-        const id = event.tags.find(t => t[0] === 'd')?.[1];
-        const title = event.tags.find(t => t[0] === 'title')?.[1];
-
-        if (!id || !title) return null;
-
-        // Get all gallery images from tags
-        const galleryImages = event.tags.filter(t => t[0] === 'image').map(t => t[1]);
-
-        // Resolve brand_site:
-        // '__html__' → HTML is in event content (brand_site_html key), render via srcdoc
-        // anything else → treat as a plain URL
-        const brandSiteTag = event.tags.find(t => t[0] === 'brand-site')?.[1];
-        let resolvedBrandSite: string | undefined;
-        let brandSiteIsHtmlSrcdoc = false;
-        if (brandSiteTag === '__html__') {
-          try {
-            const parsed = JSON.parse(event.content);
-            if (parsed.brand_site_html) {
-              resolvedBrandSite = parsed.brand_site_html;
-              brandSiteIsHtmlSrcdoc = true;
-            }
-          } catch { /* ignore */ }
-        } else if (brandSiteTag && !brandSiteTag.startsWith('__')) {
-          resolvedBrandSite = brandSiteTag;
-        }
-
-        return {
-          id,
-          event,
-          title,
-          description: event.content,
-          header_image: event.tags.find(t => t[0] === 'header')?.[1],
-          gallery_images: galleryImages,
-          external_url: event.tags.find(t => t[0] === 'r')?.[1],
-          brand_site: resolvedBrandSite,
-          brand_site_inline: event.tags.find(t => t[0] === 'brand-site-inline')?.[1] === 'true',
-          brand_site_is_srcdoc: brandSiteIsHtmlSrcdoc,
-          author_pubkey: event.pubkey,
-          created_at: new Date(event.created_at * 1000).toISOString(),
-          show_in_footer: event.tags.find(t => t[0] === 'footer')?.[1] === 'true',
-          show_zap_button: event.tags.find(t => t[0] === 'zap-button')?.[1] === 'true',
-          buy_me_coffee_url: event.tags.find(t => t[0] === 'buy-me-coffee')?.[1],
-        } as PageData;
-      } catch {
-        return null;
-      }
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: true,
+    queryFn: () => {
+      return loadPagesFromStorage().find(p => p.id === slug) ?? null;
     },
+    enabled: !!slug,
   });
 }
 
 /**
- * Fetch social media links
+ * Fetch social media links — still from Nostr (unchanged)
  */
+const ADMIN_PUBKEY = '43baaf0c28e6cfb195b17ee083e19eb3a4afdfac54d9b6baf170270ed193e34c';
+
 export function useSocialMediaLinks() {
   const { nostr } = useNostr();
 
@@ -230,7 +89,6 @@ export function useSocialMediaLinks() {
         .map((event): SocialMediaLink | null => {
           try {
             const content = JSON.parse(event.content);
-            // Skip deleted items
             if (content.deleted) return null;
             
             const id = event.tags.find(t => t[0] === 'd')?.[1];

@@ -1,8 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useNostrPublish } from '@/hooks/useNostrPublish';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { usePages } from '@/hooks/usePages';
+import { usePages, loadPagesFromStorage, savePagesToStorage } from '@/hooks/usePages';
 import { useUploadFile } from '@/hooks/useUploadFile';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -67,8 +65,6 @@ interface ContentBlock {
 }
 
 export function PageManagement() {
-  const { user } = useCurrentUser();
-  const { mutate: createEvent } = useNostrPublish();
   const { mutateAsync: uploadFile } = useUploadFile();
   const { data: pages, isLoading } = usePages();
   const queryClient = useQueryClient();
@@ -290,35 +286,13 @@ export function PageManagement() {
   };
 
   const handleDelete = (page: PageData) => {
-    if (!page.event) return;
     if (!confirm(`Delete "${page.title}"? This cannot be undone.`)) return;
-
-    createEvent(
-      {
-        kind: 5,
-        content: 'Deleted page',
-        tags: [
-          ['e', page.event.id],
-          ['a', `38175:${page.event.pubkey}:${page.id}`],
-          ['k', '38175'],
-        ],
-      },
-      {
-        onSuccess: () => {
-          toast.success('Page deleted');
-          // Immediately remove from cache so UI updates without waiting for relay
-          queryClient.setQueryData(['pages'], (old: PageData[] | undefined) =>
-            old ? old.filter(p => p.id !== page.id) : []
-          );
-          queryClient.invalidateQueries({ queryKey: ['pages'] });
-          queryClient.invalidateQueries({ queryKey: ['footer-pages'] });
-          queryClient.removeQueries({ queryKey: ['page', page.id] });
-        },
-        onError: () => {
-          toast.error('Failed to delete page');
-        },
-      }
-    );
+    const updated = loadPagesFromStorage().filter(p => p.id !== page.id);
+    savePagesToStorage(updated);
+    queryClient.invalidateQueries({ queryKey: ['pages'] });
+    queryClient.invalidateQueries({ queryKey: ['footer-pages'] });
+    queryClient.removeQueries({ queryKey: ['page', page.id] });
+    toast.success('Page deleted');
   };
 
   const handleBrandSiteFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -357,7 +331,7 @@ export function PageManagement() {
   }, [brandSiteHtml]);
 
   const handleSubmit = () => {
-    if (!user || !title.trim()) return;
+    if (!title.trim()) return;
 
     const hasContent =
       !!brandSite ||
@@ -395,53 +369,42 @@ export function PageManagement() {
       }
     });
 
-    // HTML is stored directly in the event content as srcdoc — works on all devices
+    // Build the page object and save directly to localStorage — no signing needed
     const isInlineHtml = brandSite === '__html__' && brandSiteHtml.trim();
 
-    createEvent({
-      kind: 38175,
-      content: JSON.stringify({
+    const pageData: PageData = {
+      id: pageSlug,
+      title: title.trim(),
+      description: JSON.stringify({
         blocks: contentBlocks,
         ...(isInlineHtml ? { brand_site_html: brandSiteHtml.trim() } : {}),
       }),
-      tags: [
-        ['d', pageSlug],
-        ['title', title.trim()],
-        ['t', 'custom-page'],
-        ...(headerImage ? [['header', headerImage]] : []),
-        ...(externalUrl ? [['r', externalUrl]] : []),
-        ...(showInFooter ? [['footer', 'true']] : []),
-        ...(order ? [['order', order]] : []),
-        ...(isInlineHtml ? [['brand-site', '__html__']] : brandSite ? [['brand-site', brandSite]] : []),
-        ...(brandSite && brandSiteInline ? [['brand-site-inline', 'true']] : []),
-        ...(showZapButton ? [['zap-button', 'true']] : []),
-        ...(buyMeCoffeeUrl.trim() ? [['buy-me-coffee', buyMeCoffeeUrl.trim()]] : []),
-        ...allGalleryImages.map((img) => ['image', img]),
-      ],
-    }, {
-      onSuccess: () => {
-        toast.success(editingPage ? 'Page updated!' : 'Page created!');
-        queryClient.invalidateQueries({ queryKey: ['pages'] });
-        queryClient.invalidateQueries({ queryKey: ['footer-pages'] });
-        queryClient.invalidateQueries({ queryKey: ['page', pageSlug] });
-        resetForm();
-      },
-      onError: () => {
-        toast.error('Failed to save page. Please try again.');
-      },
-    });
-  };
+      header_image: headerImage || undefined,
+      gallery_images: allGalleryImages,
+      external_url: externalUrl || undefined,
+      brand_site: isInlineHtml ? brandSiteHtml.trim() : (brandSite || undefined),
+      brand_site_inline: brandSiteInline,
+      brand_site_is_srcdoc: !!isInlineHtml,
+      author_pubkey: '',
+      created_at: editingPage?.created_at ?? new Date().toISOString(),
+      show_in_footer: showInFooter,
+      order: order ? parseInt(order) : undefined,
+      show_zap_button: showZapButton,
+      buy_me_coffee_url: buyMeCoffeeUrl.trim() || undefined,
+    };
 
-  if (!user) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Authentication Required</CardTitle>
-          <CardDescription>Please log in to manage pages</CardDescription>
-        </CardHeader>
-      </Card>
-    );
-  }
+    const existing = loadPagesFromStorage();
+    const updated = editingPage
+      ? existing.map(p => p.id === pageSlug ? pageData : p)
+      : [...existing, pageData];
+    savePagesToStorage(updated);
+
+    toast.success(editingPage ? 'Page updated!' : 'Page created!');
+    queryClient.invalidateQueries({ queryKey: ['pages'] });
+    queryClient.invalidateQueries({ queryKey: ['footer-pages'] });
+    queryClient.invalidateQueries({ queryKey: ['page', pageSlug] });
+    resetForm();
+  };
 
   return (
     <div className="space-y-6">
