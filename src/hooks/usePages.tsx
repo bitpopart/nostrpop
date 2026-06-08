@@ -39,6 +39,10 @@ function eventToPageData(event: { id: string; pubkey: string; kind: number; cont
           brandSiteIsHtmlSrcdoc = true;
         }
       } catch { /* ignore */ }
+    } else if (brandSiteTag?.startsWith('__local__:')) {
+      // Legacy: HTML was stored in localStorage under this key
+      const localHtml = localStorage.getItem(`page-html:${brandSiteTag.slice('__local__:'.length)}`);
+      if (localHtml) { resolvedBrandSite = localHtml; brandSiteIsHtmlSrcdoc = true; }
     } else if (brandSiteTag && !brandSiteTag.startsWith('__')) {
       resolvedBrandSite = brandSiteTag;
     }
