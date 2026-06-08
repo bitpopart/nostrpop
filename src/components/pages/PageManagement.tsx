@@ -424,13 +424,12 @@ export function PageManagement() {
         queryClient.invalidateQueries({ queryKey: ['pages'] });
         queryClient.invalidateQueries({ queryKey: ['footer-pages'] });
         queryClient.invalidateQueries({ queryKey: ['page', pageSlug] });
+        resetForm();
       },
       onError: () => {
         toast.error('Failed to save page. Please try again.');
       },
     });
-
-    resetForm();
   };
 
   if (!user) {
