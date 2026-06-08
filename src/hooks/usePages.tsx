@@ -5,19 +5,84 @@ import type { PageData, SocialMediaLink } from '@/lib/pageTypes';
 const ADMIN_PUBKEY = '43baaf0c28e6cfb195b17ee083e19eb3a4afdfac54d9b6baf170270ed193e34c';
 const PAGES_STORAGE_KEY = 'bitpopart:pages';
 
-/** Read pages saved locally on this browser */
+/** Key for per-page body content (description / blocks JSON) */
+function pageBodyKey(slug: string) {
+  return `bitpopart:page-body:${slug}`;
+}
+
+/** Key for per-page brand-site HTML */
+function pageSrcdocKey(slug: string) {
+  return `bitpopart:page-srcdoc:${slug}`;
+}
+
+/**
+ * Read the lightweight page index from localStorage.
+ * Heavy fields (description, brand_site HTML) are stored separately.
+ */
 export function loadPagesFromStorage(): PageData[] {
   try {
     const raw = localStorage.getItem(PAGES_STORAGE_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(parsed)) return [];
+
+    // Re-hydrate heavy fields from their own keys
+    return parsed.map((p: PageData) => {
+      const body = localStorage.getItem(pageBodyKey(p.id));
+      if (body !== null) p.description = body;
+
+      if (p.brand_site_is_srcdoc) {
+        const srcdoc = localStorage.getItem(pageSrcdocKey(p.id));
+        if (srcdoc !== null) p.brand_site = srcdoc;
+      }
+      return p;
+    });
   } catch { return []; }
 }
 
-/** Persist pages locally */
+/**
+ * Persist pages locally.
+ * Heavy fields are stored under separate keys to avoid hitting the quota.
+ */
 export function savePagesToStorage(pages: PageData[]): void {
-  localStorage.setItem(PAGES_STORAGE_KEY, JSON.stringify(pages));
+  // Build lightweight index (strip heavy fields)
+  const index = pages.map(p => {
+    const { description: _desc, ...rest } = p;
+    // Also strip brand_site HTML from index if it's srcdoc
+    if (rest.brand_site_is_srcdoc) {
+      return { ...rest, brand_site: undefined };
+    }
+    return rest;
+  });
+
+  // Save each page's heavy content separately
+  pages.forEach(p => {
+    try {
+      localStorage.setItem(pageBodyKey(p.id), p.description ?? '');
+    } catch { /* ignore individual failures */ }
+
+    if (p.brand_site_is_srcdoc && p.brand_site) {
+      try {
+        localStorage.setItem(pageSrcdocKey(p.id), p.brand_site);
+      } catch { /* ignore */ }
+    }
+  });
+
+  // Remove orphaned body/srcdoc keys for deleted pages
+  const currentIds = new Set(pages.map(p => p.id));
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (!key) continue;
+    if (key.startsWith('bitpopart:page-body:') || key.startsWith('bitpopart:page-srcdoc:')) {
+      const slug = key.split(':').slice(2).join(':');
+      if (!currentIds.has(slug)) {
+        localStorage.removeItem(key);
+        i--; // key removed, adjust index
+      }
+    }
+  }
+
+  localStorage.setItem(PAGES_STORAGE_KEY, JSON.stringify(index));
 }
 
 /** Convert a Nostr kind-38175 event into a PageData object */
