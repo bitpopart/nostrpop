@@ -95,7 +95,38 @@ export default function CustomPage() {
 
   const contentBlocks = getContentBlocks();
 
-  // Full-screen inline iframe mode — render nothing except the iframe itself
+  // Floating corner buttons — shared between both render modes
+  const floatingButtons = (page.show_zap_button || page.buy_me_coffee_url) ? (
+    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
+      {/* Buy Me a Coffee button */}
+      {page.buy_me_coffee_url && (
+        <a
+          href={page.buy_me_coffee_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-yellow-400 hover:bg-yellow-300 text-yellow-900 font-semibold text-sm shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 active:scale-95 whitespace-nowrap"
+          title="Buy Me a Coffee"
+        >
+          <Coffee className="h-4 w-4 flex-shrink-0" />
+          <span>Buy Me a Coffee</span>
+        </a>
+      )}
+
+      {/* Zap Button */}
+      {page.show_zap_button && (
+        <ZapButton
+          authorPubkey={ADMIN_PUBKEY}
+          eventTitle={page.title}
+          variant="default"
+          size="default"
+          showLabel={true}
+          className="rounded-full shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:scale-95 transition-all duration-200 px-5"
+        />
+      )}
+    </div>
+  ) : null;
+
+  // Full-screen inline iframe mode — render iframe + floating buttons
   if (page.brand_site && page.brand_site_inline) {
     return (
       <div className="fixed inset-0 flex flex-col" style={{ zIndex: 0 }}>
@@ -124,6 +155,7 @@ export default function CustomPage() {
           className="flex-1 w-full border-0"
           sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
         />
+        {floatingButtons}
       </div>
     );
   }
@@ -305,35 +337,7 @@ export default function CustomPage() {
       </div>
 
       {/* Floating Page Buttons (bottom-right corner) */}
-      {(page.show_zap_button || page.buy_me_coffee_url) && (
-        <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
-          {/* Buy Me a Coffee button */}
-          {page.buy_me_coffee_url && (
-            <a
-              href={page.buy_me_coffee_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-yellow-400 hover:bg-yellow-300 text-yellow-900 font-semibold text-sm shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 active:scale-95 whitespace-nowrap"
-              title="Buy Me a Coffee"
-            >
-              <Coffee className="h-4 w-4 flex-shrink-0" />
-              <span>Buy Me a Coffee</span>
-            </a>
-          )}
-
-          {/* Zap Button */}
-          {page.show_zap_button && (
-            <ZapButton
-              authorPubkey={ADMIN_PUBKEY}
-              eventTitle={page.title}
-              variant="default"
-              size="default"
-              showLabel={true}
-              className="rounded-full shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:scale-95 transition-all duration-200 px-5"
-            />
-          )}
-        </div>
-      )}
+      {floatingButtons}
 
       {/* Image Lightbox */}
       <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
