@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -45,6 +45,7 @@ export function PageManagement() {
   const [isCreating, setIsCreating] = useState(false);
   const [editingPage, setEditingPage] = useState<PageData | null>(null);
   const brandSiteFileRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef<HTMLDivElement>(null);
   
   // Form state
   const [title, setTitle] = useState('');
@@ -69,7 +70,16 @@ export function PageManagement() {
   const [showZapButton, setShowZapButton] = useState(false);
   const [buyMeCoffeeUrl, setBuyMeCoffeeUrl] = useState('');
   
-  const resetForm = () => {
+  // Scroll to the form whenever it opens
+  useEffect(() => {
+    if (isCreating && formRef.current) {
+      setTimeout(() => {
+        formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 50);
+    }
+  }, [isCreating]);
+
+  const resetForm = (keepOpen = false) => {
     setTitle('');
     setHeaderImage('');
     setExternalUrl('');
@@ -83,7 +93,7 @@ export function PageManagement() {
     setShowZapButton(false);
     setBuyMeCoffeeUrl('');
     setEditingPage(null);
-    setIsCreating(false);
+    if (!keepOpen) setIsCreating(false);
   };
 
   const handleEdit = (page: PageData) => {
@@ -140,6 +150,7 @@ export function PageManagement() {
     }
     
     setIsCreating(true);
+    // scrollIntoView handled by the useEffect on isCreating
   };
 
   const addContentBlock = (type: 'markdown' | 'gallery' | 'media', mediaType?: MediaShowcaseType) => {
@@ -417,7 +428,17 @@ export function PageManagement() {
               <CardTitle>Page Management</CardTitle>
               <CardDescription>Create custom pages with multiple content blocks, galleries and external links</CardDescription>
             </div>
-            <Button onClick={() => setIsCreating(!isCreating)} variant={isCreating ? "outline" : "default"}>
+            <Button
+              onClick={() => {
+                if (isCreating) {
+                  resetForm(); // closes form
+                } else {
+                  resetForm(true); // clear stale state but keep open=false first, then set true
+                  setIsCreating(true);
+                }
+              }}
+              variant={isCreating ? "outline" : "default"}
+            >
               {isCreating ? (
                 <>
                   <X className="h-4 w-4 mr-2" />
@@ -436,7 +457,7 @@ export function PageManagement() {
 
       {/* Create/Edit Form */}
       {isCreating && (
-        <Card>
+        <Card ref={formRef}>
           <CardHeader>
             <CardTitle>{editingPage ? 'Edit' : 'Create New'} Page</CardTitle>
           </CardHeader>
