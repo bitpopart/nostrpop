@@ -45,6 +45,7 @@ const MEDIUMS = [
   'Digital Art',
   'Digital Art & Original Painted Art Frame',
   'Original Painted Art Frame',
+  'Original Painted',
   'Digital Painting',
   'Digital Illustration',
   'Photography',
@@ -67,14 +68,14 @@ const artworkSchema = z.object({
   edition: z.string().optional(),
   certificateUrl: z.string().url('Must be a valid URL').optional().or(z.literal('')),
   saleType: z.enum(['not_for_sale', 'fixed', 'auction', 'sold']),
-  price: z.number().min(1, 'Price must be greater than 0').optional(),
+  price: z.preprocess(v => (typeof v === 'number' && isNaN(v) ? undefined : v), z.number().min(0, 'Price must be 0 or greater').optional()),
   currency: z.string().optional(),
-  startingBid: z.number().min(1, 'Starting bid must be greater than 0').optional(),
-  auctionDuration: z.number().min(1, 'Auction must be at least 1 hour').max(168, 'Auction cannot exceed 1 week').optional(),
+  startingBid: z.preprocess(v => (typeof v === 'number' && isNaN(v) ? undefined : v), z.number().min(1, 'Starting bid must be greater than 0').optional()),
+  auctionDuration: z.preprocess(v => (typeof v === 'number' && isNaN(v) ? undefined : v), z.number().min(1, 'Auction must be at least 1 hour').max(168, 'Auction cannot exceed 1 week').optional()),
   // Shipping fields
   localCountries: z.string().optional(),
-  localShippingCost: z.number().min(0, 'Local shipping cost must be 0 or greater').optional(),
-  internationalShippingCost: z.number().min(0, 'International shipping cost must be 0 or greater').optional(),
+  localShippingCost: z.preprocess(v => (typeof v === 'number' && isNaN(v) ? undefined : v), z.number().min(0, 'Local shipping cost must be 0 or greater').optional()),
+  internationalShippingCost: z.preprocess(v => (typeof v === 'number' && isNaN(v) ? undefined : v), z.number().min(0, 'International shipping cost must be 0 or greater').optional()),
   // Gallery display
   featured: z.boolean().optional(),
 });
@@ -652,7 +653,7 @@ export function EditArtworkForm({ artwork, onSuccess, onCancel }: EditArtworkFor
 
                     {isSold && (
                       <div className="space-y-2">
-                        <Label htmlFor="price">Sold Price *</Label>
+                        <Label htmlFor="price">Sold Price (optional)</Label>
                         <Input
                           id="price"
                           type="number"

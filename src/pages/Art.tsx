@@ -3,9 +3,11 @@ import { useSeoMeta } from '@unhead/react';
 import { useSearchParams } from 'react-router-dom';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useArtworks, useDeleteArtwork } from '@/hooks/useArtworks';
+import { useAuctionBannerSettings, usePublishAuctionBannerSettings } from '@/hooks/useAuctionBannerSettings';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -33,7 +35,8 @@ import {
   Gavel,
   ShoppingCart,
   Eye,
-  CheckCircle
+  CheckCircle,
+  Megaphone,
 } from 'lucide-react';
 
 const Art = () => {
@@ -84,6 +87,11 @@ const Art = () => {
   
   // Get featured artworks for tile gallery
   const featuredArtworks = artworks?.filter(artwork => artwork.featured) || [];
+
+  // Auction banner settings
+  const { data: auctionBannerSettings } = useAuctionBannerSettings();
+  const { publish: publishBannerSettings, isPending: isSavingBanner } = usePublishAuctionBannerSettings();
+  const auctionBannerEnabled = auctionBannerSettings?.enabled ?? true;
 
   useSeoMeta({
     title: 'Art Gallery - BitPop Cards',
@@ -473,16 +481,60 @@ const Art = () => {
 
           {user && isAdmin && (
             <TabsContent value="admin">
-              <CreateArtworkForm
-                onSuccess={() => {
-                  setActiveTab('gallery');
-                  toast({
-                    title: "Artwork Created",
-                    description: "Your artwork has been added to the gallery.",
-                  });
-                }}
-                onCancel={() => setActiveTab('gallery')}
-              />
+              <div className="space-y-6">
+                {/* Auction Banner Toggle */}
+                <Card className="border border-yellow-200 dark:border-yellow-800 bg-yellow-50/50 dark:bg-yellow-900/10">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <Megaphone className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0" />
+                        <div>
+                          <p className="font-semibold text-sm">Auction Banner on Homepage</p>
+                          <p className="text-xs text-muted-foreground">
+                            Show or hide the live auction countdown banner at the top of every page
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 flex-shrink-0">
+                        <span className={`text-xs font-medium ${auctionBannerEnabled ? 'text-green-600 dark:text-green-400' : 'text-gray-400'}`}>
+                          {auctionBannerEnabled ? 'Visible' : 'Hidden'}
+                        </span>
+                        <Switch
+                          checked={auctionBannerEnabled}
+                          disabled={isSavingBanner}
+                          onCheckedChange={(checked) => {
+                            publishBannerSettings({ enabled: checked }, {
+                              onSuccess: () => toast({
+                                title: checked ? 'Auction Banner Enabled' : 'Auction Banner Hidden',
+                                description: checked
+                                  ? 'The auction banner will now show on all pages when auctions are live.'
+                                  : 'The auction banner is now hidden from all pages.',
+                              }),
+                              onError: () => toast({
+                                title: 'Save Failed',
+                                description: 'Could not save banner setting. Please try again.',
+                                variant: 'destructive',
+                              }),
+                            });
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Create Artwork Form */}
+                <CreateArtworkForm
+                  onSuccess={() => {
+                    setActiveTab('gallery');
+                    toast({
+                      title: "Artwork Created",
+                      description: "Your artwork has been added to the gallery.",
+                    });
+                  }}
+                  onCancel={() => setActiveTab('gallery')}
+                />
+              </div>
             </TabsContent>
           )}
         </Tabs>

@@ -2,8 +2,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useArtworks } from '@/hooks/useArtworks';
 import { useBids, getEffectiveAuctionEnd } from '@/hooks/useBids';
+import { useAuctionBannerSettings } from '@/hooks/useAuctionBannerSettings';
 import { isAuctionActive, formatPrice } from '@/lib/artTypes';
-import { Gavel, Timer, ChevronRight, Zap } from 'lucide-react';
+import { Gavel, ChevronRight, Zap } from 'lucide-react';
 import type { ArtworkData } from '@/lib/artTypes';
 
 // ─── Per-auction countdown cell ───────────────────────────────────────────────
@@ -100,6 +101,10 @@ function AuctionCountdown({ artwork }: { artwork: ArtworkData }) {
 
 export function AuctionBanner() {
   const { data: artworks, isLoading } = useArtworks('auction');
+  const { data: bannerSettings } = useAuctionBannerSettings();
+
+  // If admin has disabled the banner, don't show it
+  if (bannerSettings && !bannerSettings.enabled) return null;
 
   // Filter only currently active auctions
   const liveAuctions = (artworks ?? []).filter(a => isAuctionActive(a));
