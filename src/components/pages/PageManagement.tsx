@@ -93,10 +93,25 @@ export function PageManagement() {
     setExternalUrl(page.external_url || '');
     setShowInFooter(page.show_in_footer);
     setOrder(page.order?.toString() || '');
-    setBrandSite(page.event?.tags.find(t => t[0] === 'brand-site')?.[1] || '');
-    setBrandSiteMode('url');
-    setBrandSiteHtml('');
+    const storedBrandSite = page.event?.tags.find(t => t[0] === 'brand-site')?.[1] || '';
+    setBrandSite(storedBrandSite);
     setBrandSiteInline(page.event?.tags.find(t => t[0] === 'brand-site-inline')?.[1] === 'true');
+
+    // Restore inline HTML from content if it was stored there
+    if (storedBrandSite === '__html__') {
+      try {
+        const parsed = JSON.parse(page.description);
+        const html = parsed.brand_site_html || '';
+        setBrandSiteHtml(html);
+        setBrandSiteMode('html');
+      } catch {
+        setBrandSiteHtml('');
+        setBrandSiteMode('html');
+      }
+    } else {
+      setBrandSiteMode('url');
+      setBrandSiteHtml('');
+    }
     setShowZapButton(page.event?.tags.find(t => t[0] === 'zap-button')?.[1] === 'true');
     setBuyMeCoffeeUrl(page.event?.tags.find(t => t[0] === 'buy-me-coffee')?.[1] || '');
     
@@ -271,38 +286,51 @@ export function PageManagement() {
     const isHtml = file.type === 'text/html' || /\.(html?|xhtml)$/i.test(file.name);
     if (!isPdf && !isHtml) { toast.error('Please upload a PDF or HTML file.'); return; }
     if (file.size > 15 * 1024 * 1024) { toast.error('File too large (max 15MB).'); return; }
+    setIsUploading(true);
     try {
       if (isHtml) {
+        // Read the HTML text and store it directly — rendered via srcdoc, no data: URI needed
         const html = await file.text();
-        setBrandSite(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
-        setBrandSiteMode('url');
-        toast.success('HTML file added as page site.');
+        setBrandSiteHtml(html);
+        // Use a special sentinel so the tag stays small but reader knows it's inline HTML
+        setBrandSite('__html__');
+        setBrandSiteMode('html');
+        toast.success('HTML file loaded. Save the page to publish it.');
         return;
       }
+      // PDF: upload to Blossom and get a real URL
       const tags = await uploadFile(file);
       const url = tags[0]?.[1];
       if (url) { setBrandSite(url); setBrandSiteMode('url'); toast.success('PDF uploaded and linked.'); }
-    } catch { toast.error('Failed to upload file.'); }
-    finally { if (brandSiteFileRef.current) brandSiteFileRef.current.value = ''; }
+    } catch { toast.error('Failed to process file.'); }
+    finally {
+      setIsUploading(false);
+      if (brandSiteFileRef.current) brandSiteFileRef.current.value = '';
+    }
   }, [uploadFile]);
 
   const applyBrandSiteHtml = useCallback(() => {
     if (!brandSiteHtml.trim()) { toast.error('Paste HTML first.'); return; }
-    setBrandSite(`data:text/html;charset=utf-8,${encodeURIComponent(brandSiteHtml)}`);
-    setBrandSiteMode('url');
-    setBrandSiteHtml('');
-    toast.success('HTML page created for site.');
+    // Store the sentinel marker; the actual HTML is kept in brandSiteHtml state
+    setBrandSite('__html__');
+    toast.success('HTML ready. Save the page to publish it.');
   }, [brandSiteHtml]);
 
   const handleSubmit = () => {
     if (!user || !title.trim()) return;
 
-    const hasContent = contentBlocks.some(block => 
-      (block.type === 'markdown' && block.content.trim()) ||
-      (block.type === 'gallery' && block.images.length > 0)
-    );
+    const hasContent =
+      !!brandSite ||
+      contentBlocks.some(block =>
+        (block.type === 'markdown' && block.content.trim()) ||
+        (block.type === 'gallery' && block.images.length > 0) ||
+        block.type === 'media'
+      );
 
-    if (!hasContent) return;
+    if (!hasContent) {
+      toast.error('Please add some content, a media block, or a page website before saving.');
+      return;
+    }
 
     const pageSlug = editingPage?.id || generateSlug(title);
 
@@ -327,10 +355,14 @@ export function PageManagement() {
       }
     });
 
+    // If brand site is inline HTML, store the HTML in content (not the tag — tags have size limits)
+    const isInlineHtml = brandSite === '__html__' && brandSiteHtml.trim();
+
     createEvent({
       kind: 38175,
       content: JSON.stringify({
         blocks: contentBlocks,
+        ...(isInlineHtml ? { brand_site_html: brandSiteHtml.trim() } : {}),
       }),
       tags: [
         ['d', pageSlug],
@@ -340,7 +372,9 @@ export function PageManagement() {
         ...(externalUrl ? [['r', externalUrl]] : []),
         ...(showInFooter ? [['footer', 'true']] : []),
         ...(order ? [['order', order]] : []),
-        ...(brandSite ? [['brand-site', brandSite]] : []),
+        // For inline HTML pages use sentinel; for regular URLs store the URL
+        ...(brandSite && !isInlineHtml ? [['brand-site', brandSite]] : []),
+        ...(isInlineHtml ? [['brand-site', '__html__']] : []),
         ...(brandSite && brandSiteInline ? [['brand-site-inline', 'true']] : []),
         ...(showZapButton ? [['zap-button', 'true']] : []),
         ...(buyMeCoffeeUrl.trim() ? [['buy-me-coffee', buyMeCoffeeUrl.trim()]] : []),
@@ -556,13 +590,13 @@ export function PageManagement() {
                   <Input
                     type="url"
                     placeholder="https://example.com"
-                    value={brandSite.startsWith('data:') ? '' : brandSite}
+                    value={brandSite === '__html__' ? '' : brandSite}
                     onChange={(e) => setBrandSite(e.target.value)}
                   />
-                  {brandSite && (
+                  {brandSite && brandSite !== '__html__' && (
                     <div className="flex items-center gap-2">
                       <Badge variant="secondary" className="text-xs truncate max-w-xs">
-                        {brandSite.startsWith('data:') ? 'Custom HTML/PDF page' : brandSite}
+                        {brandSite}
                       </Badge>
                       <Button type="button" variant="ghost" size="sm" onClick={() => setBrandSite('')}>
                         <X className="h-3 w-3" />
@@ -583,12 +617,14 @@ export function PageManagement() {
                   />
                   <Button type="button" variant="outline" size="sm" onClick={applyBrandSiteHtml} disabled={!brandSiteHtml.trim()}>
                     <Code2 className="h-4 w-4 mr-2" />
-                    Apply HTML
+                    Ready to Save
                   </Button>
-                  {brandSite && (
+                  {brandSite === '__html__' && brandSiteHtml.trim() && (
                     <div className="flex items-center gap-2">
-                      <Badge variant="secondary" className="text-xs">HTML page saved</Badge>
-                      <Button type="button" variant="ghost" size="sm" onClick={() => setBrandSite('')}>
+                      <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                        ✓ HTML ready — will be saved with the page
+                      </Badge>
+                      <Button type="button" variant="ghost" size="sm" onClick={() => { setBrandSite(''); setBrandSiteHtml(''); }}>
                         <X className="h-3 w-3" />
                       </Button>
                     </div>
@@ -610,16 +646,33 @@ export function PageManagement() {
                     variant="outline"
                     className="w-full"
                     onClick={() => brandSiteFileRef.current?.click()}
+                    disabled={isUploading}
                   >
-                    <Upload className="h-4 w-4 mr-2" />
-                    Upload PDF or HTML file
+                    {isUploading ? (
+                      <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Uploading...</>
+                    ) : (
+                      <><Upload className="h-4 w-4 mr-2" />Upload PDF or HTML file</>
+                    )}
                   </Button>
-                  {brandSite && (
+                  <p className="text-xs text-muted-foreground">
+                    PDF files are uploaded to Blossom. HTML files are stored inline with the page.
+                  </p>
+                  {brandSite && brandSite !== '__html__' && (
                     <div className="flex items-center gap-2">
                       <Badge variant="secondary" className="text-xs truncate max-w-xs">
-                        {brandSite.startsWith('data:') ? 'File uploaded' : brandSite}
+                        {brandSite}
                       </Badge>
                       <Button type="button" variant="ghost" size="sm" onClick={() => setBrandSite('')}>
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  )}
+                  {brandSite === '__html__' && brandSiteHtml.trim() && (
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                        ✓ HTML file loaded — will be saved with the page
+                      </Badge>
+                      <Button type="button" variant="ghost" size="sm" onClick={() => { setBrandSite(''); setBrandSiteHtml(''); }}>
                         <X className="h-3 w-3" />
                       </Button>
                     </div>

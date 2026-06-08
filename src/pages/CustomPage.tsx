@@ -142,24 +142,37 @@ export default function CustomPage() {
             Back
           </Button>
           <span className="text-sm font-medium text-muted-foreground truncate">{page.title}</span>
-          <a
-            href={page.brand_site}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="ml-auto"
-          >
-            <Button variant="ghost" size="sm">
-              <ExternalLink className="h-4 w-4 mr-1" />
-              Open
-            </Button>
-          </a>
+          {/* Only show "Open" link for real URLs, not inline HTML */}
+          {!page.brand_site_is_srcdoc && (
+            <a
+              href={page.brand_site}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="ml-auto"
+            >
+              <Button variant="ghost" size="sm">
+                <ExternalLink className="h-4 w-4 mr-1" />
+                Open
+              </Button>
+            </a>
+          )}
         </div>
-        <iframe
-          src={page.brand_site}
-          title={page.title}
-          className="flex-1 w-full border-0"
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
-        />
+        {/* Use srcdoc for inline HTML to bypass data: URI browser restrictions */}
+        {page.brand_site_is_srcdoc ? (
+          <iframe
+            srcDoc={page.brand_site}
+            title={page.title}
+            className="flex-1 w-full border-0"
+            sandbox="allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
+          />
+        ) : (
+          <iframe
+            src={page.brand_site}
+            title={page.title}
+            className="flex-1 w-full border-0"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
+          />
+        )}
         {floatingButtons}
       </div>
     );
@@ -203,7 +216,7 @@ export default function CustomPage() {
                 {page.title}
               </h1>
               <div className="flex items-center justify-center gap-3 flex-wrap mt-4">
-                {page.brand_site && (
+                {page.brand_site && !page.brand_site_is_srcdoc && (
                   <Button size="sm" asChild>
                     <a href={page.brand_site} target="_blank" rel="noopener noreferrer">
                       <Globe className="h-4 w-4 mr-2" />
@@ -328,7 +341,7 @@ export default function CustomPage() {
           {page.header_image && (page.brand_site || page.external_url) && (
             <Card className="bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800">
               <CardContent className="py-6 flex items-center justify-center gap-3 flex-wrap">
-                {page.brand_site && (
+                {page.brand_site && !page.brand_site_is_srcdoc && (
                   <Button
                     size="lg"
                     onClick={() => window.open(page.brand_site, '_blank')}

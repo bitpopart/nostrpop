@@ -35,6 +35,22 @@ export function usePages() {
             // Get all gallery images from tags
             const galleryImages = event.tags.filter(t => t[0] === 'image').map(t => t[1]);
 
+            // Resolve brand_site: if tag is '__html__', pull the actual HTML from content
+            const brandSiteTag = event.tags.find(t => t[0] === 'brand-site')?.[1];
+            let resolvedBrandSite: string | undefined;
+            let brandSiteIsHtmlSrcdoc = false;
+            if (brandSiteTag === '__html__') {
+              try {
+                const parsed = JSON.parse(event.content);
+                resolvedBrandSite = parsed.brand_site_html || undefined;
+                brandSiteIsHtmlSrcdoc = true;
+              } catch {
+                resolvedBrandSite = undefined;
+              }
+            } else {
+              resolvedBrandSite = brandSiteTag;
+            }
+
             return {
               id,
               event,
@@ -43,8 +59,9 @@ export function usePages() {
               header_image: headerImage,
               gallery_images: galleryImages,
               external_url: externalUrl,
-              brand_site: event.tags.find(t => t[0] === 'brand-site')?.[1],
+              brand_site: resolvedBrandSite,
               brand_site_inline: event.tags.find(t => t[0] === 'brand-site-inline')?.[1] === 'true',
+              brand_site_is_srcdoc: brandSiteIsHtmlSrcdoc,
               author_pubkey: event.pubkey,
               created_at: new Date(event.created_at * 1000).toISOString(),
               show_in_footer: showInFooter,
@@ -146,16 +163,33 @@ export function usePage(slug: string) {
         // Get all gallery images from tags
         const galleryImages = event.tags.filter(t => t[0] === 'image').map(t => t[1]);
 
+        // Resolve brand_site: if tag is '__html__', pull the actual HTML from content
+        const brandSiteTag = event.tags.find(t => t[0] === 'brand-site')?.[1];
+        let resolvedBrandSite: string | undefined;
+        let brandSiteIsHtmlSrcdoc = false;
+        if (brandSiteTag === '__html__') {
+          try {
+            const parsed = JSON.parse(event.content);
+            resolvedBrandSite = parsed.brand_site_html || undefined;
+            brandSiteIsHtmlSrcdoc = true;
+          } catch {
+            resolvedBrandSite = undefined;
+          }
+        } else {
+          resolvedBrandSite = brandSiteTag;
+        }
+
         return {
           id,
           event,
           title,
-          description: event.content, // Store as-is (could be JSON with blocks or plain text)
+          description: event.content,
           header_image: event.tags.find(t => t[0] === 'header')?.[1],
           gallery_images: galleryImages,
           external_url: event.tags.find(t => t[0] === 'r')?.[1],
-          brand_site: event.tags.find(t => t[0] === 'brand-site')?.[1],
+          brand_site: resolvedBrandSite,
           brand_site_inline: event.tags.find(t => t[0] === 'brand-site-inline')?.[1] === 'true',
+          brand_site_is_srcdoc: brandSiteIsHtmlSrcdoc,
           author_pubkey: event.pubkey,
           created_at: new Date(event.created_at * 1000).toISOString(),
           show_in_footer: event.tags.find(t => t[0] === 'footer')?.[1] === 'true',
