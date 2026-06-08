@@ -602,26 +602,30 @@ export function PageManagement() {
 
               {brandSiteMode === 'html' && (
                 <div className="space-y-2">
-                  <Textarea
-                    placeholder="Paste your HTML here..."
-                    value={brandSiteHtml}
-                    onChange={(e) => setBrandSiteHtml(e.target.value)}
-                    rows={6}
-                    className="font-mono text-xs"
-                  />
-                  <Button type="button" variant="outline" size="sm" onClick={applyBrandSiteHtml} disabled={!brandSiteHtml.trim()}>
-                    <Code2 className="h-4 w-4 mr-2" />
-                    Ready to Save
-                  </Button>
-                  {brandSite === '__html__' && brandSiteHtml.trim() && (
+                  {/* Once HTML is ready, hide the textarea and just show the confirmation */}
+                  {brandSite === '__html__' && brandSiteHtml.trim() ? (
                     <div className="flex items-center gap-2">
                       <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                        ✓ HTML ready — will be saved with the page
+                        ✓ HTML ready — click "Create Page" below to save
                       </Badge>
                       <Button type="button" variant="ghost" size="sm" onClick={() => { setBrandSite(''); setBrandSiteHtml(''); }}>
                         <X className="h-3 w-3" />
                       </Button>
                     </div>
+                  ) : (
+                    <>
+                      <Textarea
+                        placeholder="Paste your HTML here..."
+                        value={brandSiteHtml}
+                        onChange={(e) => setBrandSiteHtml(e.target.value)}
+                        rows={6}
+                        className="font-mono text-xs"
+                      />
+                      <Button type="button" variant="outline" size="sm" onClick={applyBrandSiteHtml} disabled={!brandSiteHtml.trim()}>
+                        <Code2 className="h-4 w-4 mr-2" />
+                        Ready to Save
+                      </Button>
+                    </>
                   )}
                 </div>
               )}
