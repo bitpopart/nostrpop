@@ -95,9 +95,11 @@ export function CreateProductForm({ onSuccess, onCancel, initialData }: CreatePr
     handleSubmit,
     watch,
     setValue,
+    trigger,
     formState: { errors, isValid }
   } = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
+    mode: 'onChange',
     defaultValues: {
       name: initialData?.name || '',
       description: initialData?.description || '',
@@ -113,24 +115,41 @@ export function CreateProductForm({ onSuccess, onCancel, initialData }: CreatePr
   });
 
   const productType = watch('type');
+  const watchedCategory = watch('category');
+  const watchedCurrency = watch('currency');
   const isPhysical = productType === 'physical';
 
-  // Update form when initialData changes
+  // Update form when initialData changes (e.g. after URL import)
   useEffect(() => {
     if (initialData) {
-      if (initialData.name) setValue('name', initialData.name);
-      if (initialData.description) setValue('description', initialData.description);
-      if (initialData.price) setValue('price', initialData.price);
-      if (initialData.currency) setValue('currency', initialData.currency);
-      if (initialData.category) setValue('category', initialData.category);
+      if (initialData.name) setValue('name', initialData.name, { shouldValidate: true });
+      if (initialData.description) setValue('description', initialData.description, { shouldValidate: true });
+      if (initialData.price) setValue('price', initialData.price, { shouldValidate: true });
+      if (initialData.currency) setValue('currency', initialData.currency, { shouldValidate: true });
       if (initialData.url) {
-        setValue('contactUrl', initialData.url);
+        setValue('contactUrl', initialData.url, { shouldValidate: true });
         setContactUrl(initialData.url);
       }
       if (initialData.images) setImages(initialData.images);
       if (initialData.priceInSats) setSatsPrice(initialData.priceInSats);
+
+      // Resolve category: match imported value against known categories (case-insensitive),
+      // fall back to first available category so the field is never empty
+      const resolvedCategory = (() => {
+        if (initialData.category) {
+          const match = categoryNames.find(
+            (n) => n.toLowerCase() === initialData.category!.toLowerCase()
+          );
+          if (match) return match;
+        }
+        return categoryNames[0] ?? '';
+      })();
+      if (resolvedCategory) setValue('category', resolvedCategory, { shouldValidate: true });
+
+      // Trigger full validation so isValid reflects the new values
+      trigger();
     }
-  }, [initialData, setValue]);
+  }, [initialData, setValue, trigger, categoryNames]);
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -336,8 +355,8 @@ export function CreateProductForm({ onSuccess, onCancel, initialData }: CreatePr
               <div className="space-y-2">
                 <Label htmlFor="category">Category *</Label>
                 <Select 
-                  defaultValue={initialData?.category || categoryNames[0]}
-                  onValueChange={(value) => setValue('category', value)}
+                  value={watchedCategory}
+                  onValueChange={(value) => setValue('category', value, { shouldValidate: true })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select category" />
@@ -352,12 +371,6 @@ export function CreateProductForm({ onSuccess, onCancel, initialData }: CreatePr
                 </Select>
                 {errors.category && (
                   <p className="text-sm text-red-500">{errors.category.message}</p>
-                )}
-                {initialData?.category && (
-                  <p className="text-xs text-green-600 dark:text-green-400 flex items-center">
-                    <Check className="w-3 h-3 mr-1" />
-                    Auto-detected: {initialData.category}
-                  </p>
                 )}
               </div>
             </div>
@@ -551,8 +564,8 @@ export function CreateProductForm({ onSuccess, onCancel, initialData }: CreatePr
               <div className="space-y-2">
                 <Label htmlFor="currency">Currency *</Label>
                 <Select 
-                  defaultValue={initialData?.currency || 'USD'}
-                  onValueChange={(value) => setValue('currency', value)}
+                  value={watchedCurrency}
+                  onValueChange={(value) => setValue('currency', value, { shouldValidate: true })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select currency" />
