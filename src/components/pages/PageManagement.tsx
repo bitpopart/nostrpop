@@ -17,13 +17,14 @@ import {
   Plus, X, Upload, FileText, Edit, Image as ImageIcon,
   ExternalLink, Trash2, Loader2, Globe, Zap, Coffee,
   MoveUp, MoveDown, Type, Film, UserCircle2, LayoutPanelTop,
-  GalleryHorizontal,
+  GalleryHorizontal, Eye,
 } from 'lucide-react';
 import { generateSlug } from '@/lib/pageTypes';
 import type { PageData } from '@/lib/pageTypes';
 import { MediaPicker } from './MediaPicker';
 import type { MediaShowcaseType } from './MediaShowcaseBlock';
 import { HtmlEditor } from './HtmlEditor';
+import { PagePreviewDialog } from './PagePreviewDialog';
 import ReactMarkdown from 'react-markdown';
 import { toast } from 'sonner';
 
@@ -326,6 +327,7 @@ export function PageManagement() {
   const [blocks, setBlocks] = useState<ContentBlock[]>([emptyBlock('markdown')]);
 
   const [isUploading, setIsUploading] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
   const headerImageRef = useRef<HTMLInputElement>(null);
   const htmlFileRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLDivElement>(null);
@@ -350,6 +352,7 @@ export function PageManagement() {
     setBlocks([emptyBlock('markdown')]);
     setEditingPage(null);
     setIsCreating(false);
+    setShowPreview(false);
   }
 
   function openCreate() {
@@ -749,11 +752,14 @@ export function PageManagement() {
             </div>
 
             {/* ── Actions ── */}
-            <div className="flex gap-2 pt-2">
+            <div className="flex gap-2 pt-2 flex-wrap">
               <Button type="button" onClick={handleSave}>
                 {editingPage ? 'Update Page' : 'Create Page'}
               </Button>
-              <Button type="button" variant="outline" onClick={resetForm}>
+              <Button type="button" variant="outline" onClick={() => setShowPreview(true)} disabled={!title.trim()}>
+                <Eye className="h-4 w-4 mr-2" /> Preview Page
+              </Button>
+              <Button type="button" variant="ghost" onClick={resetForm}>
                 Cancel
               </Button>
             </div>
@@ -838,6 +844,37 @@ export function PageManagement() {
           )}
         </CardContent>
       </Card>
+
+      {/* ── Page Preview Dialog ── */}
+      {showPreview && (() => {
+        const slug = editingPage?.id ?? generateSlug(title);
+        const isHtml = !!brandSiteHtml.trim();
+        const allGalleryImages = blocks.filter(b => b.type === 'gallery').flatMap(b => b.images);
+        const previewPage = {
+          id: slug,
+          title: title.trim() || 'Untitled Page',
+          description: JSON.stringify({ blocks }),
+          header_image: headerImage || undefined,
+          gallery_images: allGalleryImages,
+          external_url: externalUrl || undefined,
+          brand_site: isHtml ? brandSiteHtml.trim() : (brandSiteUrl.trim() || undefined),
+          brand_site_inline: brandSiteInline,
+          brand_site_is_srcdoc: isHtml,
+          author_pubkey: '',
+          created_at: new Date().toISOString(),
+          show_in_footer: showInFooter,
+          order: order ? parseInt(order) : undefined,
+          show_zap_button: showZapButton,
+          buy_me_coffee_url: buyMeCoffeeUrl.trim() || undefined,
+        };
+        return (
+          <PagePreviewDialog
+            open={showPreview}
+            onClose={() => setShowPreview(false)}
+            page={previewPage}
+          />
+        );
+      })()}
 
     </div>
   );
