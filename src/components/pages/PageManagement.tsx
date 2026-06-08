@@ -140,8 +140,16 @@ export function PageManagement() {
     setBrandSite(storedBrandSite);
     setBrandSiteInline(page.event?.tags.find(t => t[0] === 'brand-site-inline')?.[1] === 'true');
 
-    // Restore inline HTML from content if it was stored there
-    if (storedBrandSite === '__html__') {
+    // Restore inline HTML: new format stores in localStorage, legacy stored in event content
+    if (storedBrandSite?.startsWith('__local__:')) {
+      const localKey = `page-html:${storedBrandSite.slice('__local__:'.length)}`;
+      const localHtml = localStorage.getItem(localKey) || '';
+      setBrandSiteHtml(localHtml);
+      setBrandSiteMode('html');
+      // Normalise to the sentinel used by handleSubmit so the save path works
+      setBrandSite('__html__');
+    } else if (storedBrandSite === '__html__') {
+      // Legacy: HTML was stored inline in the event content
       try {
         const parsed = JSON.parse(page.description);
         const html = parsed.brand_site_html || '';
@@ -399,14 +407,25 @@ export function PageManagement() {
       }
     });
 
-    // If brand site is inline HTML, store the HTML in content (not the tag — tags have size limits)
+    // If brand site is inline HTML, store the HTML in localStorage (not the Nostr event —
+    // relays have size limits of ~64–128 KB which HTML files easily exceed).
+    // The Nostr event stores a sentinel "__local__:{slug}" so CustomPage knows to read from localStorage.
     const isInlineHtml = brandSite === '__html__' && brandSiteHtml.trim();
+    const localHtmlKey = `page-html:${pageSlug}`;
+
+    if (isInlineHtml) {
+      try {
+        localStorage.setItem(localHtmlKey, brandSiteHtml.trim());
+      } catch {
+        toast.error('Failed to save HTML locally. Your browser storage may be full.');
+        return;
+      }
+    }
 
     createEvent({
       kind: 38175,
       content: JSON.stringify({
         blocks: contentBlocks,
-        ...(isInlineHtml ? { brand_site_html: brandSiteHtml.trim() } : {}),
       }),
       tags: [
         ['d', pageSlug],
@@ -416,9 +435,9 @@ export function PageManagement() {
         ...(externalUrl ? [['r', externalUrl]] : []),
         ...(showInFooter ? [['footer', 'true']] : []),
         ...(order ? [['order', order]] : []),
-        // For inline HTML pages use sentinel; for regular URLs store the URL
+        // For inline HTML pages use a local-storage sentinel; for regular URLs store the URL
         ...(brandSite && !isInlineHtml ? [['brand-site', brandSite]] : []),
-        ...(isInlineHtml ? [['brand-site', '__html__']] : []),
+        ...(isInlineHtml ? [['brand-site', `__local__:${pageSlug}`]] : []),
         ...(brandSite && brandSiteInline ? [['brand-site-inline', 'true']] : []),
         ...(showZapButton ? [['zap-button', 'true']] : []),
         ...(buyMeCoffeeUrl.trim() ? [['buy-me-coffee', buyMeCoffeeUrl.trim()]] : []),
@@ -433,6 +452,8 @@ export function PageManagement() {
         queryClient.invalidateQueries({ queryKey: ['page', pageSlug] });
       },
       onError: () => {
+        // Clean up the localStorage entry if the Nostr event failed to publish
+        if (isInlineHtml) localStorage.removeItem(localHtmlKey);
         toast.error('Failed to save page. Please try again.');
       },
     });

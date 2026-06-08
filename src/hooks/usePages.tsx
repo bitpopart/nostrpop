@@ -35,11 +35,20 @@ export function usePages() {
             // Get all gallery images from tags
             const galleryImages = event.tags.filter(t => t[0] === 'image').map(t => t[1]);
 
-            // Resolve brand_site: if tag is '__html__', pull the actual HTML from content
+            // Resolve brand_site:
+            // - '__local__:{slug}' sentinel → read HTML from localStorage
+            // - '__html__' legacy sentinel → read HTML from event content (old format)
+            // - anything else → treat as a URL
             const brandSiteTag = event.tags.find(t => t[0] === 'brand-site')?.[1];
             let resolvedBrandSite: string | undefined;
             let brandSiteIsHtmlSrcdoc = false;
-            if (brandSiteTag === '__html__') {
+            if (brandSiteTag?.startsWith('__local__:')) {
+              const localKey = `page-html:${brandSiteTag.slice('__local__:'.length)}`;
+              const localHtml = localStorage.getItem(localKey);
+              resolvedBrandSite = localHtml || undefined;
+              brandSiteIsHtmlSrcdoc = true;
+            } else if (brandSiteTag === '__html__') {
+              // Legacy: HTML was stored inline in the event content
               try {
                 const parsed = JSON.parse(event.content);
                 resolvedBrandSite = parsed.brand_site_html || undefined;
@@ -56,7 +65,6 @@ export function usePages() {
               event,
               title,
               description: event.content, // Store as-is (could be JSON with blocks or plain text)
-              header_image: headerImage,
               gallery_images: galleryImages,
               external_url: externalUrl,
               brand_site: resolvedBrandSite,
@@ -163,11 +171,20 @@ export function usePage(slug: string) {
         // Get all gallery images from tags
         const galleryImages = event.tags.filter(t => t[0] === 'image').map(t => t[1]);
 
-        // Resolve brand_site: if tag is '__html__', pull the actual HTML from content
+        // Resolve brand_site:
+        // - '__local__:{slug}' sentinel → read HTML from localStorage
+        // - '__html__' legacy sentinel → read HTML from event content (old format)
+        // - anything else → treat as a URL
         const brandSiteTag = event.tags.find(t => t[0] === 'brand-site')?.[1];
         let resolvedBrandSite: string | undefined;
         let brandSiteIsHtmlSrcdoc = false;
-        if (brandSiteTag === '__html__') {
+        if (brandSiteTag?.startsWith('__local__:')) {
+          const localKey = `page-html:${brandSiteTag.slice('__local__:'.length)}`;
+          const localHtml = localStorage.getItem(localKey);
+          resolvedBrandSite = localHtml || undefined;
+          brandSiteIsHtmlSrcdoc = true;
+        } else if (brandSiteTag === '__html__') {
+          // Legacy: HTML was stored inline in the event content
           try {
             const parsed = JSON.parse(event.content);
             resolvedBrandSite = parsed.brand_site_html || undefined;
