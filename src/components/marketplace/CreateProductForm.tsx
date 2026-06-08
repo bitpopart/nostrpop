@@ -43,7 +43,7 @@ const CURRENCIES = [
 
 const productSchema = z.object({
   name: z.string().min(1, 'Product name is required').max(100, 'Name too long'),
-  description: z.string().min(10, 'Description must be at least 10 characters').max(1000, 'Description too long'),
+  description: z.string().min(10, 'Description must be at least 10 characters').max(5000, 'Description too long (max 5000 characters)'),
   price: z.number().min(0.01, 'Price must be greater than 0'),
   currency: z.string().min(1, 'Currency is required'),
   category: z.string().min(1, 'Category is required'),
@@ -376,7 +376,12 @@ export function CreateProductForm({ onSuccess, onCancel, initialData }: CreatePr
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Description *</Label>
+              <div className="flex justify-between items-center">
+                <Label htmlFor="description">Description *</Label>
+                <span className={`text-xs ${(watch('description')?.length ?? 0) > 4800 ? 'text-red-500' : 'text-muted-foreground'}`}>
+                  {watch('description')?.length ?? 0} / 5000
+                </span>
+              </div>
               <Textarea
                 id="description"
                 {...register('description')}

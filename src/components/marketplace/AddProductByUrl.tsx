@@ -43,14 +43,19 @@ interface ShopifyProductResponse {
   product: ShopifyProduct;
 }
 
-// Strip HTML tags from a string
-function stripHtml(html: string): string {
-  return html
+// Strip HTML tags from a string and cap length for the product form
+function stripHtml(html: string, maxLength = 2000): string {
+  const text = html
     .replace(/<br\s*\/?>/gi, ' ')
     .replace(/<\/p>/gi, ' ')
     .replace(/<[^>]+>/g, '')
     .replace(/\s+/g, ' ')
     .trim();
+  if (text.length <= maxLength) return text;
+  // Truncate at last word boundary before the limit
+  const truncated = text.slice(0, maxLength);
+  const lastSpace = truncated.lastIndexOf(' ');
+  return (lastSpace > 0 ? truncated.slice(0, lastSpace) : truncated) + '…';
 }
 
 // Auto-detect category from product name and type
