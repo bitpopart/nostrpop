@@ -152,7 +152,7 @@ export default function CustomPage() {
   // Full-screen inline iframe mode — render iframe + floating buttons
   if (page.brand_site && page.brand_site_inline) {
     return (
-      <div className="fixed inset-0 flex flex-col" style={{ zIndex: 10 }}>
+      <div className="fixed inset-0 flex flex-col" style={{ zIndex: 60 }}>
         {/* Thin top bar with back button */}
         <div className="flex items-center gap-3 px-4 py-2 bg-background/90 backdrop-blur border-b shrink-0">
           <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
