@@ -138,56 +138,61 @@ export function PageManagement() {
   }, []);
 
   function handleSave() {
-    if (!title.trim()) {
-      toast.error('Please enter a page title');
-      return;
-    }
-
-    const slug = editingPage?.id ?? generateSlug(title);
-
-    if (!editingPage) {
-      if (RESERVED_SLUGS.has(slug)) {
-        toast.error(`"/${slug}" is a reserved route. Use a different title.`);
+    try {
+      if (!title.trim()) {
+        toast.error('Please enter a page title');
         return;
       }
-      if (pages?.some(p => p.id === slug)) {
-        toast.error(`A page at "/${slug}" already exists.`);
-        return;
+
+      const slug = editingPage?.id ?? generateSlug(title);
+
+      if (!editingPage) {
+        if (RESERVED_SLUGS.has(slug)) {
+          toast.error(`"/${slug}" is a reserved route. Use a different title.`);
+          return;
+        }
+        const existing = loadPagesFromStorage();
+        if (existing.some(p => p.id === slug)) {
+          toast.error(`A page at "/${slug}" already exists.`);
+          return;
+        }
       }
+
+      const isHtml = !!brandSiteHtml.trim();
+
+      const pageData: PageData = {
+        id: slug,
+        title: title.trim(),
+        description: JSON.stringify({ blocks: [{ id: '1', type: 'markdown', content, images: [] }] }),
+        header_image: headerImage || undefined,
+        gallery_images: [],
+        external_url: externalUrl || undefined,
+        brand_site: isHtml ? brandSiteHtml.trim() : (brandSiteUrl.trim() || undefined),
+        brand_site_inline: brandSiteInline,
+        brand_site_is_srcdoc: isHtml,
+        author_pubkey: '',
+        created_at: editingPage?.created_at ?? new Date().toISOString(),
+        show_in_footer: showInFooter,
+        order: order ? parseInt(order) : undefined,
+        show_zap_button: showZapButton,
+        buy_me_coffee_url: buyMeCoffeeUrl.trim() || undefined,
+      };
+
+      const allPages = loadPagesFromStorage();
+      savePagesToStorage(
+        editingPage
+          ? allPages.map(p => p.id === slug ? pageData : p)
+          : [...allPages, pageData]
+      );
+
+      queryClient.invalidateQueries({ queryKey: ['pages'] });
+      queryClient.invalidateQueries({ queryKey: ['footer-pages'] });
+      queryClient.invalidateQueries({ queryKey: ['page', slug] });
+      toast.success(editingPage ? 'Page updated!' : 'Page created!');
+      resetForm();
+    } catch (err) {
+      toast.error('Error saving page: ' + String(err));
     }
-
-    const isHtml = !!brandSiteHtml.trim();
-
-    const pageData: PageData = {
-      id: slug,
-      title: title.trim(),
-      description: JSON.stringify({ blocks: [{ id: '1', type: 'markdown', content, images: [] }] }),
-      header_image: headerImage || undefined,
-      gallery_images: [],
-      external_url: externalUrl || undefined,
-      brand_site: isHtml ? brandSiteHtml.trim() : (brandSiteUrl.trim() || undefined),
-      brand_site_inline: brandSiteInline,
-      brand_site_is_srcdoc: isHtml,
-      author_pubkey: '',
-      created_at: editingPage?.created_at ?? new Date().toISOString(),
-      show_in_footer: showInFooter,
-      order: order ? parseInt(order) : undefined,
-      show_zap_button: showZapButton,
-      buy_me_coffee_url: buyMeCoffeeUrl.trim() || undefined,
-    };
-
-    const existing = loadPagesFromStorage();
-    savePagesToStorage(
-      editingPage
-        ? existing.map(p => p.id === slug ? pageData : p)
-        : [...existing, pageData]
-    );
-
-    queryClient.invalidateQueries({ queryKey: ['pages'] });
-    queryClient.invalidateQueries({ queryKey: ['footer-pages'] });
-    queryClient.invalidateQueries({ queryKey: ['page', slug] });
-    toast.success(editingPage ? 'Page updated!' : 'Page created!');
-    resetForm();
   }
 
   return (
@@ -349,7 +354,7 @@ export function PageManagement() {
 
             {/* Actions */}
             <div className="flex gap-2 pt-2">
-              <Button onClick={handleSave}>
+              <Button type="button" onClick={handleSave}>
                 {editingPage ? 'Update Page' : 'Create Page'}
               </Button>
               <Button type="button" variant="outline" onClick={resetForm}>
