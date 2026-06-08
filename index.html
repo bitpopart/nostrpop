@@ -101,6 +101,16 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // GitHub Pages SPA routing — restore path after 404 redirect
+      (function() {
+        var redirect = sessionStorage.getItem('spa-redirect');
+        if (redirect && redirect !== '/') {
+          sessionStorage.removeItem('spa-redirect');
+          window.history.replaceState(null, '', redirect);
+        }
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
