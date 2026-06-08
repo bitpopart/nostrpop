@@ -333,19 +333,6 @@ export function PageManagement() {
   const handleSubmit = () => {
     if (!title.trim()) return;
 
-    const hasContent =
-      !!brandSite ||
-      contentBlocks.some(block =>
-        (block.type === 'markdown' && block.content.trim()) ||
-        (block.type === 'gallery' && block.images.length > 0) ||
-        block.type === 'media'
-      );
-
-    if (!hasContent) {
-      toast.error('Please add some content, a media block, or a page website before saving.');
-      return;
-    }
-
     const pageSlug = editingPage?.id || generateSlug(title);
 
     // Only validate slug uniqueness when creating a new page (not editing)
