@@ -167,17 +167,17 @@ function applyEdit(html: string, target: EditTarget, values: Record<string, stri
 
   if (target.kind === 'text') {
     if (values.text !== undefined) el.textContent = values.text;
-    // Handle wrapping/unwrapping in a download <a>
     if (values.downloadHref !== undefined) {
       const parentA = el.closest('a');
+      const fname = values.downloadFilename || '';
       if (values.downloadHref.trim()) {
         if (parentA) {
           parentA.setAttribute('href', values.downloadHref.trim());
-          parentA.setAttribute('download', '');
+          parentA.setAttribute('download', fname);
         } else {
           const wrapper = doc.createElement('a');
           wrapper.href = values.downloadHref.trim();
-          wrapper.setAttribute('download', '');
+          wrapper.setAttribute('download', fname);
           wrapper.setAttribute('style', el.getAttribute('style') || '');
           el.parentNode!.insertBefore(wrapper, el);
           wrapper.appendChild(el);
@@ -196,14 +196,15 @@ function applyEdit(html: string, target: EditTarget, values: Record<string, stri
     if (values.alt !== undefined) (el as HTMLImageElement).alt = values.alt;
     if (values.downloadHref !== undefined) {
       const parentA = el.closest('a');
+      const fname = values.downloadFilename || '';
       if (values.downloadHref.trim()) {
         if (parentA) {
           parentA.setAttribute('href', values.downloadHref.trim());
-          parentA.setAttribute('download', '');
+          parentA.setAttribute('download', fname);
         } else {
           const wrapper = doc.createElement('a');
           wrapper.href = values.downloadHref.trim();
-          wrapper.setAttribute('download', '');
+          wrapper.setAttribute('download', fname);
           el.parentNode!.insertBefore(wrapper, el);
           wrapper.appendChild(el);
         }
@@ -217,6 +218,9 @@ function applyEdit(html: string, target: EditTarget, values: Record<string, stri
     if (values.href !== undefined) {
       (el as HTMLAnchorElement).href = values.href;
       el.setAttribute('href', values.href);
+    }
+    if (values.downloadFilename) {
+      el.setAttribute('download', values.downloadFilename);
     }
     if (values.text !== undefined) el.textContent = values.text;
   }
@@ -241,6 +245,7 @@ function EditDialog({ target, onClose, onSave, uploadFile }: EditDialogProps) {
   const [src, setSrc] = useState('');
   const [alt, setAlt] = useState('');
   const [downloadHref, setDownloadHref] = useState('');
+  const [downloadFilename, setDownloadFilename] = useState('');
   // For text and image: mode toggle between edit and download
   const [mode, setMode] = useState<'edit' | 'download'>('edit');
   const [isUploading, setIsUploading] = useState(false);
@@ -283,6 +288,7 @@ function EditDialog({ target, onClose, onSave, uploadFile }: EditDialogProps) {
       const tags = await uploadFile(file);
       const url = tags[0][1];
       setDownloadHref(url);
+      setDownloadFilename(file.name); // keep original filename
       if (target?.kind === 'download') setHref(url);
       toast.success('File uploaded!');
     } catch { toast.error('Upload failed'); }
@@ -292,13 +298,13 @@ function EditDialog({ target, onClose, onSave, uploadFile }: EditDialogProps) {
   const handleSave = () => {
     if (!target) return;
     if (target.kind === 'text')
-      onSave({ text, downloadHref: mode === 'download' ? downloadHref : '' });
+      onSave({ text, downloadHref: mode === 'download' ? downloadHref : '', downloadFilename });
     else if (target.kind === 'link')
       onSave({ href, text });
     else if (target.kind === 'image')
-      onSave({ src, alt, downloadHref: mode === 'download' ? downloadHref : '' });
+      onSave({ src, alt, downloadHref: mode === 'download' ? downloadHref : '', downloadFilename });
     else if (target.kind === 'download')
-      onSave({ href, text });
+      onSave({ href, text, downloadFilename });
   };
 
   if (!target) return null;
