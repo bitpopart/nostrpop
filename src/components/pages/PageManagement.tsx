@@ -23,6 +23,7 @@ import { generateSlug } from '@/lib/pageTypes';
 import type { PageData } from '@/lib/pageTypes';
 import { MediaPicker } from './MediaPicker';
 import type { MediaShowcaseType } from './MediaShowcaseBlock';
+import { HtmlEditor } from './HtmlEditor';
 import ReactMarkdown from 'react-markdown';
 import { toast } from 'sonner';
 
@@ -679,13 +680,20 @@ export function PageManagement() {
                 <Label className="text-xs text-muted-foreground">Or upload an HTML file</Label>
                 <input ref={htmlFileRef} type="file" accept=".html,.htm" className="hidden" onChange={handleHtmlFileUpload} />
                 {brandSiteHtml ? (
-                  <div className="flex items-center gap-2">
-                    <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                      ✓ HTML file loaded
-                    </Badge>
-                    <Button type="button" variant="ghost" size="sm" onClick={() => setBrandSiteHtml('')}>
-                      <X className="h-3 w-3" />
-                    </Button>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                        ✓ HTML file loaded
+                      </Badge>
+                      <Button type="button" variant="ghost" size="sm" onClick={() => setBrandSiteHtml('')}>
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                    <HtmlEditor
+                      html={brandSiteHtml}
+                      onChange={setBrandSiteHtml}
+                      uploadFile={uploadFile}
+                    />
                   </div>
                 ) : (
                   <Button type="button" variant="outline" size="sm" onClick={() => htmlFileRef.current?.click()}>
