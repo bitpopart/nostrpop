@@ -374,8 +374,16 @@ export function PageManagement() {
     setShowZapButton(page.show_zap_button ?? false);
     setBuyMeCoffeeUrl(page.buy_me_coffee_url ?? '');
 
-    if (page.brand_site_is_srcdoc && page.brand_site) {
-      setBrandSiteHtml(page.brand_site);
+    // Detect HTML page: either old srcdoc style OR a Blossom URL from the new flow
+    // The raw HTML is always stored in localStorage under pageSrcdocKey for the editor
+    const localHtml = localStorage.getItem(`bitpopart:page-srcdoc:${page.id}`);
+    const isHtmlPage = !!(page.brand_site_is_srcdoc || localHtml);
+
+    if (isHtmlPage) {
+      // Prefer local HTML for editing; fall back to brand_site if it's srcdoc
+      const htmlForEditor = localHtml
+        ?? (page.brand_site_is_srcdoc ? page.brand_site : '') ?? '';
+      setBrandSiteHtml(htmlForEditor);
       setBrandSiteUrl('');
       setPageTab('html');
     } else {
@@ -478,7 +486,7 @@ export function PageManagement() {
     setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }), 80);
   };
 
-  function handleSave() {
+  async function handleSave() {
     try {
       if (!title.trim()) {
         toast.error('Please enter a page title');
@@ -504,18 +512,43 @@ export function PageManagement() {
         }
       }
 
-      // HTML tab pages use brandSiteHtml; static pages never use it
       const isHtml = pageTab === 'html' && !!brandSiteHtml.trim();
 
-      // Collect all gallery images from gallery blocks for legacy gallery_images field
       const allGalleryImages = blocks
         .filter(b => b.type === 'gallery')
         .flatMap(b => b.images);
 
-      const descriptionJson = JSON.stringify({
-        blocks,
-        ...(isHtml ? { brand_site_html: brandSiteHtml.trim() } : {}),
-      });
+      // ── For HTML pages: upload to Blossom so ALL visitors can load it ──
+      // The HTML is stored as a public file — no relay size limits, no localStorage dependency.
+      let publishedHtmlUrl: string | undefined;
+      if (isHtml) {
+        if (!user) {
+          toast.error('You must be logged in to publish an HTML page');
+          return;
+        }
+        const uploadingToast = toast.loading('Uploading HTML file…');
+        try {
+          const htmlBlob = new Blob([brandSiteHtml.trim()], { type: 'text/html' });
+          const htmlFile = new File([htmlBlob], `${slug}.html`, { type: 'text/html' });
+          const tags = await uploadFile(htmlFile);
+          publishedHtmlUrl = tags[0][1];
+          toast.dismiss(uploadingToast);
+        } catch {
+          toast.dismiss(uploadingToast);
+          toast.error('Failed to upload HTML file. Page saved locally only.');
+          // Continue — save to localStorage at least
+        }
+      }
+
+      const descriptionJson = JSON.stringify({ blocks });
+
+      // brand_site: for HTML pages use the Blossom URL (so visitors can load it);
+      // fall back to srcdoc only if upload failed
+      const brandSiteValue = isHtml
+        ? (publishedHtmlUrl ?? brandSiteHtml.trim())
+        : (brandSiteUrl.trim() || undefined);
+
+      const brandSiteIsSrcdoc = isHtml && !publishedHtmlUrl;
 
       const pageData: PageData = {
         id: slug,
@@ -524,9 +557,11 @@ export function PageManagement() {
         header_image: headerImage || undefined,
         gallery_images: allGalleryImages,
         external_url: externalUrl || undefined,
-        brand_site: isHtml ? brandSiteHtml.trim() : (brandSiteUrl.trim() || undefined),
+        brand_site: brandSiteValue,
         brand_site_inline: brandSiteInline,
-        brand_site_is_srcdoc: isHtml,
+        brand_site_is_srcdoc: brandSiteIsSrcdoc,
+        // Keep local HTML for the editor
+        ...(isHtml ? { _localHtml: brandSiteHtml.trim() } as object : {}),
         author_pubkey: '',
         created_at: editingPage?.created_at ?? new Date().toISOString(),
         show_in_footer: showInFooter,
@@ -535,8 +570,12 @@ export function PageManagement() {
         buy_me_coffee_url: buyMeCoffeeUrl.trim() || undefined,
       };
 
-      // Save to localStorage immediately
+      // Save to localStorage
       const allPages = loadPagesFromStorage();
+      // Store the local HTML separately so the editor can load it back
+      if (isHtml) {
+        try { localStorage.setItem(`bitpopart:page-srcdoc:${slug}`, brandSiteHtml.trim()); } catch { /* quota */ }
+      }
       savePagesToStorage(
         editingPage
           ? allPages.map(p => p.id === slug ? pageData : p)
@@ -549,7 +588,7 @@ export function PageManagement() {
       toast.success(editingPage ? 'Page updated!' : 'Page created!');
       resetForm();
 
-      // Publish to Nostr in background
+      // Publish to Nostr
       if (user) {
         (async () => {
           try {
@@ -566,7 +605,14 @@ export function PageManagement() {
                 ...(externalUrl ? [['r', externalUrl]] : []),
                 ...(showInFooter ? [['footer', 'true']] : []),
                 ...(order ? [['order', order]] : []),
-                ...(isHtml ? [['brand-site', '__html__']] : brandSiteUrl.trim() ? [['brand-site', brandSiteUrl.trim()]] : []),
+                // For HTML: store the Blossom URL directly in the tag — no size limit
+                ...(isHtml && publishedHtmlUrl
+                  ? [['brand-site', publishedHtmlUrl]]
+                  : isHtml && !publishedHtmlUrl
+                  ? [['brand-site', '__html__']]
+                  : brandSiteUrl.trim()
+                  ? [['brand-site', brandSiteUrl.trim()]]
+                  : []),
                 ...(brandSiteInline ? [['brand-site-inline', 'true']] : []),
                 ...(showZapButton ? [['zap-button', 'true']] : []),
                 ...(buyMeCoffeeUrl.trim() ? [['buy-me-coffee', buyMeCoffeeUrl.trim()]] : []),
@@ -575,7 +621,10 @@ export function PageManagement() {
               created_at,
             });
             await nostr.event(event, { signal: AbortSignal.timeout(8000) });
-          } catch { /* silent — localStorage already has it */ }
+            toast.success('Page published to Nostr ✓', { duration: 3000 });
+          } catch (e) {
+            toast.error(`Nostr publish failed: ${String(e).slice(0, 80)}. Page is saved locally.`);
+          }
         })();
       }
     } catch (err) {
