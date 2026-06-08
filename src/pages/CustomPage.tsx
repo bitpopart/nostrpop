@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ZapButton } from '@/components/ZapButton';
+import { MediaShowcaseBlock } from '@/components/pages/MediaShowcaseBlock';
+import type { MediaShowcaseType } from '@/components/pages/MediaShowcaseBlock';
 import { ArrowLeft, ExternalLink, Globe, Image as ImageIcon, Coffee } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
@@ -16,10 +18,12 @@ const ADMIN_PUBKEY = '43baaf0c28e6cfb195b17ee083e19eb3a4afdfac54d9b6baf170270ed1
 // Content block types
 interface ContentBlock {
   id: string;
-  type: 'markdown' | 'gallery';
+  type: 'markdown' | 'gallery' | 'media';
   content: string;
   images: string[];
   externalUrl?: string;
+  mediaType?: MediaShowcaseType;
+  selectedMediaIds?: string[];
 }
 
 export default function CustomPage() {
@@ -250,6 +254,18 @@ export default function CustomPage() {
                     </CardContent>
                   </Card>
                 )}
+
+              {/* Media Showcase Block */}
+              {block.type === 'media' && block.mediaType && (
+                <Card>
+                  <CardContent className="pt-6">
+                    <MediaShowcaseBlock
+                      mediaType={block.mediaType}
+                      selectedIds={block.selectedMediaIds ?? []}
+                    />
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Gallery Block */}
               {block.type === 'gallery' && block.images.length > 0 && (

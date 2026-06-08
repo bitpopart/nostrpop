@@ -13,27 +13,24 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, X, Upload, FileText, Edit, Image as ImageIcon, ExternalLink, GripVertical, Trash2, Loader2, Globe, Code2, FileDown, Zap, Coffee } from 'lucide-react';
+import { Plus, X, Upload, FileText, Edit, Image as ImageIcon, ExternalLink, GripVertical, Trash2, Loader2, Globe, Code2, FileDown, Zap, Coffee, LayoutGrid } from 'lucide-react';
 import { generateSlug } from '@/lib/pageTypes';
 import type { PageData } from '@/lib/pageTypes';
-
-// Routes reserved by the app router — cannot be used as page slugs
-const RESERVED_SLUGS = new Set([
-  'cards', 'card', 'share', 'art', '21k-art', 'canvas', 'shop', 'admin',
-  'feed', 'blog', 'popup', 'artist', 'projects', 'nostr-projects', 'badges',
-  'fundraising', 'vlog', 'wall', 'categories', 'order-confirmation', 'free',
-  'games', 'animations', 'wallpapers', 'gifs', 'avatars', 'banners', 'frl', 'app',
-]);
+import { MediaPicker } from './MediaPicker';
+import type { MediaShowcaseType } from './MediaShowcaseBlock';
 import ReactMarkdown from 'react-markdown';
 import { toast } from 'sonner';
 
 // Content block types
 interface ContentBlock {
   id: string;
-  type: 'markdown' | 'gallery';
+  type: 'markdown' | 'gallery' | 'media';
   content: string;
   images: string[];
   externalUrl?: string;
+  // media showcase fields
+  mediaType?: MediaShowcaseType;
+  selectedMediaIds?: string[];
 }
 
 export function PageManagement() {
@@ -130,15 +127,28 @@ export function PageManagement() {
     setIsCreating(true);
   };
 
-  const addContentBlock = (type: 'markdown' | 'gallery') => {
+  const addContentBlock = (type: 'markdown' | 'gallery' | 'media', mediaType?: MediaShowcaseType) => {
     const newBlock: ContentBlock = {
       id: Date.now().toString(),
       type,
       content: '',
       images: [],
-      externalUrl: ''
+      externalUrl: '',
+      ...(type === 'media' ? { mediaType: mediaType ?? 'app-wallpaper', selectedMediaIds: [] } : {}),
     };
     setContentBlocks([...contentBlocks, newBlock]);
+  };
+
+  const updateBlockMediaType = (id: string, mediaType: MediaShowcaseType) => {
+    setContentBlocks(contentBlocks.map(block =>
+      block.id === id ? { ...block, mediaType, selectedMediaIds: [] } : block
+    ));
+  };
+
+  const updateBlockSelectedMediaIds = (id: string, selectedMediaIds: string[]) => {
+    setContentBlocks(contentBlocks.map(block =>
+      block.id === id ? { ...block, selectedMediaIds } : block
+    ));
   };
 
   const updateBlockContent = (id: string, content: string) => {
@@ -658,7 +668,9 @@ export function PageManagement() {
                             <div className="flex items-center gap-2">
                               <GripVertical className="h-4 w-4 text-muted-foreground cursor-move" />
                               <span className="text-sm font-medium">
-                                {block.type === 'markdown' ? 'Text Block' : 'Photo Gallery'}
+                                {block.type === 'markdown' ? 'Text Block'
+                                  : block.type === 'gallery' ? 'Photo Gallery'
+                                  : 'Media Showcase'}
                               </span>
                             </div>
                             <div className="flex gap-1">
@@ -705,6 +717,48 @@ export function PageManagement() {
                               <p className="text-xs text-muted-foreground">
                                 Supports Markdown: **bold**, *italic*, ## headings, [links](url), etc.
                               </p>
+                            </div>
+                          ) : block.type === 'media' ? (
+                            <div className="space-y-3">
+                              {/* Media type selector */}
+                              <div className="space-y-1.5">
+                                <Label className="text-xs font-medium text-muted-foreground">Type</Label>
+                                <div className="flex flex-wrap gap-2">
+                                  {([
+                                    { value: 'app-wallpaper', label: '🖼 Wallpapers' },
+                                    { value: 'app-gif',       label: '🎞 GIFs' },
+                                    { value: 'app-avatar',   label: '👤 Avatars' },
+                                    { value: 'app-banner',   label: '🏞 Banners' },
+                                  ] as { value: MediaShowcaseType; label: string }[]).map(opt => (
+                                    <button
+                                      key={opt.value}
+                                      type="button"
+                                      onClick={() => updateBlockMediaType(block.id, opt.value)}
+                                      className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                                        block.mediaType === opt.value
+                                          ? 'bg-purple-100 dark:bg-purple-900/40 border-purple-400 text-purple-800 dark:text-purple-200'
+                                          : 'bg-background border-border text-muted-foreground hover:border-gray-400'
+                                      }`}
+                                    >
+                                      {opt.label}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* Media picker */}
+                              <div className="space-y-1.5">
+                                <Label className="text-xs font-medium text-muted-foreground">
+                                  Select items to showcase (click to toggle, leave all unselected to show all)
+                                </Label>
+                                {block.mediaType && (
+                                  <MediaPicker
+                                    mediaType={block.mediaType}
+                                    selectedIds={block.selectedMediaIds ?? []}
+                                    onChange={(ids) => updateBlockSelectedMediaIds(block.id, ids)}
+                                  />
+                                )}
+                              </div>
                             </div>
                           ) : (
                             <div className="space-y-2">
@@ -786,7 +840,7 @@ export function PageManagement() {
                       </Card>
                       
                       {/* Add Block Buttons - appear after each block */}
-                      <div className="flex justify-center gap-2">
+                      <div className="flex justify-center flex-wrap gap-2">
                         <Button
                           type="button"
                           variant="outline"
@@ -804,6 +858,15 @@ export function PageManagement() {
                         >
                           <Plus className="h-4 w-4 mr-2" />
                           Add Gallery
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => addContentBlock('media', 'app-wallpaper')}
+                        >
+                          <LayoutGrid className="h-4 w-4 mr-2" />
+                          Add Media Showcase
                         </Button>
                       </div>
                     </div>
@@ -896,6 +959,18 @@ export function PageManagement() {
                                   </div>
                                 )}
                               </>
+                            )}
+                            {block.type === 'media' && block.mediaType && (
+                              <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 border border-dashed text-muted-foreground text-sm">
+                                <LayoutGrid className="h-4 w-4 flex-shrink-0" />
+                                <span>
+                                  Media Showcase — <strong>{block.mediaType.replace('app-', '')}</strong>
+                                  {block.selectedMediaIds && block.selectedMediaIds.length > 0
+                                    ? ` · ${block.selectedMediaIds.length} item${block.selectedMediaIds.length !== 1 ? 's' : ''} selected`
+                                    : ' · all items'}
+                                  {' '}(visible on the published page)
+                                </span>
+                              </div>
                             )}
                           </div>
                         ))}
