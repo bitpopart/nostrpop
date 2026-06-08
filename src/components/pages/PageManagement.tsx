@@ -340,33 +340,46 @@ export function PageManagement() {
     if (file.size > 15 * 1024 * 1024) { toast.error('File too large (max 15MB).'); return; }
     setIsUploading(true);
     try {
-      if (isHtml) {
-        // Read the HTML text and store it directly — rendered via srcdoc, no data: URI needed
-        const html = await file.text();
-        setBrandSiteHtml(html);
-        // Use a special sentinel so the tag stays small but reader knows it's inline HTML
-        setBrandSite('__html__');
-        setBrandSiteMode('html');
-        toast.success('HTML file loaded. Save the page to publish it.');
-      } else {
-        // PDF: upload to Blossom and get a real URL
-        const tags = await uploadFile(file);
-        const url = tags[0]?.[1];
-        if (url) { setBrandSite(url); setBrandSiteMode('url'); toast.success('PDF uploaded and linked.'); }
+      // Upload both HTML and PDF to Blossom so the URL is stored in the Nostr event
+      // and works on every device — no localStorage dependency
+      const uploadableFile = isHtml
+        ? new File([file], file.name, { type: 'text/html' })
+        : file;
+      const tags = await uploadFile(uploadableFile);
+      const url = tags[0]?.[1];
+      if (url) {
+        setBrandSite(url);
+        setBrandSiteMode('url');
+        // Also keep HTML text in state so the preview works locally
+        if (isHtml) {
+          const html = await file.text();
+          setBrandSiteHtml(html);
+        }
+        toast.success(isHtml ? 'HTML uploaded. Save the page to publish it.' : 'PDF uploaded and linked.');
       }
-    } catch { toast.error('Failed to process file.'); }
+    } catch { toast.error('Failed to upload file. Please try again.'); }
     finally {
       setIsUploading(false);
       if (brandSiteFileRef.current) brandSiteFileRef.current.value = '';
     }
   }, [uploadFile]);
 
-  const applyBrandSiteHtml = useCallback(() => {
+  const applyBrandSiteHtml = useCallback(async () => {
     if (!brandSiteHtml.trim()) { toast.error('Paste HTML first.'); return; }
-    // Store the sentinel marker; the actual HTML is kept in brandSiteHtml state
-    setBrandSite('__html__');
-    toast.success('HTML ready. Save the page to publish it.');
-  }, [brandSiteHtml]);
+    setIsUploading(true);
+    try {
+      // Upload the pasted HTML as a file to Blossom so it works on all devices
+      const blob = new Blob([brandSiteHtml.trim()], { type: 'text/html' });
+      const file = new File([blob], 'page.html', { type: 'text/html' });
+      const tags = await uploadFile(file);
+      const url = tags[0]?.[1];
+      if (url) {
+        setBrandSite(url);
+        toast.success('HTML uploaded and ready. Save the page to publish it.');
+      }
+    } catch { toast.error('Failed to upload HTML. Please try again.'); }
+    finally { setIsUploading(false); }
+  }, [brandSiteHtml, uploadFile]);
 
   const handleSubmit = () => {
     if (!user || !title.trim()) return;
@@ -407,21 +420,6 @@ export function PageManagement() {
       }
     });
 
-    // If brand site is inline HTML, store the HTML in localStorage (not the Nostr event —
-    // relays have size limits of ~64–128 KB which HTML files easily exceed).
-    // The Nostr event stores a sentinel "__local__:{slug}" so CustomPage knows to read from localStorage.
-    const isInlineHtml = brandSite === '__html__' && brandSiteHtml.trim();
-    const localHtmlKey = `page-html:${pageSlug}`;
-
-    if (isInlineHtml) {
-      try {
-        localStorage.setItem(localHtmlKey, brandSiteHtml.trim());
-      } catch {
-        toast.error('Failed to save HTML locally. Your browser storage may be full.');
-        return;
-      }
-    }
-
     createEvent({
       kind: 38175,
       content: JSON.stringify({
@@ -435,9 +433,8 @@ export function PageManagement() {
         ...(externalUrl ? [['r', externalUrl]] : []),
         ...(showInFooter ? [['footer', 'true']] : []),
         ...(order ? [['order', order]] : []),
-        // For inline HTML pages use a local-storage sentinel; for regular URLs store the URL
-        ...(brandSite && !isInlineHtml ? [['brand-site', brandSite]] : []),
-        ...(isInlineHtml ? [['brand-site', `__local__:${pageSlug}`]] : []),
+        // brand-site is always a plain URL now (HTML files are uploaded to Blossom)
+        ...(brandSite && brandSite !== '__html__' ? [['brand-site', brandSite]] : []),
         ...(brandSite && brandSiteInline ? [['brand-site-inline', 'true']] : []),
         ...(showZapButton ? [['zap-button', 'true']] : []),
         ...(buyMeCoffeeUrl.trim() ? [['buy-me-coffee', buyMeCoffeeUrl.trim()]] : []),
@@ -446,14 +443,11 @@ export function PageManagement() {
     }, {
       onSuccess: () => {
         toast.success(editingPage ? 'Page updated!' : 'Page created!');
-        // Refresh all page queries so the list and individual page show updated data
         queryClient.invalidateQueries({ queryKey: ['pages'] });
         queryClient.invalidateQueries({ queryKey: ['footer-pages'] });
         queryClient.invalidateQueries({ queryKey: ['page', pageSlug] });
       },
       onError: () => {
-        // Clean up the localStorage entry if the Nostr event failed to publish
-        if (isInlineHtml) localStorage.removeItem(localHtmlKey);
         toast.error('Failed to save page. Please try again.');
       },
     });

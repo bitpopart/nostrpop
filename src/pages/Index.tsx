@@ -382,7 +382,7 @@ function ThumbnailSkeleton() {
 
 const Index = () => {
   const { getGradientStyle } = useThemeColors();
-  const { data: homepageSettings } = useHomepageSettings();
+  const { data: homepageSettings, isLoading: settingsLoading } = useHomepageSettings();
   const author = useAuthor(ADMIN_HEX);
   const metadata: NostrMetadata | undefined = author.data?.metadata;
   
@@ -1210,44 +1210,19 @@ const Index = () => {
         {/* Hero Section */}
         <div className="text-center mb-16 pt-8">
           <div className="flex flex-col gap-4 items-center">
-            {/* Dynamic Hero Buttons from settings (fall back to defaults if not loaded) */}
+            {/* Dynamic Hero Buttons from settings — show skeletons while loading */}
             <div className="flex flex-col sm:flex-row flex-wrap gap-4 justify-center">
-              {heroButtons.length > 0 ? (
+              {settingsLoading ? (
+                /* Skeletons while relay responds — no stale hardcoded buttons */
+                <>
+                  <Skeleton className="h-11 w-40 rounded-full" />
+                  <Skeleton className="h-11 w-32 rounded-full" />
+                  <Skeleton className="h-11 w-28 rounded-full" />
+                </>
+              ) : (
                 heroButtons.map(btn => (
                   <DynamicButton key={btn.id} btn={btn} size="lg" />
                 ))
-              ) : (
-                /* Default buttons while settings load */
-                <>
-                  <Button 
-                    size="lg" 
-                    asChild 
-                    className="rounded-full text-white border-0"
-                    style={getGradientStyle('primary')}
-                  >
-                    <Link to="/canvas">
-                      <Sparkles className="mr-2 h-5 w-5" />
-                      Start Painting
-                    </Link>
-                  </Button>
-                  <Button size="lg" variant="outline" asChild className="rounded-full">
-                    <Link to="/shop">
-                      <Gift className="mr-2 h-5 w-5" />
-                      Visit Shop
-                    </Link>
-                  </Button>
-                  <Button 
-                    size="lg" 
-                    variant="outline" 
-                    asChild 
-                    className="rounded-full border-orange-300 hover:bg-orange-50 dark:border-orange-700 dark:hover:bg-orange-900/20"
-                  >
-                    <Link to="/popup">
-                      <MapPin className="mr-2 h-5 w-5 text-orange-600 dark:text-orange-400" />
-                      Pop Tour
-                    </Link>
-                  </Button>
-                </>
               )}
             </div>
             
