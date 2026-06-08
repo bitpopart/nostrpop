@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSeoMeta } from '@unhead/react';
 import { usePage } from '@/hooks/usePages';
@@ -31,6 +31,26 @@ export default function CustomPage() {
   const navigate = useNavigate();
   const { data: page, isLoading } = usePage(slug || '');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  // For HTML pages stored on Blossom: fetch the HTML and render via srcDoc
+  // to avoid cross-origin iframe blocking (Blossom doesn't send X-Frame-Options: ALLOWALL)
+  const [fetchedHtml, setFetchedHtml] = useState<string | null>(null);
+  const [fetchingHtml, setFetchingHtml] = useState(false);
+
+  const isRemoteHtml = !!(
+    page?.brand_site &&
+    !page.brand_site_is_srcdoc &&
+    /\.html?(\?|$)/i.test(page.brand_site)
+  );
+
+  useEffect(() => {
+    if (!isRemoteHtml || !page?.brand_site) return;
+    setFetchedHtml(null);
+    setFetchingHtml(true);
+    fetch(page.brand_site)
+      .then(r => r.text())
+      .then(html => { setFetchedHtml(html); setFetchingHtml(false); })
+      .catch(() => setFetchingHtml(false));
+  }, [page?.brand_site, isRemoteHtml]);
 
   useSeoMeta({
     title: page ? `${page.title} - BitPopArt` : 'Page',
@@ -64,7 +84,7 @@ export default function CustomPage() {
     }];
   };
 
-  if (isLoading) {
+  if (isLoading || (isRemoteHtml && fetchingHtml && !fetchedHtml)) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20">
         <div className="container mx-auto px-4 py-12">
@@ -131,16 +151,29 @@ export default function CustomPage() {
     </div>
   ) : null;
 
-  // Render the brand_site iframe — srcdoc for inline HTML, src for external URLs
-  const renderBrandSiteIframe = (className = 'flex-1 w-full border-0') =>
-    page.brand_site_is_srcdoc ? (
-      <iframe
-        srcDoc={page.brand_site}
-        title={page.title}
-        className={className}
-        sandbox="allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
-      />
-    ) : (
+  // Render the brand_site iframe.
+  // Remote .html files (Blossom) are fetched and rendered via srcDoc to avoid
+  // cross-origin iframe blocking — browsers won't load cross-origin HTML in iframes
+  // unless the server sends X-Frame-Options: ALLOWALL, which Blossom does not.
+  const renderBrandSiteIframe = (className = 'flex-1 w-full border-0') => {
+    if (fetchingHtml) {
+      return <div className={className + ' flex items-center justify-center bg-muted/20'}><Skeleton className="w-full h-full" /></div>;
+    }
+    const srcDoc = page.brand_site_is_srcdoc
+      ? page.brand_site                  // legacy inline HTML
+      : (fetchedHtml ?? undefined);      // fetched from Blossom URL
+    if (srcDoc) {
+      return (
+        <iframe
+          srcDoc={srcDoc}
+          title={page.title}
+          className={className}
+          sandbox="allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
+        />
+      );
+    }
+    // Fallback: plain external URL (non-HTML, e.g. a website)
+    return (
       <iframe
         src={page.brand_site}
         title={page.title}
@@ -148,6 +181,7 @@ export default function CustomPage() {
         sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
       />
     );
+  };
 
   // Full-screen inline iframe mode — HTML fills everything below the header menu
   if (page.brand_site && page.brand_site_inline) {
