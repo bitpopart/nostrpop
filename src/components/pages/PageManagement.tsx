@@ -2,6 +2,8 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { usePages, loadPagesFromStorage, savePagesToStorage } from '@/hooks/usePages';
 import { useUploadFile } from '@/hooks/useUploadFile';
+import { useNostr } from '@nostrify/react';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,6 +30,8 @@ export function PageManagement() {
   const { mutateAsync: uploadFile } = useUploadFile();
   const { data: pages, isLoading } = usePages();
   const queryClient = useQueryClient();
+  const { nostr } = useNostr();
+  const { user } = useCurrentUser();
 
   const [isCreating, setIsCreating] = useState(false);
   const [editingPage, setEditingPage] = useState<PageData | null>(null);
@@ -110,6 +114,22 @@ export function PageManagement() {
     queryClient.invalidateQueries({ queryKey: ['footer-pages'] });
     queryClient.removeQueries({ queryKey: ['page', page.id] });
     toast.success('Page deleted');
+
+    // Also delete from Nostr in background
+    if (user) {
+      (async () => {
+        try {
+          const created_at = Math.floor(Date.now() / 1000);
+          const event = await user.signer.signEvent({
+            kind: 5,
+            content: '',
+            tags: [['a', `38175:${user.pubkey}:${page.id}`], ['k', '38175']],
+            created_at,
+          });
+          await nostr.event(event, { signal: AbortSignal.timeout(5000) });
+        } catch { /* silent */ }
+      })();
+    }
   }
 
   const handleHeaderImageUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -178,6 +198,7 @@ export function PageManagement() {
         buy_me_coffee_url: buyMeCoffeeUrl.trim() || undefined,
       };
 
+      // 1. Save to localStorage immediately — admin sees it right away
       const allPages = loadPagesFromStorage();
       savePagesToStorage(
         editingPage
@@ -190,6 +211,42 @@ export function PageManagement() {
       queryClient.invalidateQueries({ queryKey: ['page', slug] });
       toast.success(editingPage ? 'Page updated!' : 'Page created!');
       resetForm();
+
+      // 2. Publish to Nostr in background so all visitors can see the page
+      //    This is fire-and-forget — if it fails, the page still works from localStorage
+      if (user) {
+        const isHtml = !!brandSiteHtml.trim();
+        (async () => {
+          try {
+            const created_at = Math.floor(Date.now() / 1000);
+            const event = await user.signer.signEvent({
+              kind: 38175,
+              content: JSON.stringify({
+                blocks: [{ id: '1', type: 'markdown', content, images: [] }],
+                ...(isHtml ? { brand_site_html: brandSiteHtml.trim() } : {}),
+              }),
+              tags: [
+                ['d', slug],
+                ['title', title.trim()],
+                ['t', 'custom-page'],
+                ['published_at', String(created_at)],
+                ...(headerImage ? [['header', headerImage]] : []),
+                ...(externalUrl ? [['r', externalUrl]] : []),
+                ...(showInFooter ? [['footer', 'true']] : []),
+                ...(order ? [['order', order]] : []),
+                ...(isHtml ? [['brand-site', '__html__']] : brandSiteUrl.trim() ? [['brand-site', brandSiteUrl.trim()]] : []),
+                ...(brandSiteInline ? [['brand-site-inline', 'true']] : []),
+                ...(showZapButton ? [['zap-button', 'true']] : []),
+                ...(buyMeCoffeeUrl.trim() ? [['buy-me-coffee', buyMeCoffeeUrl.trim()]] : []),
+              ],
+              created_at,
+            });
+            await nostr.event(event, { signal: AbortSignal.timeout(8000) });
+          } catch {
+            // Silent — localStorage already has it, Nostr publish is best-effort
+          }
+        })();
+      }
     } catch (err) {
       toast.error('Error saving page: ' + String(err));
     }
