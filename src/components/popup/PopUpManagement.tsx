@@ -282,15 +282,60 @@ export function PopUpManagement() {
     if (formData.brandSite) {
       tags.push(['brand-site', formData.brandSite]);
     }
-    if (formData.finished) {
-      tags.push(['finished', 'true']);
-    }
-
     // Store coordinates in content as JSON for easy retrieval
     const contentData = {
       description: formData.description,
       coordinates: { lat, lon },
     };
+
+    // If marked as finished, do not publish to Nostr.
+    // If editing an existing published event, send a deletion event to remove it from relays.
+    if (formData.finished) {
+      if (editingEvent) {
+        const existingEventId = editingEvent.tags.find(t => t[0] === 'd')?.[1];
+        if (existingEventId) {
+          createEvent(
+            {
+              kind: 5,
+              content: 'Event marked as finished',
+              tags: [['a', `31922:${editingEvent.pubkey}:${existingEventId}`]],
+            },
+            {
+              onSuccess: () => {
+                toast.success('Event marked as finished and removed from Nostr.');
+                queryClient.invalidateQueries({ queryKey: ['popup-events'] });
+              },
+              onError: () => {
+                toast.info('Event marked as finished (could not remove from Nostr).');
+              },
+            }
+          );
+        } else {
+          toast.info('Event marked as finished and will not be published to Nostr.');
+        }
+      } else {
+        toast.info('Event marked as finished and will not be published to Nostr.');
+      }
+      setIsCreating(false);
+      setEditingEvent(null);
+      setFormData({
+        title: '',
+        description: '',
+        type: 'art',
+        status: 'confirmed',
+        location: '',
+        latitude: '',
+        longitude: '',
+        startDate: '',
+        endDate: '',
+        image: '',
+        galleryImages: [],
+        link: '',
+        brandSite: '',
+        finished: false,
+      });
+      return;
+    }
 
     createEvent(
       {
@@ -316,6 +361,7 @@ export function PopUpManagement() {
             image: '',
             galleryImages: [],
             link: '',
+            brandSite: '',
             finished: false,
           });
           queryClient.invalidateQueries({ queryKey: ['popup-events'] });
