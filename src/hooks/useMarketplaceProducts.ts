@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNostr } from '@nostrify/react';
 import type { NostrEvent } from '@nostrify/nostrify';
@@ -50,8 +51,10 @@ export function useMarketplaceProducts(category?: string) {
   const { user: _user } = useCurrentUser();
   const adminPubkey = getAdminPubkeyHex();
 
-  return useQuery({
-    queryKey: ['marketplace-products', category],
+  // Always fetch ALL products with a stable query key — never re-query per category.
+  // Category filtering is done client-side via useMemo so switching categories is instant.
+  const query = useQuery({
+    queryKey: ['marketplace-products'],
     queryFn: async (c) => {
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(15000)]);
 
@@ -158,21 +161,23 @@ export function useMarketplaceProducts(category?: string) {
         })
         .filter(Boolean) as MarketplaceProduct[];
 
-      // Apply category filter if specified
-      const filteredProducts = category
-        ? products.filter(p => p.category.toLowerCase() === category.toLowerCase())
-        : products;
-
       // Sort by creation date (newest first)
-      const sortedProducts = filteredProducts.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
-      return sortedProducts;
+      return products.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     },
     enabled: !!adminPubkey,
     staleTime: 30000, // 30 seconds
     refetchInterval: 60000, // Refetch every minute
     retry: 2, // Retry up to 2 times on failure
   });
+
+  // Apply category filter client-side — no new network request when category changes
+  const filteredData = useMemo(() => {
+    if (!query.data) return query.data;
+    if (!category) return query.data;
+    return query.data.filter(p => p.category.toLowerCase() === category.toLowerCase());
+  }, [query.data, category]);
+
+  return { ...query, data: filteredData };
 }
 
 export function useMarketplaceProduct(productId: string) {
