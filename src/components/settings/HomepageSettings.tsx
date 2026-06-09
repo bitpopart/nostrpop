@@ -41,22 +41,22 @@ const DEFAULT_SECTIONS: HomepageSection[] = [
     title: 'Nostr Projects',
     subtitle: 'Join collaborative art - Select an image & pay in sats',
     icon: 'Users',
-    enabled: true,
+    enabled: false,
     order: 0,
-  },
-  {
-    id: 'projects',
-    title: 'Projects',
-    subtitle: 'By BitPopArt',
-    icon: 'FolderKanban',
-    enabled: true,
-    order: 1,
   },
   {
     id: 'art',
     title: 'Art',
     subtitle: 'Browse artwork gallery',
     icon: 'Palette',
+    enabled: true,
+    order: 1,
+  },
+  {
+    id: 'projects',
+    title: 'Projects',
+    subtitle: 'By BitPopArt',
+    icon: 'FolderKanban',
     enabled: true,
     order: 2,
   },
@@ -69,12 +69,20 @@ const DEFAULT_SECTIONS: HomepageSection[] = [
     order: 3,
   },
   {
+    id: 'free-downloads',
+    title: 'Free Downloads',
+    subtitle: 'Wallpapers, GIFs & Animations — all free',
+    icon: 'Download',
+    enabled: true,
+    order: 4,
+  },
+  {
     id: 'news',
     title: 'Nostr News',
     subtitle: 'Latest updates and articles',
     icon: 'Rss',
     enabled: true,
-    order: 4,
+    order: 5,
   },
   {
     id: 'pages',
@@ -82,7 +90,7 @@ const DEFAULT_SECTIONS: HomepageSection[] = [
     subtitle: 'Explore custom content',
     icon: 'FileText',
     enabled: false,
-    order: 5,
+    order: 6,
   },
 ];
 
@@ -253,7 +261,26 @@ export function HomepageSettings() {
 
   useEffect(() => {
     if (nostrSettings) {
-      setSections(nostrSettings.sections || DEFAULT_SECTIONS);
+      // Merge: ensure any DEFAULT_SECTIONS not yet in saved settings are added
+      const savedSections = nostrSettings.sections || DEFAULT_SECTIONS;
+      const savedIds = new Set(savedSections.map(s => s.id));
+      const merged = [...savedSections];
+
+      for (const def of DEFAULT_SECTIONS) {
+        if (savedIds.has(def.id)) continue;
+        // Insert at the position matching the default order
+        const defaultOrder = DEFAULT_SECTIONS.map(s => s.id);
+        const defPos = defaultOrder.indexOf(def.id);
+        const followingIds = defaultOrder.slice(defPos + 1);
+        const insertBeforeIdx = merged.findIndex(s => followingIds.includes(s.id));
+        if (insertBeforeIdx !== -1) {
+          merged.splice(insertBeforeIdx, 0, { ...def });
+        } else {
+          merged.push({ ...def });
+        }
+      }
+
+      setSections(merged.map((s, i) => ({ ...s, order: i })));
       setButtons(nostrSettings.buttons || DEFAULT_BUTTONS);
     }
   }, [nostrSettings]);
