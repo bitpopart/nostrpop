@@ -29,8 +29,12 @@ export function CategoryManagement() {
     addCategory,
     updateCategory,
     deleteCategory,
-    setFeaturedCategories
+    setFeaturedCategories,
   } = useCategories();
+
+  // Derive a Set of featured ids for O(1) lookup — avoids relying on category.featured
+  // which is never populated by the hook (featured ids are stored separately)
+  const featuredIds = new Set(featuredCategories.map(c => c.id));
 
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [editingCategory, setEditingCategory] = useState<ProductCategory | null>(null);
@@ -79,6 +83,8 @@ export function CategoryManagement() {
       setFeaturedCategories(currentFeatured.filter(id => id !== categoryId));
     }
   };
+
+  const isFeatured = (categoryId: string) => featuredIds.has(categoryId);
 
   if (isLoading) {
     return (
@@ -303,33 +309,33 @@ export function CategoryManagement() {
                   /* View Mode */
                   <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                     <div className="flex items-center space-x-4">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          checked={category.featured}
-                          onCheckedChange={(checked) =>
-                            handleToggleFeatured(category.id, checked as boolean)
-                          }
-                          disabled={!category.featured && featuredCategories.length >= 3}
-                        />
-                        {category.featured ? (
-                          <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                        ) : (
-                          <StarOff className="w-4 h-4 text-gray-400" />
-                        )}
-                      </div>
+                  <div className="flex items-center space-x-2">
+                      <Checkbox
+                        checked={isFeatured(category.id)}
+                        onCheckedChange={(checked) =>
+                          handleToggleFeatured(category.id, checked as boolean)
+                        }
+                        disabled={!isFeatured(category.id) && featuredCategories.length >= 3}
+                      />
+                      {isFeatured(category.id) ? (
+                        <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                      ) : (
+                        <StarOff className="w-4 h-4 text-gray-400" />
+                      )}
+                    </div>
 
-                      <div className="flex items-center space-x-3">
-                        {category.icon && (
-                          <span className="text-xl">{category.icon}</span>
-                        )}
-                        <div>
-                          <div className="flex items-center space-x-2">
-                            <h3 className="font-medium">{category.name}</h3>
-                            {category.featured && (
-                              <Badge variant="secondary" className="text-xs">
-                                Featured
-                              </Badge>
-                            )}
+                    <div className="flex items-center space-x-3">
+                      {category.icon && (
+                        <span className="text-xl">{category.icon}</span>
+                      )}
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <h3 className="font-medium">{category.name}</h3>
+                          {isFeatured(category.id) && (
+                            <Badge variant="secondary" className="text-xs">
+                              Featured
+                            </Badge>
+                          )}
                           </div>
                           {category.description && (
                             <p className="text-sm text-muted-foreground">
@@ -378,7 +384,7 @@ export function CategoryManagement() {
                   </div>
                 )}
 
-                {category.id !== categories[categories.length - 1].id && <Separator />}
+                {categories.length > 0 && category.id !== categories[categories.length - 1].id && <Separator />}
               </div>
             ))}
           </div>
