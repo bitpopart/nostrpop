@@ -120,11 +120,8 @@ export function useMarketplaceProducts(category?: string) {
             // Check if this product has been deleted
             const productAddress = `30018:${event.pubkey}:${dTag}`;
             if (deletedAddresses.has(productAddress)) {
-              console.log(`✗ Filtering out deleted product: ${productAddress}`);
               return null;
             }
-            
-            console.log(`✓ Keeping product: ${productAddress}`);
 
             // Determine product type
             const isDigital = categoryTags.includes('digital');

@@ -39,22 +39,23 @@ export function useArtworks(filter: ArtworkFilter = 'all', options?: { enabled?:
 
       // Query for artwork events (kind 39239 and legacy kind 30023) and deletion events (kind 5)
       // ONLY query artworks from the admin (BitPopArt)
-      const [artworkEvents, deletionEvents] = await Promise.all([
-        nostr.query([
-          {
-            kinds: [39239, 30023], // Support both new and legacy artwork kinds
-            authors: [ADMIN_PUBKEY], // ONLY show artworks from BitPopArt admin
-            '#t': ['artwork'], // Tag to identify artwork posts
-            limit: 50,
-          }
-        ], { signal }),
-        nostr.query([
-          {
-            kinds: [5], // Deletion events
-            limit: 1000,
-          }
-        ], { signal })
-      ]);
+      // Use a single combined query to reduce relay load and prevent unbounded result sets.
+      const allEvents = await nostr.query([
+        {
+          kinds: [39239, 30023], // Support both new and legacy artwork kinds
+          authors: [ADMIN_PUBKEY], // ONLY show artworks from BitPopArt admin
+          '#t': ['artwork'], // Tag to identify artwork posts
+          limit: 50,
+        },
+        {
+          kinds: [5], // Deletion events — scoped to admin only to avoid unbounded relay results
+          authors: [ADMIN_PUBKEY],
+          limit: 200,
+        }
+      ], { signal });
+
+      const artworkEvents = allEvents.filter(e => e.kind === 39239 || e.kind === 30023);
+      const deletionEvents = allEvents.filter(e => e.kind === 5);
 
       console.log(`Found ${artworkEvents.length} artworks and ${deletionEvents.length} deletion events`);
 
@@ -67,7 +68,6 @@ export function useArtworks(filter: ArtworkFilter = 'all', options?: { enabled?:
         aTags.forEach(([, address]) => {
           if (address && (address.startsWith('39239:') || address.startsWith('30023:'))) {
             deletedAddresses.add(address);
-            console.log(`Found deletion event for artwork: ${address}`);
           }
         });
       });
@@ -120,7 +120,6 @@ export function useArtworks(filter: ArtworkFilter = 'all', options?: { enabled?:
             // Check if this artwork has been deleted (support both kinds)
             const artworkAddress = `${event.kind}:${event.pubkey}:${dTag}`;
             if (deletedAddresses.has(artworkAddress)) {
-              console.log(`Filtering out deleted artwork: ${artworkAddress}`);
               return null;
             }
 
@@ -237,23 +236,24 @@ export function useArtwork(artworkId: string, authorPubkey?: string) {
 
       // Query for the artwork and deletion events (support both new and legacy kinds)
       // ONLY allow artworks from the admin (BitPopArt)
-      const [artworkEvents, deletionEvents] = await Promise.all([
-        nostr.query([
-          {
-            kinds: [39239, 30023],
-            '#d': [artworkId],
-            '#t': ['artwork'],
-            authors: [ADMIN_PUBKEY], // ONLY show artworks from BitPopArt admin
-            limit: 1
-          }
-        ], { signal }),
-        nostr.query([
-          {
-            kinds: [5], // Deletion events
-            limit: 1000,
-          }
-        ], { signal })
-      ]);
+      // Scoped deletion query to admin pubkey to avoid unbounded relay results.
+      const allEvents = await nostr.query([
+        {
+          kinds: [39239, 30023],
+          '#d': [artworkId],
+          '#t': ['artwork'],
+          authors: [ADMIN_PUBKEY], // ONLY show artworks from BitPopArt admin
+          limit: 1
+        },
+        {
+          kinds: [5], // Deletion events — scoped to admin only
+          authors: [ADMIN_PUBKEY],
+          limit: 200,
+        }
+      ], { signal });
+
+      const artworkEvents = allEvents.filter(e => e.kind === 39239 || e.kind === 30023);
+      const deletionEvents = allEvents.filter(e => e.kind === 5);
 
       if (artworkEvents.length === 0) {
         // If no Nostr event found, try sample data
