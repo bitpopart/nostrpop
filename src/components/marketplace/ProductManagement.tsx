@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useMarketplaceProducts, useDeleteProduct } from '@/hooks/useMarketplaceProducts';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -52,16 +52,25 @@ export function ProductManagement() {
   const { user } = useCurrentUser();
   const { toast } = useToast();
   const { categoryNames } = useCategories();
-  const { data: products, isLoading, refetch } = useMarketplaceProducts(
-    selectedCategory === 'All Categories' ? undefined : selectedCategory
-  );
+  // Always fetch all products; filter client-side to avoid re-querying the relay on every category change
+  const { data: allProducts, isLoading, refetch } = useMarketplaceProducts();
   const { mutate: deleteProduct, isPending: isDeleting } = useDeleteProduct();
 
-  // Filter products by search query
-  const filteredProducts = products?.filter(product =>
-    product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    product.description.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
+  // Filter products by category and search query — entirely client-side, no relay requests
+  const filteredProducts = useMemo(() => {
+    if (!allProducts) return [];
+    return allProducts.filter(product => {
+      const matchesCategory = selectedCategory === 'All Categories' ||
+        product.category.toLowerCase() === selectedCategory.toLowerCase();
+      const matchesSearch = !searchQuery ||
+        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        product.description.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesCategory && matchesSearch;
+    });
+  }, [allProducts, selectedCategory, searchQuery]);
+
+  // Use allProducts for stats (unfiltered)
+  const products = allProducts;
 
   // Calculate stats
   const totalProducts = products?.length || 0;
