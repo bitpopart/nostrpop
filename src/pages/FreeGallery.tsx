@@ -93,43 +93,59 @@ interface ImageCardProps {
   duration?: string;
 }
 
-function ImageCard({ imageUrl, title, onDownload, shape = 'square', isGif, isAnimation, thumbUrl, duration }: ImageCardProps) {
+function ImageCard({ imageUrl, title, href, onDownload, shape = 'square', isGif, isAnimation, thumbUrl, duration }: ImageCardProps) {
   const { getGradientStyle } = useThemeColors();
 
   const aspectClass = shape === 'banner' ? 'aspect-video' : 'aspect-square';
   const roundedClass = shape === 'circle' ? 'rounded-full' : 'rounded-xl';
 
+  const inner = (
+    <div className={`${aspectClass} overflow-hidden ${roundedClass}`}>
+      <img
+        src={thumbUrl || imageUrl}
+        alt={title}
+        className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${roundedClass}`}
+        loading="lazy"
+      />
+      {/* GIF badge */}
+      {isGif && (
+        <div className="absolute top-2 left-2 bg-amber-500/90 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md">
+          GIF
+        </div>
+      )}
+      {/* Play overlay for animations */}
+      {isAnimation && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/35 transition-colors rounded-xl">
+          <div className="w-10 h-10 rounded-full bg-white/90 group-hover:bg-white flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-all duration-300">
+            <Play className="w-4 h-4 text-gray-900 ml-0.5" fill="currentColor" />
+          </div>
+        </div>
+      )}
+      {/* Duration badge for animations */}
+      {duration && (
+        <span className="absolute bottom-2 left-2 bg-black/80 text-white text-[10px] font-medium px-1.5 py-0.5 rounded">
+          {duration}
+        </span>
+      )}
+      {/* Title overlay */}
+      {title !== 'Untitled' && (
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <p className="text-white text-[11px] font-medium truncate">{title}</p>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className={`group relative overflow-hidden bg-white dark:bg-gray-800 shadow-md hover:shadow-xl transition-all duration-300 ${roundedClass}`}>
-      <div className={`${aspectClass} overflow-hidden ${roundedClass}`}>
-        <img
-          src={thumbUrl || imageUrl}
-          alt={title}
-          className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${roundedClass}`}
-          loading="lazy"
-        />
-        {/* GIF badge */}
-        {isGif && (
-          <div className="absolute top-2 left-2 bg-amber-500/90 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md">
-            GIF
-          </div>
-        )}
-        {/* Play overlay for animations */}
-        {isAnimation && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/35 transition-colors rounded-xl">
-            <div className="w-10 h-10 rounded-full bg-white/90 group-hover:bg-white flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-all duration-300">
-              <Play className="w-4 h-4 text-gray-900 ml-0.5" fill="currentColor" />
-            </div>
-          </div>
-        )}
-        {/* Duration badge for animations */}
-        {duration && (
-          <span className="absolute bottom-2 left-2 bg-black/80 text-white text-[10px] font-medium px-1.5 py-0.5 rounded">
-            {duration}
-          </span>
-        )}
-      </div>
-      {/* Download button on hover */}
+      {href ? (
+        <Link to={href} className="block">
+          {inner}
+        </Link>
+      ) : (
+        inner
+      )}
+      {/* Download button on hover — sits outside the Link so it doesn't navigate */}
       {onDownload && (
         <Button
           size="icon"
@@ -140,12 +156,6 @@ function ImageCard({ imageUrl, title, onDownload, shape = 'square', isGif, isAni
         >
           <Download className="h-3.5 w-3.5" />
         </Button>
-      )}
-      {/* Title overlay */}
-      {title !== 'Untitled' && (
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-          <p className="text-white text-[11px] font-medium truncate">{title}</p>
-        </div>
       )}
     </div>
   );
@@ -278,6 +288,7 @@ export default function FreeGallery() {
                   key={item.id}
                   imageUrl={item.image_url}
                   title={item.title}
+                  href="/free/images"
                   onDownload={() => triggerDownload(item.image_url, deriveFilename(item.image_url, item.title))}
                 />
               ))}
@@ -305,6 +316,7 @@ export default function FreeGallery() {
                   key={item.id}
                   imageUrl={item.image_url}
                   title={item.title}
+                  href="/wallpapers"
                   onDownload={() => triggerDownload(item.image_url, deriveFilename(item.image_url, item.title))}
                 />
               ))}
@@ -332,6 +344,7 @@ export default function FreeGallery() {
                   key={item.id}
                   imageUrl={item.image_url}
                   title={item.title}
+                  href="/avatars"
                   shape="circle"
                   onDownload={() => triggerDownload(item.image_url, deriveFilename(item.image_url, item.title, 'png'))}
                 />
@@ -360,6 +373,7 @@ export default function FreeGallery() {
                   key={item.id}
                   imageUrl={item.image_url}
                   title={item.title}
+                  href="/gifs"
                   isGif={true}
                   onDownload={() => triggerDownload(item.image_url, deriveFilename(item.image_url, item.title, 'gif'))}
                 />
@@ -384,19 +398,19 @@ export default function FreeGallery() {
           ) : (
             <div className="grid gap-3 grid-cols-3 sm:grid-cols-4 lg:grid-cols-5">
               {latestAnimations.map((item: AnimationItem) => (
-                <Link key={item.id} to="/animations">
-                  <ImageCard
-                    imageUrl={item.thumb_url || item.video_url}
-                    title={item.title}
-                    isAnimation={true}
-                    thumbUrl={item.thumb_url}
-                    duration={item.duration}
-                    onDownload={() => triggerDownload(
-                      item.video_url,
-                      `${item.title.replace(/[^a-zA-Z0-9_-]/g, '_')}.${item.video_url.split('.').pop()?.split('?')[0] || 'mp4'}`
-                    )}
-                  />
-                </Link>
+                <ImageCard
+                  key={item.id}
+                  imageUrl={item.thumb_url || item.video_url}
+                  title={item.title}
+                  href="/animations"
+                  isAnimation={true}
+                  thumbUrl={item.thumb_url}
+                  duration={item.duration}
+                  onDownload={() => triggerDownload(
+                    item.video_url,
+                    `${item.title.replace(/[^a-zA-Z0-9_-]/g, '_')}.${item.video_url.split('.').pop()?.split('?')[0] || 'mp4'}`
+                  )}
+                />
               ))}
             </div>
           )}
@@ -424,14 +438,21 @@ export default function FreeGallery() {
               {latestBanners.map((item: AppMedia) => (
                 <div
                   key={item.id}
-                  className="group relative rounded-xl overflow-hidden bg-white dark:bg-gray-800 shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer"
+                  className="group relative rounded-xl overflow-hidden bg-white dark:bg-gray-800 shadow-md hover:shadow-xl transition-all duration-300"
                 >
-                  <img
-                    src={item.image_url}
-                    alt={item.title}
-                    className="w-full h-auto block group-hover:scale-[1.02] transition-transform duration-500"
-                    loading="lazy"
-                  />
+                  <Link to="/banners" className="block">
+                    <img
+                      src={item.image_url}
+                      alt={item.title}
+                      className="w-full h-auto block group-hover:scale-[1.02] transition-transform duration-500"
+                      loading="lazy"
+                    />
+                    {item.title !== 'Untitled' && (
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <p className="text-white text-[11px] font-medium truncate">{item.title}</p>
+                      </div>
+                    )}
+                  </Link>
                   <Button
                     size="icon"
                     className="absolute top-2 right-2 h-8 w-8 rounded-full shadow-lg text-white border-0 opacity-0 group-hover:opacity-100 transition-opacity z-10 bg-sky-500 hover:bg-sky-600"
@@ -443,11 +464,6 @@ export default function FreeGallery() {
                   >
                     <Download className="h-3.5 w-3.5" />
                   </Button>
-                  {item.title !== 'Untitled' && (
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <p className="text-white text-[11px] font-medium truncate">{item.title}</p>
-                    </div>
-                  )}
                 </div>
               ))}
             </div>
