@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useNostr } from '@nostrify/react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/useToast';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useUploadFile } from '@/hooks/useUploadFile';
+import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useProjectDesigns } from '@/hooks/useProjectDesigns';
 import { getAdminPubkeyHex } from '@/lib/adminUtils';
 import { Palette, Plus, Trash2, Upload, Link, Image as ImageIcon, GripVertical } from 'lucide-react';
@@ -47,11 +47,11 @@ const EMPTY_FORM: DesignFormState = {
 };
 
 export function ProjectDesignsManagement() {
-  const { nostr } = useNostr();
   const { user } = useCurrentUser();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { mutateAsync: uploadFile, isPending: isUploading } = useUploadFile();
+  const { mutateAsync: publishEvent } = useNostrPublish();
   const { data: designs = [], isLoading } = useProjectDesigns();
 
   const [form, setForm] = useState<DesignFormState>(EMPTY_FORM);
@@ -99,11 +99,11 @@ export function ProjectDesignsManagement() {
       if (form.projectUrl.trim()) tags.push(['r', form.projectUrl.trim()]);
       if (form.order.trim()) tags.push(['order', form.order.trim()]);
 
-      await nostr.event({
+      await publishEvent({
         kind: 38178,
         content: '',
         tags,
-      }, { signal: AbortSignal.timeout(8000) });
+      });
 
       toast({ title: 'Design published!', description: 'Thumbnail added to Project Designs section.' });
       setForm(EMPTY_FORM);
@@ -120,15 +120,14 @@ export function ProjectDesignsManagement() {
     if (!user) return;
     setDeletingId(designId);
     try {
-      // Publish a deletion event (kind 5) to remove this addressable event
-      await nostr.event({
+      await publishEvent({
         kind: 5,
         content: 'deleted',
         tags: [
           ['a', `38178:${user.pubkey}:${designId}`],
           ['alt', 'Delete project design thumbnail'],
         ],
-      }, { signal: AbortSignal.timeout(8000) });
+      });
 
       toast({ title: 'Deleted', description: 'Design thumbnail removed.' });
       await queryClient.invalidateQueries({ queryKey: ['project-designs', adminPubkey] });
