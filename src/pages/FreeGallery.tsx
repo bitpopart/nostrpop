@@ -208,21 +208,25 @@ export default function FreeGallery() {
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-2">
             Everything is free — art is meant to be shared!
           </p>
-          <p className="text-base font-semibold text-orange-600 dark:text-orange-400 italic mb-6">
-            Digital art is free — feel free to zap ⚡
-          </p>
-
-          {/* CTA buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+          {/* Zap slogan + big zap button */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-5">
+            <p className="text-base font-semibold text-orange-600 dark:text-orange-400 italic">
+              Digital art is free — feel free to zap ⚡
+            </p>
             <ZapButton
               authorPubkey={ADMIN_PUBKEY}
               lightningAddress="traveltelly@primal.net"
               eventTitle="BitPopArt Free Downloads"
+              alwaysShow={true}
               size="lg"
-              variant="outline"
+              variant="default"
               showLabel={true}
-              className="h-12 px-8 text-base font-bold border-2 border-orange-400 hover:border-orange-500"
+              className="h-14 px-10 text-lg font-extrabold gap-2 bg-gradient-to-r from-orange-400 via-amber-500 to-yellow-400 hover:from-orange-500 hover:via-amber-600 hover:to-yellow-500 text-white border-0 shadow-xl shadow-orange-300/50 dark:shadow-orange-900/50 rounded-full animate-pulse hover:animate-none transition-all duration-300 scale-100 hover:scale-105"
             />
+          </div>
+
+          {/* Community CTA */}
+          <div className="flex items-center justify-center">
             <Link to="/app">
               <Button
                 size="lg"
