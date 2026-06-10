@@ -17,6 +17,7 @@ import { Sparkles, ArrowRight, Users, Zap, Award, Share2, Image as ImageIcon, Ga
 
 import { useNostrProjects } from '@/hooks/useNostrProjects';
 import { useNIP58BadgeDefinitions, useNIP58BadgeAwards } from '@/hooks/useNIP58Badges';
+import { ProjectDesignsThumbnails } from '@/components/projects/ProjectDesignsThumbnails';
 import { nip19 } from 'nostr-tools';
 import type { ProjectData } from '@/lib/projectTypes';
 
@@ -691,6 +692,9 @@ export default function Projects() {
               </div>
             </div>
           )}
+
+          {/* Project Designs Section — shown between Nostr Projects and Badges */}
+          <ProjectDesignsThumbnails />
 
           {/* Badges Section — always shown under Nostr Projects */}
           <div className="mt-16 max-w-6xl mx-auto">

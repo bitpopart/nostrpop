@@ -15,6 +15,7 @@ import { BlogPostManagement } from '@/components/blog/BlogPostManagement';
 import { PopUpManagement } from '@/components/popup/PopUpManagement';
 import { ArtistContentManagement } from '@/components/artist/ArtistContentManagement';
 import { ProjectManagement } from '@/components/projects/ProjectManagement';
+import { ProjectDesignsManagement } from '@/components/projects/ProjectDesignsManagement';
 import { NostrProjectManagement } from '@/components/nostrprojects/NostrProjectManagement';
 import { PageManagement } from '@/components/pages/PageManagement';
 import { SocialMediaManagement } from '@/components/social/SocialMediaManagement';
@@ -172,6 +173,14 @@ const Admin = () => {
       color: 'from-purple-500 to-indigo-500',
       action: () => setActiveTab('nostr-projects'),
       badge: 'Collab'
+    },
+    {
+      title: 'Project Designs',
+      description: 'Upload design thumbnails linked to project pages',
+      icon: Palette,
+      color: 'from-pink-500 to-fuchsia-500',
+      action: () => setActiveTab('project-designs'),
+      badge: 'Designs'
     },
     {
       title: 'Fundraising',
@@ -384,6 +393,7 @@ const Admin = () => {
             <TabsTrigger value="animations-videos">Animations</TabsTrigger>
             <TabsTrigger value="frl-projects">FRL</TabsTrigger>
             <TabsTrigger value="nostr-projects">Nostr</TabsTrigger>
+            <TabsTrigger value="project-designs">Designs</TabsTrigger>
             <TabsTrigger value="fundraisers">Fundraisers</TabsTrigger>
             <TabsTrigger value="cards">Cards</TabsTrigger>
             <TabsTrigger value="badges">Badges</TabsTrigger>
@@ -675,6 +685,14 @@ const Admin = () => {
 
           <TabsContent value="nostr-projects">
             <NostrProjectManagement />
+          </TabsContent>
+
+          <TabsContent value="project-designs">
+            <Card>
+              <CardContent className="pt-6">
+                <ProjectDesignsManagement />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="pages">

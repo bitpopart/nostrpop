@@ -828,6 +828,44 @@ effective_end = auction_start + duration + SUM(duration_extended FOR all confirm
 6. Artist marks the winning bid with the 🏆 button after auction ends
 7. Winner is contacted via Nostr DM
 
+## Project Designs (Kind 38178)
+
+Design thumbnail entries displayed on the `/projects` page between "Nostr Projects" and "Nostr Badges". Each event links a single uploaded image to an optional project page URL.
+
+### Event Structure
+
+```json
+{
+  "kind": 38178,
+  "content": "",
+  "tags": [
+    ["d", "<unique_id>"],
+    ["title", "<optional title>"],
+    ["image", "<thumbnail_url>"],
+    ["r", "<project_page_url>"],
+    ["order", "<display_order>"],
+    ["t", "project-design"],
+    ["alt", "Project Design: <title>"]
+  ]
+}
+```
+
+### Fields
+
+- **d tag**: Unique identifier (auto-generated UUID)
+- **title tag**: Optional human-readable label shown below the thumbnail
+- **image tag**: URL of the thumbnail (hosted on Blossom)
+- **r tag**: Internal path or external URL the thumbnail links to
+- **order tag**: Integer for controlling display order (lower = first)
+- **t tag**: Always includes `project-design` for relay-level filtering
+
+### Usage
+
+- Admin uploads thumbnails via Admin → Project Designs tab
+- Thumbnails are shown in a responsive grid on `/projects` below "Nostr Projects"
+- Clicking a thumbnail navigates to the linked project page
+- Delete by publishing a kind-5 deletion event referencing `38178:<pubkey>:<id>`
+
 ## References
 
 - [NIP-15: Nostr Marketplace](https://github.com/nostr-protocol/nips/blob/master/15.md)
