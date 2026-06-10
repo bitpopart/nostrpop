@@ -218,7 +218,7 @@ export default function FreeGallery() {
             Everything is free — art is meant to be shared!
           </p>
           {/* Zap slogan + zap button */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-2">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-6">
             <p className="text-base font-semibold text-orange-600 dark:text-orange-400 italic">
               Digital art is free — feel free to zap ⚡
             </p>
@@ -233,25 +233,28 @@ export default function FreeGallery() {
               className="h-12 px-8 text-base font-bold gap-2 bg-gradient-to-r from-orange-400 via-amber-500 to-yellow-400 hover:from-orange-500 hover:via-amber-600 hover:to-yellow-500 text-white border-0 shadow-md rounded-full"
             />
           </div>
-        </div>
 
-        {/* ── Category quick-links ── */}
-        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-10">
-          {[
-            { label: 'Images', href: '/free/images', icon: <Gift className="h-4 w-4" />, color: 'text-green-600', bg: 'bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30 border-green-200 dark:border-green-800' },
-            { label: 'Wallpapers', href: '/wallpapers', icon: <ImageIcon className="h-4 w-4" />, color: 'text-teal-600', bg: 'bg-teal-50 dark:bg-teal-900/20 hover:bg-teal-100 dark:hover:bg-teal-900/30 border-teal-200 dark:border-teal-800' },
-            { label: 'Avatars', href: '/avatars', icon: <UserCircle2 className="h-4 w-4" />, color: 'text-violet-600', bg: 'bg-violet-50 dark:bg-violet-900/20 hover:bg-violet-100 dark:hover:bg-violet-900/30 border-violet-200 dark:border-violet-800' },
-            { label: 'GIFs', href: '/gifs', icon: <Clapperboard className="h-4 w-4" />, color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 border-amber-200 dark:border-amber-800' },
-            { label: 'Animations', href: '/animations', icon: <Play className="h-4 w-4" />, color: 'text-orange-600', bg: 'bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30 border-orange-200 dark:border-orange-800' },
-            { label: 'Banners', href: '/banners', icon: <PanelTop className="h-4 w-4" />, color: 'text-sky-600', bg: 'bg-sky-50 dark:bg-sky-900/20 hover:bg-sky-100 dark:hover:bg-sky-900/30 border-sky-200 dark:border-sky-800' },
-          ].map(({ label, href, icon, color, bg }) => (
-            <Link key={label} to={href}>
-              <button className={`w-full flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl border text-center transition-all duration-200 ${bg} ${color} font-medium text-xs`}>
-                {icon}
-                {label}
-              </button>
-            </Link>
-          ))}
+          {/* ── Category quick-links with counts ── */}
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+            {[
+              { label: 'Images', href: '/free/images', icon: <Gift className="h-4 w-4" />, color: 'text-green-700 dark:text-green-400', bg: 'bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30 border-green-200 dark:border-green-800', count: freeImages.length, loading: loadingFree },
+              { label: 'Wallpapers', href: '/wallpapers', icon: <ImageIcon className="h-4 w-4" />, color: 'text-teal-700 dark:text-teal-400', bg: 'bg-teal-50 dark:bg-teal-900/20 hover:bg-teal-100 dark:hover:bg-teal-900/30 border-teal-200 dark:border-teal-800', count: wallpapers.length, loading: loadingWallpapers },
+              { label: 'Avatars', href: '/avatars', icon: <UserCircle2 className="h-4 w-4" />, color: 'text-violet-700 dark:text-violet-400', bg: 'bg-violet-50 dark:bg-violet-900/20 hover:bg-violet-100 dark:hover:bg-violet-900/30 border-violet-200 dark:border-violet-800', count: avatars.length, loading: loadingAvatars },
+              { label: 'GIFs', href: '/gifs', icon: <Clapperboard className="h-4 w-4" />, color: 'text-amber-700 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 border-amber-200 dark:border-amber-800', count: gifs.length, loading: loadingGifs },
+              { label: 'Animations', href: '/animations', icon: <Play className="h-4 w-4" />, color: 'text-orange-700 dark:text-orange-400', bg: 'bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30 border-orange-200 dark:border-orange-800', count: animations.length, loading: loadingAnimations },
+              { label: 'Banners', href: '/banners', icon: <PanelTop className="h-4 w-4" />, color: 'text-sky-700 dark:text-sky-400', bg: 'bg-sky-50 dark:bg-sky-900/20 hover:bg-sky-100 dark:hover:bg-sky-900/30 border-sky-200 dark:border-sky-800', count: banners.length, loading: loadingBanners },
+            ].map(({ label, href, icon, color, bg, count, loading }) => (
+              <Link key={label} to={href}>
+                <div className={`w-full flex flex-col items-center gap-1 py-3 px-2 rounded-xl border text-center transition-all duration-200 cursor-pointer ${bg} ${color}`}>
+                  {icon}
+                  <span className="font-semibold text-xs leading-tight">{label}</span>
+                  <span className="text-[11px] font-bold opacity-70">
+                    {loading ? '…' : `(${count})`}
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
         </div>
 
         {/* ── Free Images section ── */}
