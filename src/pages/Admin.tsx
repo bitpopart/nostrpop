@@ -135,52 +135,12 @@ const Admin = () => {
 
   const projectsActions = [
     {
-      title: 'Projects Portfolio',
-      description: 'Showcase creative projects',
+      title: 'All Projects',
+      description: 'Portfolio, Designs, Games, Animations, FRL & Nostr — all in one place',
       icon: FolderKanban,
       color: 'from-orange-500 to-red-500',
       action: () => setActiveTab('projects'),
       badge: 'Projects'
-    },
-    {
-      title: 'Games',
-      description: 'Add game projects',
-      icon: Gamepad2,
-      color: 'from-violet-500 to-fuchsia-500',
-      action: () => setActiveTab('games-projects'),
-      badge: 'Games'
-    },
-    {
-      title: 'Animations',
-      description: 'Add animation projects',
-      icon: Clapperboard,
-      color: 'from-amber-500 to-orange-500',
-      action: () => setActiveTab('animations-projects'),
-      badge: 'Animations'
-    },
-    {
-      title: 'POPArt.frl',
-      description: 'Add FRL projects',
-      icon: Globe,
-      color: 'from-pink-500 to-rose-500',
-      action: () => setActiveTab('frl-projects'),
-      badge: 'FRL'
-    },
-    {
-      title: 'Nostr Projects',
-      description: 'Collaborative art projects',
-      icon: Users,
-      color: 'from-purple-500 to-indigo-500',
-      action: () => setActiveTab('nostr-projects'),
-      badge: 'Collab'
-    },
-    {
-      title: 'Project Designs',
-      description: 'Upload design thumbnails linked to project pages',
-      icon: Palette,
-      color: 'from-pink-500 to-fuchsia-500',
-      action: () => setActiveTab('project-designs'),
-      badge: 'Designs'
     },
     {
       title: 'Fundraising',
@@ -388,12 +348,7 @@ const Admin = () => {
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
             <TabsTrigger value="zaps">Zaps</TabsTrigger>
             <TabsTrigger value="projects">Projects</TabsTrigger>
-            <TabsTrigger value="games-projects">Games</TabsTrigger>
-            <TabsTrigger value="animations-projects">Anim.Projects</TabsTrigger>
             <TabsTrigger value="animations-videos">Animations</TabsTrigger>
-            <TabsTrigger value="frl-projects">FRL</TabsTrigger>
-            <TabsTrigger value="nostr-projects">Nostr</TabsTrigger>
-            <TabsTrigger value="project-designs">Designs</TabsTrigger>
             <TabsTrigger value="fundraisers">Fundraisers</TabsTrigger>
             <TabsTrigger value="cards">Cards</TabsTrigger>
             <TabsTrigger value="badges">Badges</TabsTrigger>
@@ -599,54 +554,117 @@ const Admin = () => {
           </TabsContent>
 
           <TabsContent value="projects">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <FolderKanban className="h-6 w-6 mr-2" />
-                  Projects Management
-                </CardTitle>
-                <CardDescription>
-                  Create and manage your project portfolio
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ProjectManagement />
-              </CardContent>
-            </Card>
-          </TabsContent>
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 mb-2">
+                <FolderKanban className="h-6 w-6 text-orange-600" />
+                <div>
+                  <h2 className="text-2xl font-bold">Projects Management</h2>
+                  <p className="text-sm text-muted-foreground">All project types in one place</p>
+                </div>
+              </div>
+              <Tabs defaultValue="portfolio" className="w-full">
+                <TabsList className="flex flex-wrap h-auto gap-1 w-full justify-start mb-4">
+                  <TabsTrigger value="portfolio" className="flex items-center gap-1.5">
+                    <FolderKanban className="h-3.5 w-3.5" /> Portfolio
+                  </TabsTrigger>
+                  <TabsTrigger value="designs" className="flex items-center gap-1.5">
+                    <Palette className="h-3.5 w-3.5" /> Project Designs
+                  </TabsTrigger>
+                  <TabsTrigger value="games" className="flex items-center gap-1.5">
+                    <Gamepad2 className="h-3.5 w-3.5" /> Games
+                  </TabsTrigger>
+                  <TabsTrigger value="animations-projects" className="flex items-center gap-1.5">
+                    <Clapperboard className="h-3.5 w-3.5" /> Animations
+                  </TabsTrigger>
+                  <TabsTrigger value="frl" className="flex items-center gap-1.5">
+                    <Globe className="h-3.5 w-3.5" /> POPArt.frl
+                  </TabsTrigger>
+                  <TabsTrigger value="nostr" className="flex items-center gap-1.5">
+                    <Users className="h-3.5 w-3.5" /> Nostr Projects
+                  </TabsTrigger>
+                </TabsList>
 
-          <TabsContent value="games-projects">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Gamepad2 className="h-6 w-6 mr-2" />
-                  Games Projects
-                </CardTitle>
-                <CardDescription>
-                  Add and manage game projects that appear on the <a href="/games" className="underline text-orange-600">/games</a> page
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ProjectManagement filterCategory="games" />
-              </CardContent>
-            </Card>
-          </TabsContent>
+                <TabsContent value="portfolio">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <FolderKanban className="h-5 w-5 mr-2" />
+                        Portfolio Projects
+                      </CardTitle>
+                      <CardDescription>
+                        Create and manage your main project portfolio shown on <a href="/projects" className="underline text-orange-600">/projects</a>
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <ProjectManagement />
+                    </CardContent>
+                  </Card>
+                </TabsContent>
 
-          <TabsContent value="animations-projects">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Clapperboard className="h-6 w-6 mr-2" />
-                  Animations Projects
-                </CardTitle>
-                <CardDescription>
-                  Add and manage animation projects that appear on the <a href="/animations" className="underline text-orange-600">/animations</a> page
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ProjectManagement filterCategory="animations" />
-              </CardContent>
-            </Card>
+                <TabsContent value="designs">
+                  <Card>
+                    <CardContent className="pt-6">
+                      <ProjectDesignsManagement />
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="games">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <Gamepad2 className="h-5 w-5 mr-2" />
+                        Games Projects
+                      </CardTitle>
+                      <CardDescription>
+                        Add and manage game projects that appear on the <a href="/games" className="underline text-orange-600">/games</a> page
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <ProjectManagement filterCategory="games" />
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="animations-projects">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <Clapperboard className="h-5 w-5 mr-2" />
+                        Animations Projects
+                      </CardTitle>
+                      <CardDescription>
+                        Add and manage animation projects that appear on the <a href="/animations" className="underline text-orange-600">/animations</a> page
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <ProjectManagement filterCategory="animations" />
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="frl">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <Globe className="h-5 w-5 mr-2" />
+                        POPArt.frl Projects
+                      </CardTitle>
+                      <CardDescription>
+                        Add and manage projects that appear on the <a href="/frl" className="underline text-orange-600">/frl</a> page
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <ProjectManagement filterCategory="frl" />
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="nostr">
+                  <NostrProjectManagement />
+                </TabsContent>
+              </Tabs>
+            </div>
           </TabsContent>
 
           <TabsContent value="animations-videos">
@@ -662,35 +680,6 @@ const Admin = () => {
               </CardHeader>
               <CardContent>
                 <AnimationsManagement />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="frl-projects">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Globe className="h-6 w-6 mr-2" />
-                  POPArt.frl Projects
-                </CardTitle>
-                <CardDescription>
-                  Add and manage projects that appear on the <a href="/frl" className="underline text-orange-600">/frl</a> page
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ProjectManagement filterCategory="frl" />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="nostr-projects">
-            <NostrProjectManagement />
-          </TabsContent>
-
-          <TabsContent value="project-designs">
-            <Card>
-              <CardContent className="pt-6">
-                <ProjectDesignsManagement />
               </CardContent>
             </Card>
           </TabsContent>
