@@ -97,23 +97,47 @@ export function ProjectManagement({ filterCategory }: ProjectManagementProps = {
     game_mode: 'indoor',
   });
 
-  // Fetch user's projects (kind 36171)
+  // Fetch user's projects (kind 36171), filtering out any that have been deleted
   const { data: projects = [], isLoading } = useQuery({
     queryKey: ['projects-admin', user?.pubkey, filterCategory],
     queryFn: async (c) => {
       if (!user?.pubkey) return [];
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(3000)]);
-      const events = await nostr.query(
-        [{ kinds: [36171], authors: [user.pubkey], '#t': ['bitpopart-project'], limit: 100 }],
-        { signal }
-      );
+
+      const [events, deletionEvents] = await Promise.all([
+        nostr.query(
+          [{ kinds: [36171], authors: [user.pubkey], '#t': ['bitpopart-project'], limit: 100 }],
+          { signal }
+        ),
+        nostr.query(
+          [{ kinds: [5], authors: [user.pubkey], limit: 200 }],
+          { signal }
+        ),
+      ]);
+
+      // Build set of deleted addresses/ids from kind-5 events
+      const deletedAddresses = new Set<string>();
+      deletionEvents.forEach(delEvent => {
+        delEvent.tags.forEach(tag => {
+          if (tag[0] === 'a') deletedAddresses.add(tag[1]);
+          if (tag[0] === 'e') deletedAddresses.add(tag[1]);
+        });
+      });
+
+      const live = events.filter(event => {
+        const dTag = event.tags.find(t => t[0] === 'd')?.[1];
+        const address = `36171:${event.pubkey}:${dTag}`;
+        return !deletedAddresses.has(address) && !deletedAddresses.has(event.id);
+      });
+
       // Filter by category if filterCategory is set
       const filtered = filterCategory
-        ? events.filter(e => {
+        ? live.filter(e => {
             const cat = e.tags.find(t => t[0] === 'category')?.[1] || 'general';
             return cat === filterCategory;
           })
-        : events;
+        : live;
+
       return filtered.sort((a, b) => {
         const aOrder = parseInt(a.tags.find(t => t[0] === 'order')?.[1] || '999');
         const bOrder = parseInt(b.tags.find(t => t[0] === 'order')?.[1] || '999');

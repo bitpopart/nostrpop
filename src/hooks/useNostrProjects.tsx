@@ -16,13 +16,35 @@ export function useNostrProjects() {
     queryFn: async (c) => {
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(3000)]);
       
-      const events = await nostr.query(
-        [{ kinds: [38171], authors: [ADMIN_PUBKEY], limit: 50 }],
-        { signal }
-      );
+      const [events, deletionEvents] = await Promise.all([
+        nostr.query(
+          [{ kinds: [38171], authors: [ADMIN_PUBKEY], limit: 50 }],
+          { signal }
+        ),
+        nostr.query(
+          [{ kinds: [5], authors: [ADMIN_PUBKEY], limit: 200 }],
+          { signal }
+        ),
+      ]);
 
-      console.log(`[useNostrProjects] Fetched ${events.length} events from relay`);
-      console.log('[useNostrProjects] Raw events:', events.map(e => ({
+      // Build set of deleted addresses from kind-5 events
+      const deletedAddresses = new Set<string>();
+      deletionEvents.forEach(delEvent => {
+        delEvent.tags.forEach(tag => {
+          if (tag[0] === 'a') deletedAddresses.add(tag[1]);
+          if (tag[0] === 'e') deletedAddresses.add(tag[1]);
+        });
+      });
+
+      // Filter out deleted events
+      const liveEvents = events.filter(event => {
+        const dTag = event.tags.find(t => t[0] === 'd')?.[1];
+        const address = `38171:${event.pubkey}:${dTag}`;
+        return !deletedAddresses.has(address) && !deletedAddresses.has(event.id);
+      });
+
+      console.log(`[useNostrProjects] Fetched ${events.length} events from relay (${liveEvents.length} after deletion filter)`);
+      console.log('[useNostrProjects] Raw events:', liveEvents.map(e => ({
         id: e.id.substring(0, 8),
         dTag: e.tags.find(t => t[0] === 'd')?.[1],
         title: e.tags.find(t => t[0] === 'title')?.[1],
@@ -31,7 +53,7 @@ export function useNostrProjects() {
       })));
 
       // Group by title to find duplicate projects (created multiple times with different d-tags)
-      const titleGroups = events.reduce((acc, event) => {
+      const titleGroups = liveEvents.reduce((acc, event) => {
         const title = event.tags.find(t => t[0] === 'title')?.[1];
         if (!title) return acc;
         
@@ -125,13 +147,34 @@ export function useFeaturedNostrProjects() {
     queryFn: async (c) => {
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(3000)]);
       
-      const events = await nostr.query(
-        [{ kinds: [38171], authors: [ADMIN_PUBKEY], '#featured': ['true'], limit: 10 }],
-        { signal }
-      );
+      const [events, deletionEvents] = await Promise.all([
+        nostr.query(
+          [{ kinds: [38171], authors: [ADMIN_PUBKEY], '#featured': ['true'], limit: 10 }],
+          { signal }
+        ),
+        nostr.query(
+          [{ kinds: [5], authors: [ADMIN_PUBKEY], limit: 200 }],
+          { signal }
+        ),
+      ]);
+
+      // Build set of deleted addresses from kind-5 events
+      const deletedAddresses = new Set<string>();
+      deletionEvents.forEach(delEvent => {
+        delEvent.tags.forEach(tag => {
+          if (tag[0] === 'a') deletedAddresses.add(tag[1]);
+          if (tag[0] === 'e') deletedAddresses.add(tag[1]);
+        });
+      });
+
+      const liveEvents = events.filter(event => {
+        const dTag = event.tags.find(t => t[0] === 'd')?.[1];
+        const address = `38171:${event.pubkey}:${dTag}`;
+        return !deletedAddresses.has(address) && !deletedAddresses.has(event.id);
+      });
 
       // Group by title to find duplicate projects
-      const titleGroups = events.reduce((acc, event) => {
+      const titleGroups = liveEvents.reduce((acc, event) => {
         const title = event.tags.find(t => t[0] === 'title')?.[1];
         if (!title) return acc;
         if (!acc[title]) acc[title] = [];

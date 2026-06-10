@@ -181,12 +181,32 @@ export default function Projects() {
     queryFn: async (c) => {
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(3000)]);
       
-      const events = await nostr.query(
-        [{ kinds: [36171], authors: [ADMIN_PUBKEY], '#t': ['bitpopart-project'], limit: 50 }],
-        { signal }
-      );
+      const [events, deletionEvents] = await Promise.all([
+        nostr.query(
+          [{ kinds: [36171], authors: [ADMIN_PUBKEY], '#t': ['bitpopart-project'], limit: 50 }],
+          { signal }
+        ),
+        nostr.query(
+          [{ kinds: [5], authors: [ADMIN_PUBKEY], limit: 200 }],
+          { signal }
+        ),
+      ]);
+
+      // Build set of deleted addresses from kind-5 events
+      const deletedAddresses = new Set<string>();
+      deletionEvents.forEach(delEvent => {
+        delEvent.tags.forEach(tag => {
+          if (tag[0] === 'a') deletedAddresses.add(tag[1]);
+          if (tag[0] === 'e') deletedAddresses.add(tag[1]);
+        });
+      });
 
       const projects: ProjectData[] = events
+        .filter(event => {
+          const dTag = event.tags.find(t => t[0] === 'd')?.[1];
+          const address = `36171:${event.pubkey}:${dTag}`;
+          return !deletedAddresses.has(address) && !deletedAddresses.has(event.id);
+        })
         .map((event): ProjectData | null => {
           try {
             const content = JSON.parse(event.content);

@@ -24,12 +24,33 @@ export function useProjectDesigns() {
     queryFn: async (c) => {
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(3000)]);
 
-      const events = await nostr.query(
-        [{ kinds: [38178], authors: [adminPubkey], '#t': ['project-design'], limit: 50 }],
-        { signal }
-      );
+      const [events, deletionEvents] = await Promise.all([
+        nostr.query(
+          [{ kinds: [38178], authors: [adminPubkey], '#t': ['project-design'], limit: 50 }],
+          { signal }
+        ),
+        nostr.query(
+          [{ kinds: [5], authors: [adminPubkey], limit: 200 }],
+          { signal }
+        ),
+      ]);
 
-      const designs: ProjectDesign[] = events
+      // Build set of deleted addresses from kind-5 events
+      const deletedAddresses = new Set<string>();
+      deletionEvents.forEach(delEvent => {
+        delEvent.tags.forEach(tag => {
+          if (tag[0] === 'a') deletedAddresses.add(tag[1]);
+          if (tag[0] === 'e') deletedAddresses.add(tag[1]);
+        });
+      });
+
+      const liveEvents = events.filter(event => {
+        const dTag = event.tags.find(t => t[0] === 'd')?.[1];
+        const address = `38178:${event.pubkey}:${dTag}`;
+        return !deletedAddresses.has(address) && !deletedAddresses.has(event.id);
+      });
+
+      const designs: ProjectDesign[] = liveEvents
         .map((event): ProjectDesign | null => {
           const id = event.tags.find(t => t[0] === 'd')?.[1];
           const title = event.tags.find(t => t[0] === 'title')?.[1] ?? '';
