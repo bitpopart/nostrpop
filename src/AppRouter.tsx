@@ -32,6 +32,7 @@ import { ProductPage } from "./pages/ProductPage";
 import { DeleteProductPage } from "./pages/DeleteProductPage";
 import OrderConfirmation from "./pages/OrderConfirmation";
 import FreeDownloads from "./pages/FreeDownloads";
+import FreeGallery from "./pages/FreeGallery";
 import Games from "./pages/Games";
 import Animations from "./pages/Animations";
 import Wallpapers from "./pages/Wallpapers";
@@ -81,7 +82,8 @@ export function AppRouter() {
           <Route path="/shop/:productId/delete" element={<DeleteProductPage />} />
           <Route path="/shop/:productId" element={<ProductPage />} />
           <Route path="/order-confirmation" element={<OrderConfirmation />} />
-          <Route path="/free" element={<FreeDownloads />} />
+          <Route path="/free" element={<FreeGallery />} />
+          <Route path="/free/images" element={<FreeDownloads />} />
           <Route path="/games" element={<Games />} />
           <Route path="/animations" element={<Animations />} />
           <Route path="/wallpapers" element={<Wallpapers />} />
