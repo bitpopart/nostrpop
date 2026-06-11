@@ -1069,8 +1069,22 @@ function Canvas100M() {
 
 
   useSeoMeta({
-    title: '100M Canvas - Collaborative Nostr Art Project',
-    description: 'Paint on a 100 million pixel canvas with the Nostr community. 1 sat per pixel. Collaborative digital art on the blockchain.',
+    title: '100M Canvas - BitPopArt | Collaborative Nostr Pixel Art',
+    description: 'Paint on a 100 million pixel canvas with the Nostr community. 1 sat per pixel. A collaborative Bitcoin digital art project on Nostr by BitPopArt.',
+    keywords: '100m canvas, nostr pixel art, collaborative art nostr, bitcoin pixel art, 1 sat per pixel, collaborative canvas, bitcoin blockchain art, nostr collaborative project',
+    author: 'Johannes Oppewal (BitPopArt)',
+    ogType: 'website',
+    ogTitle: '100M Canvas - BitPopArt | Collaborative Nostr Pixel Art',
+    ogDescription: 'Paint on a 100 million pixel canvas with the Nostr community. 1 sat per pixel. A collaborative Bitcoin digital art project.',
+    ogImage: 'https://bitpopart.com/bitpopart-logo.png',
+    ogImageAlt: '100M Canvas - Collaborative Nostr Pixel Art',
+    ogSiteName: 'BitPopArt',
+    ogUrl: 'https://bitpopart.com/canvas',
+    twitterCard: 'summary_large_image',
+    twitterTitle: '100M Canvas - BitPopArt | Collaborative Nostr Pixel Art',
+    twitterDescription: 'Paint on a 100 million pixel canvas with the Nostr community. 1 sat per pixel.',
+    twitterImage: 'https://bitpopart.com/bitpopart-logo.png',
+    robots: 'index, follow, max-snippet:-1, max-image-preview:large',
   });
 
   const totalCost = pendingPixels.length * SAT_PER_PIXEL;

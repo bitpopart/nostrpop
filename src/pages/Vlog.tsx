@@ -303,8 +303,22 @@ export default function Vlog() {
   const { data: vlogs, isLoading, error } = useVlogs();
 
   useSeoMeta({
-    title: 'Vlog - BitPopArt',
-    description: 'Bitcoin PopArt short video moments by world traveler Johannes Oppewal',
+    title: 'Vlog - BitPopArt | Travel & Art Videos by Johannes Oppewal',
+    description: 'Watch short travel and art videos by Johannes Oppewal. Bitcoin PopArt video moments from 88 countries. Travel photography, art creation, and Bitcoin culture on Nostr.',
+    keywords: 'bitpopart vlog, bitcoin art video, travel vlog, johannes oppewal videos, nostr video, bitcoin culture video, art vlog, world traveler videos, pop art shorts',
+    author: 'Johannes Oppewal (BitPopArt)',
+    ogType: 'website',
+    ogTitle: 'Vlog - BitPopArt | Travel & Art Videos by Johannes Oppewal',
+    ogDescription: 'Watch short travel and art videos by Johannes Oppewal. Bitcoin PopArt video moments from 88 countries.',
+    ogImage: 'https://bitpopart.com/bitpopart-logo.png',
+    ogImageAlt: 'BitPopArt Vlog',
+    ogSiteName: 'BitPopArt',
+    ogUrl: 'https://bitpopart.com/vlog',
+    twitterCard: 'summary_large_image',
+    twitterTitle: 'Vlog - BitPopArt | Travel & Art Videos by Johannes Oppewal',
+    twitterDescription: 'Watch short travel and art videos by Johannes Oppewal. Bitcoin PopArt video moments from 88 countries.',
+    twitterImage: 'https://bitpopart.com/bitpopart-logo.png',
+    robots: 'index, follow, max-snippet:-1, max-image-preview:large',
   });
 
   const BrowseGrid = () => (

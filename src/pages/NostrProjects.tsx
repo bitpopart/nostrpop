@@ -42,8 +42,22 @@ export default function NostrProjects() {
   const { data: projects, isLoading } = useNostrProjects();
 
   useSeoMeta({
-    title: 'Nostr Projects - Join Collaborative Art',
-    description: 'Join collaborative art projects on Nostr. Choose your image and add your identity to amazing artworks.',
+    title: 'Nostr Projects - Join Collaborative Bitcoin Art',
+    description: 'Join collaborative art projects on Nostr. Choose your image, add your Nostr identity to amazing artworks, and be part of a global Bitcoin creative community.',
+    keywords: 'nostr collaborative art, bitcoin community art, join art project, nostr art community, collaborative bitcoin art, decentralized art project, nostr identity art',
+    author: 'Johannes Oppewal (BitPopArt)',
+    ogType: 'website',
+    ogTitle: 'Nostr Projects - Join Collaborative Bitcoin Art',
+    ogDescription: 'Join collaborative art projects on Nostr. Add your identity to amazing artworks and be part of a global Bitcoin creative community.',
+    ogImage: 'https://bitpopart.com/bitpopart-logo.png',
+    ogImageAlt: 'Nostr Collaborative Art Projects',
+    ogSiteName: 'BitPopArt',
+    ogUrl: 'https://bitpopart.com/nostr-projects',
+    twitterCard: 'summary_large_image',
+    twitterTitle: 'Nostr Projects - Join Collaborative Bitcoin Art',
+    twitterDescription: 'Join collaborative art projects on Nostr. Add your identity to amazing artworks and be part of a global Bitcoin creative community.',
+    twitterImage: 'https://bitpopart.com/bitpopart-logo.png',
+    robots: 'index, follow, max-snippet:-1, max-image-preview:large',
   });
 
   return (

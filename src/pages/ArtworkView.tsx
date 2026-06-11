@@ -157,8 +157,21 @@ const ArtworkView = () => {
   const currentBidAmount = highestBid?.amount ?? artwork?.starting_bid;
 
   useSeoMeta({
-    title: artwork ? `${artwork.title} - Art Gallery` : 'Artwork - Art Gallery',
-    description: artwork?.description || 'View this unique digital artwork on BitPop Cards',
+    title: artwork ? `${artwork.title} - BitPopArt Gallery` : 'Artwork - BitPopArt Gallery',
+    description: artwork?.description || 'View this unique Bitcoin pop art digital artwork on BitPopArt. Discover, bid, and collect exclusive digital art by Johannes Oppewal.',
+    author: 'Johannes Oppewal (BitPopArt)',
+    ogType: 'article',
+    ogTitle: artwork ? `${artwork.title} - BitPopArt Gallery` : 'Artwork - BitPopArt Gallery',
+    ogDescription: artwork?.description || 'View this unique Bitcoin pop art digital artwork on BitPopArt. Discover, bid, and collect exclusive digital art.',
+    ogImage: artwork?.image_url || 'https://bitpopart.com/bitpopart-logo.png',
+    ogImageAlt: artwork?.title || 'BitPopArt Artwork',
+    ogSiteName: 'BitPopArt',
+    twitterCard: 'summary_large_image',
+    twitterTitle: artwork ? `${artwork.title} - BitPopArt Gallery` : 'Artwork - BitPopArt Gallery',
+    twitterDescription: artwork?.description || 'View this unique Bitcoin pop art digital artwork on BitPopArt.',
+    twitterImage: artwork?.image_url || 'https://bitpopart.com/bitpopart-logo.png',
+    twitterImageAlt: artwork?.title || 'BitPopArt Artwork',
+    robots: 'index, follow, max-snippet:-1, max-image-preview:large',
   });
 
   const handleBuy = () => {

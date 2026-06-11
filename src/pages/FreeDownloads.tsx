@@ -61,8 +61,22 @@ export default function FreeDownloads() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useSeoMeta({
-    title: 'Free Downloads - BitPopArt',
-    description: 'Free images and art downloads by BitPopArt. Download and use them however you like!',
+    title: 'Free Images - BitPopArt | Download Free Bitcoin Art',
+    description: 'Free Bitcoin pop art images and downloads by BitPopArt. Download and use them however you like! Spread love, freedom, and joy with free digital art.',
+    keywords: 'free bitcoin art images, free download bitcoin art, bitpopart free images, pop art download, digital art free, bitcoin art download, free creative commons art',
+    author: 'Johannes Oppewal (BitPopArt)',
+    ogType: 'website',
+    ogTitle: 'Free Images - BitPopArt | Download Free Bitcoin Art',
+    ogDescription: 'Free Bitcoin pop art images and downloads by BitPopArt. Download and use them however you like!',
+    ogImage: 'https://bitpopart.com/bitpopart-logo.png',
+    ogImageAlt: 'BitPopArt Free Images',
+    ogSiteName: 'BitPopArt',
+    ogUrl: 'https://bitpopart.com/free/images',
+    twitterCard: 'summary_large_image',
+    twitterTitle: 'Free Images - BitPopArt | Download Free Bitcoin Art',
+    twitterDescription: 'Free Bitcoin pop art images and downloads by BitPopArt. Download and use them however you like!',
+    twitterImage: 'https://bitpopart.com/bitpopart-logo.png',
+    robots: 'index, follow, max-snippet:-1, max-image-preview:large',
   });
 
   const handleFilesSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {

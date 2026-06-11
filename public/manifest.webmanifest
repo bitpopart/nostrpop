@@ -1,18 +1,69 @@
 {
-  "name": "POP Cards by BitPopArt",
-  "short_name": "POP Cards",
-  "description": "Good Vibes cards by BitPopArt to share with everyone!",
+  "name": "BitPopArt - Love, Freedom & Joy Pop Art",
+  "short_name": "BitPopArt",
+  "description": "Create Good Vibes POP cards, collect exclusive badges, join collaborative art projects, and discover Bitcoin-inspired pop art on Nostr.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "any",
   "background_color": "#fdf2f8",
   "theme_color": "#ec4899",
-  "categories": ["entertainment", "social", "lifestyle"],
+  "lang": "en-US",
+  "dir": "ltr",
+  "categories": ["entertainment", "social", "lifestyle", "art", "photography"],
+  "keywords": ["bitcoin art", "pop art", "nostr", "digital cards", "bitcoin culture", "good vibes"],
+  "screenshots": [
+    {
+      "src": "/bitpopart-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "label": "BitPopArt Home"
+    }
+  ],
   "icons": [
     {
       "src": "/icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
+    },
+    {
+      "src": "/bitpopart-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
     }
-  ]
+  ],
+  "shortcuts": [
+    {
+      "name": "Art Gallery",
+      "short_name": "Art",
+      "description": "Browse Bitcoin pop art gallery",
+      "url": "/art",
+      "icons": [{ "src": "/icon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Create Card",
+      "short_name": "Cards",
+      "description": "Create a Good Vibes POP card",
+      "url": "/cards",
+      "icons": [{ "src": "/icon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Shop",
+      "short_name": "Shop",
+      "description": "Buy Bitcoin pop art",
+      "url": "/shop",
+      "icons": [{ "src": "/icon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Blog",
+      "short_name": "Blog",
+      "description": "Read BitPopArt blog",
+      "url": "/blog",
+      "icons": [{ "src": "/icon.svg", "sizes": "any" }]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false
 }

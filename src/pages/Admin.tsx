@@ -78,6 +78,7 @@ const Admin = () => {
   useSeoMeta({
     title: 'Admin Dashboard - BitPopArt',
     description: 'Administrative dashboard for managing BitPopArt platform.',
+    robots: 'noindex, nofollow',
   });
 
   useEffect(() => {

@@ -1,0 +1,38 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://bitpopart.com/sitemap.xml
+
+# Disallow admin and utility pages
+Disallow: /admin
+Disallow: /categories
+Disallow: /order-confirmation
+Disallow: /*/delete
+
+# Allow important crawlable pages
+Allow: /
+Allow: /cards
+Allow: /art
+Allow: /shop
+Allow: /blog
+Allow: /artist
+Allow: /popup
+Allow: /projects
+Allow: /nostr-projects
+Allow: /badges
+Allow: /fundraising
+Allow: /vlog
+Allow: /wall
+Allow: /free
+Allow: /free/images
+Allow: /games
+Allow: /animations
+Allow: /wallpapers
+Allow: /gifs
+Allow: /avatars
+Allow: /banners
+Allow: /21k-art
+Allow: /canvas
+Allow: /feed
+Allow: /app

@@ -16,8 +16,22 @@ export default function Fundraising() {
   const completedFundraisers = fundraisers.filter(f => f.status === 'completed');
 
   useSeoMeta({
-    title: 'Fundraising - BitPopArt',
-    description: 'Support BitPopArt projects through crowdfunding. Contribute with Bitcoin Lightning.',
+    title: 'Fundraising - BitPopArt | Support Art with Bitcoin',
+    description: 'Support BitPopArt projects through crowdfunding. Contribute with Bitcoin Lightning to fund art projects, exhibitions, and creative endeavors by Johannes Oppewal.',
+    keywords: 'bitcoin fundraising, art crowdfunding, bitcoin lightning donation, support art, bitpopart fundraising, nostr crowdfunding, fund art project, bitcoin art support',
+    author: 'Johannes Oppewal (BitPopArt)',
+    ogType: 'website',
+    ogTitle: 'Fundraising - BitPopArt | Support Art with Bitcoin',
+    ogDescription: 'Support BitPopArt projects through crowdfunding. Contribute with Bitcoin Lightning to fund art projects and exhibitions.',
+    ogImage: 'https://bitpopart.com/bitpopart-logo.png',
+    ogImageAlt: 'BitPopArt Fundraising',
+    ogSiteName: 'BitPopArt',
+    ogUrl: 'https://bitpopart.com/fundraising',
+    twitterCard: 'summary_large_image',
+    twitterTitle: 'Fundraising - BitPopArt | Support Art with Bitcoin',
+    twitterDescription: 'Support BitPopArt projects through crowdfunding. Contribute with Bitcoin Lightning.',
+    twitterImage: 'https://bitpopart.com/bitpopart-logo.png',
+    robots: 'index, follow, max-snippet:-1, max-image-preview:large',
   });
 
   return (

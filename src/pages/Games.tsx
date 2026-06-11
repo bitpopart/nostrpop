@@ -4,8 +4,21 @@ import { Gamepad2, Sparkles } from 'lucide-react';
 
 export default function Games() {
   useSeoMeta({
-    title: 'Games - BitPopArt',
-    description: 'Bitcoin and pop art inspired games by BitPopArt',
+    title: 'Games - BitPopArt | Bitcoin Pop Art Games',
+    description: 'Play Bitcoin and pop art inspired games by BitPopArt. Fun, creative games celebrating the Bitcoin culture and pop art aesthetic. Play for free on Nostr.',
+    keywords: 'bitcoin games, pop art games, bitcoin fun, nostr games, bitpopart games, bitcoin culture games, creative bitcoin games, fun bitcoin activities',
+    author: 'Johannes Oppewal (BitPopArt)',
+    ogType: 'website',
+    ogTitle: 'Games - BitPopArt | Bitcoin Pop Art Games',
+    ogDescription: 'Play Bitcoin and pop art inspired games by BitPopArt. Fun, creative games celebrating Bitcoin culture.',
+    ogImage: 'https://bitpopart.com/bitpopart-logo.png',
+    ogSiteName: 'BitPopArt',
+    ogUrl: 'https://bitpopart.com/games',
+    twitterCard: 'summary_large_image',
+    twitterTitle: 'Games - BitPopArt | Bitcoin Pop Art Games',
+    twitterDescription: 'Play Bitcoin and pop art inspired games by BitPopArt. Fun, creative games celebrating Bitcoin culture.',
+    twitterImage: 'https://bitpopart.com/bitpopart-logo.png',
+    robots: 'index, follow',
   });
 
   return (

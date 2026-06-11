@@ -148,8 +148,22 @@ export default function Projects() {
   const [_selectedProject, _setSelectedProject] = useState<string | null>(null);
 
   useSeoMeta({
-    title: 'Projects - BitPopArt',
-    description: 'Explore creative projects by BitPopArt including 21K Art, 100M Canvas, POP Cards and more',
+    title: 'Projects - BitPopArt | Creative Bitcoin Art Projects',
+    description: 'Explore creative Bitcoin art projects by BitPopArt including 21K Art, 100M Canvas, POP Cards, collaborative art and more. Join the Bitcoin creative community on Nostr.',
+    keywords: 'bitpopart projects, bitcoin art projects, 21k art, 100m canvas, pop cards, collaborative art, nostr art projects, bitcoin creative community, digital art projects',
+    author: 'Johannes Oppewal (BitPopArt)',
+    ogType: 'website',
+    ogTitle: 'Projects - BitPopArt | Creative Bitcoin Art Projects',
+    ogDescription: 'Explore creative Bitcoin art projects by BitPopArt including 21K Art, 100M Canvas, POP Cards, and collaborative art on Nostr.',
+    ogImage: 'https://bitpopart.com/bitpopart-logo.png',
+    ogImageAlt: 'BitPopArt Projects',
+    ogSiteName: 'BitPopArt',
+    ogUrl: 'https://bitpopart.com/projects',
+    twitterCard: 'summary_large_image',
+    twitterTitle: 'Projects - BitPopArt | Creative Bitcoin Art Projects',
+    twitterDescription: 'Explore creative Bitcoin art projects by BitPopArt including 21K Art, 100M Canvas, POP Cards, and collaborative art.',
+    twitterImage: 'https://bitpopart.com/bitpopart-logo.png',
+    robots: 'index, follow, max-snippet:-1, max-image-preview:large',
   });
 
   // Fetch Nostr Projects (collaborative art)

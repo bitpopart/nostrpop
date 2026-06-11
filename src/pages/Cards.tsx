@@ -48,8 +48,22 @@ const Cards = () => {
   }, [searchParams, isAdmin, location.pathname]);
 
   useSeoMeta({
-    title: 'BitPop Cards - Create Beautiful Digital Cards',
-    description: 'Create and share beautiful digital cards for any occasion. Choose from various categories and customize your perfect BitPop card.',
+    title: 'BitPop Cards - Create & Share Beautiful Digital Cards',
+    description: 'Create and share beautiful digital Good Vibes cards for any occasion. Choose from various categories, add Bitcoin Lightning tips, and spread joy with BitPop cards on Nostr.',
+    keywords: 'digital cards, pop cards, bitcoin cards, good vibes cards, nostr cards, digital greeting cards, bitpopart cards, create cards online, bitcoin lightning cards',
+    author: 'Johannes Oppewal (BitPopArt)',
+    ogType: 'website',
+    ogTitle: 'BitPop Cards - Create & Share Beautiful Digital Cards',
+    ogDescription: 'Create and share beautiful digital Good Vibes cards for any occasion. Add Bitcoin Lightning tips and spread joy with BitPop cards on Nostr.',
+    ogImage: 'https://bitpopart.com/bitpopart-logo.png',
+    ogImageAlt: 'BitPop Cards - Digital cards for every occasion',
+    ogSiteName: 'BitPopArt',
+    ogUrl: 'https://bitpopart.com/cards',
+    twitterCard: 'summary_large_image',
+    twitterTitle: 'BitPop Cards - Create & Share Beautiful Digital Cards',
+    twitterDescription: 'Create and share beautiful digital Good Vibes cards. Add Bitcoin Lightning tips and spread joy with BitPop cards on Nostr.',
+    twitterImage: 'https://bitpopart.com/bitpopart-logo.png',
+    robots: 'index, follow, max-snippet:-1, max-image-preview:large',
   });
 
   return (

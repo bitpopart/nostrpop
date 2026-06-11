@@ -94,8 +94,22 @@ const Art = () => {
   const auctionBannerEnabled = auctionBannerSettings?.enabled ?? true;
 
   useSeoMeta({
-    title: 'Art Gallery - BitPop Cards',
-    description: 'Discover and collect unique digital artworks. Browse our gallery, participate in auctions, and purchase exclusive pieces.',
+    title: 'Art Gallery - BitPopArt | Unique Bitcoin Pop Art',
+    description: 'Discover and collect unique Bitcoin-inspired pop art. Browse the gallery, participate in auctions, and purchase exclusive digital artworks by Johannes Oppewal.',
+    keywords: 'bitcoin art gallery, pop art for sale, digital artwork, bitcoin pop art, nostr art, art auction, collect digital art, exclusive art pieces, bitpopart gallery, johannes oppewal art',
+    author: 'Johannes Oppewal (BitPopArt)',
+    ogType: 'website',
+    ogTitle: 'Art Gallery - BitPopArt | Unique Bitcoin Pop Art',
+    ogDescription: 'Discover and collect unique Bitcoin-inspired pop art. Browse the gallery, participate in auctions, and purchase exclusive digital artworks.',
+    ogImage: 'https://bitpopart.com/bitpopart-logo.png',
+    ogImageAlt: 'BitPopArt Gallery - Bitcoin Pop Art',
+    ogSiteName: 'BitPopArt',
+    ogUrl: 'https://bitpopart.com/art',
+    twitterCard: 'summary_large_image',
+    twitterTitle: 'Art Gallery - BitPopArt | Unique Bitcoin Pop Art',
+    twitterDescription: 'Discover and collect unique Bitcoin-inspired pop art. Browse the gallery, participate in auctions, and purchase exclusive digital artworks.',
+    twitterImage: 'https://bitpopart.com/bitpopart-logo.png',
+    robots: 'index, follow, max-snippet:-1, max-image-preview:large',
   });
 
   const handleViewDetails = (artwork: ArtworkData) => {

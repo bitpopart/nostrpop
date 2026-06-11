@@ -22,8 +22,22 @@ export default function PopUp() {
   const isAdmin = useIsAdmin();
 
   useSeoMeta({
-    title: 'PopUp Events - BitPopArt',
-    description: 'Discover BitPopArt exhibitions, pop-up shops, and events around the world',
+    title: 'PopUp Events - BitPopArt | Art Exhibitions Worldwide',
+    description: 'Discover BitPopArt exhibitions, pop-up shops, and events around the world. Join Johannes Oppewal\'s global art journey and find events near you.',
+    keywords: 'bitpopart events, pop art exhibition, bitcoin art events, popup art show, art exhibitions worldwide, nostr events, bitcoin art popup, johannes oppewal events',
+    author: 'Johannes Oppewal (BitPopArt)',
+    ogType: 'website',
+    ogTitle: 'PopUp Events - BitPopArt | Art Exhibitions Worldwide',
+    ogDescription: 'Discover BitPopArt exhibitions, pop-up shops, and events around the world. Join Johannes Oppewal\'s global art journey.',
+    ogImage: 'https://bitpopart.com/bitpopart-logo.png',
+    ogImageAlt: 'BitPopArt PopUp Events',
+    ogSiteName: 'BitPopArt',
+    ogUrl: 'https://bitpopart.com/popup',
+    twitterCard: 'summary_large_image',
+    twitterTitle: 'PopUp Events - BitPopArt | Art Exhibitions Worldwide',
+    twitterDescription: 'Discover BitPopArt exhibitions, pop-up shops, and events around the world.',
+    twitterImage: 'https://bitpopart.com/bitpopart-logo.png',
+    robots: 'index, follow, max-snippet:-1, max-image-preview:large',
   });
 
   // Fetch all PopUp events (kind 31922)

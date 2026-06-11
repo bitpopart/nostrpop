@@ -31,8 +31,22 @@ export default function Artist() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   useSeoMeta({
-    title: 'Artist - BitPopArt',
-    description: 'Learn about the artist behind BitPopArt - Johannes Oppewal, world traveler and Bitcoin PopArt creator',
+    title: 'Artist - Johannes Oppewal | World Traveler & Bitcoin Pop Art Creator',
+    description: 'Meet Johannes Oppewal, the artist behind BitPopArt. World traveler (88 countries), photographer, and Bitcoin pop art creator. Spreading love, freedom, and joy through art on Nostr.',
+    keywords: 'johannes oppewal, bitpopart artist, bitcoin pop art artist, world traveler artist, nostr artist, travel photographer, digital artist, bitcoin art creator, 88 countries artist',
+    author: 'Johannes Oppewal (BitPopArt)',
+    ogType: 'profile',
+    ogTitle: 'Artist - Johannes Oppewal | World Traveler & Bitcoin Pop Art Creator',
+    ogDescription: 'Meet Johannes Oppewal, the artist behind BitPopArt. World traveler (88 countries), photographer, and Bitcoin pop art creator spreading love, freedom, and joy.',
+    ogImage: 'https://bitpopart.com/bitpopart-logo.png',
+    ogImageAlt: 'Johannes Oppewal - BitPopArt Artist',
+    ogSiteName: 'BitPopArt',
+    ogUrl: 'https://bitpopart.com/artist',
+    twitterCard: 'summary_large_image',
+    twitterTitle: 'Artist - Johannes Oppewal | World Traveler & Bitcoin Pop Art Creator',
+    twitterDescription: 'Meet Johannes Oppewal, the artist behind BitPopArt. World traveler (88 countries), photographer, and Bitcoin pop art creator.',
+    twitterImage: 'https://bitpopart.com/bitpopart-logo.png',
+    robots: 'index, follow, max-snippet:-1, max-image-preview:large',
   });
 
   // Fetch artist page content (kind 30024 with artist identifier)

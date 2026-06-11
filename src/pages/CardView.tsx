@@ -205,8 +205,21 @@ const CardView = () => {
   const authorAvatar = author.data?.metadata?.picture;
 
   useSeoMeta({
-    title: cardData ? `${cardData.title} - BitPop Cards by BitPopArt` : 'Card - BitPop Cards',
-    description: cardData?.description || 'Beautiful digital card created with BitPop Cards by BitPopArt',
+    title: cardData ? `${cardData.title} - BitPop Cards by BitPopArt` : 'Card - BitPopArt',
+    description: cardData?.description || 'Beautiful digital Good Vibes card created with BitPop Cards by BitPopArt. Share love, freedom, and joy with Bitcoin-powered digital cards.',
+    author: cardData ? undefined : 'Johannes Oppewal (BitPopArt)',
+    ogType: 'article',
+    ogTitle: cardData ? `${cardData.title} - BitPop Cards by BitPopArt` : 'Card - BitPopArt',
+    ogDescription: cardData?.description || 'Beautiful digital Good Vibes card created with BitPop Cards by BitPopArt.',
+    ogImage: (cardData?.images && cardData.images[0]) || 'https://bitpopart.com/bitpopart-logo.png',
+    ogImageAlt: cardData?.title || 'BitPop Card',
+    ogSiteName: 'BitPopArt',
+    twitterCard: 'summary_large_image',
+    twitterTitle: cardData ? `${cardData.title} - BitPop Cards by BitPopArt` : 'Card - BitPopArt',
+    twitterDescription: cardData?.description || 'Beautiful digital Good Vibes card created with BitPop Cards by BitPopArt.',
+    twitterImage: (cardData?.images && cardData.images[0]) || 'https://bitpopart.com/bitpopart-logo.png',
+    twitterImageAlt: cardData?.title || 'BitPop Card',
+    robots: 'index, follow, max-snippet:-1, max-image-preview:large',
   });
 
   // Helper function to get file extension from URL or content type

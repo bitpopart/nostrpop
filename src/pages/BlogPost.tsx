@@ -133,13 +133,20 @@ export default function BlogPost() {
   useSeoMeta({
     title: seoTitle ? `${seoTitle} - BitPopArt Blog` : 'Blog Post - BitPopArt',
     description: seoSummary || (post ? post.content.slice(0, 160) : 'Read this article on BitPopArt'),
-    ogTitle: seoTitle,
-    ogDescription: seoSummary,
-    ogImage: seoImage,
-    twitterCard: post ? 'summary_large_image' : undefined,
-    twitterTitle: seoTitle,
-    twitterDescription: seoSummary,
-    twitterImage: seoImage,
+    author: 'Johannes Oppewal (BitPopArt)',
+    ogType: 'article',
+    ogTitle: seoTitle ? `${seoTitle} - BitPopArt Blog` : 'Blog Post - BitPopArt',
+    ogDescription: seoSummary || (post ? post.content.slice(0, 160) : 'Read this article on BitPopArt'),
+    ogImage: seoImage || 'https://bitpopart.com/bitpopart-logo.png',
+    ogImageAlt: seoTitle || 'BitPopArt Blog Article',
+    ogSiteName: 'BitPopArt',
+    ogUrl: `https://bitpopart.com/blog/${articleId}`,
+    twitterCard: 'summary_large_image',
+    twitterTitle: seoTitle ? `${seoTitle} - BitPopArt Blog` : 'Blog Post - BitPopArt',
+    twitterDescription: seoSummary || (post ? post.content.slice(0, 160) : 'Read this article on BitPopArt'),
+    twitterImage: seoImage || 'https://bitpopart.com/bitpopart-logo.png',
+    twitterImageAlt: seoTitle || 'BitPopArt Blog Article',
+    robots: 'index, follow, max-snippet:-1, max-image-preview:large',
   });
 
   if (isLoading) {

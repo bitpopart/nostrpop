@@ -87,8 +87,21 @@ export default function PopUpEventView() {
   });
 
   useSeoMeta({
-    title: eventData ? `${eventData.title} - PopUp Event` : 'PopUp Event',
-    description: eventData?.description || 'BitPopArt PopUp event details',
+    title: eventData ? `${eventData.title} - BitPopArt PopUp Event` : 'PopUp Event - BitPopArt',
+    description: eventData?.description || 'Discover this BitPopArt pop-up art event. Join Johannes Oppewal for an immersive Bitcoin pop art experience.',
+    author: 'Johannes Oppewal (BitPopArt)',
+    ogType: 'event',
+    ogTitle: eventData ? `${eventData.title} - BitPopArt PopUp Event` : 'PopUp Event - BitPopArt',
+    ogDescription: eventData?.description || 'Discover this BitPopArt pop-up art event. Join Johannes Oppewal for an immersive Bitcoin pop art experience.',
+    ogImage: eventData?.image || 'https://bitpopart.com/bitpopart-logo.png',
+    ogImageAlt: eventData?.title || 'BitPopArt PopUp Event',
+    ogSiteName: 'BitPopArt',
+    twitterCard: 'summary_large_image',
+    twitterTitle: eventData ? `${eventData.title} - BitPopArt PopUp Event` : 'PopUp Event - BitPopArt',
+    twitterDescription: eventData?.description || 'Discover this BitPopArt pop-up art event.',
+    twitterImage: eventData?.image || 'https://bitpopart.com/bitpopart-logo.png',
+    twitterImageAlt: eventData?.title || 'BitPopArt PopUp Event',
+    robots: 'index, follow, max-snippet:-1, max-image-preview:large',
   });
 
   if (isLoading) {

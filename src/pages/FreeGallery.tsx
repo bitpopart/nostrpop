@@ -193,8 +193,22 @@ export default function FreeGallery() {
   const { data: animations = [], isLoading: loadingAnimations } = useAnimations();
 
   useSeoMeta({
-    title: 'Free Downloads - BitPopArt',
-    description: 'All free Bitcoin PopArt downloads in one place: images, wallpapers, avatars, GIFs, animations and banners!',
+    title: 'Free Downloads - BitPopArt | Free Bitcoin Pop Art',
+    description: 'Download free Bitcoin PopArt: images, wallpapers, avatars, GIFs, animations and banners! Spread the love, freedom and joy of Bitcoin pop art for free.',
+    keywords: 'free bitcoin art, free pop art download, bitcoin wallpaper free, bitcoin avatar free, free digital art, bitcoin gif, free art download, bitpopart free',
+    author: 'Johannes Oppewal (BitPopArt)',
+    ogType: 'website',
+    ogTitle: 'Free Downloads - BitPopArt | Free Bitcoin Pop Art',
+    ogDescription: 'Download free Bitcoin PopArt: images, wallpapers, avatars, GIFs, animations and banners!',
+    ogImage: 'https://bitpopart.com/bitpopart-logo.png',
+    ogImageAlt: 'BitPopArt Free Downloads',
+    ogSiteName: 'BitPopArt',
+    ogUrl: 'https://bitpopart.com/free',
+    twitterCard: 'summary_large_image',
+    twitterTitle: 'Free Downloads - BitPopArt | Free Bitcoin Pop Art',
+    twitterDescription: 'Download free Bitcoin PopArt: images, wallpapers, avatars, GIFs, animations and banners!',
+    twitterImage: 'https://bitpopart.com/bitpopart-logo.png',
+    robots: 'index, follow, max-snippet:-1, max-image-preview:large',
   });
 
   const latestFree = freeImages.slice(0, LIMIT);

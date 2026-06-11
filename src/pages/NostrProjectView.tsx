@@ -32,8 +32,20 @@ export default function NostrProjectView() {
   const [error, setError] = useState('');
 
   useSeoMeta({
-    title: project ? `${project.title} - Join Nostr Project` : 'Nostr Project',
-    description: project?.description || 'Join this collaborative art project on Nostr',
+    title: project ? `${project.title} - Join BitPopArt Nostr Project` : 'Nostr Project - BitPopArt',
+    description: project?.description || 'Join this collaborative Bitcoin art project on Nostr. Add your identity to amazing artworks and be part of the Bitcoin creative community.',
+    author: 'Johannes Oppewal (BitPopArt)',
+    ogType: 'website',
+    ogTitle: project ? `${project.title} - BitPopArt Nostr Project` : 'Nostr Project - BitPopArt',
+    ogDescription: project?.description || 'Join this collaborative Bitcoin art project on Nostr. Be part of the Bitcoin creative community.',
+    ogImage: project?.image_url || 'https://bitpopart.com/bitpopart-logo.png',
+    ogImageAlt: project?.title || 'BitPopArt Nostr Project',
+    ogSiteName: 'BitPopArt',
+    twitterCard: 'summary_large_image',
+    twitterTitle: project ? `${project.title} - BitPopArt Nostr Project` : 'Nostr Project - BitPopArt',
+    twitterDescription: project?.description || 'Join this collaborative Bitcoin art project on Nostr.',
+    twitterImage: project?.image_url || 'https://bitpopart.com/bitpopart-logo.png',
+    robots: 'index, follow, max-snippet:-1, max-image-preview:large',
   });
 
   const handleJoinProject = async () => {

@@ -193,8 +193,20 @@ const CardPreview = () => {
   // const { sendZap, isZapping, supportsZaps, canZap } = useZap(lightningAddress);
 
   useSeoMeta({
-    title: cardData ? `${cardData.title} - Share BitPop Card` : 'Share Card - BitPop Cards',
-    description: cardData?.description || 'Share this beautiful digital card created with BitPop Cards by BitPopArt',
+    title: cardData ? `${cardData.title} - Share BitPop Card` : 'Share Card - BitPopArt',
+    description: cardData?.description || 'Share this beautiful digital Good Vibes card created with BitPop Cards by BitPopArt. Spread love, freedom, and joy with Bitcoin-powered cards.',
+    ogType: 'article',
+    ogTitle: cardData ? `${cardData.title} - Share BitPop Card` : 'Share Card - BitPopArt',
+    ogDescription: cardData?.description || 'Share this beautiful digital Good Vibes card created with BitPop Cards by BitPopArt.',
+    ogImage: (cardData?.images && cardData.images[0]) || 'https://bitpopart.com/bitpopart-logo.png',
+    ogImageAlt: cardData?.title || 'BitPop Card',
+    ogSiteName: 'BitPopArt',
+    twitterCard: 'summary_large_image',
+    twitterTitle: cardData ? `${cardData.title} - Share BitPop Card` : 'Share Card - BitPopArt',
+    twitterDescription: cardData?.description || 'Share this beautiful digital Good Vibes card created with BitPop Cards by BitPopArt.',
+    twitterImage: (cardData?.images && cardData.images[0]) || 'https://bitpopart.com/bitpopart-logo.png',
+    twitterImageAlt: cardData?.title || 'BitPop Card',
+    robots: 'index, follow, max-snippet:-1, max-image-preview:large',
   });
 
   const shareUrl = `${window.location.origin}/card/${nip19Param}`;

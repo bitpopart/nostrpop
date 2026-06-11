@@ -527,8 +527,22 @@ function Art21K() {
   };
 
   useSeoMeta({
-    title: '21K Sats Art - Bitcoin Art Value Experiment',
-    description: 'Exploring art value through Bitcoin. Each unique artwork sold for 21,000 sats. Track how USD value changes over time.',
+    title: '21K Sats Art - BitPopArt | Bitcoin Art Value Experiment',
+    description: 'Exploring art value through Bitcoin. Each unique artwork sold for 21,000 sats. Track how USD value of Bitcoin art changes over time. A BitPopArt experiment.',
+    keywords: '21k sats art, bitcoin art value, bitcoin satoshis art, bitcoin art experiment, satoshi art, bitcoin art price, 21000 sats, bitcoin art collection, nostr art sale',
+    author: 'Johannes Oppewal (BitPopArt)',
+    ogType: 'website',
+    ogTitle: '21K Sats Art - BitPopArt | Bitcoin Art Value Experiment',
+    ogDescription: 'Exploring art value through Bitcoin. Each unique artwork sold for 21,000 sats. Track how USD value changes over time.',
+    ogImage: 'https://bitpopart.com/bitpopart-logo.png',
+    ogImageAlt: '21K Sats Art - Bitcoin Art Value Experiment',
+    ogSiteName: 'BitPopArt',
+    ogUrl: 'https://bitpopart.com/21k-art',
+    twitterCard: 'summary_large_image',
+    twitterTitle: '21K Sats Art - BitPopArt | Bitcoin Art Value Experiment',
+    twitterDescription: 'Exploring art value through Bitcoin. Each unique artwork sold for 21,000 sats.',
+    twitterImage: 'https://bitpopart.com/bitpopart-logo.png',
+    robots: 'index, follow, max-snippet:-1, max-image-preview:large',
   });
 
   // Calculate graph data

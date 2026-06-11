@@ -79,8 +79,9 @@ const OrderConfirmation = () => {
   const isArtworkPurchase = product?.category === 'Artwork' || product?.stall_id === 'art-gallery';
 
   useSeoMeta({
-    title: 'Order Confirmation - BitPop Marketplace',
-    description: 'Your order has been confirmed. Thank you for your purchase!',
+    title: 'Order Confirmation - BitPopArt Marketplace',
+    description: 'Your order has been confirmed. Thank you for your purchase from BitPopArt marketplace!',
+    robots: 'noindex, nofollow',
   });
 
   // Redirect if no product data and no product ID to fetch

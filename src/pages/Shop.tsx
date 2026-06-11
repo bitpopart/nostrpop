@@ -93,8 +93,22 @@ const Shop = () => {
   const { data: fundraisers = [], isLoading: fundraisersLoading } = useFundraisers();
 
   useSeoMeta({
-    title: 'Shop - BitPop Cards Marketplace',
-    description: 'Nostr-powered marketplace for physical and digital products. Create listings, manage inventory, and trade with Bitcoin.',
+    title: 'Shop - BitPopArt Marketplace | Buy Bitcoin Pop Art',
+    description: 'Nostr-powered marketplace for physical and digital products. Buy exclusive Bitcoin pop art, digital prints, and merchandise. Pay with Bitcoin Lightning. By BitPopArt.',
+    keywords: 'bitcoin art shop, pop art for sale, bitcoin marketplace, nostr shop, buy digital art, bitcoin lightning payment, bitpopart shop, digital prints, art merchandise',
+    author: 'Johannes Oppewal (BitPopArt)',
+    ogType: 'website',
+    ogTitle: 'Shop - BitPopArt Marketplace | Buy Bitcoin Pop Art',
+    ogDescription: 'Nostr-powered marketplace for physical and digital products. Buy exclusive Bitcoin pop art and digital prints. Pay with Bitcoin Lightning.',
+    ogImage: 'https://bitpopart.com/bitpopart-logo.png',
+    ogImageAlt: 'BitPopArt Shop',
+    ogSiteName: 'BitPopArt',
+    ogUrl: 'https://bitpopart.com/shop',
+    twitterCard: 'summary_large_image',
+    twitterTitle: 'Shop - BitPopArt Marketplace | Buy Bitcoin Pop Art',
+    twitterDescription: 'Nostr-powered marketplace. Buy exclusive Bitcoin pop art and digital prints. Pay with Bitcoin Lightning.',
+    twitterImage: 'https://bitpopart.com/bitpopart-logo.png',
+    robots: 'index, follow, max-snippet:-1, max-image-preview:large',
   });
 
   // Everyone can browse the marketplace, but login is required for purchases

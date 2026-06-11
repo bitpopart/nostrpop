@@ -402,8 +402,22 @@ export default function AppPage() {
   const greeting = getGreeting();
 
   useSeoMeta({
-    title: 'BitPopArt App',
-    description: 'The BitPopArt fan app — wallpapers, GIFs, animations, games, merch and more!',
+    title: 'BitPopArt App | Wallpapers, GIFs, Animations & More',
+    description: 'The BitPopArt fan app — free wallpapers, GIFs, animations, games, merch and more! Download free Bitcoin pop art for your devices and social media profiles.',
+    keywords: 'bitpopart app, bitcoin art app, free bitcoin downloads, bitcoin pop art app, nostr app, bitcoin fan app, free art downloads, bitcoin wallpaper app',
+    author: 'Johannes Oppewal (BitPopArt)',
+    ogType: 'website',
+    ogTitle: 'BitPopArt App | Wallpapers, GIFs, Animations & More',
+    ogDescription: 'The BitPopArt fan app — free wallpapers, GIFs, animations, games, merch and more!',
+    ogImage: 'https://bitpopart.com/bitpopart-logo.png',
+    ogImageAlt: 'BitPopArt App',
+    ogSiteName: 'BitPopArt',
+    ogUrl: 'https://bitpopart.com/app',
+    twitterCard: 'summary_large_image',
+    twitterTitle: 'BitPopArt App | Wallpapers, GIFs, Animations & More',
+    twitterDescription: 'The BitPopArt fan app — free wallpapers, GIFs, animations, games, merch and more!',
+    twitterImage: 'https://bitpopart.com/bitpopart-logo.png',
+    robots: 'index, follow, max-snippet:-1, max-image-preview:large',
   });
 
   return (

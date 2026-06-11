@@ -480,8 +480,21 @@ export default function Animations() {
   const vCount = useMemo(() => animations.filter(a => a.orientation === 'vertical').length, [animations]);
 
   useSeoMeta({
-    title: 'Animations - BitPopArt',
-    description: 'Free Bitcoin PopArt animations by BitPopArt — watch, download, and zap!',
+    title: 'Animations - BitPopArt | Free Bitcoin Pop Art Animations',
+    description: 'Free Bitcoin PopArt animations by BitPopArt. Watch, download, and zap your favorite pop art animations! Bitcoin art meets creative animation.',
+    keywords: 'bitcoin animation, pop art animation, free animation download, bitcoin art animation, bitpopart animation, nostr animation, animated bitcoin art, creative animation',
+    author: 'Johannes Oppewal (BitPopArt)',
+    ogType: 'website',
+    ogTitle: 'Animations - BitPopArt | Free Bitcoin Pop Art Animations',
+    ogDescription: 'Free Bitcoin PopArt animations by BitPopArt. Watch, download, and zap your favorite pop art animations!',
+    ogImage: 'https://bitpopart.com/bitpopart-logo.png',
+    ogSiteName: 'BitPopArt',
+    ogUrl: 'https://bitpopart.com/animations',
+    twitterCard: 'summary_large_image',
+    twitterTitle: 'Animations - BitPopArt | Free Bitcoin Pop Art Animations',
+    twitterDescription: 'Free Bitcoin PopArt animations by BitPopArt. Watch, download, and zap your favorite pop art animations!',
+    twitterImage: 'https://bitpopart.com/bitpopart-logo.png',
+    robots: 'index, follow, max-snippet:-1, max-image-preview:large',
   });
 
   return (

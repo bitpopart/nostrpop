@@ -42,8 +42,22 @@ export default function Blog() {
   }, [searchParams, isAdmin]);
 
   useSeoMeta({
-    title: 'Blog - BitPopArt',
-    description: 'Latest news from BitPopArt',
+    title: 'Blog - BitPopArt | Bitcoin Pop Art News & Updates',
+    description: 'Read the latest news, stories, and updates from BitPopArt. Bitcoin pop art, travel photography, Nostr updates, and creative inspiration by Johannes Oppewal.',
+    keywords: 'bitpopart blog, bitcoin art news, pop art updates, nostr blog, bitcoin artist, johannes oppewal blog, digital art news',
+    author: 'Johannes Oppewal (BitPopArt)',
+    ogType: 'website',
+    ogTitle: 'Blog - BitPopArt | Bitcoin Pop Art News & Updates',
+    ogDescription: 'Read the latest news, stories, and updates from BitPopArt. Bitcoin pop art, travel photography, Nostr updates, and creative inspiration.',
+    ogImage: 'https://bitpopart.com/bitpopart-logo.png',
+    ogImageAlt: 'BitPopArt Blog',
+    ogSiteName: 'BitPopArt',
+    ogUrl: 'https://bitpopart.com/blog',
+    twitterCard: 'summary_large_image',
+    twitterTitle: 'Blog - BitPopArt | Bitcoin Pop Art News & Updates',
+    twitterDescription: 'Read the latest news, stories, and updates from BitPopArt. Bitcoin pop art, travel photography, and Nostr updates.',
+    twitterImage: 'https://bitpopart.com/bitpopart-logo.png',
+    robots: 'index, follow, max-snippet:-1, max-image-preview:large',
   });
 
   // BitPopArt admin pubkey

@@ -15,13 +15,14 @@
     
     <!-- Favicons -->
     <link rel="icon" type="image/png" href="/bitpopart-logo.png" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
     <link rel="apple-touch-icon" href="/bitpopart-logo.png" />
     
     <!-- Primary Meta Tags -->
-    <title>BitPopArt - Love, Freedom & Joy Pop Art</title>
-    <meta name="title" content="BitPopArt - Love, Freedom & Joy Pop Art">
-    <meta name="description" content="Create Good Vibes POP cards, collect exclusive badges, join collaborative art projects, and discover Bitcoin-inspired pop art on Nostr. By world traveler & artist Johannes Oppewal.">
-    <meta name="keywords" content="bitcoin art, pop art, nostr, satoshi, digital art, good vibes, love, freedom, joy, happiness, artist, johannes oppewal, world traveler, 88 countries, collaborative art, digital cards, greeting cards, badges, bitcoin lightning, cryptocurrency art, decentralized art, bitcoin culture, pop cards, digital collectibles, nostr badges, bitcoin community">
+    <title>BitPopArt - Love, Freedom &amp; Joy Pop Art</title>
+    <meta name="title" content="BitPopArt - Love, Freedom &amp; Joy Pop Art">
+    <meta name="description" content="Create Good Vibes POP cards, collect exclusive badges, join collaborative art projects, and discover Bitcoin-inspired pop art on Nostr. By world traveler &amp; artist Johannes Oppewal.">
+    <meta name="keywords" content="bitcoin art, pop art, nostr, satoshi, digital art, good vibes, love, freedom, joy, happiness, artist, johannes oppewal, world traveler, 88 countries, collaborative art, digital cards, greeting cards, badges, bitcoin lightning, cryptocurrency art, decentralized art, bitcoin culture, pop cards, digital collectibles, nostr badges, bitcoin community, bitpopart, bitcoin pop art">
     <meta name="author" content="Johannes Oppewal (BitPopArt)">
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
     <meta name="googlebot" content="index, follow">
@@ -30,23 +31,32 @@
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://bitpopart.com/">
-    <meta property="og:title" content="BitPopArt - Love, Freedom & Joy Pop Art">
-    <meta property="og:description" content="Create Good Vibes POP cards, collect exclusive badges, join collaborative art projects, and discover Bitcoin-inspired pop art on Nostr. By world traveler & artist Johannes Oppewal.">
+    <meta property="og:title" content="BitPopArt - Love, Freedom &amp; Joy Pop Art">
+    <meta property="og:description" content="Create Good Vibes POP cards, collect exclusive badges, join collaborative art projects, and discover Bitcoin-inspired pop art on Nostr. By world traveler &amp; artist Johannes Oppewal.">
     <meta property="og:image" content="https://bitpopart.com/bitpopart-logo.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="1200">
-    <meta property="og:image:alt" content="BitPopArt - Love, Freedom & Joy Pop Art">
+    <meta property="og:image:alt" content="BitPopArt - Love, Freedom &amp; Joy Pop Art">
     <meta property="og:site_name" content="BitPopArt">
     <meta property="og:locale" content="en_US">
     
     <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://bitpopart.com/">
-    <meta property="twitter:title" content="BitPopArt - Love, Freedom & Joy Pop Art">
-    <meta property="twitter:description" content="Create Good Vibes POP cards, collect exclusive badges, join collaborative art projects, and discover Bitcoin-inspired pop art on Nostr.">
-    <meta property="twitter:image" content="https://bitpopart.com/bitpopart-logo.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@bitpopart">
+    <meta name="twitter:creator" content="@bitpopart">
+    <meta name="twitter:url" content="https://bitpopart.com/">
+    <meta name="twitter:title" content="BitPopArt - Love, Freedom &amp; Joy Pop Art">
+    <meta name="twitter:description" content="Create Good Vibes POP cards, collect exclusive badges, join collaborative art projects, and discover Bitcoin-inspired pop art on Nostr.">
+    <meta name="twitter:image" content="https://bitpopart.com/bitpopart-logo.png">
+    <meta name="twitter:image:alt" content="BitPopArt logo">
     
+    <!-- Additional SEO -->
     <meta name="theme-color" content="#ec4899">
+    <meta name="color-scheme" content="light dark">
+    <meta name="rating" content="general">
+    <meta name="revisit-after" content="7 days">
+    <meta name="language" content="English">
+    <meta name="category" content="art, bitcoin, pop art, digital art">
     
     <!-- Structured Data (JSON-LD) for SEO -->
     <script type="application/ld+json">
@@ -54,7 +64,7 @@
       "@context": "https://schema.org",
       "@type": "WebSite",
       "name": "BitPopArt",
-      "alternateName": "BitPopArt - Love, Freedom & Joy Pop Art",
+      "alternateName": ["BitPopArt - Love, Freedom & Joy Pop Art", "Bitcoin Pop Art"],
       "url": "https://bitpopart.com/",
       "description": "Create Good Vibes POP cards, collect exclusive badges, join collaborative art projects, and discover Bitcoin-inspired pop art on Nostr.",
       "author": {
@@ -62,10 +72,22 @@
         "name": "Johannes Oppewal",
         "alternateName": "BitPopArt",
         "description": "World traveler (88 countries and counting) and artist creating Bitcoin-inspired pop art",
-        "jobTitle": "Artist & World Traveler"
+        "jobTitle": "Artist & World Traveler",
+        "url": "https://bitpopart.com/artist",
+        "sameAs": [
+          "https://primal.net/p/npub105em547c5m5gdxslr4fp2f29jav54sxml6cpk6gda7xyvxuzmv6s84a642"
+        ]
       },
       "keywords": "bitcoin art, pop art, nostr, satoshi, digital art, good vibes, love, freedom, joy",
-      "inLanguage": "en-US"
+      "inLanguage": "en-US",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://bitpopart.com/blog?q={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      }
     }
     </script>
     <script type="application/ld+json">
@@ -74,15 +96,42 @@
       "@type": "Organization",
       "name": "BitPopArt",
       "url": "https://bitpopart.com/",
-      "logo": "https://bitpopart.com/bitpopart-logo.png",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://bitpopart.com/bitpopart-logo.png",
+        "width": "512",
+        "height": "512"
+      },
       "description": "Bitcoin pop art, digital cards, badges, and collaborative art projects on Nostr. Created by world traveler Johannes Oppewal.",
       "founder": {
         "@type": "Person",
-        "name": "Johannes Oppewal"
+        "name": "Johannes Oppewal",
+        "sameAs": "https://primal.net/p/npub105em547c5m5gdxslr4fp2f29jav54sxml6cpk6gda7xyvxuzmv6s84a642"
       },
       "sameAs": [
         "https://primal.net/p/npub105em547c5m5gdxslr4fp2f29jav54sxml6cpk6gda7xyvxuzmv6s84a642"
-      ]
+      ],
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "contactType": "customer support",
+        "availableLanguage": "English"
+      }
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Person",
+      "name": "Johannes Oppewal",
+      "alternateName": "BitPopArt",
+      "url": "https://bitpopart.com/artist",
+      "image": "https://bitpopart.com/bitpopart-logo.png",
+      "description": "World traveler (88 countries and counting) and artist creating Bitcoin-inspired pop art on Nostr.",
+      "jobTitle": "Artist & World Traveler",
+      "sameAs": [
+        "https://primal.net/p/npub105em547c5m5gdxslr4fp2f29jav54sxml6cpk6gda7xyvxuzmv6s84a642"
+      ],
+      "knowsAbout": ["Bitcoin", "Pop Art", "Digital Art", "Photography", "Travel", "Nostr"]
     }
     </script>
     

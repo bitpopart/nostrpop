@@ -650,8 +650,22 @@ function EditBadgeDialog({
 
 export default function Badges() {
   useSeoMeta({
-    title: 'Badges - BitPopArt',
-    description: 'Collect exclusive NIP-58 badges by BitPopArt. Issued on the Nostr protocol.',
+    title: 'Badges - BitPopArt | Exclusive Nostr NIP-58 Badges',
+    description: 'Collect exclusive NIP-58 digital badges issued by BitPopArt on the Nostr protocol. Earn unique collectible badges for your Nostr profile.',
+    keywords: 'nostr badges, NIP-58 badges, digital badges, collectible badges, bitpopart badges, nostr collectibles, bitcoin badges, digital achievements, nostr profile badges',
+    author: 'Johannes Oppewal (BitPopArt)',
+    ogType: 'website',
+    ogTitle: 'Badges - BitPopArt | Exclusive Nostr NIP-58 Badges',
+    ogDescription: 'Collect exclusive NIP-58 digital badges issued by BitPopArt on the Nostr protocol. Earn unique collectible badges for your Nostr profile.',
+    ogImage: 'https://bitpopart.com/bitpopart-logo.png',
+    ogImageAlt: 'BitPopArt Badges',
+    ogSiteName: 'BitPopArt',
+    ogUrl: 'https://bitpopart.com/badges',
+    twitterCard: 'summary_large_image',
+    twitterTitle: 'Badges - BitPopArt | Exclusive Nostr NIP-58 Badges',
+    twitterDescription: 'Collect exclusive NIP-58 digital badges issued by BitPopArt on the Nostr protocol.',
+    twitterImage: 'https://bitpopart.com/bitpopart-logo.png',
+    robots: 'index, follow, max-snippet:-1, max-image-preview:large',
   });
 
   const isAdmin = useIsAdmin();

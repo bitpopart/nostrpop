@@ -49,8 +49,21 @@ export default function Wallpapers() {
   const tagSets = useMemo(() => wallpapers.map(w => w.hashtags), [wallpapers]);
 
   useSeoMeta({
-    title: 'Wallpapers - BitPopArt',
-    description: 'Download free Bitcoin PopArt wallpapers by BitPopArt',
+    title: 'Wallpapers - BitPopArt | Free Bitcoin Pop Art Wallpapers',
+    description: 'Download free Bitcoin PopArt wallpapers by BitPopArt. Beautiful pop art designs for your desktop and mobile. Spread love, freedom, and joy with Bitcoin art.',
+    keywords: 'bitcoin wallpaper, pop art wallpaper, free wallpaper download, bitcoin desktop wallpaper, bitcoin mobile wallpaper, bitpopart wallpaper, free bitcoin art wallpaper',
+    author: 'Johannes Oppewal (BitPopArt)',
+    ogType: 'website',
+    ogTitle: 'Wallpapers - BitPopArt | Free Bitcoin Pop Art Wallpapers',
+    ogDescription: 'Download free Bitcoin PopArt wallpapers by BitPopArt. Beautiful pop art designs for your desktop and mobile.',
+    ogImage: 'https://bitpopart.com/bitpopart-logo.png',
+    ogSiteName: 'BitPopArt',
+    ogUrl: 'https://bitpopart.com/wallpapers',
+    twitterCard: 'summary_large_image',
+    twitterTitle: 'Wallpapers - BitPopArt | Free Bitcoin Pop Art Wallpapers',
+    twitterDescription: 'Download free Bitcoin PopArt wallpapers by BitPopArt.',
+    twitterImage: 'https://bitpopart.com/bitpopart-logo.png',
+    robots: 'index, follow, max-snippet:-1, max-image-preview:large',
   });
 
   return (

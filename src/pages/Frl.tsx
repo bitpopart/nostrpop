@@ -4,8 +4,21 @@ import { Globe, Sparkles } from 'lucide-react';
 
 export default function Frl() {
   useSeoMeta({
-    title: 'POPArt.frl - BitPopArt',
-    description: 'POPArt.frl collection by BitPopArt — pop art for the real world',
+    title: 'POPArt.frl - BitPopArt | Pop Art for the Real World',
+    description: 'POPArt.frl collection by BitPopArt — pop art for the real world. Discover Bitcoin-inspired pop art with a .frl domain twist by Johannes Oppewal.',
+    keywords: 'popart frl, pop art real world, bitpopart frl, bitcoin pop art frl, nostr art frl, real world pop art',
+    author: 'Johannes Oppewal (BitPopArt)',
+    ogType: 'website',
+    ogTitle: 'POPArt.frl - BitPopArt | Pop Art for the Real World',
+    ogDescription: 'POPArt.frl collection by BitPopArt — pop art for the real world.',
+    ogImage: 'https://bitpopart.com/bitpopart-logo.png',
+    ogSiteName: 'BitPopArt',
+    ogUrl: 'https://bitpopart.com/frl',
+    twitterCard: 'summary_large_image',
+    twitterTitle: 'POPArt.frl - BitPopArt | Pop Art for the Real World',
+    twitterDescription: 'POPArt.frl collection by BitPopArt — pop art for the real world.',
+    twitterImage: 'https://bitpopart.com/bitpopart-logo.png',
+    robots: 'index, follow',
   });
 
   return (

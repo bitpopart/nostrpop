@@ -130,8 +130,17 @@ const Feed = () => {
   }, [location.hash, notes]);
 
   useSeoMeta({
-    title: `${displayName}'s Feed - BitPop Cards`,
-    description: `Latest updates and notes from ${displayName} on the BitPop Cards platform.`,
+    title: `${displayName}'s Feed - BitPopArt`,
+    description: `Latest updates and notes from ${displayName} on BitPopArt. Discover Bitcoin pop art, Good Vibes cards, and creative content on Nostr.`,
+    ogType: 'profile',
+    ogTitle: `${displayName}'s Feed - BitPopArt`,
+    ogDescription: `Latest updates and notes from ${displayName} on BitPopArt.`,
+    ogImage: 'https://bitpopart.com/bitpopart-logo.png',
+    ogSiteName: 'BitPopArt',
+    twitterCard: 'summary_large_image',
+    twitterTitle: `${displayName}'s Feed - BitPopArt`,
+    twitterDescription: `Latest updates and notes from ${displayName} on BitPopArt.`,
+    robots: 'index, follow',
   });
 
   return (

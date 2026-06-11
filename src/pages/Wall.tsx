@@ -27,8 +27,22 @@ export default function Wall() {
   const BITPOPART_PUBKEY = '43baaf0c28e6cfb195b17ee083e19eb3a4afdfac54d9b6baf170270ed193e34c';
 
   useSeoMeta({
-    title: 'Wall - Street Art Gallery',
-    description: 'Art belongs to the streets',
+    title: 'Wall - Street Art Gallery | BitPopArt',
+    description: 'Art belongs to the streets. Discover street art photography and urban art from around the world by Johannes Oppewal. Bitcoin pop art meets street culture.',
+    keywords: 'street art gallery, urban art, graffiti art, street photography, bitpopart wall, bitcoin street art, nostr art, public art, urban photography',
+    author: 'Johannes Oppewal (BitPopArt)',
+    ogType: 'website',
+    ogTitle: 'Wall - Street Art Gallery | BitPopArt',
+    ogDescription: 'Art belongs to the streets. Discover street art photography and urban art from around the world by Johannes Oppewal.',
+    ogImage: 'https://bitpopart.com/bitpopart-logo.png',
+    ogImageAlt: 'BitPopArt Wall - Street Art Gallery',
+    ogSiteName: 'BitPopArt',
+    ogUrl: 'https://bitpopart.com/wall',
+    twitterCard: 'summary_large_image',
+    twitterTitle: 'Wall - Street Art Gallery | BitPopArt',
+    twitterDescription: 'Art belongs to the streets. Discover street art photography and urban art from around the world.',
+    twitterImage: 'https://bitpopart.com/bitpopart-logo.png',
+    robots: 'index, follow, max-snippet:-1, max-image-preview:large',
   });
 
   // Query street art photos from Nostr (only from BitPopArt)

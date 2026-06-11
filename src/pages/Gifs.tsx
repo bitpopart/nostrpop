@@ -48,8 +48,21 @@ export default function Gifs() {
   const tagSets = useMemo(() => gifs.map(g => g.hashtags), [gifs]);
 
   useSeoMeta({
-    title: 'Animated GIFs - BitPopArt',
-    description: 'Download free animated Bitcoin PopArt GIFs by BitPopArt',
+    title: 'Animated GIFs - BitPopArt | Free Bitcoin Pop Art GIFs',
+    description: 'Download free animated Bitcoin PopArt GIFs by BitPopArt. Share fun and expressive Bitcoin pop art animations on social media and Nostr.',
+    keywords: 'bitcoin gif, pop art gif, animated bitcoin, free bitcoin animation, bitcoin sticker, bitcoin meme gif, bitpopart gif, nostr gif, bitcoin art animated',
+    author: 'Johannes Oppewal (BitPopArt)',
+    ogType: 'website',
+    ogTitle: 'Animated GIFs - BitPopArt | Free Bitcoin Pop Art GIFs',
+    ogDescription: 'Download free animated Bitcoin PopArt GIFs by BitPopArt. Share fun Bitcoin pop art animations on social media and Nostr.',
+    ogImage: 'https://bitpopart.com/bitpopart-logo.png',
+    ogSiteName: 'BitPopArt',
+    ogUrl: 'https://bitpopart.com/gifs',
+    twitterCard: 'summary_large_image',
+    twitterTitle: 'Animated GIFs - BitPopArt | Free Bitcoin Pop Art GIFs',
+    twitterDescription: 'Download free animated Bitcoin PopArt GIFs by BitPopArt.',
+    twitterImage: 'https://bitpopart.com/bitpopart-logo.png',
+    robots: 'index, follow, max-snippet:-1, max-image-preview:large',
   });
 
   return (

@@ -48,8 +48,21 @@ export default function Avatars() {
   const tagSets = useMemo(() => avatars.map(a => a.hashtags), [avatars]);
 
   useSeoMeta({
-    title: 'Avatars - BitPopArt',
-    description: 'Free Bitcoin PopArt avatars by BitPopArt — download and use as your profile picture!',
+    title: 'Avatars - BitPopArt | Free Bitcoin Pop Art Profile Pictures',
+    description: 'Free Bitcoin PopArt avatars by BitPopArt. Download and use as your Nostr or social media profile picture! Unique Bitcoin pop art profile images.',
+    keywords: 'bitcoin avatar, pop art avatar, free profile picture, nostr avatar, bitcoin pfp, bitpopart avatar, free bitcoin profile picture, bitcoin art profile photo',
+    author: 'Johannes Oppewal (BitPopArt)',
+    ogType: 'website',
+    ogTitle: 'Avatars - BitPopArt | Free Bitcoin Pop Art Profile Pictures',
+    ogDescription: 'Free Bitcoin PopArt avatars by BitPopArt. Download and use as your Nostr or social media profile picture!',
+    ogImage: 'https://bitpopart.com/bitpopart-logo.png',
+    ogSiteName: 'BitPopArt',
+    ogUrl: 'https://bitpopart.com/avatars',
+    twitterCard: 'summary_large_image',
+    twitterTitle: 'Avatars - BitPopArt | Free Bitcoin Pop Art Profile Pictures',
+    twitterDescription: 'Free Bitcoin PopArt avatars by BitPopArt. Download and use as your Nostr profile picture!',
+    twitterImage: 'https://bitpopart.com/bitpopart-logo.png',
+    robots: 'index, follow, max-snippet:-1, max-image-preview:large',
   });
 
   return (

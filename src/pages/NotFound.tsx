@@ -11,8 +11,9 @@ const NotFound = () => {
   const location = useLocation();
 
   useSeoMeta({
-    title: "404 - Page Not Found",
-    description: "The page you are looking for could not be found. Return to the home page to continue browsing.",
+    title: "404 - Page Not Found | BitPopArt",
+    description: "The page you are looking for could not be found. Return to the BitPopArt home page to discover Bitcoin pop art, digital cards, and more.",
+    robots: 'noindex, follow',
   });
 
   useEffect(() => {

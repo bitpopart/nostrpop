@@ -48,8 +48,21 @@ export default function Banners() {
   const tagSets = useMemo(() => banners.map(b => b.hashtags), [banners]);
 
   useSeoMeta({
-    title: 'Header Banners - BitPopArt',
-    description: 'Free Bitcoin PopArt header banners by BitPopArt — download and use as your profile header!',
+    title: 'Header Banners - BitPopArt | Free Bitcoin Pop Art Banners',
+    description: 'Free Bitcoin PopArt header banners by BitPopArt. Download and use as your Nostr or social media profile header! Beautiful pop art banner designs.',
+    keywords: 'bitcoin banner, pop art banner, free header banner, nostr header, bitcoin profile banner, bitpopart banner, free bitcoin art banner, profile header download',
+    author: 'Johannes Oppewal (BitPopArt)',
+    ogType: 'website',
+    ogTitle: 'Header Banners - BitPopArt | Free Bitcoin Pop Art Banners',
+    ogDescription: 'Free Bitcoin PopArt header banners by BitPopArt. Download and use as your Nostr or social media profile header!',
+    ogImage: 'https://bitpopart.com/bitpopart-logo.png',
+    ogSiteName: 'BitPopArt',
+    ogUrl: 'https://bitpopart.com/banners',
+    twitterCard: 'summary_large_image',
+    twitterTitle: 'Header Banners - BitPopArt | Free Bitcoin Pop Art Banners',
+    twitterDescription: 'Free Bitcoin PopArt header banners by BitPopArt. Download and use as your Nostr profile header!',
+    twitterImage: 'https://bitpopart.com/bitpopart-logo.png',
+    robots: 'index, follow, max-snippet:-1, max-image-preview:large',
   });
 
   return (

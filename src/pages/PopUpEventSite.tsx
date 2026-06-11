@@ -130,8 +130,19 @@ export default function PopUpEventSite() {
   const [iframeKey, setIframeKey] = useState(0);
 
   useSeoMeta({
-    title: eventData ? `${eventData.title} - Event Project Site` : 'Event Project Site',
-    description: 'Extra PopUp event project information, brochure and brand downloads.',
+    title: eventData ? `${eventData.title} - BitPopArt Event Site` : 'Event Site - BitPopArt',
+    description: eventData?.description || 'BitPopArt pop-up event project information, brochure and brand downloads. Discover exclusive event materials by Johannes Oppewal.',
+    author: 'Johannes Oppewal (BitPopArt)',
+    ogType: 'website',
+    ogTitle: eventData ? `${eventData.title} - BitPopArt Event Site` : 'Event Site - BitPopArt',
+    ogDescription: eventData?.description || 'BitPopArt pop-up event project information, brochure and brand downloads.',
+    ogImage: 'https://bitpopart.com/bitpopart-logo.png',
+    ogSiteName: 'BitPopArt',
+    twitterCard: 'summary_large_image',
+    twitterTitle: eventData ? `${eventData.title} - BitPopArt Event Site` : 'Event Site - BitPopArt',
+    twitterDescription: eventData?.description || 'BitPopArt pop-up event project information, brochure and brand downloads.',
+    twitterImage: 'https://bitpopart.com/bitpopart-logo.png',
+    robots: 'index, follow',
   });
 
   if (isLoading) {

@@ -1201,7 +1201,24 @@ const Index = () => {
 
   useSeoMeta({
     title: 'BitPopArt - Love, Freedom & Joy Pop Art',
-    description: 'Create and share beautiful digital cards for any occasion. Discover the latest updates and featured cards from BitPopArt.',
+    description: 'Create Good Vibes POP cards, collect exclusive badges, join collaborative art projects, and discover Bitcoin-inspired pop art on Nostr. By world traveler & artist Johannes Oppewal.',
+    keywords: 'bitcoin art, pop art, nostr, satoshi, digital art, good vibes, love, freedom, joy, happiness, artist, johannes oppewal, world traveler, digital cards, badges, bitcoin lightning, bitcoin community',
+    author: 'Johannes Oppewal (BitPopArt)',
+    ogType: 'website',
+    ogTitle: 'BitPopArt - Love, Freedom & Joy Pop Art',
+    ogDescription: 'Create Good Vibes POP cards, collect exclusive badges, join collaborative art projects, and discover Bitcoin-inspired pop art on Nostr.',
+    ogImage: 'https://bitpopart.com/bitpopart-logo.png',
+    ogImageWidth: '1200',
+    ogImageHeight: '1200',
+    ogImageAlt: 'BitPopArt - Love, Freedom & Joy Pop Art',
+    ogSiteName: 'BitPopArt',
+    ogUrl: 'https://bitpopart.com/',
+    twitterCard: 'summary_large_image',
+    twitterTitle: 'BitPopArt - Love, Freedom & Joy Pop Art',
+    twitterDescription: 'Create Good Vibes POP cards, collect exclusive badges, join collaborative art projects, and discover Bitcoin-inspired pop art on Nostr.',
+    twitterImage: 'https://bitpopart.com/bitpopart-logo.png',
+    twitterImageAlt: 'BitPopArt logo',
+    robots: 'index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1',
   });
 
   return (
