@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { NRelay1 } from '@nostrify/nostrify';
+import { NPool, NRelay1 } from '@nostrify/nostrify';
 import { useCurrentUser } from './useCurrentUser';
 import { useToast } from './useToast';
 import { getAdminNpub, getAdminPubkeyHex } from '@/lib/adminUtils';
@@ -36,9 +36,8 @@ export const NOSTR_MARKETPLACES: NostrMarketplace[] = [
     logo: '🛒',
     relays: [
       'wss://nos.lol',
-      'wss://relay.damus.io',
       'wss://relay.primal.net',
-      'wss://relay.nostr.band',
+      'wss://relay.ditto.pub',
     ],
     formats: ['nip99'],
     color: 'from-purple-500 to-violet-600',
@@ -52,11 +51,9 @@ export const NOSTR_MARKETPLACES: NostrMarketplace[] = [
     description: 'Self-sovereign marketplace. NIP-99 & NIP-15. V4V, P2P, Bitcoin only.',
     logo: '⚡',
     relays: [
-      'wss://relay.damus.io',
       'wss://nos.lol',
       'wss://relay.primal.net',
-      'wss://nostr.mom',
-      'wss://adre.su',
+      'wss://relay.ditto.pub',
     ],
     formats: ['nip15', 'nip99'],
     color: 'from-orange-500 to-amber-600',
@@ -72,9 +69,8 @@ export const NOSTR_MARKETPLACES: NostrMarketplace[] = [
     logo: '🔗',
     relays: [
       'wss://relay.primal.net',
-      'wss://relay.damus.io',
-      'wss://relay.nostr.band',
-      'wss://purplepag.es',
+      'wss://nos.lol',
+      'wss://relay.ditto.pub',
     ],
     formats: ['nip99'],
     color: 'from-blue-500 to-cyan-600',
@@ -88,10 +84,9 @@ export const NOSTR_MARKETPLACES: NostrMarketplace[] = [
     description: 'Bitcoin-only storefronts. Works with Shopstr, Plebeian, and Conduit. Publish once, appear everywhere.',
     logo: '🔐',
     relays: [
-      'wss://relay.damus.io',
       'wss://nos.lol',
       'wss://relay.primal.net',
-      'wss://relay.nostr.band',
+      'wss://relay.ditto.pub',
     ],
     formats: ['nip99', 'nip15'],
     color: 'from-green-500 to-teal-600',
@@ -253,60 +248,82 @@ export interface PublishStatus {
 }
 
 /**
- * Publish a signed event to a single relay using NRelay1 (Nostrify).
- * NRelay1 handles NIP-42 AUTH challenges automatically when a signer is provided.
+ * Publish a signed event to a set of relays using a short-lived NPool.
+ * The pool is created fresh, used once, then immediately closed so it
+ * doesn't leak WebSocket connections into the main app pool.
+ * NRelay1 inside NPool handles NIP-42 AUTH challenges automatically.
  */
-async function publishViaRelay(
-  signedEvent: ReturnType<typeof buildNip99Event> & { id: string; pubkey: string; sig: string },
-  relayUrl: string,
+async function publishViaRelays(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  signedEvent: any,
+  relayUrls: string[],
   signer: { signEvent: (e: object) => Promise<typeof signedEvent> },
   timeoutMs = 12000
-): Promise<{ success: boolean; error?: string; log: string[] }> {
-  const log: string[] = [];
-  let relay: NRelay1 | null = null;
+): Promise<Array<{ relay: string; success: boolean; error?: string; log: string[] }>> {
+  const results: Array<{ relay: string; success: boolean; error?: string; log: string[] }> = [];
+  const relayLogs: Record<string, string[]> = {};
+  for (const r of relayUrls) relayLogs[r] = [];
 
+  let pool: NPool | null = null;
   try {
-    relay = new NRelay1(relayUrl, {
-      auth: async (challenge: string) => {
-        log.push(`← AUTH challenge received, signing NIP-42 response…`);
-        return signer.signEvent({
-          kind: 22242,
-          content: '',
-          tags: [
-            ['relay', relayUrl],
-            ['challenge', challenge],
-          ],
-          created_at: Math.floor(Date.now() / 1000),
+    pool = new NPool({
+      open(url: string) {
+        return new NRelay1(url, {
+          auth: async (challenge: string) => {
+            relayLogs[url]?.push(`← AUTH challenge, signing NIP-42…`);
+            return signer.signEvent({
+              kind: 22242,
+              content: '',
+              tags: [['relay', url], ['challenge', challenge]],
+              created_at: Math.floor(Date.now() / 1000),
+            });
+          },
         });
+      },
+      eventRouter: (_event) => relayUrls,
+      reqRouter: (filters) => {
+        const map = new Map<string, typeof filters>();
+        for (const r of relayUrls) map.set(r, filters);
+        return map;
       },
     });
 
-    log.push(`→ Connecting to ${relayUrl}`);
+    // Publish to all relays in parallel using the pool
+    const publishResults = await Promise.allSettled(
+      relayUrls.map(async (relayUrl) => {
+        relayLogs[relayUrl].push(`→ Sending EVENT kind:${signedEvent.kind}…`);
+        try {
+          await pool!.event(signedEvent, { signal: AbortSignal.timeout(timeoutMs) });
+          relayLogs[relayUrl].push(`✓ Accepted`);
+          return { relay: relayUrl, success: true };
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          relayLogs[relayUrl].push(`✗ ${msg}`);
+          return { relay: relayUrl, success: false, error: msg };
+        }
+      })
+    );
 
-    await Promise.race([
-      (async () => {
-        log.push(`→ Sending EVENT kind:${signedEvent.kind} id:${signedEvent.id.slice(0, 12)}…`);
-        await relay!.event(signedEvent, { signal: AbortSignal.timeout(timeoutMs - 2000) });
-        log.push(`✓ Relay accepted the event`);
-      })(),
-      new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error(`Timeout after ${timeoutMs / 1000}s`)), timeoutMs)
-      ),
-    ]);
-
-    return { success: true, log };
+    for (const r of relayUrls) {
+      const settled = publishResults[relayUrls.indexOf(r)];
+      if (settled.status === 'fulfilled') {
+        results.push({ ...settled.value, log: relayLogs[r] });
+      } else {
+        const msg = settled.reason instanceof Error ? settled.reason.message : String(settled.reason);
+        results.push({ relay: r, success: false, error: msg, log: [...relayLogs[r], `✗ ${msg}`] });
+      }
+    }
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    log.push(`✗ Error: ${msg}`);
-    return { success: false, error: msg, log };
+    for (const r of relayUrls) {
+      results.push({ relay: r, success: false, error: msg, log: [`✗ Pool error: ${msg}`] });
+    }
   } finally {
-    // Best-effort cleanup — NRelay1 may or may not expose a close method
-    try {
-      if (relay && typeof (relay as { close?: () => void }).close === 'function') {
-        (relay as { close: () => void }).close();
-      }
-    } catch { /* ignore */ }
+    // Always close the pool to free all WebSocket connections
+    try { pool?.close(); } catch { /* ignore */ }
   }
+
+  return results;
 }
 
 // ─── Hook ──────────────────────────────────────────────────────────────────────
@@ -364,15 +381,16 @@ export function usePublishToMarketplace() {
       }
     }
 
-    // Sign NIP-99 event once, publish to all NIP-99 relays
+    // Sign NIP-99 event once, publish to all NIP-99 relays in one pool
     if (nip99RelayMap.size > 0) {
       try {
         const unsigned = buildNip99Event(product, user.pubkey);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const signed = await user.signer.signEvent(unsigned) as any;
-        for (const [relay, mId] of nip99RelayMap) {
-          const result = await publishViaRelay(signed, relay, user.signer);
-          allResults.push({ marketplaceId: mId, relay, ...result });
+        const signed = await user.signer.signEvent(unsigned);
+        const relayList = Array.from(nip99RelayMap.keys());
+        const relayResults = await publishViaRelays(signed, relayList, user.signer);
+        for (const r of relayResults) {
+          const mId = nip99RelayMap.get(r.relay) ?? 'unknown';
+          allResults.push({ marketplaceId: mId, relay: r.relay, success: r.success, error: r.error, log: r.log });
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Signing failed';
@@ -382,15 +400,16 @@ export function usePublishToMarketplace() {
       }
     }
 
-    // Sign NIP-15 event once, publish to all NIP-15 relays
+    // Sign NIP-15 event once, publish to all NIP-15 relays in one pool
     if (nip15RelayMap.size > 0) {
       try {
         const unsigned = buildNip15Event(product);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const signed = await user.signer.signEvent(unsigned) as any;
-        for (const [relay, mId] of nip15RelayMap) {
-          const result = await publishViaRelay(signed, relay, user.signer);
-          allResults.push({ marketplaceId: mId, relay, ...result });
+        const signed = await user.signer.signEvent(unsigned);
+        const relayList = Array.from(nip15RelayMap.keys());
+        const relayResults = await publishViaRelays(signed, relayList, user.signer);
+        for (const r of relayResults) {
+          const mId = nip15RelayMap.get(r.relay) ?? 'unknown';
+          allResults.push({ marketplaceId: mId, relay: r.relay, success: r.success, error: r.error, log: r.log });
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Signing failed';

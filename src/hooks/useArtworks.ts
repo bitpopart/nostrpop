@@ -35,17 +35,18 @@ export function useArtworks(filter: ArtworkFilter = 'all', options?: { enabled?:
     queryKey: ['artworks', filter],
     enabled: options?.enabled !== false,
     queryFn: async (c) => {
-      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(5000)]);
+      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(15000)]);
 
       // Query for artwork events (kind 39239 and legacy kind 30023) and deletion events (kind 5)
       // ONLY query artworks from the admin (BitPopArt)
       // Use a single combined query to reduce relay load and prevent unbounded result sets.
+      // NOTE: omit '#t' filter — not all relays index custom tags reliably;
+      // filter by author+kind is sufficient and more relay-compatible.
       const allEvents = await nostr.query([
         {
           kinds: [39239, 30023], // Support both new and legacy artwork kinds
           authors: [ADMIN_PUBKEY], // ONLY show artworks from BitPopArt admin
-          '#t': ['artwork'], // Tag to identify artwork posts
-          limit: 50,
+          limit: 100,
         },
         {
           kinds: [5], // Deletion events — scoped to admin only to avoid unbounded relay results
@@ -241,9 +242,8 @@ export function useArtwork(artworkId: string, authorPubkey?: string) {
         {
           kinds: [39239, 30023],
           '#d': [artworkId],
-          '#t': ['artwork'],
           authors: [ADMIN_PUBKEY], // ONLY show artworks from BitPopArt admin
-          limit: 1
+          limit: 5
         },
         {
           kinds: [5], // Deletion events — scoped to admin only
