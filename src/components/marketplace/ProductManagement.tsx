@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { NOSTR_MARKETPLACES } from '@/hooks/usePublishToMarketplace';
 import { useMarketplaceProducts, useDeleteProduct } from '@/hooks/useMarketplaceProducts';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,6 +15,7 @@ import { EditProductForm } from './EditProductForm';
 import { AddProductByUrl } from './AddProductByUrl';
 import { LightningAddressDebugger } from './LightningAddressDebugger';
 import { CategoryManagement } from './CategoryManagement';
+import { PublishToMarketplaces } from './PublishToMarketplaces';
 import { formatCurrency } from '@/hooks/usePayment';
 import { useToast } from '@/hooks/useToast';
 import type { MarketplaceProduct } from '@/lib/sampleProducts';
@@ -28,10 +30,130 @@ import {
   TrendingUp,
   DollarSign,
   ShoppingCart,
-  AlertTriangle
+  AlertTriangle,
+  Store,
+  ExternalLink,
 } from 'lucide-react';
 
 import { useCategories } from '@/hooks/useCategories';
+
+/** Bulk publish panel shown in the Marketplaces tab */
+function BulkPublishPanel({ products }: { products: MarketplaceProduct[] }) {
+  return (
+    <div className="space-y-6">
+      {/* Info card */}
+      <Card className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-purple-200 dark:border-purple-800">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-purple-700 dark:text-purple-300">
+            <Store className="h-5 w-5" />
+            Publish Merch to Nostr Marketplaces
+          </CardTitle>
+          <CardDescription className="text-purple-600 dark:text-purple-400">
+            Your products are stored as Nostr events. Click <strong>"Publish to Markets"</strong>{' '}
+            on any product to broadcast it to the selected Nostr marketplaces. Each marketplace
+            reads from public relays — publishing once makes your listing visible everywhere.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {NOSTR_MARKETPLACES.map((market) => (
+              <a
+                key={market.id}
+                href={market.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 p-3 rounded-lg bg-white/70 dark:bg-gray-800/70 border border-purple-100 dark:border-purple-900 hover:shadow-md transition-all group"
+              >
+                <span
+                  className={`inline-flex items-center justify-center h-8 w-8 rounded-full bg-gradient-to-r ${market.color} text-white text-sm flex-shrink-0`}
+                >
+                  {market.logo}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1">
+                    <span className="text-sm font-semibold truncate">{market.name}</span>
+                    <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground" />
+                  </div>
+                  <div className="flex gap-1 mt-0.5">
+                    {market.formats.map((fmt) => (
+                      <span
+                        key={fmt}
+                        className="text-[10px] bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 px-1.5 rounded"
+                      >
+                        {fmt === 'nip99' ? 'NIP-99' : 'NIP-15'}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </a>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Product list with publish buttons */}
+      <div>
+        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <Package className="h-5 w-5 text-muted-foreground" />
+          Your Products ({products.length})
+        </h3>
+
+        {products.length === 0 ? (
+          <Card className="border-dashed">
+            <CardContent className="py-12 text-center">
+              <ShoppingCart className="h-10 w-10 mx-auto text-gray-400 mb-3" />
+              <p className="text-muted-foreground">No products found. Create some products first.</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-3">
+            {products.map((product) => (
+              <Card key={product.id} className="hover:shadow-md transition-shadow">
+                <CardContent className="p-4 flex items-center gap-4">
+                  {/* Thumbnail */}
+                  {product.images.length > 0 ? (
+                    <img
+                      src={product.images[0]}
+                      alt={product.name}
+                      className="h-14 w-14 rounded-lg object-cover flex-shrink-0 border"
+                    />
+                  ) : (
+                    <div className="h-14 w-14 rounded-lg bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center flex-shrink-0 border">
+                      {product.type === 'digital' ? (
+                        <Download className="h-5 w-5 text-gray-400" />
+                      ) : (
+                        <Package className="h-5 w-5 text-gray-400" />
+                      )}
+                    </div>
+                  )}
+
+                  {/* Product info */}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold truncate">{product.name}</p>
+                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                      <Badge variant="outline" className="text-xs">{product.category}</Badge>
+                      <Badge variant="secondary" className="text-xs">
+                        {product.type === 'digital' ? '⬇️ Digital' : '📦 Physical'}
+                      </Badge>
+                      <span className="text-sm font-semibold text-green-600 dark:text-green-400">
+                        {product.price} {product.currency}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Publish button */}
+                  <div className="flex-shrink-0">
+                    <PublishToMarketplaces product={product} />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export function ProductManagement() {
   const [activeTab, setActiveTab] = useState('products');
@@ -179,10 +301,11 @@ export function ProductManagement() {
 
       {/* Main Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-5 max-w-4xl">
+        <TabsList className="grid w-full grid-cols-6 max-w-5xl">
           <TabsTrigger value="products">Products</TabsTrigger>
           <TabsTrigger value="create">Create</TabsTrigger>
           <TabsTrigger value="import">Import URL</TabsTrigger>
+          <TabsTrigger value="publish" className="text-purple-600 dark:text-purple-400 font-semibold">Marketplaces</TabsTrigger>
           <TabsTrigger value="categories">Categories</TabsTrigger>
           <TabsTrigger value="debug">Debug</TabsTrigger>
         </TabsList>
@@ -344,21 +467,23 @@ export function ProductManagement() {
                         {formatCurrency(product.price, product.currency)}
                       </div>
 
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setEditingProduct(product)}
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
+                      <div className="flex space-x-2 flex-wrap gap-1">
+                         <PublishToMarketplaces product={product} />
 
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="outline" size="sm" disabled={isDeleting}>
-                              <Trash2 className="w-4 h-4 text-red-500" />
-                            </Button>
-                          </AlertDialogTrigger>
+                         <Button
+                           variant="outline"
+                           size="sm"
+                           onClick={() => setEditingProduct(product)}
+                         >
+                           <Edit className="w-4 h-4" />
+                         </Button>
+
+                         <AlertDialog>
+                           <AlertDialogTrigger asChild>
+                             <Button variant="outline" size="sm" disabled={isDeleting}>
+                               <Trash2 className="w-4 h-4 text-red-500" />
+                             </Button>
+                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
                               <AlertDialogTitle>Delete Product</AlertDialogTitle>
@@ -406,6 +531,10 @@ export function ProductManagement() {
               });
             }}
           />
+        </TabsContent>
+
+        <TabsContent value="publish" className="space-y-6">
+          <BulkPublishPanel products={filteredProducts} />
         </TabsContent>
 
         <TabsContent value="categories">

@@ -65,6 +65,7 @@ import {
   Clapperboard,
   Globe,
   CalendarClock,
+  Store,
 } from 'lucide-react';
 
 const Admin = () => {
@@ -186,6 +187,14 @@ const Admin = () => {
       color: 'from-amber-500 to-orange-500',
       action: () => setActiveTab('shop'),
       badge: 'Shop'
+    },
+    {
+      title: 'Publish to Markets',
+      description: 'Broadcast merch to Shopstr, Plebeian, Conduit & Cypher',
+      icon: Store,
+      color: 'from-purple-500 to-pink-500',
+      action: () => { setActiveTab('shop'); },
+      badge: 'Markets'
     },
   ];
 
