@@ -370,12 +370,12 @@ const Admin = () => {
             <TabsTrigger value="app-avatars">Avatars</TabsTrigger>
             <TabsTrigger value="app-banners">Banners</TabsTrigger>
             <TabsTrigger
-              value="poppost-external"
-              onClick={() => window.open('https://www.bitpopart.com/poppost', '_blank')}
+              value="poppost"
+              onClick={() => navigate('/poppost')}
               className="flex items-center gap-1 text-orange-600 dark:text-orange-400 font-semibold"
             >
               <CalendarClock className="h-3.5 w-3.5" />
-              PopPost ↗
+              PopPost
             </TabsTrigger>
           </TabsList>
 
