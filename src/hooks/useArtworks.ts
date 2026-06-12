@@ -106,6 +106,12 @@ export function useArtworks(filter: ArtworkFilter = 'all', options?: { enabled?:
               return null;
             }
 
+            // Skip events with non-JSON content (e.g. blog posts with plain text)
+            const trimmed = event.content.trim();
+            if (!trimmed.startsWith('{')) {
+              return null;
+            }
+
             const content = JSON.parse(event.content);
             const dTag = event.tags.find(([name]) => name === 'd')?.[1];
             const titleTag = event.tags.find(([name]) => name === 'title')?.[1];
@@ -199,9 +205,10 @@ export function useArtworks(filter: ArtworkFilter = 'all', options?: { enabled?:
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       });
 
-      // If no artworks found from Nostr events, return sample data for demonstration
+      // If no valid artworks found from Nostr events, return empty array
+      // (do NOT fall back to sample data — fake auctions would show in the banner)
       if (sortedArtworks.length === 0) {
-        return getArtworksByFilter(filter);
+        return [];
       }
 
       // Apply filter to Nostr data
