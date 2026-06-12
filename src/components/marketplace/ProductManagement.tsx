@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { NOSTR_MARKETPLACES } from '@/hooks/usePublishToMarketplace';
+import { NOSTR_MARKETPLACES, ADMIN_NPUB, ADMIN_HEX_PUBKEY, getLastPublished } from '@/hooks/usePublishToMarketplace';
 import { useMarketplaceProducts, useDeleteProduct } from '@/hooks/useMarketplaceProducts';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -33,57 +33,56 @@ import {
   AlertTriangle,
   Store,
   ExternalLink,
+  CheckCircle2,
+  Clock,
+  ArrowUpRight,
 } from 'lucide-react';
 
 import { useCategories } from '@/hooks/useCategories';
 
 /** Bulk publish panel shown in the Marketplaces tab */
 function BulkPublishPanel({ products }: { products: MarketplaceProduct[] }) {
+  const [panelTab, setPanelTab] = useState<'products' | 'shops'>('products');
+
   return (
-    <div className="space-y-6">
-      {/* Info card */}
+    <div className="space-y-5">
+      {/* Header banner */}
       <Card className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-purple-200 dark:border-purple-800">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-purple-700 dark:text-purple-300">
-            <Store className="h-5 w-5" />
-            Publish Merch to Nostr Marketplaces
-          </CardTitle>
-          <CardDescription className="text-purple-600 dark:text-purple-400">
-            Your products are stored as Nostr events. Click <strong>"Publish to Markets"</strong>{' '}
-            on any product to broadcast it to the selected Nostr marketplaces. Each marketplace
-            reads from public relays — publishing once makes your listing visible everywhere.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <CardContent className="p-5">
+          <div className="flex items-start gap-3">
+            <div className="p-2.5 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 text-white flex-shrink-0">
+              <Store className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="font-bold text-purple-700 dark:text-purple-300 text-lg leading-tight">
+                Publish Merch to Nostr Marketplaces
+              </h2>
+              <p className="text-sm text-purple-600 dark:text-purple-400 mt-1">
+                Click <strong>"Publish to Markets"</strong> on any product below to broadcast it
+                to Shopstr, Plebeian Market, Conduit, and Cypher Space simultaneously.
+                Your listing appears everywhere buyers are shopping — no account on each platform needed.
+              </p>
+            </div>
+          </div>
+
+          {/* Marketplace quick-link row */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4">
             {NOSTR_MARKETPLACES.map((market) => (
               <a
                 key={market.id}
-                href={market.url}
+                href={market.shopUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 p-3 rounded-lg bg-white/70 dark:bg-gray-800/70 border border-purple-100 dark:border-purple-900 hover:shadow-md transition-all group"
+                className="flex items-center gap-2 p-2.5 rounded-lg bg-white/80 dark:bg-gray-800/80 border border-purple-100 dark:border-purple-900 hover:shadow-md hover:border-purple-300 transition-all group"
               >
-                <span
-                  className={`inline-flex items-center justify-center h-8 w-8 rounded-full bg-gradient-to-r ${market.color} text-white text-sm flex-shrink-0`}
-                >
+                <span className={`inline-flex items-center justify-center h-7 w-7 rounded-full bg-gradient-to-r ${market.color} text-white text-sm flex-shrink-0`}>
                   {market.logo}
                 </span>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1">
-                    <span className="text-sm font-semibold truncate">{market.name}</span>
-                    <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground" />
-                  </div>
-                  <div className="flex gap-1 mt-0.5">
-                    {market.formats.map((fmt) => (
-                      <span
-                        key={fmt}
-                        className="text-[10px] bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 px-1.5 rounded"
-                      >
-                        {fmt === 'nip99' ? 'NIP-99' : 'NIP-15'}
-                      </span>
-                    ))}
-                  </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold truncate leading-tight">{market.name}</p>
+                  <p className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+                    My Shop <ArrowUpRight className="h-2.5 w-2.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </p>
                 </div>
               </a>
             ))}
@@ -91,66 +90,238 @@ function BulkPublishPanel({ products }: { products: MarketplaceProduct[] }) {
         </CardContent>
       </Card>
 
-      {/* Product list with publish buttons */}
-      <div>
-        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <Package className="h-5 w-5 text-muted-foreground" />
-          Your Products ({products.length})
-        </h3>
+      {/* Sub-tabs */}
+      <div className="flex border-b">
+        {([
+          { id: 'products', label: `Products (${products.length})`, icon: Package },
+          { id: 'shops', label: 'My Shop Pages', icon: Store },
+        ] as const).map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            onClick={() => setPanelTab(id)}
+            className={`flex items-center gap-1.5 px-4 py-2.5 text-sm border-b-2 transition-colors ${
+              panelTab === id
+                ? 'border-purple-500 text-purple-600 dark:text-purple-400 font-medium'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <Icon className="h-3.5 w-3.5" />
+            {label}
+          </button>
+        ))}
+      </div>
 
-        {products.length === 0 ? (
-          <Card className="border-dashed">
-            <CardContent className="py-12 text-center">
-              <ShoppingCart className="h-10 w-10 mx-auto text-gray-400 mb-3" />
-              <p className="text-muted-foreground">No products found. Create some products first.</p>
+      {/* Products list */}
+      {panelTab === 'products' && (
+        <div>
+          {products.length === 0 ? (
+            <Card className="border-dashed">
+              <CardContent className="py-12 text-center">
+                <ShoppingCart className="h-10 w-10 mx-auto text-gray-400 mb-3" />
+                <p className="text-muted-foreground">No products found. Create some products first.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {products.map((product) => {
+                // Check published status across all marketplaces
+                const publishedMarkets = NOSTR_MARKETPLACES.filter(
+                  (m) => getLastPublished(product.id, m.id)?.success
+                );
+
+                return (
+                  <Card key={product.id} className="hover:shadow-md transition-shadow">
+                    <CardContent className="p-4 flex items-center gap-4">
+                      {/* Thumbnail */}
+                      {product.images.length > 0 ? (
+                        <img
+                          src={product.images[0]}
+                          alt={product.name}
+                          className="h-14 w-14 rounded-lg object-cover flex-shrink-0 border"
+                        />
+                      ) : (
+                        <div className="h-14 w-14 rounded-lg bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center flex-shrink-0 border">
+                          {product.type === 'digital'
+                            ? <Download className="h-5 w-5 text-gray-400" />
+                            : <Package className="h-5 w-5 text-gray-400" />}
+                        </div>
+                      )}
+
+                      {/* Product info */}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold truncate">{product.name}</p>
+                        <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                          <Badge variant="outline" className="text-xs">{product.category}</Badge>
+                          <Badge variant="secondary" className="text-xs">
+                            {product.type === 'digital' ? '⬇️ Digital' : '📦 Physical'}
+                          </Badge>
+                          <span className="text-sm font-semibold text-green-600 dark:text-green-400">
+                            {product.price} {product.currency}
+                          </span>
+                        </div>
+
+                        {/* Published status indicators */}
+                        {publishedMarkets.length > 0 ? (
+                          <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                            <span className="text-[10px] text-muted-foreground">Live on:</span>
+                            {publishedMarkets.map((m) => {
+                              const entry = getLastPublished(product.id, m.id);
+                              return (
+                                <span
+                                  key={m.id}
+                                  className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800"
+                                >
+                                  <CheckCircle2 className="h-2.5 w-2.5" />
+                                  {m.logo} {m.name}
+                                  {entry && (
+                                    <span className="text-green-500 dark:text-green-500 ml-0.5">
+                                      · {new Date(entry.publishedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                    </span>
+                                  )}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1 mt-1.5">
+                            <Clock className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-[10px] text-muted-foreground">Not yet published to any marketplace</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Publish button */}
+                      <div className="flex-shrink-0">
+                        <PublishToMarketplaces product={product} />
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* My shop pages */}
+      {panelTab === 'shops' && (
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            These are your direct BitPopArt seller profile pages on each Nostr marketplace.
+            Once you publish a product, it appears on all of these pages automatically.
+          </p>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            {NOSTR_MARKETPLACES.map((market) => {
+              const publishedCount = products.filter(
+                (p) => getLastPublished(p.id, market.id)?.success
+              ).length;
+
+              return (
+                <Card key={market.id} className={`border overflow-hidden ${market.colorLight}`}>
+                  <CardContent className="p-0">
+                    {/* Colored top bar */}
+                    <div className={`h-1.5 bg-gradient-to-r ${market.color}`} />
+                    <div className="p-4">
+                      <div className="flex items-center gap-3 mb-3">
+                        <span className={`inline-flex items-center justify-center h-10 w-10 rounded-full bg-gradient-to-r ${market.color} text-white text-xl flex-shrink-0 shadow-sm`}>
+                          {market.logo}
+                        </span>
+                        <div>
+                          <p className="font-bold">{market.name}</p>
+                          <p className="text-xs text-muted-foreground">{market.description}</p>
+                        </div>
+                      </div>
+
+                      {/* Stats */}
+                      <div className="flex items-center gap-2 mb-3 text-xs">
+                        {publishedCount > 0 ? (
+                          <Badge className="bg-green-500 text-white border-0 text-xs">
+                            <CheckCircle2 className="h-3 w-3 mr-1" />
+                            {publishedCount} product{publishedCount !== 1 ? 's' : ''} published
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary" className="text-xs">
+                            <Clock className="h-3 w-3 mr-1" />
+                            No products published yet
+                          </Badge>
+                        )}
+                        <div className="flex gap-1">
+                          {market.formats.map((fmt) => (
+                            <Badge key={fmt} variant="outline" className="text-[10px] py-0">
+                              {fmt === 'nip99' ? 'NIP-99' : 'NIP-15'}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Links */}
+                      <div className="space-y-2">
+                        <a
+                          href={market.shopUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-between p-3 rounded-lg bg-white/80 dark:bg-gray-800/80 border hover:shadow-sm transition-all group"
+                        >
+                          <div>
+                            <p className="text-sm font-semibold">My BitPopArt Shop</p>
+                            <p className="text-xs text-muted-foreground font-mono truncate max-w-[200px]">
+                              {market.shopUrl.replace('https://', '')}
+                            </p>
+                          </div>
+                          <ArrowUpRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors flex-shrink-0" />
+                        </a>
+                        <a
+                          href={market.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-between p-2.5 rounded-lg bg-white/50 dark:bg-gray-800/40 border hover:bg-white/80 dark:hover:bg-gray-800/60 transition-all group"
+                        >
+                          <p className="text-xs text-muted-foreground">Browse {market.name}</p>
+                          <ExternalLink className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
+                        </a>
+                      </div>
+
+                      {/* Relay tags */}
+                      <div className="flex flex-wrap gap-1 mt-3">
+                        {market.relays.map((relay) => (
+                          <span key={relay} className="text-[10px] bg-white/60 dark:bg-gray-800/60 border px-1.5 py-0.5 rounded font-mono text-muted-foreground">
+                            {relay.replace('wss://', '')}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+
+          {/* Nostr key reference */}
+          <Card className="bg-muted/30 border">
+            <CardContent className="p-4 space-y-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Your Nostr Identity (used on all marketplaces)</p>
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground w-10 flex-shrink-0">npub</span>
+                  <code className="text-xs bg-white dark:bg-gray-800 border px-2 py-1 rounded font-mono break-all flex-1">
+                    {ADMIN_NPUB}
+                  </code>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground w-10 flex-shrink-0">hex</span>
+                  <code className="text-xs bg-white dark:bg-gray-800 border px-2 py-1 rounded font-mono break-all flex-1">
+                    {ADMIN_HEX_PUBKEY}
+                  </code>
+                </div>
+              </div>
+              <p className="text-[10px] text-muted-foreground pt-1">
+                Your Nostr public key is your merchant identity. All marketplace clients use it to show your shop — no separate account creation required on each platform.
+              </p>
             </CardContent>
           </Card>
-        ) : (
-          <div className="space-y-3">
-            {products.map((product) => (
-              <Card key={product.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-4 flex items-center gap-4">
-                  {/* Thumbnail */}
-                  {product.images.length > 0 ? (
-                    <img
-                      src={product.images[0]}
-                      alt={product.name}
-                      className="h-14 w-14 rounded-lg object-cover flex-shrink-0 border"
-                    />
-                  ) : (
-                    <div className="h-14 w-14 rounded-lg bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center flex-shrink-0 border">
-                      {product.type === 'digital' ? (
-                        <Download className="h-5 w-5 text-gray-400" />
-                      ) : (
-                        <Package className="h-5 w-5 text-gray-400" />
-                      )}
-                    </div>
-                  )}
-
-                  {/* Product info */}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold truncate">{product.name}</p>
-                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                      <Badge variant="outline" className="text-xs">{product.category}</Badge>
-                      <Badge variant="secondary" className="text-xs">
-                        {product.type === 'digital' ? '⬇️ Digital' : '📦 Physical'}
-                      </Badge>
-                      <span className="text-sm font-semibold text-green-600 dark:text-green-400">
-                        {product.price} {product.currency}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Publish button */}
-                  <div className="flex-shrink-0">
-                    <PublishToMarketplaces product={product} />
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

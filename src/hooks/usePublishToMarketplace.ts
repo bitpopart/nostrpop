@@ -3,16 +3,25 @@ import { useCurrentUser } from './useCurrentUser';
 import { useToast } from './useToast';
 import type { MarketplaceProduct } from '@/lib/sampleProducts';
 
+// User's Nostr pubkey (hex) and npub — used to build shop profile URLs
+export const ADMIN_HEX_PUBKEY = '7d33ba57d8a6e8869a1f1d5215254597594ac0dbfeb01b690def8c461b82db35';
+export const ADMIN_NPUB = 'npub105em547c5m5gdxslr4fp2f29jav54sxml6cpk6gda7xyvxuzmv6s84a642';
+
 export interface NostrMarketplace {
   id: string;
   name: string;
   url: string;
+  /** Direct link to the admin's shop/profile page on this marketplace */
+  shopUrl: string;
+  /** Optional search URL for listings by this seller */
+  searchUrl?: string;
   description: string;
   logo: string;
   relays: string[];
   /** Which NIP format this marketplace prefers */
   formats: ('nip15' | 'nip99')[];
   color: string;
+  colorLight: string;
 }
 
 export const NOSTR_MARKETPLACES: NostrMarketplace[] = [
@@ -20,6 +29,7 @@ export const NOSTR_MARKETPLACES: NostrMarketplace[] = [
     id: 'shopstr',
     name: 'Shopstr',
     url: 'https://shopstr.market',
+    shopUrl: `https://shopstr.market/${ADMIN_NPUB}`,
     description: 'Bitcoin-native Nostr marketplace. NIP-99 classified listings. Pay with Lightning or Cashu.',
     logo: '🛒',
     relays: [
@@ -30,12 +40,14 @@ export const NOSTR_MARKETPLACES: NostrMarketplace[] = [
     ],
     formats: ['nip99'],
     color: 'from-purple-500 to-violet-600',
+    colorLight: 'bg-purple-50 border-purple-200 dark:bg-purple-900/20 dark:border-purple-800',
   },
   {
     id: 'plebeian',
     name: 'Plebeian Market',
     url: 'https://plebeian.market',
-    description: 'Self-sovereign marketplace. NIP-15 stalls & products. V4V, P2P, Bitcoin only.',
+    shopUrl: `https://plebeian.market/profile/${ADMIN_HEX_PUBKEY}`,
+    description: 'Self-sovereign marketplace. NIP-99 & NIP-15. V4V, P2P, Bitcoin only.',
     logo: '⚡',
     relays: [
       'wss://relay.damus.io',
@@ -44,13 +56,16 @@ export const NOSTR_MARKETPLACES: NostrMarketplace[] = [
       'wss://nostr.mom',
       'wss://adre.su',
     ],
-    formats: ['nip15'],
+    formats: ['nip15', 'nip99'],
     color: 'from-orange-500 to-amber-600',
+    colorLight: 'bg-orange-50 border-orange-200 dark:bg-orange-900/20 dark:border-orange-800',
   },
   {
     id: 'conduit',
     name: 'Conduit Market',
     url: 'https://conduit.market',
+    shopUrl: `https://shop.conduit.market`,
+    searchUrl: `https://shop.conduit.market`,
     description: 'Decentralized marketplace on Nostr. NIP-99 listings. Zero fees, instant Bitcoin payouts.',
     logo: '🔗',
     relays: [
@@ -61,11 +76,13 @@ export const NOSTR_MARKETPLACES: NostrMarketplace[] = [
     ],
     formats: ['nip99'],
     color: 'from-blue-500 to-cyan-600',
+    colorLight: 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800',
   },
   {
     id: 'cypher',
     name: 'Cypher Space',
     url: 'https://cypher.space',
+    shopUrl: `https://cypher.space`,
     description: 'Bitcoin-only storefronts. Works with Shopstr, Plebeian, and Conduit. Publish once, appear everywhere.',
     logo: '🔐',
     relays: [
@@ -76,15 +93,56 @@ export const NOSTR_MARKETPLACES: NostrMarketplace[] = [
     ],
     formats: ['nip99', 'nip15'],
     color: 'from-green-500 to-teal-600',
+    colorLight: 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800',
   },
 ];
 
+// ─── Local-storage publish history ────────────────────────────────────────────
+const PUBLISH_HISTORY_KEY = 'bitpopart_marketplace_publish_history';
+
+export interface PublishHistoryEntry {
+  productId: string;
+  marketplaceId: string;
+  publishedAt: number; // unix timestamp ms
+  success: boolean;
+}
+
+export function getPublishHistory(): PublishHistoryEntry[] {
+  try {
+    const raw = localStorage.getItem(PUBLISH_HISTORY_KEY);
+    return raw ? (JSON.parse(raw) as PublishHistoryEntry[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function savePublishHistory(history: PublishHistoryEntry[]) {
+  localStorage.setItem(PUBLISH_HISTORY_KEY, JSON.stringify(history));
+}
+
+export function addPublishHistoryEntry(entry: PublishHistoryEntry) {
+  const history = getPublishHistory();
+  // Keep only the latest entry per (productId + marketplaceId)
+  const filtered = history.filter(
+    (h) => !(h.productId === entry.productId && h.marketplaceId === entry.marketplaceId)
+  );
+  filtered.push(entry);
+  savePublishHistory(filtered);
+}
+
+export function getLastPublished(productId: string, marketplaceId: string): PublishHistoryEntry | undefined {
+  return getPublishHistory().find(
+    (h) => h.productId === productId && h.marketplaceId === marketplaceId
+  );
+}
+
+// ─── Event builders ────────────────────────────────────────────────────────────
+
 /** Build a NIP-99 (kind 30402) classified listing from a product */
-function buildNip99Event(product: MarketplaceProduct, userPubkey: string) {
+export function buildNip99Event(product: MarketplaceProduct, userPubkey: string) {
   const dTag = `bitpopart-${product.id}`;
   const now = Math.floor(Date.now() / 1000);
 
-  // Build image tags  
   const imageTags = product.images.map((url) => ['image', url]);
 
   const tags: string[][] = [
@@ -105,24 +163,20 @@ function buildNip99Event(product: MarketplaceProduct, userPubkey: string) {
     tags.push(['r', product.contact_url]);
   }
 
-  // Content is markdown description for NIP-99
-  const content = [
-    `## ${product.name}`,
-    '',
-    product.description,
-    '',
-    `**Price:** ${product.price} ${product.currency}`,
-    `**Category:** ${product.category}`,
-    `**Type:** ${product.type === 'digital' ? 'Digital Download' : 'Physical Product'}`,
-    '',
+  const specsSection =
     product.specs && product.specs.length > 0
-      ? `**Specs:**\n${product.specs.map(([k, v]) => `- ${k}: ${v}`).join('\n')}`
-      : '',
-    '',
-    `*Listed by [BitPopArt](https://bitpopart.com) — Nostr pubkey: ${userPubkey.slice(0, 16)}...*`,
-  ]
-    .filter((line) => line !== undefined)
-    .join('\n');
+      ? `\n\n**Specs:**\n${product.specs.map(([k, v]) => `- ${k}: ${v}`).join('\n')}`
+      : '';
+
+  const content = `## ${product.name}
+
+${product.description}
+
+**Price:** ${product.price} ${product.currency}
+**Category:** ${product.category}
+**Type:** ${product.type === 'digital' ? 'Digital Download' : 'Physical Product'}${specsSection}
+
+*Listed by [BitPopArt](https://bitpopart.com) — Nostr pubkey: ${userPubkey.slice(0, 16)}...*`;
 
   return {
     kind: 30402,
@@ -133,7 +187,7 @@ function buildNip99Event(product: MarketplaceProduct, userPubkey: string) {
 }
 
 /** Build a NIP-15 (kind 30018) product event from a product */
-function buildNip15Event(product: MarketplaceProduct) {
+export function buildNip15Event(product: MarketplaceProduct) {
   const dTag = `bitpopart-${product.id}`;
   const now = Math.floor(Date.now() / 1000);
 
@@ -178,6 +232,8 @@ function buildNip15Event(product: MarketplaceProduct) {
     created_at: now,
   };
 }
+
+// ─── Relay publish ──────────────────────────────────────────────────────────────
 
 export interface PublishResult {
   marketplaceId: string;
@@ -232,11 +288,9 @@ async function publishToRelay(
                 resolve({ success: false, error: (data[3] as string) || 'Relay rejected' });
               }
             }
-          } else if (Array.isArray(data) && data[0] === 'NOTICE') {
-            // Just a notice, wait for OK
           }
         } catch {
-          // Ignore parse errors
+          // ignore
         }
       };
 
@@ -267,6 +321,8 @@ async function publishToRelay(
     }
   });
 }
+
+// ─── Hook ──────────────────────────────────────────────────────────────────────
 
 export function usePublishToMarketplace() {
   const { user } = useCurrentUser();
@@ -299,7 +355,6 @@ export function usePublishToMarketplace() {
       return;
     }
 
-    // Set publishing state
     setPublishStatuses((prev) => ({
       ...prev,
       [product.id]: { productId: product.id, results: [], isPublishing: true },
@@ -307,74 +362,58 @@ export function usePublishToMarketplace() {
 
     const allResults: PublishResult[] = [];
 
-    // Collect unique relays per format needed
-    const nip99Relays = new Set<string>();
-    const nip15Relays = new Set<string>();
+    // Collect unique relays per format
+    const nip99RelayMap = new Map<string, string>(); // relay -> marketplaceId
+    const nip15RelayMap = new Map<string, string>();
 
     for (const marketplace of targetMarketplaces) {
       for (const relay of marketplace.relays) {
-        if (marketplace.formats.includes('nip99')) nip99Relays.add(relay);
-        if (marketplace.formats.includes('nip15')) nip15Relays.add(relay);
+        if (marketplace.formats.includes('nip99') && !nip99RelayMap.has(relay)) {
+          nip99RelayMap.set(relay, marketplace.id);
+        }
+        if (marketplace.formats.includes('nip15') && !nip15RelayMap.has(relay)) {
+          nip15RelayMap.set(relay, marketplace.id);
+        }
       }
     }
 
-    // Sign and publish NIP-99 event if needed
-    if (nip99Relays.size > 0) {
+    // Sign and publish NIP-99
+    if (nip99RelayMap.size > 0) {
       try {
-        const nip99Unsigned = buildNip99Event(product, user.pubkey);
-        const nip99Signed = await user.signer.signEvent(nip99Unsigned);
-
-        for (const relay of nip99Relays) {
-          const marketplace = targetMarketplaces.find((m) =>
-            m.relays.includes(relay) && m.formats.includes('nip99')
-          );
-          const result = await publishToRelay(nip99Signed as Record<string, unknown>, relay);
-          allResults.push({
-            marketplaceId: marketplace?.id ?? 'unknown',
-            relay,
-            success: result.success,
-            error: result.error,
-          });
+        const unsigned = buildNip99Event(product, user.pubkey);
+        const signed = await user.signer.signEvent(unsigned);
+        for (const [relay, mId] of nip99RelayMap) {
+          const result = await publishToRelay(signed as Record<string, unknown>, relay);
+          allResults.push({ marketplaceId: mId, relay, ...result });
         }
       } catch (err) {
-        const errMsg = err instanceof Error ? err.message : 'Signing failed';
-        for (const relay of nip99Relays) {
+        for (const [relay, mId] of nip99RelayMap) {
           allResults.push({
-            marketplaceId: 'unknown',
+            marketplaceId: mId,
             relay,
             success: false,
-            error: errMsg,
+            error: err instanceof Error ? err.message : 'Signing failed',
           });
         }
       }
     }
 
-    // Sign and publish NIP-15 event if needed
-    if (nip15Relays.size > 0) {
+    // Sign and publish NIP-15
+    if (nip15RelayMap.size > 0) {
       try {
-        const nip15Unsigned = buildNip15Event(product);
-        const nip15Signed = await user.signer.signEvent(nip15Unsigned);
-
-        for (const relay of nip15Relays) {
-          const marketplace = targetMarketplaces.find((m) =>
-            m.relays.includes(relay) && m.formats.includes('nip15')
-          );
-          const result = await publishToRelay(nip15Signed as Record<string, unknown>, relay);
-          allResults.push({
-            marketplaceId: marketplace?.id ?? 'unknown',
-            relay,
-            success: result.success,
-            error: result.error,
-          });
+        const unsigned = buildNip15Event(product);
+        const signed = await user.signer.signEvent(unsigned);
+        for (const [relay, mId] of nip15RelayMap) {
+          const result = await publishToRelay(signed as Record<string, unknown>, relay);
+          allResults.push({ marketplaceId: mId, relay, ...result });
         }
       } catch (err) {
-        const errMsg = err instanceof Error ? err.message : 'Signing failed';
-        for (const relay of nip15Relays) {
+        for (const [relay, mId] of nip15RelayMap) {
           allResults.push({
-            marketplaceId: 'unknown',
+            marketplaceId: mId,
             relay,
             success: false,
-            error: errMsg,
+            error: err instanceof Error ? err.message : 'Signing failed',
           });
         }
       }
@@ -382,6 +421,19 @@ export function usePublishToMarketplace() {
 
     const successCount = allResults.filter((r) => r.success).length;
     const failCount = allResults.filter((r) => !r.success).length;
+
+    // Persist publish history
+    const now = Date.now();
+    for (const mId of selectedMarketplaceIds) {
+      const mResults = allResults.filter((r) => r.marketplaceId === mId);
+      const mSuccess = mResults.some((r) => r.success);
+      addPublishHistoryEntry({
+        productId: product.id,
+        marketplaceId: mId,
+        publishedAt: now,
+        success: mSuccess,
+      });
+    }
 
     setPublishStatuses((prev) => ({
       ...prev,
