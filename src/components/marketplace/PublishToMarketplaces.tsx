@@ -48,6 +48,7 @@ import {
   Code2,
   RefreshCw,
   ArrowUpRight,
+  Terminal,
 } from 'lucide-react';
 
 interface PublishToMarketplacesProps {
@@ -57,12 +58,21 @@ interface PublishToMarketplacesProps {
 // ─── Relay status row ────────────────────────────────────────────────────────
 function RelayStatusRow({ result }: { result: PublishResult }) {
   const label = result.relay.replace('wss://', '');
+  const tooltip = [...(result.log ?? []), result.error ? `Error: ${result.error}` : ''].filter(Boolean).join('\n');
+
   if (result.success) {
     return (
-      <div className="flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400">
-        <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0" />
-        <span className="truncate">{label}</span>
-      </div>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400 cursor-default">
+              <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0" />
+              <span className="truncate">{label}</span>
+            </div>
+          </TooltipTrigger>
+          {tooltip && <TooltipContent className="max-w-xs whitespace-pre-wrap font-mono text-[10px]"><p>{tooltip}</p></TooltipContent>}
+        </Tooltip>
+      </TooltipProvider>
     );
   }
   return (
@@ -72,9 +82,12 @@ function RelayStatusRow({ result }: { result: PublishResult }) {
           <div className="flex items-center gap-1.5 text-xs text-red-500 dark:text-red-400 cursor-help">
             <XCircle className="h-3.5 w-3.5 flex-shrink-0" />
             <span className="truncate">{label}</span>
+            {result.error && <span className="text-[10px] text-red-400 truncate max-w-[120px]">— {result.error}</span>}
           </div>
         </TooltipTrigger>
-        <TooltipContent><p>{result.error ?? 'Failed'}</p></TooltipContent>
+        <TooltipContent className="max-w-xs whitespace-pre-wrap font-mono text-[10px]">
+          <p>{tooltip || result.error || 'Failed'}</p>
+        </TooltipContent>
       </Tooltip>
     </TooltipProvider>
   );
@@ -492,6 +505,37 @@ export function PublishToMarketplaces({ product }: PublishToMarketplacesProps) {
                       </div>
                     )}
                   </div>
+                )}
+
+                {/* Debug log — full relay transcript */}
+                {hasResults && !isPublishing && (
+                  <details className="group">
+                    <summary className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer hover:text-foreground select-none list-none">
+                      <Terminal className="h-3.5 w-3.5" />
+                      Relay debug log
+                      <span className="text-[10px] opacity-60">(click to expand)</span>
+                    </summary>
+                    <ScrollArea className="h-40 mt-2 border rounded-lg bg-black/90 dark:bg-black/70">
+                      <div className="p-3 font-mono text-[10px] space-y-0.5">
+                        {lastResults.map((r, i) => (
+                          <div key={i}>
+                            <p className="text-yellow-400/80"># {r.relay.replace('wss://', '')} [{r.marketplaceId}]</p>
+                            {(r.log ?? []).map((line, j) => (
+                              <p key={j} className={
+                                line.startsWith('✓') ? 'text-green-400' :
+                                line.startsWith('✗') ? 'text-red-400' :
+                                line.startsWith('←') ? 'text-purple-300' :
+                                'text-gray-300'
+                              }>{line}</p>
+                            ))}
+                            {!r.success && r.error && !(r.log ?? []).some(l => l.includes(r.error!)) && (
+                              <p className="text-red-400">✗ {r.error}</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </details>
                 )}
               </div>
             )}
