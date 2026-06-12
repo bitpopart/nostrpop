@@ -41,6 +41,7 @@ import Avatars from "./pages/Avatars";
 import Banners from "./pages/Banners";
 import Frl from "./pages/Frl";
 import AppPage from "./pages/AppPage";
+import PopPost from "./pages/PopPost";
 import NotFound from "./pages/NotFound";
 
 export function AppRouter() {
@@ -92,6 +93,7 @@ export function AppRouter() {
           <Route path="/banners" element={<Banners />} />
           <Route path="/frl" element={<Frl />} />
           <Route path="/app" element={<AppPage />} />
+          <Route path="/poppost" element={<PopPost />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -63,7 +63,8 @@ import {
   Smartphone,
   Gamepad2,
   Clapperboard,
-  Globe
+  Globe,
+  CalendarClock,
 } from 'lucide-react';
 
 const Admin = () => {
@@ -189,6 +190,14 @@ const Admin = () => {
   ];
 
   const contentActions = [
+    {
+      title: 'PopPost Scheduler',
+      description: 'Schedule & share BitPopArt content to Nostr community',
+      icon: CalendarClock,
+      color: 'from-orange-500 to-pink-500',
+      action: () => navigate('/poppost'),
+      badge: 'Scheduler'
+    },
     {
       title: 'News Articles',
       description: 'Publish news and blog posts',
@@ -480,6 +489,14 @@ const Admin = () => {
               <div>
                 <h2 className="text-2xl font-semibold mb-6 text-center">Quick Access</h2>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
+                  <Button
+                    variant="outline"
+                    className="h-24 flex flex-col items-center justify-center gap-2 hover:bg-orange-50 dark:hover:bg-orange-900/20 border-orange-200"
+                    onClick={() => navigate('/poppost')}
+                  >
+                    <CalendarClock className="h-6 w-6 text-orange-600" />
+                    <span className="text-sm font-medium">PopPost</span>
+                  </Button>
                   <Button
                     variant="outline"
                     className="h-24 flex flex-col items-center justify-center gap-2 hover:bg-purple-50 dark:hover:bg-purple-900/20"
