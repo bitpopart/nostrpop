@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useCurrentUser } from './useCurrentUser';
 import { useToast } from './useToast';
+import { getAdminNpub, getAdminPubkeyHex } from '@/lib/adminUtils';
 import type { MarketplaceProduct } from '@/lib/sampleProducts';
 
-// User's Nostr pubkey (hex) and npub — used to build shop profile URLs
-export const ADMIN_HEX_PUBKEY = '7d33ba57d8a6e8869a1f1d5215254597594ac0dbfeb01b690def8c461b82db35';
-export const ADMIN_NPUB = 'npub105em547c5m5gdxslr4fp2f29jav54sxml6cpk6gda7xyvxuzmv6s84a642';
+// BitPopArt admin Nostr identity — sourced from adminUtils so there's a single source of truth
+export const ADMIN_NPUB = getAdminNpub();       // npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz
+export const ADMIN_HEX_PUBKEY = getAdminPubkeyHex(); // 43baaf0c28e6cfb195b17ee083e19eb3a4afdfac54d9b6baf170270ed193e34c
 
 export interface NostrMarketplace {
   id: string;
