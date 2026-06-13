@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import type { NostrEvent } from '@nostrify/nostrify';
 
 export type MediaCategory = 'wallpaper' | 'gif' | 'avatar' | 'banner' | 'animation' | 'free' | 'custom';
 
@@ -18,6 +19,8 @@ export interface ScheduledPost {
   hashtags: string[];
   createdAt: string;
   updatedAt: string;
+  /** Pre-signed Nostr event, ready to broadcast at scheduledAt time */
+  signedEvent?: NostrEvent;
 }
 
 const STORAGE_KEY = 'poppost_scheduled_posts';

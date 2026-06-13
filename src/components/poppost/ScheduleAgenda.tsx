@@ -13,6 +13,9 @@ import {
   Image as ImageIcon,
   Send,
   Plus,
+  KeyRound,
+  CheckCircle2,
+  AlertTriangle,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -287,14 +290,23 @@ function MiniPostChip({
     minute: '2-digit',
   });
 
+  const isSigned = !!post.signedEvent;
+
   return (
     <div
-      className={`group relative rounded bg-gradient-to-r from-orange-500 to-pink-500 text-white cursor-pointer hover:from-orange-600 hover:to-pink-600 transition-colors ${compact ? 'px-1 py-0.5' : 'px-1.5 py-1'}`}
+      className={`group relative rounded cursor-pointer transition-colors ${
+        isSigned
+          ? 'bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white'
+          : 'bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-500 hover:to-yellow-500 text-white'
+      } ${compact ? 'px-1 py-0.5' : 'px-1.5 py-1'}`}
       onClick={onEdit}
+      title={isSigned ? '✅ Signed — will auto-publish' : '⚠️ Not signed yet — click to sign'}
     >
       <div className="flex items-center gap-1 min-w-0">
         {!compact && (
-          <Clock className="h-2.5 w-2.5 flex-shrink-0 opacity-80" />
+          isSigned
+            ? <CheckCircle2 className="h-2.5 w-2.5 flex-shrink-0 opacity-80" />
+            : <KeyRound className="h-2.5 w-2.5 flex-shrink-0 opacity-80" />
         )}
         <span className="text-[10px] truncate">
           {compact ? (post.caption?.slice(0, 12) || time) : `${time} ${post.caption?.slice(0, 20) || ''}`}
@@ -365,16 +377,30 @@ function AgendaListItem({
               </div>
             )}
 
-            {isOverdue && (
-              <Badge variant="outline" className="text-amber-600 border-amber-400 dark:border-amber-600 mb-2 text-xs">
-                Overdue — not yet published
-              </Badge>
-            )}
+            {/* Signed status badge */}
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {post.signedEvent ? (
+                <Badge variant="outline" className="text-green-700 border-green-400 dark:border-green-600 dark:text-green-400 text-xs gap-1">
+                  <CheckCircle2 className="h-3 w-3" />
+                  Signed — will auto-publish
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="text-amber-700 border-amber-400 dark:border-amber-600 dark:text-amber-400 text-xs gap-1">
+                  <AlertTriangle className="h-3 w-3" />
+                  Unsigned — edit to sign
+                </Badge>
+              )}
+              {isOverdue && (
+                <Badge variant="outline" className="text-red-600 border-red-400 dark:border-red-600 text-xs">
+                  Overdue — not yet published
+                </Badge>
+              )}
+            </div>
 
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={onEdit}>
                 <Edit3 className="h-3 w-3" />
-                Edit
+                {post.signedEvent ? 'Edit' : '🔐 Sign & Edit'}
               </Button>
               <Button
                 size="sm"

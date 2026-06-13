@@ -35,6 +35,7 @@ import {
 import { PostComposer } from '@/components/poppost/PostComposer';
 import { ScheduleAgenda } from '@/components/poppost/ScheduleAgenda';
 import { EngagementDashboard } from '@/components/poppost/EngagementDashboard';
+import { useScheduledPostsPublisher } from '@/hooks/useScheduledPostsPublisher';
 
 const PopPost = () => {
   const { user } = useCurrentUser();
@@ -55,6 +56,13 @@ const PopPost = () => {
     markPublished,
     markFailed,
   } = useScheduledPosts();
+
+  // Background auto-publisher: fires off pre-signed events when their scheduled time arrives
+  useScheduledPostsPublisher({
+    upcomingPosts,
+    onMarkPublished: markPublished,
+    onMarkFailed: markFailed,
+  });
 
   useSeoMeta({
     title: 'PopPost — Nostr Content Scheduler',

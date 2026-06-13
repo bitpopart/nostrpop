@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { useNostr } from '@nostrify/react';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useAuthor } from '@/hooks/useAuthor';
@@ -33,6 +34,8 @@ import {
   Repeat2,
   MessageCircle,
   ExternalLink,
+  KeyRound,
+  CheckCircle2,
 } from 'lucide-react';
 
 interface PostComposerProps {
@@ -64,6 +67,7 @@ export function PostComposer({
   onMarkPublished,
   onMarkFailed,
 }: PostComposerProps) {
+  const { nostr } = useNostr();
   const { mutateAsync: publishEvent, isPending: isPublishing } = useNostrPublish();
   const { user } = useCurrentUser();
   const author = useAuthor(user?.pubkey ?? '');
@@ -81,6 +85,9 @@ export function PostComposer({
   const [mode, setMode] = useState<'schedule' | 'draft' | 'now'>('schedule');
   const [activeTab, setActiveTab] = useState<'compose' | 'media' | 'preview'>('compose');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSigning, setIsSigning] = useState(false);
+  // Whether current editingPost already has a signed event stored
+  const alreadySigned = !!(editingPost?.signedEvent);
 
   const metadata = author.data?.metadata;
   const displayName = metadata?.display_name || metadata?.name || (user ? genUserName(user.pubkey) : 'You');
@@ -163,22 +170,57 @@ export function PostComposer({
     }
   }, [user, buildContent, buildTags, publishEvent, editingPost, onCreate, onUpdate, onMarkPublished, onMarkFailed, caption, selectedMedia, hashtags, toast, onClose]);
 
-  const handleSave = useCallback(() => {
+  const handleSave = useCallback(async () => {
     if (mode === 'now') { handlePublishNow(); return; }
+
     const scheduledAtISO = mode === 'draft' ? new Date().toISOString() : new Date(scheduledAt).toISOString();
     const status = mode === 'draft' ? 'draft' : 'scheduled';
+
+    // For scheduled posts: sign the event NOW so it can auto-publish later
+    let signedEvent = editingPost?.signedEvent;
+    if (mode === 'schedule' && user) {
+      try {
+        setIsSigning(true);
+        const scheduledTimestamp = Math.floor(new Date(scheduledAt).getTime() / 1000);
+        const content = buildContent();
+        const tags = buildTags();
+        if (location.protocol === 'https:' && !tags.some(([name]) => name === 'client')) {
+          tags.push(['client', location.hostname]);
+        }
+        signedEvent = await user.signer.signEvent({
+          kind: 1,
+          content,
+          tags,
+          created_at: scheduledTimestamp,
+        });
+      } catch (err) {
+        console.error('Failed to sign event:', err);
+        toast({
+          title: 'Signing failed',
+          description: 'Could not sign the event. Please try again.',
+          variant: 'destructive',
+        });
+        setIsSigning(false);
+        return;
+      } finally {
+        setIsSigning(false);
+      }
+    }
+
     if (editingPost) {
-      onUpdate(editingPost.id, { caption, media: selectedMedia, hashtags, scheduledAt: scheduledAtISO, status });
-      toast({ title: 'Post updated' });
+      onUpdate(editingPost.id, { caption, media: selectedMedia, hashtags, scheduledAt: scheduledAtISO, status, signedEvent });
+      toast({ title: 'Post updated', description: mode === 'schedule' ? '✅ Event signed & ready to auto-publish' : undefined });
     } else {
-      onCreate({ caption, media: selectedMedia, hashtags, scheduledAt: scheduledAtISO, status });
+      onCreate({ caption, media: selectedMedia, hashtags, scheduledAt: scheduledAtISO, status, signedEvent });
       toast({
-        title: mode === 'draft' ? 'Saved as draft' : 'Post scheduled!',
-        description: mode === 'schedule' ? `Scheduled for ${new Date(scheduledAt).toLocaleString()}` : undefined,
+        title: mode === 'draft' ? 'Saved as draft' : '🔐 Post signed & scheduled!',
+        description: mode === 'schedule'
+          ? `Will auto-publish to Nostr on ${new Date(scheduledAt).toLocaleString()}`
+          : undefined,
       });
     }
     onClose();
-  }, [mode, editingPost, caption, selectedMedia, hashtags, scheduledAt, onCreate, onUpdate, toast, onClose, handlePublishNow]);
+  }, [mode, editingPost, caption, selectedMedia, hashtags, scheduledAt, onCreate, onUpdate, toast, onClose, handlePublishNow, user, buildContent, buildTags]);
 
   const isValid = !!(caption.trim() || selectedMedia.length > 0);
 
@@ -386,31 +428,55 @@ export function PostComposer({
         </div>
 
         {/* Fixed footer action bar */}
-        <div className="flex-shrink-0 border-t px-6 py-4 flex items-center justify-between gap-3 bg-background">
-          <Button variant="outline" onClick={onClose} className="flex-shrink-0">
-            Cancel
-          </Button>
-          <div className="flex items-center gap-2">
-            {activeTab !== 'preview' && isValid && (
-              <Button variant="ghost" size="sm" className="gap-1.5 text-xs" onClick={() => setActiveTab('preview')}>
-                <Eye className="h-3.5 w-3.5" />
-                Preview
-              </Button>
-            )}
-            <Button
-              onClick={handleSave}
-              disabled={!isValid || isSubmitting || isPublishing}
-              className={
-                mode === 'now'
-                  ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white'
-                  : mode === 'schedule'
-                  ? 'bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white'
-                  : 'bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white'
+        <div className="flex-shrink-0 border-t px-6 py-4 flex flex-col gap-3 bg-background">
+          {/* Signing info banner for scheduled mode */}
+          {mode === 'schedule' && (
+            <div className={`flex items-start gap-2 rounded-lg px-3 py-2 text-xs ${alreadySigned ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300' : 'bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300'}`}>
+              {alreadySigned
+                ? <CheckCircle2 className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                : <KeyRound className="h-4 w-4 flex-shrink-0 mt-0.5" />
               }
-            >
-              {(isSubmitting || isPublishing) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              {mode === 'now' ? 'Publish Now' : mode === 'draft' ? 'Save Draft' : 'Schedule Post'}
+              <span>
+                {alreadySigned
+                  ? 'Event already signed — will auto-publish at the scheduled time.'
+                  : 'You\'ll sign this event now. It will automatically publish to Nostr at the scheduled time (while this tab is open).'}
+              </span>
+            </div>
+          )}
+          <div className="flex items-center justify-between gap-3">
+            <Button variant="outline" onClick={onClose} className="flex-shrink-0">
+              Cancel
             </Button>
+            <div className="flex items-center gap-2">
+              {activeTab !== 'preview' && isValid && (
+                <Button variant="ghost" size="sm" className="gap-1.5 text-xs" onClick={() => setActiveTab('preview')}>
+                  <Eye className="h-3.5 w-3.5" />
+                  Preview
+                </Button>
+              )}
+              <Button
+                onClick={handleSave}
+                disabled={!isValid || isSubmitting || isPublishing || isSigning}
+                className={
+                  mode === 'now'
+                    ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white'
+                    : mode === 'schedule'
+                    ? 'bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white'
+                    : 'bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white'
+                }
+              >
+                {(isSubmitting || isPublishing || isSigning) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                {isSigning
+                  ? 'Signing…'
+                  : mode === 'now'
+                  ? 'Publish Now'
+                  : mode === 'draft'
+                  ? 'Save Draft'
+                  : alreadySigned
+                  ? 'Update Schedule'
+                  : '🔐 Sign & Schedule'}
+              </Button>
+            </div>
           </div>
         </div>
       </SheetContent>
