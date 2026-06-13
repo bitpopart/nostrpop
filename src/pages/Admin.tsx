@@ -35,6 +35,7 @@ import { WallpapersAdmin } from '@/components/app/WallpapersAdmin';
 import { GifsAdmin } from '@/components/app/GifsAdmin';
 import { AvatarsAdmin } from '@/components/app/AvatarsAdmin';
 import { BannersAdmin } from '@/components/app/BannersAdmin';
+import { FanAppPublishing } from '@/components/app/FanAppPublishing';
 import { AnimationsManagement } from '@/components/animations/AnimationsManagement';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import {
@@ -66,6 +67,7 @@ import {
   Globe,
   CalendarClock,
   Store,
+  Upload,
 } from 'lucide-react';
 
 const Admin = () => {
@@ -272,6 +274,14 @@ const Admin = () => {
       badge: 'App'
     },
     {
+      title: 'Publish Fan App',
+      description: 'Publish to Apple, Google Play & Zapstore',
+      icon: Upload,
+      color: 'from-yellow-500 to-orange-500',
+      action: () => setActiveTab('app-publish'),
+      badge: 'Publish'
+    },
+    {
       title: 'Analytics',
       description: 'Track site visitors',
       icon: BarChart3,
@@ -378,6 +388,13 @@ const Admin = () => {
             <TabsTrigger value="app-gifs">GIFs</TabsTrigger>
             <TabsTrigger value="app-avatars">Avatars</TabsTrigger>
             <TabsTrigger value="app-banners">Banners</TabsTrigger>
+            <TabsTrigger
+              value="app-publish"
+              className="flex items-center gap-1 text-orange-600 dark:text-orange-400 font-semibold"
+            >
+              <Upload className="h-3.5 w-3.5" />
+              Publish App
+            </TabsTrigger>
             <TabsTrigger
               value="poppost"
               onClick={() => navigate('/poppost')}
@@ -861,6 +878,10 @@ const Admin = () => {
 
           <TabsContent value="app-banners">
             <BannersAdmin onBack={() => setActiveTab('app')} />
+          </TabsContent>
+
+          <TabsContent value="app-publish">
+            <FanAppPublishing />
           </TabsContent>
 
         </Tabs>
