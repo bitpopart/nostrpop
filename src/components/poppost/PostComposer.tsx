@@ -240,10 +240,10 @@ export function PostComposer({
           </SheetTitle>
         </SheetHeader>
 
-        {/* Tabs nav */}
-        <div className="px-6 pt-4 flex-shrink-0">
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'compose' | 'media' | 'preview')}>
-            <TabsList className="grid grid-cols-3 w-full">
+        {/* Tabs nav + scrollable content — takes all remaining space between header and footer */}
+        <div className="flex-1 min-h-0 flex flex-col px-6 pt-4">
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'compose' | 'media' | 'preview')} className="flex-1 min-h-0 flex flex-col">
+            <TabsList className="grid grid-cols-3 w-full flex-shrink-0">
               <TabsTrigger value="compose" className="gap-1.5 text-xs">
                 <Pencil className="h-3.5 w-3.5" />
                 Compose
@@ -261,8 +261,8 @@ export function PostComposer({
               </TabsTrigger>
             </TabsList>
 
-            {/* Scrollable content area */}
-            <div className="mt-4 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 220px)' }}>
+            {/* Scrollable content area — grows to fill available space */}
+            <div className="flex-1 min-h-0 overflow-y-auto mt-4">
 
               {/* ── Compose Tab ── */}
               <TabsContent value="compose" className="space-y-5 pb-4 mt-0">
@@ -425,9 +425,9 @@ export function PostComposer({
 
             </div>
           </Tabs>
-        </div>
+        </div>{/* end flex-1 tabs container */}
 
-        {/* Fixed footer action bar */}
+        {/* Fixed footer action bar — always visible at bottom */}
         <div className="flex-shrink-0 border-t px-6 py-4 flex flex-col gap-3 bg-background">
           {/* Signing info banner for scheduled mode */}
           {mode === 'schedule' && (
