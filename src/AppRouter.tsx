@@ -80,7 +80,6 @@ export function AppRouter() {
           <Route path="/fundraising" element={<Fundraising />} />
           <Route path="/vlog" element={<Vlog />} />
           <Route path="/wall" element={<Wall />} />
-          <Route path="/:slug" element={<CustomPage />} />
           <Route path="/categories" element={<CategoryDemo />} />
           <Route path="/shop/:productId/delete" element={<DeleteProductPage />} />
           <Route path="/shop/:productId" element={<ProductPage />} />
@@ -99,6 +98,7 @@ export function AppRouter() {
           <Route path="/community" element={<Community />} />
           <Route path="/studio" element={<Studio />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="/:slug" element={<CustomPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Layout>
