@@ -43,6 +43,7 @@ import Frl from "./pages/Frl";
 import AppPage from "./pages/AppPage";
 import PopPost from "./pages/PopPost";
 import Community from "./pages/Community";
+import Studio from "./pages/Studio";
 import NotFound from "./pages/NotFound";
 
 export function AppRouter() {
@@ -95,6 +96,7 @@ export function AppRouter() {
           <Route path="/app" element={<AppPage />} />
           <Route path="/poppost" element={<PopPost />} />
           <Route path="/community" element={<Community />} />
+          <Route path="/studio" element={<Studio />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="/:slug" element={<CustomPage />} />
           <Route path="*" element={<NotFound />} />
