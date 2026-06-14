@@ -57,8 +57,14 @@ const OrderConfirmation = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [orderNumber] = useState(() => `ORD-${Date.now().toString(36).toUpperCase()}`);
-  const [orderPersisted, setOrderPersisted] = useState(false);
+  // Use order number from PaymentDialog if passed, otherwise generate
+  const [orderNumber] = useState(() =>
+    (location.state?.orderNumber as string | undefined) ?? `ORD-${Date.now().toString(36).toUpperCase()}`
+  );
+  const [orderPersisted, setOrderPersisted] = useState(
+    // If PaymentDialog already saved the order (passed orderNumber), mark as persisted
+    !!(location.state?.orderNumber)
+  );
 
   // Get data from navigation state or URL params
   const stateProduct = location.state?.product as MarketplaceProduct;

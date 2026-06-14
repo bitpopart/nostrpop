@@ -27,6 +27,7 @@ import { HomepageSettings } from '@/components/settings/HomepageSettings';
 import { ArtworkOrderManager } from '@/components/art/ArtworkOrderManager';
 import { ArtworkCleanupTool } from '@/components/art/ArtworkCleanupTool';
 import { ArtBannerAdmin } from '@/components/art/ArtBannerAdmin';
+import { ArtworkSalesManager } from '@/components/art/ArtworkSalesManager';
 import { ArtProgressManagement } from '@/components/artprogress/ArtProgressManagement';
 import { WallManagement } from '@/components/wall/WallManagement';
 import { AppContentManagement } from '@/components/app/AppContentManagement';
@@ -827,6 +828,22 @@ const Admin = () => {
           </TabsContent>
 
           <TabsContent value="art" className="space-y-6">
+            {/* Sales — most important for admin, shown first */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ShoppingBag className="h-5 w-5 text-purple-600" />
+                  Artwork Sales
+                </CardTitle>
+                <CardDescription>
+                  All purchases, buyer info, shipping addresses and payment details
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ArtworkSalesManager />
+              </CardContent>
+            </Card>
+
             <ArtBannerAdmin />
 
             <Card>

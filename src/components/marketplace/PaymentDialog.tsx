@@ -12,6 +12,7 @@ import { useLightningPayment, formatCurrency, convertCurrency } from '@/hooks/us
 import { useToast } from '@/hooks/useToast';
 import { useEnhancedPaymentDetection } from '@/hooks/usePaymentDetection';
 import { DigitalDownload } from './DigitalDownload';
+import { createCheckoutOrder } from '@/hooks/useOrders';
 import QRCode from 'qrcode';
 import {
   Zap,
@@ -120,9 +121,61 @@ export function PaymentDialog({ open, onOpenChange, product }: PaymentDialogProp
     stopDetection();
     setPaymentCompleted(true);
 
+    const isArtwork = product.category === 'Artwork' || product.stall_id === 'art-gallery';
+
+    // Persist the order to the admin order store
+    const savedOrder = createCheckoutOrder({
+      productId: product.id,
+      productName: product.name,
+      productType: product.type,
+      productImage: product.images?.[0],
+      price: totalPrice,
+      currency: product.currency,
+      buyerName: buyerInfo.name || undefined,
+      buyerEmail: buyerInfo.email || undefined,
+      shippingAddress: product.type === 'physical' && buyerInfo.address.line1 ? {
+        line1: buyerInfo.address.line1,
+        line2: buyerInfo.address.line2 || undefined,
+        city: buyerInfo.address.city,
+        state: buyerInfo.address.state || undefined,
+        postal_code: buyerInfo.address.postal_code,
+        country: buyerInfo.address.country,
+      } : undefined,
+      paymentMethod: 'Lightning',
+    });
+
+    // For artwork purchases: automatically open email client to shop@bitpopart.com
+    if (isArtwork && buyerInfo.name) {
+      const subject = encodeURIComponent(`Artwork Purchase: ${product.name} — Order ${savedOrder.order_number}`);
+      const body = encodeURIComponent(
+        `Hello,\n\nI have just purchased an artwork from BitPopArt.\n\n` +
+        `Order Number: ${savedOrder.order_number}\n` +
+        `Artwork: ${product.name}\n` +
+        `Price Paid: ${totalPrice} ${product.currency}\n` +
+        `Buyer Name: ${buyerInfo.name}\n` +
+        `Buyer Email: ${buyerInfo.email}\n` +
+        (product.type === 'physical' && buyerInfo.address.line1
+          ? `\nShipping Address:\n${buyerInfo.address.line1}\n` +
+            (buyerInfo.address.line2 ? `${buyerInfo.address.line2}\n` : '') +
+            `${buyerInfo.address.city}, ${buyerInfo.address.state} ${buyerInfo.address.postal_code}\n` +
+            `${buyerInfo.address.country}\n`
+          : '') +
+        `\nPayment Method: Lightning Network\n` +
+        `\nThank you!\n${buyerInfo.name}`
+      );
+      // Open mailto — best effort (may be blocked by browser)
+      try {
+        window.open(`mailto:shop@bitpopart.com?subject=${subject}&body=${body}`, '_blank');
+      } catch {
+        // silently ignore if blocked
+      }
+    }
+
     toast({
       title: "Payment Confirmed! ⚡",
-      description: "Thank you for your purchase. Redirecting to order confirmation...",
+      description: isArtwork
+        ? "Thank you! An email window will open — please send it to complete your order."
+        : "Thank you for your purchase. Redirecting to order confirmation...",
     });
 
     // Navigate to order confirmation page after a short delay
@@ -133,7 +186,8 @@ export function PaymentDialog({ open, onOpenChange, product }: PaymentDialogProp
           product,
           buyerInfo,
           totalPrice,
-          paymentMethod
+          paymentMethod,
+          orderNumber: savedOrder.order_number,
         }
       });
     }, 2000);
