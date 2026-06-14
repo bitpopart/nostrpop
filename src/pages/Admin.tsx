@@ -31,6 +31,7 @@ import { ArtProgressManagement } from '@/components/artprogress/ArtProgressManag
 import { WallManagement } from '@/components/wall/WallManagement';
 import { AppContentManagement } from '@/components/app/AppContentManagement';
 import { AppContentDashboard } from '@/components/app/AppContentDashboard';
+import { AppAnalyticsDashboard } from '@/components/app/AppAnalyticsDashboard';
 import { WallpapersAdmin } from '@/components/app/WallpapersAdmin';
 import { GifsAdmin } from '@/components/app/GifsAdmin';
 import { AvatarsAdmin } from '@/components/app/AvatarsAdmin';
@@ -69,6 +70,7 @@ import {
   Store,
   Upload,
   ClipboardList,
+  BarChart3,
 } from 'lucide-react';
 
 const Admin = () => {
@@ -397,6 +399,13 @@ const Admin = () => {
             <TabsTrigger value="app-gifs">GIFs</TabsTrigger>
             <TabsTrigger value="app-avatars">Avatars</TabsTrigger>
             <TabsTrigger value="app-banners">Banners</TabsTrigger>
+            <TabsTrigger
+              value="app-analytics"
+              className="flex items-center gap-1 text-green-600 dark:text-green-400 font-semibold"
+            >
+              <BarChart3 className="h-3.5 w-3.5" />
+              App Stats
+            </TabsTrigger>
             <TabsTrigger
               value="app-publish"
               className="flex items-center gap-1 text-orange-600 dark:text-orange-400 font-semibold"
@@ -887,6 +896,10 @@ const Admin = () => {
 
           <TabsContent value="app-banners">
             <BannersAdmin onBack={() => setActiveTab('app')} />
+          </TabsContent>
+
+          <TabsContent value="app-analytics">
+            <AppAnalyticsDashboard />
           </TabsContent>
 
           <TabsContent value="app-publish">

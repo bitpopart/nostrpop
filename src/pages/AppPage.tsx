@@ -12,6 +12,7 @@ import { useAppWelcome, useAppMedia } from '@/hooks/useAppContent';
 import { useFreeDownloads } from '@/hooks/useFreeDownloads';
 import { useAnimations } from '@/hooks/useAnimations';
 import { ProductCard } from '@/components/marketplace/ProductCard';
+import { recordDownload, type DownloadCategory } from '@/hooks/useDownloadTracking';
 import { LoginArea } from '@/components/auth/LoginArea';
 import {
   Download,
@@ -27,6 +28,7 @@ import {
   Sparkles,
   UserCircle2,
   PanelTop,
+  BarChart3,
 } from 'lucide-react';
 
 // 3 columns × 3 rows = 9 items max shown in preview
@@ -43,7 +45,20 @@ function getGreeting(): string {
   return 'Good Evening';
 }
 
-function handleDownload(url: string, filename: string) {
+function handleDownload(
+  url: string,
+  filename: string,
+  trackingInfo?: { itemId: string; title: string; category: DownloadCategory }
+) {
+  // Track the download event
+  if (trackingInfo) {
+    recordDownload({
+      itemId: trackingInfo.itemId,
+      title: trackingInfo.title,
+      category: trackingInfo.category,
+      imageUrl: url,
+    });
+  }
   fetch(url)
     .then(r => r.blob())
     .then(blob => {
@@ -74,12 +89,14 @@ function PreviewGallery({
   emptyText,
   onMoreClick,
   moreLabel,
+  category,
 }: {
   items: { id: string; title: string; image_url: string }[];
   isLoading: boolean;
   emptyText: string;
   onMoreClick: () => void;
   moreLabel: string;
+  category: DownloadCategory;
 }) {
   const { getGradientStyle } = useThemeColors();
   const preview = items.slice(0, PREVIEW_LIMIT);
@@ -115,7 +132,11 @@ function PreviewGallery({
               size="icon"
               className="absolute top-1.5 right-1.5 h-7 w-7 rounded-full shadow text-white border-0 opacity-0 group-hover:opacity-100 transition-opacity"
               style={getGradientStyle('primary')}
-              onClick={() => handleDownload(item.image_url, deriveFilename(item.image_url, item.title))}
+              onClick={() => handleDownload(
+                item.image_url,
+                deriveFilename(item.image_url, item.title),
+                { itemId: item.id, title: item.title, category }
+              )}
               title="Download"
             >
               <Download className="h-3 w-3" />
@@ -194,18 +215,22 @@ function BannersPreview({
             className="w-full h-auto block"
             loading="lazy"
           />
-          <Button
-            size="icon"
-            className="absolute top-1.5 right-1.5 h-7 w-7 rounded-full shadow text-white border-0 opacity-0 group-hover:opacity-100 transition-opacity"
-            style={getGradientStyle('primary')}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleDownload(item.image_url, deriveFilename(item.image_url, item.title));
-            }}
-            title="Download"
-          >
-            <Download className="h-3 w-3" />
-          </Button>
+            <Button
+              size="icon"
+              className="absolute top-1.5 right-1.5 h-7 w-7 rounded-full shadow text-white border-0 opacity-0 group-hover:opacity-100 transition-opacity"
+              style={getGradientStyle('primary')}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDownload(
+                  item.image_url,
+                  deriveFilename(item.image_url, item.title),
+                  { itemId: item.id, title: item.title, category: 'banner' }
+                );
+              }}
+              title="Download"
+            >
+              <Download className="h-3 w-3" />
+            </Button>
           {item.title !== 'Untitled' && (
             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
               <p className="text-white text-[10px] font-medium truncate">{item.title}</p>
@@ -426,7 +451,10 @@ export default function AppPage() {
 
         {/* ── Admin shortcut ────────────────────────────── */}
         {isAdmin && (
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={() => navigate('/admin?tab=app-analytics')}>
+              <BarChart3 className="h-4 w-4 mr-1" /> App Stats
+            </Button>
             <Button variant="outline" size="sm" onClick={() => navigate('/admin?tab=app')}>
               <Settings className="h-4 w-4 mr-1" /> Manage App Content
             </Button>
@@ -518,6 +546,7 @@ export default function AppPage() {
             emptyText="No wallpapers yet — check back soon!"
             onMoreClick={() => navigate('/wallpapers')}
             moreLabel="More Wallpapers"
+            category="wallpaper"
           />
         </section>
 
@@ -538,6 +567,7 @@ export default function AppPage() {
             emptyText="No GIFs yet — check back soon!"
             onMoreClick={() => navigate('/gifs')}
             moreLabel="More Animated GIFs"
+            category="gif"
           />
         </section>
 
@@ -678,13 +708,13 @@ export default function AppPage() {
           ) : freeDownloads.length > 0 ? (
             <div className="space-y-3">
               <div
-                className="grid grid-cols-3 gap-3 cursor-pointer"
-                onClick={() => navigate('/free')}
+                className="grid grid-cols-3 gap-3"
               >
                 {freeDownloads.slice(0, PREVIEW_LIMIT).map(dl => (
                   <div
                     key={dl.id}
-                    className="group relative rounded-xl overflow-hidden bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow"
+                    className="group relative rounded-xl overflow-hidden bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                    onClick={() => navigate('/free')}
                   >
                     <div className="aspect-square">
                       <img
@@ -694,6 +724,22 @@ export default function AppPage() {
                         loading="lazy"
                       />
                     </div>
+                    <Button
+                      size="icon"
+                      className="absolute top-1.5 right-1.5 h-7 w-7 rounded-full shadow text-white border-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                      style={{ background: 'linear-gradient(135deg, #14b8a6, #22c55e)' }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDownload(
+                          dl.image_url,
+                          deriveFilename(dl.image_url, dl.title),
+                          { itemId: dl.id, title: dl.title, category: 'free' }
+                        );
+                      }}
+                      title="Download"
+                    >
+                      <Download className="h-3 w-3" />
+                    </Button>
                   </div>
                 ))}
               </div>
