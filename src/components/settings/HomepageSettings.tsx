@@ -7,13 +7,14 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNostr } from '@nostrify/react';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { getAdminPubkeyHex } from '@/lib/adminUtils';
-import type { HomepageSection, HomepageButton, HomepageSettings } from '@/hooks/useHomepageSettings';
+import type { HomepageSection, HomepageButton, HomepageSettings, SiteBanner, BannerStyle } from '@/hooks/useHomepageSettings';
 import {
   Home,
   GripVertical,
@@ -33,6 +34,7 @@ import {
   MousePointerClick,
   ChevronUp,
   ChevronDown,
+  Megaphone,
 } from 'lucide-react';
 
 const DEFAULT_SECTIONS: HomepageSection[] = [
@@ -140,8 +142,68 @@ const VARIANT_LABEL: Record<HomepageButton['variant'], string> = {
   accent: 'Accent (orange)',
 };
 
+const BANNER_STYLE_LABEL: Record<BannerStyle, string> = {
+  orange: 'Orange (default)',
+  blue:   'Blue',
+  green:  'Green',
+  red:    'Red',
+  purple: 'Purple',
+  dark:   'Dark',
+};
+
+const BANNER_STYLE_PREVIEW: Record<BannerStyle, string> = {
+  orange: 'bg-gradient-to-r from-orange-500 to-yellow-400',
+  blue:   'bg-gradient-to-r from-blue-600 to-cyan-400',
+  green:  'bg-gradient-to-r from-emerald-600 to-teal-400',
+  red:    'bg-gradient-to-r from-red-600 to-pink-500',
+  purple: 'bg-gradient-to-r from-purple-700 to-indigo-500',
+  dark:   'bg-gradient-to-r from-gray-900 to-gray-700',
+};
+
+const PRESET_BANNERS: Omit<SiteBanner, 'id' | 'enabled'>[] = [
+  {
+    label: 'Art Page Banner',
+    text: '🎨 Explore original Pop Art — browse the full gallery',
+    url: '/art',
+    urlLabel: 'View Art',
+    style: 'orange',
+  },
+  {
+    label: 'Free Downloads Banner',
+    text: '🎁 Free wallpapers, GIFs & animations — download now, no signup needed!',
+    url: '/free',
+    urlLabel: 'Free Downloads',
+    style: 'green',
+  },
+  {
+    label: 'Shop Banner',
+    text: '🛍️ New items in the shop — get your Pop Art prints & merchandise',
+    url: '/shop',
+    urlLabel: 'Visit Shop',
+    style: 'purple',
+  },
+  {
+    label: 'Studio Banner',
+    text: '✏️ PopArt is for everyone — create your own designs, be free!',
+    url: '/studio',
+    urlLabel: 'Open Studio',
+    style: 'blue',
+  },
+  {
+    label: 'Community Banner',
+    text: '🌍 Join the PopFans community — share your art, connect with creators',
+    url: '/community',
+    urlLabel: 'Join Now',
+    style: 'dark',
+  },
+];
+
 function generateId() {
   return `btn-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+function generateBannerId() {
+  return `banner-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 }
 
 // ─── ButtonEditor is a TOP-LEVEL component so React never remounts it on parent re-renders ───
@@ -258,7 +320,8 @@ export function HomepageSettings() {
 
   const [sections, setSections] = useState<HomepageSection[]>(nostrSettings?.sections || DEFAULT_SECTIONS);
   const [buttons, setButtons] = useState<HomepageButton[]>(nostrSettings?.buttons || DEFAULT_BUTTONS);
-  const [activeTab, setActiveTab] = useState<'sections' | 'buttons'>('sections');
+  const [banners, setBanners] = useState<SiteBanner[]>(nostrSettings?.banners || []);
+  const [activeTab, setActiveTab] = useState<'sections' | 'buttons' | 'banners'>('sections');
 
   // Track whether the user has made unsaved local changes.
   // While dirty, we must NOT let a background query refetch overwrite local state.
@@ -289,6 +352,7 @@ export function HomepageSettings() {
 
     setSections(merged.map((s, i) => ({ ...s, order: i })));
     setButtons(nostrSettings.buttons || DEFAULT_BUTTONS);
+    setBanners(nostrSettings.banners || []);
   }, [nostrSettings]);
 
   // ─── Section handlers ────────────────────────────────────────────────────
@@ -385,6 +449,40 @@ export function HomepageSettings() {
     });
   };
 
+  // ─── Banner handlers ──────────────────────────────────────────────────────
+  const addPresetBanner = (preset: Omit<SiteBanner, 'id' | 'enabled'>) => {
+    isDirty.current = true;
+    setBanners(prev => [...prev, { ...preset, id: generateBannerId(), enabled: false }]);
+  };
+
+  const addCustomBanner = () => {
+    isDirty.current = true;
+    setBanners(prev => [...prev, {
+      id: generateBannerId(),
+      label: 'Custom Banner',
+      text: 'Your message here',
+      url: '',
+      urlLabel: '',
+      style: 'orange',
+      enabled: false,
+    }]);
+  };
+
+  const updateBanner = (id: string, changes: Partial<SiteBanner>) => {
+    isDirty.current = true;
+    // If activating this banner, deactivate all others first
+    if (changes.enabled === true) {
+      setBanners(prev => prev.map(b => b.id === id ? { ...b, ...changes } : { ...b, enabled: false }));
+    } else {
+      setBanners(prev => prev.map(b => b.id === id ? { ...b, ...changes } : b));
+    }
+  };
+
+  const deleteBanner = (id: string) => {
+    isDirty.current = true;
+    setBanners(prev => prev.filter(b => b.id !== id));
+  };
+
   // ─── Save / Reset ─────────────────────────────────────────────────────────
   const handleSave = () => {
     if (!user) { toast.error('Please log in to save homepage settings'); return; }
@@ -392,6 +490,7 @@ export function HomepageSettings() {
     const payload: HomepageSettings = {
       sections: sections.map((s, i) => ({ ...s, order: i })),
       buttons,
+      banners,
     };
 
     publishEvent({
@@ -404,6 +503,7 @@ export function HomepageSettings() {
         toast.success('Homepage settings saved to Nostr!');
         queryClient.invalidateQueries({ queryKey: ['homepage-settings', adminPubkey] });
         queryClient.invalidateQueries({ queryKey: ['homepage-settings-public', adminPubkey] });
+        queryClient.invalidateQueries({ queryKey: ['site-banner', adminPubkey] });
         window.dispatchEvent(new CustomEvent('homepage-settings-updated', { detail: payload }));
         refetch();
       },
@@ -415,7 +515,8 @@ export function HomepageSettings() {
     if (!user) { toast.error('Please log in to reset homepage settings'); return; }
     setSections(DEFAULT_SECTIONS);
     setButtons(DEFAULT_BUTTONS);
-    const payload: HomepageSettings = { sections: DEFAULT_SECTIONS, buttons: DEFAULT_BUTTONS };
+    setBanners([]);
+    const payload: HomepageSettings = { sections: DEFAULT_SECTIONS, buttons: DEFAULT_BUTTONS, banners: [] };
     publishEvent({
       kind: 30078,
       content: JSON.stringify(payload),
@@ -426,6 +527,7 @@ export function HomepageSettings() {
         toast.success('Homepage settings reset to default!');
         queryClient.invalidateQueries({ queryKey: ['homepage-settings', adminPubkey] });
         queryClient.invalidateQueries({ queryKey: ['homepage-settings-public', adminPubkey] });
+        queryClient.invalidateQueries({ queryKey: ['site-banner', adminPubkey] });
         refetch();
       },
       onError: (error) => toast.error('Failed to reset settings: ' + error.message),
@@ -461,7 +563,7 @@ export function HomepageSettings() {
       <CardContent className="space-y-6">
 
         {/* Tab switcher */}
-        <div className="flex gap-2 border-b pb-3">
+        <div className="flex gap-2 border-b pb-3 flex-wrap">
           <Button
             variant={activeTab === 'sections' ? 'default' : 'ghost'}
             size="sm"
@@ -477,6 +579,18 @@ export function HomepageSettings() {
           >
             <MousePointerClick className="h-4 w-4 mr-2" />
             Buttons
+          </Button>
+          <Button
+            variant={activeTab === 'banners' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setActiveTab('banners')}
+            className="relative"
+          >
+            <Megaphone className="h-4 w-4 mr-2" />
+            Banners
+            {banners.some(b => b.enabled) && (
+              <span className="ml-1.5 inline-block w-2 h-2 rounded-full bg-green-500" title="A banner is active" />
+            )}
           </Button>
         </div>
 
@@ -629,6 +743,185 @@ export function HomepageSettings() {
           </div>
         )}
 
+        {/* ===== BANNERS TAB ===== */}
+        {activeTab === 'banners' && (
+          <div className="space-y-6">
+
+            {/* Info */}
+            <div className="text-sm bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 space-y-1">
+              <p className="font-semibold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                <Megaphone className="h-4 w-4" /> Site Banner
+              </p>
+              <p className="text-muted-foreground text-xs">
+                The active banner shows under the navigation bar on every page. Only one banner can be active at a time.
+                When a live auction is running, the auction banner automatically takes over.
+              </p>
+            </div>
+
+            {/* Preset banners */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold text-sm">Preset Banners</h3>
+                  <p className="text-xs text-muted-foreground">Ready-made banners — click to add to your list</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 gap-2">
+                {PRESET_BANNERS.map(preset => (
+                  <div key={preset.label} className="flex items-center justify-between gap-3 border rounded-lg p-3 bg-gray-50 dark:bg-gray-900/50">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className={`w-3 h-3 rounded-full flex-shrink-0 ${BANNER_STYLE_PREVIEW[preset.style]}`} />
+                      <span className="text-sm font-medium truncate">{preset.label}</span>
+                      <span className="text-xs text-muted-foreground truncate hidden sm:block">{preset.text.slice(0, 50)}…</span>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="shrink-0 h-7 text-xs"
+                      onClick={() => addPresetBanner(preset)}
+                    >
+                      <Plus className="h-3 w-3 mr-1" /> Add
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* My banners */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold text-sm">My Banners</h3>
+                  <p className="text-xs text-muted-foreground">Enable one to show it site-wide under the menu</p>
+                </div>
+                <Button size="sm" variant="outline" onClick={addCustomBanner}>
+                  <Plus className="h-3 w-3 mr-1" /> Custom Banner
+                </Button>
+              </div>
+
+              {banners.length === 0 && (
+                <p className="text-sm text-muted-foreground italic">
+                  No banners yet. Add a preset or create a custom banner above.
+                </p>
+              )}
+
+              {banners.map(banner => (
+                <div
+                  key={banner.id}
+                  className={`border-2 rounded-lg p-4 space-y-3 transition-all ${
+                    banner.enabled
+                      ? 'border-green-500 bg-green-50 dark:bg-green-900/10'
+                      : 'border-border bg-white dark:bg-gray-900'
+                  }`}
+                >
+                  {/* Header row */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={banner.enabled}
+                        onCheckedChange={checked => updateBanner(banner.id, { enabled: checked })}
+                      />
+                      {banner.enabled ? (
+                        <Badge className="text-xs bg-green-500 text-white border-0 flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse inline-block" />
+                          Active
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="text-xs">Inactive</Badge>
+                      )}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                      onClick={() => deleteBanner(banner.id)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+
+                  {/* Preview strip */}
+                  <div className={`rounded px-3 py-1.5 text-white text-xs font-medium flex items-center gap-2 flex-wrap ${BANNER_STYLE_PREVIEW[banner.style]}`}>
+                    <span>{banner.text || 'Preview...'}</span>
+                    {banner.urlLabel && (
+                      <span className="px-2 py-0.5 rounded-full bg-white/20 border border-white/40 text-xs">
+                        {banner.urlLabel}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Fields */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Admin Label</Label>
+                      <Input
+                        value={banner.label}
+                        onChange={e => updateBanner(banner.id, { label: e.target.value })}
+                        placeholder="e.g. Art Page Banner"
+                        className="h-8 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Style</Label>
+                      <Select
+                        value={banner.style}
+                        onValueChange={v => updateBanner(banner.id, { style: v as BannerStyle })}
+                      >
+                        <SelectTrigger className="h-8 text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(Object.keys(BANNER_STYLE_LABEL) as BannerStyle[]).map(s => (
+                            <SelectItem key={s} value={s}>
+                              <div className="flex items-center gap-2">
+                                <div className={`w-3 h-3 rounded-full ${BANNER_STYLE_PREVIEW[s]}`} />
+                                {BANNER_STYLE_LABEL[s]}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Banner Text</Label>
+                    <Textarea
+                      value={banner.text}
+                      onChange={e => updateBanner(banner.id, { text: e.target.value })}
+                      placeholder="Your message to visitors..."
+                      className="text-sm min-h-[60px] resize-none"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Button URL (optional)</Label>
+                      <Input
+                        value={banner.url ?? ''}
+                        onChange={e => updateBanner(banner.id, { url: e.target.value })}
+                        placeholder="e.g. /art or https://..."
+                        className="h-8 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Button Label (optional)</Label>
+                      <Input
+                        value={banner.urlLabel ?? ''}
+                        onChange={e => updateBanner(banner.id, { urlLabel: e.target.value })}
+                        placeholder="e.g. View Art"
+                        className="h-8 text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <Separator />
 
         <div className="flex gap-2">
@@ -650,7 +943,8 @@ export function HomepageSettings() {
           <ul className="list-disc list-inside space-y-1 text-muted-foreground">
             <li>Use <strong>Sections</strong> tab to show/hide and reorder homepage sections</li>
             <li>Use <strong>Buttons</strong> tab to manage hero buttons (top of page) and buttons between sections</li>
-            <li>Button URLs can be internal paths like <code>/nostr</code> or full URLs like <code>https://bitpopart.com/nostr</code></li>
+            <li>Use <strong>Banners</strong> tab to show a banner under the navigation bar on every page — only one can be active at a time</li>
+            <li>When a live auction is running, the auction banner automatically overrides the site banner</li>
             <li>Changes are saved to Nostr and visible to all visitors</li>
           </ul>
         </div>

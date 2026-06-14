@@ -3,6 +3,18 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNostr } from '@nostrify/react';
 import { getAdminPubkeyHex } from '@/lib/adminUtils';
 
+export type BannerStyle = 'orange' | 'blue' | 'green' | 'red' | 'purple' | 'dark';
+
+export interface SiteBanner {
+  id: string;
+  label: string;          // display name for the admin UI
+  text: string;           // message shown in the banner
+  url?: string;           // optional CTA link
+  urlLabel?: string;      // CTA button label
+  style: BannerStyle;
+  enabled: boolean;       // currently active
+}
+
 export interface HomepageButton {
   id: string;
   label: string;
@@ -27,6 +39,7 @@ export interface HomepageSection {
 export interface HomepageSettings {
   sections: HomepageSection[];
   buttons: HomepageButton[];
+  banners?: SiteBanner[];
 }
 
 const DEFAULT_SECTIONS: HomepageSection[] = [
