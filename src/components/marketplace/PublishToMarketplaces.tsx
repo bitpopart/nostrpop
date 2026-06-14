@@ -179,13 +179,13 @@ function ListingPreview({ product, pubkey }: { product: MarketplaceProduct; pubk
           </p>
         </TabsContent>
 
-        {/* NIP-99 raw event */}
-        <TabsContent value="nip99">
-          <div className="space-y-2">
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Code2 className="h-3.5 w-3.5" />
-              <span>kind: 30402 — Published to Shopstr, Conduit, Cypher</span>
-            </div>
+            {/* NIP-99 raw event */}
+            <TabsContent value="nip99">
+              <div className="space-y-2">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Code2 className="h-3.5 w-3.5" />
+                  <span>kind: 30402 — Published to all marketplaces (Shopstr, Plebeian, Conduit, Cypher)</span>
+                </div>
             <ScrollArea className="h-56 border rounded-lg">
               <pre className="text-xs p-3 font-mono whitespace-pre-wrap break-all text-foreground/80">
                 {JSON.stringify({ ...nip99, content: nip99.content }, null, 2)}
@@ -194,13 +194,13 @@ function ListingPreview({ product, pubkey }: { product: MarketplaceProduct; pubk
           </div>
         </TabsContent>
 
-        {/* NIP-15 raw event */}
-        <TabsContent value="nip15">
-          <div className="space-y-2">
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Code2 className="h-3.5 w-3.5" />
-              <span>kind: 30018 — Published to Plebeian Market, Cypher</span>
-            </div>
+            {/* NIP-15 raw event */}
+            <TabsContent value="nip15">
+              <div className="space-y-2">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Code2 className="h-3.5 w-3.5" />
+                  <span>kind: 30018 — Legacy format (NIP-15, no longer published)</span>
+                </div>
             <ScrollArea className="h-56 border rounded-lg">
               <pre className="text-xs p-3 font-mono whitespace-pre-wrap break-all text-foreground/80">
                 {JSON.stringify(nip15, null, 2)}
@@ -356,9 +356,9 @@ export function PublishToMarketplaces({ product }: PublishToMarketplacesProps) {
               <div className="space-y-4">
                 {/* Info */}
                 <p className="text-xs text-muted-foreground">
-                  Your product is signed with your Nostr key and broadcast to each marketplace's relay set.
-                  <strong> NIP-99</strong> (Shopstr, Conduit, Cypher) and <strong>NIP-15</strong> (Plebeian, Cypher)
-                  formats are created automatically.
+                  Your product is signed with your Nostr key and broadcast as a <strong>NIP-99</strong> classified
+                  listing to each marketplace's relay set. Plebeian Market migrated fully to NIP-99 in January 2026,
+                  so all four marketplaces now use the same format.
                 </p>
 
                 {/* Marketplace selector */}

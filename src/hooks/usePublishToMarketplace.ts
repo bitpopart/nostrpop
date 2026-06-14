@@ -37,6 +37,7 @@ export const NOSTR_MARKETPLACES: NostrMarketplace[] = [
     relays: [
       'wss://nos.lol',
       'wss://relay.primal.net',
+      'wss://relay.damus.io',
       'wss://relay.ditto.pub',
     ],
     formats: ['nip99'],
@@ -48,14 +49,17 @@ export const NOSTR_MARKETPLACES: NostrMarketplace[] = [
     name: 'Plebeian Market',
     url: 'https://plebeian.market',
     shopUrl: `https://plebeian.market/profile/${ADMIN_HEX_PUBKEY}`,
-    description: 'Self-sovereign marketplace. NIP-99 & NIP-15. V4V, P2P, Bitcoin only.',
+    // Plebeian Market migrated to NIP-99 in January 2026 — NIP-15 is no longer used.
+    // Their own relays: relay.damus.io, nos.lol, relay.primal.net, relay.snort.social
+    description: 'Self-sovereign marketplace. 100% NIP-99 (migrated Jan 2026). V4V, P2P, Bitcoin only.',
     logo: '⚡',
     relays: [
+      'wss://relay.damus.io',
       'wss://nos.lol',
       'wss://relay.primal.net',
-      'wss://relay.ditto.pub',
+      'wss://relay.snort.social',
     ],
-    formats: ['nip15', 'nip99'],
+    formats: ['nip99'],
     color: 'from-orange-500 to-amber-600',
     colorLight: 'bg-orange-50 border-orange-200 dark:bg-orange-900/20 dark:border-orange-800',
   },
@@ -70,6 +74,7 @@ export const NOSTR_MARKETPLACES: NostrMarketplace[] = [
     relays: [
       'wss://relay.primal.net',
       'wss://nos.lol',
+      'wss://relay.damus.io',
       'wss://relay.ditto.pub',
     ],
     formats: ['nip99'],
@@ -86,9 +91,10 @@ export const NOSTR_MARKETPLACES: NostrMarketplace[] = [
     relays: [
       'wss://nos.lol',
       'wss://relay.primal.net',
+      'wss://relay.damus.io',
       'wss://relay.ditto.pub',
     ],
-    formats: ['nip99', 'nip15'],
+    formats: ['nip99'],
     color: 'from-green-500 to-teal-600',
     colorLight: 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800',
   },
@@ -366,22 +372,20 @@ export function usePublishToMarketplace() {
 
     const allResults: PublishResult[] = [];
 
-    // Collect unique relays per format (deduplicated)
-    const nip99RelayMap = new Map<string, string>(); // relay -> marketplaceId
-    const nip15RelayMap = new Map<string, string>();
+    // Collect unique relays for NIP-99. Map relay -> Set<marketplaceId> so a relay
+    // shared by multiple marketplaces is published only once but credited to all of them.
+    const nip99RelayMap = new Map<string, Set<string>>(); // relay -> Set<marketplaceId>
 
     for (const marketplace of targetMarketplaces) {
+      if (!marketplace.formats.includes('nip99')) continue;
       for (const relay of marketplace.relays) {
-        if (marketplace.formats.includes('nip99') && !nip99RelayMap.has(relay)) {
-          nip99RelayMap.set(relay, marketplace.id);
-        }
-        if (marketplace.formats.includes('nip15') && !nip15RelayMap.has(relay)) {
-          nip15RelayMap.set(relay, marketplace.id);
-        }
+        if (!nip99RelayMap.has(relay)) nip99RelayMap.set(relay, new Set());
+        nip99RelayMap.get(relay)!.add(marketplace.id);
       }
     }
 
-    // Sign NIP-99 event once, publish to all NIP-99 relays in one pool
+    // Sign NIP-99 event once, publish to all NIP-99 relays in one pool, then fan
+    // out results to every marketplace that listed that relay.
     if (nip99RelayMap.size > 0) {
       try {
         const unsigned = buildNip99Event(product, user.pubkey);
@@ -389,40 +393,33 @@ export function usePublishToMarketplace() {
         const relayList = Array.from(nip99RelayMap.keys());
         const relayResults = await publishViaRelays(signed, relayList, user.signer);
         for (const r of relayResults) {
-          const mId = nip99RelayMap.get(r.relay) ?? 'unknown';
-          allResults.push({ marketplaceId: mId, relay: r.relay, success: r.success, error: r.error, log: r.log });
+          const mIds = nip99RelayMap.get(r.relay) ?? new Set(['unknown']);
+          for (const mId of mIds) {
+            allResults.push({ marketplaceId: mId, relay: r.relay, success: r.success, error: r.error, log: r.log });
+          }
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Signing failed';
-        for (const [relay, mId] of nip99RelayMap) {
-          allResults.push({ marketplaceId: mId, relay, success: false, error: msg, log: [`✗ ${msg}`] });
+        for (const [relay, mIds] of nip99RelayMap) {
+          for (const mId of mIds) {
+            allResults.push({ marketplaceId: mId, relay, success: false, error: msg, log: [`✗ ${msg}`] });
+          }
         }
       }
     }
 
-    // Sign NIP-15 event once, publish to all NIP-15 relays in one pool
-    if (nip15RelayMap.size > 0) {
-      try {
-        const unsigned = buildNip15Event(product);
-        const signed = await user.signer.signEvent(unsigned);
-        const relayList = Array.from(nip15RelayMap.keys());
-        const relayResults = await publishViaRelays(signed, relayList, user.signer);
-        for (const r of relayResults) {
-          const mId = nip15RelayMap.get(r.relay) ?? 'unknown';
-          allResults.push({ marketplaceId: mId, relay: r.relay, success: r.success, error: r.error, log: r.log });
-        }
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : 'Signing failed';
-        for (const [relay, mId] of nip15RelayMap) {
-          allResults.push({ marketplaceId: mId, relay, success: false, error: msg, log: [`✗ ${msg}`] });
-        }
-      }
+    // Count unique relay successes/failures (each relay appears once per marketplace it serves,
+    // so de-duplicate by relay URL for the summary message).
+    const uniqueRelayResults = new Map<string, boolean>();
+    for (const r of allResults) {
+      // A relay is considered a success if at least one entry for it succeeded.
+      uniqueRelayResults.set(r.relay, (uniqueRelayResults.get(r.relay) ?? false) || r.success);
     }
+    const successCount = Array.from(uniqueRelayResults.values()).filter(Boolean).length;
+    const failCount = Array.from(uniqueRelayResults.values()).filter((v) => !v).length;
 
-    const successCount = allResults.filter((r) => r.success).length;
-    const failCount = allResults.filter((r) => !r.success).length;
-
-    // Persist publish history
+    // Persist publish history — mark a marketplace as published if at least one of its
+    // relays accepted the event.
     const now = Date.now();
     for (const mId of selectedMarketplaceIds) {
       const mResults = allResults.filter((r) => r.marketplaceId === mId);
@@ -443,7 +440,7 @@ export function usePublishToMarketplace() {
     if (successCount > 0) {
       toast({
         title: 'Published to Nostr Marketplaces!',
-        description: `${successCount} relay${successCount !== 1 ? 's' : ''} accepted your listing.${failCount > 0 ? ` ${failCount} failed.` : ''}`,
+        description: `${successCount} relay${successCount !== 1 ? 's' : ''} accepted your listing.${failCount > 0 ? ` ${failCount} relay${failCount !== 1 ? 's' : ''} failed.` : ''}`,
       });
     } else {
       toast({
