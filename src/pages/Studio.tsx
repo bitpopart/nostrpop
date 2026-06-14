@@ -24,7 +24,18 @@ const POP_COLORS = [
   '#FFFFFF','#000000','#C0C0C0','#808080','#4B0082','#800000',
 ];
 
-const FONTS = ['Impact','Arial Black','Comic Sans MS','Georgia','Verdana','Courier New','Trebuchet MS'];
+const FONTS = [
+  'Impact',
+  'Arial Black',
+  'Bebas Neue',
+  'Oswald Variable',
+  'Montserrat Variable',
+  'Raleway Variable',
+  'Black Ops One',
+  'Righteous',
+  'Permanent Marker',
+  'Verdana',
+];
 
 // ─── Element Types ───────────────────────────────────────────────────────────
 type ElementKind = 'image' | 'text';
