@@ -7,7 +7,7 @@ import { RelaySelector } from '@/components/RelaySelector';
 import { Search } from '@/components/Search';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useTheme } from '@/hooks/useTheme';
-import { Menu, Moon, Sun, Shield, Search as SearchIcon, Video } from 'lucide-react';
+import { Menu, Moon, Sun, Shield, Search as SearchIcon, Video, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // Get the base path from import.meta.env or default to '/'
@@ -79,6 +79,18 @@ export function Navigation() {
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center space-x-4">
+            <Link to="/community">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 px-3 gap-1.5 rounded-full font-medium text-sm"
+                title="PopFans Community"
+                style={{ color: '#f7931a' }}
+              >
+                <Users className="h-4 w-4" />
+                <span>PopFans</span>
+              </Button>
+            </Link>
             <Link to="/wall">
               <Button
                 variant="ghost"
@@ -200,6 +212,20 @@ export function Navigation() {
                         <span>{item.name}</span>
                       </Link>
                     ))}
+                    {/* Community / PopFans */}
+                    <Link
+                      to="/community"
+                      onClick={() => setIsOpen(false)}
+                      className={cn(
+                        "flex items-center space-x-3 px-4 py-3 rounded-full text-base font-medium transition-colors",
+                        isActive('/community')
+                          ? "bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400"
+                          : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                      )}
+                    >
+                      <Users className="h-6 w-6 flex-shrink-0" style={{ color: '#f7931a' }} />
+                      <span>PopFans</span>
+                    </Link>
                   </div>
 
                   <div className="border-t pt-6 space-y-4 px-4">
