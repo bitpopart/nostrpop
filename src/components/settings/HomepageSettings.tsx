@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -253,49 +253,58 @@ export function HomepageSettings() {
       return { sections: DEFAULT_SECTIONS, buttons: DEFAULT_BUTTONS };
     },
     enabled: !!adminPubkey,
+    staleTime: 30000, // Don't refetch within 30 s to avoid overwriting local edits
   });
 
   const [sections, setSections] = useState<HomepageSection[]>(nostrSettings?.sections || DEFAULT_SECTIONS);
   const [buttons, setButtons] = useState<HomepageButton[]>(nostrSettings?.buttons || DEFAULT_BUTTONS);
   const [activeTab, setActiveTab] = useState<'sections' | 'buttons'>('sections');
 
+  // Track whether the user has made unsaved local changes.
+  // While dirty, we must NOT let a background query refetch overwrite local state.
+  const isDirty = useRef(false);
+
   useEffect(() => {
-    if (nostrSettings) {
-      // Merge: ensure any DEFAULT_SECTIONS not yet in saved settings are added
-      const savedSections = nostrSettings.sections || DEFAULT_SECTIONS;
-      const savedIds = new Set(savedSections.map(s => s.id));
-      const merged = [...savedSections];
+    // Only sync from the server when there are no unsaved local edits.
+    if (!nostrSettings || isDirty.current) return;
 
-      for (const def of DEFAULT_SECTIONS) {
-        if (savedIds.has(def.id)) continue;
-        // Insert at the position matching the default order
-        const defaultOrder = DEFAULT_SECTIONS.map(s => s.id);
-        const defPos = defaultOrder.indexOf(def.id);
-        const followingIds = defaultOrder.slice(defPos + 1);
-        const insertBeforeIdx = merged.findIndex(s => followingIds.includes(s.id));
-        if (insertBeforeIdx !== -1) {
-          merged.splice(insertBeforeIdx, 0, { ...def });
-        } else {
-          merged.push({ ...def });
-        }
+    // Merge: ensure any DEFAULT_SECTIONS not yet in saved settings are added
+    const savedSections = nostrSettings.sections || DEFAULT_SECTIONS;
+    const savedIds = new Set(savedSections.map(s => s.id));
+    const merged = [...savedSections];
+
+    for (const def of DEFAULT_SECTIONS) {
+      if (savedIds.has(def.id)) continue;
+      // Insert at the position matching the default order
+      const defaultOrder = DEFAULT_SECTIONS.map(s => s.id);
+      const defPos = defaultOrder.indexOf(def.id);
+      const followingIds = defaultOrder.slice(defPos + 1);
+      const insertBeforeIdx = merged.findIndex(s => followingIds.includes(s.id));
+      if (insertBeforeIdx !== -1) {
+        merged.splice(insertBeforeIdx, 0, { ...def });
+      } else {
+        merged.push({ ...def });
       }
-
-      setSections(merged.map((s, i) => ({ ...s, order: i })));
-      setButtons(nostrSettings.buttons || DEFAULT_BUTTONS);
     }
+
+    setSections(merged.map((s, i) => ({ ...s, order: i })));
+    setButtons(nostrSettings.buttons || DEFAULT_BUTTONS);
   }, [nostrSettings]);
 
   // ─── Section handlers ────────────────────────────────────────────────────
   const handleToggle = (id: string) => {
+    isDirty.current = true;
     setSections(prev => prev.map(s => s.id === id ? { ...s, enabled: !s.enabled } : s));
   };
 
   const handleSectionField = (id: string, field: 'title' | 'subtitle', value: string) => {
+    isDirty.current = true;
     setSections(prev => prev.map(s => s.id === id ? { ...s, [field]: value } : s));
   };
 
   const moveSectionUp = (index: number) => {
     if (index === 0) return;
+    isDirty.current = true;
     setSections(prev => {
       const next = [...prev];
       [next[index - 1], next[index]] = [next[index], next[index - 1]];
@@ -305,6 +314,7 @@ export function HomepageSettings() {
 
   const moveSectionDown = (index: number) => {
     if (index === sections.length - 1) return;
+    isDirty.current = true;
     setSections(prev => {
       const next = [...prev];
       [next[index], next[index + 1]] = [next[index + 1], next[index]];
@@ -314,6 +324,7 @@ export function HomepageSettings() {
 
   // ─── Button handlers ─────────────────────────────────────────────────────
   const addHeroButton = () => {
+    isDirty.current = true;
     const newBtn: HomepageButton = {
       id: generateId(),
       label: 'New Button',
@@ -327,6 +338,7 @@ export function HomepageSettings() {
   };
 
   const addInterButton = (afterSectionId: string) => {
+    isDirty.current = true;
     const newBtn: HomepageButton = {
       id: generateId(),
       label: 'New Button',
@@ -340,14 +352,17 @@ export function HomepageSettings() {
   };
 
   const updateButton = (id: string, changes: Partial<HomepageButton>) => {
+    isDirty.current = true;
     setButtons(prev => prev.map(b => b.id === id ? { ...b, ...changes } : b));
   };
 
   const deleteButton = (id: string) => {
+    isDirty.current = true;
     setButtons(prev => prev.filter(b => b.id !== id));
   };
 
   const moveButton = (id: string, dir: 'up' | 'down') => {
+    isDirty.current = true;
     setButtons(prev => {
       const btn = prev.find(b => b.id === id);
       if (!btn) return prev;
@@ -385,6 +400,7 @@ export function HomepageSettings() {
       tags: [['d', 'com.bitpopart.homepage-settings']],
     }, {
       onSuccess: () => {
+        isDirty.current = false; // clear dirty flag — safe to sync from server again
         toast.success('Homepage settings saved to Nostr!');
         queryClient.invalidateQueries({ queryKey: ['homepage-settings', adminPubkey] });
         queryClient.invalidateQueries({ queryKey: ['homepage-settings-public', adminPubkey] });
@@ -406,6 +422,7 @@ export function HomepageSettings() {
       tags: [['d', 'com.bitpopart.homepage-settings']],
     }, {
       onSuccess: () => {
+        isDirty.current = false; // clear dirty flag — safe to sync from server again
         toast.success('Homepage settings reset to default!');
         queryClient.invalidateQueries({ queryKey: ['homepage-settings', adminPubkey] });
         queryClient.invalidateQueries({ queryKey: ['homepage-settings-public', adminPubkey] });
