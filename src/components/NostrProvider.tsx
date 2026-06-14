@@ -107,7 +107,9 @@ const NostrProvider: React.FC<NostrProviderProps> = (props) => {
       // After the first relay sends EOSE, wait this many ms for additional
       // relays to respond before resolving. A longer window gives slower
       // relays time to return their events, ensuring we don't miss content.
-      eoseTimeout: 2000,
+      // 4 s is enough for the slowest of the 3 preset relays while still
+      // being fast enough not to noticeably delay the UI.
+      eoseTimeout: 4000,
     });
   }
 

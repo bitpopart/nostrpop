@@ -82,7 +82,9 @@ const Art = () => {
   const [biddingArtwork, setBiddingArtwork] = useState<ArtworkData | null>(null);
 
   // Fetch artworks
-  const { data: artworks, isLoading: artworksLoading, error: artworksError } = useArtworks(selectedFilter);
+  const { data: artworks, isLoading: artworksLoading, isFetching: artworksFetching, error: artworksError } = useArtworks(selectedFilter);
+  // Show loading state only when there's truly no data yet (not during background re-fetches)
+  const artworksStillLoading = artworksLoading || (artworksFetching && !artworks);
   const { mutate: deleteArtwork } = useDeleteArtwork();
   
   // Get featured artworks for tile gallery
@@ -256,7 +258,7 @@ const Art = () => {
           <TabsContent value="gallery">
             <div className="space-y-6">
               {/* Featured Tile Gallery */}
-              {featuredArtworks.length > 0 && !artworksLoading && (
+              {featuredArtworks.length > 0 && !artworksStillLoading && (
                 <TileGallery
                   artworks={featuredArtworks}
                   onViewDetails={handleViewDetails}
@@ -388,9 +390,9 @@ const Art = () => {
               </Card>
 
               {/* Artworks Display */}
-              {artworksLoading && (
+              {artworksStillLoading && (
                 <div className={`grid gap-6 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'}`}>
-                  {Array.from({ length: 3 }).map((_, i) => (
+                  {Array.from({ length: 6 }).map((_, i) => (
                     <Card key={i} className="overflow-hidden">
                       <div className="aspect-square">
                         <Skeleton className="w-full h-full" />
@@ -433,7 +435,8 @@ const Art = () => {
                 </Card>
               )}
 
-              {artworks && artworks.length === 0 && !artworksLoading && (
+              {/* Only show empty state when loading is truly complete and we got nothing */}
+              {artworks && artworks.length === 0 && !artworksStillLoading && (
                 <Card className="border-dashed">
                   <CardContent className="py-12 px-8 text-center">
                     <div className="max-w-sm mx-auto space-y-6">
@@ -461,7 +464,7 @@ const Art = () => {
                 </Card>
               )}
 
-              {artworks && artworks.length > 0 && (
+              {artworks && artworks.length > 0 && !artworksStillLoading && (
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <p className="text-sm text-muted-foreground">

@@ -24,9 +24,11 @@ const head = createHead({
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      refetchOnWindowFocus: true,  // Re-check when user returns to the tab
-      staleTime: 0,                // Always consider data stale — hit the relay every time
-      gcTime: 60000,               // Keep unused cache for 1 min, then discard
+      refetchOnWindowFocus: false, // Don't re-fetch on tab focus — causes blank flicker
+      staleTime: 30000,            // 30 s default; individual hooks can override this
+      gcTime: 300000,              // Keep unused cache for 5 min to avoid blank states
+      retry: 2,                    // Retry twice on network failure before giving up
+      retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
     },
   },
 });

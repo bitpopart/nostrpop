@@ -414,8 +414,10 @@ const Index = () => {
   // Load data
   const { data: adminNotes, isLoading: notesLoading, error: notesError } = useLatestAdminNotes(3);
   const { data: latestCards, isLoading: cardsLoading, error: cardsError } = useLatestCards(3);
-  const { data: featuredArtworks, isLoading: artworksLoading, error: artworksError } = useArtworks('all');
+  const { data: featuredArtworks, isLoading: artworksLoading, isFetching: artworksFetching, error: artworksError } = useArtworks('all');
   const { data: featuredProjects } = useFeaturedProjects();
+  // Consider artworks still loading if there's no data yet (first load OR background refetch with empty cache)
+  const artworksStillLoading = artworksLoading || (artworksFetching && !featuredArtworks);
   
   // Get all #bitpopart posts
   const { data: allArtProgressPosts, isLoading: allArtProgressLoading } = useBitPopArtPosts();
@@ -741,7 +743,7 @@ const Index = () => {
           </Card>
         )}
 
-        {artworksLoading && (
+        {artworksStillLoading && (
           <div className="grid md:grid-cols-3 gap-6">
             {Array.from({ length: 3 }).map((_, i) => (
               <ThumbnailSkeleton key={i} />
@@ -749,7 +751,8 @@ const Index = () => {
           </div>
         )}
 
-        {featuredArtworksList.length === 0 && !artworksLoading && !artworksError && (
+        {/* Only show "No Artworks Found" when we have definitely finished loading AND got nothing back */}
+        {featuredArtworksList.length === 0 && !artworksStillLoading && !artworksError && (
           <Card className="border-dashed">
             <CardContent className="py-8 px-6 text-center">
               <div className="max-w-sm mx-auto space-y-4">

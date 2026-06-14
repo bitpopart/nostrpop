@@ -34,8 +34,16 @@ export function useArtworks(filter: ArtworkFilter = 'all', options?: { enabled?:
   return useQuery({
     queryKey: ['artworks', filter],
     enabled: options?.enabled !== false,
+    // Keep data fresh for 2 minutes — avoids thrashing re-fetches on every render
+    staleTime: 120000,
+    // Cache for 10 minutes so switching tabs never shows blank state
+    gcTime: 600000,
+    // Retry up to 3 times on failure with exponential back-off
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
     queryFn: async (c) => {
-      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(15000)]);
+      // Use a generous timeout so slow relays still have time to respond
+      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(20000)]);
 
       // Query for artwork events (kind 39239 and legacy kind 30023) and deletion events (kind 5)
       // ONLY query artworks from the admin (BitPopArt)
@@ -46,7 +54,7 @@ export function useArtworks(filter: ArtworkFilter = 'all', options?: { enabled?:
         {
           kinds: [39239, 30023], // Support both new and legacy artwork kinds
           authors: [ADMIN_PUBKEY], // ONLY show artworks from BitPopArt admin
-          limit: 100,
+          limit: 150,
         },
         {
           kinds: [5], // Deletion events — scoped to admin only to avoid unbounded relay results
@@ -205,8 +213,9 @@ export function useArtworks(filter: ArtworkFilter = 'all', options?: { enabled?:
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       });
 
-      // If no valid artworks found from Nostr events, return empty array
-      // (do NOT fall back to sample data — fake auctions would show in the banner)
+      // If no valid artworks found from Nostr events, return empty array.
+      // (Do NOT fall back to sample data — fake auctions would show in the banner.)
+      // The caller should distinguish between "still loading" and "truly empty".
       if (sortedArtworks.length === 0) {
         return [];
       }
@@ -229,8 +238,11 @@ export function useArtworks(filter: ArtworkFilter = 'all', options?: { enabled?:
         }
       });
     },
-    staleTime: 30000, // 30 seconds
-    refetchInterval: 60000, // Refetch every minute
+    staleTime: 120000, // 2 minutes — avoid re-fetching on every render
+    gcTime: 600000,   // 10 minutes — keep data in cache when navigating
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
+    refetchInterval: 120000, // Refetch every 2 minutes in the background
   });
 }
 
@@ -239,8 +251,12 @@ export function useArtwork(artworkId: string, authorPubkey?: string) {
 
   return useQuery({
     queryKey: ['artwork', artworkId, authorPubkey],
+    staleTime: 120000,
+    gcTime: 600000,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
     queryFn: async (c) => {
-      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(5000)]);
+      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(20000)]);
 
       // Query for the artwork and deletion events (support both new and legacy kinds)
       // ONLY allow artworks from the admin (BitPopArt)
