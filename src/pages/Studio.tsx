@@ -315,7 +315,7 @@ export default function Studio() {
       {/* ── Hero ──────────────────────────────────────────────────────── */}
       <div className="bg-gradient-to-r from-orange-500 via-pink-500 to-yellow-400 text-white py-5 px-4">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-white font-black text-lg sm:text-xl tracking-tight" style={{ textShadow: '2px 2px 0 rgba(0,0,0,0.2)' }}>
+          <p className="text-white text-sm font-medium">
             PopArt is for everyone — create your own designs, be free!
           </p>
           <div className="flex gap-2">
