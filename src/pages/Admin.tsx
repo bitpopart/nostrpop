@@ -68,6 +68,7 @@ import {
   CalendarClock,
   Store,
   Upload,
+  ClipboardList,
 } from 'lucide-react';
 
 const Admin = () => {
@@ -189,6 +190,14 @@ const Admin = () => {
       color: 'from-amber-500 to-orange-500',
       action: () => setActiveTab('shop'),
       badge: 'Shop'
+    },
+    {
+      title: 'Orders',
+      description: 'View purchases, manage shipping & digital downloads',
+      icon: ClipboardList,
+      color: 'from-green-500 to-teal-500',
+      action: () => setActiveTab('shop'),
+      badge: 'Orders'
     },
     {
       title: 'Publish to Markets',

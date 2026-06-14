@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { DigitalDownload } from '@/components/marketplace/DigitalDownload';
 import { useMarketplaceProduct } from '@/hooks/useMarketplaceProducts';
 import { formatCurrency } from '@/hooks/usePayment';
+import { createCheckoutOrder } from '@/hooks/useOrders';
 import {
   CheckCircle,
   Package,
@@ -57,6 +58,7 @@ const OrderConfirmation = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [orderNumber] = useState(() => `ORD-${Date.now().toString(36).toUpperCase()}`);
+  const [orderPersisted, setOrderPersisted] = useState(false);
 
   // Get data from navigation state or URL params
   const stateProduct = location.state?.product as MarketplaceProduct;
@@ -90,6 +92,37 @@ const OrderConfirmation = () => {
       navigate('/shop');
     }
   }, [product, productId, stateProduct, navigate]);
+
+  // Persist order to admin order list (runs once when product is available)
+  useEffect(() => {
+    if (!product || orderPersisted) return;
+    const shippingCostVal = product.shipping?.[0]?.cost ?? 0;
+    const total = totalPrice ?? (product.price + (product.type === 'physical' ? shippingCostVal : 0));
+
+    createCheckoutOrder({
+      productId: product.id,
+      productName: product.name,
+      productType: product.type,
+      productImage: product.images?.[0],
+      price: total,
+      currency: product.currency,
+      buyerName: buyerInfo?.name,
+      buyerEmail: buyerInfo?.email,
+      shippingAddress: buyerInfo?.address
+        ? {
+            line1: buyerInfo.address.line1,
+            line2: buyerInfo.address.line2 || undefined,
+            city: buyerInfo.address.city,
+            state: buyerInfo.address.state || undefined,
+            postal_code: buyerInfo.address.postal_code,
+            country: buyerInfo.address.country,
+          }
+        : undefined,
+      paymentMethod: paymentMethod ?? 'Lightning',
+    });
+
+    setOrderPersisted(true);
+  }, [product, orderPersisted, totalPrice, buyerInfo, paymentMethod]);
 
   // Show loading state while fetching product
   if (isLoadingProduct && !stateProduct) {

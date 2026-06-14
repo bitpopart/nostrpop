@@ -16,6 +16,7 @@ import { AddProductByUrl } from './AddProductByUrl';
 import { LightningAddressDebugger } from './LightningAddressDebugger';
 import { CategoryManagement } from './CategoryManagement';
 import { PublishToMarketplaces } from './PublishToMarketplaces';
+import { OrdersManagement } from './OrdersManagement';
 import { formatCurrency } from '@/hooks/usePayment';
 import { useToast } from '@/hooks/useToast';
 import type { MarketplaceProduct } from '@/lib/sampleProducts';
@@ -36,6 +37,7 @@ import {
   CheckCircle2,
   Clock,
   ArrowUpRight,
+  ClipboardList,
 } from 'lucide-react';
 
 import { useCategories } from '@/hooks/useCategories';
@@ -327,7 +329,7 @@ function BulkPublishPanel({ products }: { products: MarketplaceProduct[] }) {
 }
 
 export function ProductManagement() {
-  const [activeTab, setActiveTab] = useState('products');
+  const [activeTab, setActiveTab] = useState('orders');
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
   const [searchQuery, setSearchQuery] = useState('');
   const [editingProduct, setEditingProduct] = useState<MarketplaceProduct | null>(null);
@@ -472,7 +474,11 @@ export function ProductManagement() {
 
       {/* Main Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-6 max-w-5xl">
+        <TabsList className="grid w-full grid-cols-7 max-w-5xl">
+          <TabsTrigger value="orders" className="flex items-center gap-1 text-orange-600 dark:text-orange-400 font-semibold">
+            <ClipboardList className="h-3.5 w-3.5" />
+            Orders
+          </TabsTrigger>
           <TabsTrigger value="products">Products</TabsTrigger>
           <TabsTrigger value="create">Create</TabsTrigger>
           <TabsTrigger value="import">Import URL</TabsTrigger>
@@ -480,6 +486,10 @@ export function ProductManagement() {
           <TabsTrigger value="categories">Categories</TabsTrigger>
           <TabsTrigger value="debug">Debug</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="orders" className="space-y-6">
+          <OrdersManagement />
+        </TabsContent>
 
         <TabsContent value="products" className="space-y-6">
           {/* Filters */}
