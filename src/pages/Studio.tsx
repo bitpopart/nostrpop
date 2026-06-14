@@ -303,15 +303,10 @@ export default function Studio() {
     <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-orange-50 to-pink-50 dark:from-gray-950 dark:via-orange-950/20 dark:to-pink-950/20">
       {/* ── Hero ──────────────────────────────────────────────────────── */}
       <div className="bg-gradient-to-r from-orange-500 via-pink-500 to-yellow-400 text-white py-5 px-4">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div>
-            <h1 className="text-3xl font-black tracking-tight uppercase" style={{ fontFamily: 'Impact, Arial Black, sans-serif', textShadow: '3px 3px 0 rgba(0,0,0,0.3)' }}>
-              🎨 Pop Art Studio
-            </h1>
-            <p className="text-white/90 text-sm mt-0.5 font-medium">
-              PopArt is for everyone — create your own designs, free!
-            </p>
-          </div>
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-white font-black text-lg sm:text-xl tracking-tight" style={{ textShadow: '2px 2px 0 rgba(0,0,0,0.2)' }}>
+            PopArt is for everyone — create your own designs, be free!
+          </p>
           <div className="flex gap-2">
             <Button size="sm" variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-white/40 border" onClick={handleDownloadPNG}>
               <Download className="h-4 w-4 mr-1.5" /> Download PNG
