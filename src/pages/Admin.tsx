@@ -384,8 +384,15 @@ const Admin = () => {
 
         {/* Admin Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-10 lg:grid-cols-12 max-w-7xl mx-auto mb-8 text-xs flex-wrap h-auto gap-1">
+          <TabsList className="flex flex-wrap w-full max-w-7xl mx-auto mb-8 text-xs h-auto gap-1 bg-muted/50 p-1 rounded-lg justify-start">
             <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger
+              value="studio"
+              className="flex items-center gap-1 bg-gradient-to-r from-orange-500 to-pink-500 text-white data-[state=active]:from-orange-600 data-[state=active]:to-pink-600 data-[state=active]:text-white font-bold rounded-md"
+            >
+              <Library className="h-3.5 w-3.5" />
+              🎨 Studio
+            </TabsTrigger>
             <TabsTrigger value="homepage">Homepage</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
             <TabsTrigger value="art-progress">Art Progress</TabsTrigger>
@@ -424,13 +431,6 @@ const Admin = () => {
             >
               <CalendarClock className="h-3.5 w-3.5" />
               PopPost
-            </TabsTrigger>
-            <TabsTrigger
-              value="studio"
-              className="flex items-center gap-1 text-orange-600 dark:text-orange-400 font-semibold"
-            >
-              <Library className="h-3.5 w-3.5" />
-              Studio
             </TabsTrigger>
           </TabsList>
 

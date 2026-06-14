@@ -14,13 +14,13 @@ import { cn } from '@/lib/utils';
 const basePath = import.meta.env.BASE_URL || '/';
 
 const navigationItems = [
-  { name: 'News', href: '/blog', icon: `${basePath}News_button_1.svg` },
-  { name: 'Artist', href: '/artist', icon: `${basePath}artist_button_1.svg` },
-  { name: 'PopUp', href: '/popup', icon: `${basePath}PopUP_button_1.svg` },
-  { name: 'Art', href: '/art', icon: `${basePath}Art_button_1.svg` },
-  { name: 'Projects', href: '/projects', icon: `${basePath}projects_button_1.svg` },
-  { name: 'Fundraising', href: '/fundraising', icon: `${basePath}fundrasing_button_1.svg` },
-  { name: 'Shop', href: '/shop', icon: `${basePath}Shop_button_1.svg` },
+  { name: 'News', href: '/blog', icon: `${basePath}News_button_1.svg`, highlight: false },
+  { name: 'Artist', href: '/artist', icon: `${basePath}artist_button_1.svg`, highlight: false },
+  { name: 'PopUp', href: '/popup', icon: `${basePath}PopUP_button_1.svg`, highlight: false },
+  { name: 'Art', href: '/art', icon: `${basePath}Art_button_1.svg`, highlight: false },
+  { name: 'Projects', href: '/projects', icon: `${basePath}projects_button_1.svg`, highlight: false },
+  { name: 'Fundraising', href: '/fundraising', icon: `${basePath}fundrasing_button_1.svg`, highlight: false },
+  { name: 'Shop', href: '/shop', icon: `${basePath}Shop_button_1.svg`, highlight: false },
 ];
 
 export function Navigation() {
@@ -65,31 +65,24 @@ export function Navigation() {
                 key={item.name}
                 to={item.href}
                 className={cn(
-                  "flex items-center space-x-2 px-3 py-2 rounded-full text-sm font-medium transition-colors",
-                  isActive(item.href)
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                  "flex items-center space-x-2 px-3 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap",
+                  item.highlight
+                    ? isActive(item.href)
+                      ? "bg-gradient-to-r from-orange-600 to-pink-600 text-white"
+                      : "bg-gradient-to-r from-orange-500 to-pink-500 text-white hover:from-orange-600 hover:to-pink-600"
+                    : isActive(item.href)
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent"
                 )}
               >
-                <img src={item.icon} alt={item.name} className="h-5 w-5 flex-shrink-0" />
-                <span className="whitespace-nowrap">{item.name}</span>
+                {item.icon && <img src={item.icon} alt={item.name} className="h-5 w-5 flex-shrink-0" />}
+                <span>{item.name}</span>
               </Link>
             ))}
           </div>
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center space-x-4">
-            <Link to="/studio">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-9 px-3 gap-1.5 rounded-full font-bold text-sm bg-gradient-to-r from-orange-500 to-pink-500 text-white hover:from-orange-600 hover:to-pink-600 hover:text-white"
-                title="Pop Art Studio"
-              >
-                <Palette className="h-4 w-4" />
-                <span>Studio</span>
-              </Button>
-            </Link>
             <Link to="/community">
               <Button
                 variant="ghost"
@@ -214,29 +207,22 @@ export function Navigation() {
                         onClick={() => setIsOpen(false)}
                         className={cn(
                           "flex items-center space-x-3 px-4 py-3 rounded-full text-base font-medium transition-colors",
-                          isActive(item.href)
-                            ? "bg-primary/10 text-primary"
-                            : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                          item.highlight
+                            ? isActive(item.href)
+                              ? "bg-gradient-to-r from-orange-600 to-pink-600 text-white font-bold"
+                              : "bg-gradient-to-r from-orange-500 to-pink-500 text-white font-bold"
+                            : isActive(item.href)
+                              ? "bg-primary/10 text-primary"
+                              : "text-muted-foreground hover:text-foreground hover:bg-accent"
                         )}
                       >
-                        <img src={item.icon} alt={item.name} className="h-6 w-6" />
+                        {item.icon
+                          ? <img src={item.icon} alt={item.name} className="h-6 w-6 flex-shrink-0" />
+                          : <Palette className="h-6 w-6 flex-shrink-0" />
+                        }
                         <span>{item.name}</span>
                       </Link>
                     ))}
-                    {/* Studio */}
-                    <Link
-                      to="/studio"
-                      onClick={() => setIsOpen(false)}
-                      className={cn(
-                        "flex items-center space-x-3 px-4 py-3 rounded-full text-base font-bold transition-colors",
-                        isActive('/studio')
-                          ? "bg-orange-500 text-white"
-                          : "text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20"
-                      )}
-                    >
-                      <Palette className="h-6 w-6 flex-shrink-0" />
-                      <span>Pop Art Studio</span>
-                    </Link>
                     {/* Community / PopFans */}
                     <Link
                       to="/community"
