@@ -20,6 +20,7 @@ import {
   useCreateFreeDownload,
   useDeleteFreeDownload,
 } from '@/hooks/useFreeDownloads';
+import { recordDownload } from '@/hooks/useDownloadTracking';
 import {
   Download,
   Upload,
@@ -154,7 +155,10 @@ export default function FreeDownloads() {
     if (published > 0) setShowUploadForm(false);
   };
 
-  const handleDownload = async (url: string, filename: string) => {
+  const handleDownload = async (url: string, filename: string, tracking?: { itemId: string; title: string }) => {
+    if (tracking) {
+      recordDownload({ itemId: tracking.itemId, title: tracking.title, category: 'free', imageUrl: url });
+    }
     try {
       const response = await fetch(url);
       const blob = await response.blob();
@@ -441,7 +445,7 @@ export default function FreeDownloads() {
                           style={getGradientStyle('primary')}
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleDownload(dl.image_url, filename);
+                            handleDownload(dl.image_url, filename, { itemId: dl.id, title: dl.title });
                           }}
                           title="Download"
                         >
@@ -471,7 +475,7 @@ export default function FreeDownloads() {
                           style={getGradientStyle('primary')}
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleDownload(dl.image_url, filename);
+                            handleDownload(dl.image_url, filename, { itemId: dl.id, title: dl.title });
                           }}
                           title="Download"
                         >

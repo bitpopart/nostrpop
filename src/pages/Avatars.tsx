@@ -7,11 +7,17 @@ import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppMedia, type AppMedia } from '@/hooks/useAppContent';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { recordDownload } from '@/hooks/useDownloadTracking';
 import { Download, UserCircle2, ArrowLeft } from 'lucide-react';
-import { RelaySelector } from '@/components/RelaySelector';
-import { HashtagCloud } from '@/components/HashtagCloud';
 
-function handleDownload(url: string, filename: string) {
+function handleDownload(
+  url: string,
+  filename: string,
+  tracking?: { itemId: string; title: string },
+) {
+  if (tracking) {
+    recordDownload({ itemId: tracking.itemId, title: tracking.title, category: 'avatar', imageUrl: url });
+  }
   fetch(url)
     .then(r => r.blob())
     .then(blob => {
@@ -217,7 +223,7 @@ export default function Avatars() {
                 <Button
                   className="w-full gap-2 text-white border-0 font-semibold shadow"
                   style={getGradientStyle('primary')}
-                  onClick={() => handleDownload(lightbox.image_url, deriveFilename(lightbox.image_url, lightbox.title))}
+                  onClick={() => handleDownload(lightbox.image_url, deriveFilename(lightbox.image_url, lightbox.title), { itemId: lightbox.id, title: lightbox.title })}
                 >
                   <Download className="h-4 w-4" />
                   Download Free
