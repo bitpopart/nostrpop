@@ -315,9 +315,17 @@ export default function Studio() {
       {/* ── Hero ──────────────────────────────────────────────────────── */}
       <div className="bg-gradient-to-r from-orange-500 via-pink-500 to-yellow-400 text-white py-5 px-4">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-white text-sm font-medium">
-            PopArt is for everyone — create your own designs, be free!
-          </p>
+          <div className="flex items-center gap-3 flex-wrap">
+            <p className="text-white text-sm font-medium">
+              PopArt is for everyone — create your own designs, be free!
+            </p>
+            <a
+              href="https://www.bitpopart.com/free"
+              className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-white/20 hover:bg-white/30 text-white border border-white/40 transition-colors whitespace-nowrap"
+            >
+              Free Downloads
+            </a>
+          </div>
           <div className="flex gap-2">
             <Button size="sm" variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-white/40 border" onClick={handleDownloadPNG}>
               <Download className="h-4 w-4 mr-1.5" /> Download PNG
