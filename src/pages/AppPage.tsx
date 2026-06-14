@@ -28,7 +28,6 @@ import {
   Sparkles,
   UserCircle2,
   PanelTop,
-  BarChart3,
 } from 'lucide-react';
 
 // 3 columns × 3 rows = 9 items max shown in preview
@@ -451,10 +450,7 @@ export default function AppPage() {
 
         {/* ── Admin shortcut ────────────────────────────── */}
         {isAdmin && (
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" size="sm" onClick={() => navigate('/admin?tab=app-analytics')}>
-              <BarChart3 className="h-4 w-4 mr-1" /> App Stats
-            </Button>
+          <div className="flex justify-end">
             <Button variant="outline" size="sm" onClick={() => navigate('/admin?tab=app')}>
               <Settings className="h-4 w-4 mr-1" /> Manage App Content
             </Button>

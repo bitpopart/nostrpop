@@ -400,13 +400,6 @@ const Admin = () => {
             <TabsTrigger value="app-avatars">Avatars</TabsTrigger>
             <TabsTrigger value="app-banners">Banners</TabsTrigger>
             <TabsTrigger
-              value="app-analytics"
-              className="flex items-center gap-1 text-green-600 dark:text-green-400 font-semibold"
-            >
-              <BarChart3 className="h-3.5 w-3.5" />
-              App Stats
-            </TabsTrigger>
-            <TabsTrigger
               value="app-publish"
               className="flex items-center gap-1 text-orange-600 dark:text-orange-400 font-semibold"
             >
@@ -866,7 +859,7 @@ const Admin = () => {
           </TabsContent>
 
           <TabsContent value="app">
-            <div className="space-y-4">
+            <div className="space-y-8">
               <div className="flex items-center gap-3 mb-2">
                 <Smartphone className="h-6 w-6 text-orange-600" />
                 <div>
@@ -879,6 +872,15 @@ const Admin = () => {
                 </div>
               </div>
               <AppContentDashboard onNavigate={setActiveTab} />
+
+              {/* Download analytics — inline in the same tab */}
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <BarChart3 className="h-5 w-5 text-green-600" />
+                  <h2 className="text-xl font-bold">Download Analytics</h2>
+                </div>
+                <AppAnalyticsDashboard />
+              </div>
             </div>
           </TabsContent>
 
@@ -896,10 +898,6 @@ const Admin = () => {
 
           <TabsContent value="app-banners">
             <BannersAdmin onBack={() => setActiveTab('app')} />
-          </TabsContent>
-
-          <TabsContent value="app-analytics">
-            <AppAnalyticsDashboard />
           </TabsContent>
 
           <TabsContent value="app-publish">
