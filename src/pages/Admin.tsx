@@ -39,6 +39,7 @@ import { AvatarsAdmin } from '@/components/app/AvatarsAdmin';
 import { BannersAdmin } from '@/components/app/BannersAdmin';
 import { FanAppPublishing } from '@/components/app/FanAppPublishing';
 import { AnimationsManagement } from '@/components/animations/AnimationsManagement';
+import { StudioLibrariesAdmin } from '@/components/studio/StudioLibrariesAdmin';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import {
   Plus,
@@ -48,6 +49,7 @@ import {
   Sparkles,
   ArrowRight,
   TrendingUp,
+  Library,
   Palette,
   ShoppingBag,
   CreditCard,
@@ -294,6 +296,14 @@ const Admin = () => {
       badge: 'Publish'
     },
     {
+      title: 'Pop Art Studio',
+      description: 'Manage element libraries for the design studio',
+      icon: Library,
+      color: 'from-orange-500 to-pink-500',
+      action: () => setActiveTab('studio'),
+      badge: 'Studio'
+    },
+    {
       title: 'Analytics',
       description: 'Track site visitors',
       icon: BarChart3,
@@ -414,6 +424,13 @@ const Admin = () => {
             >
               <CalendarClock className="h-3.5 w-3.5" />
               PopPost
+            </TabsTrigger>
+            <TabsTrigger
+              value="studio"
+              className="flex items-center gap-1 text-orange-600 dark:text-orange-400 font-semibold"
+            >
+              <Library className="h-3.5 w-3.5" />
+              Studio
             </TabsTrigger>
           </TabsList>
 
@@ -574,6 +591,14 @@ const Admin = () => {
                   >
                     <Target className="h-6 w-6 text-teal-600" />
                     <span className="text-sm font-medium">Fundraising</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-24 flex flex-col items-center justify-center gap-2 hover:bg-orange-50 dark:hover:bg-orange-900/20 border-orange-200"
+                    onClick={() => navigate('/studio')}
+                  >
+                    <Library className="h-6 w-6 text-orange-600" />
+                    <span className="text-sm font-medium">Pop Art Studio</span>
                   </Button>
                 </div>
               </div>
@@ -919,6 +944,10 @@ const Admin = () => {
 
           <TabsContent value="app-publish">
             <FanAppPublishing />
+          </TabsContent>
+
+          <TabsContent value="studio">
+            <StudioLibrariesAdmin />
           </TabsContent>
 
         </Tabs>

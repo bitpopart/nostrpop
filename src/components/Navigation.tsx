@@ -7,7 +7,7 @@ import { RelaySelector } from '@/components/RelaySelector';
 import { Search } from '@/components/Search';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useTheme } from '@/hooks/useTheme';
-import { Menu, Moon, Sun, Shield, Search as SearchIcon, Video, Users } from 'lucide-react';
+import { Menu, Moon, Sun, Shield, Search as SearchIcon, Video, Users, Palette } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // Get the base path from import.meta.env or default to '/'
@@ -79,6 +79,17 @@ export function Navigation() {
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center space-x-4">
+            <Link to="/studio">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 px-3 gap-1.5 rounded-full font-bold text-sm bg-gradient-to-r from-orange-500 to-pink-500 text-white hover:from-orange-600 hover:to-pink-600 hover:text-white"
+                title="Pop Art Studio"
+              >
+                <Palette className="h-4 w-4" />
+                <span>Studio</span>
+              </Button>
+            </Link>
             <Link to="/community">
               <Button
                 variant="ghost"
@@ -212,6 +223,20 @@ export function Navigation() {
                         <span>{item.name}</span>
                       </Link>
                     ))}
+                    {/* Studio */}
+                    <Link
+                      to="/studio"
+                      onClick={() => setIsOpen(false)}
+                      className={cn(
+                        "flex items-center space-x-3 px-4 py-3 rounded-full text-base font-bold transition-colors",
+                        isActive('/studio')
+                          ? "bg-orange-500 text-white"
+                          : "text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20"
+                      )}
+                    >
+                      <Palette className="h-6 w-6 flex-shrink-0" />
+                      <span>Pop Art Studio</span>
+                    </Link>
                     {/* Community / PopFans */}
                     <Link
                       to="/community"
