@@ -559,15 +559,7 @@ export default function Community() {
             >
               {formatFullDate(NOSTR_SINCE_DATE)}
             </p>
-            {powLoading ? (
-              <Skeleton className="h-5 w-52 mx-auto" />
-            ) : (
-              <p className="text-muted-foreground text-sm">
-                {pow?.totalCount
-                  ? `${pow.totalCount.toLocaleString()}+ original notes published on the protocol`
-                  : 'Counting notes from the archive…'}
-              </p>
-            )}
+
           </CardContent>
         </Card>
 
