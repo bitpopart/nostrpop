@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { usePopFans, type ZapperEntry, type ReactorEntry, type LikeEntry } from '@/hooks/usePopFans';
 import { useAuthor } from '@/hooks/useAuthor';
-import { useProofOfWork } from '@/hooks/useProofOfWork';
+import { useProofOfWork, NOSTR_SINCE_DATE } from '@/hooks/useProofOfWork';
 import { useLatestAdminNotes } from '@/hooks/useAdminNotes';
 import { genUserName } from '@/lib/genUserName';
 import { nip19 } from 'nostr-tools';
@@ -545,34 +545,28 @@ export default function Community() {
         <Card className="mb-8 overflow-hidden border-2 border-purple-200 dark:border-purple-800 shadow-lg"
           style={{ background: 'linear-gradient(135deg, #8b5cf611, #6366f108)' }}>
           <CardContent className="py-8 text-center">
+            <p className="text-sm font-semibold uppercase tracking-widest text-purple-600 dark:text-purple-400 mb-2">
+              🟣 On Nostr Since
+            </p>
+            <p
+              className="text-4xl sm:text-5xl font-black mb-3 tracking-tight"
+              style={{
+                background: 'linear-gradient(90deg, #8b5cf6, #6366f1)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}
+            >
+              {formatFullDate(NOSTR_SINCE_DATE)}
+            </p>
             {powLoading ? (
-              <div className="space-y-3">
-                <Skeleton className="h-8 w-48 mx-auto" />
-                <Skeleton className="h-12 w-72 mx-auto" />
-                <Skeleton className="h-5 w-40 mx-auto" />
-              </div>
-            ) : pow?.nostrSinceDate ? (
-              <>
-                <p className="text-sm font-semibold uppercase tracking-widest text-purple-600 dark:text-purple-400 mb-2">
-                  🟣 On Nostr Since
-                </p>
-                <p
-                  className="text-4xl sm:text-5xl font-black mb-2 tracking-tight"
-                  style={{
-                    background: 'linear-gradient(90deg, #8b5cf6, #6366f1)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                  }}
-                >
-                  {formatFullDate(pow.nostrSinceDate)}
-                </p>
-                <p className="text-muted-foreground text-sm">
-                  {pow.totalCount.toLocaleString()} original notes published on the protocol
-                </p>
-              </>
+              <Skeleton className="h-5 w-52 mx-auto" />
             ) : (
-              <p className="text-muted-foreground">Loading Nostr history…</p>
+              <p className="text-muted-foreground text-sm">
+                {pow?.totalCount
+                  ? `${pow.totalCount.toLocaleString()}+ original notes published on the protocol`
+                  : 'Counting notes from the archive…'}
+              </p>
             )}
           </CardContent>
         </Card>

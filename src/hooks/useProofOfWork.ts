@@ -7,6 +7,13 @@ const ADMIN_NPUB = 'npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta
 const ADMIN_HEX = nip19.decode(ADMIN_NPUB).data as string;
 
 /**
+ * The confirmed date BitPopArt joined Nostr.
+ * Hardcoded because old relays prune history and won't have events this far back.
+ * February 2023 is the known start — relays only return as far back as July 2023.
+ */
+export const NOSTR_SINCE_DATE = new Date('2023-02-01');
+
+/**
  * These relays are queried specifically for the Proof of Work section.
  * They are well-known archive/index relays that store full Nostr history,
  * independent of the relay the rest of the site uses.
@@ -111,7 +118,9 @@ export function useProofOfWork() {
           allNotes: sortedNewest,
           latestNotes: sortedNewest.slice(0, 3),
           earliestNote,
-          nostrSinceDate: earliestNote ? new Date(earliestNote.created_at * 1000) : null,
+          // Always use the hardcoded date — relay history is pruned and won't
+          // reliably return events from early 2023.
+          nostrSinceDate: NOSTR_SINCE_DATE,
           totalCount: sortedNewest.length,
         };
       } finally {
