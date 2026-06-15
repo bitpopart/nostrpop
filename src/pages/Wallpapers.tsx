@@ -9,6 +9,8 @@ import { useAppMedia, type AppMedia } from '@/hooks/useAppContent';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { recordDownload } from '@/hooks/useDownloadTracking';
+import { HashtagCloud } from '@/components/HashtagCloud';
+import { RelaySelector } from '@/components/RelaySelector';
 import { Download, Image as ImageIcon, ArrowLeft } from 'lucide-react';
 
 function handleDownload(
