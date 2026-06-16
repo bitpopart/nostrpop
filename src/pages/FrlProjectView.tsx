@@ -76,7 +76,10 @@ export default function FrlProjectView() {
   // Parse data from the event
   const brandSiteUrl = project?.tags.find(t => t[0] === 'brand-site')?.[1];
   const projectName = project?.tags.find(t => t[0] === 'name')?.[1] ?? 'Project';
-  const isHtmlUrl = brandSiteUrl ? /\.html?(\?|$)/i.test(brandSiteUrl) : false;
+  // brand-site-inline=true means the URL points to an HTML file on Blossom (no .html extension needed)
+  const isBrandSiteInline = project?.tags.find(t => t[0] === 'brand-site-inline')?.[1] === 'true';
+  // Always fetch as HTML when brand-site-inline is set, regardless of URL extension
+  const shouldFetchHtml = isBrandSiteInline && !!brandSiteUrl;
 
   // HTML fetch state — initialise from cache immediately
   const [fetchedHtml, setFetchedHtml] = useState<string | null>(
@@ -86,7 +89,7 @@ export default function FrlProjectView() {
   const fetchingUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!isHtmlUrl || !brandSiteUrl) return;
+    if (!shouldFetchHtml || !brandSiteUrl) return;
     if (htmlCache.has(brandSiteUrl)) { setFetchedHtml(htmlCache.get(brandSiteUrl)!); return; }
     if (fetchingUrlRef.current === brandSiteUrl) return;
     fetchingUrlRef.current = brandSiteUrl;
@@ -95,7 +98,7 @@ export default function FrlProjectView() {
       .then(r => r.text())
       .then(html => { htmlCache.set(brandSiteUrl, html); setFetchedHtml(html); setFetchingHtml(false); })
       .catch(() => setFetchingHtml(false));
-  }, [brandSiteUrl, isHtmlUrl]);
+  }, [brandSiteUrl, shouldFetchHtml]);
 
   // Handle download requests from inside the iframe
   useEffect(() => {
@@ -127,7 +130,7 @@ export default function FrlProjectView() {
   });
 
   // ── Loading state ──────────────────────────────────────────
-  if (isLoading || (isHtmlUrl && fetchingHtml && !fetchedHtml)) {
+  if (isLoading || (shouldFetchHtml && fetchingHtml && !fetchedHtml)) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20">
         <div className="container mx-auto px-4 py-12">
