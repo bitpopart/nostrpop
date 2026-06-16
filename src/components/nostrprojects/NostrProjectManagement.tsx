@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, X, Upload, Image as ImageIcon, Edit, Award, Loader2, Globe, FileText } from 'lucide-react';
+import { Plus, X, Upload, Image as ImageIcon, Edit, Award, Loader2, Globe, FileText, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import { generateNostrProjectUUID } from '@/lib/nostrProjectTypes';
 import type { NostrProjectData } from '@/lib/nostrProjectTypes';
@@ -295,6 +295,13 @@ export function NostrProjectManagement() {
             <CardTitle>{editingProject ? 'Edit' : 'Create New'} Nostr Project</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Alby signing hint */}
+            <div className="flex items-start gap-3 p-3 rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-900/20 text-sm text-amber-800 dark:text-amber-300">
+              <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
+              <p>
+                <strong>Using Alby?</strong> When saving or uploading, a signing popup will appear. If it shows up blank, click the <strong>Alby icon</strong> in your browser toolbar to approve the request.
+              </p>
+            </div>
             {/* Header Image */}
             <div className="space-y-2">
               <Label htmlFor="header-image">Header Image / Thumbnail</Label>

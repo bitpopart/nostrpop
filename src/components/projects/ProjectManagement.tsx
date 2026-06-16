@@ -38,6 +38,7 @@ import {
   FileText,
   House,
   TreePine,
+  Info,
 } from 'lucide-react';
 import type { GameMode } from '@/lib/projectTypes';
 import type { NostrEvent } from '@nostrify/nostrify';
@@ -391,6 +392,13 @@ export function ProjectManagement({ filterCategory }: ProjectManagementProps = {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {/* Alby signing hint */}
+            <div className="flex items-start gap-3 p-3 mb-4 rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-900/20 text-sm text-amber-800 dark:text-amber-300">
+              <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
+              <p>
+                <strong>Using Alby?</strong> When saving or uploading, a signing popup will appear. If it shows up blank, click the <strong>Alby icon</strong> in your browser toolbar to approve the request.
+              </p>
+            </div>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Project Name *</Label>
