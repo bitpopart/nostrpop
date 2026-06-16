@@ -265,13 +265,16 @@ export default function Projects() {
     };
   });
 
-  // Apply custom thumbnails to category sections
+  // Apply custom thumbnails + optional link overrides to category sections
   const categorySectionsWithThumbnails = CATEGORY_SECTIONS.map(section => {
     const customization = builtInCustomizations.find(e => e.tags.find(t => t[0] === 'd')?.[1] === `category-${section.id}`);
     const customThumbnail = customization ? getProjectThumbnail(customization.tags, {}) : '';
+    const customUrl = customization?.tags.find(t => t[0] === 'r')?.[1] ?? '';
     return {
       ...section,
       thumbnail: customThumbnail,
+      // Use custom URL if set, otherwise fall back to the hardcoded default
+      url: customUrl || section.url,
     };
   });
 
@@ -318,7 +321,13 @@ export default function Projects() {
             <Card
               key={section.id}
               className="group overflow-hidden cursor-pointer hover:shadow-2xl transition-all duration-300 bg-white dark:bg-gray-800 border-2 border-transparent hover:border-orange-300 dark:hover:border-orange-600"
-              onClick={() => navigate(section.url)}
+              onClick={() => {
+                if (section.url.startsWith('http')) {
+                  window.open(section.url, '_blank');
+                } else {
+                  navigate(section.url);
+                }
+              }}
             >
               <div className="relative h-64 overflow-hidden">
                 {section.thumbnail ? (

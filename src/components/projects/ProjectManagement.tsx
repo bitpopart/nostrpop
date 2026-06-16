@@ -1189,65 +1189,65 @@ function BuiltInProjectsManager() {
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const [isUploading, setIsUploading] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState<string | null>(null);
   const [thumbnails, setThumbnails] = useState<Record<string, string>>({});
+  // Per-category link URLs (only used for category items)
+  const [links, setLinks] = useState<Record<string, string>>({});
+  // Which category item is currently expanded for editing
+  const [editingCategory, setEditingCategory] = useState<string | null>(null);
+  // Draft values while editing
+  const [draftThumbnail, setDraftThumbnail] = useState('');
+  const [draftLink, setDraftLink] = useState('');
 
-  // Fetch built-in project thumbnails
+  // Fetch built-in project events
   const { data: builtInProjects } = useQuery({
     queryKey: ['builtin-projects', user?.pubkey],
     queryFn: async (c) => {
       if (!user?.pubkey) return [];
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(3000)]);
-      
       const events = await nostr.query(
         [{ kinds: [36171], authors: [user.pubkey], '#t': ['builtin-project'], limit: 10 }],
         { signal }
       );
-
       return events;
     },
     enabled: !!user?.pubkey,
   });
 
-  // Load thumbnails from events
+  // Load thumbnails + links from events
   useEffect(() => {
     if (builtInProjects) {
       const newThumbnails: Record<string, string> = {};
+      const newLinks: Record<string, string> = {};
       builtInProjects.forEach(event => {
-        const projectId = event.tags.find(t => t[0] === 'd')?.[1];
-        const thumbnail = event.tags.find(t => t[0] === 'image')?.[1];
-        if (projectId && thumbnail) {
-          newThumbnails[projectId] = thumbnail;
+        const id = event.tags.find(t => t[0] === 'd')?.[1];
+        const thumb = event.tags.find(t => t[0] === 'image')?.[1];
+        const link = event.tags.find(t => t[0] === 'r')?.[1];
+        if (id) {
+          if (thumb) newThumbnails[id] = thumb;
+          if (link) newLinks[id] = link;
         }
       });
       setThumbnails(newThumbnails);
+      setLinks(newLinks);
     }
   }, [builtInProjects]);
 
-  const handleImageUpload = async (projectId: string, event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+  // ── Built-in (non-category) thumbnail upload — unchanged behaviour ────────
+
+  const handleBuiltInImageUpload = async (projectId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (!file) return;
-
-    const maxSize = 10 * 1024 * 1024;
-    if (file.size > maxSize) {
-      toast.error('File is larger than 10MB. Please choose a smaller file.');
-      return;
-    }
-
+    if (file.size > 10 * 1024 * 1024) { toast.error('File is larger than 10MB.'); return; }
     setIsUploading(projectId);
     try {
       const tags = await uploadFile(file);
       const imageUrl = tags[0][1];
-      
-      // Save to Nostr
       createEvent(
         {
           kind: 36171,
           content: JSON.stringify({ thumbnail: imageUrl }),
-          tags: [
-            ['d', projectId],
-            ['image', imageUrl],
-            ['t', 'builtin-project'],
-          ],
+          tags: [['d', projectId], ['image', imageUrl], ['t', 'builtin-project']],
         },
         {
           onSuccess: () => {
@@ -1256,28 +1256,19 @@ function BuiltInProjectsManager() {
             queryClient.invalidateQueries({ queryKey: ['builtin-projects'] });
             queryClient.invalidateQueries({ queryKey: ['projects'] });
           },
-          onError: () => {
-            toast.error('Failed to update thumbnail');
-          },
+          onError: () => toast.error('Failed to update thumbnail'),
         }
       );
-    } catch (error) {
-      console.error('Upload error:', error);
-      toast.error('Failed to upload image');
-    } finally {
-      setIsUploading(null);
-    }
+    } catch { toast.error('Failed to upload image'); }
+    finally { setIsUploading(null); }
   };
 
-  const handleRemoveImage = (projectId: string) => {
+  const handleBuiltInRemoveImage = (projectId: string) => {
     createEvent(
       {
         kind: 36171,
         content: JSON.stringify({ thumbnail: '' }),
-        tags: [
-          ['d', projectId],
-          ['t', 'builtin-project'],
-        ],
+        tags: [['d', projectId], ['t', 'builtin-project']],
       },
       {
         onSuccess: () => {
@@ -1290,38 +1281,113 @@ function BuiltInProjectsManager() {
     );
   };
 
-  const projects = [
-    { id: '21k-art', name: '21K Art', description: 'Exclusive artwork collection priced at 21,000 sats', type: 'built-in' as const },
-    { id: '100m-canvas', name: '100M Canvas', description: 'Collaborative pixel art project', type: 'built-in' as const },
-    { id: 'cards', name: 'POP Cards', description: 'Create and share Good Vibes cards', type: 'built-in' as const },
-    { id: 'category-games', name: 'Games Section', description: 'Thumbnail for the Games category on the Projects page', type: 'category' as const },
-    { id: 'category-animations', name: 'Animations Section', description: 'Thumbnail for the Animations category on the Projects page', type: 'category' as const },
-    { id: 'category-frl', name: 'POPArt.frl Section', description: 'Thumbnail for the POPArt.frl category on the Projects page', type: 'category' as const },
+  // ── Category section editing ──────────────────────────────────────────────
+
+  const openCategoryEdit = (projectId: string) => {
+    setDraftThumbnail(thumbnails[projectId] ?? '');
+    setDraftLink(links[projectId] ?? '');
+    setEditingCategory(projectId);
+  };
+
+  const cancelCategoryEdit = () => {
+    setEditingCategory(null);
+    setDraftThumbnail('');
+    setDraftLink('');
+  };
+
+  const handleCategoryThumbnailUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) { toast.error('File is larger than 10MB.'); return; }
+    setIsUploading(editingCategory);
+    try {
+      const tags = await uploadFile(file);
+      setDraftThumbnail(tags[0][1]);
+      toast.success('Image uploaded — click Save to apply.');
+    } catch { toast.error('Failed to upload image'); }
+    finally { setIsUploading(null); }
+  };
+
+  const saveCategoryEdit = (projectId: string) => {
+    setIsSaving(projectId);
+    const eventTags: string[][] = [
+      ['d', projectId],
+      ['t', 'builtin-project'],
+    ];
+    if (draftThumbnail.trim()) eventTags.push(['image', draftThumbnail.trim()]);
+    if (draftLink.trim()) eventTags.push(['r', draftLink.trim()]);
+
+    createEvent(
+      {
+        kind: 36171,
+        content: JSON.stringify({ thumbnail: draftThumbnail.trim() }),
+        tags: eventTags,
+      },
+      {
+        onSuccess: () => {
+          setThumbnails(prev => ({ ...prev, [projectId]: draftThumbnail.trim() }));
+          setLinks(prev => ({ ...prev, [projectId]: draftLink.trim() }));
+          toast.success('Category section saved!');
+          queryClient.invalidateQueries({ queryKey: ['builtin-projects'] });
+          queryClient.invalidateQueries({ queryKey: ['projects'] });
+          cancelCategoryEdit();
+          setIsSaving(null);
+        },
+        onError: () => { toast.error('Failed to save'); setIsSaving(null); },
+      }
+    );
+  };
+
+  const deleteCategoryEntry = (projectId: string) => {
+    if (!confirm('Remove the thumbnail and link for this category section?')) return;
+    createEvent(
+      {
+        kind: 36171,
+        content: JSON.stringify({ thumbnail: '' }),
+        tags: [['d', projectId], ['t', 'builtin-project']],
+      },
+      {
+        onSuccess: () => {
+          setThumbnails(prev => ({ ...prev, [projectId]: '' }));
+          setLinks(prev => ({ ...prev, [projectId]: '' }));
+          toast.success('Category section reset.');
+          queryClient.invalidateQueries({ queryKey: ['builtin-projects'] });
+          queryClient.invalidateQueries({ queryKey: ['projects'] });
+          cancelCategoryEdit();
+        },
+      }
+    );
+  };
+
+  // ── Static data ───────────────────────────────────────────────────────────
+
+  const builtInItems = [
+    { id: '21k-art',      name: '21K Art',      description: 'Exclusive artwork collection priced at 21,000 sats' },
+    { id: '100m-canvas',  name: '100M Canvas',  description: 'Collaborative pixel art project' },
+    { id: 'cards',        name: 'POP Cards',    description: 'Create and share Good Vibes cards' },
   ];
 
-  const builtInItems = projects.filter(p => p.type === 'built-in');
-  const categoryItems = projects.filter(p => p.type === 'category');
+  const categoryItems = [
+    { id: 'category-games',      name: 'Games Section',       description: 'Thumbnail for the Games category on the Projects page',      defaultUrl: '/games' },
+    { id: 'category-animations', name: 'Animations Section',  description: 'Thumbnail for the Animations category on the Projects page', defaultUrl: '/animations' },
+    { id: 'category-frl',        name: 'POPArt.frl Section',  description: 'Thumbnail for the POPArt.frl category on the Projects page', defaultUrl: '/frl' },
+  ];
 
   return (
     <div className="space-y-6">
-      {/* Built-in Projects */}
+
+      {/* Built-in Projects — thumbnail upload only, unchanged */}
       <div className="space-y-4">
         {builtInItems.map((project) => (
           <Card key={project.id} className="overflow-hidden">
             <div className="flex gap-4">
               {thumbnails[project.id] ? (
                 <div className="w-32 h-24 flex-shrink-0 relative group">
-                  <img
-                    src={thumbnails[project.id]}
-                    alt={project.name}
-                    className="w-full h-full object-cover"
-                  />
+                  <img src={thumbnails[project.id]} alt={project.name} className="w-full h-full object-cover" />
                   <Button
-                    type="button"
-                    variant="destructive"
-                    size="sm"
+                    type="button" variant="destructive" size="sm"
                     className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={() => handleRemoveImage(project.id)}
+                    onClick={() => handleBuiltInRemoveImage(project.id)}
                   >
                     <X className="h-4 w-4" />
                   </Button>
@@ -1331,46 +1397,28 @@ function BuiltInProjectsManager() {
                   <ImageIcon className="h-8 w-8 text-white opacity-50" />
                 </div>
               )}
-              <div className="flex-1 p-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-lg mb-2">{project.name}</h3>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      {project.description}
-                    </p>
-                    <Badge variant="outline" className="text-xs">
-                      <Sparkles className="h-3 w-3 mr-1" />
-                      Built-in Project
-                    </Badge>
-                  </div>
-                  <div className="flex gap-2">
-                    <input
-                      ref={(el) => { fileInputRefs.current[project.id] = el; }}
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => handleImageUpload(project.id, e)}
-                      disabled={isUploading === project.id}
-                    />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => fileInputRefs.current[project.id]?.click()}
-                      disabled={isUploading === project.id}
-                    >
-                      {isUploading === project.id ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Uploading...
-                        </>
-                      ) : (
-                        <>
-                          <Upload className="h-4 w-4 mr-2" />
-                          {thumbnails[project.id] ? 'Change' : 'Add'} Thumbnail
-                        </>
-                      )}
-                    </Button>
-                  </div>
+              <div className="flex-1 p-4 flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <h3 className="font-semibold text-lg mb-1">{project.name}</h3>
+                  <p className="text-sm text-muted-foreground mb-2">{project.description}</p>
+                  <Badge variant="outline" className="text-xs"><Sparkles className="h-3 w-3 mr-1" />Built-in Project</Badge>
+                </div>
+                <div className="flex gap-2 flex-shrink-0">
+                  <input
+                    ref={(el) => { fileInputRefs.current[project.id] = el; }}
+                    type="file" accept="image/*" className="hidden"
+                    onChange={(e) => handleBuiltInImageUpload(project.id, e)}
+                    disabled={isUploading === project.id}
+                  />
+                  <Button variant="outline" size="sm"
+                    onClick={() => fileInputRefs.current[project.id]?.click()}
+                    disabled={isUploading === project.id}
+                  >
+                    {isUploading === project.id
+                      ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Uploading...</>
+                      : <><Upload className="h-4 w-4 mr-2" />{thumbnails[project.id] ? 'Change' : 'Add'} Thumbnail</>
+                    }
+                  </Button>
                 </div>
               </div>
             </div>
@@ -1378,87 +1426,169 @@ function BuiltInProjectsManager() {
         ))}
       </div>
 
-      {/* Category Section Thumbnails */}
+      {/* Category Section Thumbnails — with thumbnail + link editing + delete */}
       <Separator />
       <div>
-        <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+        <h3 className="text-lg font-semibold mb-1 flex items-center gap-2">
           <FolderKanban className="h-5 w-5" />
           Category Section Thumbnails
         </h3>
         <p className="text-sm text-muted-foreground mb-4">
-          Upload thumbnails for the 3 main category sections shown at the top of the Projects page
+          Set a thumbnail and optional custom link for each category section shown at the top of the Projects page.
         </p>
+
         <div className="space-y-4">
-          {categoryItems.map((project) => (
-            <Card key={project.id} className="overflow-hidden">
-              <div className="flex gap-4">
-                {thumbnails[project.id] ? (
-                  <div className="w-32 h-24 flex-shrink-0 relative group">
-                    <img
-                      src={thumbnails[project.id]}
-                      alt={project.name}
-                      className="w-full h-full object-cover"
-                    />
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => handleRemoveImage(project.id)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="w-32 h-24 flex-shrink-0 bg-gradient-to-br from-orange-200 via-pink-200 to-rose-200 dark:from-orange-800 dark:via-pink-800 dark:to-rose-800 flex items-center justify-center">
-                    <ImageIcon className="h-8 w-8 text-white opacity-50" />
+          {categoryItems.map((item) => {
+            const isEditing = editingCategory === item.id;
+            const hasThumbnail = !!thumbnails[item.id];
+            const hasLink = !!links[item.id];
+
+            return (
+              <Card key={item.id} className={`overflow-hidden transition-all ${isEditing ? 'ring-2 ring-orange-400' : ''}`}>
+                {/* Collapsed / preview row */}
+                {!isEditing && (
+                  <div className="flex gap-4">
+                    {hasThumbnail ? (
+                      <div className="w-32 h-24 flex-shrink-0">
+                        <img src={thumbnails[item.id]} alt={item.name} className="w-full h-full object-cover" />
+                      </div>
+                    ) : (
+                      <div className="w-32 h-24 flex-shrink-0 bg-gradient-to-br from-orange-200 via-pink-200 to-rose-200 dark:from-orange-800 dark:via-pink-800 dark:to-rose-800 flex items-center justify-center">
+                        <ImageIcon className="h-8 w-8 text-white opacity-50" />
+                      </div>
+                    )}
+                    <div className="flex-1 p-4 flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-lg mb-1">{item.name}</h3>
+                        <p className="text-sm text-muted-foreground mb-2">{item.description}</p>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge variant="outline" className="text-xs text-orange-600">
+                            <Globe className="h-3 w-3 mr-1" />Category Thumbnail
+                          </Badge>
+                          {hasLink && (
+                            <Badge variant="outline" className="text-xs text-blue-600 border-blue-300 max-w-[200px] truncate">
+                              <ExternalLink className="h-3 w-3 mr-1 flex-shrink-0" />
+                              {links[item.id]}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex gap-2 flex-shrink-0">
+                        <Button variant="outline" size="sm" onClick={() => openCategoryEdit(item.id)}>
+                          <Edit className="h-4 w-4 mr-1" /> Edit
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 )}
-                <div className="flex-1 p-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-lg mb-2">{project.name}</h3>
-                      <p className="text-sm text-muted-foreground mb-2">
-                        {project.description}
-                      </p>
-                      <Badge variant="outline" className="text-xs text-orange-600">
-                        <Globe className="h-3 w-3 mr-1" />
-                        Category Thumbnail
-                      </Badge>
+
+                {/* Expanded edit form */}
+                {isEditing && (
+                  <div className="p-4 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold text-base">{item.name}</h3>
+                      <Button type="button" variant="ghost" size="sm" onClick={cancelCategoryEdit}>
+                        <X className="h-4 w-4" />
+                      </Button>
                     </div>
-                    <div className="flex gap-2">
-                      <input
-                        ref={(el) => { fileInputRefs.current[project.id] = el; }}
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => handleImageUpload(project.id, e)}
-                        disabled={isUploading === project.id}
+
+                    {/* Thumbnail */}
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Thumbnail Image</Label>
+                      {draftThumbnail ? (
+                        <div className="space-y-2">
+                          <div className="relative rounded-lg overflow-hidden border w-full h-40">
+                            <img src={draftThumbnail} alt="Thumbnail preview" className="w-full h-full object-cover" />
+                            <Button
+                              type="button" variant="destructive" size="sm"
+                              className="absolute top-2 right-2"
+                              onClick={() => setDraftThumbnail('')}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <Input
+                            type="url"
+                            placeholder="Or paste image URL"
+                            value={draftThumbnail}
+                            onChange={e => setDraftThumbnail(e.target.value)}
+                          />
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <input
+                            ref={(el) => { fileInputRefs.current[`edit-${item.id}`] = el; }}
+                            type="file" accept="image/*" className="hidden"
+                            onChange={handleCategoryThumbnailUpload}
+                            disabled={isUploading === editingCategory}
+                          />
+                          <Button
+                            type="button" variant="outline" className="w-full"
+                            onClick={() => fileInputRefs.current[`edit-${item.id}`]?.click()}
+                            disabled={isUploading === editingCategory}
+                          >
+                            {isUploading === editingCategory
+                              ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Uploading...</>
+                              : <><Upload className="h-4 w-4 mr-2" />Upload Thumbnail</>
+                            }
+                          </Button>
+                          <Input
+                            type="url"
+                            placeholder="Or paste image URL"
+                            value={draftThumbnail}
+                            onChange={e => setDraftThumbnail(e.target.value)}
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Link URL */}
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium flex items-center gap-2">
+                        <Globe className="h-3.5 w-3.5 text-blue-600" />
+                        Custom Link URL (optional)
+                      </Label>
+                      <Input
+                        type="url"
+                        placeholder={`Default: ${item.defaultUrl} — override with any URL`}
+                        value={draftLink}
+                        onChange={e => setDraftLink(e.target.value)}
                       />
+                      <p className="text-xs text-muted-foreground">
+                        If set, clicking this section on the Projects page navigates to this URL instead of the default. Use this to link e.g. <code>https://bitpopart.com/frl</code> or any internal path.
+                      </p>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex gap-2 pt-1 border-t">
                       <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => fileInputRefs.current[project.id]?.click()}
-                        disabled={isUploading === project.id}
+                        type="button" className="flex-1"
+                        onClick={() => saveCategoryEdit(item.id)}
+                        disabled={isSaving === item.id}
                       >
-                        {isUploading === project.id ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Uploading...
-                          </>
-                        ) : (
-                          <>
-                            <Upload className="h-4 w-4 mr-2" />
-                            {thumbnails[project.id] ? 'Change' : 'Add'} Thumbnail
-                          </>
-                        )}
+                        {isSaving === item.id
+                          ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Saving...</>
+                          : <><Edit className="h-4 w-4 mr-2" />Save Changes</>
+                        }
+                      </Button>
+                      {(hasThumbnail || hasLink) && (
+                        <Button
+                          type="button" variant="outline"
+                          className="text-red-600 border-red-200 hover:bg-red-50"
+                          onClick={() => deleteCategoryEntry(item.id)}
+                        >
+                          <Trash2 className="h-4 w-4 mr-1" /> Delete
+                        </Button>
+                      )}
+                      <Button type="button" variant="ghost" onClick={cancelCategoryEdit}>
+                        Cancel
                       </Button>
                     </div>
                   </div>
-                </div>
-              </div>
-            </Card>
-          ))}
+                )}
+              </Card>
+            );
+          })}
         </div>
       </div>
     </div>
