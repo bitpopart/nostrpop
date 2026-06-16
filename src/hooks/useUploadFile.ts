@@ -15,8 +15,10 @@ export function useUploadFile() {
 
       // Warn users with Alby that a signing popup may appear blank — they need to click
       // the Alby extension icon in the browser toolbar to approve it.
-      const signerType = (user.signer as { type?: string }).type;
-      if (signerType === 'nip07' || typeof (window as Window & { alby?: unknown }).alby !== 'undefined') {
+      const loginType = (user as { type?: string }).type;
+      const isExtensionLogin = loginType === 'extension' || loginType === 'nip07';
+      const hasNip07Extension = typeof (window as Window & { nostr?: unknown }).nostr !== 'undefined';
+      if (isExtensionLogin || hasNip07Extension) {
         toast.info('A signing request will pop up. If the Alby window appears blank, click the Alby icon in your browser toolbar to approve.', {
           id: 'alby-signing-hint',
           duration: 8000,

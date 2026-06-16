@@ -29,13 +29,13 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ isOpen, onClose, onLogin, onS
   const fileInputRef = useRef<HTMLInputElement>(null);
   const login = useLoginActions();
 
-  const handleExtensionLogin = () => {
+  const handleExtensionLogin = async () => {
     setIsLoading(true);
     try {
       if (!('nostr' in window)) {
         throw new Error('Nostr extension not found. Please install a NIP-07 extension.');
       }
-      login.extension();
+      await login.extension();
       onLogin();
       onClose();
     } catch (error) {
