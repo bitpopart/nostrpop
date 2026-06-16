@@ -169,14 +169,14 @@ export default function Frl() {
             srcDoc={injectDownloadScript(fetchedHtml)}
             title={projectName}
             className="w-full flex-1 border-0"
-            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads allow-top-level-navigation-by-user-activation"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads allow-top-level-navigation"
           />
         ) : (
           <iframe
             src={brandSiteUrl}
             title={projectName}
             className="w-full flex-1 border-0"
-            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads allow-top-level-navigation-by-user-activation"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads allow-top-level-navigation"
           />
         )}
       </div>

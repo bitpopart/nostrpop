@@ -163,7 +163,7 @@ export default function FrlProjectView() {
           srcDoc={injectDownloadScript(htmlSrcDoc)}
           title={projectName}
           className="w-full flex-1 border-0"
-            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads allow-top-level-navigation-by-user-activation"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads allow-top-level-navigation"
           />
         ) : (
           /* Fallback: non-HTML brand_site URL — render as src iframe */
@@ -171,7 +171,7 @@ export default function FrlProjectView() {
             src={brandSiteUrl}
             title={projectName}
             className="w-full flex-1 border-0"
-            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads allow-top-level-navigation-by-user-activation"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads allow-top-level-navigation"
         />
       )}
     </div>
