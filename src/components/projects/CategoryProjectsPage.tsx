@@ -154,15 +154,11 @@ export function CategoryProjectsPage({
   const handleProjectClick = (project: ProjectData) => {
     if (project.coming_soon) return;
 
-    // HTML upload project with frl-inline flag → open inline below header menu
-    if (project.frl_inline && project.brand_site) {
+    // HTML upload project: brand-site-inline=true means the brand_site is a
+    // Blossom-hosted HTML file. On the frl category, open it inline at /frl/:id.
+    // frl_inline=true (explicit) OR brand_site_inline=true both trigger inline.
+    if (project.brand_site && (project.frl_inline || project.brand_site_inline)) {
       navigate(`/frl/${project.id}`);
-      return;
-    }
-
-    // HTML upload project without frl-inline → open brand_site in new tab
-    if (project.brand_site_inline && project.brand_site && !project.url) {
-      window.open(project.brand_site, '_blank');
       return;
     }
 
@@ -342,7 +338,7 @@ export function CategoryProjectsPage({
                     {/* Project Website / Open Button */}
                      {!isComingSoon && project.brand_site && (
                        <div className="pt-2" onClick={(e) => e.stopPropagation()}>
-                         {project.frl_inline ? (
+                         {(project.frl_inline || project.brand_site_inline) ? (
                            <Button
                              variant="outline"
                              size="sm"
