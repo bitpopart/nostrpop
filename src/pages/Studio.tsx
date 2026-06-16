@@ -413,6 +413,30 @@ export default function Studio() {
                     onChange={e => updateSelected({ text: e.target.value })}
                     className="h-8 text-xs"
                   />
+                  {/* Font size stepper */}
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-muted-foreground shrink-0">Size</span>
+                    <Button
+                      size="sm" variant="outline"
+                      className="h-7 w-7 p-0 text-base font-bold"
+                      onClick={() => updateSelected({ fontSize: Math.max(8, (selected.fontSize ?? 60) - 10) })}
+                    >−</Button>
+                    <Input
+                      type="number"
+                      value={selected.fontSize ?? 60}
+                      onChange={e => {
+                        const v = Math.max(8, Math.min(400, Number(e.target.value)));
+                        if (!isNaN(v)) updateSelected({ fontSize: v });
+                      }}
+                      className="h-7 text-xs text-center px-1 flex-1 min-w-0"
+                      min={8} max={400}
+                    />
+                    <Button
+                      size="sm" variant="outline"
+                      className="h-7 w-7 p-0 text-base font-bold"
+                      onClick={() => updateSelected({ fontSize: Math.min(400, (selected.fontSize ?? 60) + 10) })}
+                    >+</Button>
+                  </div>
                   <div className="flex gap-1">
                     <Button size="sm" variant={selected.bold ? 'default' : 'outline'} className="h-7 flex-1 text-xs font-bold" onClick={() => updateSelected({ bold: !selected.bold })}>B</Button>
                     <Button size="sm" variant={selected.italic ? 'default' : 'outline'} className="h-7 flex-1 text-xs italic" onClick={() => updateSelected({ italic: !selected.italic })}>I</Button>
