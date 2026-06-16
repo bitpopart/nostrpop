@@ -92,6 +92,8 @@ export function ProjectManagement({ filterCategory }: ProjectManagementProps = {
   const [brandSiteHtml, setBrandSiteHtml] = useState('');
   // HTML upload for the project itself (the whole project page IS the HTML)
   const [projectHtml, setProjectHtml] = useState('');
+  // Whether the HTML project opens inline on /frl/:id (below header menu) instead of in a new tab
+  const [frlInline, setFrlInline] = useState(false);
   const htmlFileRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState<ProjectFormData>({
     name: '',
@@ -303,6 +305,9 @@ export function ProjectManagement({ filterCategory }: ProjectManagementProps = {
     if (projectTab === 'html' && publishedHtmlUrl) {
       tags.push(['brand-site', publishedHtmlUrl]);
       tags.push(['brand-site-inline', 'true']);
+      if (frlInline) {
+        tags.push(['frl-inline', 'true']);
+      }
     } else if (projectTab === 'self' && formData.brand_site) {
       tags.push(['brand-site', formData.brand_site]);
     }
@@ -332,6 +337,7 @@ export function ProjectManagement({ filterCategory }: ProjectManagementProps = {
           setBrandSiteHtml('');
           setProjectHtml('');
           setProjectTab('self');
+          setFrlInline(false);
           setFormData({
             name: '',
             description: '',
@@ -362,6 +368,7 @@ export function ProjectManagement({ filterCategory }: ProjectManagementProps = {
     const urlTag = event.tags.find(t => t[0] === 'r')?.[1];
     const brandSiteTag = event.tags.find(t => t[0] === 'brand-site')?.[1];
     const brandSiteInlineTag = event.tags.find(t => t[0] === 'brand-site-inline')?.[1] === 'true';
+    const frlInlineTag = event.tags.find(t => t[0] === 'frl-inline')?.[1] === 'true';
     const orderTag = event.tags.find(t => t[0] === 'order')?.[1];
     const featuredTag = event.tags.find(t => t[0] === 'featured')?.[1] === 'true';
     const comingSoonTag = event.tags.find(t => t[0] === 'coming-soon')?.[1] === 'true';
@@ -386,6 +393,7 @@ export function ProjectManagement({ filterCategory }: ProjectManagementProps = {
     setBrandSiteMode('url');
     setBrandSiteHtml('');
     setProjectHtml('');
+    setFrlInline(frlInlineTag);
 
     if (isHtmlProject && brandSiteTag) {
       setProjectTab('html');
@@ -431,6 +439,7 @@ export function ProjectManagement({ filterCategory }: ProjectManagementProps = {
     setBrandSiteHtml('');
     setProjectHtml('');
     setProjectTab('self');
+    setFrlInline(false);
     setFormData({
       name: '',
       description: '',
@@ -935,6 +944,27 @@ export function ProjectManagement({ filterCategory }: ProjectManagementProps = {
                         </Button>
                       </div>
                     )}
+                  </div>
+
+                  {/* Open inline on /frl */}
+                  <div className="space-y-2 p-4 border-2 border-pink-200 rounded-lg bg-gradient-to-r from-pink-50 to-purple-50 dark:from-pink-900/10 dark:to-purple-900/10 dark:border-pink-800">
+                    <div className="flex items-start gap-3">
+                      <Checkbox
+                        id="frl-inline"
+                        checked={frlInline}
+                        onCheckedChange={(checked) => setFrlInline(!!checked)}
+                        className="mt-0.5"
+                      />
+                      <div>
+                        <Label htmlFor="frl-inline" className="text-base font-medium flex items-center gap-2 cursor-pointer">
+                          <Globe className="h-4 w-4 text-pink-600" />
+                          Open inline on /frl page
+                        </Label>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          The HTML file will open fullscreen <strong>below the header menu</strong> on the /frl page — just like HTML pages work on the site. Without this, clicking the project opens the HTML file in a new browser tab.
+                        </p>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Display Order */}

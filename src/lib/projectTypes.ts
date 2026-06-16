@@ -15,6 +15,8 @@ export interface ProjectData {
   featured?: boolean; // Show on homepage
   coming_soon?: boolean; // Shows thumbnail only, no link
   brand_site?: string; // Optional extra site/page URL
+  brand_site_inline?: boolean; // If true, HTML project is hosted on Blossom and rendered inline
+  frl_inline?: boolean; // If true, clicking opens the HTML inline on /frl/:id instead of new tab
   game_mode?: GameMode; // For games: indoor, outdoor, or both
 }
 

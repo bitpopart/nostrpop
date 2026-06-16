@@ -116,6 +116,8 @@ export function CategoryProjectsPage({
             const comingSoon = event.tags.find(t => t[0] === 'coming-soon')?.[1] === 'true';
             const eventCategory = event.tags.find(t => t[0] === 'category')?.[1] || 'general';
             const brandSite = event.tags.find(t => t[0] === 'brand-site')?.[1];
+            const brandSiteInline = event.tags.find(t => t[0] === 'brand-site-inline')?.[1] === 'true';
+            const frlInline = event.tags.find(t => t[0] === 'frl-inline')?.[1] === 'true';
             const gameMode = event.tags.find(t => t[0] === 'game-mode')?.[1] as GameMode | undefined;
 
             if (!id || !name) return null;
@@ -134,6 +136,8 @@ export function CategoryProjectsPage({
               featured,
               coming_soon: comingSoon,
               brand_site: brandSite,
+              brand_site_inline: brandSiteInline,
+              frl_inline: frlInline,
               game_mode: gameMode,
             };
           } catch {
@@ -149,6 +153,19 @@ export function CategoryProjectsPage({
 
   const handleProjectClick = (project: ProjectData) => {
     if (project.coming_soon) return;
+
+    // HTML upload project with frl-inline flag → open inline below header menu
+    if (project.frl_inline && project.brand_site) {
+      navigate(`/frl/${project.id}`);
+      return;
+    }
+
+    // HTML upload project without frl-inline → open brand_site in new tab
+    if (project.brand_site_inline && project.brand_site && !project.url) {
+      window.open(project.brand_site, '_blank');
+      return;
+    }
+
     if (project.url) {
       if (project.url.startsWith('http')) {
         window.open(project.url, '_blank');
@@ -322,20 +339,32 @@ export function CategoryProjectsPage({
                     <CardDescription className="line-clamp-3 text-base">
                       {project.description}
                     </CardDescription>
-                    {/* Project Website Button */}
-                    {!isComingSoon && project.brand_site && (
-                      <div className="pt-2" onClick={(e) => e.stopPropagation()}>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full gap-2 border-blue-300 text-blue-700 hover:bg-blue-50 dark:border-blue-700 dark:text-blue-300 dark:hover:bg-blue-900/20"
-                          onClick={() => window.open(project.brand_site, '_blank')}
-                        >
-                          <Globe className="h-4 w-4" />
-                          View Project Site
-                        </Button>
-                      </div>
-                    )}
+                    {/* Project Website / Open Button */}
+                     {!isComingSoon && project.brand_site && (
+                       <div className="pt-2" onClick={(e) => e.stopPropagation()}>
+                         {project.frl_inline ? (
+                           <Button
+                             variant="outline"
+                             size="sm"
+                             className="w-full gap-2 border-pink-300 text-pink-700 hover:bg-pink-50 dark:border-pink-700 dark:text-pink-300 dark:hover:bg-pink-900/20"
+                             onClick={() => navigate(`/frl/${project.id}`)}
+                           >
+                             <Globe className="h-4 w-4" />
+                             Open Project
+                           </Button>
+                         ) : (
+                           <Button
+                             variant="outline"
+                             size="sm"
+                             className="w-full gap-2 border-blue-300 text-blue-700 hover:bg-blue-50 dark:border-blue-700 dark:text-blue-300 dark:hover:bg-blue-900/20"
+                             onClick={() => window.open(project.brand_site, '_blank')}
+                           >
+                             <Globe className="h-4 w-4" />
+                             View Project Site
+                           </Button>
+                         )}
+                       </div>
+                     )}
 
                     {/* Share Button */}
                      {!isComingSoon && (
