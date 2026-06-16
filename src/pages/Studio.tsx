@@ -403,6 +403,42 @@ export default function Studio() {
 
             <Separator />
 
+            {/* Selected image size controls */}
+            {selected?.kind === 'image' && (
+              <>
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
+                    <ImageIcon className="h-3.5 w-3.5" /> Edit Image
+                  </p>
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-muted-foreground shrink-0">Size</span>
+                    <Button
+                      size="sm" variant="outline"
+                      className="h-7 w-7 p-0 text-base font-bold"
+                      onClick={() => {
+                        const step = Math.round(selected.width * 0.1);
+                        const newW = Math.max(20, selected.width - step);
+                        const newH = Math.max(20, selected.height - step);
+                        updateSelected({ width: newW, height: newH });
+                      }}
+                    >−</Button>
+                    <span className="h-7 flex-1 flex items-center justify-center text-xs font-mono bg-muted rounded border text-muted-foreground">
+                      {Math.round(selected.width)}
+                    </span>
+                    <Button
+                      size="sm" variant="outline"
+                      className="h-7 w-7 p-0 text-base font-bold"
+                      onClick={() => {
+                        const step = Math.round(selected.width * 0.1);
+                        updateSelected({ width: selected.width + step, height: selected.height + step });
+                      }}
+                    >+</Button>
+                  </div>
+                </div>
+                <Separator />
+              </>
+            )}
+
             {/* Selected text props */}
             {selected?.kind === 'text' && (
               <>
