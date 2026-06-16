@@ -92,7 +92,6 @@ export default function Studio() {
   const [scale, setScale] = useState(0.4);
   const canvasWrapRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const idCounter = useRef(0);
 
   const { data: libraries, isLoading: librariesLoading } = useStudioLibraries();
@@ -113,84 +112,9 @@ export default function Studio() {
     return () => obs.disconnect();
   }, [format]);
 
-  // ─── Image cache (persists across renders) ───────────────────────────
-  const imageCache = useRef<Record<string, HTMLImageElement>>({});
-
-  // ─── Preload images and trigger redraw when they load ────────────────
-  useEffect(() => {
-    const imgEls = elements.filter(e => e.kind === 'image' && e.src);
-    imgEls.forEach(el => {
-      if (!el.src) return;
-      // Already fully loaded — skip
-      const cached = imageCache.current[el.src];
-      if (cached && cached.complete && cached.naturalWidth > 0) return;
-      // Already loading — skip
-      if (cached) return;
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.src = el.src;
-      // Store immediately so we don't kick off duplicate loads
-      imageCache.current[el.src] = img;
-      img.onload = () => {
-        // Trigger a redraw now that the image is ready
-        setElements(prev => [...prev]);
-      };
-      img.onerror = () => {
-        // Remove from cache on error so a retry is possible
-        delete imageCache.current[el.src!];
-      };
-    });
-  }, [elements]);
-
-  // ─── Draw canvas ─────────────────────────────────────────────────────
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    canvas.width = format.width;
-    canvas.height = format.height;
-
-    // background
-    ctx.fillStyle = bgColor;
-    ctx.fillRect(0, 0, format.width, format.height);
-
-    for (const el of elements) {
-      ctx.save();
-      if (el.kind === 'image' && el.src) {
-        // Use the cached HTMLImageElement so the image is already loaded
-        const img = imageCache.current[el.src];
-        if (img && img.complete && img.naturalWidth > 0) {
-          ctx.drawImage(img, el.x, el.y, el.width, el.height);
-        }
-      } else if (el.kind === 'text' && el.text) {
-        ctx.fillStyle = el.color ?? '#000000';
-        ctx.font = `${el.italic ? 'italic ' : ''}${el.bold ? 'bold ' : ''}${el.fontSize ?? 60}px ${el.fontFamily ?? 'Impact'}`;
-        ctx.textBaseline = 'top';
-        ctx.textAlign = (el.align as CanvasTextAlign) ?? 'left';
-        const x = el.align === 'center' ? el.x + el.width / 2 : el.align === 'right' ? el.x + el.width : el.x;
-        ctx.fillText(el.text, x, el.y, el.width);
-      }
-      ctx.restore();
-    }
-  }, [elements, format, bgColor]);
-
   // ─── Add image element ────────────────────────────────────────────────
   const handleAddImage = useCallback((src: string) => {
     const size = Math.min(format.width, format.height) * 0.35;
-
-    // Pre-warm the image cache so the draw effect can render it immediately
-    if (!imageCache.current[src]) {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.src = src;
-      imageCache.current[src] = img;
-      img.onload = () => {
-        setElements(prev => [...prev]); // trigger redraw once loaded
-      };
-    }
-
     setElements(prev => [...prev, {
       id: newId(),
       kind: 'image',
@@ -272,7 +196,7 @@ export default function Studio() {
     setElements(prev => prev.map(e => e.id === selectedId ? { ...e, ...patch } : e));
   }, [selectedId]);
 
-  // ─── Pointer events for drag/resize ─────────────────────────────────
+  // ─── Pointer events for drag ─────────────────────────────────────────
   const getCanvasPos = (e: React.PointerEvent) => {
     const wrap = canvasWrapRef.current;
     if (!wrap) return { x: 0, y: 0 };
@@ -285,7 +209,6 @@ export default function Studio() {
 
   const handleCanvasPointerDown = (e: React.PointerEvent) => {
     const { x, y } = getCanvasPos(e);
-    // hit-test in reverse (top element first)
     for (let i = elements.length - 1; i >= 0; i--) {
       const el = elements[i];
       if (x >= el.x && x <= el.x + el.width && y >= el.y && y <= el.y + el.height) {
@@ -312,15 +235,70 @@ export default function Studio() {
     setDragging(null);
   };
 
-  // ─── Download PNG ────────────────────────────────────────────────────
+  // ─── Download PNG — draw everything to a hidden canvas on demand ──────
   const handleDownloadPNG = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const link = document.createElement('a');
-    link.download = `popart-${format.id}.png`;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-  }, [format]);
+    const canvas = document.createElement('canvas');
+    canvas.width = format.width;
+    canvas.height = format.height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // background
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, format.width, format.height);
+
+    // We must draw synchronously, so we load all images first
+    const imageElements = elements.filter(e => e.kind === 'image' && e.src);
+    let pending = imageElements.length;
+
+    const drawAll = () => {
+      ctx.fillStyle = bgColor;
+      ctx.fillRect(0, 0, format.width, format.height);
+
+      for (const el of elements) {
+        ctx.save();
+        if (el.kind === 'image' && el.src) {
+          const img = loadedImages[el.src];
+          if (img) ctx.drawImage(img, el.x, el.y, el.width, el.height);
+        } else if (el.kind === 'text' && el.text) {
+          ctx.fillStyle = el.color ?? '#000000';
+          ctx.font = `${el.italic ? 'italic ' : ''}${el.bold ? 'bold ' : ''}${el.fontSize ?? 60}px ${el.fontFamily ?? 'Impact'}`;
+          ctx.textBaseline = 'top';
+          ctx.textAlign = (el.align as CanvasTextAlign) ?? 'left';
+          const x = el.align === 'center' ? el.x + el.width / 2 : el.align === 'right' ? el.x + el.width : el.x;
+          ctx.fillText(el.text, x, el.y, el.width);
+        }
+        ctx.restore();
+      }
+
+      const link = document.createElement('a');
+      link.download = `popart-${format.id}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    };
+
+    if (pending === 0) {
+      drawAll();
+      return;
+    }
+
+    const loadedImages: Record<string, HTMLImageElement> = {};
+    for (const el of imageElements) {
+      if (!el.src) continue;
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        loadedImages[el.src!] = img;
+        pending--;
+        if (pending === 0) drawAll();
+      };
+      img.onerror = () => {
+        pending--;
+        if (pending === 0) drawAll();
+      };
+      img.src = el.src;
+    }
+  }, [elements, format, bgColor]);
 
   // ─── Color change on selected ────────────────────────────────────────
   const handleColorClick = (color: string) => {
@@ -517,48 +495,89 @@ export default function Studio() {
               {selectedId && <Badge className="text-xs bg-orange-500 text-white">1 selected</Badge>}
             </div>
 
-            {/* Interactive overlay + canvas */}
-            <div className="relative shadow-2xl" style={{ width: displayW, height: displayH }}>
-              {/* Hidden real canvas for drawing */}
-              <canvas ref={canvasRef} className="absolute inset-0" style={{ width: displayW, height: displayH, imageRendering: 'pixelated' }} />
-
-              {/* Interactive pointer overlay */}
-              <div
-                ref={canvasWrapRef}
-                className="absolute inset-0 cursor-crosshair"
-                style={{ touchAction: 'none' }}
-                onPointerDown={handleCanvasPointerDown}
-                onPointerMove={handleCanvasPointerMove}
-                onPointerUp={handleCanvasPointerUp}
-              />
-
-              {/* Selection handles overlay (rendered in DOM for crisp handles) */}
+            {/*
+              DOM-based canvas: background div + absolutely-positioned img/text elements.
+              This avoids all canvas image-loading race conditions — the browser handles
+              <img> loading natively and they appear as soon as pixels arrive.
+              A real <canvas> is only created on-demand for PNG export.
+            */}
+            <div
+              ref={canvasWrapRef}
+              className="relative shadow-2xl overflow-hidden cursor-crosshair select-none"
+              style={{
+                width: displayW,
+                height: displayH,
+                background: bgColor,
+                touchAction: 'none',
+              }}
+              onPointerDown={handleCanvasPointerDown}
+              onPointerMove={handleCanvasPointerMove}
+              onPointerUp={handleCanvasPointerUp}
+            >
+              {/* Render each element as a DOM node */}
               {elements.map(el => {
                 const isSelected = el.id === selectedId;
-                return (
-                  <div
-                    key={el.id}
-                    className="absolute"
-                    style={{
-                      left: el.x * scale,
-                      top: el.y * scale,
-                      width: el.width * scale,
-                      height: el.height * scale,
-                      outline: isSelected ? '2px solid #f97316' : 'none',
-                      outlineOffset: '1px',
-                      pointerEvents: 'none',
-                    }}
-                  >
-                    {isSelected && (
-                      <>
-                        {/* corner handles */}
-                        {[[-6,-6],[el.width*scale-6,-6],[-6,el.height*scale-6],[el.width*scale-6,el.height*scale-6]].map(([lx,ly],i) => (
-                          <div key={i} className="absolute w-3 h-3 bg-orange-500 border-2 border-white rounded-sm shadow" style={{ left: lx, top: ly }} />
-                        ))}
-                      </>
-                    )}
-                  </div>
-                );
+                const style: React.CSSProperties = {
+                  position: 'absolute',
+                  left: el.x * scale,
+                  top: el.y * scale,
+                  width: el.width * scale,
+                  height: el.height * scale,
+                  outline: isSelected ? '2px solid #f97316' : 'none',
+                  outlineOffset: '1px',
+                  pointerEvents: 'none',
+                  userSelect: 'none',
+                };
+
+                if (el.kind === 'image' && el.src) {
+                  return (
+                    <div key={el.id} style={style}>
+                      <img
+                        src={el.src}
+                        alt=""
+                        draggable={false}
+                        style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+                      />
+                      {isSelected && <SelectionHandles w={el.width * scale} h={el.height * scale} />}
+                    </div>
+                  );
+                }
+
+                if (el.kind === 'text' && el.text) {
+                  const scaledFontSize = (el.fontSize ?? 60) * scale;
+                  return (
+                    <div
+                      key={el.id}
+                      style={{
+                        ...style,
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        justifyContent:
+                          el.align === 'center' ? 'center' :
+                          el.align === 'right' ? 'flex-end' : 'flex-start',
+                        overflow: 'visible',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: scaledFontSize,
+                          fontFamily: el.fontFamily ?? 'Impact',
+                          color: el.color ?? '#000000',
+                          fontWeight: el.bold ? 'bold' : 'normal',
+                          fontStyle: el.italic ? 'italic' : 'normal',
+                          lineHeight: 1.2,
+                          pointerEvents: 'none',
+                        }}
+                      >
+                        {el.text}
+                      </span>
+                      {isSelected && <SelectionHandles w={el.width * scale} h={el.height * scale} />}
+                    </div>
+                  );
+                }
+
+                return null;
               })}
             </div>
 
@@ -647,5 +666,21 @@ export default function Studio() {
         </div>
       </div>
     </div>
+  );
+}
+
+// ─── Selection corner handles ─────────────────────────────────────────────────
+function SelectionHandles({ w, h }: { w: number; h: number }) {
+  const corners: [number, number][] = [[-6, -6], [w - 6, -6], [-6, h - 6], [w - 6, h - 6]];
+  return (
+    <>
+      {corners.map(([lx, ly], i) => (
+        <div
+          key={i}
+          className="absolute w-3 h-3 bg-orange-500 border-2 border-white rounded-sm shadow"
+          style={{ left: lx, top: ly, pointerEvents: 'none' }}
+        />
+      ))}
+    </>
   );
 }
