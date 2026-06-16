@@ -113,6 +113,35 @@ export default function Studio() {
     return () => obs.disconnect();
   }, [format]);
 
+  // ─── Image cache (persists across renders) ───────────────────────────
+  const imageCache = useRef<Record<string, HTMLImageElement>>({});
+
+  // ─── Preload images and trigger redraw when they load ────────────────
+  useEffect(() => {
+    const imgEls = elements.filter(e => e.kind === 'image' && e.src);
+    imgEls.forEach(el => {
+      if (!el.src) return;
+      // Already fully loaded — skip
+      const cached = imageCache.current[el.src];
+      if (cached && cached.complete && cached.naturalWidth > 0) return;
+      // Already loading — skip
+      if (cached) return;
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.src = el.src;
+      // Store immediately so we don't kick off duplicate loads
+      imageCache.current[el.src] = img;
+      img.onload = () => {
+        // Trigger a redraw now that the image is ready
+        setElements(prev => [...prev]);
+      };
+      img.onerror = () => {
+        // Remove from cache on error so a retry is possible
+        delete imageCache.current[el.src!];
+      };
+    });
+  }, [elements]);
+
   // ─── Draw canvas ─────────────────────────────────────────────────────
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -130,10 +159,9 @@ export default function Studio() {
     for (const el of elements) {
       ctx.save();
       if (el.kind === 'image' && el.src) {
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.src = el.src;
-        if (img.complete && img.naturalWidth > 0) {
+        // Use the cached HTMLImageElement so the image is already loaded
+        const img = imageCache.current[el.src];
+        if (img && img.complete && img.naturalWidth > 0) {
           ctx.drawImage(img, el.x, el.y, el.width, el.height);
         }
       } else if (el.kind === 'text' && el.text) {
@@ -148,26 +176,21 @@ export default function Studio() {
     }
   }, [elements, format, bgColor]);
 
-  // ─── Force canvas redraw when images load ────────────────────────────
-  const imageCache = useRef<Record<string, HTMLImageElement>>({});
-  useEffect(() => {
-    const imgEls = elements.filter(e => e.kind === 'image' && e.src);
-    imgEls.forEach(el => {
-      if (!el.src || imageCache.current[el.src]) return;
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.src = el.src;
-      img.onload = () => {
-        imageCache.current[el.src!] = img;
-        setElements(prev => [...prev]); // trigger redraw
-      };
-      imageCache.current[el.src] = img;
-    });
-  }, [elements]);
-
   // ─── Add image element ────────────────────────────────────────────────
   const handleAddImage = useCallback((src: string) => {
     const size = Math.min(format.width, format.height) * 0.35;
+
+    // Pre-warm the image cache so the draw effect can render it immediately
+    if (!imageCache.current[src]) {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.src = src;
+      imageCache.current[src] = img;
+      img.onload = () => {
+        setElements(prev => [...prev]); // trigger redraw once loaded
+      };
+    }
+
     setElements(prev => [...prev, {
       id: newId(),
       kind: 'image',
