@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import {
   Select,
@@ -36,10 +37,12 @@ import {
   Clapperboard,
   Globe,
   FileText,
+  FileCode,
   House,
   TreePine,
   Info,
 } from 'lucide-react';
+import { HtmlEditor } from '@/components/pages/HtmlEditor';
 import type { GameMode } from '@/lib/projectTypes';
 import type { NostrEvent } from '@nostrify/nostrify';
 import { generateProjectUUID } from '@/lib/projectTypes';
@@ -83,8 +86,13 @@ export function ProjectManagement({ filterCategory }: ProjectManagementProps = {
   const [isCreating, setIsCreating] = useState(false);
   const [editingProject, setEditingProject] = useState<NostrEvent | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  // 'self' = normal project form, 'html' = HTML upload project
+  const [projectTab, setProjectTab] = useState<'self' | 'html'>('self');
   const [brandSiteMode, setBrandSiteMode] = useState<'url' | 'html' | 'pdf'>('url');
   const [brandSiteHtml, setBrandSiteHtml] = useState('');
+  // HTML upload for the project itself (the whole project page IS the HTML)
+  const [projectHtml, setProjectHtml] = useState('');
+  const htmlFileRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState<ProjectFormData>({
     name: '',
     description: '',
@@ -214,7 +222,20 @@ export function ProjectManagement({ filterCategory }: ProjectManagementProps = {
     toast.success('HTML page created for project site.');
   }, [brandSiteHtml]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleProjectHtmlFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const html = await file.text();
+      setProjectHtml(html);
+      toast.success('HTML file loaded');
+    } catch { toast.error('Failed to read file'); }
+    finally {
+      if (htmlFileRef.current) htmlFileRef.current.value = '';
+    }
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Validation
@@ -222,12 +243,39 @@ export function ProjectManagement({ filterCategory }: ProjectManagementProps = {
       toast.error('Please enter a project name');
       return;
     }
-    if (!formData.description.trim()) {
+
+    // For HTML upload projects, description is optional; for self-created, required
+    if (projectTab === 'self' && !formData.description.trim()) {
       toast.error('Please enter a description');
+      return;
+    }
+    if (projectTab === 'html' && !projectHtml.trim()) {
+      toast.error('Please upload an HTML file');
       return;
     }
 
     const projectId = editingProject?.tags.find(t => t[0] === 'd')?.[1] || generateProjectUUID();
+
+    // For HTML upload projects: upload to Blossom first
+    let publishedHtmlUrl: string | undefined;
+    if (projectTab === 'html' && projectHtml.trim()) {
+      if (!user) {
+        toast.error('You must be logged in to publish an HTML project');
+        return;
+      }
+      const uploadingToast = toast.loading('Uploading HTML file…');
+      try {
+        const htmlBlob = new Blob([projectHtml.trim()], { type: 'text/html' });
+        const htmlFile = new File([htmlBlob], `${projectId}.html`, { type: 'text/html' });
+        const tags = await uploadFile(htmlFile);
+        publishedHtmlUrl = tags[0][1];
+        toast.dismiss(uploadingToast);
+      } catch {
+        toast.dismiss(uploadingToast);
+        toast.error('Failed to upload HTML file. Please try again.');
+        return;
+      }
+    }
 
     const tags: string[][] = [
       ['d', projectId],
@@ -251,7 +299,11 @@ export function ProjectManagement({ filterCategory }: ProjectManagementProps = {
     if (formData.coming_soon) {
       tags.push(['coming-soon', 'true']);
     }
-    if (formData.brand_site) {
+    // HTML upload project: brand_site = Blossom URL to the HTML file
+    if (projectTab === 'html' && publishedHtmlUrl) {
+      tags.push(['brand-site', publishedHtmlUrl]);
+      tags.push(['brand-site-inline', 'true']);
+    } else if (projectTab === 'self' && formData.brand_site) {
       tags.push(['brand-site', formData.brand_site]);
     }
     if (formData.category === 'games') {
@@ -278,6 +330,8 @@ export function ProjectManagement({ filterCategory }: ProjectManagementProps = {
           setEditingProject(null);
           setBrandSiteMode('url');
           setBrandSiteHtml('');
+          setProjectHtml('');
+          setProjectTab('self');
           setFormData({
             name: '',
             description: '',
@@ -307,18 +361,22 @@ export function ProjectManagement({ filterCategory }: ProjectManagementProps = {
     const imageTag = event.tags.find(t => t[0] === 'image')?.[1];
     const urlTag = event.tags.find(t => t[0] === 'r')?.[1];
     const brandSiteTag = event.tags.find(t => t[0] === 'brand-site')?.[1];
+    const brandSiteInlineTag = event.tags.find(t => t[0] === 'brand-site-inline')?.[1] === 'true';
     const orderTag = event.tags.find(t => t[0] === 'order')?.[1];
     const featuredTag = event.tags.find(t => t[0] === 'featured')?.[1] === 'true';
     const comingSoonTag = event.tags.find(t => t[0] === 'coming-soon')?.[1] === 'true';
     const categoryTag = (event.tags.find(t => t[0] === 'category')?.[1] || 'general') as ProjectCategory;
     const gameModeTag = (event.tags.find(t => t[0] === 'game-mode')?.[1] || 'indoor') as GameMode;
 
+    // Detect HTML upload project: brand-site-inline=true AND brand_site is a URL (not empty)
+    const isHtmlProject = brandSiteInlineTag && brandSiteTag && /\.html?(\?|$)/i.test(brandSiteTag);
+
     setFormData({
       name: nameTag || content.name || '',
       description: content.description || '',
       thumbnail: imageTag || content.thumbnail || '',
       url: urlTag || content.url || '',
-      brand_site: brandSiteTag || '',
+      brand_site: (!isHtmlProject && brandSiteTag) ? brandSiteTag : '',
       order: orderTag || '',
       featured: featuredTag,
       coming_soon: comingSoonTag,
@@ -327,6 +385,19 @@ export function ProjectManagement({ filterCategory }: ProjectManagementProps = {
     });
     setBrandSiteMode('url');
     setBrandSiteHtml('');
+    setProjectHtml('');
+
+    if (isHtmlProject && brandSiteTag) {
+      setProjectTab('html');
+      // Fetch the HTML from Blossom for editing
+      fetch(brandSiteTag)
+        .then(r => r.text())
+        .then(html => setProjectHtml(html))
+        .catch(() => toast.error('Could not load HTML from server for editing'));
+    } else {
+      setProjectTab('self');
+    }
+
     setEditingProject(event);
     setIsCreating(true);
   };
@@ -358,6 +429,8 @@ export function ProjectManagement({ filterCategory }: ProjectManagementProps = {
     setEditingProject(null);
     setBrandSiteMode('url');
     setBrandSiteHtml('');
+    setProjectHtml('');
+    setProjectTab('self');
     setFormData({
       name: '',
       description: '',
@@ -399,297 +472,511 @@ export function ProjectManagement({ filterCategory }: ProjectManagementProps = {
                 <strong>Using Alby?</strong> When saving or uploading, a signing popup will appear. If it shows up blank, click the <strong>Alby icon</strong> in your browser toolbar to approve the request.
               </p>
             </div>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Project Name *</Label>
-                <Input
-                  id="name"
-                  placeholder="My Amazing Project"
-                  value={formData.name}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
-                  required
-                />
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="description">Description *</Label>
-                <Textarea
-                  id="description"
-                  placeholder="Describe your project..."
-                  value={formData.description}
-                  onChange={(e) => handleInputChange('description', e.target.value)}
-                  rows={4}
-                  required
-                />
-              </div>
+            {/* Project Title — always visible */}
+            <div className="space-y-2 mb-6">
+              <Label htmlFor="name">Project Name *</Label>
+              <Input
+                id="name"
+                placeholder="My Amazing Project"
+                value={formData.name}
+                onChange={(e) => handleInputChange('name', e.target.value)}
+              />
+            </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="thumbnail">Project Thumbnail</Label>
-                
-                {formData.thumbnail ? (
+            {/* ── Project Type Tabs ── */}
+            <Tabs value={projectTab} onValueChange={v => setProjectTab(v as 'self' | 'html')}>
+              <TabsList className="w-full h-auto p-1 grid grid-cols-2 mb-6">
+                <TabsTrigger value="self" className="flex flex-col items-center gap-1 py-3 h-auto">
+                  <FileText className="h-4 w-4" />
+                  <span className="font-semibold text-sm">Self Created Project</span>
+                  <span className="text-xs font-normal opacity-70 leading-tight text-center">Description, thumbnail &amp; links</span>
+                </TabsTrigger>
+                <TabsTrigger value="html" className="flex flex-col items-center gap-1 py-3 h-auto">
+                  <FileCode className="h-4 w-4" />
+                  <span className="font-semibold text-sm">HTML Upload</span>
+                  <span className="text-xs font-normal opacity-70 leading-tight text-center">Upload a custom HTML file as project</span>
+                </TabsTrigger>
+              </TabsList>
+
+              {/* ════════════════════════════════
+                  SELF CREATED PROJECT TAB
+              ════════════════════════════════ */}
+              <TabsContent value="self">
+                <form onSubmit={handleSubmit} className="space-y-4">
+
+                  <div className="rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-900/10 dark:border-blue-800 px-4 py-3 text-xs text-blue-700 dark:text-blue-300 flex items-start gap-2">
+                    <FileText className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                    <span>A <strong>Self Created Project</strong> is built with a title, description, thumbnail and optional links. It uses the standard project card layout on POPArt.frl.</span>
+                  </div>
+
                   <div className="space-y-2">
-                    <div className="relative rounded-lg overflow-hidden border-2 border-gray-200 dark:border-gray-700">
-                      <img
-                        src={formData.thumbnail}
-                        alt="Project thumbnail"
-                        className="w-full h-48 object-cover"
-                      />
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="sm"
-                        className="absolute top-2 right-2"
-                        onClick={handleRemoveImage}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <Input
-                      type="url"
-                      placeholder="Or paste image URL"
-                      value={formData.thumbnail}
-                      onChange={(e) => handleInputChange('thumbnail', e.target.value)}
-                    />
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <input
-                      ref={fileInputRef}
-                      id="thumbnail-upload"
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleImageUpload}
-                      disabled={isUploading}
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={isUploading}
-                    >
-                      {isUploading ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Uploading...
-                        </>
-                      ) : (
-                        <>
-                          <Upload className="h-4 w-4 mr-2" />
-                          Upload Thumbnail
-                        </>
-                      )}
-                    </Button>
-                    <Input
-                      type="url"
-                      placeholder="Or paste image URL"
-                      value={formData.thumbnail}
-                      onChange={(e) => handleInputChange('thumbnail', e.target.value)}
-                    />
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="url">Project URL (optional)</Label>
-                <Input
-                  id="url"
-                  type="url"
-                  placeholder="https://example.com or /internal-page"
-                  value={formData.url}
-                  onChange={(e) => handleInputChange('url', e.target.value)}
-                />
-                <p className="text-xs text-muted-foreground">
-                  External URLs will open in a new tab. Internal paths (e.g., /cards) will navigate within the app.
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="category">Category</Label>
-                <Select
-                  value={formData.category}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, category: value as ProjectCategory }))}
-                  disabled={!!filterCategory}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PROJECT_CATEGORIES.map((cat) => (
-                      <SelectItem key={cat.value} value={cat.value}>
-                        <span className="flex items-center gap-2">
-                          <cat.icon className={`h-4 w-4 ${cat.color}`} />
-                          {cat.label}
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  Choose which section this project belongs to
-                </p>
-              </div>
-
-              {/* Game Mode — only shown when category is games */}
-              {formData.category === 'games' && (
-                <div className="space-y-3 p-4 border rounded-lg bg-gradient-to-r from-violet-50 to-fuchsia-50 dark:from-violet-900/20 dark:to-fuchsia-900/20">
-                  <Label className="flex items-center gap-2 font-medium text-base">
-                    <Gamepad2 className="h-4 w-4 text-violet-600" />
-                    Where can this game be played?
-                  </Label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {([
-                      { value: 'indoor', label: 'Indoor', emoji: '🎮', icon: House, desc: 'Played inside' },
-                      { value: 'outdoor', label: 'Outdoor', emoji: '🗺️', icon: TreePine, desc: 'Played outside' },
-                      { value: 'both', label: 'Both', emoji: '🎮🗺️', icon: Gamepad2, desc: 'Indoor & outdoor' },
-                    ] as const).map((option) => (
-                      <button
-                        key={option.value}
-                        type="button"
-                        onClick={() => setFormData(prev => ({ ...prev, game_mode: option.value }))}
-                        className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all text-center ${
-                          formData.game_mode === option.value
-                            ? 'border-violet-500 bg-violet-100 dark:bg-violet-900/40 shadow-md'
-                            : 'border-border bg-background hover:border-violet-300 hover:bg-violet-50 dark:hover:bg-violet-900/20'
-                        }`}
-                      >
-                        <span className="text-2xl">{option.emoji}</span>
-                        <span className="font-semibold text-sm">{option.label}</span>
-                        <span className="text-xs text-muted-foreground">{option.desc}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <Label htmlFor="order">Display Order (optional)</Label>
-                <Input
-                  id="order"
-                  type="number"
-                  placeholder="1, 2, 3... (lower numbers appear first)"
-                  value={formData.order}
-                  onChange={(e) => handleInputChange('order', e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2 p-4 border rounded-lg bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="featured"
-                    checked={formData.featured}
-                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, featured: !!checked }))}
-                  />
-                  <Label htmlFor="featured" className="text-base font-medium flex items-center gap-2">
-                    <Star className="h-4 w-4 text-amber-600" />
-                    Feature on Homepage
-                  </Label>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Display this project in the featured section on the homepage (limit: 3 projects)
-                </p>
-              </div>
-
-              <div className="space-y-2 p-4 border rounded-lg bg-gradient-to-r from-orange-50 to-pink-50 dark:from-orange-900/20 dark:to-pink-900/20">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="coming_soon"
-                    checked={formData.coming_soon}
-                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, coming_soon: !!checked }))}
-                  />
-                  <Label htmlFor="coming_soon" className="text-base font-medium">
-                    Coming Soon
-                  </Label>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Mark this project as "Coming Soon" - it will be displayed with a special badge
-                </p>
-              </div>
-
-              {/* Project Website */}
-              <div className="space-y-3 p-4 border rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
-                <div className="flex items-center justify-between gap-3 flex-wrap">
-                  <Label className="flex items-center gap-2 font-medium">
-                    <Globe className="h-4 w-4 text-blue-600" />
-                    Project Website (optional)
-                  </Label>
-                  <div className="flex items-center gap-1 rounded-md border bg-white dark:bg-gray-900 p-1">
-                    <Button type="button" size="sm" variant={brandSiteMode === 'url' ? 'default' : 'ghost'} onClick={() => setBrandSiteMode('url')}>URL</Button>
-                    <Button type="button" size="sm" variant={brandSiteMode === 'html' ? 'default' : 'ghost'} onClick={() => setBrandSiteMode('html')}>HTML</Button>
-                    <Button type="button" size="sm" variant={brandSiteMode === 'pdf' ? 'default' : 'ghost'} onClick={() => setBrandSiteMode('pdf')}>PDF</Button>
-                  </div>
-                </div>
-
-                {brandSiteMode === 'url' && (
-                  <Input
-                    type="url"
-                    placeholder="https://example.com/project-page-or-brochure.pdf"
-                    value={formData.brand_site}
-                    onChange={(e) => handleInputChange('brand_site', e.target.value)}
-                  />
-                )}
-
-                {brandSiteMode === 'html' && (
-                  <div className="space-y-2">
+                    <Label htmlFor="description">Description *</Label>
                     <Textarea
-                      value={brandSiteHtml}
-                      onChange={(e) => setBrandSiteHtml(e.target.value)}
-                      rows={8}
-                      placeholder="Paste full HTML code here — it will be converted into a page URL."
+                      id="description"
+                      placeholder="Describe your project..."
+                      value={formData.description}
+                      onChange={(e) => handleInputChange('description', e.target.value)}
+                      rows={4}
                     />
-                    <div className="flex gap-2 flex-wrap">
-                      <Button type="button" variant="outline" size="sm" onClick={applyBrandSiteHtml}>
-                        <FileText className="h-4 w-4 mr-2" />
-                        Create page from HTML
-                      </Button>
-                      <Button type="button" variant="ghost" size="sm" onClick={() => setBrandSiteHtml('')}>Clear</Button>
-                    </div>
                   </div>
-                )}
 
-                {brandSiteMode === 'pdf' && (
                   <div className="space-y-2">
-                    <input
-                      ref={brandSitePdfRef}
-                      type="file"
-                      accept="application/pdf,text/html,.html,.htm,.xhtml"
-                      className="hidden"
-                      onChange={handleBrandSiteFileUpload}
+                    <Label htmlFor="thumbnail">Project Thumbnail</Label>
+                    
+                    {formData.thumbnail ? (
+                      <div className="space-y-2">
+                        <div className="relative rounded-lg overflow-hidden border-2 border-gray-200 dark:border-gray-700">
+                          <img
+                            src={formData.thumbnail}
+                            alt="Project thumbnail"
+                            className="w-full h-48 object-cover"
+                          />
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            className="absolute top-2 right-2"
+                            onClick={handleRemoveImage}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <Input
+                          type="url"
+                          placeholder="Or paste image URL"
+                          value={formData.thumbnail}
+                          onChange={(e) => handleInputChange('thumbnail', e.target.value)}
+                        />
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <input
+                          ref={fileInputRef}
+                          id="thumbnail-upload"
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleImageUpload}
+                          disabled={isUploading}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={isUploading}
+                        >
+                          {isUploading ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Uploading...
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="h-4 w-4 mr-2" />
+                              Upload Thumbnail
+                            </>
+                          )}
+                        </Button>
+                        <Input
+                          type="url"
+                          placeholder="Or paste image URL"
+                          value={formData.thumbnail}
+                          onChange={(e) => handleInputChange('thumbnail', e.target.value)}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="url">Project URL (optional)</Label>
+                    <Input
+                      id="url"
+                      type="url"
+                      placeholder="https://example.com or /internal-page"
+                      value={formData.url}
+                      onChange={(e) => handleInputChange('url', e.target.value)}
                     />
-                    <Button type="button" variant="outline" size="sm" onClick={() => brandSitePdfRef.current?.click()}>
-                      <Upload className="h-4 w-4 mr-2" />
-                      Upload PDF / HTML file
-                    </Button>
-                    <p className="text-xs text-muted-foreground">PDF or HTML file will be hosted and linked automatically.</p>
+                    <p className="text-xs text-muted-foreground">
+                      External URLs will open in a new tab. Internal paths (e.g., /cards) will navigate within the app.
+                    </p>
                   </div>
-                )}
 
-                {formData.brand_site && (
-                  <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 rounded px-3 py-2">
-                    <Globe className="h-4 w-4 flex-shrink-0" />
-                    <span className="truncate flex-1">{formData.brand_site.startsWith('data:') ? 'HTML page ready' : formData.brand_site}</span>
-                    <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={() => setFormData(prev => ({ ...prev, brand_site: '' }))}>
-                      <X className="h-3 w-3" />
+                  <div className="space-y-2">
+                    <Label htmlFor="category">Category</Label>
+                    <Select
+                      value={formData.category}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, category: value as ProjectCategory }))}
+                      disabled={!!filterCategory}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PROJECT_CATEGORIES.map((cat) => (
+                          <SelectItem key={cat.value} value={cat.value}>
+                            <span className="flex items-center gap-2">
+                              <cat.icon className={`h-4 w-4 ${cat.color}`} />
+                              {cat.label}
+                            </span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Choose which section this project belongs to
+                    </p>
+                  </div>
+
+                  {/* Game Mode — only shown when category is games */}
+                  {formData.category === 'games' && (
+                    <div className="space-y-3 p-4 border rounded-lg bg-gradient-to-r from-violet-50 to-fuchsia-50 dark:from-violet-900/20 dark:to-fuchsia-900/20">
+                      <Label className="flex items-center gap-2 font-medium text-base">
+                        <Gamepad2 className="h-4 w-4 text-violet-600" />
+                        Where can this game be played?
+                      </Label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {([
+                          { value: 'indoor', label: 'Indoor', emoji: '🎮', icon: House, desc: 'Played inside' },
+                          { value: 'outdoor', label: 'Outdoor', emoji: '🗺️', icon: TreePine, desc: 'Played outside' },
+                          { value: 'both', label: 'Both', emoji: '🎮🗺️', icon: Gamepad2, desc: 'Indoor & outdoor' },
+                        ] as const).map((option) => (
+                          <button
+                            key={option.value}
+                            type="button"
+                            onClick={() => setFormData(prev => ({ ...prev, game_mode: option.value }))}
+                            className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all text-center ${
+                              formData.game_mode === option.value
+                                ? 'border-violet-500 bg-violet-100 dark:bg-violet-900/40 shadow-md'
+                                : 'border-border bg-background hover:border-violet-300 hover:bg-violet-50 dark:hover:bg-violet-900/20'
+                            }`}
+                          >
+                            <span className="text-2xl">{option.emoji}</span>
+                            <span className="font-semibold text-sm">{option.label}</span>
+                            <span className="text-xs text-muted-foreground">{option.desc}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <Label htmlFor="order">Display Order (optional)</Label>
+                    <Input
+                      id="order"
+                      type="number"
+                      placeholder="1, 2, 3... (lower numbers appear first)"
+                      value={formData.order}
+                      onChange={(e) => handleInputChange('order', e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-2 p-4 border rounded-lg bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="featured"
+                        checked={formData.featured}
+                        onCheckedChange={(checked) => setFormData(prev => ({ ...prev, featured: !!checked }))}
+                      />
+                      <Label htmlFor="featured" className="text-base font-medium flex items-center gap-2">
+                        <Star className="h-4 w-4 text-amber-600" />
+                        Feature on Homepage
+                      </Label>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Display this project in the featured section on the homepage (limit: 3 projects)
+                    </p>
+                  </div>
+
+                  <div className="space-y-2 p-4 border rounded-lg bg-gradient-to-r from-orange-50 to-pink-50 dark:from-orange-900/20 dark:to-pink-900/20">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="coming_soon"
+                        checked={formData.coming_soon}
+                        onCheckedChange={(checked) => setFormData(prev => ({ ...prev, coming_soon: !!checked }))}
+                      />
+                      <Label htmlFor="coming_soon" className="text-base font-medium">
+                        Coming Soon
+                      </Label>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Mark this project as "Coming Soon" - it will be displayed with a special badge
+                    </p>
+                  </div>
+
+                  {/* Project Website */}
+                  <div className="space-y-3 p-4 border rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
+                    <div className="flex items-center justify-between gap-3 flex-wrap">
+                      <Label className="flex items-center gap-2 font-medium">
+                        <Globe className="h-4 w-4 text-blue-600" />
+                        Project Website (optional)
+                      </Label>
+                      <div className="flex items-center gap-1 rounded-md border bg-white dark:bg-gray-900 p-1">
+                        <Button type="button" size="sm" variant={brandSiteMode === 'url' ? 'default' : 'ghost'} onClick={() => setBrandSiteMode('url')}>URL</Button>
+                        <Button type="button" size="sm" variant={brandSiteMode === 'html' ? 'default' : 'ghost'} onClick={() => setBrandSiteMode('html')}>HTML</Button>
+                        <Button type="button" size="sm" variant={brandSiteMode === 'pdf' ? 'default' : 'ghost'} onClick={() => setBrandSiteMode('pdf')}>PDF</Button>
+                      </div>
+                    </div>
+
+                    {brandSiteMode === 'url' && (
+                      <Input
+                        type="url"
+                        placeholder="https://example.com/project-page-or-brochure.pdf"
+                        value={formData.brand_site}
+                        onChange={(e) => handleInputChange('brand_site', e.target.value)}
+                      />
+                    )}
+
+                    {brandSiteMode === 'html' && (
+                      <div className="space-y-2">
+                        <Textarea
+                          value={brandSiteHtml}
+                          onChange={(e) => setBrandSiteHtml(e.target.value)}
+                          rows={8}
+                          placeholder="Paste full HTML code here — it will be converted into a page URL."
+                        />
+                        <div className="flex gap-2 flex-wrap">
+                          <Button type="button" variant="outline" size="sm" onClick={applyBrandSiteHtml}>
+                            <FileText className="h-4 w-4 mr-2" />
+                            Create page from HTML
+                          </Button>
+                          <Button type="button" variant="ghost" size="sm" onClick={() => setBrandSiteHtml('')}>Clear</Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {brandSiteMode === 'pdf' && (
+                      <div className="space-y-2">
+                        <input
+                          ref={brandSitePdfRef}
+                          type="file"
+                          accept="application/pdf,text/html,.html,.htm,.xhtml"
+                          className="hidden"
+                          onChange={handleBrandSiteFileUpload}
+                        />
+                        <Button type="button" variant="outline" size="sm" onClick={() => brandSitePdfRef.current?.click()}>
+                          <Upload className="h-4 w-4 mr-2" />
+                          Upload PDF / HTML file
+                        </Button>
+                        <p className="text-xs text-muted-foreground">PDF or HTML file will be hosted and linked automatically.</p>
+                      </div>
+                    )}
+
+                    {formData.brand_site && (
+                      <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 rounded px-3 py-2">
+                        <Globe className="h-4 w-4 flex-shrink-0" />
+                        <span className="truncate flex-1">{formData.brand_site.startsWith('data:') ? 'HTML page ready' : formData.brand_site}</span>
+                        <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={() => setFormData(prev => ({ ...prev, brand_site: '' }))}>
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )}
+
+                    <p className="text-xs text-muted-foreground">
+                      Add a URL, upload a PDF, or paste HTML. A "View Project Site" button will appear on the project card.
+                    </p>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button type="submit" className="flex-1">
+                      <Plus className="h-4 w-4 mr-2" />
+                      {editingProject ? 'Update Project' : 'Create Project'}
+                    </Button>
+                    <Button type="button" variant="outline" onClick={handleCancel}>
+                      Cancel
                     </Button>
                   </div>
-                )}
+                </form>
+              </TabsContent>
 
-                <p className="text-xs text-muted-foreground">
-                  Add a URL, upload a PDF, or paste HTML. A "View Project Site" button will appear on the project card.
-                </p>
-              </div>
+              {/* ════════════════════════════════
+                  HTML UPLOAD TAB
+              ════════════════════════════════ */}
+              <TabsContent value="html">
+                <form onSubmit={handleSubmit} className="space-y-6">
 
-              <div className="flex gap-2">
-                <Button type="submit" className="flex-1">
-                  <Plus className="h-4 w-4 mr-2" />
-                  {editingProject ? 'Update Project' : 'Create Project'}
-                </Button>
-                <Button type="button" variant="outline" onClick={handleCancel}>
-                  Cancel
-                </Button>
-              </div>
-            </form>
+                  <div className="rounded-lg border border-purple-200 bg-purple-50 dark:bg-purple-900/10 dark:border-purple-800 px-4 py-3 text-xs text-purple-700 dark:text-purple-300 flex items-start gap-2">
+                    <FileCode className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                    <span><strong>HTML Upload</strong> — the project page <em>is</em> the HTML file. Upload your own fully custom design, landing page, or mini-site. It will be hosted via Blossom and linked to this project on POPArt.frl.</span>
+                  </div>
+
+                  {/* Thumbnail for the project card */}
+                  <div className="space-y-2">
+                    <Label htmlFor="thumbnail-html">Project Thumbnail (shown on the project card)</Label>
+                    {formData.thumbnail ? (
+                      <div className="space-y-2">
+                        <div className="relative rounded-lg overflow-hidden border-2 border-gray-200 dark:border-gray-700">
+                          <img
+                            src={formData.thumbnail}
+                            alt="Project thumbnail"
+                            className="w-full h-48 object-cover"
+                          />
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            className="absolute top-2 right-2"
+                            onClick={handleRemoveImage}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <Input
+                          type="url"
+                          placeholder="Or paste image URL"
+                          value={formData.thumbnail}
+                          onChange={(e) => handleInputChange('thumbnail', e.target.value)}
+                        />
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <input
+                          ref={fileInputRef}
+                          id="thumbnail-html"
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleImageUpload}
+                          disabled={isUploading}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={isUploading}
+                        >
+                          {isUploading ? (
+                            <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Uploading...</>
+                          ) : (
+                            <><Upload className="h-4 w-4 mr-2" />Upload Thumbnail</>
+                          )}
+                        </Button>
+                        <Input
+                          type="url"
+                          placeholder="Or paste image URL"
+                          value={formData.thumbnail}
+                          onChange={(e) => handleInputChange('thumbnail', e.target.value)}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Description (optional for HTML projects) */}
+                  <div className="space-y-2">
+                    <Label htmlFor="description-html">Short Description (optional, shown on project card)</Label>
+                    <Textarea
+                      id="description-html"
+                      placeholder="Brief description shown on the project card..."
+                      value={formData.description}
+                      onChange={(e) => handleInputChange('description', e.target.value)}
+                      rows={3}
+                    />
+                  </div>
+
+                  {/* Category */}
+                  <div className="space-y-2">
+                    <Label>Category</Label>
+                    <Select
+                      value={formData.category}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, category: value as ProjectCategory }))}
+                      disabled={!!filterCategory}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PROJECT_CATEGORIES.map((cat) => (
+                          <SelectItem key={cat.value} value={cat.value}>
+                            <span className="flex items-center gap-2">
+                              <cat.icon className={`h-4 w-4 ${cat.color}`} />
+                              {cat.label}
+                            </span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* HTML upload / editor */}
+                  <div className="space-y-3">
+                    <Label className="text-base font-semibold flex items-center gap-2">
+                      <FileCode className="h-4 w-4 text-purple-600" />
+                      HTML Project File *
+                    </Label>
+                    <input
+                      ref={htmlFileRef}
+                      type="file"
+                      accept=".html,.htm"
+                      className="hidden"
+                      onChange={handleProjectHtmlFileUpload}
+                    />
+                    {projectHtml ? (
+                      <HtmlEditor
+                        html={projectHtml}
+                        onChange={setProjectHtml}
+                        uploadFile={uploadFile}
+                      />
+                    ) : (
+                      <div
+                        className="border-2 border-dashed rounded-xl p-10 flex flex-col items-center gap-4 text-center cursor-pointer hover:border-purple-400 hover:bg-purple-50/50 dark:hover:bg-purple-900/10 transition-colors"
+                        onClick={() => htmlFileRef.current?.click()}
+                      >
+                        <div className="h-14 w-14 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                          <Upload className="h-7 w-7 text-purple-500" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-sm">Click to upload your HTML file</p>
+                          <p className="text-xs text-muted-foreground mt-1">Accepts .html and .htm files</p>
+                        </div>
+                        <Button type="button" variant="outline">
+                          <Upload className="h-4 w-4 mr-2" /> Choose HTML file
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Display Order */}
+                  <div className="space-y-2">
+                    <Label htmlFor="order-html">Display Order (optional)</Label>
+                    <Input
+                      id="order-html"
+                      type="number"
+                      placeholder="1, 2, 3... (lower numbers appear first)"
+                      value={formData.order}
+                      onChange={(e) => handleInputChange('order', e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-2 p-4 border rounded-lg bg-gradient-to-r from-orange-50 to-pink-50 dark:from-orange-900/20 dark:to-pink-900/20">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="coming_soon_html"
+                        checked={formData.coming_soon}
+                        onCheckedChange={(checked) => setFormData(prev => ({ ...prev, coming_soon: !!checked }))}
+                      />
+                      <Label htmlFor="coming_soon_html" className="text-base font-medium">
+                        Coming Soon
+                      </Label>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Mark this project as "Coming Soon" - it will be displayed with a special badge
+                    </p>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button type="submit" className="flex-1">
+                      <Plus className="h-4 w-4 mr-2" />
+                      {editingProject ? 'Update Project' : 'Create Project'}
+                    </Button>
+                    <Button type="button" variant="outline" onClick={handleCancel}>
+                      Cancel
+                    </Button>
+                  </div>
+                </form>
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
       ) : (
@@ -739,6 +1026,8 @@ export function ProjectManagement({ filterCategory }: ProjectManagementProps = {
                 const category = (event.tags.find(t => t[0] === 'category')?.[1] || 'general') as ProjectCategory;
                 const categoryInfo = PROJECT_CATEGORIES.find(c => c.value === category);
                 const gameMode = event.tags.find(t => t[0] === 'game-mode')?.[1] as GameMode | undefined;
+                const brandSiteInline = event.tags.find(t => t[0] === 'brand-site-inline')?.[1] === 'true';
+                const isHtmlProject = brandSiteInline && !!event.tags.find(t => t[0] === 'brand-site')?.[1];
 
                 return (
                   <Card key={event.id} className="overflow-hidden">
@@ -785,6 +1074,11 @@ export function ProjectManagement({ filterCategory }: ProjectManagementProps = {
                                   : 'text-violet-700 border-violet-300 bg-violet-50 dark:text-violet-400 dark:border-violet-700 dark:bg-violet-900/20'
                                 }`}>
                                   {gameMode === 'indoor' ? '🎮 Indoor' : gameMode === 'outdoor' ? '🗺️ Outdoor' : '🎮🗺️ Indoor & Outdoor'}
+                                </Badge>
+                              )}
+                              {isHtmlProject && (
+                                <Badge variant="outline" className="text-xs text-purple-600 border-purple-300">
+                                  <FileCode className="h-3 w-3 mr-1" />HTML Upload
                                 </Badge>
                               )}
                               {order && (
