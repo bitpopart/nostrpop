@@ -11,40 +11,49 @@ import { nip19 } from 'nostr-tools';
 const ADMIN_NPUB = 'npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz';
 const ADMIN_PUBKEY = nip19.decode(ADMIN_NPUB).data as string;
 
-// Module-level HTML cache
 const htmlCache = new Map<string, string>();
 
 const FILE_RE = /\.(pdf|zip|docx?|xlsx?|pptx?|mp4|mp3|png|jpe?g|gif|svg|webp|exe|dmg|apk)(\?|$)/i;
 
-/** Rewrites download links in the HTML so they post a message to the parent instead of navigating away. */
-function injectDownloadScript(html: string): string {
-  const rewritten = html.replace(
-    /<a\s([^>]*)>/gi,
-    (match, attrs: string) => {
-      const hrefMatch = attrs.match(/href=["']([^"']+)["']/i);
-      if (!hrefMatch) return match;
-      const href = hrefMatch[1];
-      const hasDownload = /\bdownload\b/i.test(attrs);
-      if (!hasDownload && !FILE_RE.test(href)) return match;
-      const newAttrs = attrs
-        .replace(/href=["'][^"']*["']/i, `href="#"`)
-        .replace(/\btarget=["'][^"']*["']/i, '');
-      return `<a ${newAttrs} data-dl="${href}">`;
+/**
+ * Intercepts ALL anchor clicks in the iframe:
+ * - Download links  → postMessage __download__
+ * - Internal links  → postMessage __navigate__ (React Router, no double header)
+ * - External links  → open in new tab
+ */
+function injectLinkBridge(html: string): string {
+  const script = `<script id="__frl_bridge__">
+(function(){
+  var FILE_RE = /\\.(pdf|zip|docx?|xlsx?|pptx?|mp4|mp3|png|jpe?g|gif|svg|webp|exe|dmg|apk)(\\?|$)/i;
+  document.addEventListener('click', function(e) {
+    var a = e.target && e.target.closest ? e.target.closest('a') : null;
+    if (!a) return;
+    var href = a.getAttribute('href') || '';
+    if (!href || href === '#') return;
+    var hasDownload = a.hasAttribute('download');
+    if (hasDownload || FILE_RE.test(href)) {
+      e.preventDefault(); e.stopImmediatePropagation();
+      window.parent.postMessage({
+        type: '__download__',
+        url: href,
+        filename: a.getAttribute('download') || href.split('/').pop() || 'download'
+      }, '*');
+      return;
     }
-  );
-
-  const script = `<script>
-document.addEventListener('click',function(e){
-  var a=e.target&&e.target.closest?e.target.closest('[data-dl]'):null;
-  if(!a)return;
-  e.preventDefault();e.stopImmediatePropagation();
-  window.parent.postMessage({type:'__download__',url:a.getAttribute('data-dl'),filename:a.getAttribute('download')||a.getAttribute('data-dl').split('/').pop()||'download'},'*');
-},true);
+    if (/^https?:\\/\\//i.test(href)) {
+      a.setAttribute('target', '_blank');
+      a.setAttribute('rel', 'noopener noreferrer');
+      return;
+    }
+    e.preventDefault(); e.stopImmediatePropagation();
+    window.parent.postMessage({ type: '__navigate__', path: href }, '*');
+  }, true);
+})();
 </script>`;
 
-  if (rewritten.includes('</head>')) return rewritten.replace('</head>', script + '</head>');
-  if (rewritten.includes('<body')) return rewritten.replace('<body', script + '<body');
-  return script + rewritten;
+  if (html.includes('</head>')) return html.replace('</head>', script + '</head>');
+  if (html.includes('<body')) return html.replace('<body', script + '<body');
+  return script + html;
 }
 
 export default function FrlProjectView() {
@@ -52,7 +61,6 @@ export default function FrlProjectView() {
   const navigate = useNavigate();
   const { nostr } = useNostr();
 
-  // Fetch the project event from Nostr
   const { data: project, isLoading } = useQuery({
     queryKey: ['frl-project', projectId],
     queryFn: async (c) => {
@@ -73,13 +81,9 @@ export default function FrlProjectView() {
     enabled: !!projectId,
   });
 
-  // Parse data from the event
   const brandSiteUrl = project?.tags.find(t => t[0] === 'brand-site')?.[1];
   const projectName = project?.tags.find(t => t[0] === 'name')?.[1] ?? 'Project';
 
-  // HTML fetch state — initialise from cache immediately.
-  // We always fetch the brand-site URL as HTML on this route — it only ever
-  // renders inline HTML projects, regardless of tags or URL extension.
   const [fetchedHtml, setFetchedHtml] = useState<string | null>(
     () => (brandSiteUrl ? htmlCache.get(brandSiteUrl) ?? null : null)
   );
@@ -98,36 +102,44 @@ export default function FrlProjectView() {
       .catch(() => setFetchingHtml(false));
   }, [brandSiteUrl]);
 
-  // Handle download requests from inside the iframe
+  // Message bridge
   useEffect(() => {
     const handler = async (e: MessageEvent) => {
-      if (!e.data || e.data.type !== '__download__') return;
-      const { url, filename } = e.data as { type: string; url: string; filename: string };
-      try {
-        const res = await fetch(url);
-        const blob = await res.blob();
-        const blobUrl = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = blobUrl;
-        a.download = filename || url.split('/').pop() || 'download';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
-      } catch {
-        window.open(url, '_blank');
+      if (!e.data) return;
+
+      if (e.data.type === '__navigate__') {
+        const path = e.data.path as string;
+        if (path) navigate(path);
+        return;
+      }
+
+      if (e.data.type === '__download__') {
+        const { url, filename } = e.data as { type: string; url: string; filename: string };
+        try {
+          const res = await fetch(url);
+          const blob = await res.blob();
+          const blobUrl = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = blobUrl;
+          a.download = filename || url.split('/').pop() || 'download';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+        } catch {
+          window.open(url, '_blank');
+        }
       }
     };
     window.addEventListener('message', handler);
     return () => window.removeEventListener('message', handler);
-  }, []);
+  }, [navigate]);
 
   useSeoMeta({
     title: project ? `${projectName} - POPArt.frl` : 'POPArt.frl Project',
     description: project ? (() => { try { return JSON.parse(project.content).description || ''; } catch { return ''; } })() : '',
   });
 
-  // ── Loading state ──────────────────────────────────────────
   if (isLoading || (fetchingHtml && !fetchedHtml)) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20">
@@ -139,7 +151,6 @@ export default function FrlProjectView() {
     );
   }
 
-  // ── Not found ──────────────────────────────────────────────
   if (!project || !brandSiteUrl) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20 flex items-center justify-center">
@@ -153,25 +164,21 @@ export default function FrlProjectView() {
     );
   }
 
-  // ── Fullscreen inline HTML — fills everything below the header menu ──
-  const htmlSrcDoc = fetchedHtml ?? undefined;
-
   return (
     <div style={{ height: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column' }}>
-      {htmlSrcDoc ? (
+      {fetchedHtml ? (
         <iframe
-          srcDoc={injectDownloadScript(htmlSrcDoc)}
+          srcDoc={injectLinkBridge(fetchedHtml)}
           title={projectName}
           className="w-full flex-1 border-0"
-            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads allow-top-level-navigation"
-          />
-        ) : (
-          /* Fallback: non-HTML brand_site URL — render as src iframe */
-          <iframe
-            src={brandSiteUrl}
-            title={projectName}
-            className="w-full flex-1 border-0"
-            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads allow-top-level-navigation"
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads"
+        />
+      ) : (
+        <iframe
+          src={brandSiteUrl}
+          title={projectName}
+          className="w-full flex-1 border-0"
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads"
         />
       )}
     </div>

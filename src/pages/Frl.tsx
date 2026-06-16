@@ -11,37 +11,54 @@ import { nip19 } from 'nostr-tools';
 const ADMIN_NPUB = 'npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz';
 const ADMIN_PUBKEY = nip19.decode(ADMIN_NPUB).data as string;
 
-// Module-level HTML cache — shared with FrlProjectView
 const htmlCache = new Map<string, string>();
 
 const FILE_RE = /\.(pdf|zip|docx?|xlsx?|pptx?|mp4|mp3|png|jpe?g|gif|svg|webp|exe|dmg|apk)(\?|$)/i;
 
-function injectDownloadScript(html: string): string {
-  const rewritten = html.replace(
-    /<a\s([^>]*)>/gi,
-    (match, attrs: string) => {
-      const hrefMatch = attrs.match(/href=["']([^"']+)["']/i);
-      if (!hrefMatch) return match;
-      const href = hrefMatch[1];
-      const hasDownload = /\bdownload\b/i.test(attrs);
-      if (!hasDownload && !FILE_RE.test(href)) return match;
-      const newAttrs = attrs
-        .replace(/href=["'][^"']*["']/i, `href="#"`)
-        .replace(/\btarget=["'][^"']*["']/i, '');
-      return `<a ${newAttrs} data-dl="${href}">`;
+/**
+ * Injects a script into the HTML that intercepts ALL anchor clicks:
+ * - Download links  → postMessage __download__ (parent fetches as blob)
+ * - Internal links  → postMessage __navigate__  (parent uses React Router)
+ * - External links  → open in new tab (no parent involvement)
+ * This way the iframe never navigates the top-level window itself,
+ * so the site header only appears once.
+ */
+function injectLinkBridge(html: string): string {
+  const script = `<script id="__frl_bridge__">
+(function(){
+  var FILE_RE = /\\.(pdf|zip|docx?|xlsx?|pptx?|mp4|mp3|png|jpe?g|gif|svg|webp|exe|dmg|apk)(\\?|$)/i;
+  document.addEventListener('click', function(e) {
+    var a = e.target && e.target.closest ? e.target.closest('a') : null;
+    if (!a) return;
+    var href = a.getAttribute('href') || '';
+    if (!href || href === '#') return;
+    var hasDownload = a.hasAttribute('download');
+    // Download link or file extension → blob download via parent
+    if (hasDownload || FILE_RE.test(href)) {
+      e.preventDefault(); e.stopImmediatePropagation();
+      window.parent.postMessage({
+        type: '__download__',
+        url: href,
+        filename: a.getAttribute('download') || href.split('/').pop() || 'download'
+      }, '*');
+      return;
     }
-  );
-  const script = `<script>
-document.addEventListener('click',function(e){
-  var a=e.target&&e.target.closest?e.target.closest('[data-dl]'):null;
-  if(!a)return;
-  e.preventDefault();e.stopImmediatePropagation();
-  window.parent.postMessage({type:'__download__',url:a.getAttribute('data-dl'),filename:a.getAttribute('download')||a.getAttribute('data-dl').split('/').pop()||'download'},'*');
-},true);
+    // External link → open in new tab, let default behaviour run (parent unaffected)
+    if (/^https?:\\/\\//i.test(href)) {
+      a.setAttribute('target', '_blank');
+      a.setAttribute('rel', 'noopener noreferrer');
+      return;
+    }
+    // Internal / relative link → navigate parent via React Router (no full reload, no double header)
+    e.preventDefault(); e.stopImmediatePropagation();
+    window.parent.postMessage({ type: '__navigate__', path: href }, '*');
+  }, true);
+})();
 </script>`;
-  if (rewritten.includes('</head>')) return rewritten.replace('</head>', script + '</head>');
-  if (rewritten.includes('<body')) return rewritten.replace('<body', script + '<body');
-  return script + rewritten;
+
+  if (html.includes('</head>')) return html.replace('</head>', script + '</head>');
+  if (html.includes('<body')) return html.replace('<body', script + '<body');
+  return script + html;
 }
 
 export default function Frl() {
@@ -98,7 +115,7 @@ export default function Frl() {
     },
   });
 
-  // Find the single inline HTML project (brand-site-inline=true or frl-inline=true)
+  // Find the single inline HTML project
   const inlineProject = projects.find(e =>
     e.tags.find(t => t[0] === 'brand-site-inline')?.[1] === 'true' ||
     e.tags.find(t => t[0] === 'frl-inline')?.[1] === 'true'
@@ -125,29 +142,40 @@ export default function Frl() {
       .catch(() => setFetchingHtml(false));
   }, [brandSiteUrl]);
 
-  // Download bridge for the iframe
+  // Message bridge: handle __download__ and __navigate__ from the iframe
   useEffect(() => {
     const handler = async (e: MessageEvent) => {
-      if (!e.data || e.data.type !== '__download__') return;
-      const { url, filename } = e.data as { type: string; url: string; filename: string };
-      try {
-        const res = await fetch(url);
-        const blob = await res.blob();
-        const blobUrl = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = blobUrl;
-        a.download = filename || url.split('/').pop() || 'download';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
-      } catch {
-        window.open(url, '_blank');
+      if (!e.data) return;
+
+      // Internal navigation — use React Router, no page reload, no double header
+      if (e.data.type === '__navigate__') {
+        const path = e.data.path as string;
+        if (path) navigate(path);
+        return;
+      }
+
+      // File download
+      if (e.data.type === '__download__') {
+        const { url, filename } = e.data as { type: string; url: string; filename: string };
+        try {
+          const res = await fetch(url);
+          const blob = await res.blob();
+          const blobUrl = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = blobUrl;
+          a.download = filename || url.split('/').pop() || 'download';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+        } catch {
+          window.open(url, '_blank');
+        }
       }
     };
     window.addEventListener('message', handler);
     return () => window.removeEventListener('message', handler);
-  }, []);
+  }, [navigate]);
 
   // ── Loading ──────────────────────────────────────────────
   if (isLoading || (brandSiteUrl && fetchingHtml && !fetchedHtml)) {
@@ -166,17 +194,17 @@ export default function Frl() {
       <div style={{ height: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column' }}>
         {fetchedHtml ? (
           <iframe
-            srcDoc={injectDownloadScript(fetchedHtml)}
+            srcDoc={injectLinkBridge(fetchedHtml)}
             title={projectName}
             className="w-full flex-1 border-0"
-            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads allow-top-level-navigation"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads"
           />
         ) : (
           <iframe
             src={brandSiteUrl}
             title={projectName}
             className="w-full flex-1 border-0"
-            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads allow-top-level-navigation"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads"
           />
         )}
       </div>
