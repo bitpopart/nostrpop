@@ -95,6 +95,15 @@ const CATEGORY_SECTIONS = [
     gradient: 'from-amber-500 via-orange-500 to-rose-500',
     emoji: '🎬',
   },
+  {
+    id: 'frl',
+    name: 'POPArt.frl',
+    description: 'Creative pop art projects on POPArt.frl',
+    url: '/frl',
+    icon: Globe,
+    gradient: 'from-pink-500 via-rose-500 to-orange-500',
+    emoji: '🌐',
+  },
 ];
 
 // Built-in projects (general category only — Games/Animations/FRL are top-level sections)
