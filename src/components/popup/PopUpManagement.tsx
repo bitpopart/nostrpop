@@ -185,7 +185,10 @@ export function PopUpManagement() {
         const dataUrl = `data:text/html;charset=utf-8,${encodeURIComponent(html)}`;
         setFormData(prev => ({ ...prev, brandSite: dataUrl }));
         setBrandSiteMode('url');
-        toast.success('HTML file added to Event Brand Website.');
+        toast.warning(
+          'HTML file loaded for local preview only. Note: this cannot be saved to Nostr — only https:// URLs can be stored. To share this page, host it online and paste the URL instead.',
+          { duration: 10000 }
+        );
         return;
       }
 
@@ -216,7 +219,10 @@ export function PopUpManagement() {
     const url = URL.createObjectURL(htmlBlob);
     setFormData(prev => ({ ...prev, brandSite: url }));
     setBrandSiteMode('url');
-    toast.success('HTML page created for Event Brand Website.');
+    toast.warning(
+      'HTML preview created locally. Note: this cannot be saved to Nostr — only https:// URLs can be stored. To share this page, host it online and paste the URL instead.',
+      { duration: 10000 }
+    );
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -280,7 +286,19 @@ export function PopUpManagement() {
       tags.push(['r', formData.link]);
     }
     if (formData.brandSite) {
-      tags.push(['brand-site', formData.brandSite]);
+      const isBlob = formData.brandSite.startsWith('blob:');
+      const isDataUrl = formData.brandSite.startsWith('data:');
+      if (isBlob || isDataUrl) {
+        // blob: and data: URLs are local/temporary and cannot be stored on Nostr.
+        // They also cause Alby's signing popup to go blank when trying to render the tag.
+        // Warn the user and skip this tag.
+        toast.warning(
+          'The Event Brand Website could not be saved: blob/data URLs are not supported on Nostr. Please enter a real https:// URL instead.',
+          { duration: 8000 }
+        );
+      } else {
+        tags.push(['brand-site', formData.brandSite]);
+      }
     }
     // Store coordinates in content as JSON for easy retrieval
     const contentData = {
