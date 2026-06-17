@@ -21,6 +21,7 @@ import {
   usePublishAppMedia,
   useDeleteAppMedia,
   type AppMedia,
+  type AppMediaType,
 } from '@/hooks/useAppContent';
 import {
   Image as ImageIcon,
@@ -35,6 +36,8 @@ import {
   CheckCircle2,
   ArrowRight,
   Smartphone,
+  Palette,
+  Monitor,
 } from 'lucide-react';
 
 // ── Preview rows constant ─────────────────────────────────
@@ -45,7 +48,7 @@ const PREVIEW_LIMIT = PREVIEW_COLS * PREVIEW_ROWS; // 9
 // ── Section definition ─────────────────────────────────────
 
 interface SectionDef {
-  type: 'app-wallpaper' | 'app-gif' | 'app-avatar' | 'app-banner';
+  type: AppMediaType;
   label: string;
   labelPlural: string;
   icon: React.ElementType;
@@ -54,6 +57,7 @@ interface SectionDef {
   accept: string;
   aspectClass: string;    // for thumbnails
   isRound?: boolean;      // avatars use circle style
+  badge?: string;         // optional badge text (e.g. "Mobile")
 }
 
 const SECTIONS: SectionDef[] = [
@@ -66,6 +70,17 @@ const SECTIONS: SectionDef[] = [
     tabValue: 'app-wallpapers',
     accept: 'image/*',
     aspectClass: 'aspect-square',
+    badge: 'Mobile',
+  },
+  {
+    type: 'app-desktop-wallpaper',
+    label: 'Desktop Wallpaper',
+    labelPlural: 'Desktop Wallpapers',
+    icon: Monitor,
+    color: 'from-indigo-500 to-violet-500',
+    tabValue: 'app-desktop-wallpapers',
+    accept: 'image/*',
+    aspectClass: 'aspect-video',
   },
   {
     type: 'app-gif',
@@ -97,6 +112,16 @@ const SECTIONS: SectionDef[] = [
     tabValue: 'app-banners',
     accept: 'image/*',
     aspectClass: 'aspect-video',
+  },
+  {
+    type: 'app-coloring-page',
+    label: 'Coloring Page',
+    labelPlural: 'Coloring Pages',
+    icon: Palette,
+    color: 'from-rose-500 to-pink-500',
+    tabValue: 'app-coloring-pages',
+    accept: 'image/*',
+    aspectClass: 'aspect-square',
   },
 ];
 
@@ -191,6 +216,11 @@ function SectionPreview({ section, onManage }: SectionPreviewProps) {
               <Icon className="h-4 w-4" />
             </div>
             {section.labelPlural}
+            {section.badge && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-700">
+                <Smartphone className="h-2.5 w-2.5" />{section.badge}
+              </span>
+            )}
             {!isLoading && items.length > 0 && (
               <Badge variant="secondary" className="text-xs">{items.length}</Badge>
             )}

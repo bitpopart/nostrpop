@@ -37,6 +37,8 @@ import { WallpapersAdmin } from '@/components/app/WallpapersAdmin';
 import { GifsAdmin } from '@/components/app/GifsAdmin';
 import { AvatarsAdmin } from '@/components/app/AvatarsAdmin';
 import { BannersAdmin } from '@/components/app/BannersAdmin';
+import { ColoringPagesAdmin } from '@/components/app/ColoringPagesAdmin';
+import { DesktopWallpapersAdmin } from '@/components/app/DesktopWallpapersAdmin';
 import { FanAppPublishing } from '@/components/app/FanAppPublishing';
 import { AnimationsManagement } from '@/components/animations/AnimationsManagement';
 import { StudioLibrariesAdmin } from '@/components/studio/StudioLibrariesAdmin';
@@ -73,7 +75,7 @@ import {
   Store,
   Upload,
   ClipboardList,
-  BarChart3,
+  Monitor,
 } from 'lucide-react';
 
 const Admin = () => {
@@ -417,6 +419,8 @@ const Admin = () => {
             <TabsTrigger value="app-gifs">GIFs</TabsTrigger>
             <TabsTrigger value="app-avatars">Avatars</TabsTrigger>
             <TabsTrigger value="app-banners">Banners</TabsTrigger>
+            <TabsTrigger value="app-coloring-pages">Coloring Pages</TabsTrigger>
+            <TabsTrigger value="app-desktop-wallpapers">Desktop WP</TabsTrigger>
             <TabsTrigger
               value="app-publish"
               className="flex items-center gap-1 text-orange-600 dark:text-orange-400 font-semibold"
@@ -940,6 +944,14 @@ const Admin = () => {
 
           <TabsContent value="app-banners">
             <BannersAdmin onBack={() => setActiveTab('app')} />
+          </TabsContent>
+
+          <TabsContent value="app-coloring-pages">
+            <ColoringPagesAdmin onBack={() => setActiveTab('app')} />
+          </TabsContent>
+
+          <TabsContent value="app-desktop-wallpapers">
+            <DesktopWallpapersAdmin onBack={() => setActiveTab('app')} />
           </TabsContent>
 
           <TabsContent value="app-publish">
