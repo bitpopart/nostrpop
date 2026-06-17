@@ -13,7 +13,7 @@ import { CANVAS_FORMATS, type CanvasFormat } from '@/lib/studioTypes';
 import {
   Type, Trash2, Download, Layers, RotateCcw, Copy,
   Palette, ImageIcon, Sticker, FileText, Monitor, SquareUser,
-  LayoutTemplate, ChevronUp, ChevronDown,
+  LayoutTemplate, ChevronUp, ChevronDown, ZoomIn, ZoomOut,
 } from 'lucide-react';
 
 // ─── Pop Art Colors ─────────────────────────────────────────────────────────
@@ -82,6 +82,9 @@ function FormatIcon({ id }: { id: string }) {
   return <LayoutTemplate className="h-4 w-4" />;
 }
 
+// ─── Zoom steps ──────────────────────────────────────────────────────────────
+const ZOOM_STEPS = [0.5, 0.75, 1, 1.25, 1.5, 2, 2.5, 3];
+
 // ─── Scale canvas to fit container ───────────────────────────────────────────
 function computeScale(fw: number, fh: number, maxW: number, maxH: number) {
   return Math.min(maxW / fw, maxH / fh, 1);
@@ -104,7 +107,9 @@ export default function Studio() {
   const [fontFamily, setFontFamily] = useState('Impact');
   const [dragging, setDragging] = useState<{ id: string; ox: number; oy: number } | null>(null);
   const [resizing, setResizing] = useState<ResizeState | null>(null);
-  const [scale, setScale] = useState(0.4);
+  const [baseScale, setBaseScale] = useState(0.4);
+  const [zoomLevel, setZoomLevel] = useState(1); // multiplier on top of baseScale
+  const scale = baseScale * zoomLevel;
   const canvasWrapRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const idCounter = useRef(0);
@@ -116,18 +121,33 @@ export default function Studio() {
 
   const selected = elements.find(e => e.id === selectedId) ?? null;
 
-  // ─── Compute display scale ─────────────────────────────────────────────
+  // ─── Compute base scale to fit canvas in container ────────────────────
   useEffect(() => {
     const obs = new ResizeObserver(() => {
       if (!containerRef.current) return;
       const { clientWidth } = containerRef.current;
       // Cap canvas display height at 360px so libraries stay visible
       const maxDisplayH = 360;
-      setScale(computeScale(format.width, format.height, clientWidth - 32, maxDisplayH));
+      setBaseScale(computeScale(format.width, format.height, clientWidth - 32, maxDisplayH));
     });
     if (containerRef.current) obs.observe(containerRef.current);
     return () => obs.disconnect();
   }, [format]);
+
+  // Reset zoom when format changes
+  useEffect(() => {
+    setZoomLevel(1);
+  }, [format]);
+
+  const handleZoomIn  = () => setZoomLevel(z => {
+    const next = ZOOM_STEPS.find(s => s > z);
+    return next ?? z;
+  });
+  const handleZoomOut = () => setZoomLevel(z => {
+    const prev = [...ZOOM_STEPS].reverse().find(s => s < z);
+    return prev ?? z;
+  });
+  const handleZoomReset = () => setZoomLevel(1);
 
   // ─── Add image element ────────────────────────────────────────────────
   const handleAddImage = useCallback((src: string) => {
@@ -680,12 +700,41 @@ export default function Studio() {
 
           {/* ── Canvas area ──────────────────────────────────────────── */}
           <div ref={containerRef} className="flex-1 flex flex-col items-center gap-2 min-h-[380px]">
-            <div className="flex items-center gap-2">
+            {/* Info + zoom controls */}
+            <div className="flex items-center gap-2 flex-wrap justify-center">
               <Badge variant="outline" className="text-xs border-orange-300 text-orange-600">{format.label}</Badge>
               <Badge variant="secondary" className="text-xs">{format.width} × {format.height}px</Badge>
               {selectedId && <Badge className="text-xs bg-orange-500 text-white">1 selected</Badge>}
+              {/* Zoom controls */}
+              <div className="flex items-center gap-1 ml-2 bg-white dark:bg-gray-900 border rounded-full px-2 py-0.5 shadow-sm">
+                <button
+                  onClick={handleZoomOut}
+                  disabled={zoomLevel <= ZOOM_STEPS[0]}
+                  className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-orange-100 disabled:opacity-30 transition-colors"
+                  title="Zoom out"
+                >
+                  <ZoomOut className="h-3.5 w-3.5 text-orange-600" />
+                </button>
+                <button
+                  onClick={handleZoomReset}
+                  className="px-1.5 text-[11px] font-mono font-semibold text-orange-600 hover:text-orange-800 transition-colors min-w-[3rem] text-center"
+                  title="Reset zoom"
+                >
+                  {Math.round(zoomLevel * 100)}%
+                </button>
+                <button
+                  onClick={handleZoomIn}
+                  disabled={zoomLevel >= ZOOM_STEPS[ZOOM_STEPS.length - 1]}
+                  className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-orange-100 disabled:opacity-30 transition-colors"
+                  title="Zoom in"
+                >
+                  <ZoomIn className="h-3.5 w-3.5 text-orange-600" />
+                </button>
+              </div>
             </div>
 
+            {/* Scrollable canvas viewport — grows when zoomed in */}
+            <div className="overflow-auto w-full flex justify-center" style={{ maxHeight: `${Math.round(360 * zoomLevel + 40)}px` }}>
             {/*
               DOM-based canvas: background div + absolutely-positioned img/text elements.
               This avoids all canvas image-loading race conditions — the browser handles
@@ -694,7 +743,7 @@ export default function Studio() {
             */}
             <div
               ref={canvasWrapRef}
-              className="relative shadow-2xl overflow-hidden select-none"
+              className="relative shadow-2xl overflow-hidden select-none flex-shrink-0"
               style={{
                 width: displayW,
                 height: displayH,
@@ -782,8 +831,9 @@ export default function Studio() {
                 return null;
               })}
             </div>
+            </div>{/* end scrollable viewport */}
 
-            <p className="text-xs text-muted-foreground">Click to select · Drag to move · Drag corners to resize</p>
+            <p className="text-xs text-muted-foreground">Click to select · Drag to move · Drag corners to resize · Use ±zoom to get closer</p>
           </div>
         </div>
 
