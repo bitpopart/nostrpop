@@ -331,24 +331,30 @@ export default function Studio() {
     setResizing(null);
   };
 
-  // ─── Load an image via CORS proxy to avoid tainted-canvas errors ─────
-  const loadImageViaProxy = (src: string): Promise<HTMLImageElement> => {
-    return new Promise((resolve, reject) => {
-      // Try direct load first (works for same-origin or CORS-enabled images)
-      const direct = new Image();
-      direct.crossOrigin = 'anonymous';
-      direct.onload = () => resolve(direct);
-      direct.onerror = () => {
-        // Fall back to CORS proxy
-        const proxied = new Image();
-        // No crossOrigin needed when loading through our own proxy
-        proxied.onload = () => resolve(proxied);
-        proxied.onerror = () => reject(new Error(`Failed to load: ${src}`));
-        proxied.src = `https://proxy.shakespeare.diy/?url=${encodeURIComponent(src)}`;
-      };
-      direct.src = src;
-    });
+  // ─── Fetch any URL as a blob-URL so canvas.drawImage never taints ────
+  // SVGs and external images often block crossOrigin canvas access.
+  // Fetching through the CORS proxy and converting to a blob URL
+  // makes the image same-origin, so drawImage always works.
+  const fetchAsBlobUrl = async (src: string): Promise<string> => {
+    const proxyUrl = `https://proxy.shakespeare.diy/?url=${encodeURIComponent(src)}`;
+    const res = await fetch(proxyUrl);
+    if (!res.ok) throw new Error(`HTTP ${res.status} for ${src}`);
+    const blob = await res.blob();
+
+    // For SVG blobs we need to ensure the MIME type is correct so the
+    // browser can render the image element properly.
+    const mime = blob.type || (src.toLowerCase().includes('.svg') ? 'image/svg+xml' : 'image/png');
+    const typedBlob = blob.type ? blob : new Blob([blob], { type: mime });
+    return URL.createObjectURL(typedBlob);
   };
+
+  const loadBlobImage = (blobUrl: string): Promise<HTMLImageElement> =>
+    new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error('Image decode failed'));
+      img.src = blobUrl;
+    });
 
   // ─── Download PNG — full design (background + all elements) ──────────
   const handleDownloadPNG = useCallback(async () => {
@@ -358,25 +364,38 @@ export default function Studio() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Draw background
-    ctx.fillStyle = bgColor;
-    ctx.fillRect(0, 0, format.width, format.height);
-
-    // Load all images (with CORS proxy fallback)
+    // Collect unique image srcs
     const imageElements = elements.filter(e => e.kind === 'image' && e.src);
-    const loadedImages: Record<string, HTMLImageElement> = {};
+    const blobUrls: Record<string, string> = {};
+
+    // Fetch every image as a same-origin blob URL (works for SVGs too)
     await Promise.all(
       imageElements.map(async el => {
-        if (!el.src) return;
+        if (!el.src || blobUrls[el.src]) return;
         try {
-          loadedImages[el.src] = await loadImageViaProxy(el.src);
+          blobUrls[el.src] = await fetchAsBlobUrl(el.src);
         } catch {
-          // skip images that completely fail to load
+          // image will simply be skipped when drawing
         }
       })
     );
 
-    // Draw background again (clear any accidental marks)
+    // Load all blob URLs into HTMLImageElements
+    const loadedImages: Record<string, HTMLImageElement> = {};
+    await Promise.all(
+      Object.entries(blobUrls).map(async ([src, blobUrl]) => {
+        try {
+          loadedImages[src] = await loadBlobImage(blobUrl);
+        } catch {
+          // skip
+        }
+      })
+    );
+
+    // Revoke blob URLs now that images are loaded
+    for (const url of Object.values(blobUrls)) URL.revokeObjectURL(url);
+
+    // Draw background
     ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, format.width, format.height);
 
