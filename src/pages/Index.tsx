@@ -1,6 +1,6 @@
 import { useSeoMeta } from '@unhead/react';
 import { Link } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -51,10 +51,11 @@ import {
   Brush,
   Pencil,
   Wand2,
+  LayoutGrid,
 } from 'lucide-react';
 import type { NostrEvent, NostrMetadata } from '@nostrify/nostrify';
 import type { ArtworkData } from '@/lib/artTypes';
-import type { HomepageButton } from '@/hooks/useHomepageSettings';
+import type { HomepageButton, GridTile, HomepageView } from '@/hooks/useHomepageSettings';
 import { nip19 } from 'nostr-tools';
 
 const ADMIN_NPUB = 'npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz';
@@ -400,6 +401,53 @@ function InterSectionButtons({ buttons }: { buttons: HomepageButton[] }) {
   );
 }
 
+/** Pure image grid — no text, tiles link to their destination */
+function PhotoGrid({ tiles }: { tiles: GridTile[] }) {
+  if (tiles.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 gap-4 text-muted-foreground">
+        <LayoutGrid className="h-12 w-12 opacity-20" />
+        <p className="text-sm">No tiles configured yet. Add some in Homepage Settings → Photo Grid.</p>
+      </div>
+    );
+  }
+
+  const sorted = [...tiles].sort((a, b) => a.order - b.order);
+
+  return (
+    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-1 sm:gap-1.5">
+      {sorted.map(tile => {
+        const isExternal = tile.linkUrl.startsWith('http://') || tile.linkUrl.startsWith('https://');
+        const inner = (
+          <div className="relative aspect-square overflow-hidden bg-gray-200 dark:bg-gray-800 group">
+            <img
+              src={tile.imageUrl}
+              alt={tile.alt || ''}
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+              loading="lazy"
+              onError={e => {
+                (e.currentTarget as HTMLImageElement).style.display = 'none';
+              }}
+            />
+            {/* subtle overlay on hover */}
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200" />
+          </div>
+        );
+
+        return isExternal ? (
+          <a key={tile.id} href={tile.linkUrl} target="_blank" rel="noopener noreferrer" className="block rounded-sm overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500">
+            {inner}
+          </a>
+        ) : (
+          <Link key={tile.id} to={tile.linkUrl} className="block rounded-sm overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500">
+            {inner}
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
+
 function ThumbnailSkeleton() {
   return (
     <Card className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
@@ -435,12 +483,24 @@ const Index = () => {
   const author = useAuthor(ADMIN_HEX);
   const metadata: NostrMetadata | undefined = author.data?.metadata;
   
-  // View mode toggle state
-  const [viewMode, setViewMode] = useState<'gallery' | 'progress'>('gallery');
+  // View mode toggle state — initialise from saved defaultView once settings load
+  const [viewMode, setViewMode] = useState<HomepageView>('gallery');
+  const [viewModeInitialised, setViewModeInitialised] = useState(false);
+
+  // Once settings load, set the default view (only on first load)
+  useEffect(() => {
+    if (!viewModeInitialised && homepageSettings?.defaultView) {
+      setViewMode(homepageSettings.defaultView);
+      setViewModeInitialised(true);
+    } else if (!viewModeInitialised && homepageSettings) {
+      setViewModeInitialised(true);
+    }
+  }, [homepageSettings, viewModeInitialised]);
   
   // Extract sections and buttons from the new settings shape
   const sections = homepageSettings?.sections;
   const allButtons = homepageSettings?.buttons || [];
+  const gridTiles = homepageSettings?.gridTiles || [];
 
   // Get ordered section IDs based on settings
   const orderedSections = sections?.filter(s => s.enabled).map(s => s.id) || [];
@@ -1351,7 +1411,7 @@ const Index = () => {
         </Link>
 
         {/* Conditional Content Based on View Mode */}
-        {viewMode === 'progress' ? (
+        {viewMode === 'progress' && (
           /* Art Progress View */
           <div className="mb-16">
             <div className="mb-8">
@@ -1367,7 +1427,14 @@ const Index = () => {
               isLoading={artProgressLoading}
             />
           </div>
-        ) : (
+        )}
+
+        {viewMode === 'grid' && (
+          /* Photo Grid View — pure images, no text */
+          <PhotoGrid tiles={gridTiles} />
+        )}
+
+        {viewMode === 'gallery' && (
           /* Gallery View - Dynamic Sections with inter-section buttons */
           <>
             {orderedSections.map(sectionId => (

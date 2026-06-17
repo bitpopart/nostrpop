@@ -38,10 +38,28 @@ export interface HomepageSection {
   order: number;
 }
 
+export interface GridTile {
+  id: string;
+  /** Direct image URL shown as the tile */
+  imageUrl: string;
+  /** Internal route or external URL the tile links to */
+  linkUrl: string;
+  /** Optional accessible alt text */
+  alt?: string;
+  /** Display order */
+  order: number;
+}
+
+export type HomepageView = 'gallery' | 'grid' | 'progress';
+
 export interface HomepageSettings {
   sections: HomepageSection[];
   buttons: HomepageButton[];
   banners?: SiteBanner[];
+  /** Which view is shown by default when the homepage loads */
+  defaultView?: HomepageView;
+  /** Tiles shown in the photo-grid view */
+  gridTiles?: GridTile[];
 }
 
 const DEFAULT_SECTIONS: HomepageSection[] = [
@@ -160,13 +178,19 @@ export function useHomepageSettings() {
             let sections: HomepageSection[];
             let buttons: HomepageButton[];
 
+            let defaultView: HomepageView | undefined;
+            let gridTiles: GridTile[] | undefined;
+
             if (Array.isArray(parsed)) {
               // Legacy format: just sections array
               sections = parsed as HomepageSection[];
               buttons = DEFAULT_BUTTONS;
             } else if (parsed && typeof parsed === 'object' && 'sections' in parsed) {
-              sections = (parsed as HomepageSettings).sections || [];
-              buttons = (parsed as HomepageSettings).buttons || DEFAULT_BUTTONS;
+              const p = parsed as HomepageSettings;
+              sections = p.sections || [];
+              buttons = p.buttons || DEFAULT_BUTTONS;
+              defaultView = p.defaultView;
+              gridTiles = p.gridTiles;
             } else {
               sections = DEFAULT_SECTIONS;
               buttons = DEFAULT_BUTTONS;
@@ -201,6 +225,8 @@ export function useHomepageSettings() {
             return {
               sections: merged.sort((a, b) => a.order - b.order),
               buttons: buttons.sort((a, b) => a.order - b.order),
+              defaultView,
+              gridTiles: (gridTiles || []).sort((a, b) => a.order - b.order),
             } as HomepageSettings;
           } catch (e) {
             console.error('[useHomepageSettings] Failed to parse settings from Nostr:', e);
@@ -213,6 +239,8 @@ export function useHomepageSettings() {
       return {
         sections: DEFAULT_SECTIONS.sort((a, b) => a.order - b.order),
         buttons: DEFAULT_BUTTONS.sort((a, b) => a.order - b.order),
+        defaultView: undefined,
+        gridTiles: [],
       } as HomepageSettings;
     },
     enabled: !!adminPubkey,

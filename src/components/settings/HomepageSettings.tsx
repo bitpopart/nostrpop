@@ -14,7 +14,7 @@ import { useNostr } from '@nostrify/react';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { getAdminPubkeyHex } from '@/lib/adminUtils';
-import type { HomepageSection, HomepageButton, HomepageSettings, SiteBanner, BannerStyle } from '@/hooks/useHomepageSettings';
+import type { HomepageSection, HomepageButton, HomepageSettings, SiteBanner, BannerStyle, GridTile, HomepageView } from '@/hooks/useHomepageSettings';
 import {
   Home,
   GripVertical,
@@ -54,6 +54,8 @@ import {
   ArrowRight,
   ExternalLink,
   Ban,
+  LayoutGrid,
+  Link as LinkIcon,
 } from 'lucide-react';
 
 const DEFAULT_SECTIONS: HomepageSection[] = [
@@ -411,7 +413,9 @@ export function HomepageSettings() {
   const [sections, setSections] = useState<HomepageSection[]>(nostrSettings?.sections || DEFAULT_SECTIONS);
   const [buttons, setButtons] = useState<HomepageButton[]>(nostrSettings?.buttons || DEFAULT_BUTTONS);
   const [banners, setBanners] = useState<SiteBanner[]>(nostrSettings?.banners || []);
-  const [activeTab, setActiveTab] = useState<'sections' | 'buttons' | 'banners'>('sections');
+  const [gridTiles, setGridTiles] = useState<GridTile[]>(nostrSettings?.gridTiles || []);
+  const [defaultView, setDefaultView] = useState<HomepageView>(nostrSettings?.defaultView || 'gallery');
+  const [activeTab, setActiveTab] = useState<'sections' | 'buttons' | 'banners' | 'grid'>('sections');
 
   // Track whether the user has made unsaved local changes.
   // While dirty, we must NOT let a background query refetch overwrite local state.
@@ -443,6 +447,8 @@ export function HomepageSettings() {
     setSections(merged.map((s, i) => ({ ...s, order: i })));
     setButtons(nostrSettings.buttons || DEFAULT_BUTTONS);
     setBanners(nostrSettings.banners || []);
+    setGridTiles((nostrSettings.gridTiles || []).sort((a, b) => a.order - b.order));
+    setDefaultView(nostrSettings.defaultView || 'gallery');
   }, [nostrSettings]);
 
   // ─── Section handlers ────────────────────────────────────────────────────
@@ -539,6 +545,42 @@ export function HomepageSettings() {
     });
   };
 
+  // ─── Grid tile handlers ───────────────────────────────────────────────────
+  const addGridTile = () => {
+    isDirty.current = true;
+    const newTile: GridTile = {
+      id: `tile-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      imageUrl: '',
+      linkUrl: '/',
+      alt: '',
+      order: gridTiles.length,
+    };
+    setGridTiles(prev => [...prev, newTile]);
+  };
+
+  const updateGridTile = (id: string, changes: Partial<GridTile>) => {
+    isDirty.current = true;
+    setGridTiles(prev => prev.map(t => t.id === id ? { ...t, ...changes } : t));
+  };
+
+  const deleteGridTile = (id: string) => {
+    isDirty.current = true;
+    setGridTiles(prev => prev.filter(t => t.id !== id).map((t, i) => ({ ...t, order: i })));
+  };
+
+  const moveGridTile = (id: string, dir: 'up' | 'down') => {
+    isDirty.current = true;
+    setGridTiles(prev => {
+      const sorted = [...prev].sort((a, b) => a.order - b.order);
+      const idx = sorted.findIndex(t => t.id === id);
+      if (dir === 'up' && idx === 0) return prev;
+      if (dir === 'down' && idx === sorted.length - 1) return prev;
+      const swapIdx = dir === 'up' ? idx - 1 : idx + 1;
+      [sorted[idx], sorted[swapIdx]] = [sorted[swapIdx], sorted[idx]];
+      return sorted.map((t, i) => ({ ...t, order: i }));
+    });
+  };
+
   // ─── Banner handlers ──────────────────────────────────────────────────────
   const addPresetBanner = (preset: Omit<SiteBanner, 'id' | 'enabled'>) => {
     isDirty.current = true;
@@ -581,6 +623,8 @@ export function HomepageSettings() {
       sections: sections.map((s, i) => ({ ...s, order: i })),
       buttons,
       banners,
+      defaultView,
+      gridTiles: gridTiles.map((t, i) => ({ ...t, order: i })),
     };
 
     publishEvent({
@@ -606,7 +650,9 @@ export function HomepageSettings() {
     setSections(DEFAULT_SECTIONS);
     setButtons(DEFAULT_BUTTONS);
     setBanners([]);
-    const payload: HomepageSettings = { sections: DEFAULT_SECTIONS, buttons: DEFAULT_BUTTONS, banners: [] };
+    setGridTiles([]);
+    setDefaultView('gallery');
+    const payload: HomepageSettings = { sections: DEFAULT_SECTIONS, buttons: DEFAULT_BUTTONS, banners: [], gridTiles: [], defaultView: 'gallery' };
     publishEvent({
       kind: 30078,
       content: JSON.stringify(payload),
@@ -680,6 +726,18 @@ export function HomepageSettings() {
             Banners
             {banners.some(b => b.enabled) && (
               <span className="ml-1.5 inline-block w-2 h-2 rounded-full bg-green-500" title="A banner is active" />
+            )}
+          </Button>
+          <Button
+            variant={activeTab === 'grid' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setActiveTab('grid')}
+            className="relative"
+          >
+            <LayoutGrid className="h-4 w-4 mr-2" />
+            Photo Grid
+            {gridTiles.length > 0 && (
+              <span className="ml-1.5 inline-flex items-center justify-center w-4 h-4 rounded-full bg-purple-500 text-white text-[10px]">{gridTiles.length}</span>
             )}
           </Button>
         </div>
@@ -1012,6 +1070,167 @@ export function HomepageSettings() {
           </div>
         )}
 
+        {/* ===== GRID TAB ===== */}
+        {activeTab === 'grid' && (
+          <div className="space-y-6">
+
+            {/* Default view picker */}
+            <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4 space-y-3">
+              <div>
+                <p className="font-semibold text-sm text-purple-800 dark:text-purple-300 flex items-center gap-1.5">
+                  <LayoutGrid className="h-4 w-4" /> Default Homepage View
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Choose which view visitors see first when they open the homepage.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {([
+                  { value: 'gallery', label: '📋 Gallery (sections)', desc: 'Default rich sections with cards' },
+                  { value: 'grid', label: '🖼️ Photo Grid', desc: 'Pure image grid — no text' },
+                  { value: 'progress', label: '✏️ Art Progress', desc: '#bitpopart posts feed' },
+                ] as { value: HomepageView; label: string; desc: string }[]).map(opt => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => { isDirty.current = true; setDefaultView(opt.value); }}
+                    className={`flex flex-col items-start px-3 py-2 rounded-lg border-2 text-left transition-all text-sm ${
+                      defaultView === opt.value
+                        ? 'border-purple-500 bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-200'
+                        : 'border-border bg-white dark:bg-gray-900 text-muted-foreground hover:border-purple-300'
+                    }`}
+                  >
+                    <span className="font-medium">{opt.label}</span>
+                    <span className="text-xs opacity-70">{opt.desc}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Tile list */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold text-sm">Photo Grid Tiles</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Each tile is an image that links somewhere. Paste a direct image URL and a destination link.
+                    <br />On mobile 3 columns · desktop 6 columns.
+                  </p>
+                </div>
+                <Button size="sm" variant="outline" onClick={addGridTile}>
+                  <Plus className="h-3 w-3 mr-1" /> Add Tile
+                </Button>
+              </div>
+
+              {/* Live mini-preview */}
+              {gridTiles.length > 0 && (
+                <div className="rounded-lg overflow-hidden border">
+                  <div className="bg-gray-100 dark:bg-gray-800 px-2 py-1 text-xs text-muted-foreground">Preview</div>
+                  <div className="grid grid-cols-6 gap-0.5 bg-gray-200 dark:bg-gray-700 p-0.5">
+                    {gridTiles.slice(0, 12).map(tile => (
+                      <div key={tile.id} className="aspect-square bg-gray-300 dark:bg-gray-600 overflow-hidden">
+                        {tile.imageUrl ? (
+                          <img src={tile.imageUrl} alt={tile.alt || ''} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <ImageIcon className="h-3 w-3 text-gray-400" />
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    {gridTiles.length > 12 && (
+                      <div className="aspect-square bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs text-muted-foreground col-span-1">
+                        +{gridTiles.length - 12}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {gridTiles.length === 0 && (
+                <div className="border-2 border-dashed rounded-lg p-8 text-center text-muted-foreground text-sm">
+                  <LayoutGrid className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                  No tiles yet. Click "Add Tile" to build your photo grid.
+                </div>
+              )}
+
+              <div className="space-y-2">
+                {[...gridTiles].sort((a, b) => a.order - b.order).map((tile, idx) => (
+                  <div key={tile.id} className="border rounded-lg p-3 space-y-2 bg-white dark:bg-gray-900">
+                    {/* Header */}
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-medium text-muted-foreground">Tile {idx + 1}</span>
+                      <div className="flex gap-1 ml-auto">
+                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => moveGridTile(tile.id, 'up')}>
+                          <ChevronUp className="h-3 w-3" />
+                        </Button>
+                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => moveGridTile(tile.id, 'down')}>
+                          <ChevronDown className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="ghost" size="sm"
+                          className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                          onClick={() => deleteGridTile(tile.id)}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Image URL + preview */}
+                    <div className="flex gap-2 items-start">
+                      <div className="w-14 h-14 flex-shrink-0 rounded overflow-hidden border bg-gray-100 dark:bg-gray-800">
+                        {tile.imageUrl ? (
+                          <img src={tile.imageUrl} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <ImageIcon className="h-5 w-5 text-gray-300" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 space-y-2">
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Image URL</Label>
+                          <Input
+                            value={tile.imageUrl}
+                            onChange={e => updateGridTile(tile.id, { imageUrl: e.target.value })}
+                            placeholder="https://... (direct image link)"
+                            className="h-8 text-sm"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                            <LinkIcon className="h-3 w-3" /> Destination URL
+                          </Label>
+                          <Input
+                            value={tile.linkUrl}
+                            onChange={e => updateGridTile(tile.id, { linkUrl: e.target.value })}
+                            placeholder="e.g. /art or /shop or https://..."
+                            className="h-8 text-sm"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Alt text */}
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Alt text (optional)</Label>
+                      <Input
+                        value={tile.alt ?? ''}
+                        onChange={e => updateGridTile(tile.id, { alt: e.target.value })}
+                        placeholder="Describe the image for accessibility"
+                        className="h-8 text-sm"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         <Separator />
 
         <div className="flex gap-2">
@@ -1034,6 +1253,7 @@ export function HomepageSettings() {
             <li>Use <strong>Sections</strong> tab to show/hide and reorder homepage sections</li>
             <li>Use <strong>Buttons</strong> tab to manage hero buttons (top of page) and buttons between sections</li>
             <li>Use <strong>Banners</strong> tab to show a banner under the navigation bar on every page — only one can be active at a time</li>
+            <li>Use <strong>Photo Grid</strong> tab to build a pure image grid and choose which view loads by default</li>
             <li>When a live auction is running, the auction banner automatically overrides the site banner</li>
             <li>Changes are saved to Nostr and visible to all visitors</li>
           </ul>

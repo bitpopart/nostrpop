@@ -1,10 +1,11 @@
 import { Button } from '@/components/ui/button';
-import { Palette, Pencil } from 'lucide-react';
+import { Palette, Pencil, LayoutGrid } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import type { HomepageView } from '@/hooks/useHomepageSettings';
 
 interface ArtProgressToggleProps {
-  mode: 'gallery' | 'progress';
-  onToggle: (mode: 'gallery' | 'progress') => void;
+  mode: HomepageView;
+  onToggle: (mode: HomepageView) => void;
   className?: string;
 }
 
@@ -27,11 +28,25 @@ export function ArtProgressToggle({ mode, onToggle, className }: ArtProgressTogg
       </Button>
       <Button
         size="lg"
+        variant={mode === 'grid' ? 'default' : 'ghost'}
+        className={cn(
+          "rounded-full transition-all duration-200",
+          mode === 'grid'
+            ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
+            : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
+        )}
+        onClick={() => onToggle('grid')}
+      >
+        <LayoutGrid className="h-5 w-5 mr-2" />
+        <span className="hidden sm:inline">Photo Grid</span>
+      </Button>
+      <Button
+        size="lg"
         variant={mode === 'progress' ? 'default' : 'ghost'}
         className={cn(
           "rounded-full transition-all duration-200",
           mode === 'progress'
-            ? "bg-gradient-to-r from-purple-500 to-indigo-500 text-white hover:from-purple-600 hover:to-indigo-600"
+            ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:from-indigo-600 hover:to-purple-600"
             : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
         )}
         onClick={() => onToggle('progress')}
