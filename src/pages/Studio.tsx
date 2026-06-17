@@ -331,84 +331,77 @@ export default function Studio() {
     setResizing(null);
   };
 
+  // ─── Load an image via CORS proxy to avoid tainted-canvas errors ─────
+  const loadImageViaProxy = (src: string): Promise<HTMLImageElement> => {
+    return new Promise((resolve, reject) => {
+      // Try direct load first (works for same-origin or CORS-enabled images)
+      const direct = new Image();
+      direct.crossOrigin = 'anonymous';
+      direct.onload = () => resolve(direct);
+      direct.onerror = () => {
+        // Fall back to CORS proxy
+        const proxied = new Image();
+        // No crossOrigin needed when loading through our own proxy
+        proxied.onload = () => resolve(proxied);
+        proxied.onerror = () => reject(new Error(`Failed to load: ${src}`));
+        proxied.src = `https://proxy.shakespeare.diy/?url=${encodeURIComponent(src)}`;
+      };
+      direct.src = src;
+    });
+  };
+
   // ─── Download PNG — full design (background + all elements) ──────────
-  const handleDownloadPNG = useCallback(() => {
+  const handleDownloadPNG = useCallback(async () => {
     const canvas = document.createElement('canvas');
     canvas.width = format.width;
     canvas.height = format.height;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // background
+    // Draw background
     ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, format.width, format.height);
 
+    // Load all images (with CORS proxy fallback)
     const imageElements = elements.filter(e => e.kind === 'image' && e.src);
-    let pending = imageElements.length;
-
-    const drawAll = () => {
-      ctx.fillStyle = bgColor;
-      ctx.fillRect(0, 0, format.width, format.height);
-
-      for (const el of elements) {
-        ctx.save();
-        if (el.kind === 'image' && el.src) {
-          const img = loadedImages[el.src];
-          if (img) ctx.drawImage(img, el.x, el.y, el.width, el.height);
-        } else if (el.kind === 'text' && el.text) {
-          ctx.fillStyle = el.color ?? '#000000';
-          ctx.font = `${el.italic ? 'italic ' : ''}${el.bold ? 'bold ' : ''}${el.fontSize ?? 60}px ${el.fontFamily ?? 'Impact'}`;
-          ctx.textBaseline = 'top';
-          ctx.textAlign = (el.align as CanvasTextAlign) ?? 'left';
-          const x = el.align === 'center' ? el.x + el.width / 2 : el.align === 'right' ? el.x + el.width : el.x;
-          ctx.fillText(el.text, x, el.y, el.width);
-        }
-        ctx.restore();
-      }
-
-      const link = document.createElement('a');
-      link.download = `popart-${format.id}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
-    };
-
-    if (pending === 0) {
-      drawAll();
-      return;
-    }
-
     const loadedImages: Record<string, HTMLImageElement> = {};
-    for (const el of imageElements) {
-      if (!el.src) continue;
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => {
-        loadedImages[el.src!] = img;
-        pending--;
-        if (pending === 0) drawAll();
-      };
-      img.onerror = () => {
-        pending--;
-        if (pending === 0) drawAll();
-      };
-      img.src = el.src;
-    }
-  }, [elements, format, bgColor]);
+    await Promise.all(
+      imageElements.map(async el => {
+        if (!el.src) return;
+        try {
+          loadedImages[el.src] = await loadImageViaProxy(el.src);
+        } catch {
+          // skip images that completely fail to load
+        }
+      })
+    );
 
-  // ─── Download PNG — background only (no placed elements) ─────────────
-  const handleDownloadBgOnly = useCallback(() => {
-    const canvas = document.createElement('canvas');
-    canvas.width = format.width;
-    canvas.height = format.height;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    // Draw background again (clear any accidental marks)
     ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, format.width, format.height);
+
+    // Draw all elements in order
+    for (const el of elements) {
+      ctx.save();
+      if (el.kind === 'image' && el.src) {
+        const img = loadedImages[el.src];
+        if (img) ctx.drawImage(img, el.x, el.y, el.width, el.height);
+      } else if (el.kind === 'text' && el.text) {
+        ctx.fillStyle = el.color ?? '#000000';
+        ctx.font = `${el.italic ? 'italic ' : ''}${el.bold ? 'bold ' : ''}${el.fontSize ?? 60}px ${el.fontFamily ?? 'Impact'}`;
+        ctx.textBaseline = 'top';
+        ctx.textAlign = (el.align as CanvasTextAlign) ?? 'left';
+        const x = el.align === 'center' ? el.x + el.width / 2 : el.align === 'right' ? el.x + el.width : el.x;
+        ctx.fillText(el.text, x, el.y, el.width);
+      }
+      ctx.restore();
+    }
+
     const link = document.createElement('a');
-    link.download = `popart-background-${format.id}.png`;
+    link.download = `popart-${format.id}.png`;
     link.href = canvas.toDataURL('image/png');
     link.click();
-  }, [format, bgColor]);
+  }, [elements, format, bgColor]);
 
   // ─── Color change on selected ────────────────────────────────────────
   const handleColorClick = (color: string) => {
@@ -445,11 +438,8 @@ export default function Studio() {
             </a>
           </div>
           <div className="flex gap-2">
-            <Button size="sm" variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-white/40 border" onClick={handleDownloadBgOnly}>
-              <Download className="h-4 w-4 mr-1.5" /> Background
-            </Button>
             <Button size="sm" variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-white/40 border" onClick={handleDownloadPNG}>
-              <Download className="h-4 w-4 mr-1.5" /> Full Design
+              <Download className="h-4 w-4 mr-1.5" /> Download Design
             </Button>
           </div>
         </div>
@@ -659,10 +649,7 @@ export default function Studio() {
 
             <div className="space-y-1.5">
               <Button size="sm" className="w-full h-8 text-xs bg-orange-500 hover:bg-orange-600 text-white" onClick={handleDownloadPNG}>
-                <Download className="h-3.5 w-3.5 mr-1" /> Download Full
-              </Button>
-              <Button size="sm" variant="outline" className="w-full h-8 text-xs" onClick={handleDownloadBgOnly}>
-                <Download className="h-3.5 w-3.5 mr-1" /> Background Only
+                <Download className="h-3.5 w-3.5 mr-1" /> Download Design
               </Button>
               {format.category === 'print' && (
                 <p className="text-[10px] text-center text-muted-foreground">PNG at {format.dpi} DPI — ready for print</p>
@@ -846,7 +833,7 @@ export default function Studio() {
             { icon: '🖱️', tip: 'Click an element in the library to add it to your canvas' },
             { icon: '↔️', tip: 'Drag the corner handles to resize a selected element' },
             { icon: '🎨', tip: 'Select a text object then click a color to change it' },
-            { icon: '💾', tip: 'Download Full saves everything; Background Only saves just the background' },
+            { icon: '💾', tip: 'Click "Download Design" to save your full design as a PNG' },
           ].map((t, i) => (
             <div key={i} className="flex items-start gap-2 bg-white dark:bg-gray-900 rounded-xl p-3 border text-xs text-muted-foreground">
               <span className="text-base shrink-0">{t.icon}</span>
