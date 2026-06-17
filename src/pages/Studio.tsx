@@ -431,7 +431,19 @@ export default function Studio() {
       ctx.save();
       if (el.kind === 'image' && el.src) {
         const img = loadedImages[el.src];
-        if (img) ctx.drawImage(img, el.x, el.y, el.width, el.height);
+        if (img) {
+          // Mirror the DOM's objectFit:'contain' behaviour — scale the image
+          // uniformly to fit inside the element box and centre it, so the
+          // exported PNG matches exactly what the user sees on the canvas.
+          const natW = img.naturalWidth  || img.width  || el.width;
+          const natH = img.naturalHeight || img.height || el.height;
+          const scale = Math.min(el.width / natW, el.height / natH);
+          const drawW = natW * scale;
+          const drawH = natH * scale;
+          const drawX = el.x + (el.width  - drawW) / 2;
+          const drawY = el.y + (el.height - drawH) / 2;
+          ctx.drawImage(img, drawX, drawY, drawW, drawH);
+        }
       } else if (el.kind === 'text' && el.text) {
         ctx.fillStyle = el.color ?? '#000000';
         ctx.font = `${el.italic ? 'italic ' : ''}${el.bold ? 'bold ' : ''}${el.fontSize ?? 60}px ${el.fontFamily ?? 'Impact'}`;
