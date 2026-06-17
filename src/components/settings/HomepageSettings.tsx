@@ -1,4 +1,22 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, type CSSProperties } from 'react';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  DragOverlay,
+  type DragStartEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  useSortable,
+  rectSortingStrategy,
+  arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -57,6 +75,7 @@ import {
   Ban,
   LayoutGrid,
   Link as LinkIcon,
+  X,
 } from 'lucide-react';
 
 const DEFAULT_SECTIONS: HomepageSection[] = [
@@ -373,6 +392,114 @@ function ButtonEditor({ btn, onUpdate, onDelete, onMove }: ButtonEditorProps) {
   );
 }
 
+// ─── Sortable tile thumb (used inside drag-and-drop grid) ─────────────────────
+interface SortableTileProps {
+  tile: GridTile;
+  onDelete: (id: string) => void;
+  onUpdate: (id: string, changes: Partial<GridTile>) => void;
+  isEditing: boolean;
+  onToggleEdit: (id: string | null) => void;
+}
+
+function SortableTile({ tile, onDelete, onUpdate, isEditing, onToggleEdit }: SortableTileProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: tile.id });
+
+  const style: CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+    zIndex: isDragging ? 999 : undefined,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="relative group">
+      {/* Thumb */}
+      <div
+        className={`aspect-square overflow-hidden rounded-lg border-2 bg-gray-100 dark:bg-gray-800 transition-all ${
+          isEditing ? 'border-purple-500' : 'border-transparent group-hover:border-purple-300'
+        }`}
+      >
+        {tile.imageUrl ? (
+          <img src={tile.imageUrl} alt={tile.alt || ''} className="w-full h-full object-cover" loading="lazy" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <ImageIcon className="h-6 w-6 text-gray-300" />
+          </div>
+        )}
+      </div>
+
+      {/* Drag handle — top-left */}
+      <button
+        type="button"
+        className="absolute top-0.5 left-0.5 w-6 h-6 rounded bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing touch-none"
+        {...attributes}
+        {...listeners}
+        aria-label="Drag to reorder"
+      >
+        <GripVertical className="h-3.5 w-3.5 text-white" />
+      </button>
+
+      {/* Edit button — top-right */}
+      <button
+        type="button"
+        onClick={() => onToggleEdit(isEditing ? null : tile.id)}
+        className="absolute top-0.5 right-6 w-6 h-6 rounded bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+        aria-label="Edit tile"
+      >
+        <Pencil className="h-3 w-3 text-white" />
+      </button>
+
+      {/* Delete button — far top-right */}
+      <button
+        type="button"
+        onClick={() => onDelete(tile.id)}
+        className="absolute top-0.5 right-0.5 w-6 h-6 rounded bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600/80"
+        aria-label="Remove tile"
+      >
+        <X className="h-3 w-3 text-white" />
+      </button>
+
+      {/* Inline edit panel (opens below the thumb) */}
+      {isEditing && (
+        <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-white dark:bg-gray-900 border rounded-lg shadow-lg p-2 space-y-1.5 min-w-[220px]">
+          <Label className="text-xs text-muted-foreground">Image URL</Label>
+          <Input
+            value={tile.imageUrl}
+            onChange={e => onUpdate(tile.id, { imageUrl: e.target.value })}
+            placeholder="https://..."
+            className="h-7 text-xs"
+            autoFocus
+          />
+          <Label className="text-xs text-muted-foreground">Link URL</Label>
+          <Input
+            value={tile.linkUrl}
+            onChange={e => onUpdate(tile.id, { linkUrl: e.target.value })}
+            placeholder="/art or https://..."
+            className="h-7 text-xs"
+          />
+          <Label className="text-xs text-muted-foreground">Alt text</Label>
+          <Input
+            value={tile.alt ?? ''}
+            onChange={e => onUpdate(tile.id, { alt: e.target.value })}
+            placeholder="Description…"
+            className="h-7 text-xs"
+          />
+          <Button size="sm" className="w-full h-7 text-xs mt-1" onClick={() => onToggleEdit(null)}>
+            Done
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 export function HomepageSettings() {
   const { user } = useCurrentUser();
@@ -418,6 +545,14 @@ export function HomepageSettings() {
   const [defaultView, setDefaultView] = useState<HomepageView>(nostrSettings?.defaultView || 'gallery');
   const [activeTab, setActiveTab] = useState<'sections' | 'buttons' | 'banners' | 'grid'>('sections');
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [editingTileId, setEditingTileId] = useState<string | null>(null);
+  const [activeDragId, setActiveDragId] = useState<string | null>(null);
+
+  // dnd-kit sensors — pointer + touch
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 8 } }),
+  );
 
   // Track whether the user has made unsaved local changes.
   // While dirty, we must NOT let a background query refetch overwrite local state.
@@ -597,6 +732,25 @@ export function HomepageSettings() {
       return [...prev, ...newTiles];
     });
   }, []);
+
+  // ─── Drag and drop handlers ──────────────────────────────────────────────
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveDragId(String(event.active.id));
+    setEditingTileId(null); // close any open edit panel
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    setActiveDragId(null);
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    isDirty.current = true;
+    setGridTiles(prev => {
+      const sorted = [...prev].sort((a, b) => a.order - b.order);
+      const oldIdx = sorted.findIndex(t => t.id === active.id);
+      const newIdx = sorted.findIndex(t => t.id === over.id);
+      return arrayMove(sorted, oldIdx, newIdx).map((t, i) => ({ ...t, order: i }));
+    });
+  };
 
   // ─── Banner handlers ──────────────────────────────────────────────────────
   const addPresetBanner = (preset: Omit<SiteBanner, 'id' | 'enabled'>) => {
@@ -1181,81 +1335,57 @@ export function HomepageSettings() {
               {gridTiles.length === 0 && (
                 <div className="border-2 border-dashed rounded-lg p-8 text-center text-muted-foreground text-sm">
                   <LayoutGrid className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                  No tiles yet. Click "Add Tile" to build your photo grid.
+                  No tiles yet. Click "Pick from content" to build your photo grid.
                 </div>
               )}
 
-              <div className="space-y-2">
-                {[...gridTiles].sort((a, b) => a.order - b.order).map((tile, idx) => (
-                  <div key={tile.id} className="border rounded-lg p-3 space-y-2 bg-white dark:bg-gray-900">
-                    {/* Header */}
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs font-medium text-muted-foreground">Tile {idx + 1}</span>
-                      <div className="flex gap-1 ml-auto">
-                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => moveGridTile(tile.id, 'up')}>
-                          <ChevronUp className="h-3 w-3" />
-                        </Button>
-                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => moveGridTile(tile.id, 'down')}>
-                          <ChevronDown className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          variant="ghost" size="sm"
-                          className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-                          onClick={() => deleteGridTile(tile.id)}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
+              {gridTiles.length > 0 && (
+                <div className="text-xs text-muted-foreground flex items-center gap-1.5 pb-1">
+                  <GripVertical className="h-3 w-3" />
+                  Drag thumbnails to reorder · hover for edit/delete controls
+                </div>
+              )}
 
-                    {/* Image URL + preview */}
-                    <div className="flex gap-2 items-start">
-                      <div className="w-14 h-14 flex-shrink-0 rounded overflow-hidden border bg-gray-100 dark:bg-gray-800">
-                        {tile.imageUrl ? (
-                          <img src={tile.imageUrl} alt="" className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <ImageIcon className="h-5 w-5 text-gray-300" />
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex-1 space-y-2">
-                        <div>
-                          <Label className="text-xs text-muted-foreground">Image URL</Label>
-                          <Input
-                            value={tile.imageUrl}
-                            onChange={e => updateGridTile(tile.id, { imageUrl: e.target.value })}
-                            placeholder="https://... (direct image link)"
-                            className="h-8 text-sm"
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                            <LinkIcon className="h-3 w-3" /> Destination URL
-                          </Label>
-                          <Input
-                            value={tile.linkUrl}
-                            onChange={e => updateGridTile(tile.id, { linkUrl: e.target.value })}
-                            placeholder="e.g. /art or /shop or https://..."
-                            className="h-8 text-sm"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Alt text */}
-                    <div>
-                      <Label className="text-xs text-muted-foreground">Alt text (optional)</Label>
-                      <Input
-                        value={tile.alt ?? ''}
-                        onChange={e => updateGridTile(tile.id, { alt: e.target.value })}
-                        placeholder="Describe the image for accessibility"
-                        className="h-8 text-sm"
+              {/* Drag-and-drop thumbnail grid */}
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={[...gridTiles].sort((a, b) => a.order - b.order).map(t => t.id)}
+                  strategy={rectSortingStrategy}
+                >
+                  <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2">
+                    {[...gridTiles].sort((a, b) => a.order - b.order).map(tile => (
+                      <SortableTile
+                        key={tile.id}
+                        tile={tile}
+                        onDelete={deleteGridTile}
+                        onUpdate={updateGridTile}
+                        isEditing={editingTileId === tile.id}
+                        onToggleEdit={setEditingTileId}
                       />
-                    </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </SortableContext>
+
+                {/* Ghost image while dragging */}
+                <DragOverlay>
+                  {activeDragId ? (() => {
+                    const t = gridTiles.find(x => x.id === activeDragId);
+                    return t ? (
+                      <div className="aspect-square w-20 rounded-lg overflow-hidden shadow-2xl ring-2 ring-purple-500 rotate-2 opacity-90">
+                        {t.imageUrl
+                          ? <img src={t.imageUrl} alt="" className="w-full h-full object-cover" />
+                          : <div className="w-full h-full bg-gray-200 flex items-center justify-center"><ImageIcon className="h-6 w-6 text-gray-400" /></div>
+                        }
+                      </div>
+                    ) : null;
+                  })() : null}
+                </DragOverlay>
+              </DndContext>
             </div>
           </div>
         )}

@@ -12,6 +12,9 @@
     "deploy:gh": "npm run build && gh-pages -d dist"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "@fontsource-variable/inter": "^5.2.6",
     "@fontsource-variable/montserrat": "^5.2.8",
     "@fontsource-variable/oswald": "^5.2.8",
