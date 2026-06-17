@@ -370,9 +370,11 @@ export default function Studio() {
     return URL.createObjectURL(typedBlob);
   };
 
-  const loadBlobImage = (blobUrl: string): Promise<HTMLImageElement> =>
+  // Load a blob URL into an HTMLImageElement, with explicit pixel dimensions
+  // so SVGs (which may have no intrinsic pixel size) render at the correct size.
+  const loadBlobImage = (blobUrl: string, targetW: number, targetH: number): Promise<HTMLImageElement> =>
     new Promise((resolve, reject) => {
-      const img = new Image();
+      const img = new Image(targetW, targetH);
       img.onload = () => resolve(img);
       img.onerror = () => reject(new Error('Image decode failed'));
       img.src = blobUrl;
@@ -402,12 +404,15 @@ export default function Studio() {
       })
     );
 
-    // Load all blob URLs into HTMLImageElements
+    // Load all blob URLs into HTMLImageElements.
+    // We pass the element's canvas-space dimensions so that SVGs with no
+    // intrinsic pixel size are decoded at exactly the right resolution.
     const loadedImages: Record<string, HTMLImageElement> = {};
     await Promise.all(
-      Object.entries(blobUrls).map(async ([src, blobUrl]) => {
+      imageElements.map(async el => {
+        if (!el.src || loadedImages[el.src] || !blobUrls[el.src]) return;
         try {
-          loadedImages[src] = await loadBlobImage(blobUrl);
+          loadedImages[el.src] = await loadBlobImage(blobUrls[el.src], Math.round(el.width), Math.round(el.height));
         } catch {
           // skip
         }
