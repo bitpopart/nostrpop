@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -15,6 +15,7 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { getAdminPubkeyHex } from '@/lib/adminUtils';
 import type { HomepageSection, HomepageButton, HomepageSettings, SiteBanner, BannerStyle, GridTile, HomepageView } from '@/hooks/useHomepageSettings';
+import { TilePickerDialog } from './TilePickerDialog';
 import {
   Home,
   GripVertical,
@@ -416,6 +417,7 @@ export function HomepageSettings() {
   const [gridTiles, setGridTiles] = useState<GridTile[]>(nostrSettings?.gridTiles || []);
   const [defaultView, setDefaultView] = useState<HomepageView>(nostrSettings?.defaultView || 'gallery');
   const [activeTab, setActiveTab] = useState<'sections' | 'buttons' | 'banners' | 'grid'>('sections');
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   // Track whether the user has made unsaved local changes.
   // While dirty, we must NOT let a background query refetch overwrite local state.
@@ -580,6 +582,21 @@ export function HomepageSettings() {
       return sorted.map((t, i) => ({ ...t, order: i }));
     });
   };
+
+  const handlePickerAdd = useCallback((picked: Omit<GridTile, 'id' | 'order'>[]) => {
+    isDirty.current = true;
+    setGridTiles(prev => {
+      const start = prev.length;
+      const newTiles: GridTile[] = picked.map((p, i) => ({
+        id: `tile-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 6)}`,
+        imageUrl: p.imageUrl,
+        linkUrl: p.linkUrl,
+        alt: p.alt ?? '',
+        order: start + i,
+      }));
+      return [...prev, ...newTiles];
+    });
+  }, []);
 
   // ─── Banner handlers ──────────────────────────────────────────────────────
   const addPresetBanner = (preset: Omit<SiteBanner, 'id' | 'enabled'>) => {
@@ -1111,18 +1128,30 @@ export function HomepageSettings() {
 
             {/* Tile list */}
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2">
                 <div>
                   <h3 className="font-semibold text-sm">Photo Grid Tiles</h3>
                   <p className="text-xs text-muted-foreground">
-                    Each tile is an image that links somewhere. Paste a direct image URL and a destination link.
+                    Pick from your existing content — Art, Projects, Free Downloads, Shop.
                     <br />On mobile 3 columns · desktop 6 columns.
                   </p>
                 </div>
-                <Button size="sm" variant="outline" onClick={addGridTile}>
-                  <Plus className="h-3 w-3 mr-1" /> Add Tile
-                </Button>
+                <div className="flex gap-1 shrink-0">
+                  <Button size="sm" onClick={() => setPickerOpen(true)}>
+                    <Plus className="h-3 w-3 mr-1" /> Pick from content
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={addGridTile} title="Add blank tile with manual URL">
+                    <Plus className="h-3 w-3" />
+                  </Button>
+                </div>
               </div>
+
+              {/* Picker dialog */}
+              <TilePickerDialog
+                open={pickerOpen}
+                onClose={() => setPickerOpen(false)}
+                onAdd={handlePickerAdd}
+              />
 
               {/* Live mini-preview */}
               {gridTiles.length > 0 && (
