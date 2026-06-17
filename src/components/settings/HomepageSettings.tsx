@@ -161,9 +161,11 @@ const VARIANT_LABEL: Record<HomepageButton['variant'], string> = {
   accent: 'Accent (orange)',
 };
 
+const ICON_NONE = '__none__';
+
 /** All icons available to pick for a button */
 const BUTTON_ICON_OPTIONS: { value: string; label: string; Icon: React.ComponentType<{ className?: string }> }[] = [
-  { value: '', label: 'Auto (based on style)', Icon: Ban },
+  { value: ICON_NONE, label: 'Auto (based on style)', Icon: Ban },
   { value: 'Sparkles', label: 'Sparkles ✨', Icon: Sparkles },
   { value: 'Wand2', label: 'Magic Wand 🪄', Icon: Wand2 },
   { value: 'Brush', label: 'Brush 🖌️', Icon: Brush },
@@ -193,7 +195,7 @@ const BUTTON_ICON_OPTIONS: { value: string; label: string; Icon: React.Component
 
 /** Resolve an icon component by name */
 const BUTTON_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = Object.fromEntries(
-  BUTTON_ICON_OPTIONS.filter(o => o.value).map(o => [o.value, o.Icon])
+  BUTTON_ICON_OPTIONS.filter(o => o.value !== ICON_NONE).map(o => [o.value, o.Icon])
 );
 
 const BANNER_STYLE_LABEL: Record<BannerStyle, string> = {
@@ -269,7 +271,7 @@ interface ButtonEditorProps {
 }
 
 function ButtonEditor({ btn, onUpdate, onDelete, onMove }: ButtonEditorProps) {
-  const selectedIconEntry = BUTTON_ICON_OPTIONS.find(o => o.value === (btn.icon ?? ''));
+  const selectedIconEntry = BUTTON_ICON_OPTIONS.find(o => o.value === (btn.icon ?? ICON_NONE));
   const PreviewIcon = selectedIconEntry?.Icon ?? Ban;
 
   return (
@@ -338,8 +340,8 @@ function ButtonEditor({ btn, onUpdate, onDelete, onMove }: ButtonEditorProps) {
         <div>
           <Label className="text-xs text-muted-foreground">Icon</Label>
           <Select
-            value={btn.icon ?? ''}
-            onValueChange={v => onUpdate(btn.id, { icon: v || undefined })}
+            value={btn.icon ?? ICON_NONE}
+            onValueChange={v => onUpdate(btn.id, { icon: v === ICON_NONE ? undefined : v })}
           >
             <SelectTrigger className="h-8 text-sm">
               <SelectValue>
@@ -353,7 +355,7 @@ function ButtonEditor({ btn, onUpdate, onDelete, onMove }: ButtonEditorProps) {
             </SelectTrigger>
             <SelectContent className="max-h-64">
               {BUTTON_ICON_OPTIONS.map(opt => (
-                <SelectItem key={opt.value === '' ? '__auto__' : opt.value} value={opt.value}>
+                <SelectItem key={opt.value} value={opt.value}>
                   <span className="flex items-center gap-2">
                     <opt.Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
                     {opt.label}
