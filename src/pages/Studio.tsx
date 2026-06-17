@@ -120,8 +120,10 @@ export default function Studio() {
   useEffect(() => {
     const obs = new ResizeObserver(() => {
       if (!containerRef.current) return;
-      const { clientWidth, clientHeight } = containerRef.current;
-      setScale(computeScale(format.width, format.height, clientWidth - 32, clientHeight - 32));
+      const { clientWidth } = containerRef.current;
+      // Cap canvas display height at 360px so libraries stay visible
+      const maxDisplayH = 360;
+      setScale(computeScale(format.width, format.height, clientWidth - 32, maxDisplayH));
     });
     if (containerRef.current) obs.observe(containerRef.current);
     return () => obs.disconnect();
@@ -677,7 +679,7 @@ export default function Studio() {
           </div>
 
           {/* ── Canvas area ──────────────────────────────────────────── */}
-          <div ref={containerRef} className="flex-1 flex flex-col items-center gap-2 min-h-[520px]">
+          <div ref={containerRef} className="flex-1 flex flex-col items-center gap-2 min-h-[380px]">
             <div className="flex items-center gap-2">
               <Badge variant="outline" className="text-xs border-orange-300 text-orange-600">{format.label}</Badge>
               <Badge variant="secondary" className="text-xs">{format.width} × {format.height}px</Badge>
