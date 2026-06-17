@@ -21,13 +21,13 @@ interface HashtagCloudProps {
   maxTags?: number;
   /** Whether data is still loading */
   isLoading?: boolean;
-  /** Accent colour theme: amber | teal | orange */
-  accent?: 'amber' | 'teal' | 'orange';
+  /** Accent colour theme: amber | teal | orange | rose | indigo */
+  accent?: 'amber' | 'teal' | 'orange' | 'rose' | 'indigo';
 }
 
 /** Map accent name → Tailwind classes */
 const ACCENT_CLASSES: Record<
-  'amber' | 'teal' | 'orange',
+  'amber' | 'teal' | 'orange' | 'rose' | 'indigo',
   { active: string; inactive: string; dot: string; all: string }
 > = {
   amber: {
@@ -54,6 +54,22 @@ const ACCENT_CLASSES: Record<
     dot: 'bg-orange-400',
     all: 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-200 border-orange-200 dark:border-orange-700 hover:bg-orange-200 dark:hover:bg-orange-800/40',
   },
+  rose: {
+    active:
+      'bg-rose-500 text-white border-rose-500 shadow-rose-200 dark:shadow-rose-900/40 shadow-md scale-105',
+    inactive:
+      'bg-white dark:bg-gray-800 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-700 hover:bg-rose-50 dark:hover:bg-rose-900/20 hover:border-rose-400',
+    dot: 'bg-rose-400',
+    all: 'bg-rose-100 dark:bg-rose-900/30 text-rose-800 dark:text-rose-200 border-rose-200 dark:border-rose-700 hover:bg-rose-200 dark:hover:bg-rose-800/40',
+  },
+  indigo: {
+    active:
+      'bg-indigo-500 text-white border-indigo-500 shadow-indigo-200 dark:shadow-indigo-900/40 shadow-md scale-105',
+    inactive:
+      'bg-white dark:bg-gray-800 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:border-indigo-400',
+    dot: 'bg-indigo-400',
+    all: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-200 border-indigo-200 dark:border-indigo-700 hover:bg-indigo-200 dark:hover:bg-indigo-800/40',
+  },
 };
 
 export function HashtagCloud({
@@ -64,7 +80,7 @@ export function HashtagCloud({
   isLoading = false,
   accent = 'amber',
 }: HashtagCloudProps) {
-  const colors = ACCENT_CLASSES[accent];
+  const colors = ACCENT_CLASSES[accent as keyof typeof ACCENT_CLASSES];
 
   // Count frequency of each tag across all items
   const topTags = useMemo(() => {

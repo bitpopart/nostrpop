@@ -63,10 +63,12 @@ export function useAppWelcome() {
   });
 }
 
+export type AppMediaType = 'app-wallpaper' | 'app-gif' | 'app-avatar' | 'app-banner' | 'app-coloring-page' | 'app-desktop-wallpaper';
+
 /**
- * Fetch app media items (wallpapers, gifs, avatars, or banners).
+ * Fetch app media items (wallpapers, gifs, avatars, banners, coloring pages, or desktop wallpapers).
  */
-export function useAppMedia(type: 'app-wallpaper' | 'app-gif' | 'app-avatar' | 'app-banner') {
+export function useAppMedia(type: AppMediaType) {
   const { nostr } = useNostr();
   const adminPubkey = getAdminPubkeyHex();
 
@@ -115,7 +117,7 @@ export function useAppMedia(type: 'app-wallpaper' | 'app-gif' | 'app-avatar' | '
             if (!imageTag) return null;
 
             // Collect hashtags: all t-tags excluding system ones
-            const systemTypeTags = new Set(['app-wallpaper', 'app-gif', 'app-avatar', 'app-banner']);
+            const systemTypeTags = new Set(['app-wallpaper', 'app-gif', 'app-avatar', 'app-banner', 'app-coloring-page', 'app-desktop-wallpaper']);
             const hashtags = event.tags
               .filter(([n, v]) => n === 't' && v && !systemTypeTags.has(v))
               .map(([, v]) => v);
@@ -193,7 +195,7 @@ export function usePublishAppMedia() {
       imageUrl,
       hashtags = [],
     }: {
-      type: 'app-wallpaper' | 'app-gif' | 'app-avatar' | 'app-banner';
+      type: AppMediaType;
       title: string;
       imageUrl: string;
       hashtags?: string[];
@@ -202,15 +204,18 @@ export function usePublishAppMedia() {
 
       const dTag = `${type}-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
 
-      const systemTypeTags = new Set(['app-wallpaper', 'app-gif', 'app-avatar', 'app-banner']);
+      const systemTypeTags = new Set(['app-wallpaper', 'app-gif', 'app-avatar', 'app-banner', 'app-coloring-page', 'app-desktop-wallpaper']);
       const extraTags: string[][] = hashtags
         .filter(t => t && !systemTypeTags.has(t))
         .map(t => ['t', t]);
 
       const typeLabel =
-        type === 'app-wallpaper' ? 'Wallpaper' :
+        type === 'app-wallpaper' ? 'Wallpaper (Mobile)' :
         type === 'app-gif' ? 'Animated GIF' :
-        type === 'app-avatar' ? 'Avatar' : 'Header Banner';
+        type === 'app-avatar' ? 'Avatar' :
+        type === 'app-banner' ? 'Header Banner' :
+        type === 'app-coloring-page' ? 'Coloring Page' :
+        'Desktop Wallpaper';
 
       const event = {
         kind: 34019,
@@ -255,22 +260,25 @@ export function useUpdateAppMedia() {
       hashtags = [],
     }: {
       dTag: string;
-      type: 'app-wallpaper' | 'app-gif' | 'app-avatar' | 'app-banner';
+      type: AppMediaType;
       title: string;
       imageUrl: string;
       hashtags?: string[];
     }) => {
       if (!user) throw new Error('Must be logged in');
 
-      const systemTypeTags = new Set(['app-wallpaper', 'app-gif', 'app-avatar', 'app-banner']);
+      const systemTypeTags = new Set(['app-wallpaper', 'app-gif', 'app-avatar', 'app-banner', 'app-coloring-page', 'app-desktop-wallpaper']);
       const extraTags: string[][] = hashtags
         .filter(t => t && !systemTypeTags.has(t))
         .map(t => ['t', t]);
 
       const typeLabel =
-        type === 'app-wallpaper' ? 'Wallpaper' :
+        type === 'app-wallpaper' ? 'Wallpaper (Mobile)' :
         type === 'app-gif' ? 'Animated GIF' :
-        type === 'app-avatar' ? 'Avatar' : 'Header Banner';
+        type === 'app-avatar' ? 'Avatar' :
+        type === 'app-banner' ? 'Header Banner' :
+        type === 'app-coloring-page' ? 'Coloring Page' :
+        'Desktop Wallpaper';
 
       const event = {
         kind: 34019,
@@ -307,7 +315,7 @@ export function useDeleteAppMedia() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, type }: { id: string; type: 'app-wallpaper' | 'app-gif' | 'app-avatar' | 'app-banner' }) => {
+    mutationFn: async ({ id, type }: { id: string; type: AppMediaType }) => {
       if (!user) throw new Error('Must be logged in');
 
       const address = `34019:${user.pubkey}:${id}`;

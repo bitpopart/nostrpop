@@ -7,11 +7,10 @@ import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppMedia, type AppMedia } from '@/hooks/useAppContent';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { recordDownload } from '@/hooks/useDownloadTracking';
 import { HashtagCloud } from '@/components/HashtagCloud';
 import { RelaySelector } from '@/components/RelaySelector';
-import { Download, Image as ImageIcon, ArrowLeft, Smartphone } from 'lucide-react';
+import { Download, Palette, ArrowLeft } from 'lucide-react';
 
 function handleDownload(
   url: string,
@@ -19,7 +18,7 @@ function handleDownload(
   tracking?: { itemId: string; title: string },
 ) {
   if (tracking) {
-    recordDownload({ itemId: tracking.itemId, title: tracking.title, category: 'wallpaper', imageUrl: url });
+    recordDownload({ itemId: tracking.itemId, title: tracking.title, category: 'coloring-page', imageUrl: url });
   }
   fetch(url)
     .then(r => r.blob())
@@ -40,42 +39,42 @@ function deriveFilename(url: string, title: string): string {
   if (title && title !== 'Untitled') {
     return `${title.replace(/[^a-zA-Z0-9_-]/g, '_')}.${ext}`;
   }
-  return url.split('/').pop() || `wallpaper.${ext}`;
+  return url.split('/').pop() || `coloring-page.${ext}`;
 }
 
-export default function Wallpapers() {
+export default function ColoringPages() {
   const navigate = useNavigate();
   const { getGradientStyle } = useThemeColors();
-  const { data: wallpapers = [], isLoading } = useAppMedia('app-wallpaper');
+  const { data: items = [], isLoading } = useAppMedia('app-coloring-page');
   const [lightbox, setLightbox] = useState<AppMedia | null>(null);
   const [activeTag, setActiveTag] = useState<string | undefined>(undefined);
 
   const filtered = useMemo(() =>
-    activeTag ? wallpapers.filter(w => w.hashtags.includes(activeTag)) : wallpapers,
-    [wallpapers, activeTag],
+    activeTag ? items.filter(w => w.hashtags.includes(activeTag)) : items,
+    [items, activeTag],
   );
-  const tagSets = useMemo(() => wallpapers.map(w => w.hashtags), [wallpapers]);
+  const tagSets = useMemo(() => items.map(w => w.hashtags), [items]);
 
   useSeoMeta({
-    title: 'Wallpapers - BitPopArt | Free Bitcoin Pop Art Wallpapers',
-    description: 'Download free Bitcoin PopArt wallpapers by BitPopArt. Beautiful pop art designs for your desktop and mobile. Spread love, freedom, and joy with Bitcoin art.',
-    keywords: 'bitcoin wallpaper, pop art wallpaper, free wallpaper download, bitcoin desktop wallpaper, bitcoin mobile wallpaper, bitpopart wallpaper, free bitcoin art wallpaper',
+    title: 'Coloring Pages - BitPopArt | Free Bitcoin Pop Art Coloring Pages',
+    description: 'Download free Bitcoin PopArt coloring pages by BitPopArt. Fun and creative printable coloring pages for all ages. Spread love, freedom, and joy with Bitcoin art.',
+    keywords: 'bitcoin coloring page, pop art coloring, free coloring page download, bitcoin art coloring, printable coloring page, bitpopart coloring, free bitcoin art coloring',
     author: 'Johannes Oppewal (BitPopArt)',
     ogType: 'website',
-    ogTitle: 'Wallpapers - BitPopArt | Free Bitcoin Pop Art Wallpapers',
-    ogDescription: 'Download free Bitcoin PopArt wallpapers by BitPopArt. Beautiful pop art designs for your desktop and mobile.',
+    ogTitle: 'Coloring Pages - BitPopArt | Free Bitcoin Pop Art Coloring Pages',
+    ogDescription: 'Download free Bitcoin PopArt coloring pages by BitPopArt. Fun printable coloring pages for all ages!',
     ogImage: 'https://bitpopart.com/bitpopart-logo.png',
     ogSiteName: 'BitPopArt',
-    ogUrl: 'https://bitpopart.com/wallpapers',
+    ogUrl: 'https://bitpopart.com/coloring-pages',
     twitterCard: 'summary_large_image',
-    twitterTitle: 'Wallpapers - BitPopArt | Free Bitcoin Pop Art Wallpapers',
-    twitterDescription: 'Download free Bitcoin PopArt wallpapers by BitPopArt.',
+    twitterTitle: 'Coloring Pages - BitPopArt | Free Bitcoin Pop Art Coloring Pages',
+    twitterDescription: 'Download free Bitcoin PopArt coloring pages by BitPopArt. Fun printable coloring pages for all ages!',
     twitterImage: 'https://bitpopart.com/bitpopart-logo.png',
     robots: 'index, follow, max-snippet:-1, max-image-preview:large',
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-teal-50 via-cyan-50 to-blue-50 dark:from-gray-900 dark:via-teal-900/20 dark:to-blue-900/20">
+    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-orange-50 dark:from-gray-900 dark:via-rose-900/20 dark:to-orange-900/20">
       <div className="container mx-auto px-4 py-10 max-w-6xl">
 
         {/* Back */}
@@ -83,26 +82,20 @@ export default function Wallpapers() {
           variant="ghost"
           size="sm"
           className="mb-6 gap-2 text-muted-foreground hover:text-foreground"
-          onClick={() => navigate('/app')}
+          onClick={() => navigate('/free')}
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to App
+          Back to Free Downloads
         </Button>
 
         {/* Header */}
         <div className="text-center mb-6">
           <div className="flex items-center justify-center gap-3 mb-3">
-            <div className="relative">
-              <ImageIcon className="h-10 w-10 text-teal-600" />
-              <Smartphone className="h-4 w-4 text-teal-500 absolute -bottom-1 -right-1 bg-white dark:bg-gray-900 rounded-full p-0.5" />
-            </div>
-            <h1 className="text-4xl font-bold gradient-header-text">Wallpapers</h1>
-            <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-700">
-              <Smartphone className="h-3 w-3" /> Mobile
-            </span>
+            <Palette className="h-10 w-10 text-rose-500" />
+            <h1 className="text-4xl font-bold gradient-header-text">Coloring Pages</h1>
           </div>
           <p className="text-muted-foreground max-w-xl mx-auto">
-            Bitcoin PopArt <strong>mobile</strong> wallpapers by BitPopArt — free to download and use on your phone!
+            Free Bitcoin PopArt coloring pages by BitPopArt — print them out and color away!
           </p>
         </div>
 
@@ -112,7 +105,7 @@ export default function Wallpapers() {
           activeTag={activeTag}
           onTagChange={setActiveTag}
           isLoading={isLoading}
-          accent="teal"
+          accent="rose"
         />
 
         {/* Grid */}
@@ -120,28 +113,28 @@ export default function Wallpapers() {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {[...Array(8)].map((_, i) => <Skeleton key={i} className="aspect-square rounded-xl" />)}
           </div>
-        ) : wallpapers.length === 0 ? (
+        ) : items.length === 0 ? (
           <Card className="border-dashed max-w-md mx-auto">
             <CardContent className="py-12 text-center space-y-4">
-              <ImageIcon className="h-12 w-12 mx-auto text-gray-300" />
-              <p className="text-muted-foreground">No wallpapers found. Try another relay?</p>
+              <Palette className="h-12 w-12 mx-auto text-gray-300" />
+              <p className="text-muted-foreground">No coloring pages found. Try another relay?</p>
               <RelaySelector className="w-full" />
             </CardContent>
           </Card>
         ) : filtered.length === 0 ? (
           <Card className="border-dashed max-w-md mx-auto">
             <CardContent className="py-12 text-center space-y-3">
-              <ImageIcon className="h-10 w-10 mx-auto text-teal-300" />
-              <p className="text-muted-foreground text-sm">No wallpapers tagged <strong>#{activeTag}</strong>.</p>
-              <button onClick={() => setActiveTag(undefined)} className="text-xs text-teal-600 underline">Clear filter</button>
+              <Palette className="h-10 w-10 mx-auto text-rose-300" />
+              <p className="text-muted-foreground text-sm">No coloring pages tagged <strong>#{activeTag}</strong>.</p>
+              <button onClick={() => setActiveTag(undefined)} className="text-xs text-rose-600 underline">Clear filter</button>
             </CardContent>
           </Card>
         ) : (
           <>
             <p className="text-sm text-muted-foreground mb-4 text-center">
               {activeTag
-                ? `${filtered.length} of ${wallpapers.length} wallpaper${wallpapers.length !== 1 ? 's' : ''} · #${activeTag}`
-                : `${wallpapers.length} wallpaper${wallpapers.length !== 1 ? 's' : ''} available`}
+                ? `${filtered.length} of ${items.length} coloring page${items.length !== 1 ? 's' : ''} · #${activeTag}`
+                : `${items.length} coloring page${items.length !== 1 ? 's' : ''} available`}
             </p>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {filtered.map(item => (
@@ -204,7 +197,6 @@ export default function Wallpapers() {
             <>
               <DialogTitle className="sr-only">{lightbox.title}</DialogTitle>
 
-              {/* Image — natural ratio, max height capped so it never overflows the viewport */}
               <div className="flex items-center justify-center bg-black/5 dark:bg-black/30 w-full">
                 <img
                   src={lightbox.image_url}
@@ -214,9 +206,7 @@ export default function Wallpapers() {
                 />
               </div>
 
-              {/* Info + download bar */}
               <div className="px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
-                {/* Title + hashtags */}
                 <div className="flex-1 min-w-0">
                   {lightbox.title !== 'Untitled' && (
                     <p className="font-semibold text-sm truncate">{lightbox.title}</p>
@@ -226,7 +216,7 @@ export default function Wallpapers() {
                       {lightbox.hashtags.map(tag => (
                         <span
                           key={tag}
-                          className="text-[11px] px-2 py-0.5 rounded-full bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 font-medium"
+                          className="text-[11px] px-2 py-0.5 rounded-full bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 font-medium"
                         >
                           #{tag}
                         </span>
@@ -235,7 +225,6 @@ export default function Wallpapers() {
                   )}
                 </div>
 
-                {/* Download button */}
                 <Button
                   className="shrink-0 gap-2 text-white border-0 font-semibold shadow"
                   style={getGradientStyle('primary')}

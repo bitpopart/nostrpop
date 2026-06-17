@@ -17,7 +17,7 @@
  *   - dateKey   : "YYYY-MM-DD" for daily grouping
  */
 
-export type DownloadCategory = 'wallpaper' | 'gif' | 'avatar' | 'banner' | 'animation' | 'free';
+export type DownloadCategory = 'wallpaper' | 'gif' | 'avatar' | 'banner' | 'animation' | 'free' | 'coloring-page' | 'desktop-wallpaper';
 
 export interface DownloadEvent {
   id: string;

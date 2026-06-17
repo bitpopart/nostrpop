@@ -19,6 +19,7 @@ import {
   useUpdateAppMedia,
   useDeleteAppMedia,
   type AppMedia,
+  type AppMediaType,
 } from '@/hooks/useAppContent';
 import {
   MessageSquare,
@@ -35,6 +36,9 @@ import {
   AlertCircle,
   UserCircle2,
   PanelTop,
+  Palette,
+  Monitor,
+  Smartphone,
 } from 'lucide-react';
 
 interface PendingMedia {
@@ -52,7 +56,7 @@ interface PendingMedia {
 
 interface EditMediaDialogProps {
   item: AppMedia;
-  type: 'app-wallpaper' | 'app-gif' | 'app-avatar' | 'app-banner';
+  type: AppMediaType;
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }
@@ -108,9 +112,12 @@ function EditMediaDialog({ item, type, open, onOpenChange }: EditMediaDialogProp
   };
 
   const typeLabel =
-    type === 'app-wallpaper' ? 'Wallpaper' :
+    type === 'app-wallpaper' ? 'Wallpaper (Mobile)' :
     type === 'app-gif' ? 'GIF' :
-    type === 'app-avatar' ? 'Avatar' : 'Banner';
+    type === 'app-avatar' ? 'Avatar' :
+    type === 'app-banner' ? 'Banner' :
+    type === 'app-coloring-page' ? 'Coloring Page' :
+    'Desktop Wallpaper';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -220,7 +227,7 @@ export function MediaUploader({
   type,
   label,
 }: {
-  type: 'app-wallpaper' | 'app-gif' | 'app-avatar' | 'app-banner';
+  type: AppMediaType;
   label: string;
 }) {
   const { mutateAsync: uploadFile } = useUploadFile();
@@ -415,7 +422,7 @@ export function MediaUploader({
 }
 
 // ── Media list with edit + delete ─────────────────────────
-export function MediaList({ type, aspectClass = 'aspect-square' }: { type: 'app-wallpaper' | 'app-gif' | 'app-avatar' | 'app-banner'; aspectClass?: string }) {
+export function MediaList({ type, aspectClass = 'aspect-square' }: { type: AppMediaType; aspectClass?: string }) {
   const { data: items = [], isLoading } = useAppMedia(type);
   const { mutate: deleteItem } = useDeleteAppMedia();
   const [editingItem, setEditingItem] = useState<AppMedia | null>(null);
@@ -552,15 +559,18 @@ export function AppContentManagement() {
 
       <Separator />
 
-      {/* Wallpapers */}
+      {/* Wallpapers (Mobile) */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <ImageIcon className="h-5 w-5" />
             Wallpapers
+            <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-700">
+              <Smartphone className="h-3 w-3" /> Mobile
+            </span>
           </CardTitle>
           <CardDescription>
-            Images shown in the Wallpapers section. Hover any item to edit or delete it.
+            Mobile phone wallpapers shown in the Wallpapers section. Hover any item to edit or delete it.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -623,6 +633,44 @@ export function AppContentManagement() {
         <CardContent className="space-y-4">
           <MediaUploader type="app-banner" label="Banner" />
           <MediaList type="app-banner" aspectClass="aspect-video" />
+        </CardContent>
+      </Card>
+
+      <Separator />
+
+      {/* Coloring Pages */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Palette className="h-5 w-5 text-rose-600" />
+            Coloring Pages
+          </CardTitle>
+          <CardDescription>
+            Free printable coloring pages fans can download. Hover any item to edit or delete it.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <MediaUploader type="app-coloring-page" label="Coloring Page" />
+          <MediaList type="app-coloring-page" />
+        </CardContent>
+      </Card>
+
+      <Separator />
+
+      {/* Desktop Wallpapers */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Monitor className="h-5 w-5 text-indigo-600" />
+            Desktop Wallpapers
+          </CardTitle>
+          <CardDescription>
+            Desktop / PC wallpapers in landscape format. Hover any item to edit or delete it.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <MediaUploader type="app-desktop-wallpaper" label="Desktop Wallpaper" />
+          <MediaList type="app-desktop-wallpaper" aspectClass="aspect-video" />
         </CardContent>
       </Card>
     </div>
