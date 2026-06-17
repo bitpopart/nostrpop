@@ -59,6 +59,20 @@ interface CanvasElement {
   align?: 'left' | 'center' | 'right';
 }
 
+// ─── Resize state ────────────────────────────────────────────────────────────
+type Corner = 'nw' | 'ne' | 'sw' | 'se';
+
+interface ResizeState {
+  id: string;
+  corner: Corner;
+  startX: number;   // canvas-space pointer X at drag start
+  startY: number;   // canvas-space pointer Y at drag start
+  origX: number;    // element x at drag start
+  origY: number;    // element y at drag start
+  origW: number;    // element width at drag start
+  origH: number;    // element height at drag start
+}
+
 // ─── Format Icon ─────────────────────────────────────────────────────────────
 function FormatIcon({ id }: { id: string }) {
   if (id === 'sticker') return <Sticker className="h-4 w-4" />;
@@ -89,6 +103,7 @@ export default function Studio() {
   const [fontSize, setFontSize] = useState(60);
   const [fontFamily, setFontFamily] = useState('Impact');
   const [dragging, setDragging] = useState<{ id: string; ox: number; oy: number } | null>(null);
+  const [resizing, setResizing] = useState<ResizeState | null>(null);
   const [scale, setScale] = useState(0.4);
   const canvasWrapRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -196,7 +211,7 @@ export default function Studio() {
     setElements(prev => prev.map(e => e.id === selectedId ? { ...e, ...patch } : e));
   }, [selectedId]);
 
-  // ─── Pointer events for drag ─────────────────────────────────────────
+  // ─── Pointer helpers ─────────────────────────────────────────────────
   const getCanvasPos = (e: React.PointerEvent) => {
     const wrap = canvasWrapRef.current;
     if (!wrap) return { x: 0, y: 0 };
@@ -207,7 +222,30 @@ export default function Studio() {
     };
   };
 
+  // ─── Canvas pointer down — detect resize handle or start drag ────────
   const handleCanvasPointerDown = (e: React.PointerEvent) => {
+    // Check if we clicked a resize handle (data-corner attribute)
+    const target = e.target as HTMLElement;
+    const corner = target.getAttribute('data-corner') as Corner | null;
+    if (corner && selectedId) {
+      const el = elements.find(el => el.id === selectedId);
+      if (!el) return;
+      const { x, y } = getCanvasPos(e);
+      setResizing({
+        id: selectedId,
+        corner,
+        startX: x,
+        startY: y,
+        origX: el.x,
+        origY: el.y,
+        origW: el.width,
+        origH: el.height,
+      });
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+      e.stopPropagation();
+      return;
+    }
+
     const { x, y } = getCanvasPos(e);
     for (let i = elements.length - 1; i >= 0; i--) {
       const el = elements[i];
@@ -222,6 +260,63 @@ export default function Studio() {
   };
 
   const handleCanvasPointerMove = (e: React.PointerEvent) => {
+    // Handle resize
+    if (resizing) {
+      const { x, y } = getCanvasPos(e);
+      const dx = x - resizing.startX;
+      const dy = y - resizing.startY;
+      const MIN_SIZE = 20;
+
+      setElements(prev => prev.map(el => {
+        if (el.id !== resizing.id) return el;
+
+        let newX = resizing.origX;
+        let newY = resizing.origY;
+        let newW = resizing.origW;
+        let newH = resizing.origH;
+
+        const corner = resizing.corner;
+
+        if (corner === 'se') {
+          // Bottom-right: grow/shrink from top-left anchor
+          const rawW = resizing.origW + dx;
+          const rawH = resizing.origH + dy;
+          // Keep aspect ratio using the larger delta
+          const ratio = resizing.origH / resizing.origW;
+          const newWfromW = Math.max(MIN_SIZE, rawW);
+          const newHfromW = newWfromW * ratio;
+          newW = newWfromW;
+          newH = newHfromW;
+        } else if (corner === 'sw') {
+          // Bottom-left: anchor is top-right
+          const rawW = resizing.origW - dx;
+          const ratio = resizing.origH / resizing.origW;
+          newW = Math.max(MIN_SIZE, rawW);
+          newH = newW * ratio;
+          newX = resizing.origX + resizing.origW - newW;
+        } else if (corner === 'ne') {
+          // Top-right: anchor is bottom-left
+          const rawW = resizing.origW + dx;
+          const ratio = resizing.origH / resizing.origW;
+          newW = Math.max(MIN_SIZE, rawW);
+          newH = newW * ratio;
+          newY = resizing.origY + resizing.origH - newH;
+        } else if (corner === 'nw') {
+          // Top-left: anchor is bottom-right
+          const rawW = resizing.origW - dx;
+          const ratio = resizing.origH / resizing.origW;
+          newW = Math.max(MIN_SIZE, rawW);
+          newH = newW * ratio;
+          newX = resizing.origX + resizing.origW - newW;
+          newY = resizing.origY + resizing.origH - newH;
+        }
+
+        return { ...el, x: newX, y: newY, width: newW, height: newH };
+      }));
+      return;
+    }
+
+    // Handle drag
     if (!dragging) return;
     const { x, y } = getCanvasPos(e);
     setElements(prev => prev.map(el =>
@@ -233,9 +328,10 @@ export default function Studio() {
 
   const handleCanvasPointerUp = () => {
     setDragging(null);
+    setResizing(null);
   };
 
-  // ─── Download PNG — draw everything to a hidden canvas on demand ──────
+  // ─── Download PNG — full design (background + all elements) ──────────
   const handleDownloadPNG = useCallback(() => {
     const canvas = document.createElement('canvas');
     canvas.width = format.width;
@@ -247,7 +343,6 @@ export default function Studio() {
     ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, format.width, format.height);
 
-    // We must draw synchronously, so we load all images first
     const imageElements = elements.filter(e => e.kind === 'image' && e.src);
     let pending = imageElements.length;
 
@@ -300,6 +395,21 @@ export default function Studio() {
     }
   }, [elements, format, bgColor]);
 
+  // ─── Download PNG — background only (no placed elements) ─────────────
+  const handleDownloadBgOnly = useCallback(() => {
+    const canvas = document.createElement('canvas');
+    canvas.width = format.width;
+    canvas.height = format.height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, format.width, format.height);
+    const link = document.createElement('a');
+    link.download = `popart-background-${format.id}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  }, [format, bgColor]);
+
   // ─── Color change on selected ────────────────────────────────────────
   const handleColorClick = (color: string) => {
     setActiveColor(color);
@@ -310,6 +420,13 @@ export default function Studio() {
 
   const displayW = Math.round(format.width * scale);
   const displayH = Math.round(format.height * scale);
+
+  // Cursor style while resizing or dragging
+  const canvasCursor = resizing
+    ? (resizing.corner === 'nw' || resizing.corner === 'se' ? 'nwse-resize' : 'nesw-resize')
+    : dragging
+      ? 'grabbing'
+      : 'crosshair';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-orange-50 to-pink-50 dark:from-gray-950 dark:via-orange-950/20 dark:to-pink-950/20">
@@ -328,8 +445,11 @@ export default function Studio() {
             </a>
           </div>
           <div className="flex gap-2">
+            <Button size="sm" variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-white/40 border" onClick={handleDownloadBgOnly}>
+              <Download className="h-4 w-4 mr-1.5" /> Background
+            </Button>
             <Button size="sm" variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-white/40 border" onClick={handleDownloadPNG}>
-              <Download className="h-4 w-4 mr-1.5" /> Download PNG
+              <Download className="h-4 w-4 mr-1.5" /> Full Design
             </Button>
           </div>
         </div>
@@ -539,7 +659,10 @@ export default function Studio() {
 
             <div className="space-y-1.5">
               <Button size="sm" className="w-full h-8 text-xs bg-orange-500 hover:bg-orange-600 text-white" onClick={handleDownloadPNG}>
-                <Download className="h-3.5 w-3.5 mr-1" /> Download PNG
+                <Download className="h-3.5 w-3.5 mr-1" /> Download Full
+              </Button>
+              <Button size="sm" variant="outline" className="w-full h-8 text-xs" onClick={handleDownloadBgOnly}>
+                <Download className="h-3.5 w-3.5 mr-1" /> Background Only
               </Button>
               {format.category === 'print' && (
                 <p className="text-[10px] text-center text-muted-foreground">PNG at {format.dpi} DPI — ready for print</p>
@@ -563,12 +686,13 @@ export default function Studio() {
             */}
             <div
               ref={canvasWrapRef}
-              className="relative shadow-2xl overflow-hidden cursor-crosshair select-none"
+              className="relative shadow-2xl overflow-hidden select-none"
               style={{
                 width: displayW,
                 height: displayH,
                 background: bgColor,
                 touchAction: 'none',
+                cursor: canvasCursor,
               }}
               onPointerDown={handleCanvasPointerDown}
               onPointerMove={handleCanvasPointerMove}
@@ -598,7 +722,12 @@ export default function Studio() {
                         draggable={false}
                         style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
                       />
-                      {isSelected && <SelectionHandles w={el.width * scale} h={el.height * scale} />}
+                      {isSelected && (
+                        <SelectionHandles
+                          w={el.width * scale}
+                          h={el.height * scale}
+                        />
+                      )}
                     </div>
                   );
                 }
@@ -632,7 +761,12 @@ export default function Studio() {
                       >
                         {el.text}
                       </span>
-                      {isSelected && <SelectionHandles w={el.width * scale} h={el.height * scale} />}
+                      {isSelected && (
+                        <SelectionHandles
+                          w={el.width * scale}
+                          h={el.height * scale}
+                        />
+                      )}
                     </div>
                   );
                 }
@@ -641,7 +775,7 @@ export default function Studio() {
               })}
             </div>
 
-            <p className="text-xs text-muted-foreground">Click element to select · Drag to move</p>
+            <p className="text-xs text-muted-foreground">Click to select · Drag to move · Drag corners to resize</p>
           </div>
         </div>
 
@@ -710,9 +844,9 @@ export default function Studio() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
             { icon: '🖱️', tip: 'Click an element in the library to add it to your canvas' },
-            { icon: '✍️', tip: 'Type your text and click "Add Text" to place it' },
+            { icon: '↔️', tip: 'Drag the corner handles to resize a selected element' },
             { icon: '🎨', tip: 'Select a text object then click a color to change it' },
-            { icon: '💾', tip: 'Click "Download PNG" to save your design' },
+            { icon: '💾', tip: 'Download Full saves everything; Background Only saves just the background' },
           ].map((t, i) => (
             <div key={i} className="flex items-start gap-2 bg-white dark:bg-gray-900 rounded-xl p-3 border text-xs text-muted-foreground">
               <span className="text-base shrink-0">{t.icon}</span>
@@ -729,16 +863,29 @@ export default function Studio() {
   );
 }
 
-// ─── Selection corner handles ─────────────────────────────────────────────────
+// ─── Selection corner handles (interactive resize) ───────────────────────────
 function SelectionHandles({ w, h }: { w: number; h: number }) {
-  const corners: [number, number][] = [[-6, -6], [w - 6, -6], [-6, h - 6], [w - 6, h - 6]];
+  const corners: { corner: Corner; lx: number; ly: number; cursor: string }[] = [
+    { corner: 'nw', lx: -6, ly: -6, cursor: 'nwse-resize' },
+    { corner: 'ne', lx: w - 6, ly: -6, cursor: 'nesw-resize' },
+    { corner: 'sw', lx: -6, ly: h - 6, cursor: 'nesw-resize' },
+    { corner: 'se', lx: w - 6, ly: h - 6, cursor: 'nwse-resize' },
+  ];
   return (
     <>
-      {corners.map(([lx, ly], i) => (
+      {corners.map(({ corner, lx, ly, cursor }) => (
         <div
-          key={i}
-          className="absolute w-3 h-3 bg-orange-500 border-2 border-white rounded-sm shadow"
-          style={{ left: lx, top: ly, pointerEvents: 'none' }}
+          key={corner}
+          data-corner={corner}
+          className="absolute w-4 h-4 bg-orange-500 border-2 border-white rounded-sm shadow-md hover:bg-orange-600 hover:scale-125 transition-transform"
+          style={{
+            left: lx,
+            top: ly,
+            pointerEvents: 'auto',
+            cursor,
+            zIndex: 10,
+            touchAction: 'none',
+          }}
         />
       ))}
     </>
