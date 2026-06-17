@@ -35,6 +35,25 @@ import {
   ChevronUp,
   ChevronDown,
   Megaphone,
+  Sparkles,
+  Gift,
+  MapPin,
+  Star,
+  Zap,
+  Heart,
+  Music,
+  Camera,
+  ShoppingCart,
+  Globe,
+  Brush,
+  Pencil,
+  Wand2,
+  Play,
+  Clapperboard,
+  Image,
+  ArrowRight,
+  ExternalLink,
+  Ban,
 } from 'lucide-react';
 
 const DEFAULT_SECTIONS: HomepageSection[] = [
@@ -142,6 +161,41 @@ const VARIANT_LABEL: Record<HomepageButton['variant'], string> = {
   accent: 'Accent (orange)',
 };
 
+/** All icons available to pick for a button */
+const BUTTON_ICON_OPTIONS: { value: string; label: string; Icon: React.ComponentType<{ className?: string }> }[] = [
+  { value: '', label: 'Auto (based on style)', Icon: Ban },
+  { value: 'Sparkles', label: 'Sparkles ✨', Icon: Sparkles },
+  { value: 'Wand2', label: 'Magic Wand 🪄', Icon: Wand2 },
+  { value: 'Brush', label: 'Brush 🖌️', Icon: Brush },
+  { value: 'Pencil', label: 'Pencil ✏️', Icon: Pencil },
+  { value: 'Palette', label: 'Palette 🎨', Icon: Palette },
+  { value: 'Image', label: 'Image 🖼️', Icon: Image },
+  { value: 'Camera', label: 'Camera 📷', Icon: Camera },
+  { value: 'Clapperboard', label: 'Studio 🎬', Icon: Clapperboard },
+  { value: 'Play', label: 'Play ▶️', Icon: Play },
+  { value: 'Music', label: 'Music 🎵', Icon: Music },
+  { value: 'ShoppingCart', label: 'Shop 🛒', Icon: ShoppingCart },
+  { value: 'Gift', label: 'Gift 🎁', Icon: Gift },
+  { value: 'Star', label: 'Star ⭐', Icon: Star },
+  { value: 'Heart', label: 'Heart ❤️', Icon: Heart },
+  { value: 'Zap', label: 'Zap ⚡', Icon: Zap },
+  { value: 'Globe', label: 'Globe 🌍', Icon: Globe },
+  { value: 'MapPin', label: 'Map Pin 📍', Icon: MapPin },
+  { value: 'Users', label: 'Community 👥', Icon: Users },
+  { value: 'Download', label: 'Download ⬇️', Icon: Download },
+  { value: 'Rss', label: 'News / RSS 📡', Icon: Rss },
+  { value: 'FolderKanban', label: 'Projects 📂', Icon: FolderKanban },
+  { value: 'FileText', label: 'Page 📄', Icon: FileText },
+  { value: 'CreditCard', label: 'Cards 💳', Icon: CreditCard },
+  { value: 'ArrowRight', label: 'Arrow →', Icon: ArrowRight },
+  { value: 'ExternalLink', label: 'External Link 🔗', Icon: ExternalLink },
+];
+
+/** Resolve an icon component by name */
+const BUTTON_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = Object.fromEntries(
+  BUTTON_ICON_OPTIONS.filter(o => o.value).map(o => [o.value, o.Icon])
+);
+
 const BANNER_STYLE_LABEL: Record<BannerStyle, string> = {
   orange: 'Orange (default)',
   blue:   'Blue',
@@ -215,6 +269,9 @@ interface ButtonEditorProps {
 }
 
 function ButtonEditor({ btn, onUpdate, onDelete, onMove }: ButtonEditorProps) {
+  const selectedIconEntry = BUTTON_ICON_OPTIONS.find(o => o.value === (btn.icon ?? ''));
+  const PreviewIcon = selectedIconEntry?.Icon ?? Ban;
+
   return (
     <div className="border rounded-lg p-3 space-y-2 bg-white dark:bg-gray-900">
       <div className="flex items-center justify-between gap-2">
@@ -260,21 +317,52 @@ function ButtonEditor({ btn, onUpdate, onDelete, onMove }: ButtonEditorProps) {
         </div>
       </div>
 
-      <div>
-        <Label className="text-xs text-muted-foreground">Style</Label>
-        <Select
-          value={btn.variant}
-          onValueChange={v => onUpdate(btn.id, { variant: v as HomepageButton['variant'] })}
-        >
-          <SelectTrigger className="h-8 text-sm">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {(Object.keys(VARIANT_LABEL) as HomepageButton['variant'][]).map(v => (
-              <SelectItem key={v} value={v}>{VARIANT_LABEL[v]}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="grid grid-cols-2 gap-2">
+        <div>
+          <Label className="text-xs text-muted-foreground">Style</Label>
+          <Select
+            value={btn.variant}
+            onValueChange={v => onUpdate(btn.id, { variant: v as HomepageButton['variant'] })}
+          >
+            <SelectTrigger className="h-8 text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {(Object.keys(VARIANT_LABEL) as HomepageButton['variant'][]).map(v => (
+                <SelectItem key={v} value={v}>{VARIANT_LABEL[v]}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <Label className="text-xs text-muted-foreground">Icon</Label>
+          <Select
+            value={btn.icon ?? ''}
+            onValueChange={v => onUpdate(btn.id, { icon: v || undefined })}
+          >
+            <SelectTrigger className="h-8 text-sm">
+              <SelectValue>
+                <span className="flex items-center gap-1.5">
+                  {btn.icon
+                    ? <PreviewIcon className="h-3.5 w-3.5 shrink-0" />
+                    : null}
+                  {selectedIconEntry?.label ?? 'Auto (based on style)'}
+                </span>
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent className="max-h-64">
+              {BUTTON_ICON_OPTIONS.map(opt => (
+                <SelectItem key={opt.value === '' ? '__auto__' : opt.value} value={opt.value}>
+                  <span className="flex items-center gap-2">
+                    <opt.Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    {opt.label}
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
     </div>
   );

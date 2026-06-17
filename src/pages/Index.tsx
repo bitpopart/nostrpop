@@ -44,6 +44,13 @@ import {
   Clapperboard,
   Play,
   ExternalLink,
+  Star,
+  Music,
+  Camera,
+  Globe,
+  Brush,
+  Pencil,
+  Wand2,
 } from 'lucide-react';
 import type { NostrEvent, NostrMetadata } from '@nostrify/nostrify';
 import type { ArtworkData } from '@/lib/artTypes';
@@ -299,6 +306,42 @@ function ArtworkThumbnail({ artwork }: { artwork: ArtworkData }) {
   );
 }
 
+/** Lookup map for named icons used in button settings */
+const BUTTON_ICON_COMPONENTS: Record<string, React.ComponentType<{ className?: string }>> = {
+  Sparkles,
+  Wand2,
+  Brush,
+  Pencil,
+  Palette,
+  Image: ImageIcon,
+  Camera,
+  Clapperboard,
+  Play,
+  Music,
+  ShoppingCart,
+  Gift,
+  Star,
+  Heart,
+  Zap,
+  Globe,
+  MapPin,
+  Users,
+  Download,
+  Rss,
+  FolderKanban,
+  FileText,
+  CreditCard,
+  ArrowRight,
+  ExternalLink,
+};
+
+/** Default icons per variant when no explicit icon is set */
+function getDefaultIcon(variant: HomepageButton['variant']): React.ComponentType<{ className?: string }> | null {
+  if (variant === 'primary') return Sparkles;
+  if (variant === 'accent') return MapPin;
+  return Gift;
+}
+
 function DynamicButton({ btn, size = 'default' }: { btn: HomepageButton; size?: 'default' | 'lg' | 'sm' }) {
   const isExternal = btn.url.startsWith('http://') || btn.url.startsWith('https://');
 
@@ -314,13 +357,21 @@ function DynamicButton({ btn, size = 'default' }: { btn: HomepageButton; size?: 
 
   const primaryStyle = btn.variant === 'primary' ? { style: { background: 'linear-gradient(135deg, #ec4899, #8b5cf6)', border: 'none' } } : {};
 
+  // Resolve the icon: use explicitly chosen icon, or fall back to variant default
+  const ResolvedIcon: React.ComponentType<{ className?: string }> | null =
+    btn.icon && BUTTON_ICON_COMPONENTS[btn.icon]
+      ? BUTTON_ICON_COMPONENTS[btn.icon]
+      : getDefaultIcon(btn.variant);
+
+  const accentIconClass = btn.variant === 'accent' && !btn.icon
+    ? 'text-orange-600 dark:text-orange-400'
+    : '';
+
   if (isExternal) {
     return (
       <Button size={size} {...variantProps} className={`rounded-full ${accentClass}`} {...primaryStyle} asChild>
         <a href={btn.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
-          {btn.variant === 'primary' && <Sparkles className="h-4 w-4" />}
-          {btn.variant === 'accent' && <MapPin className="h-4 w-4 text-orange-600 dark:text-orange-400" />}
-          {btn.variant === 'outline' && <Gift className="h-4 w-4" />}
+          {ResolvedIcon && <ResolvedIcon className={`h-4 w-4 ${accentIconClass}`} />}
           {btn.label}
           <ExternalLink className="h-3 w-3 opacity-60" />
         </a>
@@ -331,9 +382,7 @@ function DynamicButton({ btn, size = 'default' }: { btn: HomepageButton; size?: 
   return (
     <Button size={size} {...variantProps} className={`rounded-full ${accentClass}`} {...primaryStyle} asChild>
       <Link to={btn.url} className="flex items-center gap-2">
-        {btn.variant === 'primary' && <Sparkles className="h-4 w-4" />}
-        {btn.variant === 'accent' && <MapPin className="h-4 w-4 text-orange-600 dark:text-orange-400" />}
-        {btn.variant === 'outline' && <Gift className="h-4 w-4" />}
+        {ResolvedIcon && <ResolvedIcon className={`h-4 w-4 ${accentIconClass}`} />}
         {btn.label}
       </Link>
     </Button>

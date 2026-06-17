@@ -20,6 +20,8 @@ export interface HomepageButton {
   label: string;
   url: string;
   variant: 'primary' | 'outline' | 'accent';
+  /** Lucide icon name to show on the button. Falls back to variant default when omitted. */
+  icon?: string;
   /** If set, this button appears between the section with this id and the next */
   afterSectionId?: string | null;
   /** True = shown in the top hero button row */
