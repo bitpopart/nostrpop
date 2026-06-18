@@ -42,6 +42,7 @@ import { DesktopWallpapersAdmin } from '@/components/app/DesktopWallpapersAdmin'
 import { FanAppPublishing } from '@/components/app/FanAppPublishing';
 import { AnimationsManagement } from '@/components/animations/AnimationsManagement';
 import { StudioLibrariesAdmin } from '@/components/studio/StudioLibrariesAdmin';
+import { PrintPostersAdmin } from '@/components/print/PrintPostersAdmin';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import {
   Plus,
@@ -76,6 +77,7 @@ import {
   Upload,
   ClipboardList,
   Monitor,
+  Printer,
 } from 'lucide-react';
 
 const Admin = () => {
@@ -197,6 +199,14 @@ const Admin = () => {
       color: 'from-amber-500 to-orange-500',
       action: () => setActiveTab('shop'),
       badge: 'Shop'
+    },
+    {
+      title: 'Print Shop',
+      description: 'Upload SVG posters — A3, A4, A5, A6 — pay with Lightning, download PDF',
+      icon: Printer,
+      color: 'from-orange-500 to-rose-500',
+      action: () => setActiveTab('print'),
+      badge: 'Print'
     },
     {
       title: 'Orders',
@@ -413,6 +423,10 @@ const Admin = () => {
             <TabsTrigger value="cards">Cards</TabsTrigger>
             <TabsTrigger value="badges">Badges</TabsTrigger>
             <TabsTrigger value="shop">Shop</TabsTrigger>
+            <TabsTrigger value="print" className="flex items-center gap-1">
+              <Printer className="h-3.5 w-3.5" />
+              Print Shop
+            </TabsTrigger>
             <TabsTrigger value="art">Art</TabsTrigger>
             <TabsTrigger value="app">App</TabsTrigger>
             <TabsTrigger value="app-wallpapers">Wallpapers</TabsTrigger>
@@ -596,13 +610,21 @@ const Admin = () => {
                     <Target className="h-6 w-6 text-teal-600" />
                     <span className="text-sm font-medium">Fundraising</span>
                   </Button>
-                  <Button
+                   <Button
                     variant="outline"
                     className="h-24 flex flex-col items-center justify-center gap-2 hover:bg-orange-50 dark:hover:bg-orange-900/20 border-orange-200"
                     onClick={() => navigate('/studio')}
                   >
                     <Library className="h-6 w-6 text-orange-600" />
                     <span className="text-sm font-medium">Pop Art Studio</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-24 flex flex-col items-center justify-center gap-2 hover:bg-orange-50 dark:hover:bg-orange-900/20 border-orange-200"
+                    onClick={() => setActiveTab('print')}
+                  >
+                    <Printer className="h-6 w-6 text-orange-500" />
+                    <span className="text-sm font-medium">Print Shop</span>
                   </Button>
                 </div>
               </div>
@@ -837,6 +859,10 @@ const Admin = () => {
 
           <TabsContent value="shop">
             <ProductManagement />
+          </TabsContent>
+
+          <TabsContent value="print">
+            <PrintPostersAdmin />
           </TabsContent>
 
           <TabsContent value="fundraisers">
