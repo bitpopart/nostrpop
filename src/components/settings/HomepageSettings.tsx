@@ -94,7 +94,7 @@ import {
   Mail,
   Bell,
   Bookmark,
-  Share2,
+  Share,
 } from 'lucide-react';
 
 const DEFAULT_SECTIONS: HomepageSection[] = [
@@ -250,7 +250,7 @@ const BUTTON_ICON_OPTIONS: { value: string; label: string; Icon: React.Component
   { value: 'Mail', label: 'Mail ✉️', Icon: Mail },
   { value: 'Bell', label: 'Bell 🔔', Icon: Bell },
   { value: 'Bookmark', label: 'Bookmark 🔖', Icon: Bookmark },
-  { value: 'Share2', label: 'Share 🔁', Icon: Share2 },
+  { value: 'Share', label: 'Share 🔁', Icon: Share },
 ];
 
 /** Resolve an icon component by name */

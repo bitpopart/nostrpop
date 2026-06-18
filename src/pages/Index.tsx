@@ -70,7 +70,7 @@ import {
   Mail,
   Bell,
   Bookmark,
-  Share2,
+  Share,
 } from 'lucide-react';
 import type { NostrEvent, NostrMetadata } from '@nostrify/nostrify';
 import type { ArtworkData } from '@/lib/artTypes';
@@ -371,7 +371,7 @@ const BUTTON_ICON_COMPONENTS: Record<string, React.ComponentType<{ className?: s
   Mail,
   Bell,
   Bookmark,
-  Share2,
+  Share,
 };
 
 /** Default icons per variant when no explicit icon is set */
