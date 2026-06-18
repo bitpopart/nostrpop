@@ -254,6 +254,70 @@ export function useCreatePrintPoster() {
   });
 }
 
+export interface UpdatePrintPosterInput extends CreatePrintPosterInput {
+  posterId: string; // the existing d-tag — re-publishing replaces the addressable event
+}
+
+/**
+ * Update an existing print poster (admin only).
+ * Addressable events (kind 34021) are replaced when the same d-tag is re-published.
+ */
+export function useUpdatePrintPoster() {
+  const { nostr } = useNostr();
+  const { user } = useCurrentUser();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: UpdatePrintPosterInput) => {
+      if (!user) throw new Error('Must be logged in');
+
+      const priceTags: string[][] = [];
+      for (const fp of input.formats) {
+        const key = fp.format.toLowerCase();
+        priceTags.push([`price_${key}_usd`, fp.priceUsd.toString()]);
+        priceTags.push([`price_${key}_eur`, fp.priceEur.toString()]);
+        priceTags.push([`price_${key}_sats`, fp.priceSats.toString()]);
+      }
+
+      const extraTTags = (input.extraTags ?? []).map(t => ['t', t]);
+      const category = input.category.trim() || 'Other';
+
+      const event = {
+        kind: 34021,
+        content: input.description,
+        tags: [
+          ['d', input.posterId],
+          ['title', input.title],
+          ['description', input.description],
+          ['svg', input.svgUrl],
+          ['image', input.previewUrl],
+          ['category', category],
+          ['t', 'print-poster'],
+          ['t', category.toLowerCase().replace(/\s+/g, '-')],
+          ...extraTTags,
+          ...priceTags,
+          ['alt', `Print poster: ${input.title}`],
+        ],
+        created_at: Math.floor(Date.now() / 1000),
+      };
+
+      const signed = await user.signer.signEvent(event);
+      await nostr.event(signed, { signal: AbortSignal.timeout(10000) });
+
+      return { id: input.posterId, title: input.title, category };
+    },
+    onSuccess: (data) => {
+      toast({ title: 'Poster Updated', description: `"${data.title}" has been saved.` });
+      queryClient.invalidateQueries({ queryKey: ['print-posters'] });
+    },
+    onError: (error) => {
+      console.error('Failed to update print poster:', error);
+      toast({ title: 'Update Failed', description: 'Could not save changes. Please try again.', variant: 'destructive' });
+    },
+  });
+}
+
 /**
  * Delete a print poster (admin only).
  */
@@ -293,4 +357,42 @@ export function useDeletePrintPoster() {
       toast({ title: 'Delete Failed', description: 'Could not delete. Please try again.', variant: 'destructive' });
     },
   });
+}
+
+/**
+ * Fetch live BTC/EUR rate from CoinGecko (refreshes every 5 min).
+ * Returns sats per 1 EUR, e.g. 1500.
+ */
+export function useBtcEurRate() {
+  return useQuery({
+    queryKey: ['btc-eur-rate'],
+    queryFn: async ({ signal }) => {
+      const res = await fetch(
+        'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=eur,usd',
+        { signal }
+      );
+      const data = await res.json();
+      const eurPerBtc: number = data?.bitcoin?.eur;
+      const usdPerBtc: number = data?.bitcoin?.usd;
+      if (!eurPerBtc || !usdPerBtc) return null;
+      return {
+        eurPerBtc,
+        usdPerBtc,
+        satsPerEur: Math.round(100_000_000 / eurPerBtc),
+        satsPerUsd: Math.round(100_000_000 / usdPerBtc),
+      };
+    },
+    staleTime: 5 * 60 * 1000,      // 5 minutes
+    refetchInterval: 5 * 60 * 1000, // auto-refresh every 5 min
+    retry: 2,
+  });
+}
+
+/**
+ * Convert a EUR price to live sats using the BTC/EUR rate.
+ * Falls back to the stored priceSats if no rate available.
+ */
+export function eurToLiveSats(priceEur: number, rate: ReturnType<typeof useBtcEurRate>['data']): number {
+  if (!rate) return 0;
+  return Math.round(priceEur * rate.satsPerEur);
 }

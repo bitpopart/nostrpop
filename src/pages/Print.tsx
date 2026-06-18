@@ -11,6 +11,8 @@ import {
   DEFAULT_FORMAT_PRICES,
   POSTER_CATEGORIES,
   getPosterCategories,
+  useBtcEurRate,
+  eurToLiveSats,
 } from '@/hooks/usePrintPosters';
 import type { PrintPoster, PosterFormat, PosterFormatPrice } from '@/hooks/usePrintPosters';
 import { useLNURL } from '@/hooks/useLNURL';
@@ -159,11 +161,13 @@ interface PosterCardProps {
   isAdmin: boolean;
   onDelete: (id: string) => void;
   onBuy: (poster: PrintPoster, format: PosterFormat) => void;
+  btcRate?: ReturnType<typeof useBtcEurRate>['data'];
 }
 
-function PosterCard({ poster, isAdmin, onDelete, onBuy }: PosterCardProps) {
+function PosterCard({ poster, isAdmin, onDelete, onBuy, btcRate }: PosterCardProps) {
   const [selectedFormat, setSelectedFormat] = useState<PosterFormat>('A4');
   const selectedPrice = poster.formats.find(f => f.format === selectedFormat)!;
+  const liveSats = btcRate ? eurToLiveSats(selectedPrice.priceEur, btcRate) : selectedPrice.priceSats;
 
   return (
     <Card className="overflow-hidden group hover:shadow-xl transition-shadow duration-300 flex flex-col">
@@ -237,7 +241,10 @@ function PosterCard({ poster, isAdmin, onDelete, onBuy }: PosterCardProps) {
             </span>
             <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
               <Zap className="h-3 w-3 text-yellow-500" />
-              {selectedPrice.priceSats.toLocaleString()} sats
+              {liveSats.toLocaleString()} sats
+              {btcRate && liveSats !== selectedPrice.priceSats && (
+                <span className="text-[10px] opacity-60">(live)</span>
+              )}
             </div>
           </div>
         </div>
@@ -273,8 +280,13 @@ function PrintPaymentDialog({ open, onOpenChange, poster, format }: PrintPayment
 
   const { getZapInvoice, lnurlData, isLoading: lnurlLoading } = useLNURL(LIGHTNING_ADDRESS);
   const { isDetecting, startDetection, stopDetection, payWithWebLN, openLightningWallet } = useEnhancedPaymentDetection();
+  const { data: btcRate } = useBtcEurRate();
 
   const selectedPrice = poster && format ? poster.formats.find(f => f.format === format) : null;
+  // Use live sats if available, fall back to stored value
+  const liveSatsAmount = selectedPrice && btcRate
+    ? eurToLiveSats(selectedPrice.priceEur, btcRate)
+    : selectedPrice?.priceSats ?? 0;
 
   const handleConfirmPayment = useCallback(async () => {
     stopDetection();
@@ -285,9 +297,9 @@ function PrintPaymentDialog({ open, onOpenChange, poster, format }: PrintPayment
     if (!selectedPrice) return;
     setIsCreatingInvoice(true);
     try {
-      const pr = await getZapInvoice(selectedPrice.priceSats);
+      const pr = await getZapInvoice(liveSatsAmount);
       if (!pr) return;
-      const invoiceData = { pr, amountSats: selectedPrice.priceSats, expiresAt: Date.now() + 15 * 60 * 1000 };
+      const invoiceData = { pr, amountSats: liveSatsAmount, expiresAt: Date.now() + 15 * 60 * 1000 };
       setInvoice(invoiceData);
       const qr = await QRCode.toDataURL(pr, { width: 256, margin: 2 });
       setQrDataUrl(qr);
@@ -395,7 +407,8 @@ function PrintPaymentDialog({ open, onOpenChange, poster, format }: PrintPayment
                     <p className="font-bold text-lg text-orange-600">€{selectedPrice.priceEur.toFixed(2)}</p>
                     <p className="text-xs text-muted-foreground flex items-center gap-1 justify-end">
                       <Zap className="h-3 w-3 text-yellow-500" />
-                      {selectedPrice.priceSats.toLocaleString()} sats
+                      {liveSatsAmount.toLocaleString()} sats
+                      {btcRate && <span className="opacity-60">(live)</span>}
                     </p>
                   </div>
                 </div>
@@ -679,6 +692,7 @@ export default function Print() {
   const { getGradientStyle } = useThemeColors();
   const { data: posters = [], isLoading } = usePrintPosters();
   const { mutate: deletePoster } = useDeletePrintPoster();
+  const { data: btcRate } = useBtcEurRate();
 
   const [showUploadForm, setShowUploadForm] = useState(false);
   const [payDialogOpen, setPayDialogOpen] = useState(false);
@@ -879,6 +893,7 @@ export default function Print() {
                   isAdmin={isAdmin}
                   onDelete={deletePoster}
                   onBuy={handleBuy}
+                  btcRate={btcRate}
                 />
               ))}
             </div>

@@ -35,6 +35,8 @@ import {
 } from 'lucide-react';
 
 import { useCategories } from '@/hooks/useCategories';
+import { usePrintPosters, useBtcEurRate, eurToLiveSats } from '@/hooks/usePrintPosters';
+import type { PrintPoster, PosterFormat } from '@/hooks/usePrintPosters';
 
 const Shop = () => {
   const { user } = useCurrentUser();
@@ -92,6 +94,12 @@ const Shop = () => {
 
   // Fetch fundraisers
   const { data: fundraisers = [], isLoading: fundraisersLoading } = useFundraisers();
+
+  // Fetch print posters
+  const { data: printPosters = [], isLoading: printersLoading } = usePrintPosters();
+  const { data: btcRate } = useBtcEurRate();
+  // Show max 6 on shop page
+  const featuredPosters = printPosters.slice(0, 6);
 
   useSeoMeta({
     title: 'Shop - BitPopArt Marketplace | Buy Bitcoin Pop Art',
@@ -249,6 +257,80 @@ const Shop = () => {
               </div>
 
 
+
+              {/* ── Print Posters Section ── */}
+              {(printersLoading || featuredPosters.length > 0) && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Printer className="h-5 w-5 text-orange-500" />
+                      <h2 className="text-xl font-bold">Print Posters</h2>
+                      <Badge variant="outline" className="text-xs">A3 · A4 · A5 · A6</Badge>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={() => navigate('/print')} className="gap-1.5 text-orange-600 border-orange-300 hover:bg-orange-50">
+                      <Printer className="h-3.5 w-3.5" />
+                      View All
+                    </Button>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Pay with Bitcoin Lightning — print at home or at any print shop</p>
+
+                  {printersLoading && (
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                      {Array.from({ length: 6 }).map((_, i) => (
+                        <div key={i} className="space-y-2">
+                          <Skeleton className="aspect-[3/4] w-full rounded-lg" />
+                          <Skeleton className="h-3 w-3/4" />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {!printersLoading && featuredPosters.length > 0 && (
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                      {featuredPosters.map((poster: PrintPoster) => {
+                        const a4 = poster.formats.find((f: { format: PosterFormat }) => f.format === 'A4');
+                        const liveSats = btcRate && a4 ? eurToLiveSats(a4.priceEur, btcRate) : a4?.priceSats;
+                        return (
+                          <div
+                            key={poster.id}
+                            className="group cursor-pointer rounded-xl overflow-hidden border bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow"
+                            onClick={() => navigate('/print')}
+                          >
+                            <div className="aspect-[3/4] bg-gray-100 dark:bg-gray-700 overflow-hidden">
+                              <img
+                                src={poster.previewUrl}
+                                alt={poster.title}
+                                className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+                                loading="lazy"
+                              />
+                            </div>
+                            <div className="p-2">
+                              <p className="text-xs font-semibold truncate">{poster.title}</p>
+                              {a4 && (
+                                <div className="flex items-center gap-0.5 text-xs text-orange-600 font-medium mt-0.5">
+                                  €{a4.priceEur}
+                                  {liveSats && (
+                                    <span className="text-yellow-600 flex items-center gap-0.5 ml-1">
+                                      <Zap className="h-2.5 w-2.5" />{liveSats.toLocaleString()}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {!printersLoading && printPosters.length > 6 && (
+                    <Button variant="outline" className="w-full gap-2" onClick={() => navigate('/print')}>
+                      <Printer className="h-4 w-4" />
+                      View all {printPosters.length} print poster designs
+                    </Button>
+                  )}
+                </div>
+              )}
 
               {/* Filters */}
               <Card className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
