@@ -33,7 +33,6 @@ import {
   Loader2,
   X,
   CheckCircle2,
-  Download,
   Zap,
   Copy,
   QrCode,
@@ -79,42 +78,79 @@ function categoryColorClass(cat: string): string {
 // ─── Lightning address ───────────────────────────────────────────────────────
 const LIGHTNING_ADDRESS = 'bitpopart@walletofsatoshi.com';
 
-// ─── PDF download helper ─────────────────────────────────────────────────────
-async function downloadAsPdf(svgUrl: string, format: PosterFormat, title: string): Promise<void> {
-  const { jsPDF } = await import('jspdf');
+// ─── Print/download helper — opens a print-ready page in a new window ────────
+// Uses the browser's native Print → Save as PDF, zero dependencies.
+async function openPrintWindow(svgUrl: string, format: PosterFormat, title: string): Promise<void> {
   const { width, height } = FORMAT_DIMENSIONS[format];
+  // Portrait for all A-sizes (width < height)
+  const orientation = width < height ? 'portrait' : 'landscape';
 
-  const response = await fetch(svgUrl);
-  const svgText = await response.text();
+  // Fetch SVG and embed inline so it renders correctly cross-origin
+  let svgContent = '';
+  try {
+    const res = await fetch(svgUrl);
+    svgContent = await res.text();
+  } catch {
+    // Fallback: use as <img> src
+    svgContent = `<img src="${svgUrl}" style="width:100%;height:100%;object-fit:contain;" />`;
+  }
 
-  const svgBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
-  const svgObjectUrl = URL.createObjectURL(svgBlob);
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>${title} — ${format}</title>
+  <style>
+    @page {
+      size: ${width}mm ${height}mm ${orientation};
+      margin: 0;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: ${width}mm;
+      height: ${height}mm;
+      overflow: hidden;
+      background: white;
+    }
+    .poster {
+      width: ${width}mm;
+      height: ${height}mm;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .poster svg, .poster img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+  </style>
+</head>
+<body>
+  <div class="poster">${svgContent}</div>
+  <script>
+    window.onload = function() {
+      setTimeout(function() { window.print(); }, 300);
+    };
+  </script>
+</body>
+</html>`;
 
-  const img = new Image();
-  await new Promise<void>((resolve, reject) => {
-    img.onload = () => resolve();
-    img.onerror = reject;
-    img.src = svgObjectUrl;
-  });
-
-  const scale = 3;
-  const canvas = document.createElement('canvas');
-  canvas.width = img.width * scale || width * scale * 3.7795;
-  canvas.height = img.height * scale || height * scale * 3.7795;
-  const ctx = canvas.getContext('2d')!;
-  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-  URL.revokeObjectURL(svgObjectUrl);
-
-  const imgData = canvas.toDataURL('image/jpeg', 0.92);
-
-  const pdf = new jsPDF({
-    orientation: width > height ? 'landscape' : 'portrait',
-    unit: 'mm',
-    format: [width, height],
-  });
-  pdf.addImage(imgData, 'JPEG', 0, 0, width, height);
-  const safeTitle = title.replace(/[^a-zA-Z0-9_-]/g, '_');
-  pdf.save(`${safeTitle}_${format}.pdf`);
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const win = window.open(url, '_blank');
+  if (win) {
+    win.addEventListener('afterprint', () => {
+      URL.revokeObjectURL(url);
+    });
+  } else {
+    // Popup blocked — offer direct link
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${title.replace(/[^a-zA-Z0-9_-]/g, '_')}_${format}.html`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  }
 }
 
 // ─── PosterCard ───────────────────────────────────────────────────────────────
@@ -276,11 +312,11 @@ function PrintPaymentDialog({ open, onOpenChange, poster, format }: PrintPayment
     if (!poster || !format) return;
     setIsDownloading(true);
     try {
-      await downloadAsPdf(poster.svgUrl, format, poster.title);
-      toast({ title: 'PDF Downloaded!', description: `${poster.title} — ${format} format saved.` });
+      await openPrintWindow(poster.svgUrl, format, poster.title);
+      toast({ title: 'Print window opened!', description: `Use "Save as PDF" in the print dialog to save your ${format} poster.` });
     } catch (err) {
       console.error(err);
-      toast({ title: 'Download Failed', description: 'Could not generate PDF. Try again.', variant: 'destructive' });
+      toast({ title: 'Failed to open print window', description: 'Please try again.', variant: 'destructive' });
     } finally {
       setIsDownloading(false);
     }
@@ -303,12 +339,12 @@ function PrintPaymentDialog({ open, onOpenChange, poster, format }: PrintPayment
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Printer className="h-5 w-5 text-orange-500" />
-            {paymentDone ? 'Download Your Poster' : `Purchase ${FORMAT_DIMENSIONS[format].label}`}
+            {paymentDone ? 'Print Your Poster' : `Purchase ${FORMAT_DIMENSIONS[format].label}`}
           </DialogTitle>
           <DialogDescription>
             {paymentDone
-              ? `Payment confirmed! Download "${poster.title}" as a high-quality PDF.`
-              : 'Pay with Bitcoin Lightning to unlock the print-ready PDF.'}
+              ? `Payment confirmed! Open the print dialog to save "${poster.title}" as PDF.`
+              : 'Pay with Bitcoin Lightning to unlock the print-ready file.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -332,11 +368,11 @@ function PrintPaymentDialog({ open, onOpenChange, poster, format }: PrintPayment
               disabled={isDownloading}
             >
               {isDownloading
-                ? <><Loader2 className="h-4 w-4 animate-spin" /> Generating PDF…</>
-                : <><Download className="h-5 w-5" /> Download PDF — {format}</>}
+                ? <><Loader2 className="h-4 w-4 animate-spin" /> Opening…</>
+                : <><Printer className="h-5 w-5" /> Open Print Dialog — {format}</>}
             </Button>
             <p className="text-xs text-muted-foreground text-center">
-              High-resolution print-ready PDF. Bring to any print shop or print at home.
+              A print window opens — choose "Save as PDF" or print directly. Sized for {FORMAT_DIMENSIONS[format].description}.
             </p>
             <Button variant="outline" className="w-full" onClick={handleClose}>Close</Button>
           </div>
