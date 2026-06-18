@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { RelaySelector } from '@/components/RelaySelector';
 import { ZapButton } from '@/components/ZapButton';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
@@ -33,6 +33,8 @@ import {
   CheckCircle2,
   Heart,
 } from 'lucide-react';
+import { ZapButton } from '@/components/ZapButton';
+import type { FreeDownload } from '@/hooks/useFreeDownloads';
 
 const ADMIN_PUBKEY = getAdminPubkeyHex();
 
@@ -58,7 +60,7 @@ export default function FreeDownloads() {
   const [showUploadForm, setShowUploadForm] = useState(false);
   const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [lightboxItem, setLightboxItem] = useState<FreeDownload | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useSeoMeta({
@@ -408,7 +410,7 @@ export default function FreeDownloads() {
                     {/* Image */}
                     <div
                       className="aspect-square cursor-pointer"
-                      onClick={() => setLightboxImage(dl.image_url)}
+                      onClick={() => setLightboxItem(dl)}
                     >
                       <img
                         src={dl.image_url}
@@ -504,14 +506,54 @@ export default function FreeDownloads() {
       </div>
 
       {/* Lightbox */}
-      <Dialog open={!!lightboxImage} onOpenChange={() => setLightboxImage(null)}>
-        <DialogContent className="max-w-4xl p-0 overflow-hidden">
-          {lightboxImage && (
-            <img
-              src={lightboxImage}
-              alt="Full size"
-              className="w-full h-auto"
-            />
+      <Dialog open={!!lightboxItem} onOpenChange={() => setLightboxItem(null)}>
+        <DialogContent className="max-w-4xl w-full p-0 overflow-hidden bg-background rounded-2xl shadow-2xl">
+          {lightboxItem && (
+            <>
+              <DialogTitle className="sr-only">{lightboxItem.title}</DialogTitle>
+              <div className="flex items-center justify-center bg-black/5 dark:bg-black/30 w-full">
+                <img
+                  src={lightboxItem.image_url}
+                  alt={lightboxItem.title}
+                  className="max-w-full max-h-[70vh] w-auto h-auto object-contain"
+                  style={{ display: 'block' }}
+                />
+              </div>
+              <div className="px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
+                <div className="flex-1 min-w-0">
+                  {lightboxItem.title !== 'Untitled' && (
+                    <p className="font-semibold text-sm truncate">{lightboxItem.title}</p>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <ZapButton
+                    authorPubkey={ADMIN_PUBKEY}
+                    lightningAddress="traveltelly@primal.net"
+                    event={lightboxItem.event}
+                    eventTitle={lightboxItem.title}
+                    size="default"
+                    variant="outline"
+                    showLabel={true}
+                    alwaysShow={true}
+                  />
+                  <Button
+                    className="gap-2 text-white border-0 font-semibold shadow"
+                    style={getGradientStyle('primary')}
+                    onClick={() => {
+                      const urlParts = lightboxItem.image_url.split('/');
+                      const rawFilename = urlParts[urlParts.length - 1] || 'download';
+                      const filename = lightboxItem.title !== 'Untitled'
+                        ? `${lightboxItem.title.replace(/[^a-zA-Z0-9_-]/g, '_')}.${rawFilename.split('.').pop() || 'jpg'}`
+                        : rawFilename;
+                      handleDownload(lightboxItem.image_url, filename, { itemId: lightboxItem.id, title: lightboxItem.title });
+                    }}
+                  >
+                    <Download className="h-4 w-4" />
+                    Download Free
+                  </Button>
+                </div>
+              </div>
+            </>
           )}
         </DialogContent>
       </Dialog>

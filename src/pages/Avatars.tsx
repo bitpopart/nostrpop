@@ -11,6 +11,10 @@ import { recordDownload } from '@/hooks/useDownloadTracking';
 import { HashtagCloud } from '@/components/HashtagCloud';
 import { RelaySelector } from '@/components/RelaySelector';
 import { Download, UserCircle2, ArrowLeft } from 'lucide-react';
+import { ZapButton } from '@/components/ZapButton';
+import { getAdminPubkeyHex } from '@/lib/adminUtils';
+
+const ADMIN_PUBKEY = getAdminPubkeyHex();
 
 function handleDownload(
   url: string,
@@ -221,15 +225,27 @@ export default function Avatars() {
                   )}
                 </div>
 
-                {/* Download button */}
-                <Button
-                  className="w-full gap-2 text-white border-0 font-semibold shadow"
-                  style={getGradientStyle('primary')}
-                  onClick={() => handleDownload(lightbox.image_url, deriveFilename(lightbox.image_url, lightbox.title), { itemId: lightbox.id, title: lightbox.title })}
-                >
-                  <Download className="h-4 w-4" />
-                  Download Free
-                </Button>
+                {/* Zap + Download buttons */}
+                <div className="flex items-center gap-2">
+                  <ZapButton
+                    authorPubkey={ADMIN_PUBKEY}
+                    lightningAddress="traveltelly@primal.net"
+                    event={lightbox.event}
+                    eventTitle={lightbox.title}
+                    size="default"
+                    variant="outline"
+                    showLabel={true}
+                    alwaysShow={true}
+                  />
+                  <Button
+                    className="flex-1 gap-2 text-white border-0 font-semibold shadow"
+                    style={getGradientStyle('primary')}
+                    onClick={() => handleDownload(lightbox.image_url, deriveFilename(lightbox.image_url, lightbox.title), { itemId: lightbox.id, title: lightbox.title })}
+                  >
+                    <Download className="h-4 w-4" />
+                    Download Free
+                  </Button>
+                </div>
               </div>
             </>
           )}
