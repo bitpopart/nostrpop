@@ -34,6 +34,7 @@ import {
   Heart,
 } from 'lucide-react';
 import { ZapButton } from '@/components/ZapButton';
+import { ShareToNostrMediaDialog } from '@/components/ShareToNostrMediaDialog';
 import type { FreeDownload } from '@/hooks/useFreeDownloads';
 
 const ADMIN_PUBKEY = getAdminPubkeyHex();
@@ -535,6 +536,11 @@ export default function FreeDownloads() {
                     variant="outline"
                     showLabel={true}
                     alwaysShow={true}
+                  />
+                  <ShareToNostrMediaDialog
+                    title={lightboxItem.title}
+                    imageUrl={lightboxItem.image_url}
+                    hashtags={['freedownload', 'freeart']}
                   />
                   <Button
                     className="gap-2 text-white border-0 font-semibold shadow"

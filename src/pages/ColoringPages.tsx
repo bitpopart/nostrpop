@@ -12,6 +12,7 @@ import { HashtagCloud } from '@/components/HashtagCloud';
 import { RelaySelector } from '@/components/RelaySelector';
 import { Download, Palette, ArrowLeft } from 'lucide-react';
 import { ZapButton } from '@/components/ZapButton';
+import { ShareToNostrMediaDialog } from '@/components/ShareToNostrMediaDialog';
 import { getAdminPubkeyHex } from '@/lib/adminUtils';
 
 const ADMIN_PUBKEY = getAdminPubkeyHex();
@@ -239,6 +240,11 @@ export default function ColoringPages() {
                     variant="outline"
                     showLabel={true}
                     alwaysShow={true}
+                  />
+                  <ShareToNostrMediaDialog
+                    title={lightbox.title}
+                    imageUrl={lightbox.image_url}
+                    hashtags={[...lightbox.hashtags, 'coloringpage', 'art']}
                   />
                   <Button
                     className="gap-2 text-white border-0 font-semibold shadow"

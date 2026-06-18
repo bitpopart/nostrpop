@@ -13,6 +13,7 @@ import { HashtagCloud } from '@/components/HashtagCloud';
 import { RelaySelector } from '@/components/RelaySelector';
 import { Download, Image as ImageIcon, ArrowLeft, Smartphone } from 'lucide-react';
 import { ZapButton } from '@/components/ZapButton';
+import { ShareToNostrMediaDialog } from '@/components/ShareToNostrMediaDialog';
 import { getAdminPubkeyHex } from '@/lib/adminUtils';
 
 const ADMIN_PUBKEY = getAdminPubkeyHex();
@@ -239,7 +240,7 @@ export default function Wallpapers() {
                   )}
                 </div>
 
-                {/* Zap + Download buttons */}
+                {/* Zap + Share + Download buttons */}
                 <div className="flex items-center gap-2 shrink-0">
                   <ZapButton
                     authorPubkey={ADMIN_PUBKEY}
@@ -250,6 +251,11 @@ export default function Wallpapers() {
                     variant="outline"
                     showLabel={true}
                     alwaysShow={true}
+                  />
+                  <ShareToNostrMediaDialog
+                    title={lightbox.title}
+                    imageUrl={lightbox.image_url}
+                    hashtags={[...lightbox.hashtags, 'wallpaper']}
                   />
                   <Button
                     className="gap-2 text-white border-0 font-semibold shadow"
