@@ -75,7 +75,6 @@ export function useFeaturedProjects(options?: { enabled?: boolean }) {
 
   return useQuery({
     queryKey: ['projects-featured', adminPubkey],
-    enabled: options?.enabled !== false,
     queryFn: async (c) => {
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(3000)]);
       
@@ -147,6 +146,6 @@ export function useFeaturedProjects(options?: { enabled?: boolean }) {
 
       return allProjects;
     },
-    enabled: !!adminPubkey,
+    enabled: options?.enabled !== false && !!adminPubkey,
   });
 }
