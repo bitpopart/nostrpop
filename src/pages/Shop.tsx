@@ -31,6 +31,7 @@ import {
   Target,
   Download,
   Gift,
+  Printer,
 } from 'lucide-react';
 
 import { useCategories } from '@/hooks/useCategories';
@@ -138,20 +139,35 @@ const Shop = () => {
             </div>
             <LightningStatusIndicator />
           </div>
-          {/* Free Downloads Button */}
-          <div className="mt-6">
-            <Button
-              size="lg"
-              onClick={() => navigate('/free')}
-              className="gap-2 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white border-0 shadow-md text-base px-8"
-            >
-              <Gift className="h-5 w-5" />
-              Free Downloads
-              <Download className="h-4 w-4 ml-1" />
-            </Button>
-            <p className="text-sm text-muted-foreground mt-2">
-              Free digital art — download &amp; zap what you like
-            </p>
+          {/* Free Downloads + Print Posters Buttons */}
+          <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <div className="flex flex-col items-center gap-1">
+              <Button
+                size="lg"
+                onClick={() => navigate('/free')}
+                className="gap-2 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white border-0 shadow-md text-base px-8"
+              >
+                <Gift className="h-5 w-5" />
+                Free Downloads
+                <Download className="h-4 w-4 ml-1" />
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Free digital art — zap what you like
+              </p>
+            </div>
+            <div className="flex flex-col items-center gap-1">
+              <Button
+                size="lg"
+                onClick={() => navigate('/print')}
+                className="gap-2 bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white border-0 shadow-md text-base px-8"
+              >
+                <Printer className="h-5 w-5" />
+                Print Posters
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                A3 · A4 · A5 · A6 — pay &amp; download PDF
+              </p>
+            </div>
           </div>
 
           {user && isAdmin && (

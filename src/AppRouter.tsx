@@ -47,6 +47,7 @@ import Community from "./pages/Community";
 import Studio from "./pages/Studio";
 import Frl from "./pages/Frl";
 import FrlProjectView from "./pages/FrlProjectView";
+import Print from "./pages/Print";
 import NotFound from "./pages/NotFound";
 
 export function AppRouter() {
@@ -103,6 +104,7 @@ export function AppRouter() {
           <Route path="/studio" element={<Studio />} />
           <Route path="/frl" element={<Frl />} />
           <Route path="/frl/:projectId" element={<FrlProjectView />} />
+          <Route path="/print" element={<Print />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="/:slug" element={<CustomPage />} />
           <Route path="*" element={<NotFound />} />
