@@ -3,12 +3,23 @@
   Cache-Control: no-cache, no-store, must-revalidate
   Pragma: no-cache
   Expires: 0
+  Content-Type: text/html; charset=UTF-8
 
 # SPA fallback also must not be cached
 /
   Cache-Control: no-cache, no-store, must-revalidate
   Pragma: no-cache
   Expires: 0
+
+# Root-level JS bundles (Shakespeare build system outputs JS to root, not /assets/)
+/*.js
+  Content-Type: application/javascript; charset=UTF-8
+  Cache-Control: public, max-age=31536000, immutable
+
+# Root-level CSS
+/*.css
+  Content-Type: text/css; charset=UTF-8
+  Cache-Control: public, max-age=31536000, immutable
 
 # Versioned assets (JS/CSS with content hash in filename) can be cached forever
 /assets/*

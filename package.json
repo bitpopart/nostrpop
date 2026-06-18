@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "npm i && vite",
-    "build": "npm i && vite build && node scripts/fix-base-paths.mjs && cp dist/index.html dist/404.html",
-    "build:ci": "vite build && node scripts/fix-base-paths.mjs && cp dist/index.html dist/404.html",
+    "build": "npm i && vite build && node scripts/fix-base-paths.mjs && cp dist/index.html dist/404.html && touch dist/.nojekyll",
+    "build:ci": "vite build && node scripts/fix-base-paths.mjs && cp dist/index.html dist/404.html && touch dist/.nojekyll",
     "test": "npm i && tsc -p tsconfig.app.json --noEmit && eslint && vitest run && vite build && node scripts/fix-base-paths.mjs",
     "deploy": "npm run build && npx -y nostr-deploy-cli deploy --skip-setup",
     "deploy:gh": "npm run build && gh-pages -d dist"
