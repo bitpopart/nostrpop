@@ -20,20 +20,41 @@ export interface PrintPoster {
   title: string;
   description: string;
   svgUrl: string;
-  previewUrl: string; // same SVG used for preview
+  previewUrl: string;
   formats: PosterFormatPrice[];
-  tags: string[];
+  category: string;   // primary category
+  tags: string[];     // extra t-tags (excluding 'print-poster' and the category)
   created_at: string;
 }
 
-const DEFAULT_FORMAT_PRICES: PosterFormatPrice[] = [
+// ─── Default poster categories ────────────────────────────────────────────────
+export const POSTER_CATEGORIES = [
+  'Bitcoin',
+  'Pop Art',
+  'Travel',
+  'Photography',
+  'Abstract',
+  'Typography',
+  'Nature',
+  'City',
+  'Music',
+  'Sport',
+  'Motivational',
+  'Humor',
+  'Holiday',
+  'Animals',
+  'Other',
+] as const;
+
+export type PosterCategory = typeof POSTER_CATEGORIES[number];
+
+// ─── Default prices ────────────────────────────────────────────────────────────
+export const DEFAULT_FORMAT_PRICES: PosterFormatPrice[] = [
   { format: 'A3', priceUsd: 4.99, priceEur: 4.59, priceSats: 7500 },
   { format: 'A4', priceUsd: 2.99, priceEur: 2.75, priceSats: 4500 },
   { format: 'A5', priceUsd: 1.99, priceEur: 1.85, priceSats: 3000 },
   { format: 'A6', priceUsd: 0.99, priceEur: 0.90, priceSats: 1500 },
 ];
-
-export { DEFAULT_FORMAT_PRICES };
 
 /**
  * Parse format prices from Nostr event tags.
@@ -112,14 +133,15 @@ export function usePrintPosters() {
             const descTag = event.tags.find(([n]) => n === 'description')?.[1];
             const svgTag = event.tags.find(([n]) => n === 'svg')?.[1];
             const imageTag = event.tags.find(([n]) => n === 'image')?.[1];
+            const categoryTag = event.tags.find(([n]) => n === 'category')?.[1];
 
             // Need at least one of svg or image
             const svgUrl = svgTag || imageTag;
             if (!svgUrl) return null;
 
+            // Collect extra t-tags (excluding the system tag 'print-poster')
             const tTags = event.tags
-              .filter(([n]) => n === 't' && ![  'print-poster'].includes)
-              .filter(([, v]) => v && v !== 'print-poster')
+              .filter(([n, v]) => n === 't' && v && v !== 'print-poster')
               .map(([, v]) => v);
 
             const formats = parseFormatPrices(event.tags);
@@ -132,6 +154,7 @@ export function usePrintPosters() {
               svgUrl,
               previewUrl: imageTag || svgUrl,
               formats,
+              category: categoryTag || 'Other',
               tags: tTags,
               created_at: new Date(event.created_at * 1000).toISOString(),
             };
@@ -151,12 +174,22 @@ export function usePrintPosters() {
   });
 }
 
+/**
+ * Derive the sorted list of unique categories from a poster list.
+ */
+export function getPosterCategories(posters: PrintPoster[]): string[] {
+  const cats = new Set<string>();
+  posters.forEach(p => { if (p.category) cats.add(p.category); });
+  return Array.from(cats).sort((a, b) => a.localeCompare(b));
+}
+
 export interface CreatePrintPosterInput {
   title: string;
   description: string;
   svgUrl: string;
   previewUrl: string;
   formats: PosterFormatPrice[];
+  category: string;
   extraTags?: string[];
 }
 
@@ -184,6 +217,7 @@ export function useCreatePrintPoster() {
       }
 
       const extraTTags = (input.extraTags ?? []).map(t => ['t', t]);
+      const category = input.category.trim() || 'Other';
 
       const event = {
         kind: 34021,
@@ -194,7 +228,9 @@ export function useCreatePrintPoster() {
           ['description', input.description],
           ['svg', input.svgUrl],
           ['image', input.previewUrl],
+          ['category', category],
           ['t', 'print-poster'],
+          ['t', category.toLowerCase().replace(/\s+/g, '-')],
           ...extraTTags,
           ...priceTags,
           ['alt', `Print poster: ${input.title}`],
@@ -205,10 +241,10 @@ export function useCreatePrintPoster() {
       const signed = await user.signer.signEvent(event);
       await nostr.event(signed, { signal: AbortSignal.timeout(10000) });
 
-      return { id: dTag, title: input.title };
+      return { id: dTag, title: input.title, category };
     },
     onSuccess: (data) => {
-      toast({ title: 'Poster Published', description: `"${data.title}" is now available in the Print Shop.` });
+      toast({ title: 'Poster Published', description: `"${data.title}" added to "${data.category}" category.` });
       queryClient.invalidateQueries({ queryKey: ['print-posters'] });
     },
     onError: (error) => {

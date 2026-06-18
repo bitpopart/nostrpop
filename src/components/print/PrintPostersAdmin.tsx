@@ -1,7 +1,14 @@
 import { useState, useRef } from 'react';
 import { useUploadFile } from '@/hooks/useUploadFile';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { usePrintPosters, useCreatePrintPoster, useDeletePrintPoster, DEFAULT_FORMAT_PRICES } from '@/hooks/usePrintPosters';
+import {
+  usePrintPosters,
+  useCreatePrintPoster,
+  useDeletePrintPoster,
+  DEFAULT_FORMAT_PRICES,
+  POSTER_CATEGORIES,
+  getPosterCategories,
+} from '@/hooks/usePrintPosters';
 import type { PosterFormat, PosterFormatPrice } from '@/hooks/usePrintPosters';
 import { useToast } from '@/hooks/useToast';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -24,6 +31,8 @@ import {
   Settings,
   Zap,
   ExternalLink,
+  Tag,
+  LayoutGrid,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -33,6 +42,27 @@ const FORMAT_LABELS: Record<PosterFormat, string> = {
   A5: 'A5 — 148×210 mm',
   A6: 'A6 Postcard — 105×148 mm',
 };
+
+// Category color helper (same palette as Print page)
+const CATEGORY_COLORS: Record<string, string> = {
+  Bitcoin:      'bg-orange-100 text-orange-700 border-orange-200',
+  'Pop Art':    'bg-pink-100 text-pink-700 border-pink-200',
+  Travel:       'bg-cyan-100 text-cyan-700 border-cyan-200',
+  Photography:  'bg-blue-100 text-blue-700 border-blue-200',
+  Abstract:     'bg-purple-100 text-purple-700 border-purple-200',
+  Typography:   'bg-gray-100 text-gray-700 border-gray-200',
+  Nature:       'bg-green-100 text-green-700 border-green-200',
+  City:         'bg-slate-100 text-slate-700 border-slate-200',
+  Music:        'bg-violet-100 text-violet-700 border-violet-200',
+  Sport:        'bg-lime-100 text-lime-700 border-lime-200',
+  Motivational: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+  Humor:        'bg-amber-100 text-amber-700 border-amber-200',
+  Holiday:      'bg-red-100 text-red-700 border-red-200',
+  Animals:      'bg-teal-100 text-teal-700 border-teal-200',
+};
+function catColor(cat: string) {
+  return CATEGORY_COLORS[cat] ?? 'bg-gray-100 text-gray-700 border-gray-200';
+}
 
 // ─── Upload Form ──────────────────────────────────────────────────────────────
 function UploadForm({ onClose }: { onClose: () => void }) {
@@ -44,6 +74,8 @@ function UploadForm({ onClose }: { onClose: () => void }) {
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [category, setCategory] = useState('');
+  const [customCategory, setCustomCategory] = useState('');
   const [svgFile, setSvgFile] = useState<File | null>(null);
   const [svgPreview, setSvgPreview] = useState('');
   const [svgUrl, setSvgUrl] = useState('');
@@ -53,6 +85,8 @@ function UploadForm({ onClose }: { onClose: () => void }) {
   );
   const [showPricing, setShowPricing] = useState(false);
 
+  const resolvedCategory = category === '__custom__' ? customCategory : category;
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -60,7 +94,6 @@ function UploadForm({ onClose }: { onClose: () => void }) {
     const reader = new FileReader();
     reader.onload = (ev) => setSvgPreview(ev.target?.result as string);
     reader.readAsDataURL(file);
-
     setIsUploading(true);
     try {
       const tags = await uploadFile(file);
@@ -84,16 +117,11 @@ function UploadForm({ onClose }: { onClose: () => void }) {
   };
 
   const handlePublish = () => {
-    if (!svgUrl) {
-      toast({ title: 'No file', description: 'Please upload a poster file first.', variant: 'destructive' });
-      return;
-    }
-    if (!title.trim()) {
-      toast({ title: 'No title', description: 'Please enter a title.', variant: 'destructive' });
-      return;
-    }
+    if (!svgUrl) { toast({ title: 'No file', description: 'Please upload a poster file first.', variant: 'destructive' }); return; }
+    if (!title.trim()) { toast({ title: 'No title', description: 'Please enter a title.', variant: 'destructive' }); return; }
+    if (!resolvedCategory.trim()) { toast({ title: 'No category', description: 'Please select or enter a category.', variant: 'destructive' }); return; }
     createPoster(
-      { title: title.trim(), description: description.trim(), svgUrl, previewUrl: svgUrl, formats },
+      { title: title.trim(), description: description.trim(), svgUrl, previewUrl: svgUrl, formats, category: resolvedCategory.trim() },
       { onSuccess: onClose }
     );
   };
@@ -116,25 +144,17 @@ function UploadForm({ onClose }: { onClose: () => void }) {
         <div className="space-y-1">
           <Label className="text-sm">Poster File (SVG / PNG / JPG) *</Label>
           <label className="flex flex-col items-center justify-center w-full h-36 border-2 border-dashed rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors border-orange-300 dark:border-orange-700 overflow-hidden relative">
-            {svgPreview ? (
-              <img src={svgPreview} alt="preview" className="absolute inset-0 w-full h-full object-contain" />
-            ) : (
-              <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                <FileImage className="h-7 w-7 text-orange-400" />
-                <span className="text-sm font-medium text-orange-700 dark:text-orange-400">Click to select file</span>
-                <span className="text-xs">SVG recommended for best print quality</span>
-              </div>
-            )}
-            {isUploading && (
-              <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                <Loader2 className="h-8 w-8 text-white animate-spin" />
-              </div>
-            )}
-            {svgUrl && !isUploading && (
-              <div className="absolute top-2 left-2">
-                <CheckCircle2 className="h-5 w-5 text-green-400 drop-shadow" />
-              </div>
-            )}
+            {svgPreview
+              ? <img src={svgPreview} alt="preview" className="absolute inset-0 w-full h-full object-contain" />
+              : (
+                <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                  <FileImage className="h-7 w-7 text-orange-400" />
+                  <span className="text-sm font-medium text-orange-700 dark:text-orange-400">Click to select file</span>
+                  <span className="text-xs">SVG recommended for best print quality</span>
+                </div>
+              )}
+            {isUploading && <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Loader2 className="h-8 w-8 text-white animate-spin" /></div>}
+            {svgUrl && !isUploading && <div className="absolute top-2 left-2"><CheckCircle2 className="h-5 w-5 text-green-400 drop-shadow" /></div>}
             <input ref={fileRef} type="file" accept="image/svg+xml,image/*" className="hidden" onChange={handleFileChange} />
           </label>
           {svgFile && <p className="text-xs text-muted-foreground">{svgFile.name}</p>}
@@ -152,6 +172,52 @@ function UploadForm({ onClose }: { onClose: () => void }) {
           </div>
         </div>
 
+        {/* Category */}
+        <div className="space-y-2">
+          <Label className="text-sm flex items-center gap-1.5"><Tag className="h-3.5 w-3.5" /> Category *</Label>
+          <div className="flex flex-wrap gap-1.5">
+            {POSTER_CATEGORIES.map(cat => (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => { setCategory(cat); setCustomCategory(''); }}
+                className={`text-xs px-2.5 py-1 rounded-full border font-medium transition-colors ${
+                  category === cat
+                    ? 'bg-orange-500 border-orange-500 text-white'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-orange-300'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => setCategory('__custom__')}
+              className={`text-xs px-2.5 py-1 rounded-full border font-medium transition-colors ${
+                category === '__custom__'
+                  ? 'bg-purple-500 border-purple-500 text-white'
+                  : 'border-dashed border-gray-300 dark:border-gray-600 hover:border-purple-400'
+              }`}
+            >
+              + Custom
+            </button>
+          </div>
+          {category === '__custom__' && (
+            <Input
+              placeholder="Type your category name…"
+              value={customCategory}
+              onChange={e => setCustomCategory(e.target.value)}
+              className="mt-1 h-8 text-sm"
+              autoFocus
+            />
+          )}
+          {resolvedCategory && (
+            <p className="text-xs text-muted-foreground">
+              Selected: <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold border ${catColor(resolvedCategory)}`}>{resolvedCategory}</span>
+            </p>
+          )}
+        </div>
+
         {/* Pricing toggle */}
         <div className="space-y-2">
           <button
@@ -163,7 +229,6 @@ function UploadForm({ onClose }: { onClose: () => void }) {
             Customize Prices per Format
             {showPricing ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </button>
-
           {showPricing && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {formats.map(fp => (
@@ -172,30 +237,15 @@ function UploadForm({ onClose }: { onClose: () => void }) {
                   <div className="grid grid-cols-3 gap-2">
                     <div className="space-y-1">
                       <Label className="text-xs">USD ($)</Label>
-                      <Input
-                        type="number" min="0" step="0.01"
-                        value={fp.priceUsd}
-                        onChange={e => updateFormatPrice(fp.format, 'priceUsd', e.target.value)}
-                        className="h-7 text-xs"
-                      />
+                      <Input type="number" min="0" step="0.01" value={fp.priceUsd} onChange={e => updateFormatPrice(fp.format, 'priceUsd', e.target.value)} className="h-7 text-xs" />
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs">EUR (€)</Label>
-                      <Input
-                        type="number" min="0" step="0.01"
-                        value={fp.priceEur}
-                        onChange={e => updateFormatPrice(fp.format, 'priceEur', e.target.value)}
-                        className="h-7 text-xs"
-                      />
+                      <Input type="number" min="0" step="0.01" value={fp.priceEur} onChange={e => updateFormatPrice(fp.format, 'priceEur', e.target.value)} className="h-7 text-xs" />
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs">Sats ⚡</Label>
-                      <Input
-                        type="number" min="0" step="100"
-                        value={fp.priceSats}
-                        onChange={e => updateFormatPrice(fp.format, 'priceSats', e.target.value)}
-                        className="h-7 text-xs"
-                      />
+                      <Input type="number" min="0" step="100" value={fp.priceSats} onChange={e => updateFormatPrice(fp.format, 'priceSats', e.target.value)} className="h-7 text-xs" />
                     </div>
                   </div>
                 </div>
@@ -211,11 +261,9 @@ function UploadForm({ onClose }: { onClose: () => void }) {
           className="w-full text-white border-0"
           style={getGradientStyle('primary')}
         >
-          {isPublishing ? (
-            <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Publishing…</>
-          ) : (
-            <><Plus className="h-4 w-4 mr-2" />Publish Poster</>
-          )}
+          {isPublishing
+            ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Publishing…</>
+            : <><Plus className="h-4 w-4 mr-2" />Publish Poster</>}
         </Button>
       </CardContent>
     </Card>
@@ -228,6 +276,10 @@ export function PrintPostersAdmin() {
   const { data: posters = [], isLoading } = usePrintPosters();
   const { mutate: deletePoster } = useDeletePrintPoster();
   const [showForm, setShowForm] = useState(false);
+  const [filterCategory, setFilterCategory] = useState('All');
+
+  const availableCategories = getPosterCategories(posters);
+  const filteredPosters = filterCategory === 'All' ? posters : posters.filter(p => p.category === filterCategory);
 
   return (
     <div className="space-y-6">
@@ -268,7 +320,7 @@ export function PrintPostersAdmin() {
             <UploadForm onClose={() => setShowForm(false)} />
           )}
 
-          {/* Format pricing reference */}
+          {/* Default price reference */}
           <div className="rounded-lg bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-800 p-3">
             <p className="text-xs font-semibold text-orange-700 dark:text-orange-300 mb-2">Default prices per format:</p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -288,9 +340,49 @@ export function PrintPostersAdmin() {
 
       {/* Published Posters */}
       <div className="space-y-3">
-        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-          Published Posters ({isLoading ? '…' : posters.length})
-        </h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+            Published Posters ({isLoading ? '…' : posters.length})
+          </h3>
+        </div>
+
+        {/* Category filter */}
+        {!isLoading && availableCategories.length > 0 && (
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <LayoutGrid className="h-3.5 w-3.5" />
+              Filter by category:
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                onClick={() => setFilterCategory('All')}
+                className={`text-xs px-2.5 py-1 rounded-full border font-medium transition-colors ${
+                  filterCategory === 'All'
+                    ? 'bg-orange-500 border-orange-500 text-white'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-orange-300'
+                }`}
+              >
+                All ({posters.length})
+              </button>
+              {availableCategories.map(cat => {
+                const count = posters.filter(p => p.category === cat).length;
+                return (
+                  <button
+                    key={cat}
+                    onClick={() => setFilterCategory(cat)}
+                    className={`text-xs px-2.5 py-1 rounded-full border font-medium transition-colors ${
+                      filterCategory === cat
+                        ? 'bg-orange-500 border-orange-500 text-white'
+                        : `${catColor(cat)} hover:opacity-90`
+                    }`}
+                  >
+                    {cat} ({count})
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {isLoading && (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
@@ -311,18 +403,28 @@ export function PrintPostersAdmin() {
           </Card>
         )}
 
-        {!isLoading && posters.length > 0 && (
+        {!isLoading && filteredPosters.length === 0 && posters.length > 0 && (
+          <Card className="border-dashed">
+            <CardContent className="py-6 text-center text-sm text-muted-foreground">
+              No posters in "{filterCategory}".
+              <Button variant="link" size="sm" onClick={() => setFilterCategory('All')} className="text-orange-500 pl-1">Show all</Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {!isLoading && filteredPosters.length > 0 && (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            {posters.map(poster => (
+            {filteredPosters.map(poster => (
               <div key={poster.id} className="group relative rounded-xl overflow-hidden border bg-white dark:bg-gray-800 shadow-sm">
                 {/* Preview */}
                 <div className="aspect-[3/4] bg-gray-100 dark:bg-gray-700">
-                  <img
-                    src={poster.previewUrl}
-                    alt={poster.title}
-                    className="w-full h-full object-contain"
-                    loading="lazy"
-                  />
+                  <img src={poster.previewUrl} alt={poster.title} className="w-full h-full object-contain" loading="lazy" />
+                </div>
+                {/* Category badge */}
+                <div className="absolute top-2 left-2">
+                  <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full border ${catColor(poster.category)}`}>
+                    {poster.category}
+                  </span>
                 </div>
                 {/* Delete button */}
                 <Button

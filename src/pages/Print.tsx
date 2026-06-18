@@ -4,7 +4,14 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useUploadFile } from '@/hooks/useUploadFile';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { usePrintPosters, useCreatePrintPoster, useDeletePrintPoster, DEFAULT_FORMAT_PRICES } from '@/hooks/usePrintPosters';
+import {
+  usePrintPosters,
+  useCreatePrintPoster,
+  useDeletePrintPoster,
+  DEFAULT_FORMAT_PRICES,
+  POSTER_CATEGORIES,
+  getPosterCategories,
+} from '@/hooks/usePrintPosters';
 import type { PrintPoster, PosterFormat, PosterFormatPrice } from '@/hooks/usePrintPosters';
 import { useLNURL } from '@/hooks/useLNURL';
 import { useEnhancedPaymentDetection } from '@/hooks/usePaymentDetection';
@@ -34,6 +41,8 @@ import {
   ChevronDown,
   ChevronUp,
   Settings,
+  Tag,
+  LayoutGrid,
 } from 'lucide-react';
 import QRCode from 'qrcode';
 
@@ -45,23 +54,39 @@ const FORMAT_DIMENSIONS: Record<PosterFormat, { width: number; height: number; l
   A6: { width: 105, height: 148, label: 'A6 Postcard', description: '105 × 148 mm — postcard size' },
 };
 
+// ─── Category accent colors ───────────────────────────────────────────────────
+const CATEGORY_COLORS: Record<string, string> = {
+  Bitcoin:      'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300',
+  'Pop Art':    'bg-pink-100 text-pink-700 border-pink-200 dark:bg-pink-900/30 dark:text-pink-300',
+  Travel:       'bg-cyan-100 text-cyan-700 border-cyan-200 dark:bg-cyan-900/30 dark:text-cyan-300',
+  Photography:  'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300',
+  Abstract:     'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300',
+  Typography:   'bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-300',
+  Nature:       'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-300',
+  City:         'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300',
+  Music:        'bg-violet-100 text-violet-700 border-violet-200 dark:bg-violet-900/30 dark:text-violet-300',
+  Sport:        'bg-lime-100 text-lime-700 border-lime-200 dark:bg-lime-900/30 dark:text-lime-300',
+  Motivational: 'bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300',
+  Humor:        'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300',
+  Holiday:      'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300',
+  Animals:      'bg-teal-100 text-teal-700 border-teal-200 dark:bg-teal-900/30 dark:text-teal-300',
+};
+
+function categoryColorClass(cat: string): string {
+  return CATEGORY_COLORS[cat] ?? 'bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-300';
+}
+
 // ─── Lightning address ───────────────────────────────────────────────────────
 const LIGHTNING_ADDRESS = 'bitpopart@walletofsatoshi.com';
 
 // ─── PDF download helper ─────────────────────────────────────────────────────
-async function downloadAsPdf(
-  svgUrl: string,
-  format: PosterFormat,
-  title: string,
-): Promise<void> {
+async function downloadAsPdf(svgUrl: string, format: PosterFormat, title: string): Promise<void> {
   const { jsPDF } = await import('jspdf');
   const { width, height } = FORMAT_DIMENSIONS[format];
 
-  // Fetch the SVG content
   const response = await fetch(svgUrl);
   const svgText = await response.text();
 
-  // Convert SVG to image via canvas
   const svgBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
   const svgObjectUrl = URL.createObjectURL(svgBlob);
 
@@ -72,10 +97,9 @@ async function downloadAsPdf(
     img.src = svgObjectUrl;
   });
 
-  // Render to canvas at high resolution (3x for print quality)
   const scale = 3;
   const canvas = document.createElement('canvas');
-  canvas.width = img.width * scale || width * scale * 3.7795; // fallback: mm to px at 96dpi
+  canvas.width = img.width * scale || width * scale * 3.7795;
   canvas.height = img.height * scale || height * scale * 3.7795;
   const ctx = canvas.getContext('2d')!;
   ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
@@ -83,20 +107,17 @@ async function downloadAsPdf(
 
   const imgData = canvas.toDataURL('image/jpeg', 0.92);
 
-  // Create PDF
   const pdf = new jsPDF({
     orientation: width > height ? 'landscape' : 'portrait',
     unit: 'mm',
     format: [width, height],
   });
-
   pdf.addImage(imgData, 'JPEG', 0, 0, width, height);
-
   const safeTitle = title.replace(/[^a-zA-Z0-9_-]/g, '_');
   pdf.save(`${safeTitle}_${format}.pdf`);
 }
 
-// ─── PosterCard component ─────────────────────────────────────────────────────
+// ─── PosterCard ───────────────────────────────────────────────────────────────
 interface PosterCardProps {
   poster: PrintPoster;
   isAdmin: boolean;
@@ -109,7 +130,7 @@ function PosterCard({ poster, isAdmin, onDelete, onBuy }: PosterCardProps) {
   const selectedPrice = poster.formats.find(f => f.format === selectedFormat)!;
 
   return (
-    <Card className="overflow-hidden group hover:shadow-xl transition-shadow duration-300">
+    <Card className="overflow-hidden group hover:shadow-xl transition-shadow duration-300 flex flex-col">
       {/* Preview */}
       <div className="relative aspect-[3/4] bg-gray-100 dark:bg-gray-800 overflow-hidden">
         <img
@@ -118,11 +139,18 @@ function PosterCard({ poster, isAdmin, onDelete, onBuy }: PosterCardProps) {
           className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
           loading="lazy"
         />
+        {/* Category badge — top left */}
+        <div className="absolute top-2 left-2">
+          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${categoryColorClass(poster.category)}`}>
+            {poster.category}
+          </span>
+        </div>
+        {/* Admin delete — top right */}
         {isAdmin && (
           <Button
             size="icon"
             variant="destructive"
-            className="absolute top-2 right-2 h-8 w-8 rounded-full shadow opacity-0 group-hover:opacity-100 transition-opacity z-10"
+            className="absolute top-2 right-2 h-7 w-7 rounded-full shadow opacity-0 group-hover:opacity-100 transition-opacity z-10"
             onClick={() => onDelete(poster.id)}
             title="Delete poster"
           >
@@ -131,7 +159,7 @@ function PosterCard({ poster, isAdmin, onDelete, onBuy }: PosterCardProps) {
         )}
       </div>
 
-      <CardContent className="p-4 space-y-3">
+      <CardContent className="p-4 space-y-3 flex flex-col flex-1">
         <div>
           <h3 className="font-bold text-base leading-tight">{poster.title}</h3>
           {poster.description && (
@@ -140,7 +168,7 @@ function PosterCard({ poster, isAdmin, onDelete, onBuy }: PosterCardProps) {
         </div>
 
         {/* Format selector */}
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             Choose Format
           </Label>
@@ -159,18 +187,16 @@ function PosterCard({ poster, isAdmin, onDelete, onBuy }: PosterCardProps) {
               </button>
             ))}
           </div>
-          <p className="text-xs text-muted-foreground">
-            {FORMAT_DIMENSIONS[selectedFormat].description}
-          </p>
+          <p className="text-xs text-muted-foreground">{FORMAT_DIMENSIONS[selectedFormat].description}</p>
         </div>
 
-        {/* Price display */}
-        <div className="flex items-center justify-between">
+        {/* Price */}
+        <div className="flex items-end justify-between mt-auto pt-1">
           <div>
             <span className="text-lg font-bold text-orange-600 dark:text-orange-400">
               €{selectedPrice.priceEur.toFixed(2)}
             </span>
-            <span className="text-sm text-muted-foreground ml-2">
+            <span className="text-sm text-muted-foreground ml-1.5">
               / ${selectedPrice.priceUsd.toFixed(2)}
             </span>
             <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
@@ -186,7 +212,7 @@ function PosterCard({ poster, isAdmin, onDelete, onBuy }: PosterCardProps) {
           onClick={() => onBuy(poster, selectedFormat)}
         >
           <Zap className="h-4 w-4" />
-          Pay & Download PDF
+          Pay &amp; Download PDF
         </Button>
       </CardContent>
     </Card>
@@ -225,13 +251,8 @@ function PrintPaymentDialog({ open, onOpenChange, poster, format }: PrintPayment
     try {
       const pr = await getZapInvoice(selectedPrice.priceSats);
       if (!pr) return;
-      const invoiceData = {
-        pr,
-        amountSats: selectedPrice.priceSats,
-        expiresAt: Date.now() + 15 * 60 * 1000,
-      };
+      const invoiceData = { pr, amountSats: selectedPrice.priceSats, expiresAt: Date.now() + 15 * 60 * 1000 };
       setInvoice(invoiceData);
-      // Generate QR
       const qr = await QRCode.toDataURL(pr, { width: 256, margin: 2 });
       setQrDataUrl(qr);
     } catch (err) {
@@ -287,12 +308,11 @@ function PrintPaymentDialog({ open, onOpenChange, poster, format }: PrintPayment
           <DialogDescription>
             {paymentDone
               ? `Payment confirmed! Download "${poster.title}" as a high-quality PDF.`
-              : `Pay with Bitcoin Lightning to unlock the print-ready PDF.`}
+              : 'Pay with Bitcoin Lightning to unlock the print-ready PDF.'}
           </DialogDescription>
         </DialogHeader>
 
         {paymentDone ? (
-          /* ── Post-payment: Download ── */
           <div className="space-y-5 py-2">
             <div className="flex items-center justify-center py-4">
               <div className="h-16 w-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
@@ -311,23 +331,17 @@ function PrintPaymentDialog({ open, onOpenChange, poster, format }: PrintPayment
               onClick={handleDownload}
               disabled={isDownloading}
             >
-              {isDownloading ? (
-                <><Loader2 className="h-4 w-4 animate-spin" /> Generating PDF…</>
-              ) : (
-                <><Download className="h-5 w-5" /> Download PDF — {format}</>
-              )}
+              {isDownloading
+                ? <><Loader2 className="h-4 w-4 animate-spin" /> Generating PDF…</>
+                : <><Download className="h-5 w-5" /> Download PDF — {format}</>}
             </Button>
             <p className="text-xs text-muted-foreground text-center">
               High-resolution print-ready PDF. Bring to any print shop or print at home.
             </p>
-            <Button variant="outline" className="w-full" onClick={handleClose}>
-              Close
-            </Button>
+            <Button variant="outline" className="w-full" onClick={handleClose}>Close</Button>
           </div>
         ) : (
-          /* ── Payment flow ── */
           <div className="space-y-4 py-2">
-            {/* Order summary */}
             <Card>
               <CardContent className="pt-4 space-y-2 text-sm">
                 <div className="flex justify-between">
@@ -353,88 +367,51 @@ function PrintPaymentDialog({ open, onOpenChange, poster, format }: PrintPayment
             </Card>
 
             {invoice ? (
-              /* ── Invoice created ── */
               <div className="space-y-4">
                 <div className="text-center">
                   <div className="bg-white rounded-xl p-4 inline-block shadow">
-                    {qrDataUrl ? (
-                      <img src={qrDataUrl} alt="Lightning QR" className="w-48 h-48" />
-                    ) : (
-                      <div className="w-48 h-48 flex items-center justify-center bg-gray-100 rounded">
-                        <QrCode className="h-12 w-12 text-gray-400" />
-                      </div>
-                    )}
+                    {qrDataUrl
+                      ? <img src={qrDataUrl} alt="Lightning QR" className="w-48 h-48" />
+                      : <div className="w-48 h-48 flex items-center justify-center bg-gray-100 rounded"><QrCode className="h-12 w-12 text-gray-400" /></div>}
                   </div>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Scan with your Lightning wallet
-                  </p>
+                  <p className="text-sm text-muted-foreground mt-2">Scan with your Lightning wallet</p>
                 </div>
-
                 <div className="flex gap-2">
                   <Input value={invoice.pr} readOnly className="font-mono text-xs" />
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => {
-                      navigator.clipboard.writeText(invoice.pr);
-                      toast({ title: 'Copied!', description: 'Invoice copied to clipboard.' });
-                    }}
-                  >
+                  <Button variant="outline" size="icon" onClick={() => { navigator.clipboard.writeText(invoice.pr); toast({ title: 'Copied!' }); }}>
                     <Copy className="h-4 w-4" />
                   </Button>
                 </div>
-
                 <Button
                   className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white border-0 gap-2"
-                  onClick={() => {
-                    payWithWebLN(
-                      invoice.pr,
-                      handleConfirmPayment,
-                      () => {
-                        openLightningWallet(invoice.pr);
-                        handleStartDetection();
-                      }
-                    );
-                  }}
+                  onClick={() => payWithWebLN(invoice.pr, handleConfirmPayment, () => { openLightningWallet(invoice.pr); handleStartDetection(); })}
                   disabled={isDetecting}
                 >
                   <Zap className="h-4 w-4" />
                   {typeof window !== 'undefined' && window.webln ? 'Pay with WebLN' : 'Open Lightning Wallet'}
                 </Button>
-
                 {isDetecting ? (
                   <div className="text-center space-y-2">
                     <div className="flex items-center justify-center gap-2 text-sm text-yellow-700 dark:text-yellow-300">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Waiting for payment…
+                      <Loader2 className="h-4 w-4 animate-spin" /> Waiting for payment…
                     </div>
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={handleConfirmPayment}>
-                        Payment sent? Click here
-                      </Button>
-                      <Button variant="outline" size="sm" className="text-xs" onClick={stopDetection}>
-                        Cancel
-                      </Button>
+                      <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={handleConfirmPayment}>Payment sent? Click here</Button>
+                      <Button variant="outline" size="sm" className="text-xs" onClick={stopDetection}>Cancel</Button>
                     </div>
                   </div>
                 ) : (
                   <div className="text-center space-y-2">
-                    <p className="text-xs text-muted-foreground">
-                      Paid via QR? Click below to confirm and unlock your download.
-                    </p>
-                    <Button variant="outline" size="sm" className="text-xs" onClick={handleStartDetection}>
-                      Start Payment Detection
-                    </Button>
+                    <p className="text-xs text-muted-foreground">Paid via QR? Click below to confirm and unlock your download.</p>
+                    <Button variant="outline" size="sm" className="text-xs" onClick={handleStartDetection}>Start Payment Detection</Button>
                   </div>
                 )}
               </div>
             ) : (
-              /* ── Generate invoice ── */
               <div className="space-y-3">
                 <div className="rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 p-3 text-sm">
                   <div className="flex items-center gap-2 font-medium text-yellow-800 dark:text-yellow-200 mb-1">
-                    <Zap className="h-4 w-4" />
-                    Lightning Payment
+                    <Zap className="h-4 w-4" /> Lightning Payment
                   </div>
                   <p className="text-yellow-700 dark:text-yellow-300 text-xs">
                     Pay to: <code className="bg-yellow-100 dark:bg-yellow-900/40 px-1 rounded">{LIGHTNING_ADDRESS}</code>
@@ -445,11 +422,9 @@ function PrintPaymentDialog({ open, onOpenChange, poster, format }: PrintPayment
                   onClick={handleCreateInvoice}
                   disabled={isCreatingInvoice || lnurlLoading || !lnurlData}
                 >
-                  {isCreatingInvoice || lnurlLoading ? (
-                    <><Loader2 className="h-4 w-4 animate-spin" /> Creating Invoice…</>
-                  ) : (
-                    <><Zap className="h-4 w-4" /> Generate Lightning Invoice</>
-                  )}
+                  {isCreatingInvoice || lnurlLoading
+                    ? <><Loader2 className="h-4 w-4 animate-spin" /> Creating Invoice…</>
+                    : <><Zap className="h-4 w-4" /> Generate Lightning Invoice</>}
                 </Button>
               </div>
             )}
@@ -460,44 +435,45 @@ function PrintPaymentDialog({ open, onOpenChange, poster, format }: PrintPayment
   );
 }
 
-// ─── Admin: Upload Form ────────────────────────────────────────────────────────
-interface UploadFormProps {
+// ─── Admin Upload Form (inline on the Print page) ─────────────────────────────
+interface AdminUploadFormProps {
   onClose: () => void;
 }
 
-function AdminUploadForm({ onClose }: UploadFormProps) {
+function AdminUploadForm({ onClose }: AdminUploadFormProps) {
   const { getGradientStyle } = useThemeColors();
   const { mutateAsync: uploadFile } = useUploadFile();
   const { mutate: createPoster, isPending: isPublishing } = useCreatePrintPoster();
+  const { toast } = useToast();
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [category, setCategory] = useState('');
+  const [customCategory, setCustomCategory] = useState('');
   const [svgFile, setSvgFile] = useState<File | null>(null);
   const [svgPreview, setSvgPreview] = useState('');
   const [svgUrl, setSvgUrl] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [formats, setFormats] = useState<PosterFormatPrice[]>(DEFAULT_FORMAT_PRICES.map(f => ({ ...f })));
   const [showPricing, setShowPricing] = useState(false);
-  const { toast } = useToast();
-  const fileRef = useRef<HTMLInputElement>(null);
+
+  const resolvedCategory = category === '__custom__' ? customCategory : category;
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setSvgFile(file);
-    // Preview
     const reader = new FileReader();
     reader.onload = (ev) => setSvgPreview(ev.target?.result as string);
     reader.readAsDataURL(file);
-
-    // Upload immediately
     setIsUploading(true);
     try {
       const tags = await uploadFile(file);
       setSvgUrl(tags[0][1]);
-      toast({ title: 'File uploaded', description: 'SVG uploaded successfully.' });
+      toast({ title: 'File uploaded', description: 'Poster uploaded successfully.' });
     } catch {
-      toast({ title: 'Upload failed', description: 'Could not upload SVG.', variant: 'destructive' });
+      toast({ title: 'Upload failed', description: 'Could not upload the file.', variant: 'destructive' });
     } finally {
       setIsUploading(false);
     }
@@ -505,23 +481,16 @@ function AdminUploadForm({ onClose }: UploadFormProps) {
 
   const updateFormatPrice = (format: PosterFormat, field: keyof PosterFormatPrice, value: string) => {
     setFormats(prev => prev.map(f =>
-      f.format === format
-        ? { ...f, [field]: field === 'format' ? value : parseFloat(value) || 0 }
-        : f
+      f.format === format ? { ...f, [field]: field === 'format' ? value : parseFloat(value) || 0 } : f
     ));
   };
 
   const handlePublish = () => {
-    if (!svgUrl) {
-      toast({ title: 'No SVG', description: 'Please upload an SVG file first.', variant: 'destructive' });
-      return;
-    }
-    if (!title.trim()) {
-      toast({ title: 'No title', description: 'Please enter a title.', variant: 'destructive' });
-      return;
-    }
+    if (!svgUrl) { toast({ title: 'No file', description: 'Please upload a poster file first.', variant: 'destructive' }); return; }
+    if (!title.trim()) { toast({ title: 'No title', description: 'Please enter a title.', variant: 'destructive' }); return; }
+    if (!resolvedCategory.trim()) { toast({ title: 'No category', description: 'Please select or enter a category.', variant: 'destructive' }); return; }
     createPoster(
-      { title: title.trim(), description: description.trim(), svgUrl, previewUrl: svgUrl, formats },
+      { title: title.trim(), description: description.trim(), svgUrl, previewUrl: svgUrl, formats, category: resolvedCategory.trim() },
       { onSuccess: onClose }
     );
   };
@@ -534,35 +503,25 @@ function AdminUploadForm({ onClose }: UploadFormProps) {
             <Upload className="h-5 w-5" />
             Upload Print Poster
           </span>
-          <Button variant="ghost" size="icon" onClick={onClose}>
-            <X className="h-4 w-4" />
-          </Button>
+          <Button variant="ghost" size="icon" onClick={onClose}><X className="h-4 w-4" /></Button>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-5">
-        {/* SVG Upload */}
+        {/* File drop zone */}
         <div className="space-y-2">
-          <Label>SVG File *</Label>
+          <Label>SVG / Image File *</Label>
           <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors border-orange-300 dark:border-orange-700 overflow-hidden relative">
-            {svgPreview ? (
-              <img src={svgPreview} alt="preview" className="absolute inset-0 w-full h-full object-contain" />
-            ) : (
-              <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                <FileImage className="h-8 w-8 text-orange-400" />
-                <span className="text-sm font-medium text-orange-700 dark:text-orange-400">Click to select SVG file</span>
-                <span className="text-xs">SVG, PNG, or any image format</span>
-              </div>
-            )}
-            {isUploading && (
-              <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                <Loader2 className="h-8 w-8 text-white animate-spin" />
-              </div>
-            )}
-            {svgUrl && !isUploading && (
-              <div className="absolute top-2 left-2">
-                <CheckCircle2 className="h-5 w-5 text-green-400 drop-shadow" />
-              </div>
-            )}
+            {svgPreview
+              ? <img src={svgPreview} alt="preview" className="absolute inset-0 w-full h-full object-contain" />
+              : (
+                <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                  <FileImage className="h-8 w-8 text-orange-400" />
+                  <span className="text-sm font-medium text-orange-700 dark:text-orange-400">Click to select file</span>
+                  <span className="text-xs">SVG recommended — PNG, JPG also supported</span>
+                </div>
+              )}
+            {isUploading && <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Loader2 className="h-8 w-8 text-white animate-spin" /></div>}
+            {svgUrl && !isUploading && <div className="absolute top-2 left-2"><CheckCircle2 className="h-5 w-5 text-green-400 drop-shadow" /></div>}
             <input ref={fileRef} type="file" accept="image/svg+xml,image/*" className="hidden" onChange={handleFileChange} />
           </label>
           {svgFile && <p className="text-xs text-muted-foreground">{svgFile.name}</p>}
@@ -580,6 +539,52 @@ function AdminUploadForm({ onClose }: UploadFormProps) {
           <Input placeholder="Short description (optional)" value={description} onChange={e => setDescription(e.target.value)} />
         </div>
 
+        {/* Category */}
+        <div className="space-y-2">
+          <Label className="flex items-center gap-1.5"><Tag className="h-3.5 w-3.5" /> Category *</Label>
+          <div className="flex flex-wrap gap-2">
+            {POSTER_CATEGORIES.map(cat => (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => { setCategory(cat); setCustomCategory(''); }}
+                className={`text-xs px-3 py-1 rounded-full border font-medium transition-colors ${
+                  category === cat
+                    ? 'bg-orange-500 border-orange-500 text-white'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-orange-300'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => setCategory('__custom__')}
+              className={`text-xs px-3 py-1 rounded-full border font-medium transition-colors ${
+                category === '__custom__'
+                  ? 'bg-purple-500 border-purple-500 text-white'
+                  : 'border-dashed border-gray-300 dark:border-gray-600 hover:border-purple-400'
+              }`}
+            >
+              + Custom
+            </button>
+          </div>
+          {category === '__custom__' && (
+            <Input
+              placeholder="Type your category name…"
+              value={customCategory}
+              onChange={e => setCustomCategory(e.target.value)}
+              className="mt-2"
+              autoFocus
+            />
+          )}
+          {resolvedCategory && (
+            <p className="text-xs text-muted-foreground">
+              Selected: <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold border ${categoryColorClass(resolvedCategory)}`}>{resolvedCategory}</span>
+            </p>
+          )}
+        </div>
+
         {/* Pricing per format */}
         <div className="space-y-2">
           <button
@@ -591,7 +596,6 @@ function AdminUploadForm({ onClose }: UploadFormProps) {
             Set Prices per Format
             {showPricing ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </button>
-
           {showPricing && (
             <div className="space-y-3 pt-1">
               {formats.map(fp => (
@@ -600,36 +604,15 @@ function AdminUploadForm({ onClose }: UploadFormProps) {
                   <div className="grid grid-cols-3 gap-2">
                     <div className="space-y-1">
                       <Label className="text-xs">USD ($)</Label>
-                      <Input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={fp.priceUsd}
-                        onChange={e => updateFormatPrice(fp.format, 'priceUsd', e.target.value)}
-                        className="h-8 text-sm"
-                      />
+                      <Input type="number" min="0" step="0.01" value={fp.priceUsd} onChange={e => updateFormatPrice(fp.format, 'priceUsd', e.target.value)} className="h-8 text-sm" />
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs">EUR (€)</Label>
-                      <Input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={fp.priceEur}
-                        onChange={e => updateFormatPrice(fp.format, 'priceEur', e.target.value)}
-                        className="h-8 text-sm"
-                      />
+                      <Input type="number" min="0" step="0.01" value={fp.priceEur} onChange={e => updateFormatPrice(fp.format, 'priceEur', e.target.value)} className="h-8 text-sm" />
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs">Sats ⚡</Label>
-                      <Input
-                        type="number"
-                        min="0"
-                        step="100"
-                        value={fp.priceSats}
-                        onChange={e => updateFormatPrice(fp.format, 'priceSats', e.target.value)}
-                        className="h-8 text-sm"
-                      />
+                      <Input type="number" min="0" step="100" value={fp.priceSats} onChange={e => updateFormatPrice(fp.format, 'priceSats', e.target.value)} className="h-8 text-sm" />
                     </div>
                   </div>
                 </div>
@@ -638,18 +621,15 @@ function AdminUploadForm({ onClose }: UploadFormProps) {
           )}
         </div>
 
-        {/* Publish button */}
         <Button
           onClick={handlePublish}
           disabled={isPublishing || isUploading || !svgUrl}
           className="w-full text-white border-0"
           style={getGradientStyle('primary')}
         >
-          {isPublishing ? (
-            <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Publishing…</>
-          ) : (
-            <><Plus className="h-4 w-4 mr-2" />Publish Poster</>
-          )}
+          {isPublishing
+            ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Publishing…</>
+            : <><Plus className="h-4 w-4 mr-2" />Publish Poster</>}
         </Button>
       </CardContent>
     </Card>
@@ -668,6 +648,7 @@ export default function Print() {
   const [payDialogOpen, setPayDialogOpen] = useState(false);
   const [selectedPoster, setSelectedPoster] = useState<PrintPoster | null>(null);
   const [selectedFormat, setSelectedFormat] = useState<PosterFormat>('A4');
+  const [activeCategory, setActiveCategory] = useState<string>('All');
 
   useSeoMeta({
     title: 'Print Posters — BitPopArt Print Shop',
@@ -693,12 +674,20 @@ export default function Print() {
     setPayDialogOpen(true);
   };
 
+  // Derive available categories from actual poster data
+  const availableCategories = getPosterCategories(posters);
+
+  // Filter posters by active category
+  const filteredPosters = activeCategory === 'All'
+    ? posters
+    : posters.filter(p => p.category === activeCategory);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-rose-50 to-yellow-50 dark:from-gray-900 dark:via-orange-900/20 dark:to-yellow-900/20">
       <div className="container mx-auto px-4 py-8 max-w-6xl">
 
         {/* ── Header ── */}
-        <div className="text-center mb-10">
+        <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4 gap-3">
             <Printer className="h-12 w-12 text-orange-500" />
             <h1 className="text-4xl font-bold leading-tight gradient-header-text">
@@ -752,6 +741,49 @@ export default function Print() {
           </div>
         )}
 
+        {/* ── Category filter bar ── */}
+        {!isLoading && availableCategories.length > 0 && (
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-3">
+              <LayoutGrid className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Browse by Category</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {/* All button */}
+              <button
+                onClick={() => setActiveCategory('All')}
+                className={`px-4 py-1.5 rounded-full text-sm font-semibold border transition-colors ${
+                  activeCategory === 'All'
+                    ? 'bg-orange-500 border-orange-500 text-white shadow-sm'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-orange-300 dark:hover:border-orange-600'
+                }`}
+              >
+                All
+                <span className="ml-1.5 text-xs opacity-70">({posters.length})</span>
+              </button>
+              {/* Per-category buttons */}
+              {availableCategories.map(cat => {
+                const count = posters.filter(p => p.category === cat).length;
+                const isActive = activeCategory === cat;
+                return (
+                  <button
+                    key={cat}
+                    onClick={() => setActiveCategory(cat)}
+                    className={`px-4 py-1.5 rounded-full text-sm font-semibold border transition-colors ${
+                      isActive
+                        ? 'bg-orange-500 border-orange-500 text-white shadow-sm'
+                        : `${categoryColorClass(cat)} hover:opacity-90`
+                    }`}
+                  >
+                    {cat}
+                    <span className="ml-1.5 text-xs opacity-70">({count})</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* ── Loading ── */}
         {isLoading && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -776,9 +808,7 @@ export default function Print() {
                 <Printer className="h-12 w-12 mx-auto text-gray-400" />
                 <div>
                   <p className="font-semibold mb-1">No posters yet</p>
-                  <p className="text-sm text-muted-foreground">
-                    Check back soon or try a different relay.
-                  </p>
+                  <p className="text-sm text-muted-foreground">Check back soon or try a different relay.</p>
                 </div>
                 <RelaySelector className="w-full" />
               </div>
@@ -786,14 +816,27 @@ export default function Print() {
           </Card>
         )}
 
+        {/* ── No results in this category ── */}
+        {!isLoading && posters.length > 0 && filteredPosters.length === 0 && (
+          <Card className="border-dashed max-w-md mx-auto">
+            <CardContent className="py-10 text-center">
+              <p className="text-muted-foreground text-sm">No posters in "{activeCategory}" yet.</p>
+              <Button variant="link" className="mt-2 text-orange-500" onClick={() => setActiveCategory('All')}>
+                Show all posters
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
         {/* ── Poster grid ── */}
-        {!isLoading && posters.length > 0 && (
+        {!isLoading && filteredPosters.length > 0 && (
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground text-center">
-              {posters.length} poster design{posters.length !== 1 ? 's' : ''} available
+            <p className="text-sm text-muted-foreground">
+              {filteredPosters.length} poster{filteredPosters.length !== 1 ? 's' : ''}
+              {activeCategory !== 'All' && <> in <span className={`inline-block mx-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${categoryColorClass(activeCategory)}`}>{activeCategory}</span></>}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {posters.map(poster => (
+              {filteredPosters.map(poster => (
                 <PosterCard
                   key={poster.id}
                   poster={poster}
@@ -807,7 +850,7 @@ export default function Print() {
         )}
 
         {/* ── Footer ── */}
-        <div className="text-center mt-16 text-sm text-gray-500 dark:text-gray:400">
+        <div className="text-center mt-16 text-sm text-gray-500 dark:text-gray-400">
           <p>Nostr &amp; BitPopArt {new Date().getFullYear()}</p>
         </div>
       </div>
