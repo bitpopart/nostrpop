@@ -212,12 +212,12 @@ function PosterCard({ poster, isAdmin, onDelete, onBuy, btcRate }: PosterCardPro
           <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             Choose Format
           </Label>
-          <div className="grid grid-cols-4 gap-1">
+          <div className="grid grid-cols-4 gap-1.5">
             {poster.formats.map((fp) => (
               <button
                 key={fp.format}
                 onClick={() => setSelectedFormat(fp.format)}
-                className={`rounded-md border text-xs font-semibold py-1.5 transition-colors ${
+                className={`rounded-md border text-xs font-semibold py-2 transition-colors ${
                   selectedFormat === fp.format
                     ? 'bg-orange-500 border-orange-500 text-white'
                     : 'border-gray-200 dark:border-gray-700 hover:border-orange-300 dark:hover:border-orange-600'
@@ -347,13 +347,13 @@ function PrintPaymentDialog({ open, onOpenChange, poster, format }: PrintPayment
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="w-[calc(100vw-2rem)] max-w-lg rounded-xl p-4 sm:p-6">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Printer className="h-5 w-5 text-orange-500" />
+          <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <Printer className="h-5 w-5 text-orange-500 shrink-0" />
             {paymentDone ? 'Print Your Poster' : `Purchase ${FORMAT_DIMENSIONS[format].label}`}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-xs sm:text-sm">
             {paymentDone
               ? `Payment confirmed! Open the print dialog to save "${poster.title}" as PDF.`
               : 'Pay with Bitcoin Lightning to unlock the print-ready file.'}
@@ -361,21 +361,21 @@ function PrintPaymentDialog({ open, onOpenChange, poster, format }: PrintPayment
         </DialogHeader>
 
         {paymentDone ? (
-          <div className="space-y-5 py-2">
-            <div className="flex items-center justify-center py-4">
-              <div className="h-16 w-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                <CheckCircle2 className="h-9 w-9 text-green-600" />
+          <div className="space-y-4 py-2">
+            <div className="flex items-center justify-center py-3">
+              <div className="h-14 w-14 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                <CheckCircle2 className="h-8 w-8 text-green-600" />
               </div>
             </div>
             <Card className="border-green-200 bg-green-50 dark:bg-green-900/10">
               <CardContent className="pt-4 space-y-1 text-sm">
                 <p className="font-semibold">{poster.title}</p>
-                <p className="text-muted-foreground">{FORMAT_DIMENSIONS[format].label} — {FORMAT_DIMENSIONS[format].description}</p>
-                <p className="text-muted-foreground">Paid: {selectedPrice.priceSats.toLocaleString()} sats</p>
+                <p className="text-muted-foreground text-xs">{FORMAT_DIMENSIONS[format].label} — {FORMAT_DIMENSIONS[format].description}</p>
+                <p className="text-muted-foreground text-xs">Paid: {selectedPrice.priceSats.toLocaleString()} sats</p>
               </CardContent>
             </Card>
             <Button
-              className="w-full bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white border-0 font-bold gap-2 h-12 text-base"
+              className="w-full bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white border-0 font-bold gap-2 h-11 text-sm sm:text-base"
               onClick={handleDownload}
               disabled={isDownloading}
             >
@@ -389,15 +389,15 @@ function PrintPaymentDialog({ open, onOpenChange, poster, format }: PrintPayment
             <Button variant="outline" className="w-full" onClick={handleClose}>Close</Button>
           </div>
         ) : (
-          <div className="space-y-4 py-2">
+          <div className="space-y-3 py-2">
             <Card>
               <CardContent className="pt-4 space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Poster</span>
-                  <span className="font-medium">{poster.title}</span>
+                <div className="flex justify-between gap-2">
+                  <span className="text-muted-foreground shrink-0">Poster</span>
+                  <span className="font-medium text-right truncate">{poster.title}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Format</span>
+                <div className="flex justify-between gap-2">
+                  <span className="text-muted-foreground shrink-0">Format</span>
                   <span className="font-medium">{FORMAT_DIMENSIONS[format].label}</span>
                 </div>
                 <Separator />
@@ -416,18 +416,19 @@ function PrintPaymentDialog({ open, onOpenChange, poster, format }: PrintPayment
             </Card>
 
             {invoice ? (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <div className="text-center">
-                  <div className="bg-white rounded-xl p-4 inline-block shadow">
+                  <div className="bg-white rounded-xl p-3 inline-block shadow">
                     {qrDataUrl
-                      ? <img src={qrDataUrl} alt="Lightning QR" className="w-48 h-48" />
-                      : <div className="w-48 h-48 flex items-center justify-center bg-gray-100 rounded"><QrCode className="h-12 w-12 text-gray-400" /></div>}
+                      ? <img src={qrDataUrl} alt="Lightning QR" className="w-40 h-40 sm:w-48 sm:h-48" />
+                      : <div className="w-40 h-40 sm:w-48 sm:h-48 flex items-center justify-center bg-gray-100 rounded"><QrCode className="h-12 w-12 text-gray-400" /></div>}
                   </div>
                   <p className="text-sm text-muted-foreground mt-2">Scan with your Lightning wallet</p>
                 </div>
-                <div className="flex gap-2">
-                  <Input value={invoice.pr} readOnly className="font-mono text-xs" />
-                  <Button variant="outline" size="icon" onClick={() => { navigator.clipboard.writeText(invoice.pr); toast({ title: 'Copied!' }); }}>
+                {/* Invoice string — truncated on mobile, copyable */}
+                <div className="flex gap-2 items-center">
+                  <Input value={invoice.pr} readOnly className="font-mono text-[10px] sm:text-xs min-w-0" />
+                  <Button variant="outline" size="icon" className="shrink-0" onClick={() => { navigator.clipboard.writeText(invoice.pr); toast({ title: 'Copied!' }); }}>
                     <Copy className="h-4 w-4" />
                   </Button>
                 </div>
@@ -446,7 +447,7 @@ function PrintPaymentDialog({ open, onOpenChange, poster, format }: PrintPayment
                     </div>
                     <div className="flex gap-2">
                       <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={handleConfirmPayment}>Payment sent? Click here</Button>
-                      <Button variant="outline" size="sm" className="text-xs" onClick={stopDetection}>Cancel</Button>
+                      <Button variant="outline" size="sm" className="text-xs shrink-0" onClick={stopDetection}>Cancel</Button>
                     </div>
                   </div>
                 ) : (
@@ -460,9 +461,9 @@ function PrintPaymentDialog({ open, onOpenChange, poster, format }: PrintPayment
               <div className="space-y-3">
                 <div className="rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 p-3 text-sm">
                   <div className="flex items-center gap-2 font-medium text-yellow-800 dark:text-yellow-200 mb-1">
-                    <Zap className="h-4 w-4" /> Lightning Payment
+                    <Zap className="h-4 w-4 shrink-0" /> Lightning Payment
                   </div>
-                  <p className="text-yellow-700 dark:text-yellow-300 text-xs">
+                  <p className="text-yellow-700 dark:text-yellow-300 text-xs break-all">
                     Pay to: <code className="bg-yellow-100 dark:bg-yellow-900/40 px-1 rounded">{LIGHTNING_ADDRESS}</code>
                   </p>
                 </div>
@@ -755,7 +756,8 @@ export default function Print() {
           <div className="flex flex-wrap items-center justify-center gap-2 mt-5">
             {(Object.entries(FORMAT_DIMENSIONS) as [PosterFormat, (typeof FORMAT_DIMENSIONS)[PosterFormat]][]).map(([f, d]) => (
               <Badge key={f} variant="outline" className="text-xs px-3 py-1 font-medium">
-                {f} — {d.description}
+                <span className="sm:hidden">{f}</span>
+                <span className="hidden sm:inline">{f} — {d.description}</span>
               </Badge>
             ))}
           </div>
@@ -798,11 +800,12 @@ export default function Print() {
               <LayoutGrid className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Browse by Category</span>
             </div>
-            <div className="flex flex-wrap gap-2">
+            {/* Horizontal scroll on mobile, wrap on desktop */}
+            <div className="flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0 scrollbar-none">
               {/* All button */}
               <button
                 onClick={() => setActiveCategory('All')}
-                className={`px-4 py-1.5 rounded-full text-sm font-semibold border transition-colors ${
+                className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-semibold border transition-colors ${
                   activeCategory === 'All'
                     ? 'bg-orange-500 border-orange-500 text-white shadow-sm'
                     : 'border-gray-200 dark:border-gray-700 hover:border-orange-300 dark:hover:border-orange-600'
@@ -819,7 +822,7 @@ export default function Print() {
                   <button
                     key={cat}
                     onClick={() => setActiveCategory(cat)}
-                    className={`px-4 py-1.5 rounded-full text-sm font-semibold border transition-colors ${
+                    className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-semibold border transition-colors ${
                       isActive
                         ? 'bg-orange-500 border-orange-500 text-white shadow-sm'
                         : `${categoryColorClass(cat)} hover:opacity-90`
