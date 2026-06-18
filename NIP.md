@@ -1,0 +1,877 @@
+# BitPopArt Platform NIP
+
+## Summary
+
+This document describes the custom Nostr event kinds used by the BitPopArt platform, including marketplace functionality, project management, and artist page content.
+
+## Motivation
+
+The BitPop Cards platform requires a marketplace system that can handle both physical and digital products with admin-only access control. This implementation extends the standard NIP-15 marketplace specification to include enhanced metadata and file management capabilities.
+
+## Specification
+
+### Admin Access Control
+
+The marketplace is restricted to a specific admin NPUB:
+- **Admin NPUB**: `npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz`
+- Only this pubkey can create, update, and manage marketplace products
+- Public users can browse the marketplace (when implemented)
+
+### Product Types
+
+The marketplace supports two distinct product types:
+
+#### 1. Physical Products (Kind 30018)
+
+Physical products follow the NIP-15 specification with additional metadata:
+
+```json
+{
+  "kind": 30018,
+  "content": {
+    "id": "<uuid>",
+    "stall_id": "bitpop-main-stall",
+    "name": "<product title>",
+    "description": "<product description>",
+    "images": ["<image_url>", ...],
+    "currency": "<currency_code>",
+    "price": <float>,
+    "quantity": <int|null>,
+    "specs": [
+      ["type", "physical"],
+      ["weight", "<weight>"],
+      ["dimensions", "<dimensions>"]
+    ],
+    "shipping": [{
+      "id": "default",
+      "cost": <float>
+    }]
+  },
+  "tags": [
+    ["d", "<product_id>"],
+    ["t", "<category>"],
+    ["t", "physical"],
+    ["title", "<product_title>"],
+    ["price", "<price>", "<currency>"],
+    ["alt", "Physical product: <title>"]
+  ]
+}
+```
+
+**Additional Physical Product Fields:**
+- `weight`: Product weight for shipping calculations
+- `dimensions`: Product dimensions (e.g., "20x15x5 cm")
+- `shipping.cost`: Base shipping cost for the product
+
+#### 2. Digital Products (Kind 30018)
+
+Digital products extend NIP-15 with file management capabilities:
+
+```json
+{
+  "kind": 30018,
+  "content": {
+    "id": "<uuid>",
+    "stall_id": "bitpop-digital-stall",
+    "name": "<product title>",
+    "description": "<product description>",
+    "images": ["<preview_image_url>", ...],
+    "currency": "<currency_code>",
+    "price": <float>,
+    "quantity": null,
+    "specs": [
+      ["type", "digital"],
+      ["download_limit", "<limit>"],
+      ["license_type", "<license>"],
+      ["file_count", "<count>"]
+    ],
+    "digital_files": ["<file_url>", ...]
+  },
+  "tags": [
+    ["d", "<product_id>"],
+    ["t", "<category>"],
+    ["t", "digital"],
+    ["title", "<product_title>"],
+    ["price", "<price>", "<currency>"],
+    ["alt", "Digital product: <title>"],
+    ["file", "<file_url>"],
+    ...
+  ]
+}
+```
+
+**Additional Digital Product Fields:**
+- `digital_files`: Array of downloadable file URLs
+- `download_limit`: Maximum number of downloads per purchase
+- `license_type`: License terms (personal, commercial, extended, royalty-free)
+- `file` tags: Each downloadable file is also tagged for discoverability
+
+### File Storage
+
+All files (images and digital products) are uploaded using:
+- **Blossom servers** (NIP-B7) for decentralized file storage
+- **NIP-94 compatible tags** for file metadata
+- **Maximum file size**: 10MB per file
+- **Supported formats**: Any file type for digital products, images for previews
+
+### Categories
+
+The marketplace supports a comprehensive category system including:
+- Physical goods (Clothing, Electronics, Home & Garden, etc.)
+- Digital products (Software, Media, Services, etc.)
+- Professional services
+- Subscription services
+
+### Currency Support
+
+Supported currencies:
+- **USD** - US Dollar ($)
+- **EUR** - Euro (€)
+- **GBP** - British Pound (£)
+- **BTC** - Bitcoin (₿)
+- **SAT** - Satoshis (sats)
+
+### Stall Configuration
+
+The marketplace uses predefined stalls:
+- **Physical Products**: `bitpop-main-stall`
+- **Digital Products**: `bitpop-digital-stall`
+
+### Event Publishing
+
+All marketplace events include:
+- **NIP-31 alt tags** for human-readable descriptions
+- **Proper categorization** using `t` tags for relay-level filtering
+- **Structured metadata** following NIP-15 standards
+- **File references** using both content fields and tags
+
+## Implementation Notes
+
+### Admin Interface
+
+The admin interface provides:
+- **Tabbed product creation** (Physical/Digital)
+- **File upload with drag-and-drop** support
+- **Category selection** from predefined list
+- **Currency selection** with symbol display
+- **Form validation** and error handling
+- **Upload progress** indicators
+
+### Security
+
+- **Admin-only access** enforced at the UI level
+- **File size limits** to prevent abuse
+- **Input validation** on all form fields
+- **Secure file upload** through Blossom servers
+
+### Future Enhancements
+
+Planned features:
+- **Public marketplace browsing** for non-admin users
+- **Shopping cart** functionality
+- **Order management** system
+- **Payment integration** with Lightning Network
+- **Customer support** messaging
+
+## Compatibility
+
+This implementation is compatible with:
+- **NIP-15**: Nostr Marketplace standard
+- **NIP-94**: File Metadata standard
+- **NIP-B7**: Blossom file storage
+- **NIP-31**: Alt tags for accessibility
+
+## Example Usage
+
+### Creating a Physical Product
+
+1. Admin logs in with the specified NPUB
+2. Navigates to Shop → Admin Panel → Physical tab
+3. Fills in product details (title, description, category)
+4. Uploads product images
+5. Sets pricing and shipping information
+6. Submits form to publish to Nostr network
+
+### Creating a Digital Product
+
+1. Admin logs in with the specified NPUB
+2. Navigates to Shop → Admin Panel → Digital tab
+3. Fills in product details
+4. Uploads downloadable files and preview images
+5. Sets pricing and license terms
+6. Submits form to publish to Nostr network
+
+## Project Portfolio (Kind 36171)
+
+Custom projects are managed using **kind 36171** (addressable event) for flexible portfolio management.
+
+### Event Structure
+
+```json
+{
+  "kind": 36171,
+  "content": {
+    "name": "<project name>",
+    "description": "<project description>",
+    "thumbnail": "<thumbnail_url>",
+    "url": "<project_url>"
+  },
+  "tags": [
+    ["d", "<project_id>"],
+    ["name", "<project_name>"],
+    ["t", "bitpopart-project"],
+    ["image", "<thumbnail_url>"],
+    ["r", "<project_url>"],
+    ["order", "<display_order>"],
+    ["alt", "Project: <project_name>"]
+  ]
+}
+```
+
+### Fields
+
+- **d tag**: Unique project identifier (UUID)
+- **name tag**: Project name for quick access
+- **image tag**: Thumbnail/preview image URL
+- **r tag**: Project URL (internal path or external URL)
+- **order tag**: Display order (lower numbers appear first)
+- **t tag**: Always includes `bitpopart-project` for filtering
+
+### Content Object
+
+- **name**: Full project name
+- **description**: Detailed project description
+- **thumbnail**: Preview image URL
+- **url**: Link to project (optional)
+
+### Usage
+
+Projects are displayed on the `/projects` page and can be managed through the admin panel. Built-in projects (21K Art, 100M Canvas, POP Cards) are hardcoded, while custom projects are fetched from Nostr.
+
+## Artist Page Content (Kind 30023)
+
+The artist biography page uses **kind 30023** (NIP-23 long-form content) with a specific identifier.
+
+### Event Structure
+
+```json
+{
+  "kind": 30023,
+  "content": "<markdown content>",
+  "tags": [
+    ["d", "artist-page"],
+    ["title", "My Story"],
+    ["t", "artist"],
+    ["published_at", "<unix_timestamp>"],
+    ["alt", "Artist page: My Story"]
+  ]
+}
+```
+
+### Fields
+
+- **d tag**: Always `"artist-page"` for the main artist bio
+- **title tag**: Page title (e.g., "My Story", "About the Artist")
+- **content**: Markdown-formatted biography and artist statement
+
+### Usage
+
+The artist page content is editable through the admin panel and supports full Markdown formatting. If no event is found, a default "My Story" content is displayed.
+
+## Artworks (Kind 39239)
+
+Digital artworks displayed in the art gallery with full sale and auction support.
+
+### Event Structure
+
+```json
+{
+  "kind": 39239,
+  "content": {
+    "title": "<artwork title>",
+    "description": "<artwork description>",
+    "images": ["<image_url_1>", "<image_url_2>", ...],
+    "medium": "<art medium>",
+    "dimensions": "<dimensions>",
+    "year": "<creation year>",
+    "edition": "<edition info>",
+    "certificate_url": "<certificate_url>",
+    "tags": ["<tag1>", "<tag2>", ...],
+    "price": <price>,
+    "currency": "<currency_code>",
+    "starting_bid": <bid>,
+    "current_bid": <bid>,
+    "auction_start": "<iso_timestamp>",
+    "auction_end": "<iso_timestamp>",
+    "shipping": {
+      "local_countries": "<country_codes>",
+      "local_cost": <cost>,
+      "international_cost": <cost>
+    }
+  },
+  "tags": [
+    ["d", "<artwork_id>"],
+    ["title", "<artwork title>"],
+    ["t", "artwork"],
+    ["t", "art"],
+    ["sale", "fixed|auction|sold"],
+    ["featured", "true"],
+    ["order", "<display_order>"],
+    ["price", "<price>"],
+    ["currency", "<currency>"],
+    ["alt", "Artwork: <title>"]
+  ]
+}
+```
+
+### Fields
+
+- **d tag**: Unique artwork identifier (auto-generated)
+- **title tag**: Artwork title for quick access
+- **t tags**: Always includes `artwork` and `art`, plus custom tags
+- **sale tag**: Sale type (fixed/auction/sold) if applicable
+- **featured tag**: If "true", displays in featured tile gallery
+- **order tag**: Custom display order
+- **price/currency tags**: Pricing information if for sale
+
+### Content Object
+
+- **title**: Full artwork title
+- **description**: Detailed artwork description
+- **images**: Array of artwork image URLs (first is main image)
+- **medium**: Art medium (Digital Art, Photography, etc.)
+- **dimensions**: Artwork dimensions
+- **year**: Year created
+- **edition**: Edition information (e.g., "1/1", "Limited Edition")
+- **certificate_url**: Link to certificate of authenticity
+- **tags**: Custom tags for categorization
+- **price/currency**: For fixed-price sales
+- **starting_bid/current_bid**: For auctions
+- **auction_start/auction_end**: Auction timeframe
+- **shipping**: Shipping cost information
+
+### Sale Types
+
+1. **Not for Sale**: Display only, no sale tags
+2. **Fixed Price**: `sale: fixed` tag with price/currency
+3. **Auction**: `sale: auction` tag with bidding info
+4. **Sold**: `sale: sold` tag to mark as sold
+
+### Usage
+
+- Admin creates artworks through Art Gallery → Create Artwork
+- Supports multiple images per artwork
+- Optional sale/auction functionality
+- Featured artworks appear in tile gallery at top of Art page
+- Custom ordering support for gallery layout
+- Shipping cost calculator for physical artworks
+
+## Nostr Projects (Kind 38171)
+
+Collaborative art projects where participants can join by selecting an image and paying in sats.
+
+### Event Structure
+
+```json
+{
+  "kind": 38171,
+  "content": {
+    "description": "<project description>",
+    "images": ["<image_url_1>", "<image_url_2>", ...]
+  },
+  "tags": [
+    ["d", "<project_id>"],
+    ["title", "<project title>"],
+    ["price", "<price_in_sats>"],
+    ["status", "active|completed|archived"],
+    ["featured", "true"],
+    ["author-handle", "<nostr_handle>"],
+    ["image", "<image_url>", "<index>"],
+    ["t", "nostr-project"],
+    ["alt", "Collaborative art project: <title>"]
+  ]
+}
+```
+
+### Fields
+
+- **d tag**: Unique project identifier (UUID)
+- **title tag**: Project title
+- **price tag**: Price in satoshis to join
+- **status tag**: Project status (active/completed/archived)
+- **featured tag**: If "true", shows on homepage and projects page
+- **author-handle tag**: Creator's Nostr handle (optional)
+- **image tags**: Each project image with index
+- **t tag**: Always includes `nostr-project` for filtering
+
+### Participant Events (Kind 38172)
+
+When someone joins a Nostr project:
+
+```json
+{
+  "kind": 38172,
+  "content": {
+    "payment_proof": "<lightning_payment_proof>"
+  },
+  "tags": [
+    ["p", "<project_id>"],
+    ["npub", "<participant_npub>"],
+    ["handle", "<participant_handle>"],
+    ["image", "<selected_image_url>"],
+    ["t", "nostr-project-participant"],
+    ["alt", "Joined project: <project_title>"]
+  ]
+}
+```
+
+### Usage
+
+- Admin creates projects with multiple images
+- Participants select their favorite image
+- Pay the specified amount in sats
+- Their selection is recorded on Nostr
+- Artist creates final collaborative artwork including all participants
+
+## POP Badges (Kind 38173)
+
+Purchasable badges inspired by badges.page that users can collect and add to their Nostr profiles.
+
+### Event Structure
+
+```json
+{
+  "kind": 38173,
+  "content": {
+    "description": "<optional description>"
+  },
+  "tags": [
+    ["d", "<badge_id>"],
+    ["title", "<badge title>"],
+    ["image", "<badge_image_url>"],
+    ["price", "<price_in_sats>"],
+    ["status", "active|sold_out|archived"],
+    ["featured", "true"],
+    ["t", "pop-badge"],
+    ["alt", "POP Badge: <title>"]
+  ]
+}
+```
+
+### Fields
+
+- **d tag**: Unique badge identifier (UUID)
+- **title tag**: Badge name
+- **image tag**: Badge image URL (single image)
+- **price tag**: Price in satoshis
+- **status tag**: Availability status
+- **featured tag**: If "true", shows on homepage and projects page
+- **t tag**: Always includes `pop-badge` for filtering
+
+### Badge Purchase Events (Kind 38174)
+
+When someone purchases a badge:
+
+```json
+{
+  "kind": 38174,
+  "content": {
+    "payment_proof": "<lightning_payment_proof>"
+  },
+  "tags": [
+    ["b", "<badge_id>"],
+    ["npub", "<buyer_npub>"],
+    ["t", "badge-purchase"],
+    ["alt", "Purchased badge: <badge_title>"]
+  ]
+}
+```
+
+### Usage
+
+- Admin creates badges with single image
+- Users browse badges on `/badges` page
+- Click to purchase, enter npub
+- Pay with Lightning
+- Badge is recorded on Nostr
+- Can be added to Nostr profile badges (NIP-58)
+
+## Custom Pages (Kind 38175)
+
+General-purpose pages with optional header images, photo galleries, and external links.
+
+### Event Structure
+
+```json
+{
+  "kind": 38175,
+  "content": {
+    "description": "<page content>",
+    "gallery_images": ["<image_url_1>", "<image_url_2>", ...]
+  },
+  "tags": [
+    ["d", "<page-slug>"],
+    ["title", "<page title>"],
+    ["header", "<header_image_url>"],
+    ["r", "<external_url>"],
+    ["footer", "true"],
+    ["order", "<display_order>"],
+    ["image", "<gallery_image_url>", "<index>"],
+    ["t", "custom-page"],
+    ["alt", "Page: <title>"]
+  ]
+}
+```
+
+### Fields
+
+- **d tag**: URL slug (auto-generated from title)
+- **title tag**: Page title
+- **header tag**: Optional hero/header image
+- **r tag**: Optional external URL link
+- **footer tag**: If "true", shows link in footer
+- **order tag**: Display order in footer
+- **image tags**: Gallery images with index
+- **t tag**: Always includes `custom-page` for filtering
+
+### Usage
+
+- Admin creates custom pages (About, Contact, Privacy, etc.)
+- Pages accessible at `/page/<slug>`
+- Optional header image for hero section
+- Multi-image gallery support
+- Can link to external resources
+- Footer links for important pages
+
+## Social Media Links (Kind 38176)
+
+Social media profile links displayed in the footer.
+
+### Event Structure
+
+```json
+{
+  "kind": 38176,
+  "content": {},
+  "tags": [
+    ["d", "<platform-id>"],
+    ["platform", "<platform_name>"],
+    ["icon", "<emoji_or_icon>"],
+    ["r", "<profile_url>"],
+    ["order", "<display_order>"],
+    ["t", "social-media"],
+    ["alt", "Social: <platform>"]
+  ]
+}
+```
+
+### Fields
+
+- **d tag**: Platform identifier (e.g., "twitter", "instagram")
+- **platform tag**: Platform name (Twitter/X, Instagram, etc.)
+- **icon tag**: Emoji or icon for display (𝕏, 📷, ⚡, etc.)
+- **r tag**: Full URL to social profile
+- **order tag**: Display order in footer
+- **t tag**: Always includes `social-media` for filtering
+
+### Supported Platforms
+
+- Twitter/X (𝕏)
+- Instagram (📷)
+- Facebook (📘)
+- YouTube (▶️)
+- Nostr (⚡)
+- GitHub (💻)
+- LinkedIn (💼)
+- TikTok (🎵)
+- Pinterest (📌)
+- Custom (🔗)
+
+### Usage
+
+- Admin manages social links in Admin panel
+- Links appear as icons in footer
+- Customizable icons and order
+- Can add/edit/delete links
+
+## Newsletter Subscriptions (Kind 38177)
+
+Email newsletter subscriptions with optional Nostr integration.
+
+### Event Structure
+
+```json
+{
+  "kind": 38177,
+  "content": {
+    "email": "<subscriber_email>"
+  },
+  "tags": [
+    ["email", "<subscriber_email>"],
+    ["npub", "<subscriber_npub>"],
+    ["t", "newsletter-subscription"],
+    ["alt", "Newsletter subscription: <email>"]
+  ]
+}
+```
+
+### Fields
+
+- **email tag**: Subscriber email address
+- **npub tag**: Optional Nostr npub for dual identity
+- **t tag**: Always includes `newsletter-subscription`
+
+### Usage
+
+- Newsletter signup form in footer
+- Optional npub field for Nostr users
+- Dual identity tracking (email + Nostr)
+- Subscription events published to Nostr
+
+## SEO & Analytics
+
+### Meta Tags
+
+The platform includes comprehensive SEO optimization:
+- Primary meta tags (title, description, keywords)
+- Open Graph tags for social sharing
+- Twitter Card tags
+- Structured Data (JSON-LD) for search engines
+- Canonical URLs
+- Preconnect hints for image CDNs
+
+### Keywords
+
+Primary keywords: bitcoin art, pop art, nostr, satoshi, digital art, good vibes, love, freedom, joy, happiness, artist, johannes oppewal, world traveler, 88 countries, collaborative art, digital cards, greeting cards, badges, bitcoin lightning, cryptocurrency art, decentralized art, bitcoin culture, pop cards, digital collectibles, nostr badges, bitcoin community
+
+### Google Analytics
+
+Analytics can be configured in Admin → Analytics tab:
+- Supports Google Analytics 4 (GA4)
+- Measurement ID format: G-XXXXXXXXXX
+- Manual integration via index.html
+- Code generator provided in admin panel
+
+## NIP-58 Badge System (Kinds 30009, 8, 10008)
+
+The `/badges` page implements the standard **NIP-58** badge protocol. No custom kinds are used for badge definitions or awards.
+
+### Badge Definition (Kind 30009)
+
+Addressable event published by the badge issuer (admin pubkey):
+
+```json
+{
+  "kind": 30009,
+  "tags": [
+    ["d", "<unique-badge-id>"],
+    ["name", "<badge name>"],
+    ["description", "<what this badge means>"],
+    ["image", "<high-res-url>", "1024x1024"],
+    ["thumb", "<url>", "512x512"],
+    ["thumb", "<url>", "256x256"],
+    ["thumb", "<url>", "64x64"]
+  ]
+}
+```
+
+### Badge Award (Kind 8)
+
+Published by the issuer to award one or more pubkeys:
+
+```json
+{
+  "kind": 8,
+  "tags": [
+    ["a", "30009:<issuer-pubkey>:<badge-id>"],
+    ["p", "<recipient-pubkey>", "<relay>"],
+    ["p", "<recipient-pubkey>", "<relay>"]
+  ]
+}
+```
+
+### Profile Badges (Kind 10008 — per NIP proposal #2275)
+
+The profile badges list should use **kind 10008** (replaceable), **not** kind 30008 (addressable).
+
+Rationale: Profile badges belong to a single user and should behave like a contact list (replaceable). Using 30008 (addressable) was a historical mistake carried over from deprecated NIP-51 lists.
+
+Reference: https://github.com/nostr-protocol/nips/issues/2275
+
+```json
+{
+  "kind": 10008,
+  "pubkey": "<user-pubkey>",
+  "tags": [
+    ["a", "30009:<issuer-pubkey>:<badge-id>"],
+    ["e", "<badge-award-event-id>", "<relay>"],
+    ["a", "30009:<issuer-pubkey>:<badge-id-2>"],
+    ["e", "<badge-award-event-id-2>", "<relay>"]
+  ]
+}
+```
+
+The `/badges` page queries both kind 10008 and the legacy kind 30008, preferring 10008 when present.
+
+### Badge Sets (Kind 30008)
+
+Kind 30008 is now repurposed as "Badge Sets" — curated collections of badges (comparable to playlists). The BitPopArt platform does not currently use badge sets.
+
+## Free Downloads (Kind 34019)
+
+Free downloadable images published by the admin. Each event represents a single image available for public download.
+
+### Event Structure
+
+```json
+{
+  "kind": 34019,
+  "content": "",
+  "tags": [
+    ["d", "<unique_id>"],
+    ["title", "<image title>"],
+    ["image", "<image_url>"],
+    ["t", "free-download"],
+    ["alt", "Free download: <title>"]
+  ]
+}
+```
+
+### Fields
+
+- **d tag**: Unique identifier (auto-generated)
+- **title tag**: Optional human-readable title
+- **image tag**: URL of the downloadable image (hosted on Blossom)
+- **t tag**: Always includes `free-download` for filtering
+
+### Usage
+
+- Admin uploads images via the `/free` page
+- Public users browse the image gallery
+- Each image has a download button (top-right corner) that saves the file locally
+- Images are stored on Blossom servers via NIP-B7
+
+### App Content (also Kind 34019)
+
+The Fan App page (`/app`) reuses kind 34019 with distinct `t` tags:
+
+| t tag | d tag | Description |
+|---|---|---|
+| `app-welcome` | `app-welcome` (singleton) | Welcome message shown at the top of the app. Content field contains the message text. |
+| `app-wallpaper` | auto-generated | Wallpaper images available for download. |
+| `app-gif` | auto-generated | Animated GIFs available for download. |
+
+Wallpaper and GIF events share the same structure as free downloads (title + image tags).
+
+## Artwork Bidding (Kinds 1021 & 1022)
+
+Artwork auctions use the standard **NIP-15** bidding protocol. Bids are published as kind 1021 events and confirmed by the artist as kind 1022 events.
+
+### Bid Event (Kind 1021)
+
+Published by a bidder to place a bid on an auction:
+
+```json
+{
+  "kind": 1021,
+  "content": "<amount in sats as string>",
+  "tags": [
+    ["e", "<event ID of the artwork auction event>"],
+    ["currency", "SAT"]
+  ]
+}
+```
+
+### Fields
+
+- **content**: Bid amount as a string integer (in satoshis)
+- **e tag**: References the specific Nostr event ID of the artwork being bid on
+- **currency tag**: Currency of the bid (SAT)
+
+### Bid Confirmation (Kind 1022)
+
+Published by the artist/admin to accept, reject, or declare a winner:
+
+```json
+{
+  "kind": 1022,
+  "content": "{\"status\": \"accepted\", \"duration_extended\": 300}",
+  "tags": [
+    ["e", "<event ID of the bid being confirmed>"],
+    ["e", "<event ID of the auction>"]
+  ]
+}
+```
+
+### Content Object
+
+- **status**: One of `"accepted"`, `"rejected"`, `"pending"`, or `"winner"`
+- **message** (optional): Human-readable message explaining the decision
+- **duration_extended** (optional): Number of seconds to extend the auction
+
+### Last-Minute Extension Rule
+
+When a bid is placed within the **last 60 seconds** of the auction and the artist confirms it, the confirmation event includes `"duration_extended": 300` (5 minutes), extending the auction. This ensures the highest bidder truly wins and prevents sniping.
+
+The effective auction end time is calculated as:
+```
+effective_end = auction_start + duration + SUM(duration_extended FOR all confirmations)
+```
+
+### Usage
+
+1. Users place bids via the "Place Bid" button on the artwork detail page
+2. Bids are published to Nostr as kind 1021 events
+3. The artist sees new bids in the Bid History panel with admin controls
+4. Artist accepts/rejects each bid using the ✓/✗ buttons
+5. If a last-minute bid is accepted, the auction automatically extends by 5 minutes
+6. Artist marks the winning bid with the 🏆 button after auction ends
+7. Winner is contacted via Nostr DM
+
+## Project Designs (Kind 38178)
+
+Design thumbnail entries displayed on the `/projects` page between "Nostr Projects" and "Nostr Badges". Each event links a single uploaded image to an optional project page URL.
+
+### Event Structure
+
+```json
+{
+  "kind": 38178,
+  "content": "",
+  "tags": [
+    ["d", "<unique_id>"],
+    ["title", "<optional title>"],
+    ["image", "<thumbnail_url>"],
+    ["r", "<project_page_url>"],
+    ["order", "<display_order>"],
+    ["t", "project-design"],
+    ["alt", "Project Design: <title>"]
+  ]
+}
+```
+
+### Fields
+
+- **d tag**: Unique identifier (auto-generated UUID)
+- **title tag**: Optional human-readable label shown below the thumbnail
+- **image tag**: URL of the thumbnail (hosted on Blossom)
+- **r tag**: Internal path or external URL the thumbnail links to
+- **order tag**: Integer for controlling display order (lower = first)
+- **t tag**: Always includes `project-design` for relay-level filtering
+
+### Usage
+
+- Admin uploads thumbnails via Admin → Project Designs tab
+- Thumbnails are shown in a responsive grid on `/projects` below "Nostr Projects"
+- Clicking a thumbnail navigates to the linked project page
+- Delete by publishing a kind-5 deletion event referencing `38178:<pubkey>:<id>`
+
+## References
+
+- [NIP-15: Nostr Marketplace](https://github.com/nostr-protocol/nips/blob/master/15.md)
+- [NIP-23: Long-form Content](https://github.com/nostr-protocol/nips/blob/master/23.md)
+- [NIP-58: Badges](https://github.com/nostr-protocol/nips/blob/master/58.md)
+- [NIP-94: File Metadata](https://github.com/nostr-protocol/nips/blob/master/94.md)
+- [NIP-99: Classified Listings](https://github.com/nostr-protocol/nips/blob/master/99.md)
+- [NIP-B7: Blossom](https://github.com/hzrd149/blossom)
+- [NIP proposal #2275 — kind 10008 for Profile Badges](https://github.com/nostr-protocol/nips/issues/2275)

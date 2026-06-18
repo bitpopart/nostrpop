@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <base href="/">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Preconnect to CDNs for faster loading -->
+    <link rel="preconnect" href="https://nostr.build" crossorigin="">
+    <link rel="preconnect" href="https://image.nostr.build" crossorigin="">
+    <link rel="preconnect" href="https://blossom.primal.net" crossorigin="">
+    <link rel="dns-prefetch" href="https://nostr.build">
+    <link rel="dns-prefetch" href="https://image.nostr.build">
+    <link rel="dns-prefetch" href="https://blossom.primal.net">
+    
+    <!-- Favicons -->
+    <link rel="icon" type="image/png" href="/bitpopart-logo.png">
+    <link rel="icon" type="image/svg+xml" href="/icon.svg">
+    <link rel="apple-touch-icon" href="/bitpopart-logo.png">
+    
+    <!-- Primary Meta Tags -->
+    <title>BitPopArt - Love, Freedom &amp; Joy Pop Art</title>
+    <meta name="title" content="BitPopArt - Love, Freedom &amp; Joy Pop Art">
+    <meta name="description" content="Create Good Vibes POP cards, collect exclusive badges, join collaborative art projects, and discover Bitcoin-inspired pop art on Nostr. By world traveler &amp; artist Johannes Oppewal.">
+    <meta name="keywords" content="bitcoin art, pop art, nostr, satoshi, digital art, good vibes, love, freedom, joy, happiness, artist, johannes oppewal, world traveler, 88 countries, collaborative art, digital cards, greeting cards, badges, bitcoin lightning, cryptocurrency art, decentralized art, bitcoin culture, pop cards, digital collectibles, nostr badges, bitcoin community, bitpopart, bitcoin pop art">
+    <meta name="author" content="Johannes Oppewal (BitPopArt)">
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+    <meta name="googlebot" content="index, follow">
+    <link rel="canonical" href="https://bitpopart.com/">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://bitpopart.com/">
+    <meta property="og:title" content="BitPopArt - Love, Freedom &amp; Joy Pop Art">
+    <meta property="og:description" content="Create Good Vibes POP cards, collect exclusive badges, join collaborative art projects, and discover Bitcoin-inspired pop art on Nostr. By world traveler &amp; artist Johannes Oppewal.">
+    <meta property="og:image" content="https://bitpopart.com/bitpopart-logo.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="1200">
+    <meta property="og:image:alt" content="BitPopArt - Love, Freedom &amp; Joy Pop Art">
+    <meta property="og:site_name" content="BitPopArt">
+    <meta property="og:locale" content="en_US">
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@bitpopart">
+    <meta name="twitter:creator" content="@bitpopart">
+    <meta name="twitter:url" content="https://bitpopart.com/">
+    <meta name="twitter:title" content="BitPopArt - Love, Freedom &amp; Joy Pop Art">
+    <meta name="twitter:description" content="Create Good Vibes POP cards, collect exclusive badges, join collaborative art projects, and discover Bitcoin-inspired pop art on Nostr.">
+    <meta name="twitter:image" content="https://bitpopart.com/bitpopart-logo.png">
+    <meta name="twitter:image:alt" content="BitPopArt logo">
+    
+    <!-- Additional SEO -->
+    <meta name="theme-color" content="#ec4899">
+    <meta name="color-scheme" content="light dark">
+    <meta name="rating" content="general">
+    <meta name="revisit-after" content="7 days">
+    <meta name="language" content="English">
+    <meta name="category" content="art, bitcoin, pop art, digital art">
+    
+    <!-- Structured Data (JSON-LD) for SEO -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "BitPopArt",
+      "alternateName": ["BitPopArt - Love, Freedom & Joy Pop Art", "Bitcoin Pop Art"],
+      "url": "https://bitpopart.com/",
+      "description": "Create Good Vibes POP cards, collect exclusive badges, join collaborative art projects, and discover Bitcoin-inspired pop art on Nostr.",
+      "author": {
+        "@type": "Person",
+        "name": "Johannes Oppewal",
+        "alternateName": "BitPopArt",
+        "description": "World traveler (88 countries and counting) and artist creating Bitcoin-inspired pop art",
+        "jobTitle": "Artist & World Traveler",
+        "url": "https://bitpopart.com/artist",
+        "sameAs": [
+          "https://primal.net/p/npub105em547c5m5gdxslr4fp2f29jav54sxml6cpk6gda7xyvxuzmv6s84a642"
+        ]
+      },
+      "keywords": "bitcoin art, pop art, nostr, satoshi, digital art, good vibes, love, freedom, joy",
+      "inLanguage": "en-US",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://bitpopart.com/blog?q={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "BitPopArt",
+      "url": "https://bitpopart.com/",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://bitpopart.com/bitpopart-logo.png",
+        "width": "512",
+        "height": "512"
+      },
+      "description": "Bitcoin pop art, digital cards, badges, and collaborative art projects on Nostr. Created by world traveler Johannes Oppewal.",
+      "founder": {
+        "@type": "Person",
+        "name": "Johannes Oppewal",
+        "sameAs": "https://primal.net/p/npub105em547c5m5gdxslr4fp2f29jav54sxml6cpk6gda7xyvxuzmv6s84a642"
+      },
+      "sameAs": [
+        "https://primal.net/p/npub105em547c5m5gdxslr4fp2f29jav54sxml6cpk6gda7xyvxuzmv6s84a642"
+      ],
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "contactType": "customer support",
+        "availableLanguage": "English"
+      }
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Person",
+      "name": "Johannes Oppewal",
+      "alternateName": "BitPopArt",
+      "url": "https://bitpopart.com/artist",
+      "image": "https://bitpopart.com/bitpopart-logo.png",
+      "description": "World traveler (88 countries and counting) and artist creating Bitcoin-inspired pop art on Nostr.",
+      "jobTitle": "Artist & World Traveler",
+      "sameAs": [
+        "https://primal.net/p/npub105em547c5m5gdxslr4fp2f29jav54sxml6cpk6gda7xyvxuzmv6s84a642"
+      ],
+      "knowsAbout": ["Bitcoin", "Pop Art", "Digital Art", "Photography", "Travel", "Nostr"]
+    }
+    </script>
+    
+    <!-- Google tag (gtag.js) -->
+    <script async="" src="https://www.googletagmanager.com/gtag/js?id=G-EMPT49G1SP"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-EMPT49G1SP');
+    </script>
+    
+    <!-- CSP: Development mode - allows unsafe-eval for Vite HMR -->
+    <meta http-equiv="content-security-policy" content="default-src 'none'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://esm.sh https://www.googletagmanager.com https://*.google-analytics.com; style-src 'self' 'unsafe-inline' https://esm.sh; font-src 'self' data: https://esm.sh; base-uri 'self'; manifest-src 'self'; connect-src 'self' blob: https: wss: https://esm.sh; img-src 'self' data: blob: https: https://esm.sh; media-src 'self' https: https://esm.sh; object-src 'none'; worker-src 'self' blob:">
+    <link rel="manifest" href="/manifest.webmanifest">
+  <style type="text/tailwindcss">/* fs:/projects/nostrpop-1/src/components/popup/leaflet.css */
+.leaflet-pane,
+.leaflet-tile,
+.leaflet-marker-icon,
+.leaflet-marker-shadow,
+.leaflet-tile-container,
+.leaflet-pane > svg,
+.leaflet-pane > canvas,
+.leaflet-zoom-box,
+.leaflet-image-layer,
+.leaflet-layer {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+.leaflet-container {
+  overflow: hidden;
+  outline: 0;
+}
+.leaflet-container img {
+  max-width: none !important;
+  max-height: none !important;
+}
+.leaflet-container .leaflet-marker-pane img,
+.leaflet-container .leaflet-shadow-pane img,
+.leaflet-container .leaflet-tile-pane img,
+.leaflet-container img.leaflet-image-layer,
+.leaflet-container .leaflet-tile {
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.leaflet-control,
+.leaflet-popup-pane {
+  position: absolute;
+}
+.leaflet-control-zoom a,
+.leaflet-control-layers-toggle,
+.leaflet-popup-close-button,
+.leaflet-tooltip,
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  -webkit-tap-highlight-color: transparent;
+}
+.leaflet-container a {
+  color: #0078a8;
+}
+.leaflet-container a.leaflet-active {
+  outline: 2px solid orange;
+}
+.leaflet-zoom-box {
+  width: 0;
+  height: 0;
+  box-sizing: border-box;
+  z-index: 800;
+}
+.leaflet-overlay-pane svg {
+  max-width: none !important;
+  max-height: none !important;
+}
+.leaflet-container .leaflet-marker-pane img,
+.leaflet-container .leaflet-shadow-pane img,
+.leaflet-container .leaflet-tile-pane img {
+  pointer-events: none;
+}
+.leaflet-control-zoom {
+  display: inline-flex;
+  flex-direction: column;
+}
+.leaflet-control-zoom a {
+  width: 36px;
+  height: 36px;
+  line-height: 36px;
+  text-align: center;
+  text-decoration: none;
+}
+.leaflet-popup {
+  position: absolute;
+}
+.leaflet-popup-content-wrapper {
+  position: relative;
+}
+.leaflet-popup-content {
+  margin: 13px 19px;
+  line-height: 1.4;
+}
+.leaflet-popup-tip-container {
+  position: absolute;
+  left: 50%;
+  margin-left: -20px;
+  width: 40px;
+  height: 20px;
+  overflow: hidden;
+  pointer-events: none;
+}
+.leaflet-popup-tip {
+  width: 17px;
+  height: 17px;
+  margin: -10px auto 0;
+  transform: rotate(45deg);
+}
+
+/* fs:/projects/nostrpop-1/src/index.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@layer utilities {
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .gradient-primary {
+    background:
+      linear-gradient(
+        to right,
+        var(--primary-gradient-from),
+        var(--primary-gradient-to));
+  }
+  .gradient-primary-hover:hover {
+    background:
+      linear-gradient(
+        to right,
+        var(--primary-gradient-from),
+        var(--primary-gradient-to));
+    filter: brightness(1.1);
+  }
+  .gradient-secondary {
+    background:
+      linear-gradient(
+        to right,
+        var(--secondary-gradient-from),
+        var(--secondary-gradient-to));
+  }
+  .gradient-coming-soon {
+    background:
+      linear-gradient(
+        to right,
+        var(--coming-soon-from),
+        var(--coming-soon-to));
+  }
+  .gradient-header-text {
+    background:
+      linear-gradient(
+        to right,
+        var(--header-text-from),
+        var(--header-text-via),
+        var(--header-text-to));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+    display: inline-block;
+  }
+  .bg-gradient-to-br.from-pink-50,
+  .bg-gradient-to-br.from-purple-50 {
+    background: var(--page-background) !important;
+  }
+  .gradient-primary,
+  .gradient-secondary,
+  .gradient-coming-soon {
+    color: var(--button-text-color);
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: var(--heading-text-color);
+  }
+  .icon-themed {
+    color: var(--icon-color);
+  }
+  a.link-themed {
+    color: var(--link-color);
+  }
+  a.link-themed:hover {
+    color: var(--link-hover-color);
+  }
+  .hover\:text-orange-600:hover,
+  .group:hover .group-hover\:text-orange-600,
+  .group-hover\:text-orange-700:hover {
+    color: var(--link-color) !important;
+  }
+}
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+    --radius: 0.5rem;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+    --coming-soon-from: #e99840;
+    --coming-soon-to: #e99840;
+    --primary-gradient-from: #e99840;
+    --primary-gradient-to: #e99840;
+    --secondary-gradient-from: #e99840;
+    --secondary-gradient-to: #e99840;
+    --accent-color: #e99840;
+    --header-text-from: #e99840;
+    --header-text-via: #e99840;
+    --header-text-to: #e99840;
+    --page-background: #f7f8f9;
+    --body-text-color: #1a1a1a;
+    --button-text-color: #ffffff;
+    --heading-text-color: #1a1a1a;
+    --icon-color: #e99840;
+    --link-color: #e99840;
+    --link-hover-color: #c87a30;
+    --hover-color: #e99840;
+    --hover-color-dark: #c87a30;
+  }
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply text-foreground;
+    overflow-x: hidden;
+    color: var(--body-text-color);
+  }
+  html {
+    overflow-x: hidden;
+  }
+  .bg-clip-text {
+    padding-bottom: 0.15em;
+    line-height: 1.3;
+  }
+}
+
+/* esm:https://esm.sh/*@fontsource-variable/inter@5.2.8?target=esnext&lp=node_modules%252F%2540fontsource-variable%252Finter */
+@font-face {
+  font-family: "Inter Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url(https://esm.sh/@fontsource-variable/inter@5.2.8/files/inter-cyrillic-ext-wght-normal.woff2?lp=node_modules%252F%2540fontsource-variable%252Finter) format("woff2-variations");
+  unicode-range:
+    U+0460-052F,
+    U+1C80-1C8A,
+    U+20B4,
+    U+2DE0-2DFF,
+    U+A640-A69F,
+    U+FE2E-FE2F;
+}
+@font-face {
+  font-family: "Inter Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url(https://esm.sh/@fontsource-variable/inter@5.2.8/files/inter-cyrillic-wght-normal.woff2?lp=node_modules%252F%2540fontsource-variable%252Finter) format("woff2-variations");
+  unicode-range:
+    U+0301,
+    U+0400-045F,
+    U+0490-0491,
+    U+04B0-04B1,
+    U+2116;
+}
+@font-face {
+  font-family: "Inter Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url(https://esm.sh/@fontsource-variable/inter@5.2.8/files/inter-greek-ext-wght-normal.woff2?lp=node_modules%252F%2540fontsource-variable%252Finter) format("woff2-variations");
+  unicode-range: U+1F00-1FFF;
+}
+@font-face {
+  font-family: "Inter Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url(https://esm.sh/@fontsource-variable/inter@5.2.8/files/inter-greek-wght-normal.woff2?lp=node_modules%252F%2540fontsource-variable%252Finter) format("woff2-variations");
+  unicode-range:
+    U+0370-0377,
+    U+037A-037F,
+    U+0384-038A,
+    U+038C,
+    U+038E-03A1,
+    U+03A3-03FF;
+}
+@font-face {
+  font-family: "Inter Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url(https://esm.sh/@fontsource-variable/inter@5.2.8/files/inter-vietnamese-wght-normal.woff2?lp=node_modules%252F%2540fontsource-variable%252Finter) format("woff2-variations");
+  unicode-range:
+    U+0102-0103,
+    U+0110-0111,
+    U+0128-0129,
+    U+0168-0169,
+    U+01A0-01A1,
+    U+01AF-01B0,
+    U+0300-0301,
+    U+0303-0304,
+    U+0308-0309,
+    U+0323,
+    U+0329,
+    U+1EA0-1EF9,
+    U+20AB;
+}
+@font-face {
+  font-family: "Inter Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url(https://esm.sh/@fontsource-variable/inter@5.2.8/files/inter-latin-ext-wght-normal.woff2?lp=node_modules%252F%2540fontsource-variable%252Finter) format("woff2-variations");
+  unicode-range:
+    U+0100-02BA,
+    U+02BD-02C5,
+    U+02C7-02CC,
+    U+02CE-02D7,
+    U+02DD-02FF,
+    U+0304,
+    U+0308,
+    U+0329,
+    U+1D00-1DBF,
+    U+1E00-1E9F,
+    U+1EF2-1EFF,
+    U+2020,
+    U+20A0-20AB,
+    U+20AD-20C0,
+    U+2113,
+    U+2C60-2C7F,
+    U+A720-A7FF;
+}
+@font-face {
+  font-family: "Inter Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url(https://esm.sh/@fontsource-variable/inter@5.2.8/files/inter-latin-wght-normal.woff2?lp=node_modules%252F%2540fontsource-variable%252Finter) format("woff2-variations");
+  unicode-range:
+    U+0000-00FF,
+    U+0131,
+    U+0152-0153,
+    U+02BB-02BC,
+    U+02C6,
+    U+02DA,
+    U+02DC,
+    U+0304,
+    U+0308,
+    U+0329,
+    U+2000-206F,
+    U+20AC,
+    U+2122,
+    U+2191,
+    U+2193,
+    U+2212,
+    U+2215,
+    U+FEFF,
+    U+FFFD;
+}
+
+/* esm:https://esm.sh/*@fontsource/bebas-neue@5.2.7?target=esnext&lp=node_modules%252F%2540fontsource%252Fbebas-neue */
+@font-face {
+  font-family: "Bebas Neue";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url(https://esm.sh/@fontsource/bebas-neue@5.2.7/files/bebas-neue-latin-ext-400-normal.woff2?lp=node_modules%252F%2540fontsource%252Fbebas-neue) format("woff2"), url(https://esm.sh/@fontsource/bebas-neue@5.2.7/files/bebas-neue-latin-ext-400-normal.woff?lp=node_modules%252F%2540fontsource%252Fbebas-neue) format("woff");
+  unicode-range:
+    U+0100-02BA,
+    U+02BD-02C5,
+    U+02C7-02CC,
+    U+02CE-02D7,
+    U+02DD-02FF,
+    U+0304,
+    U+0308,
+    U+0329,
+    U+1D00-1DBF,
+    U+1E00-1E9F,
+    U+1EF2-1EFF,
+    U+2020,
+    U+20A0-20AB,
+    U+20AD-20C0,
+    U+2113,
+    U+2C60-2C7F,
+    U+A720-A7FF;
+}
+@font-face {
+  font-family: "Bebas Neue";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url(https://esm.sh/@fontsource/bebas-neue@5.2.7/files/bebas-neue-latin-400-normal.woff2?lp=node_modules%252F%2540fontsource%252Fbebas-neue) format("woff2"), url(https://esm.sh/@fontsource/bebas-neue@5.2.7/files/bebas-neue-latin-400-normal.woff?lp=node_modules%252F%2540fontsource%252Fbebas-neue) format("woff");
+  unicode-range:
+    U+0000-00FF,
+    U+0131,
+    U+0152-0153,
+    U+02BB-02BC,
+    U+02C6,
+    U+02DA,
+    U+02DC,
+    U+0304,
+    U+0308,
+    U+0329,
+    U+2000-206F,
+    U+20AC,
+    U+2122,
+    U+2191,
+    U+2193,
+    U+2212,
+    U+2215,
+    U+FEFF,
+    U+FFFD;
+}
+
+/* esm:https://esm.sh/*@fontsource-variable/oswald@5.2.8?target=esnext&lp=node_modules%252F%2540fontsource-variable%252Foswald */
+@font-face {
+  font-family: "Oswald Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 700;
+  src: url(https://esm.sh/@fontsource-variable/oswald@5.2.8/files/oswald-cyrillic-ext-wght-normal.woff2?lp=node_modules%252F%2540fontsource-variable%252Foswald) format("woff2-variations");
+  unicode-range:
+    U+0460-052F,
+    U+1C80-1C8A,
+    U+20B4,
+    U+2DE0-2DFF,
+    U+A640-A69F,
+    U+FE2E-FE2F;
+}
+@font-face {
+  font-family: "Oswald Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 700;
+  src: url(https://esm.sh/@fontsource-variable/oswald@5.2.8/files/oswald-cyrillic-wght-normal.woff2?lp=node_modules%252F%2540fontsource-variable%252Foswald) format("woff2-variations");
+  unicode-range:
+    U+0301,
+    U+0400-045F,
+    U+0490-0491,
+    U+04B0-04B1,
+    U+2116;
+}
+@font-face {
+  font-family: "Oswald Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 700;
+  src: url(https://esm.sh/@fontsource-variable/oswald@5.2.8/files/oswald-vietnamese-wght-normal.woff2?lp=node_modules%252F%2540fontsource-variable%252Foswald) format("woff2-variations");
+  unicode-range:
+    U+0102-0103,
+    U+0110-0111,
+    U+0128-0129,
+    U+0168-0169,
+    U+01A0-01A1,
+    U+01AF-01B0,
+    U+0300-0301,
+    U+0303-0304,
+    U+0308-0309,
+    U+0323,
+    U+0329,
+    U+1EA0-1EF9,
+    U+20AB;
+}
+@font-face {
+  font-family: "Oswald Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 700;
+  src: url(https://esm.sh/@fontsource-variable/oswald@5.2.8/files/oswald-latin-ext-wght-normal.woff2?lp=node_modules%252F%2540fontsource-variable%252Foswald) format("woff2-variations");
+  unicode-range:
+    U+0100-02BA,
+    U+02BD-02C5,
+    U+02C7-02CC,
+    U+02CE-02D7,
+    U+02DD-02FF,
+    U+0304,
+    U+0308,
+    U+0329,
+    U+1D00-1DBF,
+    U+1E00-1E9F,
+    U+1EF2-1EFF,
+    U+2020,
+    U+20A0-20AB,
+    U+20AD-20C0,
+    U+2113,
+    U+2C60-2C7F,
+    U+A720-A7FF;
+}
+@font-face {
+  font-family: "Oswald Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 700;
+  src: url(https://esm.sh/@fontsource-variable/oswald@5.2.8/files/oswald-latin-wght-normal.woff2?lp=node_modules%252F%2540fontsource-variable%252Foswald) format("woff2-variations");
+  unicode-range:
+    U+0000-00FF,
+    U+0131,
+    U+0152-0153,
+    U+02BB-02BC,
+    U+02C6,
+    U+02DA,
+    U+02DC,
+    U+0304,
+    U+0308,
+    U+0329,
+    U+2000-206F,
+    U+20AC,
+    U+2122,
+    U+2191,
+    U+2193,
+    U+2212,
+    U+2215,
+    U+FEFF,
+    U+FFFD;
+}
+
+/* esm:https://esm.sh/*@fontsource-variable/montserrat@5.2.8?target=esnext&lp=node_modules%252F%2540fontsource-variable%252Fmontserrat */
+@font-face {
+  font-family: "Montserrat Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url(https://esm.sh/@fontsource-variable/montserrat@5.2.8/files/montserrat-cyrillic-ext-wght-normal.woff2?lp=node_modules%252F%2540fontsource-variable%252Fmontserrat) format("woff2-variations");
+  unicode-range:
+    U+0460-052F,
+    U+1C80-1C8A,
+    U+20B4,
+    U+2DE0-2DFF,
+    U+A640-A69F,
+    U+FE2E-FE2F;
+}
+@font-face {
+  font-family: "Montserrat Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url(https://esm.sh/@fontsource-variable/montserrat@5.2.8/files/montserrat-cyrillic-wght-normal.woff2?lp=node_modules%252F%2540fontsource-variable%252Fmontserrat) format("woff2-variations");
+  unicode-range:
+    U+0301,
+    U+0400-045F,
+    U+0490-0491,
+    U+04B0-04B1,
+    U+2116;
+}
+@font-face {
+  font-family: "Montserrat Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url(https://esm.sh/@fontsource-variable/montserrat@5.2.8/files/montserrat-vietnamese-wght-normal.woff2?lp=node_modules%252F%2540fontsource-variable%252Fmontserrat) format("woff2-variations");
+  unicode-range:
+    U+0102-0103,
+    U+0110-0111,
+    U+0128-0129,
+    U+0168-0169,
+    U+01A0-01A1,
+    U+01AF-01B0,
+    U+0300-0301,
+    U+0303-0304,
+    U+0308-0309,
+    U+0323,
+    U+0329,
+    U+1EA0-1EF9,
+    U+20AB;
+}
+@font-face {
+  font-family: "Montserrat Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url(https://esm.sh/@fontsource-variable/montserrat@5.2.8/files/montserrat-latin-ext-wght-normal.woff2?lp=node_modules%252F%2540fontsource-variable%252Fmontserrat) format("woff2-variations");
+  unicode-range:
+    U+0100-02BA,
+    U+02BD-02C5,
+    U+02C7-02CC,
+    U+02CE-02D7,
+    U+02DD-02FF,
+    U+0304,
+    U+0308,
+    U+0329,
+    U+1D00-1DBF,
+    U+1E00-1E9F,
+    U+1EF2-1EFF,
+    U+2020,
+    U+20A0-20AB,
+    U+20AD-20C0,
+    U+2113,
+    U+2C60-2C7F,
+    U+A720-A7FF;
+}
+@font-face {
+  font-family: "Montserrat Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url(https://esm.sh/@fontsource-variable/montserrat@5.2.8/files/montserrat-latin-wght-normal.woff2?lp=node_modules%252F%2540fontsource-variable%252Fmontserrat) format("woff2-variations");
+  unicode-range:
+    U+0000-00FF,
+    U+0131,
+    U+0152-0153,
+    U+02BB-02BC,
+    U+02C6,
+    U+02DA,
+    U+02DC,
+    U+0304,
+    U+0308,
+    U+0329,
+    U+2000-206F,
+    U+20AC,
+    U+2122,
+    U+2191,
+    U+2193,
+    U+2212,
+    U+2215,
+    U+FEFF,
+    U+FFFD;
+}
+
+/* esm:https://esm.sh/*@fontsource-variable/raleway@5.2.8?target=esnext&lp=node_modules%252F%2540fontsource-variable%252Fraleway */
+@font-face {
+  font-family: "Raleway Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url(https://esm.sh/@fontsource-variable/raleway@5.2.8/files/raleway-cyrillic-ext-wght-normal.woff2?lp=node_modules%252F%2540fontsource-variable%252Fraleway) format("woff2-variations");
+  unicode-range:
+    U+0460-052F,
+    U+1C80-1C8A,
+    U+20B4,
+    U+2DE0-2DFF,
+    U+A640-A69F,
+    U+FE2E-FE2F;
+}
+@font-face {
+  font-family: "Raleway Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url(https://esm.sh/@fontsource-variable/raleway@5.2.8/files/raleway-cyrillic-wght-normal.woff2?lp=node_modules%252F%2540fontsource-variable%252Fraleway) format("woff2-variations");
+  unicode-range:
+    U+0301,
+    U+0400-045F,
+    U+0490-0491,
+    U+04B0-04B1,
+    U+2116;
+}
+@font-face {
+  font-family: "Raleway Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url(https://esm.sh/@fontsource-variable/raleway@5.2.8/files/raleway-vietnamese-wght-normal.woff2?lp=node_modules%252F%2540fontsource-variable%252Fraleway) format("woff2-variations");
+  unicode-range:
+    U+0102-0103,
+    U+0110-0111,
+    U+0128-0129,
+    U+0168-0169,
+    U+01A0-01A1,
+    U+01AF-01B0,
+    U+0300-0301,
+    U+0303-0304,
+    U+0308-0309,
+    U+0323,
+    U+0329,
+    U+1EA0-1EF9,
+    U+20AB;
+}
+@font-face {
+  font-family: "Raleway Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url(https://esm.sh/@fontsource-variable/raleway@5.2.8/files/raleway-latin-ext-wght-normal.woff2?lp=node_modules%252F%2540fontsource-variable%252Fraleway) format("woff2-variations");
+  unicode-range:
+    U+0100-02BA,
+    U+02BD-02C5,
+    U+02C7-02CC,
+    U+02CE-02D7,
+    U+02DD-02FF,
+    U+0304,
+    U+0308,
+    U+0329,
+    U+1D00-1DBF,
+    U+1E00-1E9F,
+    U+1EF2-1EFF,
+    U+2020,
+    U+20A0-20AB,
+    U+20AD-20C0,
+    U+2113,
+    U+2C60-2C7F,
+    U+A720-A7FF;
+}
+@font-face {
+  font-family: "Raleway Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url(https://esm.sh/@fontsource-variable/raleway@5.2.8/files/raleway-latin-wght-normal.woff2?lp=node_modules%252F%2540fontsource-variable%252Fraleway) format("woff2-variations");
+  unicode-range:
+    U+0000-00FF,
+    U+0131,
+    U+0152-0153,
+    U+02BB-02BC,
+    U+02C6,
+    U+02DA,
+    U+02DC,
+    U+0304,
+    U+0308,
+    U+0329,
+    U+2000-206F,
+    U+20AC,
+    U+2122,
+    U+2191,
+    U+2193,
+    U+2212,
+    U+2215,
+    U+FEFF,
+    U+FFFD;
+}
+
+/* esm:https://esm.sh/*@fontsource/black-ops-one@5.2.8?target=esnext&lp=node_modules%252F%2540fontsource%252Fblack-ops-one */
+@font-face {
+  font-family: "Black Ops One";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url(https://esm.sh/@fontsource/black-ops-one@5.2.8/files/black-ops-one-cyrillic-ext-400-normal.woff2?lp=node_modules%252F%2540fontsource%252Fblack-ops-one) format("woff2"), url(https://esm.sh/@fontsource/black-ops-one@5.2.8/files/black-ops-one-cyrillic-ext-400-normal.woff?lp=node_modules%252F%2540fontsource%252Fblack-ops-one) format("woff");
+  unicode-range:
+    U+0460-052F,
+    U+1C80-1C8A,
+    U+20B4,
+    U+2DE0-2DFF,
+    U+A640-A69F,
+    U+FE2E-FE2F;
+}
+@font-face {
+  font-family: "Black Ops One";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url(https://esm.sh/@fontsource/black-ops-one@5.2.8/files/black-ops-one-vietnamese-400-normal.woff2?lp=node_modules%252F%2540fontsource%252Fblack-ops-one) format("woff2"), url(https://esm.sh/@fontsource/black-ops-one@5.2.8/files/black-ops-one-vietnamese-400-normal.woff?lp=node_modules%252F%2540fontsource%252Fblack-ops-one) format("woff");
+  unicode-range:
+    U+0102-0103,
+    U+0110-0111,
+    U+0128-0129,
+    U+0168-0169,
+    U+01A0-01A1,
+    U+01AF-01B0,
+    U+0300-0301,
+    U+0303-0304,
+    U+0308-0309,
+    U+0323,
+    U+0329,
+    U+1EA0-1EF9,
+    U+20AB;
+}
+@font-face {
+  font-family: "Black Ops One";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url(https://esm.sh/@fontsource/black-ops-one@5.2.8/files/black-ops-one-latin-ext-400-normal.woff2?lp=node_modules%252F%2540fontsource%252Fblack-ops-one) format("woff2"), url(https://esm.sh/@fontsource/black-ops-one@5.2.8/files/black-ops-one-latin-ext-400-normal.woff?lp=node_modules%252F%2540fontsource%252Fblack-ops-one) format("woff");
+  unicode-range:
+    U+0100-02BA,
+    U+02BD-02C5,
+    U+02C7-02CC,
+    U+02CE-02D7,
+    U+02DD-02FF,
+    U+0304,
+    U+0308,
+    U+0329,
+    U+1D00-1DBF,
+    U+1E00-1E9F,
+    U+1EF2-1EFF,
+    U+2020,
+    U+20A0-20AB,
+    U+20AD-20C0,
+    U+2113,
+    U+2C60-2C7F,
+    U+A720-A7FF;
+}
+@font-face {
+  font-family: "Black Ops One";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url(https://esm.sh/@fontsource/black-ops-one@5.2.8/files/black-ops-one-latin-400-normal.woff2?lp=node_modules%252F%2540fontsource%252Fblack-ops-one) format("woff2"), url(https://esm.sh/@fontsource/black-ops-one@5.2.8/files/black-ops-one-latin-400-normal.woff?lp=node_modules%252F%2540fontsource%252Fblack-ops-one) format("woff");
+  unicode-range:
+    U+0000-00FF,
+    U+0131,
+    U+0152-0153,
+    U+02BB-02BC,
+    U+02C6,
+    U+02DA,
+    U+02DC,
+    U+0304,
+    U+0308,
+    U+0329,
+    U+2000-206F,
+    U+20AC,
+    U+2122,
+    U+2191,
+    U+2193,
+    U+2212,
+    U+2215,
+    U+FEFF,
+    U+FFFD;
+}
+
+/* esm:https://esm.sh/*@fontsource/righteous@5.2.7?target=esnext&lp=node_modules%252F%2540fontsource%252Frighteous */
+@font-face {
+  font-family: "Righteous";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url(https://esm.sh/@fontsource/righteous@5.2.7/files/righteous-latin-ext-400-normal.woff2?lp=node_modules%252F%2540fontsource%252Frighteous) format("woff2"), url(https://esm.sh/@fontsource/righteous@5.2.7/files/righteous-latin-ext-400-normal.woff?lp=node_modules%252F%2540fontsource%252Frighteous) format("woff");
+  unicode-range:
+    U+0100-02BA,
+    U+02BD-02C5,
+    U+02C7-02CC,
+    U+02CE-02D7,
+    U+02DD-02FF,
+    U+0304,
+    U+0308,
+    U+0329,
+    U+1D00-1DBF,
+    U+1E00-1E9F,
+    U+1EF2-1EFF,
+    U+2020,
+    U+20A0-20AB,
+    U+20AD-20C0,
+    U+2113,
+    U+2C60-2C7F,
+    U+A720-A7FF;
+}
+@font-face {
+  font-family: "Righteous";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url(https://esm.sh/@fontsource/righteous@5.2.7/files/righteous-latin-400-normal.woff2?lp=node_modules%252F%2540fontsource%252Frighteous) format("woff2"), url(https://esm.sh/@fontsource/righteous@5.2.7/files/righteous-latin-400-normal.woff?lp=node_modules%252F%2540fontsource%252Frighteous) format("woff");
+  unicode-range:
+    U+0000-00FF,
+    U+0131,
+    U+0152-0153,
+    U+02BB-02BC,
+    U+02C6,
+    U+02DA,
+    U+02DC,
+    U+0304,
+    U+0308,
+    U+0329,
+    U+2000-206F,
+    U+20AC,
+    U+2122,
+    U+2191,
+    U+2193,
+    U+2212,
+    U+2215,
+    U+FEFF,
+    U+FFFD;
+}
+
+/* esm:https://esm.sh/*@fontsource/permanent-marker@5.2.7?target=esnext&lp=node_modules%252F%2540fontsource%252Fpermanent-marker */
+@font-face {
+  font-family: "Permanent Marker";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url(https://esm.sh/@fontsource/permanent-marker@5.2.7/files/permanent-marker-latin-400-normal.woff2?lp=node_modules%252F%2540fontsource%252Fpermanent-marker) format("woff2"), url(https://esm.sh/@fontsource/permanent-marker@5.2.7/files/permanent-marker-latin-400-normal.woff?lp=node_modules%252F%2540fontsource%252Fpermanent-marker) format("woff");
+  unicode-range:
+    U+0000-00FF,
+    U+0131,
+    U+0152-0153,
+    U+02BB-02BC,
+    U+02C6,
+    U+02DA,
+    U+02DC,
+    U+0304,
+    U+0308,
+    U+0329,
+    U+2000-206F,
+    U+20AC,
+    U+2122,
+    U+2191,
+    U+2193,
+    U+2212,
+    U+2215,
+    U+FEFF,
+    U+FFFD;
+}
+/*# sourceMappingURL=main-5JTRGHUU.css.map */
+</style><script type="module" src="/shakespeare_tailwind.config-5TGO7TRT.js"></script></head>
+  <body>
+    <div id="root"></div>
+    <script>
+      // GitHub Pages SPA routing — restore path after 404 redirect
+      (function() {
+        var redirect = sessionStorage.getItem('spa-redirect');
+        if (redirect && redirect !== '/') {
+          sessionStorage.removeItem('spa-redirect');
+          window.history.replaceState(null, '', redirect);
+        }
+      })();
+    </script>
+    <script type="module" src="/main-5DJENGM7.js"></script>
+  
+
+</body></html>

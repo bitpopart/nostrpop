@@ -1,0 +1,93 @@
+{
+  "name": "BitPopArt Fan App",
+  "short_name": "BitPopArt",
+  "description": "The BitPopArt fan community app — free wallpapers, GIFs, animations, avatars, merch and more! Bitcoin pop art for fans worldwide. No login, no KYC, no barriers.",
+  "start_url": "/app",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#fef3c7",
+  "theme_color": "#f97316",
+  "lang": "en-US",
+  "dir": "ltr",
+  "id": "com.bitpopart.fanapp",
+  "categories": ["entertainment", "social", "lifestyle", "art", "photography"],
+  "keywords": ["bitcoin art", "pop art", "nostr", "fan app", "free downloads", "bitcoin culture", "good vibes", "wallpapers", "gifs"],
+  "screenshots": [
+    {
+      "src": "/fan-app-icon.png",
+      "sizes": "828x828",
+      "type": "image/png",
+      "label": "BitPopArt Fan App"
+    },
+    {
+      "src": "/bitpopart-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "label": "BitPopArt"
+    }
+  ],
+  "icons": [
+    {
+      "src": "/fan-app-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/fan-app-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/bitpopart-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Free Downloads",
+      "short_name": "Downloads",
+      "description": "Browse free wallpapers, GIFs and art",
+      "url": "/app",
+      "icons": [{ "src": "/fan-app-icon.png", "sizes": "512x512" }]
+    },
+    {
+      "name": "Art Gallery",
+      "short_name": "Art",
+      "description": "Browse Bitcoin pop art gallery",
+      "url": "/art",
+      "icons": [{ "src": "/icon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Shop",
+      "short_name": "Shop",
+      "description": "Buy BitPopArt merch",
+      "url": "/shop",
+      "icons": [{ "src": "/icon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Blog",
+      "short_name": "Blog",
+      "description": "Read BitPopArt blog",
+      "url": "/blog",
+      "icons": [{ "src": "/icon.svg", "sizes": "any" }]
+    }
+  ],
+  "related_applications": [
+    {
+      "platform": "webapp",
+      "url": "https://bitpopart.com/manifest.webmanifest"
+    }
+  ],
+  "prefer_related_applications": false
+}
