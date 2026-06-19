@@ -131,6 +131,16 @@ export function Navigation() {
                 <Sun className="h-4 w-4" />
               )}
             </Button>
+            <Link to="/NFT">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 px-3 gap-1.5 rounded-full font-medium text-sm bg-gradient-to-r from-orange-100 to-pink-100 dark:from-orange-900/30 dark:to-pink-900/30 hover:from-orange-200 hover:to-pink-200 dark:hover:from-orange-900/50 dark:hover:to-pink-900/50 text-orange-600 dark:text-orange-400"
+              >
+                <Sparkles className="h-4 w-4" />
+                <span>NFT</span>
+              </Button>
+            </Link>
             {isAdmin && (
               <>
                 <Button
