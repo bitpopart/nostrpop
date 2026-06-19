@@ -1,6 +1,6 @@
 import { useSeoMeta } from '@unhead/react';
 import { Link } from 'react-router-dom';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -27,6 +27,7 @@ import { useContentOverview } from '@/hooks/useContentOverview';
 import { genUserName } from '@/lib/genUserName';
 import { nip19 } from 'nostr-tools';
 import { getFirstImage, stripImagesFromContent } from '@/lib/extractImages';
+import { getAdminPubkeyHex } from '@/lib/adminUtils';
 import { RelaySelector } from '@/components/RelaySelector';
 import {
   Zap,
@@ -57,6 +58,7 @@ import {
   TrendingUp,
   BarChart2,
   Flame,
+  Network,
 } from 'lucide-react';
 import type { NostrEvent, NostrMetadata } from '@nostrify/nostrify';
 
@@ -385,6 +387,335 @@ function NoteThumbnail({ event }: { event: NostrEvent }) {
         </CardContent>
       </Card>
     </a>
+  );
+}
+
+// ── WOT Network ──────────────────────────────────────────────────────────────
+
+interface FanNode {
+  pubkey: string;
+  /** Combined engagement score: zap sats * 3 + reaction count */
+  score: number;
+  /** Radius of the orbit ring this node sits on */
+  orbitRadius: number;
+  /** Angle in degrees (0–360) on its orbit ring */
+  angle: number;
+  /** Pixel offset for the floating animation */
+  floatOffset: number;
+  /** Duration of one full float cycle (s) */
+  floatDuration: number;
+}
+
+
+interface FanAvatarNodeProps {
+  pubkey: string;
+  cx: number;
+  cy: number;
+  size: number;
+  score: number;
+  floatOffset: number;
+  floatDuration: number;
+  delay: number;
+}
+
+function FanAvatarNode({ pubkey, cx, cy, size, floatOffset, floatDuration, delay }: FanAvatarNodeProps) {
+  const author = useAuthor(pubkey);
+  const metadata: NostrMetadata | undefined = author.data?.metadata;
+  const displayName = metadata?.display_name ?? metadata?.name ?? genUserName(pubkey);
+  const picture = metadata?.picture;
+  const npub = pubkeyToNpub(pubkey);
+  const initials = displayName.slice(0, 2).toUpperCase();
+
+  const r = size / 2;
+  const clipId = `clip-fan-${pubkey.slice(0, 8)}`;
+  const animId = `float-${pubkey.slice(0, 8)}`;
+
+  return (
+    <g transform={`translate(${cx - r}, ${cy - r})`}>
+      {/* Floating animation */}
+      <animateTransform
+        attributeName="transform"
+        type="translate"
+        values={`${cx - r},${cy - r + floatOffset} ; ${cx - r},${cy - r - floatOffset} ; ${cx - r},${cy - r + floatOffset}`}
+        dur={`${floatDuration}s`}
+        begin={`${delay}s`}
+        repeatCount="indefinite"
+        id={animId}
+      />
+
+      {/* Glow ring */}
+      <circle
+        cx={r}
+        cy={r}
+        r={r + 3}
+        fill="none"
+        stroke="#f97316"
+        strokeWidth="1.5"
+        opacity="0.4"
+      />
+
+      {/* Avatar clip */}
+      <defs>
+        <clipPath id={clipId}>
+          <circle cx={r} cy={r} r={r} />
+        </clipPath>
+      </defs>
+
+      {picture ? (
+        <image
+          href={picture}
+          width={size}
+          height={size}
+          clipPath={`url(#${clipId})`}
+        />
+      ) : (
+        <>
+          <circle cx={r} cy={r} r={r} fill="#f97316" opacity="0.9" />
+          <text
+            x={r}
+            y={r}
+            textAnchor="middle"
+            dominantBaseline="central"
+            fontSize={r * 0.7}
+            fontWeight="bold"
+            fill="white"
+          >
+            {initials}
+          </text>
+        </>
+      )}
+
+      {/* Invisible hit area linking to njump */}
+      <a href={`https://njump.me/${npub}`} target="_blank" rel="noopener noreferrer">
+        <circle cx={r} cy={r} r={r + 4} fill="transparent" cursor="pointer">
+          <title>{displayName}</title>
+        </circle>
+      </a>
+    </g>
+  );
+}
+
+interface WotNetworkProps {
+  data: ReturnType<typeof usePopFans>['data'];
+  isLoading: boolean;
+}
+
+function WotNetwork({ data, isLoading }: WotNetworkProps) {
+  const adminPubkey = getAdminPubkeyHex();
+  const adminAuthor = useAuthor(adminPubkey);
+  const adminMeta: NostrMetadata | undefined = adminAuthor.data?.metadata;
+  const adminPicture = adminMeta?.picture;
+  const adminName = adminMeta?.display_name ?? adminMeta?.name ?? 'BitPopArt';
+  const adminClipId = 'clip-admin-center';
+
+  // Build combined unique fan list from top zappers + top reactors, scored by engagement
+  const fans: FanNode[] = useMemo(() => {
+    if (!data) return [];
+
+    const scoreMap = new Map<string, number>();
+
+    // Zaps: weight heavily (sats * 3 to give zaps more impact, min 1 per zap)
+    for (const z of data.allTimeTopZappers) {
+      const s = Math.max(z.totalSats * 3, z.zapCount * 100);
+      scoreMap.set(z.pubkey, (scoreMap.get(z.pubkey) ?? 0) + s);
+    }
+    // Reactions: each reaction = 50 score
+    for (const r of data.latestTopReactors) {
+      scoreMap.set(r.pubkey, (scoreMap.get(r.pubkey) ?? 0) + r.reactionCount * 50);
+    }
+
+    // Sort by score desc, take top 12
+    const sorted = Array.from(scoreMap.entries())
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 12);
+
+    // Assign orbits: 3 rings with radii 120, 175, 220
+    // Ring 0 (innermost): top 4, Ring 1: next 4, Ring 2: last 4
+    const rings = [120, 175, 220];
+
+    return sorted.map(([pubkey, score], i) => {
+      const ring = Math.min(Math.floor(i / 4), 2);
+      const posInRing = i % 4;
+      // Evenly space within the ring but rotate each ring to avoid visual clash
+      const ringOffset = ring * 22; // degrees
+      const angle = ringOffset + (posInRing / 4) * 360 + (ring % 2 === 0 ? 0 : 45);
+
+      return {
+        pubkey,
+        score,
+        orbitRadius: rings[ring],
+        angle,
+        floatOffset: 4 + (i % 4) * 1.5,
+        floatDuration: 3.5 + (i % 6) * 0.7,
+      };
+    });
+  }, [data]);
+
+  // SVG dimensions — responsive via viewBox
+  const W = 480;
+  const H = 480;
+  const cx = W / 2;
+  const cy = H / 2;
+  const ADMIN_R = 38; // admin avatar radius
+  const FAN_SIZE = 40; // fan avatar diameter
+
+  if (isLoading) {
+    return (
+      <Card className="mb-10 shadow-md overflow-hidden">
+        <CardContent className="py-10 flex items-center justify-center">
+          <Skeleton className="w-64 h-64 rounded-full" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!data || fans.length === 0) return null;
+
+  return (
+    <Card className="mb-10 shadow-lg overflow-hidden border-2 border-orange-100 dark:border-orange-900"
+      style={{ background: 'linear-gradient(135deg, #fff7ed, #fdf4ff)' }}>
+      <CardHeader className="pb-1 pt-5">
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <Network className="h-5 w-5 text-orange-500" />
+          Web of Trust
+          <span className="ml-auto text-xs font-normal text-muted-foreground">Top fans &amp; friends</span>
+        </CardTitle>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          The real people keeping BitPopArt alive — connected by zaps, reactions &amp; love ⚡❤️
+        </p>
+      </CardHeader>
+
+      <CardContent className="pt-2 pb-5">
+        <div className="w-full max-w-sm mx-auto">
+          <svg
+            viewBox={`0 0 ${W} ${H}`}
+            width="100%"
+            style={{ overflow: 'visible' }}
+            aria-label="BitPopArt Web of Trust network"
+          >
+            <defs>
+              {/* Radial glow for centre */}
+              <radialGradient id="centerGlow" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="#f7931a" stopOpacity="0.35" />
+                <stop offset="100%" stopColor="#f7931a" stopOpacity="0" />
+              </radialGradient>
+              {/* Orbit ring gradient */}
+              <radialGradient id="bgGrad" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="#fdf6ee" stopOpacity="0.0" />
+                <stop offset="100%" stopColor="#f7931a" stopOpacity="0.04" />
+              </radialGradient>
+              <clipPath id={adminClipId}>
+                <circle cx={cx} cy={cy} r={ADMIN_R} />
+              </clipPath>
+            </defs>
+
+            {/* Background subtle glow */}
+            <circle cx={cx} cy={cy} r={230} fill="url(#bgGrad)" />
+
+            {/* Orbit rings — dashed circles */}
+            {[120, 175, 220].map((r, i) => (
+              <circle
+                key={r}
+                cx={cx}
+                cy={cy}
+                r={r}
+                fill="none"
+                stroke="#f7931a"
+                strokeWidth="1"
+                strokeDasharray="4 8"
+                opacity={0.18 - i * 0.04}
+              />
+            ))}
+
+            {/* Connection lines from centre to each fan */}
+            {fans.map((fan) => {
+              const rad = (fan.angle * Math.PI) / 180;
+              const fx = cx + Math.cos(rad) * fan.orbitRadius;
+              const fy = cy + Math.sin(rad) * fan.orbitRadius;
+              return (
+                <line
+                  key={`line-${fan.pubkey}`}
+                  x1={cx}
+                  y1={cy}
+                  x2={fx}
+                  y2={fy}
+                  stroke="#f7931a"
+                  strokeWidth="1.2"
+                  strokeDasharray="3 5"
+                  opacity="0.35"
+                >
+                  {/* Pulse animation on the line opacity */}
+                  <animate
+                    attributeName="opacity"
+                    values="0.2;0.55;0.2"
+                    dur={`${3 + (fan.angle % 3)}s`}
+                    repeatCount="indefinite"
+                  />
+                </line>
+              );
+            })}
+
+            {/* Fan avatar nodes */}
+            {fans.map((fan, i) => {
+              const rad = (fan.angle * Math.PI) / 180;
+              const fx = cx + Math.cos(rad) * fan.orbitRadius;
+              const fy = cy + Math.sin(rad) * fan.orbitRadius;
+              return (
+                <FanAvatarNode
+                  key={fan.pubkey}
+                  pubkey={fan.pubkey}
+                  cx={fx}
+                  cy={fy}
+                  size={FAN_SIZE}
+                  score={fan.score}
+                  floatOffset={fan.floatOffset}
+                  floatDuration={fan.floatDuration}
+                  delay={i * 0.3}
+                />
+              );
+            })}
+
+            {/* Centre glow halo */}
+            <circle cx={cx} cy={cy} r={ADMIN_R + 20} fill="url(#centerGlow)" />
+
+            {/* Admin pulse ring */}
+            <circle cx={cx} cy={cy} r={ADMIN_R + 6} fill="none" stroke="#f7931a" strokeWidth="2" opacity="0.5">
+              <animate attributeName="r" values={`${ADMIN_R + 4};${ADMIN_R + 12};${ADMIN_R + 4}`} dur="2.8s" repeatCount="indefinite" />
+              <animate attributeName="opacity" values="0.5;0.1;0.5" dur="2.8s" repeatCount="indefinite" />
+            </circle>
+
+            {/* Admin avatar (centre) */}
+            {adminPicture ? (
+              <image
+                href={adminPicture}
+                x={cx - ADMIN_R}
+                y={cy - ADMIN_R}
+                width={ADMIN_R * 2}
+                height={ADMIN_R * 2}
+                clipPath={`url(#${adminClipId})`}
+              />
+            ) : (
+              <>
+                <circle cx={cx} cy={cy} r={ADMIN_R} fill="#f7931a" />
+                <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" fontSize="16" fontWeight="bold" fill="white">BP</text>
+              </>
+            )}
+
+            {/* Admin border ring */}
+            <circle cx={cx} cy={cy} r={ADMIN_R} fill="none" stroke="#f7931a" strokeWidth="2.5" />
+
+            {/* "BitPopArt" label below centre */}
+            <text x={cx} y={cy + ADMIN_R + 14} textAnchor="middle" fontSize="11" fontWeight="bold" fill="#f7931a" opacity="0.9">
+              {adminName}
+            </text>
+          </svg>
+        </div>
+
+        <p className="text-[10px] text-center text-muted-foreground mt-1">
+          Avatars ranked by zaps ⚡ &amp; reactions — tap any to view profile on Nostr
+        </p>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -1052,6 +1383,9 @@ export default function Community() {
             ))}
           </CardContent>
         </Card>
+
+        {/* ── WEB OF TRUST NETWORK ── */}
+        <WotNetwork data={data} isLoading={isLoading} />
 
         {/* ════════════════════════════════════════════════════════════════════ */}
         {/* ── PROOF OF WORK SECTION ── */}
