@@ -381,7 +381,7 @@ function getDefaultIcon(variant: HomepageButton['variant']): React.ComponentType
   return Gift;
 }
 
-function DynamicButton({ btn, size = 'default' }: { btn: HomepageButton; size?: 'default' | 'lg' | 'sm' }) {
+function DynamicButton({ btn, size = 'default', mobileIconOnly = false }: { btn: HomepageButton; size?: 'default' | 'lg' | 'sm'; mobileIconOnly?: boolean }) {
   const isExternal = btn.url.startsWith('http://') || btn.url.startsWith('https://');
 
   const variantProps = btn.variant === 'primary'
@@ -406,23 +406,31 @@ function DynamicButton({ btn, size = 'default' }: { btn: HomepageButton; size?: 
     ? 'text-orange-600 dark:text-orange-400'
     : '';
 
+  // On mobile (when mobileIconOnly=true): square icon button, label hidden.
+  // On sm+ screens: normal full button with label.
+  const mobileClass = mobileIconOnly ? 'w-12 h-12 p-0 sm:w-auto sm:h-auto sm:px-4 sm:py-2' : '';
+
   if (isExternal) {
     return (
-      <Button size={size} {...variantProps} className={`rounded-full ${accentClass}`} {...primaryStyle} asChild>
+      <Button size={size} {...variantProps} className={`rounded-full ${accentClass} ${mobileClass}`} {...primaryStyle} title={btn.label} asChild>
         <a href={btn.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
-          {ResolvedIcon && <ResolvedIcon className={`h-4 w-4 ${accentIconClass}`} />}
-          {btn.label}
-          <ExternalLink className="h-3 w-3 opacity-60" />
+          {ResolvedIcon && <ResolvedIcon className={`h-5 w-5 sm:h-4 sm:w-4 ${accentIconClass}`} />}
+          {mobileIconOnly
+            ? <span className="hidden sm:inline">{btn.label}</span>
+            : btn.label}
+          <ExternalLink className="hidden sm:inline h-3 w-3 opacity-60" />
         </a>
       </Button>
     );
   }
 
   return (
-    <Button size={size} {...variantProps} className={`rounded-full ${accentClass}`} {...primaryStyle} asChild>
+    <Button size={size} {...variantProps} className={`rounded-full ${accentClass} ${mobileClass}`} {...primaryStyle} title={btn.label} asChild>
       <Link to={btn.url} className="flex items-center gap-2">
-        {ResolvedIcon && <ResolvedIcon className={`h-4 w-4 ${accentIconClass}`} />}
-        {btn.label}
+        {ResolvedIcon && <ResolvedIcon className={`h-5 w-5 sm:h-4 sm:w-4 ${accentIconClass}`} />}
+        {mobileIconOnly
+          ? <span className="hidden sm:inline">{btn.label}</span>
+          : btn.label}
       </Link>
     </Button>
   );
@@ -1378,17 +1386,17 @@ const Index = () => {
         <div className="text-center mb-16 pt-8">
           <div className="flex flex-col gap-4 items-center">
             {/* Dynamic Hero Buttons from settings — show skeletons while loading */}
-            <div className="flex flex-col sm:flex-row flex-wrap gap-4 justify-center">
+            <div className="flex flex-row flex-wrap gap-3 justify-center">
               {settingsLoading ? (
-                /* Skeletons while relay responds — no stale hardcoded buttons */
+                /* Skeletons while relay responds */
                 <>
-                  <Skeleton className="h-11 w-40 rounded-full" />
-                  <Skeleton className="h-11 w-32 rounded-full" />
-                  <Skeleton className="h-11 w-28 rounded-full" />
+                  <Skeleton className="h-12 w-12 rounded-full sm:h-11 sm:w-40" />
+                  <Skeleton className="h-12 w-12 rounded-full sm:h-11 sm:w-32" />
+                  <Skeleton className="h-12 w-12 rounded-full sm:h-11 sm:w-28" />
                 </>
               ) : (
                 heroButtons.map(btn => (
-                  <DynamicButton key={btn.id} btn={btn} size="lg" />
+                  <DynamicButton key={btn.id} btn={btn} size="lg" mobileIconOnly />
                 ))
               )}
             </div>
