@@ -177,7 +177,7 @@ export function usePopFans() {
       const latestLikes: LikeEntry[] = reactionEvents
         .filter((e) => (e.content === '+' || e.content === '❤️' || e.content === '👍' || e.content === '🤙') && e.pubkey !== adminPubkey && !EXCLUDED_PUBKEYS.has(e.pubkey))
         .sort((a, b) => b.created_at - a.created_at)
-        .slice(0, 20)
+        .slice(0, 5)
         .map((e) => ({
           pubkey: e.pubkey,
           createdAt: e.created_at,
