@@ -273,7 +273,7 @@ function GeneratorCard({ character }: GeneratorCardProps) {
         {/* Zap */}
         <ZapButton
           authorPubkey={ADMIN_PUBKEY}
-          lightningAddress="traveltelly@primal.net"
+          lightningAddress="bitpopart@walletofsatoshi.com"
           event={character.event}
           eventTitle={`${character.title} NFT`}
           variant="outline"
@@ -492,12 +492,12 @@ export default function NFTPage() {
         <div className="max-w-xl mx-auto text-center space-y-4">
           <h3 className="text-xl font-bold">Love a character? Send a zap! ⚡</h3>
           <p className="text-muted-foreground text-sm">
-            Every zap goes directly to <strong>traveltelly@primal.net</strong> via Lightning.
+            Every zap goes directly to <strong>bitpopart@walletofsatoshi.com</strong> via Lightning.
             It helps Johannes keep creating more pop-art characters on Nostr.
           </p>
           <ZapButton
             authorPubkey={ADMIN_PUBKEY}
-            lightningAddress="traveltelly@primal.net"
+            lightningAddress="bitpopart@walletofsatoshi.com"
             eventTitle="BitPopArt NFT Collection"
             variant="default"
             size="lg"
