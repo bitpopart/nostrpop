@@ -85,11 +85,10 @@ function pubkeyToNpub(pubkey: string): string {
   }
 }
 
-function formatFullDate(date: Date): string {
+function formatMonthYear(date: Date): string {
   return date.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
-    day: 'numeric',
   });
 }
 
@@ -166,25 +165,28 @@ function AllTimeZapperRow({ entry, rank }: { entry: ZapperEntry; rank: number })
       href={`https://njump.me/${npub}`}
       target="_blank"
       rel="noopener noreferrer"
-      className={`flex items-center gap-3 p-3 rounded-xl border transition-all hover:scale-[1.01] hover:shadow-md ${medalBg(rank)}`}
+      className={`flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-xl border transition-all hover:scale-[1.01] hover:shadow-md ${medalBg(rank)}`}
     >
       {/* Rank */}
-      <span className={`text-xl font-black w-8 text-center flex-shrink-0 ${medalColour(rank)}`}>
+      <span className={`text-lg sm:text-xl font-black w-7 sm:w-8 text-center flex-shrink-0 ${medalColour(rank)}`}>
         {rank <= 3 ? ['🥇', '🥈', '🥉'][rank - 1] : `#${rank}`}
       </span>
 
       <ProfileAvatar pubkey={entry.pubkey} size={rank <= 3 ? 'lg' : 'md'} />
-      <ProfileName pubkey={entry.pubkey} />
+      {/* min-w-0 keeps the name from overflowing on narrow screens */}
+      <div className="min-w-0 flex-1">
+        <ProfileName pubkey={entry.pubkey} />
+      </div>
 
-      <div className="ml-auto flex flex-col items-end gap-1 flex-shrink-0">
+      <div className="flex flex-col items-end gap-1 flex-shrink-0">
         <Badge
-          className="text-white font-bold px-2.5 py-0.5 flex items-center gap-1"
+          className="text-white font-bold px-2 py-0.5 flex items-center gap-1 text-xs"
           style={{ background: '#f7931a' }}
         >
           <Zap className="h-3 w-3" />
-          {formatSats(entry.totalSats)} sats
+          {formatSats(entry.totalSats)}
         </Badge>
-        <span className="text-xs text-muted-foreground">{entry.zapCount} zap{entry.zapCount !== 1 ? 's' : ''}</span>
+        <span className="text-[10px] text-muted-foreground whitespace-nowrap">{entry.zapCount} zap{entry.zapCount !== 1 ? 's' : ''}</span>
       </div>
     </a>
   );
@@ -199,11 +201,11 @@ function LatestZapperRow({ entry, rank }: { entry: ZapperEntry; rank: number }) 
       href={`https://njump.me/${npub}`}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex items-center gap-3 p-3 rounded-xl border border-border bg-background hover:bg-orange-50 dark:hover:bg-orange-900/10 transition-all hover:shadow-sm"
+      className="flex items-center gap-3 p-2.5 sm:p-3 rounded-xl border border-border bg-background hover:bg-orange-50 dark:hover:bg-orange-900/10 transition-all hover:shadow-sm"
     >
       <ProfileAvatar pubkey={entry.pubkey} />
-      <ProfileName pubkey={entry.pubkey} />
-      <div className="ml-auto flex flex-col items-end gap-1 flex-shrink-0">
+      <div className="min-w-0 flex-1"><ProfileName pubkey={entry.pubkey} /></div>
+      <div className="flex flex-col items-end gap-1 flex-shrink-0">
         <Badge
           className="text-white font-bold px-2 py-0.5 flex items-center gap-1 text-xs"
           style={{ background: '#f7931a' }}
@@ -233,9 +235,9 @@ function LatestReactorRow({ entry }: { entry: ReactorEntry }) {
         <ProfileAvatar pubkey={entry.pubkey} />
         <span className="absolute -bottom-1 -right-1 text-base leading-none">{emoji}</span>
       </div>
-      <ProfileName pubkey={entry.pubkey} />
-      <div className="ml-auto flex flex-col items-end gap-1 flex-shrink-0">
-        <Badge variant="secondary" className="text-xs font-medium">
+      <div className="min-w-0 flex-1"><ProfileName pubkey={entry.pubkey} /></div>
+      <div className="flex flex-col items-end gap-1 flex-shrink-0">
+        <Badge variant="secondary" className="text-xs font-medium whitespace-nowrap">
           {entry.reactionCount} reaction{entry.reactionCount !== 1 ? 's' : ''}
         </Badge>
         <span className="text-xs text-muted-foreground">{timeAgo(entry.latestReactionAt)}</span>
@@ -260,8 +262,8 @@ function LikeRow({ entry }: { entry: LikeEntry }) {
         <ProfileAvatar pubkey={entry.pubkey} size="sm" />
         <span className="absolute -bottom-1 -right-1 text-sm leading-none">{emoji}</span>
       </div>
-      <ProfileName pubkey={entry.pubkey} />
-      <span className="ml-auto text-xs text-muted-foreground flex-shrink-0">{timeAgo(entry.createdAt)}</span>
+      <div className="min-w-0 flex-1"><ProfileName pubkey={entry.pubkey} /></div>
+      <span className="text-xs text-muted-foreground flex-shrink-0 whitespace-nowrap">{timeAgo(entry.createdAt)}</span>
     </a>
   );
 }
@@ -607,44 +609,49 @@ function ActivityChart({ notes, isLoading, isPartial }: ActivityChartProps) {
           </div>
         </div>
 
-        {/* Chart */}
-        <div className="w-full" style={{ height: 280 }}>
+        {/* Chart — extra bottom padding lets the angled labels breathe */}
+        <div className="w-full" style={{ height: 300 }}>
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={data} margin={{ top: 4, right: 12, left: -20, bottom: 0 }}>
+            <ComposedChart
+              data={data}
+              margin={{ top: 4, right: 8, left: -22, bottom: view === 'monthly' ? 48 : 8 }}
+            >
               <CartesianGrid strokeDasharray="3 3" stroke="#8b5cf620" vertical={false} />
               <XAxis
                 dataKey="label"
-                tick={{ fontSize: 10, fill: '#9ca3af' }}
+                tick={{ fontSize: 9, fill: '#9ca3af' }}
                 tickLine={false}
                 axisLine={false}
-                interval={view === 'monthly' ? Math.max(0, Math.floor(data.length / 12) - 1) : 0}
+                /* Show every 3rd month (quarterly) so labels never crowd on any screen */
+                interval={view === 'monthly' ? 2 : 0}
+                angle={view === 'monthly' ? -45 : 0}
+                textAnchor={view === 'monthly' ? 'end' : 'middle'}
+                height={view === 'monthly' ? 52 : 20}
               />
               <YAxis
                 yAxisId="left"
-                tick={{ fontSize: 10, fill: '#9ca3af' }}
+                tick={{ fontSize: 9, fill: '#9ca3af' }}
                 tickLine={false}
                 axisLine={false}
                 allowDecimals={false}
+                width={28}
               />
               <YAxis
                 yAxisId="right"
                 orientation="right"
-                tick={{ fontSize: 10, fill: '#f97316' }}
+                tick={{ fontSize: 9, fill: '#f97316' }}
                 tickLine={false}
                 axisLine={false}
                 allowDecimals={false}
+                width={32}
               />
               <Tooltip content={<ChartTooltip />} />
-              <Legend
-                wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
-                iconSize={10}
-              />
               <Bar
                 yAxisId="left"
                 dataKey="posts"
                 name="Posts"
                 radius={[3, 3, 0, 0]}
-                maxBarSize={view === 'monthly' ? 16 : 60}
+                maxBarSize={view === 'monthly' ? 14 : 56}
               >
                 {data.map((entry) => (
                   <Cell
@@ -668,14 +675,20 @@ function ActivityChart({ notes, isLoading, isPartial }: ActivityChartProps) {
         </div>
 
         {/* Legend key */}
-        <p className="text-[10px] text-center text-muted-foreground mt-2 mb-3">
-          <span className="inline-block w-2 h-2 rounded-sm bg-purple-500 mr-1 align-middle" />
-          Notes per month &nbsp;·&nbsp;
-          <span className="inline-block w-2 h-2 rounded-full bg-orange-400 mr-1 align-middle" />
-          Running total &nbsp;·&nbsp;
-          <span className="inline-block w-2 h-2 rounded-sm bg-orange-400 mr-1 align-middle" />
-          Current month
-        </p>
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[10px] text-muted-foreground mt-1 mb-3">
+          <span className="flex items-center gap-1">
+            <span className="inline-block w-2.5 h-2.5 rounded-sm bg-purple-500" />
+            Notes per month
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="inline-block w-2.5 h-2.5 rounded-full bg-orange-400" />
+            Running total
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="inline-block w-2.5 h-2.5 rounded-sm bg-orange-400" />
+            Current month
+          </span>
+        </div>
 
         {/* Relay data disclaimer — always shown, emphasised when partial */}
         <div className={`rounded-xl border px-4 py-3 text-xs leading-relaxed ${
@@ -898,7 +911,7 @@ export default function Community() {
 
         {/* Page title */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-black tracking-tight mb-1">
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight mb-1">
             <span style={{
               background: 'linear-gradient(90deg, #f7931a, #ff6b6b)',
               WebkitBackgroundClip: 'text',
@@ -935,7 +948,7 @@ export default function Community() {
             style={{ background: 'linear-gradient(135deg, #f7931a, #ff6b6b)' }}>
             <Users className="h-8 w-8 text-white" />
           </div>
-          <h2 className="text-4xl font-black tracking-tight mb-2">
+          <h2 className="text-3xl sm:text-4xl font-black tracking-tight mb-2">
             <span style={{
               background: 'linear-gradient(90deg, #f7931a, #ff6b6b)',
               WebkitBackgroundClip: 'text',
@@ -963,10 +976,10 @@ export default function Community() {
         <Card className="mb-8 shadow-lg border-2 border-orange-200 dark:border-orange-800 overflow-hidden">
           <CardHeader className="pb-2 pt-5"
             style={{ background: 'linear-gradient(135deg, #f7931a22, #ff6b6b11)' }}>
-            <CardTitle className="flex items-center gap-2 text-xl">
-              <Trophy className="h-5 w-5 text-yellow-500" />
-              All-Time Top Zappers
-              <span className="ml-auto text-sm font-normal text-muted-foreground">Hall of Fame</span>
+            <CardTitle className="flex items-center gap-2 text-base sm:text-xl">
+              <Trophy className="h-5 w-5 text-yellow-500 flex-shrink-0" />
+              <span>All-Time Top Zappers</span>
+              <span className="ml-auto text-xs sm:text-sm font-normal text-muted-foreground whitespace-nowrap">Hall of Fame</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-4 pb-4 space-y-2">
@@ -1063,7 +1076,7 @@ export default function Community() {
             style={{ background: 'linear-gradient(135deg, #8b5cf6, #6366f1)' }}>
             <Hammer className="h-8 w-8 text-white" />
           </div>
-          <h2 className="text-3xl font-black tracking-tight mb-2">
+          <h2 className="text-2xl sm:text-3xl font-black tracking-tight mb-2">
             <span style={{
               background: 'linear-gradient(90deg, #8b5cf6, #6366f1)',
               WebkitBackgroundClip: 'text',
@@ -1086,7 +1099,7 @@ export default function Community() {
               🟣 On Nostr Since
             </p>
             <p
-              className="text-4xl sm:text-5xl font-black mb-3 tracking-tight"
+              className="text-3xl sm:text-5xl font-black mb-3 tracking-tight break-words"
               style={{
                 background: 'linear-gradient(90deg, #8b5cf6, #6366f1)',
                 WebkitBackgroundClip: 'text',
@@ -1094,7 +1107,7 @@ export default function Community() {
                 backgroundClip: 'text',
               }}
             >
-              {formatFullDate(NOSTR_SINCE_DATE)}
+              {formatMonthYear(NOSTR_SINCE_DATE)}
             </p>
 
           </CardContent>
