@@ -470,9 +470,10 @@ function ChartTooltip({ active, payload, label }: {
 interface ActivityChartProps {
   notes: { created_at: number }[];
   isLoading: boolean;
+  isPartial: boolean;
 }
 
-function ActivityChart({ notes, isLoading }: ActivityChartProps) {
+function ActivityChart({ notes, isLoading, isPartial }: ActivityChartProps) {
   const [view, setView] = useState<'monthly' | 'yearly'>('monthly');
 
   const monthlyData = useMemo(
@@ -494,7 +495,7 @@ function ActivityChart({ notes, isLoading }: ActivityChartProps) {
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([yr, posts]) => {
         cum += posts;
-        return { label: yr, posts, cumulative: cum, isCurrent: yr === currentYear };
+        return { label: yr, posts, cumulative: cum, isCurrent: yr === currentYear, monthKey: yr };
       });
   }, [monthlyData]);
 
@@ -521,7 +522,13 @@ function ActivityChart({ notes, isLoading }: ActivityChartProps) {
     return (
       <Card className="mb-8 overflow-hidden border-2 border-purple-200 dark:border-purple-800 shadow-lg">
         <CardContent className="py-8 px-6">
-          <Skeleton className="h-5 w-48 mb-6" />
+          <div className="flex items-center gap-3 mb-6">
+            <Skeleton className="h-5 w-5 rounded" />
+            <Skeleton className="h-5 w-48" />
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-5">
+            {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-16 rounded-xl" />)}
+          </div>
           <Skeleton className="h-64 w-full rounded-xl" />
         </CardContent>
       </Card>
@@ -575,12 +582,12 @@ function ActivityChart({ notes, isLoading }: ActivityChartProps) {
         </p>
       </CardHeader>
 
-      <CardContent className="pt-2 pb-4">
+      <CardContent className="pt-2 pb-5">
         {/* Stat pills */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-5">
           <div className="rounded-xl bg-purple-50 dark:bg-purple-900/20 border border-purple-100 dark:border-purple-800 px-3 py-2.5 text-center">
             <p className="text-[10px] uppercase tracking-widest text-purple-500 font-semibold mb-0.5">Total Notes</p>
-            <p className="text-2xl font-black text-purple-700 dark:text-purple-300">{totalPosts}</p>
+            <p className="text-2xl font-black text-purple-700 dark:text-purple-300">{totalPosts}+</p>
           </div>
           <div className="rounded-xl bg-orange-50 dark:bg-orange-900/20 border border-orange-100 dark:border-orange-800 px-3 py-2.5 text-center">
             <p className="text-[10px] uppercase tracking-widest text-orange-500 font-semibold mb-0.5">This Month</p>
@@ -601,16 +608,16 @@ function ActivityChart({ notes, isLoading }: ActivityChartProps) {
         </div>
 
         {/* Chart */}
-        <div className="w-full" style={{ height: 260 }}>
+        <div className="w-full" style={{ height: 280 }}>
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={data} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
+            <ComposedChart data={data} margin={{ top: 4, right: 12, left: -20, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#8b5cf620" vertical={false} />
               <XAxis
                 dataKey="label"
                 tick={{ fontSize: 10, fill: '#9ca3af' }}
                 tickLine={false}
                 axisLine={false}
-                interval={view === 'monthly' ? Math.max(0, Math.floor(data.length / 10) - 1) : 0}
+                interval={view === 'monthly' ? Math.max(0, Math.floor(data.length / 12) - 1) : 0}
               />
               <YAxis
                 yAxisId="left"
@@ -637,7 +644,7 @@ function ActivityChart({ notes, isLoading }: ActivityChartProps) {
                 dataKey="posts"
                 name="Posts"
                 radius={[3, 3, 0, 0]}
-                maxBarSize={view === 'monthly' ? 18 : 60}
+                maxBarSize={view === 'monthly' ? 16 : 60}
               >
                 {data.map((entry) => (
                   <Cell
@@ -660,14 +667,33 @@ function ActivityChart({ notes, isLoading }: ActivityChartProps) {
           </ResponsiveContainer>
         </div>
 
-        <p className="text-[10px] text-center text-muted-foreground mt-2">
+        {/* Legend key */}
+        <p className="text-[10px] text-center text-muted-foreground mt-2 mb-3">
           <span className="inline-block w-2 h-2 rounded-sm bg-purple-500 mr-1 align-middle" />
-          Monthly notes &nbsp;·&nbsp;
+          Notes per month &nbsp;·&nbsp;
           <span className="inline-block w-2 h-2 rounded-full bg-orange-400 mr-1 align-middle" />
           Running total &nbsp;·&nbsp;
           <span className="inline-block w-2 h-2 rounded-sm bg-orange-400 mr-1 align-middle" />
           Current month
         </p>
+
+        {/* Relay data disclaimer — always shown, emphasised when partial */}
+        <div className={`rounded-xl border px-4 py-3 text-xs leading-relaxed ${
+          isPartial
+            ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-700 text-amber-800 dark:text-amber-300'
+            : 'bg-muted/60 border-border text-muted-foreground'
+        }`}>
+          <p className="font-semibold mb-0.5 flex items-center gap-1.5">
+            {isPartial ? '⚠️' : 'ℹ️'} About this data
+          </p>
+          <p>
+            Counts are retrieved live from multiple Nostr archive relays (relay.nostr.band, nos.lol, Damus, Primal &amp; more).
+            <strong> The real number of notes posted in 2023, 2024 &amp; 2025 is significantly higher</strong> — many older events
+            are no longer stored by relays due to pruning, server issues or relay shutdowns over the years.
+            The chart shows what relays currently return, not the full lifetime output.
+            True Proof of Work is larger than these numbers suggest. 💜
+          </p>
+        </div>
       </CardContent>
     </Card>
   );
@@ -1075,7 +1101,11 @@ export default function Community() {
         </Card>
 
         {/* ── Activity / Consistency Chart ── */}
-        <ActivityChart notes={pow?.allNotes ?? []} isLoading={powLoading} />
+        <ActivityChart
+          notes={pow?.allNotes ?? []}
+          isLoading={powLoading}
+          isPartial={pow?.isPartial ?? true}
+        />
 
         {/* Latest 2 notes highlight */}
         {(powLoading || (pow?.latestNotes && pow.latestNotes.length > 0)) && (

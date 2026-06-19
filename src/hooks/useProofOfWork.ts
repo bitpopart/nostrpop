@@ -17,8 +17,6 @@ export const NOSTR_SINCE_DATE = new Date('2023-02-01');
  * These relays are queried specifically for the Proof of Work section.
  * They are well-known archive/index relays that store full Nostr history,
  * independent of the relay the rest of the site uses.
- * This is so we can find the *true* earliest note from 2023, even if the
- * site relay (e.g. relay.ditto.pub) only has recent data.
  */
 const POW_ARCHIVE_RELAYS = [
   'wss://relay.nostr.band',
@@ -34,21 +32,34 @@ export interface ProofOfWorkData {
   earliestNote: NostrEvent | null;
   nostrSinceDate: Date | null;
   totalCount: number;
+  /** True if relay coverage may be incomplete — some years might have gaps */
+  isPartial: boolean;
+}
+
+/**
+ * Build unix timestamp boundaries for a given year.
+ */
+function yearWindow(year: number): { since: number; until: number } {
+  const since = Math.floor(new Date(`${year}-01-01T00:00:00Z`).getTime() / 1000);
+  const until = Math.floor(new Date(`${year}-12-31T23:59:59Z`).getTime() / 1000);
+  return { since, until };
 }
 
 /**
  * Fetches all Nostr notes from BitPopArt admin for the Proof of Work archive.
- * Uses a dedicated NPool targeting multiple archive relays so the full history
- * (back to 2023) is always available, regardless of which relay the site uses.
+ *
+ * Strategy: query each year independently (2023 → current year) in parallel,
+ * each with a high per-year limit. This prevents the 200-event cap from hiding
+ * 2023/2024 data when the relay returns newest-first.
+ *
+ * Relays may still prune old events — noted in isPartial.
  */
 export function useProofOfWork() {
   return useQuery({
-    queryKey: ['proof-of-work', ADMIN_HEX],
+    queryKey: ['proof-of-work-v2', ADMIN_HEX],
     queryFn: async (c): Promise<ProofOfWorkData> => {
-      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(10000)]);
+      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(20000)]);
 
-      // Create a short-lived NPool pointing only at our archive relays.
-      // This is independent of the site's global relay setting.
       const pool = new NPool({
         open(url: string) {
           return new NRelay1(url);
@@ -63,71 +74,64 @@ export function useProofOfWork() {
         eventRouter() {
           return POW_ARCHIVE_RELAYS;
         },
-        eoseTimeout: 5000,
+        eoseTimeout: 6000,
       });
 
       try {
-        // Query 1: latest notes (sorted by time descending — newest first)
-        const latestEvents = await pool.query(
-          [
-            {
-              kinds: [1],
-              authors: [ADMIN_HEX],
-              limit: 200,
-            },
-          ],
-          { signal }
-        );
+        const currentYear = new Date().getFullYear();
+        const startYear = 2023;
 
-        // Query 2: earliest notes (sorted by time ascending — oldest first)
-        // Some relays support `since: 0` with a small limit to get oldest events.
-        // We ask for a small limit anchored at the oldest possible time.
-        const earliestEvents = await pool.query(
-          [
-            {
-              kinds: [1],
-              authors: [ADMIN_HEX],
-              since: 0,
-              until: Math.floor(Date.now() / 1000),
-              limit: 50,
-            },
-          ],
-          { signal }
-        );
-
-        // Merge both batches and deduplicate by id
-        const allById = new Map<string, NostrEvent>();
-        for (const e of [...latestEvents, ...earliestEvents]) {
-          allById.set(e.id, e);
+        // Build one query per year from 2023 → now.
+        // Each year window gets up to 500 events so a busy year doesn't lose data.
+        const yearQueries = [];
+        for (let yr = startYear; yr <= currentYear; yr++) {
+          const { since, until } = yearWindow(yr);
+          yearQueries.push(
+            pool.query(
+              [{ kinds: [1], authors: [ADMIN_HEX], since, until, limit: 500 }],
+              { signal },
+            ).catch(() => [] as NostrEvent[]), // if one year fails, keep going
+          );
         }
-        const allRaw = Array.from(allById.values());
 
-        // Filter out replies (notes with 'e' tags)
-        const originalNotes = allRaw.filter(
-          (event) => !event.tags.some((tag) => tag[0] === 'e')
+        const yearResults = await Promise.all(yearQueries);
+
+        // Merge + deduplicate by event id
+        const allById = new Map<string, NostrEvent>();
+        for (const batch of yearResults) {
+          for (const e of batch) {
+            allById.set(e.id, e);
+          }
+        }
+
+        // Filter out replies (events that reference other events via 'e' tags)
+        const originalNotes = Array.from(allById.values()).filter(
+          (event) => !event.tags.some((tag) => tag[0] === 'e'),
         );
 
-        // Sort newest first for archive display
+        // Sort newest → oldest for archive display
         const sortedNewest = [...originalNotes].sort((a, b) => b.created_at - a.created_at);
-
-        // Find the absolute earliest note across all results
         const sortedOldest = [...originalNotes].sort((a, b) => a.created_at - b.created_at);
         const earliestNote = sortedOldest[0] ?? null;
+
+        // Consider data partial if we got fewer than 10 events for 2023
+        // (relay pruning means the early history may be missing)
+        const count2023 = yearResults[0]?.length ?? 0;
+        const isPartial = count2023 < 10;
 
         return {
           allNotes: sortedNewest,
           latestNotes: sortedNewest.slice(0, 3),
           earliestNote,
-          // Always use the hardcoded date — relay history is pruned and won't
-          // reliably return events from early 2023.
           nostrSinceDate: NOSTR_SINCE_DATE,
           totalCount: sortedNewest.length,
+          isPartial,
         };
       } finally {
         pool.close();
       }
     },
-    staleTime: 300000, // 5 minutes — archive data doesn't change often
-    refetchInterval: 600000, // Refetch every 10 minutes
+    staleTime: 300000,    // 5 minutes
+    refetchInterval: 600000, // 10 minutes
   });
 }
