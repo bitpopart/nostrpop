@@ -229,8 +229,7 @@ function GeneratorCard({ character }: GeneratorCardProps) {
         <div>
           <h3 className="font-bold text-base">{character.title}</h3>
           <p className="text-xs text-muted-foreground">
-            {layerGroups.map(g => g.name).filter(Boolean).join(' · ') || 'Nostr Fungible Token'}
-            {' '}· Right-click save is fine 😄
+            Nostr Fungible Token · Right-click save is fine 😄
           </p>
         </div>
 
