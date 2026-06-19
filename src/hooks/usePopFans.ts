@@ -64,6 +64,14 @@ function extractZapSenderPubkey(event: { tags: string[][] }): string | null {
 }
 
 /**
+ * Pubkeys to exclude from all leaderboards (e.g. bots, infrastructure accounts).
+ * Add hex pubkeys here to permanently hide them from the lists.
+ */
+const EXCLUDED_PUBKEYS = new Set([
+  '97f848adcc4c6276685fe48426de5614887c8a51ada0468cec71fba938272911', // Rizful.com (npub1jluy3twvf338v6zlujzzdhjkzjy8ezj34ksydr8vw8a6jwp89ygshpp2kq)
+]);
+
+/**
  * Fetch zap receipts and reactions directed at bitpopart's posts.
  */
 export function usePopFans() {
@@ -101,6 +109,8 @@ export function usePopFans() {
         if (!senderPubkey) continue;
         // Don't count self-zaps
         if (senderPubkey === adminPubkey) continue;
+        // Skip excluded pubkeys (bots, infrastructure accounts, etc.)
+        if (EXCLUDED_PUBKEYS.has(senderPubkey)) continue;
 
         const bolt11 = event.tags.find(([name]) => name === 'bolt11')?.[1] ?? '';
         const sats = parseSatsFromBolt11(bolt11);
@@ -139,6 +149,7 @@ export function usePopFans() {
 
       for (const event of reactionEvents) {
         if (event.pubkey === adminPubkey) continue;
+        if (EXCLUDED_PUBKEYS.has(event.pubkey)) continue;
 
         const existing = reactorMap.get(event.pubkey);
         if (existing) {
@@ -164,7 +175,7 @@ export function usePopFans() {
 
       // ---- Latest Likes ('+' reactions only) ----
       const latestLikes: LikeEntry[] = reactionEvents
-        .filter((e) => (e.content === '+' || e.content === '❤️' || e.content === '👍' || e.content === '🤙') && e.pubkey !== adminPubkey)
+        .filter((e) => (e.content === '+' || e.content === '❤️' || e.content === '👍' || e.content === '🤙') && e.pubkey !== adminPubkey && !EXCLUDED_PUBKEYS.has(e.pubkey))
         .sort((a, b) => b.created_at - a.created_at)
         .slice(0, 20)
         .map((e) => ({
