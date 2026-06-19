@@ -12,13 +12,11 @@ import { RelaySelector } from '@/components/RelaySelector';
 import {
   Shuffle,
   Download,
-  Zap,
   Bitcoin,
   Layers,
   ArrowRight,
   Sparkles,
   ImageIcon,
-  ChevronLeft,
 } from 'lucide-react';
 
 const ADMIN_PUBKEY = getAdminPubkeyHex();
@@ -252,16 +250,15 @@ function GeneratorCard({ character }: GeneratorCardProps) {
 
         {/* Zap */}
         <ZapButton
-          recipientPubkey={ADMIN_PUBKEY}
-          eventId={character.event.id}
+          authorPubkey={ADMIN_PUBKEY}
+          lightningAddress="traveltelly@primal.net"
+          event={character.event}
           eventTitle={`${character.title} NFT`}
-          variant="ghost"
+          variant="outline"
           size="sm"
-          className="w-full text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50 dark:hover:bg-yellow-950/20 gap-2"
-        >
-          <Zap className="h-3.5 w-3.5" />
-          Zap if you feel it has value ⚡
-        </ZapButton>
+          alwaysShow
+          className="w-full"
+        />
       </CardContent>
     </Card>
   );
@@ -477,15 +474,14 @@ export default function NFTPage() {
             It helps Johannes keep creating more pop-art characters on Nostr.
           </p>
           <ZapButton
-            recipientPubkey={ADMIN_PUBKEY}
+            authorPubkey={ADMIN_PUBKEY}
+            lightningAddress="traveltelly@primal.net"
             eventTitle="BitPopArt NFT Collection"
             variant="default"
             size="lg"
-            className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black font-bold gap-2 px-8"
-          >
-            <Zap className="h-4 w-4" />
-            Zap the Artist ⚡
-          </ZapButton>
+            alwaysShow
+            className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black font-bold"
+          />
         </div>
       </section>
 

@@ -60,66 +60,60 @@ export function AppRouter() {
     <BrowserRouter basename={basename}>
       <ScrollToTop />
       <Routes>
-        {/* Full-screen admin routes — no site Layout */}
+        {/* Full-screen admin route — no site Layout */}
         <Route path="/nft-admin" element={<NFTAdmin />} />
 
         {/* All other routes wrapped in the site Layout */}
-        <Route path="*" element={
-          <Layout>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/cards" element={<Cards />} />
-              <Route path="/cards/create" element={<Cards />} />
-              <Route path="/card/:nip19" element={<CardView />} />
-              <Route path="/share/:nip19" element={<CardPreview />} />
-              <Route path="/art" element={<Art />} />
-              <Route path="/art/:naddr" element={<ArtworkView />} />
-              <Route path="/21k-art" element={<Art21K />} />
-              <Route path="/canvas" element={<Canvas100M />} />
-              <Route path="/shop" element={<Shop />} />
-              <Route path="/admin" element={<Admin />} />
-              <Route path="/feed" element={<Feed />} />
-              <Route path="/blog" element={<Blog />} />
-              <Route path="/blog/:articleId" element={<BlogPost />} />
-              <Route path="/popup" element={<PopUp />} />
-              <Route path="/popup/:eventId" element={<PopUpEventView />} />
-              <Route path="/popup/:eventId/site" element={<PopUpEventSite />} />
-              <Route path="/artist" element={<Artist />} />
-              <Route path="/projects" element={<Projects />} />
-              <Route path="/nostr-projects" element={<NostrProjects />} />
-              <Route path="/nostr-projects/:projectId" element={<NostrProjectView />} />
-              <Route path="/badges" element={<Badges />} />
-              <Route path="/fundraising" element={<Fundraising />} />
-              <Route path="/vlog" element={<Vlog />} />
-              <Route path="/wall" element={<Wall />} />
-              <Route path="/categories" element={<CategoryDemo />} />
-              <Route path="/shop/:productId/delete" element={<DeleteProductPage />} />
-              <Route path="/shop/:productId" element={<ProductPage />} />
-              <Route path="/order-confirmation" element={<OrderConfirmation />} />
-              <Route path="/free" element={<FreeGallery />} />
-              <Route path="/free/images" element={<FreeDownloads />} />
-              <Route path="/games" element={<Games />} />
-              <Route path="/animations" element={<Animations />} />
-              <Route path="/wallpapers" element={<Wallpapers />} />
-              <Route path="/gifs" element={<Gifs />} />
-              <Route path="/avatars" element={<Avatars />} />
-              <Route path="/banners" element={<Banners />} />
-              <Route path="/coloring-pages" element={<ColoringPages />} />
-              <Route path="/desktop-wallpapers" element={<DesktopWallpapers />} />
-              <Route path="/app" element={<AppPage />} />
-              <Route path="/poppost" element={<PopPost />} />
-              <Route path="/community" element={<Community />} />
-              <Route path="/studio" element={<Studio />} />
-              <Route path="/frl" element={<Frl />} />
-              <Route path="/frl/:projectId" element={<FrlProjectView />} />
-              <Route path="/print" element={<Print />} />
-              <Route path="/NFT" element={<NFT />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="/:slug" element={<CustomPage />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Layout>
-        } />
+        <Route path="/" element={<Layout><Index /></Layout>} />
+        <Route path="/cards" element={<Layout><Cards /></Layout>} />
+        <Route path="/cards/create" element={<Layout><Cards /></Layout>} />
+        <Route path="/card/:nip19" element={<Layout><CardView /></Layout>} />
+        <Route path="/share/:nip19" element={<Layout><CardPreview /></Layout>} />
+        <Route path="/art" element={<Layout><Art /></Layout>} />
+        <Route path="/art/:naddr" element={<Layout><ArtworkView /></Layout>} />
+        <Route path="/21k-art" element={<Layout><Art21K /></Layout>} />
+        <Route path="/canvas" element={<Layout><Canvas100M /></Layout>} />
+        <Route path="/shop" element={<Layout><Shop /></Layout>} />
+        <Route path="/admin" element={<Layout><Admin /></Layout>} />
+        <Route path="/feed" element={<Layout><Feed /></Layout>} />
+        <Route path="/blog" element={<Layout><Blog /></Layout>} />
+        <Route path="/blog/:articleId" element={<Layout><BlogPost /></Layout>} />
+        <Route path="/popup" element={<Layout><PopUp /></Layout>} />
+        <Route path="/popup/:eventId" element={<Layout><PopUpEventView /></Layout>} />
+        <Route path="/popup/:eventId/site" element={<Layout><PopUpEventSite /></Layout>} />
+        <Route path="/artist" element={<Layout><Artist /></Layout>} />
+        <Route path="/projects" element={<Layout><Projects /></Layout>} />
+        <Route path="/nostr-projects" element={<Layout><NostrProjects /></Layout>} />
+        <Route path="/nostr-projects/:projectId" element={<Layout><NostrProjectView /></Layout>} />
+        <Route path="/badges" element={<Layout><Badges /></Layout>} />
+        <Route path="/fundraising" element={<Layout><Fundraising /></Layout>} />
+        <Route path="/vlog" element={<Layout><Vlog /></Layout>} />
+        <Route path="/wall" element={<Layout><Wall /></Layout>} />
+        <Route path="/categories" element={<Layout><CategoryDemo /></Layout>} />
+        <Route path="/shop/:productId/delete" element={<Layout><DeleteProductPage /></Layout>} />
+        <Route path="/shop/:productId" element={<Layout><ProductPage /></Layout>} />
+        <Route path="/order-confirmation" element={<Layout><OrderConfirmation /></Layout>} />
+        <Route path="/free" element={<Layout><FreeGallery /></Layout>} />
+        <Route path="/free/images" element={<Layout><FreeDownloads /></Layout>} />
+        <Route path="/games" element={<Layout><Games /></Layout>} />
+        <Route path="/animations" element={<Layout><Animations /></Layout>} />
+        <Route path="/wallpapers" element={<Layout><Wallpapers /></Layout>} />
+        <Route path="/gifs" element={<Layout><Gifs /></Layout>} />
+        <Route path="/avatars" element={<Layout><Avatars /></Layout>} />
+        <Route path="/banners" element={<Layout><Banners /></Layout>} />
+        <Route path="/coloring-pages" element={<Layout><ColoringPages /></Layout>} />
+        <Route path="/desktop-wallpapers" element={<Layout><DesktopWallpapers /></Layout>} />
+        <Route path="/app" element={<Layout><AppPage /></Layout>} />
+        <Route path="/poppost" element={<Layout><PopPost /></Layout>} />
+        <Route path="/community" element={<Layout><Community /></Layout>} />
+        <Route path="/studio" element={<Layout><Studio /></Layout>} />
+        <Route path="/frl" element={<Layout><Frl /></Layout>} />
+        <Route path="/frl/:projectId" element={<Layout><FrlProjectView /></Layout>} />
+        <Route path="/print" element={<Layout><Print /></Layout>} />
+        <Route path="/NFT" element={<Layout><NFT /></Layout>} />
+        {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+        <Route path="/:slug" element={<Layout><CustomPage /></Layout>} />
+        <Route path="*" element={<Layout><NotFound /></Layout>} />
       </Routes>
     </BrowserRouter>
   );

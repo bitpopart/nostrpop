@@ -1,5 +1,6 @@
 /** Generate a deterministic user display name based on a string seed. */
-export function genUserName(seed: string): string {
+export function genUserName(seed: string | undefined | null): string {
+  if (!seed) return 'Anon';
   // Use a simple hash of the pubkey to generate consistent adjective + noun combinations
   const adjectives = [
     'Swift', 'Bright', 'Calm', 'Bold', 'Wise', 'Kind', 'Quick', 'Brave',

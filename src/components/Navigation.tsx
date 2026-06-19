@@ -7,7 +7,7 @@ import { RelaySelector } from '@/components/RelaySelector';
 import { Search } from '@/components/Search';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useTheme } from '@/hooks/useTheme';
-import { Menu, Moon, Sun, Shield, Search as SearchIcon, Video, Users, Palette } from 'lucide-react';
+import { Menu, Moon, Sun, Shield, Search as SearchIcon, Video, Users, Palette, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // Get the base path from import.meta.env or default to '/'
@@ -131,18 +131,41 @@ export function Navigation() {
                 <Sun className="h-4 w-4" />
               )}
             </Button>
-            {isAdmin && (
+            <Link to="/NFT">
               <Button
-                asChild
-                variant="outline"
+                variant="ghost"
                 size="sm"
-                className="bg-gradient-to-r from-orange-50 to-orange-50 dark:from-orange-900/20 dark:to-orange-900/20 border-orange-200 dark:border-orange-800 hover:bg-gradient-to-r hover:from-orange-100 hover:to-orange-100 dark:hover:from-orange-900/30 dark:hover:to-orange-900/30"
+                className="h-9 px-3 gap-1.5 rounded-full font-medium text-sm bg-gradient-to-r from-orange-100 to-pink-100 dark:from-orange-900/30 dark:to-pink-900/30 hover:from-orange-200 hover:to-pink-200 dark:hover:from-orange-900/50 dark:hover:to-pink-900/50 text-orange-600 dark:text-orange-400"
               >
-                <Link to="/admin" className="flex items-center space-x-2">
-                  <Shield className="h-4 w-4" style={{ color: '#e99840' }} />
-                  <span className="font-medium" style={{ color: '#e99840' }}>Dashboard</span>
-                </Link>
+                <Sparkles className="h-4 w-4" />
+                <span>NFT</span>
               </Button>
+            </Link>
+            {isAdmin && (
+              <>
+                <Button
+                  asChild
+                  variant="outline"
+                  size="sm"
+                  className="bg-gradient-to-r from-orange-50 to-orange-50 dark:from-orange-900/20 dark:to-orange-900/20 border-orange-200 dark:border-orange-800 hover:bg-gradient-to-r hover:from-orange-100 hover:to-orange-100 dark:hover:from-orange-900/30 dark:hover:to-orange-900/30"
+                >
+                  <Link to="/admin" className="flex items-center space-x-2">
+                    <Shield className="h-4 w-4" style={{ color: '#e99840' }} />
+                    <span className="font-medium" style={{ color: '#e99840' }}>Dashboard</span>
+                  </Link>
+                </Button>
+                <Button
+                  asChild
+                  variant="outline"
+                  size="sm"
+                  className="border-orange-200 dark:border-orange-700 text-orange-600 dark:text-orange-400"
+                >
+                  <Link to="/nft-admin" className="flex items-center space-x-2">
+                    <Sparkles className="h-4 w-4" />
+                    <span className="font-medium">NFT Admin</span>
+                  </Link>
+                </Button>
+              </>
             )}
             <LoginArea className="max-w-48" />
           </div>
@@ -183,7 +206,7 @@ export function Navigation() {
                 <div className="flex flex-col space-y-6 mt-6">
                   {/* Admin Dashboard Button (Mobile) */}
                   {isAdmin && (
-                    <div className="px-4">
+                    <div className="px-4 space-y-2">
                       <Button
                         asChild
                         className="w-full text-white"
@@ -193,6 +216,17 @@ export function Navigation() {
                         <Link to="/admin" className="flex items-center justify-center space-x-2">
                           <Shield className="h-5 w-5" />
                           <span className="font-medium">Admin Dashboard</span>
+                        </Link>
+                      </Button>
+                      <Button
+                        asChild
+                        variant="outline"
+                        className="w-full border-orange-300 dark:border-orange-700"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <Link to="/nft-admin" className="flex items-center justify-center space-x-2">
+                          <Sparkles className="h-5 w-5 text-orange-500" />
+                          <span className="font-medium">NFT Admin</span>
                         </Link>
                       </Button>
                     </div>
@@ -236,6 +270,20 @@ export function Navigation() {
                     >
                       <Users className="h-6 w-6 flex-shrink-0" style={{ color: '#f7931a' }} />
                       <span>PopFans</span>
+                    </Link>
+                    {/* NFT */}
+                    <Link
+                      to="/NFT"
+                      onClick={() => setIsOpen(false)}
+                      className={cn(
+                        "flex items-center space-x-3 px-4 py-3 rounded-full text-base font-medium transition-colors",
+                        isActive('/NFT')
+                          ? "bg-gradient-to-r from-orange-100 to-pink-100 text-orange-600 dark:from-orange-900/30 dark:to-pink-900/30 dark:text-orange-400"
+                          : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                      )}
+                    >
+                      <Sparkles className="h-6 w-6 flex-shrink-0 text-orange-500" />
+                      <span>NFT</span>
                     </Link>
                   </div>
 

@@ -46,8 +46,11 @@ export function ZapButton({
   const [customAmount, setCustomAmount] = useState('');
 
   const { user } = useCurrentUser();
-  const author = useAuthor(authorPubkey);
+  const author = useAuthor(authorPubkey || '');
   const metadata = author.data?.metadata;
+
+  // Don't render if no pubkey provided
+  if (!authorPubkey) return null;
 
   // Use provided lightning address or get from author's profile
   const finalLightningAddress = lightningAddress || metadata?.lud16 || metadata?.lud06;
