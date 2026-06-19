@@ -440,7 +440,6 @@ export default function NFTPage() {
           <h3 className="text-xl font-bold">Love a character? Send a zap! ⚡</h3>
           <p className="text-muted-foreground text-sm">
             Every zap goes directly to <strong>bitpopart@walletofsatoshi.com</strong> via Lightning.
-            It helps Johannes keep creating more pop-art characters on Nostr.
           </p>
           <ZapButton
             authorPubkey={ADMIN_PUBKEY}
