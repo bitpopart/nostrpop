@@ -8,32 +8,39 @@ import { getAdminPubkeyHex } from '@/lib/adminUtils';
 /**
  * Kind 36201 – NFT Character (Nostr Fungible Token character)
  *
- * Addressable event storing a cartoon character with layered images.
+ * Addressable event storing a cartoon character with named layer groups.
+ * Each layer group has one or more image variants; one is picked randomly at generate time.
  *
- * Tags:
- *   d          – unique slug for the character
- *   title      – character display name
- *   t          – "nft-character" (system tag)
- *   t          – category (e.g. "travel", "crypto", …)
- *   layer      – <index>:<label>:<url> for each layer image (multiple)
- *   image      – preview image URL (first layer or manually set)
- *   alt        – NIP-31 human-readable description
+ * Tag format:
+ *   d        – unique slug for the character
+ *   title    – character display name
+ *   t        – "nft-character" (system tag)
+ *   t        – category (e.g. "travel", "crypto", …)
+ *   layer    – "<index>:<name>:<url1>|<url2>|<url3>"  (pipe-separated variants)
+ *   image    – preview image URL (first variant of first layer)
+ *   alt      – NIP-31 human-readable description
  */
 
 export const NFT_CHARACTER_KIND = 36201;
 
-export interface NFTLayer {
+/** A single named layer group with one or more image variants. */
+export interface NFTLayerGroup {
+  /** Render order — 0 = bottom */
   index: number;
-  label: string;
-  url: string;
+  /** Human-readable name, e.g. "Background", "Hat", "Body" */
+  name: string;
+  /** All image variants for this layer; one is picked randomly on generate */
+  variants: string[];
 }
 
 export interface NFTCharacter {
-  id: string; // d-tag value
+  id: string;
   event: NostrEvent;
   title: string;
   category: string;
-  layers: NFTLayer[];
+  /** Layer groups ordered bottom → top */
+  layerGroups: NFTLayerGroup[];
+  /** Preview URL — first variant of first layer */
   previewUrl: string;
   created_at: string;
 }
@@ -48,32 +55,38 @@ function parseCharacter(event: NostrEvent): NFTCharacter | null {
       .filter(([n, v]) => n === 't' && v && v !== 'nft-character')
       .map(([, v]) => v)[0] || '';
 
-    const layers: NFTLayer[] = event.tags
+    const layerGroups: NFTLayerGroup[] = event.tags
       .filter(([n]) => n === 'layer')
       .map(([, value]) => {
-        // format: "<index>:<label>:<url>"
+        // format: "<index>:<name>:<url1>|<url2>|..."
         const firstColon = value.indexOf(':');
         const secondColon = value.indexOf(':', firstColon + 1);
         if (firstColon === -1 || secondColon === -1) return null;
+
         const index = parseInt(value.slice(0, firstColon));
-        const label = value.slice(firstColon + 1, secondColon);
-        const url = value.slice(secondColon + 1);
-        if (isNaN(index) || !url) return null;
-        return { index, label, url };
+        const name = value.slice(firstColon + 1, secondColon);
+        const variantStr = value.slice(secondColon + 1);
+        if (isNaN(index) || !variantStr) return null;
+
+        const variants = variantStr.split('|').map(u => u.trim()).filter(Boolean);
+        if (variants.length === 0) return null;
+
+        return { index, name, variants };
       })
-      .filter((l): l is NFTLayer => l !== null)
+      .filter((l): l is NFTLayerGroup => l !== null)
       .sort((a, b) => a.index - b.index);
 
-    const previewUrl = event.tags.find(([n]) => n === 'image')?.[1]
-      || layers[0]?.url
-      || '';
+    const previewUrl =
+      event.tags.find(([n]) => n === 'image')?.[1] ||
+      layerGroups[0]?.variants[0] ||
+      '';
 
     return {
       id: dTag,
       event,
       title,
       category,
-      layers,
+      layerGroups,
       previewUrl,
       created_at: new Date(event.created_at * 1000).toISOString(),
     };
@@ -99,7 +112,6 @@ export function useNFTCharacters() {
           '#t': ['nft-character'],
           limit: 200,
         },
-        // Fetch deletion events so we can filter deleted characters
         {
           kinds: [5],
           authors: [adminPubkey],
@@ -110,7 +122,6 @@ export function useNFTCharacters() {
       const characterEvents = allEvents.filter(e => e.kind === NFT_CHARACTER_KIND);
       const deletionEvents = allEvents.filter(e => e.kind === 5);
 
-      // Collect deleted addresses
       const deletedAddresses = new Set<string>();
       deletionEvents.forEach(del => {
         del.tags
@@ -141,8 +152,8 @@ export function useNFTCharacters() {
 export interface PublishNFTCharacterInput {
   title: string;
   category: string;
-  layers: { label: string; url: string }[];
-  /** If updating, pass the existing d-tag */
+  /** Layer groups with name + variants array */
+  layerGroups: { name: string; variants: string[] }[];
   existingId?: string;
 }
 
@@ -158,7 +169,7 @@ export function usePublishNFTCharacter() {
       if (!user) throw new Error('Must be logged in');
 
       const dTag = input.existingId || `nft-char-${Date.now()}`;
-      const previewUrl = input.layers[0]?.url || '';
+      const previewUrl = input.layerGroups[0]?.variants[0] || '';
 
       const tags: string[][] = [
         ['d', dTag],
@@ -170,8 +181,11 @@ export function usePublishNFTCharacter() {
       if (input.category) tags.push(['t', input.category]);
       if (previewUrl) tags.push(['image', previewUrl]);
 
-      input.layers.forEach((layer, i) => {
-        tags.push(['layer', `${i}:${layer.label}:${layer.url}`]);
+      input.layerGroups.forEach((group, i) => {
+        const variantStr = group.variants.filter(Boolean).join('|');
+        if (variantStr) {
+          tags.push(['layer', `${i}:${group.name}:${variantStr}`]);
+        }
       });
 
       const event = {

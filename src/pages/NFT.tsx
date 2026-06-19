@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useNFTCharacters, type NFTCharacter } from '@/hooks/useNFTCharacters';
+import { useNFTCharacters, type NFTCharacter, type NFTLayerGroup } from '@/hooks/useNFTCharacters';
 import { getAdminPubkeyHex } from '@/lib/adminUtils';
 import { ZapButton } from '@/components/ZapButton';
 import { RelaySelector } from '@/components/RelaySelector';
@@ -17,6 +17,7 @@ import {
   ArrowRight,
   Sparkles,
   ImageIcon,
+  Images,
 } from 'lucide-react';
 
 const ADMIN_PUBKEY = getAdminPubkeyHex();
@@ -61,6 +62,16 @@ async function compositeLayers(urls: string[]): Promise<Blob> {
   });
 }
 
+// ─── Pick one random variant URL per layer group ──────────────────────────────
+
+function pickRandom(groups: NFTLayerGroup[]): string[] {
+  return groups.map(g => {
+    const valid = g.variants.filter(Boolean);
+    if (valid.length === 0) return '';
+    return valid[Math.floor(Math.random() * valid.length)];
+  }).filter(Boolean);
+}
+
 // ─── Single character generator card ─────────────────────────────────────────
 
 interface GeneratorCardProps {
@@ -71,146 +82,157 @@ function GeneratorCard({ character }: GeneratorCardProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
-  const [generated, setGenerated] = useState(false);
-  const [selectedLayers, setSelectedLayers] = useState<string[]>([]);
+  const [generatedDataUrl, setGeneratedDataUrl] = useState<string | null>(null);
+  const [pickedUrls, setPickedUrls] = useState<string[]>([]);
 
-  const { layers } = character;
+  const { layerGroups } = character;
+  const totalVariants = layerGroups.reduce((sum, g) => sum + g.variants.length, 0);
+
+  // Default preview: first variant of each group
+  const defaultPreviewUrls = layerGroups.map(g => g.variants[0]).filter(Boolean);
 
   const handleGenerate = useCallback(async () => {
-    if (layers.length === 0) return;
+    if (layerGroups.length === 0) return;
     setIsGenerating(true);
 
     try {
-      // For each layer randomly pick a variant — here each layer has one image
-      // but we support random selection if the same layer label has multiple entries
-      const picked = layers.map(l => l.url);
+      // Pick one random variant per layer group
+      const picked = pickRandom(layerGroups);
 
-      // Draw onto canvas for preview
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-
-      // Load images
+      // Load all images
       const imgs = await Promise.all(
-        picked.map(url => {
-          return new Promise<HTMLImageElement>((res, rej) => {
+        picked.map(url =>
+          new Promise<HTMLImageElement>((res, rej) => {
             const img = new Image();
             img.crossOrigin = 'anonymous';
             img.onload = () => res(img);
             img.onerror = rej;
             img.src = url;
-          });
-        })
+          })
+        )
       );
 
-      const size = 800;
+      // Composite onto canvas
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const size = 1024;
       canvas.width = size;
       canvas.height = size;
       const ctx = canvas.getContext('2d')!;
       ctx.clearRect(0, 0, size, size);
       imgs.forEach(img => ctx.drawImage(img, 0, 0, size, size));
 
-      setSelectedLayers(picked);
-      setGenerated(true);
+      setPickedUrls(picked);
+      setGeneratedDataUrl(canvas.toDataURL('image/png'));
     } catch {
-      // fallback: just show stacked images
-      setSelectedLayers(layers.map(l => l.url));
-      setGenerated(true);
+      // Fallback: show first variant of each group stacked
+      const fallback = layerGroups.map(g => g.variants[0]).filter(Boolean);
+      setPickedUrls(fallback);
+      setGeneratedDataUrl(null);
     } finally {
       setIsGenerating(false);
     }
-  }, [layers]);
+  }, [layerGroups]);
 
   const handleDownload = async () => {
-    if (!generated) return;
     setIsDownloading(true);
     try {
-      const canvas = canvasRef.current;
-      if (canvas) {
-        const dataUrl = canvas.toDataURL('image/png');
+      if (generatedDataUrl) {
         const a = document.createElement('a');
-        a.href = dataUrl;
+        a.href = generatedDataUrl;
         a.download = `${character.title.replace(/\s+/g, '-')}-NFT.png`;
         a.click();
-      }
-    } catch {
-      // fallback: fetch + blob
-      try {
-        const blob = await compositeLayers(selectedLayers);
+      } else if (pickedUrls.length > 0) {
+        const blob = await compositeLayers(pickedUrls);
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
         a.download = `${character.title.replace(/\s+/g, '-')}-NFT.png`;
         a.click();
         URL.revokeObjectURL(url);
-      } catch {
-        // last resort
-        window.open(selectedLayers[0], '_blank');
       }
+    } catch {
+      if (pickedUrls[0]) window.open(pickedUrls[0], '_blank');
     } finally {
       setIsDownloading(false);
     }
   };
 
+  const hasGenerated = pickedUrls.length > 0;
+
   return (
     <Card className="overflow-hidden border-2 border-transparent hover:border-orange-200 dark:hover:border-orange-800 transition-colors">
       {/* Image area */}
       <div className="relative bg-gradient-to-br from-orange-50 to-pink-50 dark:from-orange-950/30 dark:to-pink-950/30 aspect-square">
-        {/* Hidden canvas used for compositing */}
+        {/* Hidden canvas for compositing */}
         <canvas ref={canvasRef} className="hidden" />
 
-        {!generated ? (
-          /* Default stacked preview */
+        {!hasGenerated ? (
+          /* Default preview: stack first variant of each layer */
           <div className="absolute inset-0">
-            {layers.map((layer, i) => (
+            {defaultPreviewUrls.map((url, i) => (
               <img
                 key={i}
-                src={layer.url}
-                alt={layer.label}
+                src={url}
+                alt=""
                 className="absolute inset-0 w-full h-full object-contain"
                 style={{ zIndex: i }}
                 crossOrigin="anonymous"
               />
             ))}
-            {/* Overlay prompt */}
             <div className="absolute inset-0 bg-black/20 flex items-end justify-center pb-4" style={{ zIndex: 99 }}>
               <span className="bg-black/60 text-white text-xs px-3 py-1 rounded-full">
                 Press Generate ⚡
               </span>
             </div>
           </div>
-        ) : (
-          /* Generated canvas preview */
+        ) : generatedDataUrl ? (
+          /* Canvas composite */
           <img
-            src={canvasRef.current?.toDataURL('image/png') || ''}
+            src={generatedDataUrl}
             alt={`${character.title} NFT`}
             className="absolute inset-0 w-full h-full object-contain"
           />
+        ) : (
+          /* Fallback: stack picked urls */
+          <div className="absolute inset-0">
+            {pickedUrls.map((url, i) => (
+              <img
+                key={i}
+                src={url}
+                alt=""
+                className="absolute inset-0 w-full h-full object-contain"
+                style={{ zIndex: i }}
+                crossOrigin="anonymous"
+              />
+            ))}
+          </div>
         )}
 
         {/* Category badge */}
         {character.category && (
-          <Badge
-            className="absolute top-2 left-2 z-10 bg-white/80 dark:bg-black/50 text-foreground text-xs border"
-            variant="outline"
-          >
+          <Badge className="absolute top-2 left-2 z-10 bg-white/80 dark:bg-black/50 text-foreground text-xs border" variant="outline">
             {character.category}
           </Badge>
         )}
 
-        {/* Layer count badge */}
-        <Badge
-          className="absolute top-2 right-2 z-10 bg-white/80 dark:bg-black/50 text-foreground text-xs border"
-          variant="outline"
-        >
+        {/* Stats badge */}
+        <Badge className="absolute top-2 right-2 z-10 bg-white/80 dark:bg-black/50 text-foreground text-xs border" variant="outline">
           <Layers className="h-2.5 w-2.5 mr-1" />
-          {layers.length} layers
+          {layerGroups.length}
+          {totalVariants > layerGroups.length && (
+            <><Images className="h-2.5 w-2.5 mx-1" />{totalVariants}</>
+          )}
         </Badge>
       </div>
 
       <CardContent className="p-4 space-y-3">
         <div>
           <h3 className="font-bold text-base">{character.title}</h3>
-          <p className="text-xs text-muted-foreground">Nostr Fungible Token · Right-click save is fine 😄</p>
+          <p className="text-xs text-muted-foreground">
+            {layerGroups.map(g => g.name).filter(Boolean).join(' · ') || 'Nostr Fungible Token'}
+            {' '}· Right-click save is fine 😄
+          </p>
         </div>
 
         {/* Actions */}
@@ -226,24 +248,24 @@ function GeneratorCard({ character }: GeneratorCardProps) {
             ) : (
               <>
                 <Shuffle className="h-3.5 w-3.5 mr-1.5" />
-                Generate NFT
+                {hasGenerated ? 'Regenerate' : 'Generate NFT'}
               </>
             )}
           </Button>
 
-          {generated && (
+          {hasGenerated && (
             <Button
               onClick={handleDownload}
               disabled={isDownloading}
               variant="outline"
               size="sm"
               className="shrink-0"
+              title="Download PNG"
             >
-              {isDownloading ? (
-                <span className="text-xs animate-pulse">…</span>
-              ) : (
-                <Download className="h-3.5 w-3.5" />
-              )}
+              {isDownloading
+                ? <span className="text-xs animate-pulse">…</span>
+                : <Download className="h-3.5 w-3.5" />
+              }
             </Button>
           )}
         </div>
@@ -387,7 +409,7 @@ export default function NFTPage() {
               {
                 icon: '⚡',
                 title: 'Generate',
-                desc: 'Hit Generate — the character layers are combined into a unique image.',
+                desc: 'Hit Generate — a random variant is picked per layer and combined into a unique image.',
               },
               {
                 icon: '📥',
@@ -413,7 +435,7 @@ export default function NFTPage() {
               Choose &amp; Generate
             </span>
           </h2>
-          <p className="text-muted-foreground">Select a character and generate your unique NFT</p>
+          <p className="text-muted-foreground">Each generate picks a random variant per layer — every result is unique</p>
         </div>
 
         {isLoading ? (
