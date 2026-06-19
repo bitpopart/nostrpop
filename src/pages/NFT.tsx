@@ -319,7 +319,7 @@ export default function NFTPage() {
           <div className="absolute top-10 left-10 w-32 h-32 bg-orange-200/30 dark:bg-orange-800/20 rounded-full blur-2xl" />
           <div className="absolute top-20 right-20 w-48 h-48 bg-pink-200/30 dark:bg-pink-800/20 rounded-full blur-3xl" />
         </div>
-        <div className="container mx-auto px-4 pt-12 pb-6 relative">
+        <div className="container mx-auto px-4 pt-12 pb-8 relative">
           <div className="max-w-3xl mx-auto text-center space-y-4">
             <div className="flex items-center justify-center">
               <Badge className="bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-700 text-sm px-3 py-1">
@@ -342,40 +342,7 @@ export default function NFTPage() {
         </div>
       </section>
 
-      {/* ── Story + Generator side by side on wide screens ── */}
-      <div className="container mx-auto px-4 py-8 space-y-10">
-
-        {/* The Story */}
-        <div className="max-w-2xl mx-auto">
-          <Card className="border-orange-200 dark:border-orange-800 bg-orange-50/50 dark:bg-orange-950/20">
-            <CardContent className="p-6 md:p-8 space-y-4">
-              <div className="flex items-center gap-2 mb-1">
-                <Bitcoin className="h-5 w-5 text-orange-500" />
-                <span className="font-bold text-orange-700 dark:text-orange-400 text-sm uppercase tracking-wider">The Story</span>
-              </div>
-              <div className="space-y-3 text-base leading-relaxed text-muted-foreground">
-                <p>
-                  In 2023 when I started on Nostr I came out of the so-called shitcoin space. And yes — I made NFTs. 😅
-                </p>
-                <p>
-                  But now, already many years <span className="font-semibold text-foreground">'clean'</span> lol, and only focused on{' '}
-                  <span className="font-bold text-orange-600 dark:text-orange-400">Bitcoin</span> (as money) and{' '}
-                  <span className="font-bold text-purple-600 dark:text-purple-400">Nostr</span> (as media) —
-                  I share here the <strong>Nostr Fungible Tokens</strong>.
-                </p>
-                <p>
-                  As a gimmick to the NFT space. No NFTs for me anymore on a blockchain, only on Nostr.
-                </p>
-                <p className="text-foreground font-medium">
-                  So enjoy and feel free to right-click save! 😄
-                </p>
-                <p className="text-sm">
-                  A zap is always appreciated if you feel this NFT has any value ⚡
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+      <div className="container mx-auto px-4 pb-8 space-y-12">
 
         {/* ── Choose & Generate ── */}
         <div>
@@ -435,8 +402,40 @@ export default function NFTPage() {
           )}
         </div>
 
+        {/* ── The Story ── */}
+        <div className="max-w-2xl mx-auto">
+          <Card className="border-orange-200 dark:border-orange-800 bg-orange-50/50 dark:bg-orange-950/20">
+            <CardContent className="p-6 md:p-8 space-y-4">
+              <div className="flex items-center gap-2 mb-1">
+                <Bitcoin className="h-5 w-5 text-orange-500" />
+                <span className="font-bold text-orange-700 dark:text-orange-400 text-sm uppercase tracking-wider">The Story</span>
+              </div>
+              <div className="space-y-3 text-base leading-relaxed text-muted-foreground">
+                <p>
+                  In 2023 when I started on Nostr I came out of the so-called shitcoin space. And yes — I made NFTs. 😅
+                </p>
+                <p>
+                  But now, already many years <span className="font-semibold text-foreground">'clean'</span> lol, and only focused on{' '}
+                  <span className="font-bold text-orange-600 dark:text-orange-400">Bitcoin</span> (as money) and{' '}
+                  <span className="font-bold text-purple-600 dark:text-purple-400">Nostr</span> (as media) —
+                  I share here the <strong>Nostr Fungible Tokens</strong>.
+                </p>
+                <p>
+                  As a gimmick to the NFT space. No NFTs for me anymore on a blockchain, only on Nostr.
+                </p>
+                <p className="text-foreground font-medium">
+                  So enjoy and feel free to right-click save! 😄
+                </p>
+                <p className="text-sm">
+                  A zap is always appreciated if you feel this NFT has any value ⚡
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* ── Footer Zap ── */}
-        <div className="max-w-xl mx-auto text-center space-y-4 py-8">
+        <div className="max-w-xl mx-auto text-center space-y-4 py-4">
           <h3 className="text-xl font-bold">Love a character? Send a zap! ⚡</h3>
           <p className="text-muted-foreground text-sm">
             Every zap goes directly to <strong>bitpopart@walletofsatoshi.com</strong> via Lightning.
