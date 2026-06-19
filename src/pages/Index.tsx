@@ -381,7 +381,19 @@ function getDefaultIcon(variant: HomepageButton['variant']): React.ComponentType
   return Gift;
 }
 
-function DynamicButton({ btn, size = 'default', mobileIconOnly = false }: { btn: HomepageButton; size?: 'default' | 'lg' | 'sm'; mobileIconOnly?: boolean }) {
+function DynamicButton({
+  btn,
+  size = 'default',
+  mobileIconOnly = false,
+  mobileShowLabel = false,
+}: {
+  btn: HomepageButton;
+  size?: 'default' | 'lg' | 'sm';
+  /** Hide label on mobile, icon-only square button */
+  mobileIconOnly?: boolean;
+  /** Keep label visible on mobile even when mobileIconOnly is set (for important buttons like Nostr) */
+  mobileShowLabel?: boolean;
+}) {
   const isExternal = btn.url.startsWith('http://') || btn.url.startsWith('https://');
 
   const variantProps = btn.variant === 'primary'
@@ -396,7 +408,6 @@ function DynamicButton({ btn, size = 'default', mobileIconOnly = false }: { btn:
 
   const primaryStyle = btn.variant === 'primary' ? { style: { background: 'linear-gradient(135deg, #ec4899, #8b5cf6)', border: 'none' } } : {};
 
-  // Resolve the icon: use explicitly chosen icon, or fall back to variant default
   const ResolvedIcon: React.ComponentType<{ className?: string }> | null =
     btn.icon && BUTTON_ICON_COMPONENTS[btn.icon]
       ? BUTTON_ICON_COMPONENTS[btn.icon]
@@ -406,18 +417,27 @@ function DynamicButton({ btn, size = 'default', mobileIconOnly = false }: { btn:
     ? 'text-orange-600 dark:text-orange-400'
     : '';
 
-  // On mobile (when mobileIconOnly=true): square icon button, label hidden.
-  // On sm+ screens: normal full button with label.
-  const mobileClass = mobileIconOnly ? 'w-12 h-12 p-0 sm:w-auto sm:h-auto sm:px-4 sm:py-2' : '';
+  // Mobile sizing:
+  // - mobileShowLabel: compact pill (auto width) with icon + short label
+  // - mobileIconOnly: square icon-only
+  // - neither: normal full button
+  const mobileClass = mobileIconOnly && !mobileShowLabel
+    ? 'w-12 h-12 p-0 sm:w-auto sm:h-auto sm:px-4 sm:py-2'
+    : mobileIconOnly && mobileShowLabel
+    ? 'px-3 h-12 sm:px-4 sm:h-auto'
+    : '';
+
+  // What to render as label
+  const labelNode = mobileIconOnly && !mobileShowLabel
+    ? <span className="hidden sm:inline">{btn.label}</span>
+    : btn.label;
 
   if (isExternal) {
     return (
       <Button size={size} {...variantProps} className={`rounded-full ${accentClass} ${mobileClass}`} {...primaryStyle} title={btn.label} asChild>
-        <a href={btn.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
-          {ResolvedIcon && <ResolvedIcon className={`h-5 w-5 sm:h-4 sm:w-4 ${accentIconClass}`} />}
-          {mobileIconOnly
-            ? <span className="hidden sm:inline">{btn.label}</span>
-            : btn.label}
+        <a href={btn.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5">
+          {ResolvedIcon && <ResolvedIcon className={`h-5 w-5 sm:h-4 sm:w-4 flex-shrink-0 ${accentIconClass}`} />}
+          {labelNode}
           <ExternalLink className="hidden sm:inline h-3 w-3 opacity-60" />
         </a>
       </Button>
@@ -426,11 +446,9 @@ function DynamicButton({ btn, size = 'default', mobileIconOnly = false }: { btn:
 
   return (
     <Button size={size} {...variantProps} className={`rounded-full ${accentClass} ${mobileClass}`} {...primaryStyle} title={btn.label} asChild>
-      <Link to={btn.url} className="flex items-center gap-2">
-        {ResolvedIcon && <ResolvedIcon className={`h-5 w-5 sm:h-4 sm:w-4 ${accentIconClass}`} />}
-        {mobileIconOnly
-          ? <span className="hidden sm:inline">{btn.label}</span>
-          : btn.label}
+      <Link to={btn.url} className="flex items-center gap-1.5">
+        {ResolvedIcon && <ResolvedIcon className={`h-5 w-5 sm:h-4 sm:w-4 flex-shrink-0 ${accentIconClass}`} />}
+        {labelNode}
       </Link>
     </Button>
   );
@@ -1395,9 +1413,18 @@ const Index = () => {
                   <Skeleton className="h-12 w-12 rounded-full sm:h-11 sm:w-28" />
                 </>
               ) : (
-                heroButtons.map(btn => (
-                  <DynamicButton key={btn.id} btn={btn} size="lg" mobileIconOnly />
-                ))
+                heroButtons.map(btn => {
+                  const isNostr = btn.label.toLowerCase().includes('nostr');
+                  return (
+                    <DynamicButton
+                      key={btn.id}
+                      btn={btn}
+                      size="lg"
+                      mobileIconOnly
+                      mobileShowLabel={isNostr}
+                    />
+                  );
+                })
               )}
             </div>
             
