@@ -1,6 +1,18 @@
 import { useSeoMeta } from '@unhead/react';
 import { Link } from 'react-router-dom';
 import { useState, useMemo } from 'react';
+import {
+  ResponsiveContainer,
+  ComposedChart,
+  Bar,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  Cell,
+} from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -42,6 +54,9 @@ import {
   Printer,
   Newspaper,
   FolderKanban,
+  TrendingUp,
+  BarChart2,
+  Flame,
 } from 'lucide-react';
 import type { NostrEvent, NostrMetadata } from '@nostrify/nostrify';
 
@@ -368,6 +383,293 @@ function NoteThumbnail({ event }: { event: NostrEvent }) {
         </CardContent>
       </Card>
     </a>
+  );
+}
+
+// ── Activity Chart ────────────────────────────────────────────────────────────
+
+interface MonthBucket {
+  label: string;      // "Feb '23"
+  monthKey: string;   // "2023-02"
+  posts: number;
+  cumulative: number;
+  isCurrent: boolean;
+}
+
+/** Build a continuous month-by-month timeline from startDate to today */
+function buildMonthTimeline(
+  notes: { created_at: number }[],
+  startDate: Date,
+): MonthBucket[] {
+  // Count posts per month
+  const counts = new Map<string, number>();
+  for (const note of notes) {
+    const d = new Date(note.created_at * 1000);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+
+  const now = new Date();
+  const currentKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+  const buckets: MonthBucket[] = [];
+  const cursor = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+  const end = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  let cumulative = 0;
+
+  while (cursor <= end) {
+    const year = cursor.getFullYear();
+    const month = cursor.getMonth(); // 0-indexed
+    const key = `${year}-${String(month + 1).padStart(2, '0')}`;
+    const posts = counts.get(key) ?? 0;
+    cumulative += posts;
+
+    const shortMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                         'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const label = `${shortMonths[month]} '${String(year).slice(2)}`;
+
+    buckets.push({
+      label,
+      monthKey: key,
+      posts,
+      cumulative,
+      isCurrent: key === currentKey,
+    });
+
+    cursor.setMonth(cursor.getMonth() + 1);
+  }
+
+  return buckets;
+}
+
+// Custom tooltip for the chart
+function ChartTooltip({ active, payload, label }: {
+  active?: boolean;
+  payload?: Array<{ name: string; value: number; color: string }>;
+  label?: string;
+}) {
+  if (!active || !payload?.length) return null;
+  const posts = payload.find(p => p.name === 'Posts')?.value ?? 0;
+  const total = payload.find(p => p.name === 'Total')?.value ?? 0;
+  return (
+    <div className="bg-white dark:bg-gray-900 border border-purple-200 dark:border-purple-700 rounded-xl shadow-xl px-4 py-3 text-sm">
+      <p className="font-bold text-purple-700 dark:text-purple-300 mb-1">{label}</p>
+      <p className="text-gray-700 dark:text-gray-300">
+        <span className="inline-block w-2.5 h-2.5 rounded-full bg-purple-500 mr-1.5 align-middle" />
+        Notes this month: <span className="font-bold">{posts}</span>
+      </p>
+      <p className="text-gray-500 dark:text-gray-400">
+        <span className="inline-block w-2.5 h-2.5 rounded-full bg-orange-400 mr-1.5 align-middle" />
+        Total on Nostr: <span className="font-bold">{total}</span>
+      </p>
+    </div>
+  );
+}
+
+interface ActivityChartProps {
+  notes: { created_at: number }[];
+  isLoading: boolean;
+}
+
+function ActivityChart({ notes, isLoading }: ActivityChartProps) {
+  const [view, setView] = useState<'monthly' | 'yearly'>('monthly');
+
+  const monthlyData = useMemo(
+    () => buildMonthTimeline(notes, NOSTR_SINCE_DATE),
+    [notes],
+  );
+
+  // Yearly rollup
+  const yearlyData = useMemo(() => {
+    const byYear = new Map<string, number>();
+    for (const b of monthlyData) {
+      const yr = b.monthKey.slice(0, 4);
+      byYear.set(yr, (byYear.get(yr) ?? 0) + b.posts);
+    }
+    const now = new Date();
+    const currentYear = String(now.getFullYear());
+    let cum = 0;
+    return Array.from(byYear.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([yr, posts]) => {
+        cum += posts;
+        return { label: yr, posts, cumulative: cum, isCurrent: yr === currentYear };
+      });
+  }, [monthlyData]);
+
+  const data = view === 'monthly' ? monthlyData : yearlyData;
+
+  // Stats
+  const totalPosts = monthlyData[monthlyData.length - 1]?.cumulative ?? 0;
+  const thisMonthPosts = monthlyData.find(b => b.isCurrent)?.posts ?? 0;
+  const bestMonth = useMemo(() =>
+    [...monthlyData].sort((a, b) => b.posts - a.posts)[0],
+    [monthlyData],
+  );
+  // Streak: consecutive months with at least 1 post, counting backwards
+  const streak = useMemo(() => {
+    let s = 0;
+    for (let i = monthlyData.length - 1; i >= 0; i--) {
+      if (monthlyData[i].posts > 0) s++;
+      else break;
+    }
+    return s;
+  }, [monthlyData]);
+
+  if (isLoading) {
+    return (
+      <Card className="mb-8 overflow-hidden border-2 border-purple-200 dark:border-purple-800 shadow-lg">
+        <CardContent className="py-8 px-6">
+          <Skeleton className="h-5 w-48 mb-6" />
+          <Skeleton className="h-64 w-full rounded-xl" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (notes.length === 0) return null;
+
+  return (
+    <Card className="mb-8 overflow-hidden border-2 border-purple-200 dark:border-purple-800 shadow-lg"
+      style={{ background: 'linear-gradient(135deg, #8b5cf608, #6366f104)' }}>
+      <CardHeader className="pb-2 pt-5">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <CardTitle className="flex items-center gap-2 text-xl">
+            <BarChart2 className="h-5 w-5 text-purple-500" />
+            <span style={{
+              background: 'linear-gradient(90deg, #8b5cf6, #6366f1)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}>
+              Consistency Chart
+            </span>
+          </CardTitle>
+          {/* View toggle */}
+          <div className="flex items-center gap-1 p-1 bg-muted rounded-lg sm:ml-auto">
+            <button
+              onClick={() => setView('monthly')}
+              className={`px-3 py-1 rounded-md text-xs font-semibold transition-all ${
+                view === 'monthly'
+                  ? 'bg-purple-600 text-white shadow'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Monthly
+            </button>
+            <button
+              onClick={() => setView('yearly')}
+              className={`px-3 py-1 rounded-md text-xs font-semibold transition-all ${
+                view === 'yearly'
+                  ? 'bg-purple-600 text-white shadow'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Yearly
+            </button>
+          </div>
+        </div>
+        <p className="text-xs text-muted-foreground mt-1">
+          Notes posted to Nostr — proof of consistent creation since February 2023
+        </p>
+      </CardHeader>
+
+      <CardContent className="pt-2 pb-4">
+        {/* Stat pills */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-5">
+          <div className="rounded-xl bg-purple-50 dark:bg-purple-900/20 border border-purple-100 dark:border-purple-800 px-3 py-2.5 text-center">
+            <p className="text-[10px] uppercase tracking-widest text-purple-500 font-semibold mb-0.5">Total Notes</p>
+            <p className="text-2xl font-black text-purple-700 dark:text-purple-300">{totalPosts}</p>
+          </div>
+          <div className="rounded-xl bg-orange-50 dark:bg-orange-900/20 border border-orange-100 dark:border-orange-800 px-3 py-2.5 text-center">
+            <p className="text-[10px] uppercase tracking-widest text-orange-500 font-semibold mb-0.5">This Month</p>
+            <p className="text-2xl font-black text-orange-600 dark:text-orange-300">{thisMonthPosts}</p>
+          </div>
+          <div className="rounded-xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 px-3 py-2.5 text-center">
+            <p className="text-[10px] uppercase tracking-widest text-indigo-500 font-semibold mb-0.5">Best Month</p>
+            <p className="text-2xl font-black text-indigo-700 dark:text-indigo-300">{bestMonth?.posts ?? 0}</p>
+            <p className="text-[10px] text-muted-foreground leading-tight">{bestMonth?.label}</p>
+          </div>
+          <div className="rounded-xl bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-800 px-3 py-2.5 text-center">
+            <p className="text-[10px] uppercase tracking-widest text-rose-500 font-semibold mb-0.5 flex items-center justify-center gap-0.5">
+              <Flame className="h-2.5 w-2.5" /> Streak
+            </p>
+            <p className="text-2xl font-black text-rose-600 dark:text-rose-300">{streak}</p>
+            <p className="text-[10px] text-muted-foreground leading-tight">month{streak !== 1 ? 's' : ''} running</p>
+          </div>
+        </div>
+
+        {/* Chart */}
+        <div className="w-full" style={{ height: 260 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart data={data} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#8b5cf620" vertical={false} />
+              <XAxis
+                dataKey="label"
+                tick={{ fontSize: 10, fill: '#9ca3af' }}
+                tickLine={false}
+                axisLine={false}
+                interval={view === 'monthly' ? Math.max(0, Math.floor(data.length / 10) - 1) : 0}
+              />
+              <YAxis
+                yAxisId="left"
+                tick={{ fontSize: 10, fill: '#9ca3af' }}
+                tickLine={false}
+                axisLine={false}
+                allowDecimals={false}
+              />
+              <YAxis
+                yAxisId="right"
+                orientation="right"
+                tick={{ fontSize: 10, fill: '#f97316' }}
+                tickLine={false}
+                axisLine={false}
+                allowDecimals={false}
+              />
+              <Tooltip content={<ChartTooltip />} />
+              <Legend
+                wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
+                iconSize={10}
+              />
+              <Bar
+                yAxisId="left"
+                dataKey="posts"
+                name="Posts"
+                radius={[3, 3, 0, 0]}
+                maxBarSize={view === 'monthly' ? 18 : 60}
+              >
+                {data.map((entry) => (
+                  <Cell
+                    key={entry.monthKey}
+                    fill={entry.isCurrent ? '#f7931a' : entry.posts === 0 ? '#e5e7eb' : '#8b5cf6'}
+                  />
+                ))}
+              </Bar>
+              <Line
+                yAxisId="right"
+                type="monotone"
+                dataKey="cumulative"
+                name="Total"
+                stroke="#f97316"
+                strokeWidth={2}
+                dot={false}
+                activeDot={{ r: 4, fill: '#f97316' }}
+              />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
+
+        <p className="text-[10px] text-center text-muted-foreground mt-2">
+          <span className="inline-block w-2 h-2 rounded-sm bg-purple-500 mr-1 align-middle" />
+          Monthly notes &nbsp;·&nbsp;
+          <span className="inline-block w-2 h-2 rounded-full bg-orange-400 mr-1 align-middle" />
+          Running total &nbsp;·&nbsp;
+          <span className="inline-block w-2 h-2 rounded-sm bg-orange-400 mr-1 align-middle" />
+          Current month
+        </p>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -771,6 +1073,9 @@ export default function Community() {
 
           </CardContent>
         </Card>
+
+        {/* ── Activity / Consistency Chart ── */}
+        <ActivityChart notes={pow?.allNotes ?? []} isLoading={powLoading} />
 
         {/* Latest 2 notes highlight */}
         {(powLoading || (pow?.latestNotes && pow.latestNotes.length > 0)) && (
