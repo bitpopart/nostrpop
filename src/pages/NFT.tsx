@@ -14,7 +14,6 @@ import {
   Download,
   Bitcoin,
   Layers,
-  ArrowRight,
   Sparkles,
   ImageIcon,
   Images,
@@ -314,26 +313,21 @@ export default function NFTPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-orange-50 via-white to-pink-50 dark:from-orange-950/20 dark:via-background dark:to-pink-950/20">
-      {/* ── Hero / Intro ── */}
+
+      {/* ── Header ── */}
       <section className="relative overflow-hidden">
-        {/* Background decoration */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-10 left-10 w-32 h-32 bg-orange-200/30 dark:bg-orange-800/20 rounded-full blur-2xl" />
           <div className="absolute top-20 right-20 w-48 h-48 bg-pink-200/30 dark:bg-pink-800/20 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 left-1/2 w-64 h-32 bg-yellow-200/20 dark:bg-yellow-800/10 rounded-full blur-2xl" />
         </div>
-
-        <div className="container mx-auto px-4 py-16 md:py-24 relative">
-          <div className="max-w-3xl mx-auto text-center space-y-6">
-            {/* Badge */}
-            <div className="flex items-center justify-center gap-2">
+        <div className="container mx-auto px-4 pt-12 pb-6 relative">
+          <div className="max-w-3xl mx-auto text-center space-y-4">
+            <div className="flex items-center justify-center">
               <Badge className="bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-700 text-sm px-3 py-1">
                 <Bitcoin className="h-3.5 w-3.5 mr-1.5" />
                 100% On-Chain Free · Nostr Only
               </Badge>
             </div>
-
-            {/* Title */}
             <h1 className="text-5xl md:text-6xl font-black tracking-tight">
               <span className="bg-gradient-to-r from-orange-500 via-pink-500 to-purple-600 bg-clip-text text-transparent">
                 Nostr Fungible
@@ -341,28 +335,18 @@ export default function NFTPage() {
               <br />
               <span className="text-foreground">Tokens</span>
             </h1>
-
             <p className="text-xl text-muted-foreground font-light max-w-xl mx-auto">
               Generate your own cartoon character &amp; download it instantly.
               No blockchain. No gas fees. Just vibes.
             </p>
-
-            {/* CTA */}
-            <div className="flex items-center justify-center gap-3 pt-2">
-              <a href="#generator">
-                <Button size="lg" className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white gap-2 text-base px-8">
-                  <Sparkles className="h-4 w-4" />
-                  Start Generating
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </a>
-            </div>
           </div>
         </div>
       </section>
 
-      {/* ── The Story ── */}
-      <section className="container mx-auto px-4 py-12">
+      {/* ── Story + Generator side by side on wide screens ── */}
+      <div className="container mx-auto px-4 py-8 space-y-10">
+
+        {/* The Story */}
         <div className="max-w-2xl mx-auto">
           <Card className="border-orange-200 dark:border-orange-800 bg-orange-50/50 dark:bg-orange-950/20">
             <CardContent className="p-6 md:p-8 space-y-4">
@@ -393,103 +377,67 @@ export default function NFTPage() {
             </CardContent>
           </Card>
         </div>
-      </section>
 
-      {/* ── How it works ── */}
-      <section className="container mx-auto px-4 py-6">
-        <div className="max-w-2xl mx-auto">
-          <h2 className="text-center text-2xl font-bold mb-6">How it works</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {[
-              {
-                icon: '🎨',
-                title: 'Pick a Character',
-                desc: 'Choose from the BitPopArt cartoon characters below.',
-              },
-              {
-                icon: '⚡',
-                title: 'Generate',
-                desc: 'Hit Generate — a random variant is picked per layer and combined into a unique image.',
-              },
-              {
-                icon: '📥',
-                title: 'Download & Share',
-                desc: 'Download your PNG. Right-click save is always free. Zap if you love it!',
-              },
-            ].map((step, i) => (
-              <div key={i} className="text-center p-4 rounded-xl bg-white dark:bg-card border">
-                <div className="text-3xl mb-2">{step.icon}</div>
-                <h3 className="font-bold text-sm mb-1">{step.title}</h3>
-                <p className="text-xs text-muted-foreground">{step.desc}</p>
-              </div>
-            ))}
+        {/* ── Choose & Generate ── */}
+        <div>
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-black mb-2">
+              <span className="bg-gradient-to-r from-orange-500 to-pink-500 bg-clip-text text-transparent">
+                Choose &amp; Generate
+              </span>
+            </h2>
+            <p className="text-muted-foreground">Each generate picks a random variant per layer — every result is unique</p>
           </div>
-        </div>
-      </section>
 
-      {/* ── Generator ── */}
-      <section id="generator" className="container mx-auto px-4 py-10">
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-black mb-2">
-            <span className="bg-gradient-to-r from-orange-500 to-pink-500 bg-clip-text text-transparent">
-              Choose &amp; Generate
-            </span>
-          </h2>
-          <p className="text-muted-foreground">Each generate picks a random variant per layer — every result is unique</p>
-        </div>
-
-        {isLoading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="space-y-2">
-                <Skeleton className="aspect-square rounded-lg" />
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-8 w-full rounded" />
-              </div>
-            ))}
-          </div>
-        ) : !characters || characters.length === 0 ? (
-          <div className="col-span-full max-w-sm mx-auto">
-            <Card className="border-dashed">
-              <CardContent className="py-12 px-8 text-center space-y-4">
-                <ImageIcon className="h-12 w-12 mx-auto text-muted-foreground/40" />
-                <p className="text-muted-foreground text-sm">
-                  No characters available yet. Check back soon!
-                </p>
-                <RelaySelector className="w-full" />
-              </CardContent>
-            </Card>
-          </div>
-        ) : (
-          <>
-            {/* Category tabs */}
-            {categories.length > 2 && (
-              <Tabs value={activeCategory} onValueChange={setActiveCategory} className="mb-6">
-                <TabsList className="mx-auto flex">
-                  {categories.map(cat => (
-                    <TabsTrigger key={cat} value={cat} className="capitalize">
-                      {cat === 'all' ? 'All Characters' : cat}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-                {categories.map(cat => (
-                  <TabsContent key={cat} value={cat} />
-                ))}
-              </Tabs>
-            )}
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filtered.map(char => (
-                <GeneratorCard key={char.id} character={char} />
+          {isLoading ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="space-y-2">
+                  <Skeleton className="aspect-square rounded-lg" />
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-8 w-full rounded" />
+                </div>
               ))}
             </div>
-          </>
-        )}
-      </section>
+          ) : !characters || characters.length === 0 ? (
+            <div className="max-w-sm mx-auto">
+              <Card className="border-dashed">
+                <CardContent className="py-12 px-8 text-center space-y-4">
+                  <ImageIcon className="h-12 w-12 mx-auto text-muted-foreground/40" />
+                  <p className="text-muted-foreground text-sm">
+                    No characters available yet. Check back soon!
+                  </p>
+                  <RelaySelector className="w-full" />
+                </CardContent>
+              </Card>
+            </div>
+          ) : (
+            <>
+              {categories.length > 2 && (
+                <Tabs value={activeCategory} onValueChange={setActiveCategory} className="mb-6">
+                  <TabsList className="mx-auto flex">
+                    {categories.map(cat => (
+                      <TabsTrigger key={cat} value={cat} className="capitalize">
+                        {cat === 'all' ? 'All Characters' : cat}
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+                  {categories.map(cat => (
+                    <TabsContent key={cat} value={cat} />
+                  ))}
+                </Tabs>
+              )}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {filtered.map(char => (
+                  <GeneratorCard key={char.id} character={char} />
+                ))}
+              </div>
+            </>
+          )}
+        </div>
 
-      {/* ── Footer CTA ── */}
-      <section className="container mx-auto px-4 py-12">
-        <div className="max-w-xl mx-auto text-center space-y-4">
+        {/* ── Footer Zap ── */}
+        <div className="max-w-xl mx-auto text-center space-y-4 py-8">
           <h3 className="text-xl font-bold">Love a character? Send a zap! ⚡</h3>
           <p className="text-muted-foreground text-sm">
             Every zap goes directly to <strong>bitpopart@walletofsatoshi.com</strong> via Lightning.
@@ -505,9 +453,8 @@ export default function NFTPage() {
             className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black font-bold"
           />
         </div>
-      </section>
+      </div>
 
-      {/* ── Footer note ── */}
       <div className="text-center pb-8 text-xs text-muted-foreground/60">
         Nostr Fungible Tokens · No blockchain · No gas fees · Just Nostr
       </div>
