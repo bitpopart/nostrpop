@@ -11,6 +11,7 @@ import { usePopFans, type ZapperEntry, type ReactorEntry, type LikeEntry } from 
 import { useAuthor } from '@/hooks/useAuthor';
 import { useProofOfWork, NOSTR_SINCE_DATE } from '@/hooks/useProofOfWork';
 import { useLatestAdminNotes } from '@/hooks/useAdminNotes';
+import { useContentOverview } from '@/hooks/useContentOverview';
 import { genUserName } from '@/lib/genUserName';
 import { nip19 } from 'nostr-tools';
 import { getFirstImage, stripImagesFromContent } from '@/lib/extractImages';
@@ -29,6 +30,18 @@ import {
   ArrowRight,
   Rss,
   ExternalLink,
+  Gift,
+  Clapperboard,
+  Image as ImageIcon,
+  Monitor,
+  Smartphone,
+  Play,
+  Gamepad2,
+  Palette,
+  ShoppingBag,
+  Printer,
+  Newspaper,
+  FolderKanban,
 } from 'lucide-react';
 import type { NostrEvent, NostrMetadata } from '@nostrify/nostrify';
 
@@ -358,6 +371,169 @@ function NoteThumbnail({ event }: { event: NostrEvent }) {
   );
 }
 
+// ── Content Overview ──────────────────────────────────────────────────────────
+
+interface OverviewCardProps {
+  icon: React.ReactNode;
+  label: string;
+  count: number | undefined;
+  href: string;
+  color: string;          // Tailwind bg class for the icon circle
+  textColor: string;      // Tailwind text class for the count
+  borderColor: string;    // Tailwind border class
+}
+
+function OverviewCard({ icon, label, count, href, color, textColor, borderColor }: OverviewCardProps) {
+  return (
+    <Link
+      to={href}
+      className={`group flex flex-col items-center gap-2 p-4 rounded-2xl border-2 ${borderColor} bg-white dark:bg-gray-900/60 hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 text-center`}
+    >
+      {/* Icon circle */}
+      <div className={`flex items-center justify-center w-12 h-12 rounded-xl ${color} group-hover:scale-110 transition-transform duration-200`}>
+        {icon}
+      </div>
+
+      {/* Count */}
+      <div className={`text-2xl font-black leading-none ${textColor}`}>
+        {count === undefined ? (
+          <Skeleton className="h-7 w-10 mx-auto rounded" />
+        ) : (
+          count
+        )}
+      </div>
+
+      {/* Label */}
+      <p className="text-xs font-semibold text-muted-foreground leading-tight">
+        {label}
+      </p>
+    </Link>
+  );
+}
+
+function SiteOverview() {
+  const overview = useContentOverview();
+
+  const cards: OverviewCardProps[] = [
+    {
+      icon: <Gift className="h-6 w-6 text-teal-600" />,
+      label: 'Free Images',
+      count: overview.freeImages,
+      href: '/free/images',
+      color: 'bg-teal-100 dark:bg-teal-900/40',
+      textColor: 'text-teal-700 dark:text-teal-300',
+      borderColor: 'border-teal-200 dark:border-teal-800',
+    },
+    {
+      icon: <Clapperboard className="h-6 w-6 text-amber-600" />,
+      label: 'GIFs',
+      count: overview.gifs,
+      href: '/gifs',
+      color: 'bg-amber-100 dark:bg-amber-900/40',
+      textColor: 'text-amber-700 dark:text-amber-300',
+      borderColor: 'border-amber-200 dark:border-amber-800',
+    },
+    {
+      icon: <Smartphone className="h-6 w-6 text-blue-600" />,
+      label: 'Wallpapers',
+      count: overview.wallpapers,
+      href: '/wallpapers',
+      color: 'bg-blue-100 dark:bg-blue-900/40',
+      textColor: 'text-blue-700 dark:text-blue-300',
+      borderColor: 'border-blue-200 dark:border-blue-800',
+    },
+    {
+      icon: <Monitor className="h-6 w-6 text-cyan-600" />,
+      label: 'Desktop Wallpapers',
+      count: overview.desktopWallpapers,
+      href: '/desktop-wallpapers',
+      color: 'bg-cyan-100 dark:bg-cyan-900/40',
+      textColor: 'text-cyan-700 dark:text-cyan-300',
+      borderColor: 'border-cyan-200 dark:border-cyan-800',
+    },
+    {
+      icon: <Play className="h-6 w-6 text-orange-600" />,
+      label: 'Animations',
+      count: overview.animations,
+      href: '/animations',
+      color: 'bg-orange-100 dark:bg-orange-900/40',
+      textColor: 'text-orange-700 dark:text-orange-300',
+      borderColor: 'border-orange-200 dark:border-orange-800',
+    },
+    {
+      icon: <Newspaper className="h-6 w-6 text-violet-600" />,
+      label: 'News Posts',
+      count: overview.news,
+      href: '/blog',
+      color: 'bg-violet-100 dark:bg-violet-900/40',
+      textColor: 'text-violet-700 dark:text-violet-300',
+      borderColor: 'border-violet-200 dark:border-violet-800',
+    },
+    {
+      icon: <FolderKanban className="h-6 w-6 text-indigo-600" />,
+      label: 'Projects',
+      count: overview.projects,
+      href: '/nostr-projects',
+      color: 'bg-indigo-100 dark:bg-indigo-900/40',
+      textColor: 'text-indigo-700 dark:text-indigo-300',
+      borderColor: 'border-indigo-200 dark:border-indigo-800',
+    },
+    {
+      icon: <Palette className="h-6 w-6 text-pink-600" />,
+      label: 'Art',
+      count: overview.art,
+      href: '/art',
+      color: 'bg-pink-100 dark:bg-pink-900/40',
+      textColor: 'text-pink-700 dark:text-pink-300',
+      borderColor: 'border-pink-200 dark:border-pink-800',
+    },
+    {
+      icon: <ShoppingBag className="h-6 w-6 text-rose-600" />,
+      label: 'Shop Items',
+      count: overview.shop,
+      href: '/shop',
+      color: 'bg-rose-100 dark:bg-rose-900/40',
+      textColor: 'text-rose-700 dark:text-rose-300',
+      borderColor: 'border-rose-200 dark:border-rose-800',
+    },
+    {
+      icon: <Printer className="h-6 w-6 text-emerald-600" />,
+      label: 'Print Posters',
+      count: overview.print,
+      href: '/print',
+      color: 'bg-emerald-100 dark:bg-emerald-900/40',
+      textColor: 'text-emerald-700 dark:text-emerald-300',
+      borderColor: 'border-emerald-200 dark:border-emerald-800',
+    },
+  ];
+
+  return (
+    <div className="mb-12">
+      {/* Section header */}
+      <div className="flex items-center gap-3 mb-5">
+        <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400 to-pink-500 shadow-md flex-shrink-0">
+          <ImageIcon className="h-5 w-5 text-white" />
+        </div>
+        <div>
+          <h2 className="text-xl font-black tracking-tight">BitPopArt Content</h2>
+          <p className="text-xs text-muted-foreground">Live item counts — click any card to explore</p>
+        </div>
+      </div>
+
+      {/* Grid of overview cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+        {cards.map(card => (
+          <OverviewCard key={card.label} {...card} />
+        ))}
+      </div>
+
+      <p className="text-xs text-center text-muted-foreground mt-3">
+        Counts update automatically as new content is published on Nostr
+      </p>
+    </div>
+  );
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function Community() {
@@ -392,13 +568,46 @@ export default function Community() {
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-background to-pink-50 dark:from-gray-950 dark:via-background dark:to-gray-900">
       <div className="container mx-auto px-4 py-10 max-w-4xl">
 
-        {/* Header */}
+        {/* Page title */}
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-black tracking-tight mb-1">
+            <span style={{
+              background: 'linear-gradient(90deg, #f7931a, #ff6b6b)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}>
+              BitPopArt Community
+            </span>
+          </h1>
+          <p className="text-muted-foreground text-base max-w-md mx-auto">
+            Your gateway to all BitPopArt content &amp; the community keeping it alive on Nostr
+          </p>
+        </div>
+
+        {/* ── SITE OVERVIEW ── */}
+        <SiteOverview />
+
+        {/* Section divider before PopFans */}
+        <div className="relative my-10">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-border" />
+          </div>
+          <div className="relative flex justify-center">
+            <span className="bg-background px-4 text-sm text-muted-foreground flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Fan Community
+            </span>
+          </div>
+        </div>
+
+        {/* PopFans Header */}
         <div className="text-center mb-10">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 shadow-lg"
             style={{ background: 'linear-gradient(135deg, #f7931a, #ff6b6b)' }}>
             <Users className="h-8 w-8 text-white" />
           </div>
-          <h1 className="text-4xl font-black tracking-tight mb-2">
+          <h2 className="text-4xl font-black tracking-tight mb-2">
             <span style={{
               background: 'linear-gradient(90deg, #f7931a, #ff6b6b)',
               WebkitBackgroundClip: 'text',
@@ -407,7 +616,7 @@ export default function Community() {
             }}>
               PopFans
             </span>
-          </h1>
+          </h2>
           <p className="text-muted-foreground text-lg max-w-md mx-auto">
             The community that keeps BitPopArt alive on Nostr — top zappers, reactors &amp; fans ⚡
           </p>
