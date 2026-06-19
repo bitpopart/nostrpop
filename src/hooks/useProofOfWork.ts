@@ -9,9 +9,9 @@ const ADMIN_HEX = nip19.decode(ADMIN_NPUB).data as string;
 /**
  * The confirmed date BitPopArt joined Nostr.
  * Hardcoded because old relays prune history and won't have events this far back.
- * February 2023 is the known start — relays only return as far back as July 2023.
+ * March 2023 is the confirmed starting month.
  */
-export const NOSTR_SINCE_DATE = new Date('2023-02-01');
+export const NOSTR_SINCE_DATE = new Date('2023-03-01');
 
 /**
  * These relays are queried specifically for the Proof of Work section.
