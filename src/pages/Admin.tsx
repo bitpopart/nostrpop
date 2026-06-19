@@ -43,6 +43,7 @@ import { FanAppPublishing } from '@/components/app/FanAppPublishing';
 import { AnimationsManagement } from '@/components/animations/AnimationsManagement';
 import { StudioLibrariesAdmin } from '@/components/studio/StudioLibrariesAdmin';
 import { PrintPostersAdmin } from '@/components/print/PrintPostersAdmin';
+import { NFTCharacterAdmin } from '@/components/nft/NFTCharacterAdmin';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import {
   Plus,
@@ -78,6 +79,7 @@ import {
   ClipboardList,
   Monitor,
   Printer,
+  ImageIcon,
 } from 'lucide-react';
 
 const Admin = () => {
@@ -330,6 +332,14 @@ const Admin = () => {
       color: 'from-yellow-500 to-orange-500',
       action: () => setActiveTab('zaps'),
       badge: 'Zaps'
+    },
+    {
+      title: 'NFT Characters',
+      description: 'Upload layered cartoon characters for the /NFT generator',
+      icon: ImageIcon,
+      color: 'from-orange-500 to-pink-600',
+      action: () => setActiveTab('nft'),
+      badge: 'NFT'
     },
   ];
 
@@ -986,6 +996,10 @@ const Admin = () => {
 
           <TabsContent value="studio">
             <StudioLibrariesAdmin />
+          </TabsContent>
+
+          <TabsContent value="nft">
+            <NFTCharacterAdmin />
           </TabsContent>
 
         </Tabs>

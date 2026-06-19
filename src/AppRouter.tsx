@@ -48,6 +48,7 @@ import Studio from "./pages/Studio";
 import Frl from "./pages/Frl";
 import FrlProjectView from "./pages/FrlProjectView";
 import Print from "./pages/Print";
+import NFT from "./pages/NFT";
 import NotFound from "./pages/NotFound";
 
 export function AppRouter() {
@@ -105,6 +106,7 @@ export function AppRouter() {
           <Route path="/frl" element={<Frl />} />
           <Route path="/frl/:projectId" element={<FrlProjectView />} />
           <Route path="/print" element={<Print />} />
+          <Route path="/NFT" element={<NFT />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="/:slug" element={<CustomPage />} />
           <Route path="*" element={<NotFound />} />
