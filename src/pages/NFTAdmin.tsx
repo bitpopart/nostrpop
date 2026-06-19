@@ -209,9 +209,10 @@ function EditPanel({ character, onSaved, onCancel }: EditPanelProps) {
     return [emptyLayerGroup()];
   });
 
-  // File input refs: [groupIdx][variantIdx]
+  // File input refs: single variant uploads keyed "g-v", bulk keyed "bulk-g"
   const fileRefs = useRef<Map<string, HTMLInputElement | null>>(new Map());
   const refKey = (g: number, v: number) => `${g}-${v}`;
+  const bulkKey = (g: number) => `bulk-${g}`;
 
   // Reset when character changes
   useEffect(() => {
@@ -292,6 +293,49 @@ function EditPanel({ character, onSaved, onCancel }: EditPanelProps) {
       toast({ title: 'Upload failed', variant: 'destructive' });
       setVariantUploading(gi, vi, false);
     }
+  };
+
+  // ── Bulk upload: multiple files at once for a layer group ──
+
+  const handleBulkUpload = async (gi: number, files: FileList) => {
+    if (files.length === 0) return;
+    const fileArray = Array.from(files);
+
+    // Append placeholder slots for each file, all marked uploading
+    const placeholders: VariantItem[] = fileArray.map(() => ({ url: '', uploading: true }));
+    let startIndex = 0;
+    setGroups(prev => prev.map((g, i) => {
+      if (i !== gi) return g;
+      // Remove empty trailing slot if present, then append placeholders
+      const existing = g.variants.filter(v => v.url.trim() || v.uploading);
+      startIndex = existing.length;
+      return { ...g, variants: [...existing, ...placeholders] };
+    }));
+
+    // Upload all in parallel
+    await Promise.all(
+      fileArray.map(async (file, fi) => {
+        const vi = startIndex + fi;
+        try {
+          const tags = await uploadFile(file);
+          const url = tags[0]?.[1] || '';
+          setGroups(prev => prev.map((g, i) =>
+            i === gi
+              ? { ...g, variants: g.variants.map((v, j) => j === vi ? { url, uploading: false } : v) }
+              : g
+          ));
+        } catch {
+          // Mark as failed (empty url, not uploading)
+          setGroups(prev => prev.map((g, i) =>
+            i === gi
+              ? { ...g, variants: g.variants.map((v, j) => j === vi ? { url: '', uploading: false } : v) }
+              : g
+          ));
+        }
+      })
+    );
+
+    toast({ title: `${fileArray.length} image${fileArray.length !== 1 ? 's' : ''} uploaded!` });
   };
 
   // ── Submit ──
@@ -470,13 +514,33 @@ function EditPanel({ character, onSaved, onCancel }: EditPanelProps) {
                   />
                 ))}
 
-                <Button
-                  variant="ghost" size="sm" className="w-full h-7 text-xs text-muted-foreground gap-1.5 border border-dashed hover:border-orange-300 hover:text-orange-600 mt-1"
-                  onClick={() => addVariant(gi)}
-                >
-                  <Plus className="h-3 w-3" />
-                  Add variant image
-                </Button>
+                <div className="flex gap-2 mt-1">
+                  <Button
+                    variant="ghost" size="sm" className="flex-1 h-7 text-xs text-muted-foreground gap-1.5 border border-dashed hover:border-orange-300 hover:text-orange-600"
+                    onClick={() => addVariant(gi)}
+                  >
+                    <Plus className="h-3 w-3" />
+                    Add variant
+                  </Button>
+                  <Button
+                    variant="ghost" size="sm" className="flex-1 h-7 text-xs text-muted-foreground gap-1.5 border border-dashed hover:border-orange-300 hover:text-orange-600"
+                    onClick={() => fileRefs.current.get(bulkKey(gi))?.click()}
+                  >
+                    <Upload className="h-3 w-3" />
+                    Upload multiple
+                  </Button>
+                  <input
+                    ref={el => fileRefs.current.set(bulkKey(gi), el)}
+                    type="file"
+                    accept="image/png,image/webp,image/svg+xml,image/*"
+                    multiple
+                    className="hidden"
+                    onChange={e => {
+                      if (e.target.files) handleBulkUpload(gi, e.target.files);
+                      e.target.value = '';
+                    }}
+                  />
+                </div>
               </div>
             </div>
           ))}
