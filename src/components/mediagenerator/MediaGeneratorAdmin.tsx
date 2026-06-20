@@ -17,30 +17,23 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+
 import {
   useAllMediaGenConfigs,
   useSaveMediaGenConfig,
   DEFAULT_PAGE_CONFIG,
   type MediaGenPageConfig,
-  type DownloadItem,
 } from '@/hooks/useMediaGenerator';
 import { useProjectPages } from '@/hooks/useProjectPages';
 import { useMarketplaceProducts } from '@/hooks/useMarketplaceProducts';
 import { useCardTemplates } from '@/hooks/useCardTemplates';
 import { useToast } from '@/hooks/useToast';
+import { DownloadPicker } from './DownloadPicker';
 import {
   ShoppingBag,
   Download,
@@ -49,10 +42,7 @@ import {
   ChevronLeft,
   Save,
   LayoutGrid,
-  Plus,
-  Trash2,
   Loader2,
-  Image as ImageIcon,
   FileText,
   FolderKanban,
   Globe,
@@ -74,15 +64,6 @@ const BUTTON_LABELS = {
   zap: 'Zap ⚡',
 };
 
-const DOWNLOAD_TYPES = [
-  { value: 'gif', label: 'GIF' },
-  { value: 'wallpaper', label: 'Wallpaper' },
-  { value: 'desktop', label: 'Desktop Wallpaper' },
-  { value: 'coloring', label: 'Coloring Page' },
-  { value: 'banner', label: 'Banner' },
-  { value: 'other', label: 'Other' },
-];
-
 /** General site pages (non-project) */
 const GENERAL_PAGES = [
   { slug: '/', label: 'Home' },
@@ -99,128 +80,6 @@ const GENERAL_PAGES = [
   { slug: '/community', label: 'Community' },
   { slug: '/badges', label: 'Badges' },
 ];
-
-// ─── Download item editor ─────────────────────────────────────────────────────
-
-function DownloadItemEditor({
-  items,
-  onChange,
-}: {
-  items: DownloadItem[];
-  onChange: (items: DownloadItem[]) => void;
-}) {
-  const [newLabel, setNewLabel] = useState('');
-  const [newUrl, setNewUrl] = useState('');
-  const [newThumb, setNewThumb] = useState('');
-  const [newType, setNewType] = useState('other');
-
-  const addItem = () => {
-    if (!newLabel.trim() || !newUrl.trim()) return;
-    const item: DownloadItem = {
-      id: `dl-${Date.now()}`,
-      label: newLabel.trim(),
-      url: newUrl.trim(),
-      thumb: newThumb.trim() || undefined,
-      type: newType,
-    };
-    onChange([...items, item]);
-    setNewLabel('');
-    setNewUrl('');
-    setNewThumb('');
-    setNewType('other');
-  };
-
-  const removeItem = (id: string) => {
-    onChange(items.filter((i) => i.id !== id));
-  };
-
-  return (
-    <div className="space-y-3">
-      <p className="text-xs text-muted-foreground">
-        Add downloadable files for this page. Users can download them directly from the popup.
-      </p>
-
-      {items.length > 0 && (
-        <div className="space-y-2">
-          {items.map((item) => (
-            <div key={item.id} className="flex items-center gap-2 p-2 bg-muted rounded-lg text-sm">
-              {item.thumb ? (
-                <img src={item.thumb} alt={item.label} className="w-8 h-8 object-cover rounded" />
-              ) : (
-                <div className="w-8 h-8 bg-gray-200 rounded flex items-center justify-center">
-                  <ImageIcon className="w-3 h-3 text-gray-400" />
-                </div>
-              )}
-              <div className="flex-1 min-w-0">
-                <p className="font-medium truncate">{item.label}</p>
-                <p className="text-xs text-muted-foreground truncate">{item.url}</p>
-              </div>
-              <Badge variant="outline" className="text-xs shrink-0">
-                {item.type}
-              </Badge>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="h-6 w-6 text-red-500 hover:text-red-700 shrink-0"
-                onClick={() => removeItem(item.id)}
-              >
-                <Trash2 className="w-3 h-3" />
-              </Button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div className="border rounded-lg p-3 space-y-2 bg-background">
-        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-          Add New Download
-        </p>
-        <div className="grid grid-cols-2 gap-2">
-          <Input
-            placeholder="Label (e.g. Travel Wallpaper)"
-            value={newLabel}
-            onChange={(e) => setNewLabel(e.target.value)}
-            className="col-span-2 text-sm"
-          />
-          <Input
-            placeholder="File URL"
-            value={newUrl}
-            onChange={(e) => setNewUrl(e.target.value)}
-            className="col-span-2 text-sm"
-          />
-          <Input
-            placeholder="Thumbnail URL (optional)"
-            value={newThumb}
-            onChange={(e) => setNewThumb(e.target.value)}
-            className="text-sm"
-          />
-          <Select value={newType} onValueChange={setNewType}>
-            <SelectTrigger className="text-sm">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {DOWNLOAD_TYPES.map((t) => (
-                <SelectItem key={t.value} value={t.value}>
-                  {t.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <Button
-          size="sm"
-          variant="outline"
-          className="w-full gap-1"
-          onClick={addItem}
-          disabled={!newLabel.trim() || !newUrl.trim()}
-        >
-          <Plus className="w-3 h-3" />
-          Add Download Item
-        </Button>
-      </div>
-    </div>
-  );
-}
 
 // ─── Per-page config editor ───────────────────────────────────────────────────
 
@@ -418,7 +277,7 @@ function PageEditor({
             </CardHeader>
             {config.download.enabled && (
               <CardContent>
-                <DownloadItemEditor
+                <DownloadPicker
                   items={config.download.items}
                   onChange={(items) =>
                     setConfig((prev) => ({ ...prev, download: { ...prev.download, items } }))
@@ -533,7 +392,7 @@ function PageEditor({
               <CardContent>
                 <div className="p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg text-sm text-orange-800 dark:text-orange-200">
                   <Zap className="w-4 h-4 inline mr-1" />
-                  Zap button uses traveltelly@primal.net. Users can send any amount of sats.
+                  Zap button uses bitpopart@walletofsatoshi.com. Users can send any amount of sats.
                 </div>
               </CardContent>
             )}

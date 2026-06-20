@@ -14,6 +14,7 @@
 import { useNostr } from '@nostrify/react';
 import { useQuery } from '@tanstack/react-query';
 import { getAdminPubkeyHex } from '@/lib/adminUtils';
+import { loadPagesFromStorage } from '@/hooks/usePages';
 
 export interface ProjectPage {
   slug: string;
@@ -116,7 +117,8 @@ export function useProjectPages() {
       };
 
       // ── Custom pages (kind 38175) → /:slug ──────────────────────────────
-      const customPages: ProjectPage[] = customPageEvents
+      // Merge Nostr events + localStorage (same strategy as usePages)
+      const nostrCustomPages: ProjectPage[] = customPageEvents
         .filter((e) => {
           const id = e.tags.find((t) => t[0] === 'd')?.[1];
           return id && !isDeleted(38175, e.pubkey, id, e.id);
@@ -125,14 +127,23 @@ export function useProjectPages() {
           const id = event.tags.find((t) => t[0] === 'd')?.[1];
           const title = event.tags.find((t) => t[0] === 'title')?.[1];
           if (!id || !title) return null;
-          return {
-            slug: `/${id}`,
-            label: title,
-            thumbnail: getThumb(event),
-            source: 'custom-page',
-          };
+          return { slug: `/${id}`, label: title, thumbnail: getThumb(event), source: 'custom-page' };
         })
-        .filter((p): p is ProjectPage => p !== null)
+        .filter((p): p is ProjectPage => p !== null);
+
+      // Add localStorage-only pages (not yet synced or admin's browser only)
+      const localPages = loadPagesFromStorage();
+      const nostrCustomSlugs = new Set(nostrCustomPages.map((p) => p.slug));
+      const localOnlyPages: ProjectPage[] = localPages
+        .filter((p) => !nostrCustomSlugs.has(`/${p.id}`))
+        .map((p): ProjectPage => ({
+          slug: `/${p.id}`,
+          label: p.title,
+          thumbnail: p.header_image || p.gallery_images?.[0] || undefined,
+          source: 'custom-page',
+        }));
+
+      const customPages: ProjectPage[] = [...nostrCustomPages, ...localOnlyPages]
         .sort((a, b) => a.label.localeCompare(b.label));
 
       // ── FRL projects → /frl/:id ─────────────────────────────────────────

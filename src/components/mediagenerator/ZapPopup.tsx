@@ -27,7 +27,7 @@ interface ZapPopupProps {
   onClose: () => void;
 }
 
-const ADMIN_LIGHTNING_ADDRESS = 'traveltelly@primal.net';
+const ADMIN_LIGHTNING_ADDRESS = 'bitpopart@walletofsatoshi.com';
 const ADMIN_NAME = 'BitPopArt';
 const ADMIN_AVATAR = 'https://nostr.build/i/nostr.build_1cdc4f4551701244d7d580b3bd500be0049a2d29c39e7c44949557875a8d4f00.png';
 
