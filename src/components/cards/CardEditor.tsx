@@ -32,12 +32,12 @@ import {
   Upload, Share2, Layers,
 } from 'lucide-react';
 
-// ─── Card Format (one fixed format — horizontal, matches existing cards aspect-[4/3]) ────
+// ─── Card Format (1500×900 — the format of all BitPop Cards) ────────────────
 const CARD_FORMAT = {
   id: 'greeting-card',
   name: 'BitPop Card',
-  width: 1200,
-  height: 900, // 4:3 landscape — same ratio as all existing cards (aspect-[4/3])
+  width: 1500,
+  height: 900,
 };
 
 // ─── Pop Art colors ──────────────────────────────────────────────────────────
@@ -1045,7 +1045,7 @@ export function CardEditor({ onPublished }: CardEditorProps) {
 
         {/* Format info */}
         <p className="text-xs text-center text-muted-foreground">
-          BitPop Card — {CARD_FORMAT.width} × {CARD_FORMAT.height} px (4:3 landscape — same format as all cards)
+          BitPop Card — {CARD_FORMAT.width} × {CARD_FORMAT.height} px
         </p>
       </div>
     </div>
