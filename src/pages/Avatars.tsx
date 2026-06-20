@@ -10,7 +10,7 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { recordDownload } from '@/hooks/useDownloadTracking';
 import { HashtagCloud } from '@/components/HashtagCloud';
 import { RelaySelector } from '@/components/RelaySelector';
-import { Download, UserCircle2, ArrowLeft } from 'lucide-react';
+import { Download, UserCircle2, ArrowLeft, Wand2 } from 'lucide-react';
 import { ZapButton } from '@/components/ZapButton';
 import { ShareToNostrMediaDialog } from '@/components/ShareToNostrMediaDialog';
 import { getAdminPubkeyHex } from '@/lib/adminUtils';
@@ -138,11 +138,22 @@ export default function Avatars() {
           </Card>
         ) : (
           <>
-            <p className="text-sm text-muted-foreground mb-4 text-center">
-              {activeTag
-                ? `${filtered.length} of ${avatars.length} avatar${avatars.length !== 1 ? 's' : ''} · #${activeTag}`
-                : `${avatars.length} avatar${avatars.length !== 1 ? 's' : ''} available`}
-            </p>
+            {/* Generate your own avatar CTA */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-4">
+              <p className="text-sm text-muted-foreground">
+                {activeTag
+                  ? `${filtered.length} of ${avatars.length} avatar${avatars.length !== 1 ? 's' : ''} · #${activeTag}`
+                  : `${avatars.length} avatar${avatars.length !== 1 ? 's' : ''} available`}
+              </p>
+              <Button
+                onClick={() => navigate('/studio?mode=avatar-generator')}
+                className="gap-2 bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white shadow-md hover:shadow-lg transition-all"
+                size="sm"
+              >
+                <Wand2 className="h-4 w-4" />
+                Generate your own avatar
+              </Button>
+            </div>
 
             {/* Circular avatar grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">

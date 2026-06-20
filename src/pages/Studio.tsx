@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useSeoMeta } from '@unhead/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -107,7 +108,10 @@ export default function Studio() {
     description: 'Create pop art designs online: stickers, flyers, banners and avatars.',
   });
 
-  const [avatarGeneratorMode, setAvatarGeneratorMode] = useState(false);
+  const [searchParams] = useSearchParams();
+  const [avatarGeneratorMode, setAvatarGeneratorMode] = useState(
+    () => searchParams.get('mode') === 'avatar-generator'
+  );
   const [format, setFormat] = useState<CanvasFormat>(CANVAS_FORMATS[0]);
   const [elements, setElements] = useState<CanvasElement[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
