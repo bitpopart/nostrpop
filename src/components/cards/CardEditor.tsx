@@ -628,23 +628,110 @@ export function CardEditor({ onPublished }: CardEditorProps) {
         {/* Text panel */}
         {activePanel === 'text' && (
           <div className="space-y-3">
-            <p className="text-sm font-medium">Add text to your card</p>
 
-            <div className="space-y-2">
-              <Label className="text-xs">Text</Label>
-              <Textarea
-                value={textInput}
-                onChange={e => setTextInput(e.target.value)}
-                rows={3}
-                placeholder="Type your text…"
-                className="text-sm"
-              />
-            </div>
+            {/* ── Edit selected text (shown at top when a text element is selected) ── */}
+            {selected?.kind === 'text' && (
+              <>
+                <div className="space-y-2 p-3 bg-pink-50 dark:bg-pink-900/20 rounded-lg border border-pink-200 dark:border-pink-800">
+                  <p className="text-xs font-semibold text-pink-700 dark:text-pink-300 flex items-center gap-1">
+                    <Type className="h-3 w-3" /> Edit Text
+                  </p>
 
-            <div className="space-y-2">
-              <Label className="text-xs">Font</Label>
+                  {/* Text content */}
+                  <Input
+                    value={selected.text ?? ''}
+                    onChange={e => updateSelected({ text: e.target.value })}
+                    className="h-8 text-xs"
+                    placeholder="Your text…"
+                  />
+
+                  {/* Font size stepper — identical to Studio */}
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-muted-foreground shrink-0 w-7">Size</span>
+                    <Button
+                      size="sm" variant="outline"
+                      className="h-7 w-7 p-0 text-base font-bold shrink-0"
+                      onClick={() => updateSelected({ fontSize: Math.max(8, (selected.fontSize ?? 60) - 10) })}
+                    >−</Button>
+                    <Input
+                      type="number"
+                      value={selected.fontSize ?? 60}
+                      onChange={e => {
+                        const v = Math.max(8, Math.min(400, Number(e.target.value)));
+                        if (!isNaN(v)) updateSelected({ fontSize: v });
+                      }}
+                      className="h-7 text-xs text-center px-1 flex-1 min-w-0"
+                      min={8} max={400}
+                    />
+                    <Button
+                      size="sm" variant="outline"
+                      className="h-7 w-7 p-0 text-base font-bold shrink-0"
+                      onClick={() => updateSelected({ fontSize: Math.min(400, (selected.fontSize ?? 60) + 10) })}
+                    >+</Button>
+                  </div>
+
+                  {/* Font family */}
+                  <Select value={selected.fontFamily ?? fontFamily} onValueChange={v => updateSelected({ fontFamily: v })}>
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {FONTS.map(f => (
+                        <SelectItem key={f} value={f} style={{ fontFamily: f }}>{f}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  {/* Bold / Italic / Align */}
+                  <div className="flex gap-1">
+                    <Button size="sm" variant={selected.bold ? 'default' : 'outline'} className="h-7 flex-1 text-xs font-bold" onClick={() => updateSelected({ bold: !selected.bold })}>B</Button>
+                    <Button size="sm" variant={selected.italic ? 'default' : 'outline'} className="h-7 flex-1 text-xs italic" onClick={() => updateSelected({ italic: !selected.italic })}>I</Button>
+                    <Button size="sm" variant={selected.align === 'left' ? 'default' : 'outline'} className="h-7 flex-1 text-xs" onClick={() => updateSelected({ align: 'left' })}>←</Button>
+                    <Button size="sm" variant={selected.align === 'center' ? 'default' : 'outline'} className="h-7 flex-1 text-xs" onClick={() => updateSelected({ align: 'center' })}>↔</Button>
+                    <Button size="sm" variant={selected.align === 'right' ? 'default' : 'outline'} className="h-7 flex-1 text-xs" onClick={() => updateSelected({ align: 'right' })}>→</Button>
+                  </div>
+
+                  {/* Colour swatches — colour also updates live on selected element */}
+                  <div className="grid grid-cols-8 gap-1">
+                    {POP_COLORS.map(c => (
+                      <button
+                        key={c}
+                        onClick={() => { setActiveColor(c); updateSelected({ color: c }); }}
+                        style={{ background: c }}
+                        className={`w-6 h-6 rounded border-2 transition-transform hover:scale-110 ${(selected.color ?? activeColor) === c ? 'border-pink-500 scale-110' : 'border-gray-200'}`}
+                        title={c}
+                      />
+                    ))}
+                    <input
+                      type="color"
+                      value={selected.color ?? activeColor}
+                      onChange={e => { setActiveColor(e.target.value); updateSelected({ color: e.target.value }); }}
+                      className="w-6 h-6 rounded border-2 border-gray-200 cursor-pointer"
+                      title="Custom colour"
+                    />
+                  </div>
+                </div>
+                <Separator />
+              </>
+            )}
+
+            {/* ── Add new text ── */}
+            <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
+              <Type className="h-3.5 w-3.5" /> Add Text
+            </p>
+
+            <Input
+              value={textInput}
+              onChange={e => setTextInput(e.target.value)}
+              placeholder="Type something…"
+              className="h-8 text-xs"
+              onKeyDown={e => e.key === 'Enter' && handleAddText()}
+            />
+
+            {/* Font + size on same row */}
+            <div className="flex gap-1">
               <Select value={fontFamily} onValueChange={setFontFamily}>
-                <SelectTrigger className="text-sm h-8">
+                <SelectTrigger className="h-8 text-xs flex-1 min-w-0">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -653,40 +740,33 @@ export function CardEditor({ onPublished }: CardEditorProps) {
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-xs">Font Size: {fontSize}px</Label>
-              <input
-                type="range"
-                min={20}
-                max={200}
+              <Input
+                type="number"
                 value={fontSize}
-                onChange={e => setFontSize(Number(e.target.value))}
-                className="w-full accent-pink-500"
+                onChange={e => setFontSize(Math.max(8, Math.min(400, Number(e.target.value))))}
+                className="h-8 w-14 text-xs"
+                min={8} max={400}
               />
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-xs">Colour</Label>
-              <div className="grid grid-cols-8 gap-1">
-                {POP_COLORS.map(c => (
-                  <button
-                    key={c}
-                    onClick={() => setActiveColor(c)}
-                    style={{ background: c }}
-                    className={`w-6 h-6 rounded border-2 transition-transform hover:scale-110 ${activeColor === c ? 'border-pink-500 scale-110' : 'border-gray-200'}`}
-                    title={c}
-                  />
-                ))}
-                <input
-                  type="color"
-                  value={activeColor}
-                  onChange={e => setActiveColor(e.target.value)}
-                  className="w-6 h-6 rounded border-2 border-gray-200 cursor-pointer"
-                  title="Custom colour"
+            {/* Colour swatches for new text */}
+            <div className="grid grid-cols-8 gap-1">
+              {POP_COLORS.map(c => (
+                <button
+                  key={c}
+                  onClick={() => setActiveColor(c)}
+                  style={{ background: c }}
+                  className={`w-6 h-6 rounded border-2 transition-transform hover:scale-110 ${activeColor === c ? 'border-pink-500 scale-110' : 'border-gray-200'}`}
+                  title={c}
                 />
-              </div>
+              ))}
+              <input
+                type="color"
+                value={activeColor}
+                onChange={e => setActiveColor(e.target.value)}
+                className="w-6 h-6 rounded border-2 border-gray-200 cursor-pointer"
+                title="Custom colour"
+              />
             </div>
 
             <Button
@@ -697,26 +777,6 @@ export function CardEditor({ onPublished }: CardEditorProps) {
               <Type className="h-3.5 w-3.5 mr-1" />
               Add Text
             </Button>
-
-            {/* Selected text element controls */}
-            {selected?.kind === 'text' && (
-              <div className="space-y-2 p-3 bg-pink-50 dark:bg-pink-900/20 rounded-lg border border-pink-200 dark:border-pink-800">
-                <p className="text-xs font-medium text-pink-700 dark:text-pink-300">Edit selected text</p>
-                <Textarea
-                  value={selected.text ?? ''}
-                  onChange={e => updateSelected({ text: e.target.value })}
-                  rows={2}
-                  className="text-xs"
-                />
-                <div className="flex gap-1">
-                  <Button size="sm" variant={selected.bold ? 'default' : 'outline'} className="flex-1 text-xs h-7 font-bold" onClick={() => updateSelected({ bold: !selected.bold })}>B</Button>
-                  <Button size="sm" variant={selected.italic ? 'default' : 'outline'} className="flex-1 text-xs h-7 italic" onClick={() => updateSelected({ italic: !selected.italic })}>I</Button>
-                  {(['left', 'center', 'right'] as const).map(a => (
-                    <Button key={a} size="sm" variant={selected.align === a ? 'default' : 'outline'} className="flex-1 text-xs h-7 capitalize" onClick={() => updateSelected({ align: a })}>{a[0].toUpperCase()}</Button>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         )}
 
