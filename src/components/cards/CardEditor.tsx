@@ -32,11 +32,11 @@ import {
   Upload, Share2, Layers,
 } from 'lucide-react';
 
-// ─── Card Format (1500×900 — the format of all BitPop Cards) ────────────────
+// ─── Card Format (1200×900 — 4:3 landscape, matches all existing BitPop Cards) ──
 const CARD_FORMAT = {
   id: 'greeting-card',
   name: 'BitPop Card',
-  width: 1500,
+  width: 1200,
   height: 900,
 };
 
