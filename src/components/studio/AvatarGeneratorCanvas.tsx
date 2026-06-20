@@ -136,10 +136,10 @@ function SingleCharacterGenerator({ character }: SingleCharacterGeneratorProps) 
     <>
       <canvas ref={canvasRef} className="hidden" />
 
-      <div className="flex flex-col md:flex-row gap-6">
+      <div className="flex flex-col items-center gap-3">
 
         {/* ── Preview + actions ── */}
-        <div className="shrink-0 flex flex-col items-center gap-3">
+        <div className="flex flex-col items-center gap-3">
           {/* Preview square */}
           <div
             className="relative w-64 h-64 rounded-2xl overflow-hidden bg-gradient-to-br from-violet-50 to-purple-100 dark:from-violet-950 dark:to-purple-900 border-2 border-violet-200 dark:border-violet-700 shadow-xl cursor-zoom-in"
@@ -209,8 +209,8 @@ function SingleCharacterGenerator({ character }: SingleCharacterGeneratorProps) 
           </div>
         </div>
 
-        {/* ── Layer pickers ── */}
-        <div className="flex-1 space-y-4 min-w-0">
+        {/* ── Layer pickers — hidden for now, can be re-enabled later ── */}
+        {/* <div className="flex-1 space-y-4 min-w-0">
           <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
             Customise layers
           </p>
@@ -248,7 +248,7 @@ function SingleCharacterGenerator({ character }: SingleCharacterGeneratorProps) 
               </div>
             </div>
           ))}
-        </div>
+        </div> */}
       </div>
 
       {/* Full-size preview dialog */}
