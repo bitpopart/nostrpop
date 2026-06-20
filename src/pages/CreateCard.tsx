@@ -40,7 +40,7 @@ const CreateCard = () => {
               Create Your Own Card
             </h1>
             <p className="text-muted-foreground max-w-xl mx-auto">
-              Pick a background template, add your text and images, then publish your card to the Nostr network for everyone to enjoy.
+              Pick a background template, add your own text and images, then download your card or publish it to the Nostr network.
             </p>
           </div>
         </div>

@@ -509,19 +509,6 @@ export function CardEditor({ onPublished }: CardEditorProps) {
   };
 
   // ─── Render ───────────────────────────────────────────────────────────────
-  if (!user) {
-    return (
-      <div className="flex flex-col items-center justify-center py-16 space-y-4">
-        <Sparkles className="h-12 w-12 text-pink-500" />
-        <h3 className="text-lg font-semibold">Log in to create your card</h3>
-        <p className="text-muted-foreground text-sm text-center max-w-xs">
-          Sign in with Nostr to design and publish your own BitPop Cards.
-        </p>
-        <LoginArea className="max-w-xs w-full" />
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col lg:flex-row gap-4 min-h-[70vh]">
       {/* ── Left sidebar: tool panels ── */}
@@ -572,8 +559,8 @@ export function CardEditor({ onPublished }: CardEditorProps) {
             <Separator />
 
             {templatesLoading ? (
-              <div className="grid grid-cols-3 gap-2">
-                {[...Array(6)].map((_, i) => <Skeleton key={i} className="aspect-[3/4] rounded" />)}
+              <div className="grid grid-cols-2 gap-2">
+                {[...Array(4)].map((_, i) => <Skeleton key={i} className="aspect-[4/3] rounded" />)}
               </div>
             ) : !templates || templates.length === 0 ? (
               <div className="text-center py-6">
@@ -583,7 +570,7 @@ export function CardEditor({ onPublished }: CardEditorProps) {
               </div>
             ) : (
               <ScrollArea className="h-80">
-                <div className="grid grid-cols-3 gap-2 pr-2">
+                <div className="grid grid-cols-2 gap-2 pr-2">
                   {templates.map(tpl => (
                     <button
                       key={tpl.id}
@@ -593,7 +580,7 @@ export function CardEditor({ onPublished }: CardEditorProps) {
                       }`}
                       title={tpl.name}
                     >
-                      <div className="aspect-[3/4] relative">
+                      <div className="aspect-[4/3] relative">
                         <img src={tpl.coverImage} alt={tpl.name} className="w-full h-full object-cover" />
                         {bgImage === tpl.coverImage && (
                           <div className="absolute inset-0 bg-pink-500/20 flex items-center justify-center">
@@ -709,89 +696,117 @@ export function CardEditor({ onPublished }: CardEditorProps) {
         {activePanel === 'images' && (
           <div className="space-y-3">
             <p className="text-sm font-medium">Add images / stickers</p>
-            <div className="space-y-2">
-              <Label className="cursor-pointer">
-                <div className="flex items-center gap-2 p-3 border-2 border-dashed border-pink-300 rounded-lg hover:bg-pink-50 dark:hover:bg-pink-900/10 transition-colors cursor-pointer">
-                  {isUploading ? (
-                    <Loader2 className="h-5 w-5 text-pink-500 animate-spin" />
-                  ) : (
-                    <Upload className="h-5 w-5 text-pink-500" />
-                  )}
-                  <div>
-                    <p className="text-sm font-medium text-pink-600">Upload image</p>
-                    <p className="text-xs text-muted-foreground">PNG, JPG, GIF, WebP</p>
+            {user ? (
+              <div className="space-y-2">
+                <Label className="cursor-pointer">
+                  <div className="flex items-center gap-2 p-3 border-2 border-dashed border-pink-300 rounded-lg hover:bg-pink-50 dark:hover:bg-pink-900/10 transition-colors cursor-pointer">
+                    {isUploading ? (
+                      <Loader2 className="h-5 w-5 text-pink-500 animate-spin" />
+                    ) : (
+                      <Upload className="h-5 w-5 text-pink-500" />
+                    )}
+                    <div>
+                      <p className="text-sm font-medium text-pink-600">Upload image</p>
+                      <p className="text-xs text-muted-foreground">PNG, JPG, GIF, WebP</p>
+                    </div>
                   </div>
-                </div>
-                <input type="file" accept="image/*" className="hidden" onChange={handleUploadImage} disabled={isUploading} />
-              </Label>
-            </div>
+                  <input type="file" accept="image/*" className="hidden" onChange={handleUploadImage} disabled={isUploading} />
+                </Label>
+              </div>
+            ) : (
+              <div className="p-3 rounded-lg bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 space-y-2">
+                <p className="text-xs text-orange-700 dark:text-orange-300 font-medium">
+                  Log in to upload your own images onto the card.
+                </p>
+                <LoginArea className="w-full" />
+              </div>
+            )}
           </div>
         )}
 
         {/* Publish panel */}
         {activePanel === 'publish' && (
           <div className="space-y-3">
-            <p className="text-sm font-medium">Publish as BitPop Card</p>
-
-            <div className="space-y-2">
-              <Label className="text-xs">Title *</Label>
-              <Input
-                value={publishTitle}
-                onChange={e => setPublishTitle(e.target.value)}
-                placeholder="e.g. Happy Birthday!"
-                className="text-sm"
-              />
+            {/* Download is always available */}
+            <div className="p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
+              <p className="text-xs font-medium text-green-700 dark:text-green-300 mb-2">
+                Download your card — no login needed
+              </p>
+              <Button
+                onClick={handleDownload}
+                disabled={isExporting}
+                className="w-full bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white"
+              >
+                {isExporting ? (
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Exporting…</>
+                ) : (
+                  <><Download className="h-4 w-4 mr-2" />Download JPG</>
+                )}
+              </Button>
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-xs">Description</Label>
-              <Textarea
-                value={publishDescription}
-                onChange={e => setPublishDescription(e.target.value)}
-                rows={3}
-                placeholder="A heartfelt message…"
-                className="text-sm"
-              />
-            </div>
+            <Separator />
 
-            <div className="space-y-2">
-              <Label className="text-xs">Category</Label>
-              <Select value={publishCategory} onValueChange={setPublishCategory}>
-                <SelectTrigger className="text-sm h-8">
-                  <SelectValue placeholder="Select category…" />
-                </SelectTrigger>
-                <SelectContent>
-                  {allCategories.map(c => (
-                    <SelectItem key={c.name} value={c.name}>{c.icon} {c.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Publish to Nostr — requires login */}
+            <p className="text-sm font-medium">Publish to Nostr</p>
 
-            <Button
-              onClick={handlePublish}
-              disabled={isExporting || isPublishing || !publishTitle.trim()}
-              className="w-full bg-gradient-to-r from-orange-500 via-pink-500 to-purple-500 text-white"
-            >
-              {isExporting || isPublishing ? (
-                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Publishing…</>
-              ) : (
-                <><Sparkles className="h-4 w-4 mr-2" />Publish Card</>
-              )}
-            </Button>
+            {user ? (
+              <>
+                <div className="space-y-2">
+                  <Label className="text-xs">Title *</Label>
+                  <Input
+                    value={publishTitle}
+                    onChange={e => setPublishTitle(e.target.value)}
+                    placeholder="e.g. Happy Birthday!"
+                    className="text-sm"
+                  />
+                </div>
 
-            <Button
-              onClick={handleDownload}
-              disabled={isExporting}
-              variant="outline"
-              className="w-full"
-            >
-              {isExporting ? (
-                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Exporting…</>
-              ) : (
-                <><Download className="h-4 w-4 mr-2" />Download JPG</>
-              )}
-            </Button>
+                <div className="space-y-2">
+                  <Label className="text-xs">Description</Label>
+                  <Textarea
+                    value={publishDescription}
+                    onChange={e => setPublishDescription(e.target.value)}
+                    rows={3}
+                    placeholder="A heartfelt message…"
+                    className="text-sm"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs">Category</Label>
+                  <Select value={publishCategory} onValueChange={setPublishCategory}>
+                    <SelectTrigger className="text-sm h-8">
+                      <SelectValue placeholder="Select category…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {allCategories.map(c => (
+                        <SelectItem key={c.name} value={c.name}>{c.icon} {c.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Button
+                  onClick={handlePublish}
+                  disabled={isExporting || isPublishing || !publishTitle.trim()}
+                  className="w-full bg-gradient-to-r from-orange-500 via-pink-500 to-purple-500 text-white"
+                >
+                  {isExporting || isPublishing ? (
+                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Publishing…</>
+                  ) : (
+                    <><Sparkles className="h-4 w-4 mr-2" />Publish Card</>
+                  )}
+                </Button>
+              </>
+            ) : (
+              <div className="p-3 rounded-lg bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 space-y-2">
+                <p className="text-xs text-purple-700 dark:text-purple-300">
+                  Log in with Nostr to publish your card and share it with the world.
+                </p>
+                <LoginArea className="w-full" />
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -810,10 +825,22 @@ export function CardEditor({ onPublished }: CardEditorProps) {
           <Button size="sm" variant="outline" onClick={handleDelete} disabled={!selectedId} title="Delete selected" className="h-8 w-8 p-0 text-red-500 hover:text-red-600"><Trash2 className="h-3.5 w-3.5" /></Button>
           <Button size="sm" variant="outline" onClick={handleClear} title="Clear all" className="h-8 px-2 text-xs text-red-500 hover:text-red-600"><RotateCcw className="h-3.5 w-3.5 mr-1" />Clear</Button>
 
-          {/* Layer count */}
-          <div className="ml-auto flex items-center gap-1 text-xs text-muted-foreground">
-            <Layers className="h-3.5 w-3.5" />
-            {elements.length} element{elements.length !== 1 ? 's' : ''}
+          {/* Layer count + quick download */}
+          <div className="ml-auto flex items-center gap-2">
+            <span className="text-xs text-muted-foreground flex items-center gap-1">
+              <Layers className="h-3.5 w-3.5" />
+              {elements.length} element{elements.length !== 1 ? 's' : ''}
+            </span>
+            <Button
+              size="sm"
+              onClick={handleDownload}
+              disabled={isExporting}
+              className="h-8 bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white px-3"
+              title="Download card as JPG"
+            >
+              {isExporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+              <span className="ml-1.5 text-xs hidden sm:inline">Download</span>
+            </Button>
           </div>
         </div>
 
