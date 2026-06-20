@@ -646,7 +646,9 @@ export function MediaGeneratorAdmin() {
 
   // All known pages for label/thumbnail lookup
   const allKnownPages = [
-    ...(projectPages?.dynamic ?? []),
+    ...(projectPages?.customPages ?? []),
+    ...(projectPages?.frl ?? []),
+    ...(projectPages?.collab ?? []),
     ...(projectPages?.builtin ?? []),
     ...GENERAL_PAGES.map((p) => ({ ...p, source: 'general' as const, thumbnail: undefined })),
   ];
@@ -705,6 +707,43 @@ export function MediaGeneratorAdmin() {
           </div>
         ) : (
           <div className="space-y-5">
+
+            {/* ── Custom Pages (kind 38175) → /:slug ───────────────── */}
+            {/* These are pages like /sneek, /bitcoinfriesland, /gamestr */}
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
+                <FileText className="w-3 h-3 text-pink-500" />
+                Custom Pages
+                {projectPages?.customPages && (
+                  <Badge variant="secondary" className="text-xs">{projectPages.customPages.length}</Badge>
+                )}
+                <span className="text-muted-foreground font-normal normal-case tracking-normal">
+                  — /sneek, /bitcoinfriesland, /gamestr …
+                </span>
+              </p>
+              {isLoading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                  {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-28" />)}
+                </div>
+              ) : projectPages?.customPages && projectPages.customPages.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                  {projectPages.customPages.map((page) => (
+                    <PageCard
+                      key={page.slug}
+                      slug={page.slug}
+                      label={page.label}
+                      thumbnail={page.thumbnail}
+                      config={allConfigs?.[page.slug] ?? DEFAULT_PAGE_CONFIG}
+                      onClick={() => setSelectedSlug(page.slug)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground italic">
+                  No custom pages found. Create them in Admin → Pages.
+                </p>
+              )}
+            </div>
 
             {/* ── /projects overview page ─────────────────────────── */}
             <div className="space-y-2">

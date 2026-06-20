@@ -1,15 +1,14 @@
 /**
  * useProjectPages
  *
- * Fetches all project pages from Nostr and returns them grouped by type.
- * Used by the Media Generator admin to show a live list of all pages
- * that can have floating buttons configured.
+ * Fetches all dynamic pages from Nostr and combines with built-in pages
+ * so the Media Generator admin has a complete, always-up-to-date list.
  *
- * Page → URL mapping:
- *  - Portfolio projects (kind 36171, general)    → /projects  (they all live on the one page)
- *  - FRL projects       (kind 36171, frl)         → /frl/:id
- *  - Nostr collab       (kind 38171)              → /nostr-projects/:id
- *  - Built-in project pages                       → /21k-art, /canvas, /cards, etc.
+ * Sources:
+ *  - kind 38175  → Custom pages (/:slug) — /sneek, /bitcoinfriesland, /gamestr, etc.
+ *  - kind 36171 frl → /frl/:id
+ *  - kind 38171  → /nostr-projects/:id
+ *  - BUILTIN_PROJECT_PAGES → hardcoded routes
  */
 
 import { useNostr } from '@nostrify/react';
@@ -17,17 +16,12 @@ import { useQuery } from '@tanstack/react-query';
 import { getAdminPubkeyHex } from '@/lib/adminUtils';
 
 export interface ProjectPage {
-  /** Full pathname used as the page slug in Media Generator config */
   slug: string;
-  /** Human-readable label */
   label: string;
-  /** Optional thumbnail URL */
   thumbnail?: string;
-  /** Source category */
-  source: 'builtin' | 'nostr-collab' | 'nostr-frl';
+  source: 'builtin' | 'custom-page' | 'nostr-collab' | 'nostr-frl';
 }
 
-/** Static project pages that always exist (routes in AppRouter.tsx) */
 const BUILTIN_PROJECT_PAGES: ProjectPage[] = [
   { slug: '/21k-art',            label: '21K Art',            source: 'builtin' },
   { slug: '/canvas',             label: '100M Canvas',        source: 'builtin' },
@@ -46,18 +40,23 @@ const BUILTIN_PROJECT_PAGES: ProjectPage[] = [
   { slug: '/desktop-wallpapers', label: 'Desktop Wallpapers', source: 'builtin' },
 ];
 
-function getThumbFromEvent(event: { tags: string[][]; content: string }): string | undefined {
+// Same admin pubkey used in usePages.tsx
+const PAGES_ADMIN_PUBKEY = '43baaf0c28e6cfb195b17ee083e19eb3a4afdfac54d9b6baf170270ed193e34c';
+
+function getThumb(event: { tags: string[][]; content: string }): string | undefined {
   try {
     const content = JSON.parse(event.content || '{}');
-    const thumb =
+    return (
       event.tags.find((t) => t[0] === 'image')?.[1] ||
+      event.tags.find((t) => t[0] === 'header')?.[1] ||
       event.tags.find((t) => t[0] === 'header-image')?.[1] ||
       event.tags.find((t) => t[0] === 'thumb')?.[1] ||
       content.thumbnail ||
       (Array.isArray(content.images) && typeof content.images[0] === 'string'
         ? content.images[0]
-        : undefined);
-    return thumb || undefined;
+        : undefined) ||
+      undefined
+    );
   } catch {
     return undefined;
   }
@@ -70,19 +69,32 @@ export function useProjectPages() {
   return useQuery({
     queryKey: ['project-pages', adminPubkey],
     queryFn: async (c) => {
-      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(6000)]);
+      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(8000)]);
 
-      const [portfolioEvents, nostrProjectEvents, deletionEvents] = await Promise.all([
+      const [
+        customPageEvents,
+        portfolioEvents,
+        nostrProjectEvents,
+        deletionEvents,
+      ] = await Promise.all([
+        // kind 38175 — custom pages (/:slug): Sneek, Bitcoinfriesland, gamestr, etc.
+        nostr.query(
+          [{ kinds: [38175], authors: [PAGES_ADMIN_PUBKEY], limit: 100 }],
+          { signal }
+        ),
+        // kind 36171 — portfolio / frl projects
         nostr.query(
           [{ kinds: [36171], authors: [adminPubkey], '#t': ['bitpopart-project'], limit: 100 }],
           { signal }
         ),
+        // kind 38171 — Nostr collaborative projects
         nostr.query(
           [{ kinds: [38171], authors: [adminPubkey], limit: 100 }],
           { signal }
         ),
+        // kind 5 — deletion events (cover all authors)
         nostr.query(
-          [{ kinds: [5], authors: [adminPubkey], limit: 300 }],
+          [{ kinds: [5], authors: [adminPubkey, PAGES_ADMIN_PUBKEY], limit: 400 }],
           { signal }
         ),
       ]);
@@ -96,27 +108,39 @@ export function useProjectPages() {
         });
       });
 
-      const isDeleted36171 = (event: { pubkey: string; id: string; tags: string[][] }) => {
-        const dTag = event.tags.find((t) => t[0] === 'd')?.[1];
+      const isDeleted = (kind: number, pubkey: string, dTag: string | undefined, eventId: string) => {
         return (
-          deletedAddresses.has(`36171:${event.pubkey}:${dTag}`) ||
-          deletedAddresses.has(event.id)
+          deletedAddresses.has(`${kind}:${pubkey}:${dTag}`) ||
+          deletedAddresses.has(eventId)
         );
       };
 
-      const isDeleted38171 = (event: { pubkey: string; id: string; tags: string[][] }) => {
-        const dTag = event.tags.find((t) => t[0] === 'd')?.[1];
-        return (
-          deletedAddresses.has(`38171:${event.pubkey}:${dTag}`) ||
-          deletedAddresses.has(event.id)
-        );
-      };
+      // ── Custom pages (kind 38175) → /:slug ──────────────────────────────
+      const customPages: ProjectPage[] = customPageEvents
+        .filter((e) => {
+          const id = e.tags.find((t) => t[0] === 'd')?.[1];
+          return id && !isDeleted(38175, e.pubkey, id, e.id);
+        })
+        .map((event): ProjectPage | null => {
+          const id = event.tags.find((t) => t[0] === 'd')?.[1];
+          const title = event.tags.find((t) => t[0] === 'title')?.[1];
+          if (!id || !title) return null;
+          return {
+            slug: `/${id}`,
+            label: title,
+            thumbnail: getThumb(event),
+            source: 'custom-page',
+          };
+        })
+        .filter((p): p is ProjectPage => p !== null)
+        .sort((a, b) => a.label.localeCompare(b.label));
 
-      // ── FRL projects → /frl/:id ──────────────────────────────────────────
+      // ── FRL projects → /frl/:id ─────────────────────────────────────────
       const frlPages: ProjectPage[] = portfolioEvents
         .filter((e) => {
+          const id = e.tags.find((t) => t[0] === 'd')?.[1];
           const category = e.tags.find((t) => t[0] === 'category')?.[1];
-          return !isDeleted36171(e) && category === 'frl';
+          return category === 'frl' && id && !isDeleted(36171, e.pubkey, id, e.id);
         })
         .map((event): ProjectPage | null => {
           try {
@@ -124,23 +148,26 @@ export function useProjectPages() {
             const id = event.tags.find((t) => t[0] === 'd')?.[1];
             const name = event.tags.find((t) => t[0] === 'name')?.[1] || content.name || id;
             if (!id || !name) return null;
-            return { slug: `/frl/${id}`, label: name, thumbnail: getThumbFromEvent(event), source: 'nostr-frl' };
+            return { slug: `/frl/${id}`, label: name, thumbnail: getThumb(event), source: 'nostr-frl' };
           } catch { return null; }
         })
         .filter((p): p is ProjectPage => p !== null)
         .sort((a, b) => a.label.localeCompare(b.label));
 
-      // ── Nostr collab projects → /nostr-projects/:id ──────────────────────
-      // Deduplicate by title (keep newest per title, same logic as useNostrProjects)
-      const liveCollabEvents = nostrProjectEvents.filter((e) => !isDeleted38171(e));
-      const titleGroups = liveCollabEvents.reduce<Record<string, typeof liveCollabEvents>>((acc, e) => {
+      // ── Nostr collab projects → /nostr-projects/:id ─────────────────────
+      // Deduplicate by title (keep newest per title)
+      const liveCollab = nostrProjectEvents.filter((e) => {
+        const id = e.tags.find((t) => t[0] === 'd')?.[1];
+        return id && !isDeleted(38171, e.pubkey, id, e.id);
+      });
+      const titleGroups = liveCollab.reduce<Record<string, typeof liveCollab>>((acc, e) => {
         const title = e.tags.find((t) => t[0] === 'title')?.[1] || '';
         if (!acc[title]) acc[title] = [];
         acc[title].push(e);
         return acc;
       }, {});
-      const dedupedCollab = Object.values(titleGroups).map((group) =>
-        group.sort((a, b) => b.created_at - a.created_at)[0]
+      const dedupedCollab = Object.values(titleGroups).map((g) =>
+        g.sort((a, b) => b.created_at - a.created_at)[0]
       );
 
       const collabPages: ProjectPage[] = dedupedCollab
@@ -150,18 +177,18 @@ export function useProjectPages() {
             const id = event.tags.find((t) => t[0] === 'd')?.[1];
             const title = event.tags.find((t) => t[0] === 'title')?.[1] || content.title || id;
             if (!id || !title) return null;
-            return { slug: `/nostr-projects/${id}`, label: title, thumbnail: getThumbFromEvent(event), source: 'nostr-collab' };
+            return { slug: `/nostr-projects/${id}`, label: title, thumbnail: getThumb(event), source: 'nostr-collab' };
           } catch { return null; }
         })
         .filter((p): p is ProjectPage => p !== null)
         .sort((a, b) => a.label.localeCompare(b.label));
 
       return {
+        customPages,   // kind 38175 — /:slug (Sneek, Bitcoinfriesland, gamestr, etc.)
+        frl: frlPages, // kind 36171 frl — /frl/:id
+        collab: collabPages, // kind 38171 — /nostr-projects/:id
         builtin: BUILTIN_PROJECT_PAGES,
-        frl: frlPages,
-        collab: collabPages,
-        // all dynamic pages combined (for other consumers)
-        dynamic: [...frlPages, ...collabPages],
+        dynamic: [...customPages, ...frlPages, ...collabPages],
       };
     },
     staleTime: 30_000,
