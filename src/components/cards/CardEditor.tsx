@@ -20,6 +20,7 @@ import { useCardTemplates } from '@/hooks/useCardTemplates';
 import { useUploadFile } from '@/hooks/useUploadFile';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useToast } from '@/hooks/useToast';
 import { useCardCategories } from '@/hooks/useCardCategories';
 import { LoginArea } from '@/components/auth/LoginArea';
@@ -99,6 +100,7 @@ interface CardEditorProps {
 
 export function CardEditor({ onPublished }: CardEditorProps) {
   const { user } = useCurrentUser();
+  const isAdmin = useIsAdmin();
   const { toast } = useToast();
   const { mutate: createEvent, isPending: isPublishing } = useNostrPublish();
   const { mutateAsync: uploadFile, isPending: isUploading } = useUploadFile();
@@ -518,7 +520,7 @@ export function CardEditor({ onPublished }: CardEditorProps) {
           {[
             { key: 'templates', label: 'Templates', icon: LayoutTemplate },
             { key: 'text', label: 'Text', icon: Type },
-            { key: 'images', label: 'Images', icon: ImageIcon },
+            ...(isAdmin ? [{ key: 'images', label: 'Images', icon: ImageIcon }] : []),
             { key: 'publish', label: 'Publish', icon: Share2 },
           ].map(({ key, label, icon: Icon }) => (
             <Button
@@ -692,35 +694,26 @@ export function CardEditor({ onPublished }: CardEditorProps) {
           </div>
         )}
 
-        {/* Images panel */}
-        {activePanel === 'images' && (
+        {/* Images panel — admin only */}
+        {activePanel === 'images' && isAdmin && (
           <div className="space-y-3">
             <p className="text-sm font-medium">Add images / stickers</p>
-            {user ? (
-              <div className="space-y-2">
-                <Label className="cursor-pointer">
-                  <div className="flex items-center gap-2 p-3 border-2 border-dashed border-pink-300 rounded-lg hover:bg-pink-50 dark:hover:bg-pink-900/10 transition-colors cursor-pointer">
-                    {isUploading ? (
-                      <Loader2 className="h-5 w-5 text-pink-500 animate-spin" />
-                    ) : (
-                      <Upload className="h-5 w-5 text-pink-500" />
-                    )}
-                    <div>
-                      <p className="text-sm font-medium text-pink-600">Upload image</p>
-                      <p className="text-xs text-muted-foreground">PNG, JPG, GIF, WebP</p>
-                    </div>
+            <div className="space-y-2">
+              <Label className="cursor-pointer">
+                <div className="flex items-center gap-2 p-3 border-2 border-dashed border-pink-300 rounded-lg hover:bg-pink-50 dark:hover:bg-pink-900/10 transition-colors cursor-pointer">
+                  {isUploading ? (
+                    <Loader2 className="h-5 w-5 text-pink-500 animate-spin" />
+                  ) : (
+                    <Upload className="h-5 w-5 text-pink-500" />
+                  )}
+                  <div>
+                    <p className="text-sm font-medium text-pink-600">Upload image</p>
+                    <p className="text-xs text-muted-foreground">PNG, JPG, GIF, WebP</p>
                   </div>
-                  <input type="file" accept="image/*" className="hidden" onChange={handleUploadImage} disabled={isUploading} />
-                </Label>
-              </div>
-            ) : (
-              <div className="p-3 rounded-lg bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 space-y-2">
-                <p className="text-xs text-orange-700 dark:text-orange-300 font-medium">
-                  Log in to upload your own images onto the card.
-                </p>
-                <LoginArea className="w-full" />
-              </div>
-            )}
+                </div>
+                <input type="file" accept="image/*" className="hidden" onChange={handleUploadImage} disabled={isUploading} />
+              </Label>
+            </div>
           </div>
         )}
 
