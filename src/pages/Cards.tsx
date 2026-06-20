@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useCardCategories } from '@/hooks/useCardCategories';
-import { Shield } from 'lucide-react';
+import { Shield, Wand2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 
@@ -79,11 +79,23 @@ const Cards = () => {
         {/* Main Content */}
         {isAdmin ? (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3 max-w-lg mx-auto mb-8">
-              <TabsTrigger value="create">Create New</TabsTrigger>
-              <TabsTrigger value="my-cards">My Cards</TabsTrigger>
-              <TabsTrigger value="browse">Browse All</TabsTrigger>
-            </TabsList>
+            <div className="flex items-center justify-center gap-3 mb-8 flex-wrap">
+              <TabsList className="grid grid-cols-3 max-w-lg">
+                <TabsTrigger value="create">Create New</TabsTrigger>
+                <TabsTrigger value="my-cards">My Cards</TabsTrigger>
+                <TabsTrigger value="browse">Browse All</TabsTrigger>
+              </TabsList>
+              <Button
+                asChild
+                size="sm"
+                className="bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 hover:from-pink-600 hover:via-purple-600 hover:to-indigo-600 text-white"
+              >
+                <Link to="/cards/editor">
+                  <Wand2 className="h-3.5 w-3.5 mr-1.5" />
+                  Create Your Own Card
+                </Link>
+              </Button>
+            </div>
 
             <TabsContent value="browse">
               <div className="max-w-6xl mx-auto space-y-6">
@@ -148,6 +160,23 @@ const Cards = () => {
           </Tabs>
         ) : (
           <div className="max-w-6xl mx-auto space-y-6">
+            {/* "Create Your Own Card" CTA */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-xl bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-indigo-500/10 border border-pink-200 dark:border-pink-800">
+              <div>
+                <h3 className="text-base font-semibold">Want to make your own card?</h3>
+                <p className="text-sm text-muted-foreground">Use the card editor to design and publish your personalised BitPop card.</p>
+              </div>
+              <Button
+                asChild
+                className="bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 hover:from-pink-600 hover:via-purple-600 hover:to-indigo-600 text-white shrink-0"
+              >
+                <Link to="/cards/editor">
+                  <Wand2 className="h-4 w-4 mr-2" />
+                  Create Your Own Card
+                </Link>
+              </Button>
+            </div>
+
             {/* Category Filter */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-center">Browse by Category</h3>

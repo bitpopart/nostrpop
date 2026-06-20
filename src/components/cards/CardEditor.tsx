@@ -1,0 +1,946 @@
+/**
+ * CardEditor
+ *
+ * A canvas-based card editor with one fixed format (greeting card portrait 1050×1485).
+ * Users can pick a background template, add text layers and sticker/image elements,
+ * then export/save or publish the result as a BitPop Card on Nostr.
+ */
+
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { useCardTemplates } from '@/hooks/useCardTemplates';
+import { useUploadFile } from '@/hooks/useUploadFile';
+import { useNostrPublish } from '@/hooks/useNostrPublish';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useToast } from '@/hooks/useToast';
+import { useCardCategories } from '@/hooks/useCardCategories';
+import { LoginArea } from '@/components/auth/LoginArea';
+import { nip19 } from 'nostr-tools';
+import {
+  Type, Trash2, Download, RotateCcw, Copy,
+  Palette, ImageIcon, ChevronUp, ChevronDown,
+  ZoomIn, ZoomOut, LayoutTemplate, Loader2, Sparkles,
+  Upload, Share2, Layers,
+} from 'lucide-react';
+
+// ─── Card Format (one fixed format) ─────────────────────────────────────────
+const CARD_FORMAT = {
+  id: 'greeting-card',
+  name: 'Greeting Card',
+  width: 1050,
+  height: 1485, // A6 portrait ratio
+};
+
+// ─── Pop Art colors ──────────────────────────────────────────────────────────
+const POP_COLORS = [
+  '#FF0080', '#FF4500', '#FFD700', '#00FF41', '#00BFFF', '#FF69B4',
+  '#FF1493', '#FF6600', '#FFFF00', '#39FF14', '#00FFFF', '#BF00FF',
+  '#FF0000', '#FF8C00', '#FFF01F', '#7FFF00', '#0080FF', '#FF00FF',
+  '#FFFFFF', '#000000', '#C0C0C0', '#808080', '#4B0082', '#800000',
+];
+
+const FONTS = [
+  'Impact', 'Arial Black', 'Verdana', 'Georgia',
+  'Courier New', 'Trebuchet MS', 'Comic Sans MS',
+];
+
+// ─── Element types ───────────────────────────────────────────────────────────
+type ElementKind = 'image' | 'text';
+
+interface CanvasElement {
+  id: string;
+  kind: ElementKind;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  src?: string;
+  text?: string;
+  fontSize?: number;
+  fontFamily?: string;
+  color?: string;
+  bold?: boolean;
+  italic?: boolean;
+  align?: 'left' | 'center' | 'right';
+}
+
+type Corner = 'nw' | 'ne' | 'sw' | 'se';
+
+interface ResizeState {
+  id: string;
+  corner: Corner;
+  startX: number;
+  startY: number;
+  origX: number;
+  origY: number;
+  origW: number;
+  origH: number;
+}
+
+// ─── Scale helper ────────────────────────────────────────────────────────────
+function computeScale(fw: number, fh: number, maxW: number, maxH: number) {
+  return Math.min(maxW / fw, maxH / fh, 1);
+}
+
+const ZOOM_STEPS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2];
+
+// ─── Main component ──────────────────────────────────────────────────────────
+interface CardEditorProps {
+  onPublished?: (cardUrl: string) => void;
+}
+
+export function CardEditor({ onPublished }: CardEditorProps) {
+  const { user } = useCurrentUser();
+  const { toast } = useToast();
+  const { mutate: createEvent, isPending: isPublishing } = useNostrPublish();
+  const { mutateAsync: uploadFile, isPending: isUploading } = useUploadFile();
+  const { data: templates, isLoading: templatesLoading } = useCardTemplates();
+  const { allCategories } = useCardCategories();
+
+  // Canvas state
+  const [bgImage, setBgImage] = useState<string | null>(null);
+  const [bgColor, setBgColor] = useState('#ffffff');
+  const [elements, setElements] = useState<CanvasElement[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  // Tool state
+  const [textInput, setTextInput] = useState('Your Text Here');
+  const [fontSize, setFontSize] = useState(80);
+  const [fontFamily, setFontFamily] = useState('Impact');
+  const [activeColor, setActiveColor] = useState('#FF0080');
+
+  // Drag/resize
+  const [dragging, setDragging] = useState<{ id: string; ox: number; oy: number } | null>(null);
+  const [resizing, setResizing] = useState<ResizeState | null>(null);
+
+  // Scale
+  const [baseScale, setBaseScale] = useState(0.35);
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const scale = baseScale * zoomLevel;
+
+  const canvasWrapRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const idCounter = useRef(0);
+
+  // Publish form state
+  const [publishTitle, setPublishTitle] = useState('');
+  const [publishDescription, setPublishDescription] = useState('');
+  const [publishCategory, setPublishCategory] = useState('');
+  const [isExporting, setIsExporting] = useState(false);
+  const [activePanel, setActivePanel] = useState<'templates' | 'text' | 'images' | 'publish'>('templates');
+
+  const newId = () => `el-${++idCounter.current}`;
+  const selected = elements.find(e => e.id === selectedId) ?? null;
+
+  // ─── Auto-scale to container ─────────────────────────────────────────────
+  useEffect(() => {
+    const obs = new ResizeObserver(() => {
+      if (!containerRef.current) return;
+      const { clientWidth } = containerRef.current;
+      const maxH = 500;
+      setBaseScale(computeScale(CARD_FORMAT.width, CARD_FORMAT.height, clientWidth - 32, maxH));
+    });
+    if (containerRef.current) obs.observe(containerRef.current);
+    return () => obs.disconnect();
+  }, []);
+
+  useEffect(() => { setZoomLevel(1); }, []);
+
+  const handleZoomIn = () => setZoomLevel(z => { const n = ZOOM_STEPS.find(s => s > z); return n ?? z; });
+  const handleZoomOut = () => setZoomLevel(z => { const p = [...ZOOM_STEPS].reverse().find(s => s < z); return p ?? z; });
+
+  // ─── Add text ──────────────────────────────────────────────────────────────
+  const handleAddText = useCallback(() => {
+    const w = CARD_FORMAT.width * 0.8;
+    setElements(prev => [...prev, {
+      id: newId(),
+      kind: 'text',
+      text: textInput || 'Your Text Here',
+      x: CARD_FORMAT.width / 2 - w / 2,
+      y: CARD_FORMAT.height / 2 - (fontSize * 1.2) / 2,
+      width: w,
+      height: fontSize * 1.5,
+      fontSize,
+      fontFamily,
+      color: activeColor,
+      bold: fontFamily === 'Impact',
+      italic: false,
+      align: 'center',
+    }]);
+  }, [textInput, fontSize, fontFamily, activeColor]);
+
+  // ─── Add image from URL ───────────────────────────────────────────────────
+  const handleAddImage = useCallback((src: string) => {
+    const size = Math.min(CARD_FORMAT.width, CARD_FORMAT.height) * 0.35;
+    setElements(prev => [...prev, {
+      id: newId(),
+      kind: 'image',
+      src,
+      x: CARD_FORMAT.width / 2 - size / 2,
+      y: CARD_FORMAT.height / 2 - size / 2,
+      width: size,
+      height: size,
+    }]);
+  }, []);
+
+  // ─── Upload user image ─────────────────────────────────────────────────────
+  const handleUploadImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const [[, url]] = await uploadFile(file);
+      handleAddImage(url);
+    } catch {
+      toast({ title: 'Upload failed', variant: 'destructive' });
+    }
+  };
+
+  // ─── Delete / clear ────────────────────────────────────────────────────────
+  const handleDelete = useCallback(() => {
+    if (!selectedId) return;
+    setElements(prev => prev.filter(e => e.id !== selectedId));
+    setSelectedId(null);
+  }, [selectedId]);
+
+  const handleClear = () => { setElements([]); setSelectedId(null); };
+
+  // ─── Duplicate ─────────────────────────────────────────────────────────────
+  const handleDuplicate = useCallback(() => {
+    if (!selected) return;
+    const clone: CanvasElement = { ...selected, id: newId(), x: selected.x + 30, y: selected.y + 30 };
+    setElements(prev => [...prev, clone]);
+    setSelectedId(clone.id);
+  }, [selected]);
+
+  // ─── Layer ordering ────────────────────────────────────────────────────────
+  const handleBringForward = useCallback(() => {
+    if (!selectedId) return;
+    setElements(prev => {
+      const idx = prev.findIndex(e => e.id === selectedId);
+      if (idx >= prev.length - 1) return prev;
+      const next = [...prev];
+      [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
+      return next;
+    });
+  }, [selectedId]);
+
+  const handleSendBackward = useCallback(() => {
+    if (!selectedId) return;
+    setElements(prev => {
+      const idx = prev.findIndex(e => e.id === selectedId);
+      if (idx <= 0) return prev;
+      const next = [...prev];
+      [next[idx], next[idx - 1]] = [next[idx - 1], next[idx]];
+      return next;
+    });
+  }, [selectedId]);
+
+  // ─── Update selected element ───────────────────────────────────────────────
+  const updateSelected = useCallback((patch: Partial<CanvasElement>) => {
+    if (!selectedId) return;
+    setElements(prev => prev.map(e => e.id === selectedId ? { ...e, ...patch } : e));
+  }, [selectedId]);
+
+  // ─── Pointer helpers ──────────────────────────────────────────────────────
+  const getCanvasPos = (e: React.PointerEvent) => {
+    const wrap = canvasWrapRef.current;
+    if (!wrap) return { x: 0, y: 0 };
+    const rect = wrap.getBoundingClientRect();
+    return { x: (e.clientX - rect.left) / scale, y: (e.clientY - rect.top) / scale };
+  };
+
+  const handleCanvasPointerDown = (e: React.PointerEvent) => {
+    const target = e.target as HTMLElement;
+    const corner = target.getAttribute('data-corner') as Corner | null;
+    if (corner && selectedId) {
+      const el = elements.find(el => el.id === selectedId);
+      if (!el) return;
+      const { x, y } = getCanvasPos(e);
+      setResizing({ id: selectedId, corner, startX: x, startY: y, origX: el.x, origY: el.y, origW: el.width, origH: el.height });
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+      e.stopPropagation();
+      return;
+    }
+    const { x, y } = getCanvasPos(e);
+    for (let i = elements.length - 1; i >= 0; i--) {
+      const el = elements[i];
+      if (x >= el.x && x <= el.x + el.width && y >= el.y && y <= el.y + el.height) {
+        setSelectedId(el.id);
+        setDragging({ id: el.id, ox: x - el.x, oy: y - el.y });
+        (e.target as HTMLElement).setPointerCapture(e.pointerId);
+        return;
+      }
+    }
+    setSelectedId(null);
+  };
+
+  const handleCanvasPointerMove = (e: React.PointerEvent) => {
+    if (resizing) {
+      const { x, y } = getCanvasPos(e);
+      const dx = x - resizing.startX;
+      const dy = y - resizing.startY;
+      const MIN_SIZE = 20;
+      setElements(prev => prev.map(el => {
+        if (el.id !== resizing.id) return el;
+        let newX = resizing.origX, newY = resizing.origY, newW = resizing.origW, newH = resizing.origH;
+        const ratio = resizing.origH / resizing.origW;
+        const corner = resizing.corner;
+        if (corner === 'se') {
+          newW = Math.max(MIN_SIZE, resizing.origW + dx);
+          newH = newW * ratio;
+        } else if (corner === 'sw') {
+          newW = Math.max(MIN_SIZE, resizing.origW - dx);
+          newH = newW * ratio;
+          newX = resizing.origX + resizing.origW - newW;
+        } else if (corner === 'ne') {
+          newW = Math.max(MIN_SIZE, resizing.origW + dx);
+          newH = newW * ratio;
+          newY = resizing.origY + resizing.origH - newH;
+        } else if (corner === 'nw') {
+          newW = Math.max(MIN_SIZE, resizing.origW - dx);
+          newH = newW * ratio;
+          newX = resizing.origX + resizing.origW - newW;
+          newY = resizing.origY + resizing.origH - newH;
+        }
+        return { ...el, x: newX, y: newY, width: newW, height: newH };
+      }));
+      return;
+    }
+    if (dragging) {
+      const { x, y } = getCanvasPos(e);
+      setElements(prev => prev.map(el =>
+        el.id === dragging.id
+          ? { ...el, x: Math.max(0, Math.min(x - dragging.ox, CARD_FORMAT.width - el.width)), y: Math.max(0, Math.min(y - dragging.oy, CARD_FORMAT.height - el.height)) }
+          : el
+      ));
+    }
+  };
+
+  const handleCanvasPointerUp = () => {
+    setDragging(null);
+    setResizing(null);
+  };
+
+  // ─── Export canvas to PNG (via DOM rendering) ─────────────────────────────
+  const exportCanvas = async (): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement('canvas');
+      canvas.width = CARD_FORMAT.width;
+      canvas.height = CARD_FORMAT.height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return reject(new Error('No canvas context'));
+
+      // Fill background color
+      ctx.fillStyle = bgColor;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const drawNext = (index: number, allItems: Array<() => Promise<void>>) => {
+        if (index >= allItems.length) {
+          resolve(canvas.toDataURL('image/jpeg', 0.92));
+          return;
+        }
+        allItems[index]().then(() => drawNext(index + 1, allItems)).catch(reject);
+      };
+
+      const drawTasks: Array<() => Promise<void>> = [];
+
+      // Background image
+      if (bgImage) {
+        drawTasks.push(() => new Promise((res, rej) => {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = () => { ctx.drawImage(img, 0, 0, canvas.width, canvas.height); res(); };
+          img.onerror = rej;
+          img.src = bgImage;
+        }));
+      }
+
+      // Elements
+      elements.forEach(el => {
+        if (el.kind === 'image' && el.src) {
+          drawTasks.push(() => new Promise((res, rej) => {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => { ctx.drawImage(img, el.x, el.y, el.width, el.height); res(); };
+            img.onerror = rej;
+            img.src = el.src!;
+          }));
+        } else if (el.kind === 'text' && el.text) {
+          drawTasks.push(() => {
+            ctx.save();
+            const weight = el.bold ? 'bold' : 'normal';
+            const style = el.italic ? 'italic' : 'normal';
+            ctx.font = `${style} ${weight} ${el.fontSize ?? 80}px ${el.fontFamily ?? 'Impact'}`;
+            ctx.fillStyle = el.color ?? '#000000';
+            ctx.textAlign = el.align ?? 'center';
+            ctx.textBaseline = 'top';
+            // Word wrap
+            const maxWidth = el.width;
+            const lineHeight = (el.fontSize ?? 80) * 1.25;
+            const words = (el.text ?? '').split(' ');
+            const lines: string[] = [];
+            let line = '';
+            for (const word of words) {
+              const test = line ? `${line} ${word}` : word;
+              if (ctx.measureText(test).width > maxWidth && line) {
+                lines.push(line);
+                line = word;
+              } else {
+                line = test;
+              }
+            }
+            if (line) lines.push(line);
+            const startX = el.align === 'center' ? el.x + el.width / 2 : el.align === 'right' ? el.x + el.width : el.x;
+            lines.forEach((l, i) => ctx.fillText(l, startX, el.y + i * lineHeight));
+            ctx.restore();
+            return Promise.resolve();
+          });
+        }
+      });
+
+      drawNext(0, drawTasks);
+    });
+  };
+
+  // ─── Download ─────────────────────────────────────────────────────────────
+  const handleDownload = async () => {
+    setIsExporting(true);
+    try {
+      const dataUrl = await exportCanvas();
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = 'bitpop-card.jpg';
+      a.click();
+      toast({ title: 'Downloaded! 📥', description: 'Your card image has been saved.' });
+    } catch {
+      toast({ title: 'Export failed', variant: 'destructive' });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // ─── Publish to Nostr ─────────────────────────────────────────────────────
+  const handlePublish = async () => {
+    if (!user) {
+      toast({ title: 'Please log in first', variant: 'destructive' });
+      return;
+    }
+    if (!publishTitle.trim()) {
+      toast({ title: 'Please add a title', variant: 'destructive' });
+      return;
+    }
+
+    setIsExporting(true);
+    try {
+      // Export to image
+      const dataUrl = await exportCanvas();
+      const blob = await (await fetch(dataUrl)).blob();
+      const file = new File([blob], 'bitpop-card.jpg', { type: 'image/jpeg' });
+      const [[, imageUrl]] = await uploadFile(file);
+
+      // Create the card event (kind 30402)
+      const cardId = `card-${Date.now()}`;
+      const category = publishCategory || 'Others';
+      const tags = [
+        ['d', cardId],
+        ['title', publishTitle.trim()],
+        ['category', category],
+        ['pricing', 'free'],
+        ['t', 'ecard'],
+        ['t', category.toLowerCase().replace(/[^a-z0-9]/g, '')],
+        ['image', imageUrl],
+      ];
+
+      const cardContent = {
+        title: publishTitle.trim(),
+        description: publishDescription.trim() || publishTitle.trim(),
+        category,
+        pricing: 'free',
+        images: [imageUrl],
+        created_at: new Date().toISOString(),
+      };
+
+      createEvent(
+        { kind: 30402, content: JSON.stringify(cardContent), tags },
+        {
+          onSuccess: (event) => {
+            toast({ title: 'Card published! 🎉', description: 'Your card is now live on Nostr.' });
+
+            // Also share as kind 1 note
+            try {
+              const naddr = nip19.naddrEncode({ identifier: cardId, pubkey: user.pubkey, kind: 30402 });
+              const cardUrl = `${window.location.origin}/card/${naddr}`;
+              createEvent({
+                kind: 1,
+                content: `Just created a beautiful ${category} card! 🎨\n\n"${publishTitle.trim()}"\n\n${cardUrl}\n\n${imageUrl}\n\n#ecard #bitpopart`,
+                tags: [
+                  ['t', 'ecard'],
+                  ['t', 'bitpopart'],
+                  ['image', imageUrl],
+                  ['imeta', `url ${imageUrl}`, 'm image/jpeg', `alt ${publishTitle}`],
+                ],
+              });
+              onPublished?.(cardUrl);
+            } catch {
+              // Share is best-effort
+            }
+
+            setIsExporting(false);
+          },
+          onError: () => {
+            toast({ title: 'Publish failed', variant: 'destructive' });
+            setIsExporting(false);
+          },
+        }
+      );
+    } catch {
+      toast({ title: 'Failed to export card image', variant: 'destructive' });
+      setIsExporting(false);
+    }
+  };
+
+  // ─── Render ───────────────────────────────────────────────────────────────
+  if (!user) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 space-y-4">
+        <Sparkles className="h-12 w-12 text-pink-500" />
+        <h3 className="text-lg font-semibold">Log in to create your card</h3>
+        <p className="text-muted-foreground text-sm text-center max-w-xs">
+          Sign in with Nostr to design and publish your own BitPop Cards.
+        </p>
+        <LoginArea className="max-w-xs w-full" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col lg:flex-row gap-4 min-h-[70vh]">
+      {/* ── Left sidebar: tool panels ── */}
+      <div className="w-full lg:w-72 flex-shrink-0 space-y-3">
+        {/* Panel tabs */}
+        <div className="flex gap-1 flex-wrap">
+          {[
+            { key: 'templates', label: 'Templates', icon: LayoutTemplate },
+            { key: 'text', label: 'Text', icon: Type },
+            { key: 'images', label: 'Images', icon: ImageIcon },
+            { key: 'publish', label: 'Publish', icon: Share2 },
+          ].map(({ key, label, icon: Icon }) => (
+            <Button
+              key={key}
+              size="sm"
+              variant={activePanel === key ? 'default' : 'outline'}
+              className={activePanel === key ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white border-0' : ''}
+              onClick={() => setActivePanel(key as typeof activePanel)}
+            >
+              <Icon className="h-3.5 w-3.5 mr-1" />
+              {label}
+            </Button>
+          ))}
+        </div>
+
+        <Separator />
+
+        {/* Templates panel */}
+        {activePanel === 'templates' && (
+          <div className="space-y-3">
+            <p className="text-sm font-medium">Choose a background template</p>
+
+            {/* Solid background color option */}
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">Or use a solid colour background:</p>
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  value={bgColor}
+                  onChange={e => { setBgColor(e.target.value); setBgImage(null); }}
+                  className="w-8 h-8 rounded cursor-pointer border"
+                  title="Background colour"
+                />
+                <span className="text-xs text-muted-foreground">Background colour</span>
+              </div>
+            </div>
+
+            <Separator />
+
+            {templatesLoading ? (
+              <div className="grid grid-cols-3 gap-2">
+                {[...Array(6)].map((_, i) => <Skeleton key={i} className="aspect-[3/4] rounded" />)}
+              </div>
+            ) : !templates || templates.length === 0 ? (
+              <div className="text-center py-6">
+                <LayoutTemplate className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                <p className="text-sm text-muted-foreground">No templates yet.</p>
+                <p className="text-xs text-muted-foreground">The admin can add templates in the backend.</p>
+              </div>
+            ) : (
+              <ScrollArea className="h-80">
+                <div className="grid grid-cols-3 gap-2 pr-2">
+                  {templates.map(tpl => (
+                    <button
+                      key={tpl.id}
+                      onClick={() => setBgImage(tpl.coverImage)}
+                      className={`rounded overflow-hidden border-2 transition-all hover:scale-105 ${
+                        bgImage === tpl.coverImage ? 'border-pink-500 shadow-md' : 'border-transparent hover:border-pink-300'
+                      }`}
+                      title={tpl.name}
+                    >
+                      <div className="aspect-[3/4] relative">
+                        <img src={tpl.coverImage} alt={tpl.name} className="w-full h-full object-cover" />
+                        {bgImage === tpl.coverImage && (
+                          <div className="absolute inset-0 bg-pink-500/20 flex items-center justify-center">
+                            <Badge className="text-xs bg-pink-500">✓</Badge>
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-xs p-1 truncate text-center bg-white dark:bg-gray-800">{tpl.name}</p>
+                    </button>
+                  ))}
+                </div>
+              </ScrollArea>
+            )}
+          </div>
+        )}
+
+        {/* Text panel */}
+        {activePanel === 'text' && (
+          <div className="space-y-3">
+            <p className="text-sm font-medium">Add text to your card</p>
+
+            <div className="space-y-2">
+              <Label className="text-xs">Text</Label>
+              <Textarea
+                value={textInput}
+                onChange={e => setTextInput(e.target.value)}
+                rows={3}
+                placeholder="Type your text…"
+                className="text-sm"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs">Font</Label>
+              <Select value={fontFamily} onValueChange={setFontFamily}>
+                <SelectTrigger className="text-sm h-8">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {FONTS.map(f => (
+                    <SelectItem key={f} value={f} style={{ fontFamily: f }}>{f}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs">Font Size: {fontSize}px</Label>
+              <input
+                type="range"
+                min={20}
+                max={200}
+                value={fontSize}
+                onChange={e => setFontSize(Number(e.target.value))}
+                className="w-full accent-pink-500"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs">Colour</Label>
+              <div className="grid grid-cols-8 gap-1">
+                {POP_COLORS.map(c => (
+                  <button
+                    key={c}
+                    onClick={() => setActiveColor(c)}
+                    style={{ background: c }}
+                    className={`w-6 h-6 rounded border-2 transition-transform hover:scale-110 ${activeColor === c ? 'border-pink-500 scale-110' : 'border-gray-200'}`}
+                    title={c}
+                  />
+                ))}
+                <input
+                  type="color"
+                  value={activeColor}
+                  onChange={e => setActiveColor(e.target.value)}
+                  className="w-6 h-6 rounded border-2 border-gray-200 cursor-pointer"
+                  title="Custom colour"
+                />
+              </div>
+            </div>
+
+            <Button
+              onClick={handleAddText}
+              className="w-full bg-gradient-to-r from-pink-500 to-purple-500 text-white"
+              size="sm"
+            >
+              <Type className="h-3.5 w-3.5 mr-1" />
+              Add Text
+            </Button>
+
+            {/* Selected text element controls */}
+            {selected?.kind === 'text' && (
+              <div className="space-y-2 p-3 bg-pink-50 dark:bg-pink-900/20 rounded-lg border border-pink-200 dark:border-pink-800">
+                <p className="text-xs font-medium text-pink-700 dark:text-pink-300">Edit selected text</p>
+                <Textarea
+                  value={selected.text ?? ''}
+                  onChange={e => updateSelected({ text: e.target.value })}
+                  rows={2}
+                  className="text-xs"
+                />
+                <div className="flex gap-1">
+                  <Button size="sm" variant={selected.bold ? 'default' : 'outline'} className="flex-1 text-xs h-7 font-bold" onClick={() => updateSelected({ bold: !selected.bold })}>B</Button>
+                  <Button size="sm" variant={selected.italic ? 'default' : 'outline'} className="flex-1 text-xs h-7 italic" onClick={() => updateSelected({ italic: !selected.italic })}>I</Button>
+                  {(['left', 'center', 'right'] as const).map(a => (
+                    <Button key={a} size="sm" variant={selected.align === a ? 'default' : 'outline'} className="flex-1 text-xs h-7 capitalize" onClick={() => updateSelected({ align: a })}>{a[0].toUpperCase()}</Button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Images panel */}
+        {activePanel === 'images' && (
+          <div className="space-y-3">
+            <p className="text-sm font-medium">Add images / stickers</p>
+            <div className="space-y-2">
+              <Label className="cursor-pointer">
+                <div className="flex items-center gap-2 p-3 border-2 border-dashed border-pink-300 rounded-lg hover:bg-pink-50 dark:hover:bg-pink-900/10 transition-colors cursor-pointer">
+                  {isUploading ? (
+                    <Loader2 className="h-5 w-5 text-pink-500 animate-spin" />
+                  ) : (
+                    <Upload className="h-5 w-5 text-pink-500" />
+                  )}
+                  <div>
+                    <p className="text-sm font-medium text-pink-600">Upload image</p>
+                    <p className="text-xs text-muted-foreground">PNG, JPG, GIF, WebP</p>
+                  </div>
+                </div>
+                <input type="file" accept="image/*" className="hidden" onChange={handleUploadImage} disabled={isUploading} />
+              </Label>
+            </div>
+          </div>
+        )}
+
+        {/* Publish panel */}
+        {activePanel === 'publish' && (
+          <div className="space-y-3">
+            <p className="text-sm font-medium">Publish as BitPop Card</p>
+
+            <div className="space-y-2">
+              <Label className="text-xs">Title *</Label>
+              <Input
+                value={publishTitle}
+                onChange={e => setPublishTitle(e.target.value)}
+                placeholder="e.g. Happy Birthday!"
+                className="text-sm"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs">Description</Label>
+              <Textarea
+                value={publishDescription}
+                onChange={e => setPublishDescription(e.target.value)}
+                rows={3}
+                placeholder="A heartfelt message…"
+                className="text-sm"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs">Category</Label>
+              <Select value={publishCategory} onValueChange={setPublishCategory}>
+                <SelectTrigger className="text-sm h-8">
+                  <SelectValue placeholder="Select category…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {allCategories.map(c => (
+                    <SelectItem key={c.name} value={c.name}>{c.icon} {c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Button
+              onClick={handlePublish}
+              disabled={isExporting || isPublishing || !publishTitle.trim()}
+              className="w-full bg-gradient-to-r from-orange-500 via-pink-500 to-purple-500 text-white"
+            >
+              {isExporting || isPublishing ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Publishing…</>
+              ) : (
+                <><Sparkles className="h-4 w-4 mr-2" />Publish Card</>
+              )}
+            </Button>
+
+            <Button
+              onClick={handleDownload}
+              disabled={isExporting}
+              variant="outline"
+              className="w-full"
+            >
+              {isExporting ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Exporting…</>
+              ) : (
+                <><Download className="h-4 w-4 mr-2" />Download JPG</>
+              )}
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {/* ── Main canvas area ── */}
+      <div className="flex-1 flex flex-col gap-3" ref={containerRef}>
+        {/* Canvas toolbar */}
+        <div className="flex items-center gap-1 flex-wrap">
+          <Button size="sm" variant="outline" onClick={handleZoomOut} className="h-8 w-8 p-0"><ZoomOut className="h-3.5 w-3.5" /></Button>
+          <Button size="sm" variant="outline" onClick={() => setZoomLevel(1)} className="h-8 px-2 text-xs">{Math.round(zoomLevel * 100)}%</Button>
+          <Button size="sm" variant="outline" onClick={handleZoomIn} className="h-8 w-8 p-0"><ZoomIn className="h-3.5 w-3.5" /></Button>
+          <Separator orientation="vertical" className="h-6 mx-1" />
+          <Button size="sm" variant="outline" onClick={handleBringForward} disabled={!selectedId} title="Bring forward" className="h-8 w-8 p-0"><ChevronUp className="h-3.5 w-3.5" /></Button>
+          <Button size="sm" variant="outline" onClick={handleSendBackward} disabled={!selectedId} title="Send backward" className="h-8 w-8 p-0"><ChevronDown className="h-3.5 w-3.5" /></Button>
+          <Button size="sm" variant="outline" onClick={handleDuplicate} disabled={!selectedId} title="Duplicate" className="h-8 w-8 p-0"><Copy className="h-3.5 w-3.5" /></Button>
+          <Button size="sm" variant="outline" onClick={handleDelete} disabled={!selectedId} title="Delete selected" className="h-8 w-8 p-0 text-red-500 hover:text-red-600"><Trash2 className="h-3.5 w-3.5" /></Button>
+          <Button size="sm" variant="outline" onClick={handleClear} title="Clear all" className="h-8 px-2 text-xs text-red-500 hover:text-red-600"><RotateCcw className="h-3.5 w-3.5 mr-1" />Clear</Button>
+
+          {/* Layer count */}
+          <div className="ml-auto flex items-center gap-1 text-xs text-muted-foreground">
+            <Layers className="h-3.5 w-3.5" />
+            {elements.length} element{elements.length !== 1 ? 's' : ''}
+          </div>
+        </div>
+
+        {/* Canvas */}
+        <div className="overflow-auto rounded-lg border-2 border-pink-200 dark:border-pink-800 bg-gray-100 dark:bg-gray-900 flex items-start justify-center p-4">
+          <div
+            ref={canvasWrapRef}
+            style={{
+              width: CARD_FORMAT.width * scale,
+              height: CARD_FORMAT.height * scale,
+              position: 'relative',
+              cursor: dragging ? 'grabbing' : 'default',
+              background: bgImage ? 'transparent' : bgColor,
+              flexShrink: 0,
+            }}
+            onPointerDown={handleCanvasPointerDown}
+            onPointerMove={handleCanvasPointerMove}
+            onPointerUp={handleCanvasPointerUp}
+          >
+            {/* Background image */}
+            {bgImage && (
+              <img
+                src={bgImage}
+                alt="background"
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  pointerEvents: 'none',
+                  userSelect: 'none',
+                }}
+              />
+            )}
+
+            {/* Elements */}
+            {elements.map(el => {
+              const isSelected = el.id === selectedId;
+              const elStyle: React.CSSProperties = {
+                position: 'absolute',
+                left: el.x * scale,
+                top: el.y * scale,
+                width: el.width * scale,
+                height: el.height * scale,
+                cursor: dragging?.id === el.id ? 'grabbing' : 'grab',
+                outline: isSelected ? `2px solid #ec4899` : 'none',
+                outlineOffset: 1,
+                userSelect: 'none',
+              };
+
+              return (
+                <div key={el.id} style={elStyle}>
+                  {el.kind === 'image' && el.src && (
+                    <img
+                      src={el.src}
+                      alt=""
+                      draggable={false}
+                      style={{ width: '100%', height: '100%', objectFit: 'contain', pointerEvents: 'none', userSelect: 'none' }}
+                    />
+                  )}
+                  {el.kind === 'text' && (
+                    <div
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        overflow: 'hidden',
+                        fontFamily: el.fontFamily ?? 'Impact',
+                        fontSize: (el.fontSize ?? 80) * scale,
+                        fontWeight: el.bold ? 'bold' : 'normal',
+                        fontStyle: el.italic ? 'italic' : 'normal',
+                        color: el.color ?? '#000',
+                        textAlign: el.align ?? 'center',
+                        lineHeight: 1.25,
+                        wordBreak: 'break-word',
+                        pointerEvents: 'none',
+                        userSelect: 'none',
+                      }}
+                    >
+                      {el.text}
+                    </div>
+                  )}
+
+                  {/* Resize handles */}
+                  {isSelected && (['nw', 'ne', 'sw', 'se'] as Corner[]).map(corner => {
+                    const cStyle: React.CSSProperties = {
+                      position: 'absolute',
+                      width: 10,
+                      height: 10,
+                      background: '#ec4899',
+                      border: '2px solid white',
+                      borderRadius: 2,
+                      cursor: `${corner}-resize`,
+                      ...(corner.includes('n') ? { top: -5 } : { bottom: -5 }),
+                      ...(corner.includes('w') ? { left: -5 } : { right: -5 }),
+                    };
+                    return <div key={corner} style={cStyle} data-corner={corner} />;
+                  })}
+                </div>
+              );
+            })}
+
+            {/* Empty state hint */}
+            {elements.length === 0 && !bgImage && (
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  pointerEvents: 'none',
+                  color: '#9ca3af',
+                }}
+              >
+                <LayoutTemplate style={{ width: 48, height: 48, marginBottom: 12, opacity: 0.4 }} />
+                <p style={{ fontSize: 14, opacity: 0.6 }}>Pick a template or add a text/image</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Format info */}
+        <p className="text-xs text-center text-muted-foreground">
+          Greeting Card — {CARD_FORMAT.width} × {CARD_FORMAT.height} px (A6 portrait ratio)
+        </p>
+      </div>
+    </div>
+  );
+}

@@ -4,6 +4,7 @@ import { Layout } from "./components/Layout";
 
 import Index from "./pages/Index";
 import Cards from "./pages/Cards";
+import CreateCard from "./pages/CreateCard";
 import CardView from "./pages/CardView";
 import CardPreview from "./pages/CardPreview";
 import Art from "./pages/Art";
@@ -67,6 +68,7 @@ export function AppRouter() {
         <Route path="/" element={<Layout><Index /></Layout>} />
         <Route path="/cards" element={<Layout><Cards /></Layout>} />
         <Route path="/cards/create" element={<Layout><Cards /></Layout>} />
+        <Route path="/cards/editor" element={<Layout><CreateCard /></Layout>} />
         <Route path="/card/:nip19" element={<Layout><CardView /></Layout>} />
         <Route path="/share/:nip19" element={<Layout><CardPreview /></Layout>} />
         <Route path="/art" element={<Layout><Art /></Layout>} />

@@ -42,6 +42,7 @@ import { DesktopWallpapersAdmin } from '@/components/app/DesktopWallpapersAdmin'
 import { FanAppPublishing } from '@/components/app/FanAppPublishing';
 import { AnimationsManagement } from '@/components/animations/AnimationsManagement';
 import { StudioLibrariesAdmin } from '@/components/studio/StudioLibrariesAdmin';
+import { CardTemplatesAdmin } from '@/components/cards/CardTemplatesAdmin';
 import { PrintPostersAdmin } from '@/components/print/PrintPostersAdmin';
 import { NFTCharacterAdmin } from '@/components/nft/NFTCharacterAdmin';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
@@ -80,6 +81,7 @@ import {
   Monitor,
   Printer,
   ImageIcon,
+  LayoutTemplate,
 } from 'lucide-react';
 
 const Admin = () => {
@@ -847,7 +849,23 @@ const Admin = () => {
           </TabsContent>
 
           <TabsContent value="cards">
-            <CardManagement />
+            <div className="space-y-8">
+              <CardManagement />
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <LayoutTemplate className="h-6 w-6 mr-2 text-pink-600" />
+                    Card Editor Templates
+                  </CardTitle>
+                  <CardDescription>
+                    Upload background images that users can select in the "Create Your Own Card" editor.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <CardTemplatesAdmin />
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           <TabsContent value="badges">
