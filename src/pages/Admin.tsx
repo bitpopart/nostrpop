@@ -45,6 +45,7 @@ import { StudioLibrariesAdmin } from '@/components/studio/StudioLibrariesAdmin';
 import { CardTemplatesAdmin } from '@/components/cards/CardTemplatesAdmin';
 import { PrintPostersAdmin } from '@/components/print/PrintPostersAdmin';
 import { NFTCharacterAdmin } from '@/components/nft/NFTCharacterAdmin';
+import { MediaGeneratorAdmin } from '@/components/mediagenerator/MediaGeneratorAdmin';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import {
   Plus,
@@ -82,6 +83,7 @@ import {
   Printer,
   ImageIcon,
   LayoutTemplate,
+  LayoutGrid,
 } from 'lucide-react';
 
 const Admin = () => {
@@ -351,6 +353,14 @@ const Admin = () => {
       action: () => setActiveTab('nft'),
       badge: 'NFT'
     },
+    {
+      title: 'Media Generator',
+      description: 'Configure floating Merch, Download, Create & Zap buttons per page',
+      icon: LayoutGrid,
+      color: 'from-pink-500 to-purple-600',
+      action: () => setActiveTab('media-generator'),
+      badge: '🎛️ New'
+    },
   ];
 
   const statsCards = [
@@ -473,6 +483,13 @@ const Admin = () => {
             >
               <CalendarClock className="h-3.5 w-3.5" />
               PopPost
+            </TabsTrigger>
+            <TabsTrigger
+              value="media-generator"
+              className="flex items-center gap-1 bg-gradient-to-r from-pink-500 to-purple-500 text-white data-[state=active]:from-pink-600 data-[state=active]:to-purple-600 data-[state=active]:text-white font-bold rounded-md"
+            >
+              <LayoutGrid className="h-3.5 w-3.5" />
+              🎛️ Media Gen
             </TabsTrigger>
           </TabsList>
 
@@ -1048,6 +1065,10 @@ const Admin = () => {
 
           <TabsContent value="nft">
             <NFTCharacterAdmin />
+          </TabsContent>
+
+          <TabsContent value="media-generator">
+            <MediaGeneratorAdmin />
           </TabsContent>
 
         </Tabs>

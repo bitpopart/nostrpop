@@ -3,6 +3,7 @@ import { Navigation } from './Navigation';
 import { Footer } from './Footer';
 import { AuctionBanner } from './art/AuctionBanner';
 import { SiteBannerBar } from './SiteBannerBar';
+import { MediaGeneratorFloat } from './mediagenerator/MediaGeneratorFloat';
 
 interface LayoutProps {
   children: ReactNode;
@@ -20,6 +21,8 @@ export function Layout({ children }: LayoutProps) {
         {children}
       </main>
       <Footer />
+      {/* Media Generator floating action buttons — shown per page config */}
+      <MediaGeneratorFloat />
     </div>
   );
 }
