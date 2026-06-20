@@ -181,6 +181,14 @@ const Admin = () => {
       badge: 'Cards'
     },
     {
+      title: 'Card Editor Templates',
+      description: 'Upload background images users pick in the "Create Your Own Card" editor',
+      icon: LayoutTemplate,
+      color: 'from-pink-500 to-rose-500',
+      action: () => setActiveTab('card-templates'),
+      badge: 'Templates'
+    },
+    {
       title: 'POP Badges',
       description: 'Create collectible badges',
       icon: Award,
@@ -433,6 +441,10 @@ const Admin = () => {
             <TabsTrigger value="animations-videos">Animations</TabsTrigger>
             <TabsTrigger value="fundraisers">Fundraisers</TabsTrigger>
             <TabsTrigger value="cards">Cards</TabsTrigger>
+            <TabsTrigger value="card-templates" className="flex items-center gap-1 text-pink-600 dark:text-pink-400 font-semibold">
+              <LayoutTemplate className="h-3.5 w-3.5" />
+              Card Templates
+            </TabsTrigger>
             <TabsTrigger value="badges">Badges</TabsTrigger>
             <TabsTrigger value="shop">Shop</TabsTrigger>
             <TabsTrigger value="print" className="flex items-center gap-1">
@@ -866,6 +878,24 @@ const Admin = () => {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          <TabsContent value="card-templates">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <LayoutTemplate className="h-6 w-6 text-pink-600" />
+                  Card Editor Templates
+                </CardTitle>
+                <CardDescription>
+                  Upload landscape background images for users to pick in the <strong>"Create Your Own Card"</strong> editor (<code>/cards/editor</code>).
+                  Recommended size: <strong>1200 × 900 px (4:3 landscape)</strong>.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <CardTemplatesAdmin />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="badges">

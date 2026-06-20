@@ -31,12 +31,12 @@ import {
   Upload, Share2, Layers,
 } from 'lucide-react';
 
-// ─── Card Format (one fixed format) ─────────────────────────────────────────
+// ─── Card Format (one fixed format — horizontal, matches existing cards aspect-[4/3]) ────
 const CARD_FORMAT = {
   id: 'greeting-card',
-  name: 'Greeting Card',
-  width: 1050,
-  height: 1485, // A6 portrait ratio
+  name: 'BitPop Card',
+  width: 1200,
+  height: 900, // 4:3 landscape — same ratio as all existing cards (aspect-[4/3])
 };
 
 // ─── Pop Art colors ──────────────────────────────────────────────────────────
@@ -145,7 +145,8 @@ export function CardEditor({ onPublished }: CardEditorProps) {
     const obs = new ResizeObserver(() => {
       if (!containerRef.current) return;
       const { clientWidth } = containerRef.current;
-      const maxH = 500;
+      // Landscape card — allow more height so it fills the area nicely
+      const maxH = 600;
       setBaseScale(computeScale(CARD_FORMAT.width, CARD_FORMAT.height, clientWidth - 32, maxH));
     });
     if (containerRef.current) obs.observe(containerRef.current);
@@ -938,7 +939,7 @@ export function CardEditor({ onPublished }: CardEditorProps) {
 
         {/* Format info */}
         <p className="text-xs text-center text-muted-foreground">
-          Greeting Card — {CARD_FORMAT.width} × {CARD_FORMAT.height} px (A6 portrait ratio)
+          BitPop Card — {CARD_FORMAT.width} × {CARD_FORMAT.height} px (4:3 landscape — same format as all cards)
         </p>
       </div>
     </div>

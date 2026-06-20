@@ -29,11 +29,7 @@ export function CardTemplatesAdmin() {
   const { mutateAsync: uploadFile, isPending: isUploading } = useUploadFile();
   const { toast } = useToast();
 
-  const [form, setForm] = useState({
-    name: '',
-    description: '',
-    category: '',
-  });
+  const [form, setForm] = useState({ name: '', description: '', category: '' });
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -41,17 +37,14 @@ export function CardTemplatesAdmin() {
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    // Show local preview immediately
-    const objectUrl = URL.createObjectURL(file);
-    setPreviewUrl(objectUrl);
-
+    // Local preview
+    setPreviewUrl(URL.createObjectURL(file));
     try {
       const [[, url]] = await uploadFile(file);
       setUploadedUrl(url);
       toast({ title: 'Image uploaded ✅', description: 'Image ready to use as template.' });
     } catch {
-      toast({ title: 'Upload failed', description: 'Could not upload image.', variant: 'destructive' });
+      toast({ title: 'Upload failed', variant: 'destructive' });
       setPreviewUrl(null);
     }
   };
@@ -62,10 +55,9 @@ export function CardTemplatesAdmin() {
       return;
     }
     if (!uploadedUrl) {
-      toast({ title: 'Image required', description: 'Please upload an image for the template.', variant: 'destructive' });
+      toast({ title: 'Image required', description: 'Please upload an image first.', variant: 'destructive' });
       return;
     }
-
     const id = `template-${Date.now()}`;
     createTemplate(
       { id, name: form.name.trim(), description: form.description.trim() || undefined, coverImage: uploadedUrl, category: form.category.trim() || undefined },
@@ -77,9 +69,7 @@ export function CardTemplatesAdmin() {
           setUploadedUrl(null);
           setShowForm(false);
         },
-        onError: () => {
-          toast({ title: 'Failed to save template', variant: 'destructive' });
-        },
+        onError: () => toast({ title: 'Failed to save template', variant: 'destructive' }),
       }
     );
   };
@@ -91,6 +81,13 @@ export function CardTemplatesAdmin() {
     });
   };
 
+  const resetForm = () => {
+    setShowForm(false);
+    setPreviewUrl(null);
+    setUploadedUrl(null);
+    setForm({ name: '', description: '', category: '' });
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -98,15 +95,18 @@ export function CardTemplatesAdmin() {
         <div>
           <h2 className="text-xl font-bold flex items-center gap-2">
             <LayoutTemplate className="h-5 w-5 text-pink-600" />
-            Card Templates
+            Card Editor Templates
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Upload background images that users can pick when creating their own cards.
+            Upload horizontal (landscape) background images — users will pick one of these when they use the <strong>"Create Your Own Card"</strong> editor at <code className="text-xs bg-muted px-1 py-0.5 rounded">/cards/editor</code>.
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Recommended image size: <strong>1200 × 900 px (4:3 landscape)</strong> — same ratio as all existing BitPop Cards.
           </p>
         </div>
         <Button
           onClick={() => setShowForm(!showForm)}
-          className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white"
+          className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white shrink-0"
         >
           <Plus className="h-4 w-4 mr-2" />
           Add Template
@@ -115,78 +115,81 @@ export function CardTemplatesAdmin() {
 
       {/* Add Template Form */}
       {showForm && (
-        <Card className="border-pink-200 dark:border-pink-800">
+        <Card className="border-pink-200 dark:border-pink-800 bg-pink-50/50 dark:bg-pink-900/10">
           <CardHeader>
             <CardTitle className="text-lg">New Card Template</CardTitle>
-            <CardDescription>Upload a background image + give it a name.</CardDescription>
+            <CardDescription>
+              Upload a <strong>landscape / horizontal</strong> background image (4:3 ratio) and give it a name. Users will see this as a background option in the card editor.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Image Upload */}
+            {/* Image upload — landscape preview box */}
             <div className="space-y-2">
-              <Label>Template Image *</Label>
-              <div className="flex items-start gap-4">
-                <label className="cursor-pointer flex-shrink-0">
-                  <div className="w-32 h-48 border-2 border-dashed border-pink-300 rounded-lg overflow-hidden flex items-center justify-center bg-pink-50 dark:bg-pink-900/10 hover:bg-pink-100 dark:hover:bg-pink-900/20 transition-colors">
-                    {previewUrl ? (
-                      <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="text-center p-2">
-                        <ImageIcon className="h-8 w-8 text-pink-400 mx-auto mb-1" />
-                        <p className="text-xs text-pink-500">Click to upload</p>
-                      </div>
-                    )}
-                  </div>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleFileChange}
-                    disabled={isUploading}
-                  />
-                </label>
-                <div className="flex-1 space-y-3">
-                  {isUploading && (
-                    <div className="flex items-center gap-2 text-sm text-pink-600">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Uploading image…
+              <Label>Template Image * <span className="text-xs text-muted-foreground">(landscape / horizontal)</span></Label>
+              <label className="cursor-pointer block">
+                <div className="w-full max-w-sm aspect-[4/3] border-2 border-dashed border-pink-300 rounded-lg overflow-hidden flex items-center justify-center bg-white dark:bg-gray-800 hover:bg-pink-50 dark:hover:bg-pink-900/10 transition-colors">
+                  {previewUrl ? (
+                    <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="text-center p-4">
+                      <ImageIcon className="h-10 w-10 text-pink-400 mx-auto mb-2" />
+                      <p className="text-sm font-medium text-pink-600">Click to upload image</p>
+                      <p className="text-xs text-muted-foreground mt-1">PNG, JPG, WebP — landscape recommended</p>
                     </div>
                   )}
-                  {uploadedUrl && (
-                    <div className="flex items-center gap-2 text-sm text-green-600">
-                      <Upload className="h-4 w-4" />
-                      Image uploaded ✅
-                    </div>
-                  )}
-                  <div className="space-y-1">
-                    <Label htmlFor="tpl-name">Template Name *</Label>
-                    <Input
-                      id="tpl-name"
-                      placeholder="e.g. Tropical Vibes"
-                      value={form.name}
-                      onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="tpl-cat">Category (optional)</Label>
-                    <Input
-                      id="tpl-cat"
-                      placeholder="e.g. Birthday, Holiday…"
-                      value={form.category}
-                      onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="tpl-desc">Description (optional)</Label>
-                    <Textarea
-                      id="tpl-desc"
-                      placeholder="Brief description of this template…"
-                      rows={2}
-                      value={form.description}
-                      onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                    />
-                  </div>
                 </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleFileChange}
+                  disabled={isUploading}
+                />
+              </label>
+              {isUploading && (
+                <div className="flex items-center gap-2 text-sm text-pink-600">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Uploading to Blossom…
+                </div>
+              )}
+              {uploadedUrl && !isUploading && (
+                <div className="flex items-center gap-2 text-sm text-green-600">
+                  <Upload className="h-4 w-4" />
+                  Image uploaded successfully ✅
+                </div>
+              )}
+            </div>
+
+            {/* Text fields */}
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label htmlFor="tpl-name">Template Name *</Label>
+                <Input
+                  id="tpl-name"
+                  placeholder="e.g. Sunny Vibes, Birthday Burst…"
+                  value={form.name}
+                  onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                />
               </div>
+              <div className="space-y-1">
+                <Label htmlFor="tpl-cat">Category <span className="text-xs text-muted-foreground">(optional)</span></Label>
+                <Input
+                  id="tpl-cat"
+                  placeholder="e.g. Birthday, Holiday, Love…"
+                  value={form.category}
+                  onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
+                />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="tpl-desc">Description <span className="text-xs text-muted-foreground">(optional)</span></Label>
+              <Textarea
+                id="tpl-desc"
+                placeholder="Short description of this template background…"
+                rows={2}
+                value={form.description}
+                onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+              />
             </div>
 
             <div className="flex gap-2 pt-2">
@@ -195,22 +198,22 @@ export function CardTemplatesAdmin() {
                 disabled={isCreating || isUploading || !uploadedUrl || !form.name.trim()}
                 className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white"
               >
-                {isCreating ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Saving…</> : <><Plus className="h-4 w-4 mr-2" />Save Template</>}
+                {isCreating
+                  ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Saving…</>
+                  : <><Plus className="h-4 w-4 mr-2" />Save Template</>}
               </Button>
-              <Button variant="outline" onClick={() => { setShowForm(false); setPreviewUrl(null); setUploadedUrl(null); setForm({ name: '', description: '', category: '' }); }}>
-                Cancel
-              </Button>
+              <Button variant="outline" onClick={resetForm}>Cancel</Button>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Template Grid */}
+      {/* Template Grid — landscape aspect ratio 4:3 */}
       {isLoading ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           {[...Array(6)].map((_, i) => (
             <div key={i} className="space-y-2">
-              <Skeleton className="w-full aspect-[3/4] rounded-lg" />
+              <Skeleton className="w-full aspect-[4/3] rounded-lg" />
               <Skeleton className="h-4 w-3/4" />
             </div>
           ))}
@@ -220,22 +223,27 @@ export function CardTemplatesAdmin() {
           <CardContent className="py-12 text-center">
             <LayoutTemplate className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
             <p className="font-medium text-muted-foreground">No templates yet</p>
-            <p className="text-sm text-muted-foreground mt-1">Add your first card template background image above.</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Click <strong>Add Template</strong> above to upload your first background image.
+            </p>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           {templates.map((tpl) => (
-            <div key={tpl.id} className="group relative rounded-lg overflow-hidden border bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow">
-              {/* Image */}
-              <div className="aspect-[3/4] relative overflow-hidden bg-gray-100 dark:bg-gray-700">
+            <div
+              key={tpl.id}
+              className="group relative rounded-lg overflow-hidden border bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow"
+            >
+              {/* Landscape image preview */}
+              <div className="aspect-[4/3] relative overflow-hidden bg-gray-100 dark:bg-gray-700">
                 <img
                   src={tpl.coverImage}
                   alt={tpl.name}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
-                {/* Delete button overlay */}
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                {/* Delete overlay on hover */}
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button variant="destructive" size="sm">
@@ -265,11 +273,11 @@ export function CardTemplatesAdmin() {
                 </div>
               </div>
 
-              {/* Info */}
-              <div className="p-2 space-y-1">
-                <p className="font-medium text-sm line-clamp-1">{tpl.name}</p>
+              {/* Info row */}
+              <div className="p-2 flex items-center justify-between gap-2">
+                <p className="font-medium text-sm line-clamp-1 flex-1">{tpl.name}</p>
                 {tpl.category && (
-                  <Badge variant="secondary" className="text-xs">{tpl.category}</Badge>
+                  <Badge variant="secondary" className="text-xs shrink-0">{tpl.category}</Badge>
                 )}
               </div>
             </div>
