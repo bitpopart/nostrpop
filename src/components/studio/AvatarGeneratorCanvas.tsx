@@ -17,8 +17,12 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { RelaySelector } from '@/components/RelaySelector';
+import { ZapButton } from '@/components/ZapButton';
 import { useAvatarGeneratorNFTs } from '@/hooks/useAvatarGenerator';
 import type { NFTCharacter, NFTLayerGroup } from '@/hooks/useNFTCharacters';
+import { getAdminPubkeyHex } from '@/lib/adminUtils';
+
+const ADMIN_PUBKEY = getAdminPubkeyHex();
 import {
   Shuffle,
   Download,
@@ -280,25 +284,36 @@ function SingleCharacterGenerator({ character }: SingleCharacterGeneratorProps) 
             )}
           </div>
 
-          <div className="p-4 bg-background border-t flex items-center gap-3">
+          <div className="p-4 bg-background border-t flex flex-col sm:flex-row items-center gap-3">
             <div className="flex-1 min-w-0">
               <p className="font-bold text-sm truncate">{character.title}</p>
               <p className="text-xs text-muted-foreground">Right-click save or download</p>
             </div>
-            <Button
-              onClick={handleRandomise}
-              disabled={isCompositing}
-              size="sm"
-              className="bg-gradient-to-r from-violet-500 to-purple-600 text-white gap-1.5 shrink-0"
-            >
-              <Shuffle className="h-3.5 w-3.5" />
-              {isCompositing ? '…' : 'Randomise'}
-            </Button>
-            {composited && (
-              <Button onClick={handleDownload} variant="outline" size="sm" className="gap-1.5 shrink-0">
-                <Download className="h-3.5 w-3.5" /> Download
+            <div className="flex gap-2 shrink-0 flex-wrap justify-end">
+              <Button
+                onClick={handleRandomise}
+                disabled={isCompositing}
+                size="sm"
+                className="bg-gradient-to-r from-violet-500 to-purple-600 text-white gap-1.5"
+              >
+                <Shuffle className="h-3.5 w-3.5" />
+                {isCompositing ? '…' : 'Randomise'}
               </Button>
-            )}
+              {composited && (
+                <Button onClick={handleDownload} variant="outline" size="sm" className="gap-1.5">
+                  <Download className="h-3.5 w-3.5" /> Download
+                </Button>
+              )}
+              <ZapButton
+                authorPubkey={ADMIN_PUBKEY}
+                lightningAddress="bitpopart@walletofsatoshi.com"
+                event={character.event}
+                eventTitle={`${character.title} Avatar`}
+                variant="outline"
+                size="sm"
+                alwaysShow
+              />
+            </div>
           </div>
         </DialogContent>
       </Dialog>
