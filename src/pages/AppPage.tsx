@@ -778,11 +778,11 @@ export default function AppPage() {
           ) : products.length > 0 ? (
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {products.slice(0, 6).map(product => (
+                {products.slice(0, 3).map(product => (
                   <ProductCard key={product.id} product={product} />
                 ))}
               </div>
-              {products.length > 6 && (
+              {products.length > 3 && (
                 <Button variant="outline" className="w-full gap-2 font-semibold" onClick={() => navigate('/shop')}>
                   More Merch
                   <Badge variant="secondary" className="text-xs">{products.length}</Badge>
