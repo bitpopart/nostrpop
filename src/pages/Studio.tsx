@@ -17,6 +17,10 @@ import {
   UserCircle2,
 } from 'lucide-react';
 import { AvatarGeneratorCanvas } from '@/components/studio/AvatarGeneratorCanvas';
+import { ZapButton } from '@/components/ZapButton';
+import { getAdminPubkeyHex } from '@/lib/adminUtils';
+
+const ADMIN_PUBKEY = getAdminPubkeyHex();
 
 // ─── Pop Art Colors ─────────────────────────────────────────────────────────
 const POP_COLORS = [
@@ -501,6 +505,16 @@ export default function Studio() {
             >
               Free Downloads
             </a>
+            <ZapButton
+              authorPubkey={ADMIN_PUBKEY}
+              lightningAddress="traveltelly@primal.net"
+              eventTitle="BitPopArt Studio"
+              size="sm"
+              variant="outline"
+              showLabel={true}
+              alwaysShow={true}
+              className="bg-white/20 hover:bg-white/30 text-white border-white/40 gap-1.5 whitespace-nowrap"
+            />
           </div>
           <div className="flex gap-2">
             <Button size="sm" variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-white/40 border" onClick={handleDownloadPNG}>
