@@ -74,6 +74,59 @@ function pickRandom(groups: NFTLayerGroup[]): string[] {
   }).filter(Boolean);
 }
 
+// ─── Clickable generated image (self-contained hover, no group bleed) ────────
+
+interface ClickableImageProps {
+  generatedDataUrl: string | null;
+  pickedUrls: string[];
+  title: string;
+  onClick: () => void;
+}
+
+function ClickableImage({ generatedDataUrl, pickedUrls, title, onClick }: ClickableImageProps) {
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <div
+      className="absolute inset-0 cursor-zoom-in"
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      {generatedDataUrl ? (
+        <img
+          src={generatedDataUrl}
+          alt={title}
+          className="absolute inset-0 w-full h-full object-contain"
+        />
+      ) : (
+        pickedUrls.map((url, i) => (
+          <img
+            key={i}
+            src={url}
+            alt=""
+            className="absolute inset-0 w-full h-full object-contain"
+            style={{ zIndex: i }}
+            crossOrigin="anonymous"
+          />
+        ))
+      )}
+      {/* Hover overlay */}
+      <div
+        className="absolute inset-0 flex items-center justify-center transition-colors duration-150"
+        style={{ zIndex: 20, backgroundColor: hovered ? 'rgba(0,0,0,0.18)' : 'transparent' }}
+      >
+        {hovered && (
+          <span className="bg-black/65 text-white text-xs px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg">
+            <Expand className="h-3.5 w-3.5" />
+            View full size
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Single character generator card ─────────────────────────────────────────
 
 interface GeneratorCardProps {
@@ -94,15 +147,13 @@ function GeneratorCard({ character }: GeneratorCardProps) {
   // Default preview: first variant of each group
   const defaultPreviewUrls = layerGroups.map(g => g.variants[0]).filter(Boolean);
 
-  const handleGenerate = useCallback(async () => {
+  const handleGenerate = useCallback(async (openPreviewAfter = false) => {
     if (layerGroups.length === 0) return;
     setIsGenerating(true);
 
     try {
-      // Pick one random variant per layer group
       const picked = pickRandom(layerGroups);
 
-      // Load all images
       const imgs = await Promise.all(
         picked.map(url =>
           new Promise<HTMLImageElement>((res, rej) => {
@@ -115,7 +166,6 @@ function GeneratorCard({ character }: GeneratorCardProps) {
         )
       );
 
-      // Composite onto canvas
       const canvas = canvasRef.current;
       if (!canvas) return;
       const size = 1024;
@@ -127,11 +177,12 @@ function GeneratorCard({ character }: GeneratorCardProps) {
 
       setPickedUrls(picked);
       setGeneratedDataUrl(canvas.toDataURL('image/png'));
+      if (openPreviewAfter) setPreviewOpen(true);
     } catch {
-      // Fallback: show first variant of each group stacked
       const fallback = layerGroups.map(g => g.variants[0]).filter(Boolean);
       setPickedUrls(fallback);
       setGeneratedDataUrl(null);
+      if (openPreviewAfter) setPreviewOpen(true);
     } finally {
       setIsGenerating(false);
     }
@@ -184,53 +235,20 @@ function GeneratorCard({ character }: GeneratorCardProps) {
                 crossOrigin="anonymous"
               />
             ))}
-            <div className="absolute inset-0 bg-black/20 flex items-end justify-center pb-4" style={{ zIndex: 99 }}>
+            <div className="absolute bottom-3 inset-x-0 flex justify-center" style={{ zIndex: 5 }}>
               <span className="bg-black/60 text-white text-xs px-3 py-1 rounded-full">
                 Press Generate ⚡
               </span>
             </div>
           </div>
-        ) : generatedDataUrl ? (
-          /* Canvas composite — clickable to open preview */
-          <div
-            className="absolute inset-0 cursor-zoom-in group"
-            onClick={() => setPreviewOpen(true)}
-          >
-            <img
-              src={generatedDataUrl}
-              alt={`${character.title} NFT`}
-              className="absolute inset-0 w-full h-full object-contain"
-            />
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center" style={{ zIndex: 10 }}>
-              <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 text-white text-xs px-3 py-1.5 rounded-full flex items-center gap-1.5">
-                <Expand className="h-3.5 w-3.5" />
-                View full size
-              </div>
-            </div>
-          </div>
         ) : (
-          /* Fallback: stack picked urls — also clickable */
-          <div
-            className="absolute inset-0 cursor-zoom-in group"
+          /* Generated — clickable to open big preview */
+          <ClickableImage
+            generatedDataUrl={generatedDataUrl}
+            pickedUrls={pickedUrls}
+            title={character.title}
             onClick={() => setPreviewOpen(true)}
-          >
-            {pickedUrls.map((url, i) => (
-              <img
-                key={i}
-                src={url}
-                alt=""
-                className="absolute inset-0 w-full h-full object-contain"
-                style={{ zIndex: i }}
-                crossOrigin="anonymous"
-              />
-            ))}
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center" style={{ zIndex: 10 }}>
-              <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 text-white text-xs px-3 py-1.5 rounded-full flex items-center gap-1.5">
-                <Expand className="h-3.5 w-3.5" />
-                View full size
-              </div>
-            </div>
-          </div>
+          />
         )}
 
         {/* Category badge */}
@@ -309,17 +327,26 @@ function GeneratorCard({ character }: GeneratorCardProps) {
 
     {/* ── Full-size preview popup ── */}
     <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-      <DialogContent className="max-w-2xl w-full p-0 overflow-hidden bg-gradient-to-br from-orange-50 to-pink-50 dark:from-orange-950/40 dark:to-pink-950/40 border-2">
-        {/* Close button */}
+      <DialogContent className="max-w-2xl w-full p-0 overflow-hidden bg-gradient-to-br from-orange-50 to-pink-50 dark:from-orange-950/40 dark:to-pink-950/40 border-2 [&>button]:hidden">
+
+        {/* Close button top-right */}
         <button
           onClick={() => setPreviewOpen(false)}
-          className="absolute top-3 right-3 z-10 bg-black/50 hover:bg-black/70 text-white rounded-full p-1.5 transition-colors"
+          className="absolute top-3 right-3 z-50 bg-black/60 hover:bg-black/80 text-white rounded-full p-1.5 transition-colors"
         >
           <X className="h-4 w-4" />
         </button>
 
-        {/* Big image */}
-        <div className="relative w-full aspect-square">
+        {/* Big image — updates live as regenerate runs */}
+        <div className="relative w-full aspect-square bg-gradient-to-br from-orange-50 to-pink-50 dark:from-orange-950/30 dark:to-pink-950/30">
+          {isGenerating && (
+            <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/30">
+              <div className="bg-black/70 text-white text-sm px-4 py-2 rounded-full flex items-center gap-2">
+                <Shuffle className="h-4 w-4 animate-spin" />
+                Generating…
+              </div>
+            </div>
+          )}
           {generatedDataUrl ? (
             <img
               src={generatedDataUrl}
@@ -343,20 +370,20 @@ function GeneratorCard({ character }: GeneratorCardProps) {
         </div>
 
         {/* Actions bar */}
-        <div className="p-4 bg-background/80 backdrop-blur border-t flex flex-col sm:flex-row gap-3 items-center">
+        <div className="p-4 bg-background border-t flex flex-col sm:flex-row gap-3 items-center">
           <div className="flex-1 min-w-0">
             <p className="font-bold text-sm truncate">{character.title}</p>
-            <p className="text-xs text-muted-foreground">Nostr Fungible Token · Right-click save is fine 😄</p>
+            <p className="text-xs text-muted-foreground">Right-click save is fine 😄</p>
           </div>
-          <div className="flex gap-2 shrink-0">
+          <div className="flex gap-2 shrink-0 flex-wrap justify-end">
             <Button
-              onClick={() => { setPreviewOpen(false); handleGenerate(); }}
+              onClick={() => handleGenerate(false)}
               disabled={isGenerating}
               size="sm"
               className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white gap-1.5"
             >
               <Shuffle className="h-3.5 w-3.5" />
-              Regenerate
+              {isGenerating ? 'Generating…' : 'Regenerate'}
             </Button>
             <Button
               onClick={handleDownload}
