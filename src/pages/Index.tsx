@@ -1461,9 +1461,6 @@ const Index = () => {
                     <span className="text-xl font-extrabold bg-gradient-to-r from-pink-600 via-rose-600 to-orange-600 bg-clip-text text-transparent">
                       Love PopArt
                     </span>
-                    <Badge className="bg-gradient-to-r from-pink-500 to-orange-500 text-white border-0 text-xs">
-                      Open App
-                    </Badge>
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-300 mt-0.5">
                     Join the community
