@@ -49,8 +49,18 @@ const POP_COLORS = [
 ];
 
 const FONTS = [
-  'Impact', 'Arial Black', 'Verdana', 'Georgia',
-  'Courier New', 'Trebuchet MS', 'Comic Sans MS',
+  'Impact',
+  'Arial Black',
+  'Bebas Neue',
+  'Oswald Variable',
+  'Montserrat Variable',
+  'Raleway Variable',
+  'Black Ops One',
+  'Righteous',
+  'Permanent Marker',
+  'Verdana',
+  'Georgia',
+  'Courier New',
 ];
 
 // ─── Element types ───────────────────────────────────────────────────────────
@@ -332,85 +342,98 @@ export function CardEditor({ onPublished }: CardEditorProps) {
     setResizing(null);
   };
 
-  // ─── Export canvas to PNG (via DOM rendering) ─────────────────────────────
-  const exportCanvas = async (): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const canvas = document.createElement('canvas');
-      canvas.width = CARD_FORMAT.width;
-      canvas.height = CARD_FORMAT.height;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return reject(new Error('No canvas context'));
+  // ─── Load image safely for canvas (CORS-safe) ─────────────────────────────
+  // Tries direct load first, falls back to CORS proxy, never rejects so export
+  // always completes (skips the image instead of crashing).
+  const loadImageSafe = (src: string): Promise<HTMLImageElement | null> => {
+    const CORS_PROXY = 'https://proxy.shakespeare.diy/?url=';
 
-      // Fill background color
-      ctx.fillStyle = bgColor;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      const drawNext = (index: number, allItems: Array<() => Promise<void>>) => {
-        if (index >= allItems.length) {
-          resolve(canvas.toDataURL('image/jpeg', 0.92));
-          return;
-        }
-        allItems[index]().then(() => drawNext(index + 1, allItems)).catch(reject);
-      };
-
-      const drawTasks: Array<() => Promise<void>> = [];
-
-      // Background image
-      if (bgImage) {
-        drawTasks.push(() => new Promise((res, rej) => {
-          const img = new Image();
-          img.crossOrigin = 'anonymous';
-          img.onload = () => { ctx.drawImage(img, 0, 0, canvas.width, canvas.height); res(); };
-          img.onerror = rej;
-          img.src = bgImage;
-        }));
-      }
-
-      // Elements
-      elements.forEach(el => {
-        if (el.kind === 'image' && el.src) {
-          drawTasks.push(() => new Promise((res, rej) => {
-            const img = new Image();
-            img.crossOrigin = 'anonymous';
-            img.onload = () => { ctx.drawImage(img, el.x, el.y, el.width, el.height); res(); };
-            img.onerror = rej;
-            img.src = el.src!;
-          }));
-        } else if (el.kind === 'text' && el.text) {
-          drawTasks.push(() => {
-            ctx.save();
-            const weight = el.bold ? 'bold' : 'normal';
-            const style = el.italic ? 'italic' : 'normal';
-            ctx.font = `${style} ${weight} ${el.fontSize ?? 80}px ${el.fontFamily ?? 'Impact'}`;
-            ctx.fillStyle = el.color ?? '#000000';
-            ctx.textAlign = el.align ?? 'center';
-            ctx.textBaseline = 'top';
-            // Word wrap
-            const maxWidth = el.width;
-            const lineHeight = (el.fontSize ?? 80) * 1.25;
-            const words = (el.text ?? '').split(' ');
-            const lines: string[] = [];
-            let line = '';
-            for (const word of words) {
-              const test = line ? `${line} ${word}` : word;
-              if (ctx.measureText(test).width > maxWidth && line) {
-                lines.push(line);
-                line = word;
-              } else {
-                line = test;
-              }
-            }
-            if (line) lines.push(line);
-            const startX = el.align === 'center' ? el.x + el.width / 2 : el.align === 'right' ? el.x + el.width : el.x;
-            lines.forEach((l, i) => ctx.fillText(l, startX, el.y + i * lineHeight));
-            ctx.restore();
-            return Promise.resolve();
-          });
-        }
+    const tryLoad = (url: string, useCrossOrigin: boolean): Promise<HTMLImageElement> =>
+      new Promise((resolve, reject) => {
+        const img = new Image();
+        if (useCrossOrigin) img.crossOrigin = 'anonymous';
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = url;
       });
 
-      drawNext(0, drawTasks);
-    });
+    // 1. Try direct with crossOrigin
+    return tryLoad(src, true)
+      .catch(() => {
+        // 2. Try via CORS proxy
+        return tryLoad(`${CORS_PROXY}${encodeURIComponent(src)}`, true);
+      })
+      .catch(() => {
+        // 3. Try direct without crossOrigin (canvas will be tainted but let's try toDataURL anyway)
+        return tryLoad(src, false);
+      })
+      .catch(() => null); // Give up — skip this image
+  };
+
+  // ─── Export canvas to JPEG ────────────────────────────────────────────────
+  const exportCanvas = async (): Promise<string> => {
+    // Ensure all custom fonts are loaded before rendering
+    try { await document.fonts.ready; } catch { /* ignore */ }
+
+    const canvas = document.createElement('canvas');
+    canvas.width = CARD_FORMAT.width;
+    canvas.height = CARD_FORMAT.height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('No canvas context');
+
+    // Fill background colour
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Background image
+    if (bgImage) {
+      const img = await loadImageSafe(bgImage);
+      if (img) ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    }
+
+    // Elements (in order)
+    for (const el of elements) {
+      if (el.kind === 'image' && el.src) {
+        const img = await loadImageSafe(el.src);
+        if (img) ctx.drawImage(img, el.x, el.y, el.width, el.height);
+      } else if (el.kind === 'text' && el.text) {
+        ctx.save();
+        const weight = el.bold ? 'bold' : 'normal';
+        const style = el.italic ? 'italic' : 'normal';
+        ctx.font = `${style} ${weight} ${el.fontSize ?? 80}px "${el.fontFamily ?? 'Impact'}"`;
+        ctx.fillStyle = el.color ?? '#000000';
+        ctx.textAlign = el.align ?? 'center';
+        ctx.textBaseline = 'top';
+        // Word wrap
+        const maxWidth = el.width;
+        const lineHeight = (el.fontSize ?? 80) * 1.3;
+        const words = el.text.split(' ');
+        const lines: string[] = [];
+        let line = '';
+        for (const word of words) {
+          const test = line ? `${line} ${word}` : word;
+          if (ctx.measureText(test).width > maxWidth && line) {
+            lines.push(line);
+            line = word;
+          } else {
+            line = test;
+          }
+        }
+        if (line) lines.push(line);
+        const startX = el.align === 'center' ? el.x + el.width / 2
+          : el.align === 'right' ? el.x + el.width
+          : el.x;
+        lines.forEach((l, i) => ctx.fillText(l, startX, el.y + i * lineHeight));
+        ctx.restore();
+      }
+    }
+
+    // Try to export — if canvas is tainted (CORS), this throws
+    try {
+      return canvas.toDataURL('image/jpeg', 0.92);
+    } catch {
+      throw new Error('Could not export image — a template image blocked the download due to CORS restrictions. Try a different background colour instead.');
+    }
   };
 
   // ─── Download ─────────────────────────────────────────────────────────────
@@ -421,10 +444,13 @@ export function CardEditor({ onPublished }: CardEditorProps) {
       const a = document.createElement('a');
       a.href = dataUrl;
       a.download = 'bitpop-card.jpg';
+      document.body.appendChild(a);
       a.click();
+      document.body.removeChild(a);
       toast({ title: 'Downloaded! 📥', description: 'Your card image has been saved.' });
-    } catch {
-      toast({ title: 'Export failed', variant: 'destructive' });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Export failed. Please try again.';
+      toast({ title: 'Download failed', description: msg, variant: 'destructive' });
     } finally {
       setIsExporting(false);
     }
