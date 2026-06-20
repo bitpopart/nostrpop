@@ -644,18 +644,17 @@ export function MediaGeneratorAdmin() {
     });
   };
 
-  // All dynamic + built-in project pages
-  const allProjectPages = [
+  // All known pages for label/thumbnail lookup
+  const allKnownPages = [
     ...(projectPages?.dynamic ?? []),
     ...(projectPages?.builtin ?? []),
+    ...GENERAL_PAGES.map((p) => ({ ...p, source: 'general' as const, thumbnail: undefined })),
   ];
 
   if (selectedSlug) {
-    // Find page info from either projects or general pages
-    const projectPage = allProjectPages.find((p) => p.slug === selectedSlug);
-    const generalPage = GENERAL_PAGES.find((p) => p.slug === selectedSlug);
-    const pageLabel = projectPage?.label ?? generalPage?.label ?? selectedSlug;
-    const pageThumbnail = (projectPage as { thumbnail?: string } | undefined)?.thumbnail;
+    const knownPage = allKnownPages.find((p) => p.slug === selectedSlug);
+    const pageLabel = knownPage?.label ?? selectedSlug;
+    const pageThumbnail = (knownPage as { thumbnail?: string } | undefined)?.thumbnail;
     const config = allConfigs?.[selectedSlug] ?? DEFAULT_PAGE_CONFIG;
 
     return (
@@ -687,38 +686,56 @@ export function MediaGeneratorAdmin() {
       </Card>
 
       {/* ─── PROJECTS (priority section) ──────────────────────────────────── */}
-      <div className="space-y-3">
-        <div className="flex items-center gap-2">
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 flex-wrap">
           <FolderKanban className="w-5 h-5 text-orange-600" />
           <h2 className="font-bold text-lg">Projects</h2>
           <Badge className="bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-400 text-xs">
             Primary
           </Badge>
-          {projectPages?.dynamic && projectPages.dynamic.length > 0 && (
-            <Badge variant="secondary" className="text-xs">
-              {projectPages.dynamic.length} from Nostr
-            </Badge>
-          )}
         </div>
         <p className="text-sm text-muted-foreground">
-          Each project can have its own set of buttons. New projects created in Admin → Projects
-          appear here automatically.
+          Configure buttons per project page. New projects created in Admin → Projects appear
+          here automatically.
         </p>
 
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-            {[...Array(8)].map((_, i) => <Skeleton key={i} className="h-32" />)}
+            {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-32" />)}
           </div>
         ) : (
           <div className="space-y-5">
+
+            {/* ── /projects overview page ─────────────────────────── */}
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
+                <FolderKanban className="w-3 h-3 text-orange-500" />
+                Projects Overview Page
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                <PageCard
+                  slug="/projects"
+                  label="Projects Page"
+                  config={allConfigs?.['/projects'] ?? DEFAULT_PAGE_CONFIG}
+                  onClick={() => setSelectedSlug('/projects')}
+                />
+              </div>
+            </div>
+
             {/* ── Nostr Collaborative Projects (/nostr-projects/:id) ──── */}
-            {projectPages?.collab && projectPages.collab.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
-                  <Globe className="w-3 h-3 text-orange-500" />
-                  Nostr Projects
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
+                <Globe className="w-3 h-3 text-orange-500" />
+                Collaborative Projects
+                {projectPages?.collab && (
                   <Badge variant="secondary" className="text-xs">{projectPages.collab.length}</Badge>
-                </p>
+                )}
+              </p>
+              {isLoading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                  {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-28" />)}
+                </div>
+              ) : projectPages?.collab && projectPages.collab.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                   {projectPages.collab.map((page) => (
                     <PageCard
@@ -731,17 +748,27 @@ export function MediaGeneratorAdmin() {
                     />
                   ))}
                 </div>
-              </div>
-            )}
+              ) : (
+                <p className="text-xs text-muted-foreground italic">
+                  No collaborative projects yet. Create them in Admin → Projects → Nostr Projects.
+                </p>
+              )}
+            </div>
 
             {/* ── FRL Projects (/frl/:id) ───────────────────────────── */}
-            {projectPages?.frl && projectPages.frl.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
-                  <Globe className="w-3 h-3 text-pink-500" />
-                  POPArt.frl Projects
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
+                <Globe className="w-3 h-3 text-pink-500" />
+                POPArt.frl Projects
+                {projectPages?.frl && (
                   <Badge variant="secondary" className="text-xs">{projectPages.frl.length}</Badge>
-                </p>
+                )}
+              </p>
+              {isLoading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                  {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-28" />)}
+                </div>
+              ) : projectPages?.frl && projectPages.frl.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                   {projectPages.frl.map((page) => (
                     <PageCard
@@ -754,31 +781,12 @@ export function MediaGeneratorAdmin() {
                     />
                   ))}
                 </div>
-              </div>
-            )}
-
-            {/* ── Portfolio projects with internal routes ───────────── */}
-            {projectPages?.portfolio && projectPages.portfolio.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
-                  <FolderKanban className="w-3 h-3 text-blue-500" />
-                  Portfolio Projects
-                  <Badge variant="secondary" className="text-xs">{projectPages.portfolio.length}</Badge>
+              ) : (
+                <p className="text-xs text-muted-foreground italic">
+                  No FRL projects yet. Create them in Admin → Projects → POPArt.frl.
                 </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                  {projectPages.portfolio.map((page) => (
-                    <PageCard
-                      key={page.slug}
-                      slug={page.slug}
-                      label={page.label}
-                      thumbnail={page.thumbnail}
-                      config={allConfigs?.[page.slug] ?? DEFAULT_PAGE_CONFIG}
-                      onClick={() => setSelectedSlug(page.slug)}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
+              )}
+            </div>
 
             {/* ── Built-in project pages ────────────────────────────── */}
             <div className="space-y-2">
@@ -799,15 +807,6 @@ export function MediaGeneratorAdmin() {
                 ))}
               </div>
             </div>
-
-            {/* ── Empty state if no dynamic projects yet ────────────── */}
-            {(!projectPages?.collab?.length && !projectPages?.frl?.length && !projectPages?.portfolio?.length) && (
-              <div className="text-center py-6 text-sm text-muted-foreground border border-dashed rounded-xl">
-                <FolderKanban className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                <p>No custom projects found yet.</p>
-                <p className="text-xs mt-1">Projects created in Admin → Projects will appear here automatically.</p>
-              </div>
-            )}
           </div>
         )}
       </div>
