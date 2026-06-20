@@ -62,47 +62,28 @@ export const DEFAULT_PAGE_CONFIG: MediaGenPageConfig = {
   zap: { enabled: false },
 };
 
-// List of all app pages with their route slugs
-export const ALL_PAGES: { slug: string; label: string }[] = [
-  { slug: '/', label: 'Home' },
-  { slug: '/art', label: 'Art' },
-  { slug: '/shop', label: 'Shop' },
-  { slug: '/cards', label: 'Cards' },
-  { slug: '/blog', label: 'Blog' },
-  { slug: '/popup', label: 'Pop-Up Events' },
-  { slug: '/artist', label: 'Artist' },
-  { slug: '/projects', label: 'Projects' },
-  { slug: '/fundraising', label: 'Fundraising' },
-  { slug: '/vlog', label: 'Vlog' },
-  { slug: '/wall', label: 'Wall' },
-  { slug: '/wallpapers', label: 'Wallpapers' },
-  { slug: '/gifs', label: 'Gifs' },
-  { slug: '/avatars', label: 'Avatars' },
-  { slug: '/banners', label: 'Banners' },
-  { slug: '/coloring-pages', label: 'Coloring Pages' },
-  { slug: '/desktop-wallpapers', label: 'Desktop Wallpapers' },
-  { slug: '/free', label: 'Free Gallery' },
-  { slug: '/animations', label: 'Animations' },
-  { slug: '/studio', label: 'Studio' },
-  { slug: '/badges', label: 'Badges' },
-  { slug: '/feed', label: 'Feed' },
-  { slug: '/community', label: 'Community' },
-  { slug: '/print', label: 'Print' },
-  { slug: '/NFT', label: 'NFT' },
-  { slug: '/21k-art', label: '21K Art' },
-  { slug: '/canvas', label: 'Canvas' },
-  { slug: '/games', label: 'Games' },
-];
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function slugToD(slug: string): string {
-  // Replace leading slash with empty, then replace inner slashes
+/**
+ * Convert a page slug (e.g. "/projects/my-id") to a Nostr d-tag.
+ * Leading slash is stripped; "/" becomes "home".
+ * Inner slashes are preserved as-is (relay d-tag is just a string).
+ */
+export function slugToD(slug: string): string {
   const clean = slug.replace(/^\//, '') || 'home';
   return `${MEDIA_GEN_D_PREFIX}${clean}`;
 }
 
-// ─── Hook: read all page configs ──────────────────────────────────────────────
+/**
+ * Convert a d-tag back to a page slug.
+ */
+export function dToSlug(dTag: string): string {
+  const clean = dTag.replace(MEDIA_GEN_D_PREFIX, '');
+  const slug = '/' + clean;
+  return slug === '/home' ? '/' : slug;
+}
+
+// ─── Hook: read ALL page configs (no fixed list — fetches everything) ─────────
 
 export function useAllMediaGenConfigs() {
   const { nostr } = useNostr();
@@ -113,13 +94,16 @@ export function useAllMediaGenConfigs() {
     queryFn: async (c) => {
       if (!adminPubkey) return {} as Record<string, MediaGenPageConfig>;
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(8000)]);
+
+      // Query by t-tag 'media-generator' so we pick up any slug — including
+      // dynamic project pages — without maintaining a fixed list.
       const events = await nostr.query(
         [
           {
             kinds: [MEDIA_GEN_KIND],
             authors: [adminPubkey],
-            '#d': ALL_PAGES.map((p) => slugToD(p.slug)),
-            limit: 200,
+            '#t': ['media-generator'],
+            limit: 500,
           },
         ],
         { signal }
@@ -129,11 +113,10 @@ export function useAllMediaGenConfigs() {
       for (const event of events) {
         const dTag = event.tags.find(([n]) => n === 'd')?.[1];
         if (!dTag || !dTag.startsWith(MEDIA_GEN_D_PREFIX)) continue;
-        const slug = '/' + dTag.replace(MEDIA_GEN_D_PREFIX, '');
-        const normalizedSlug = slug === '/home' ? '/' : slug;
+        const slug = dToSlug(dTag);
         try {
           const parsed = JSON.parse(event.content || '{}') as Partial<MediaGenPageConfig>;
-          configMap[normalizedSlug] = {
+          configMap[slug] = {
             merch: { enabled: false, productIds: [], ...parsed.merch },
             download: { enabled: false, items: [], ...parsed.download },
             create: { enabled: false, templateIds: [], ...parsed.create },
