@@ -11,6 +11,7 @@ import { useMarketplaceProducts } from '@/hooks/useMarketplaceProducts';
 import { useAppWelcome, useAppMedia } from '@/hooks/useAppContent';
 import { useFreeDownloads } from '@/hooks/useFreeDownloads';
 import { useAnimations } from '@/hooks/useAnimations';
+import { useNFTCharacters } from '@/hooks/useNFTCharacters';
 import { ProductCard } from '@/components/marketplace/ProductCard';
 import { recordDownload, type DownloadCategory } from '@/hooks/useDownloadTracking';
 import { LoginArea } from '@/components/auth/LoginArea';
@@ -28,6 +29,9 @@ import {
   Sparkles,
   UserCircle2,
   PanelTop,
+  Shuffle,
+  Layers,
+  Bitcoin,
 } from 'lucide-react';
 
 // 3 columns × 3 rows = 9 items max shown in preview
@@ -405,6 +409,103 @@ function AnimationsPreview({ onMoreClick }: { onMoreClick: () => void }) {
   );
 }
 
+// ── NFT Preview ───────────────────────────────────────────
+
+function NFTPreview({ onMoreClick }: { onMoreClick: () => void }) {
+  const { data: characters = [], isLoading } = useNFTCharacters();
+  const preview = characters.slice(0, 3);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        <div className="grid grid-cols-3 gap-3">
+          {[...Array(3)].map((_, i) => <Skeleton key={i} className="aspect-square rounded-xl" />)}
+        </div>
+      </div>
+    );
+  }
+
+  if (characters.length === 0) {
+    return (
+      <div className="space-y-3">
+        <div className="grid grid-cols-3 gap-3">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="aspect-square rounded-xl bg-gradient-to-br from-orange-100 to-pink-100 dark:from-orange-900/30 dark:to-pink-900/30 flex items-center justify-center">
+              <Bitcoin className="h-8 w-8 text-orange-300" />
+            </div>
+          ))}
+        </div>
+        <Button variant="outline" className="w-full gap-2 font-semibold" onClick={onMoreClick}>
+          Browse NFTs <ArrowRight className="h-4 w-4 ml-auto" />
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-3 gap-3">
+        {preview.map(char => {
+          const defaultUrl = char.layerGroups[0]?.variants[0];
+          return (
+            <div
+              key={char.id}
+              className="group relative rounded-xl overflow-hidden bg-gradient-to-br from-orange-50 to-pink-50 dark:from-orange-950/30 dark:to-pink-950/30 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+              onClick={onMoreClick}
+              title={char.title}
+            >
+              <div className="aspect-square relative">
+                {char.layerGroups.slice(0, 4).map((grp, i) => (
+                  grp.variants[0] ? (
+                    <img
+                      key={i}
+                      src={grp.variants[0]}
+                      alt=""
+                      className="absolute inset-0 w-full h-full object-contain"
+                      style={{ zIndex: i }}
+                      loading="lazy"
+                    />
+                  ) : null
+                ))}
+                {!defaultUrl && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Bitcoin className="h-8 w-8 text-orange-300" />
+                  </div>
+                )}
+                {/* Hover overlay */}
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" style={{ zIndex: 10 }} />
+                <div className="absolute inset-x-0 bottom-0 pb-1 flex justify-center opacity-0 group-hover:opacity-100 transition-opacity" style={{ zIndex: 11 }}>
+                  <span className="bg-black/70 text-white text-[9px] px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <Shuffle className="h-2.5 w-2.5" /> Generate
+                  </span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="flex items-center gap-2">
+        <Badge className="text-xs bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-700">
+          <Layers className="h-3 w-3 mr-1" /> Free · No blockchain
+        </Badge>
+        <span className="text-xs text-muted-foreground">Right-click save is always fine 😄</span>
+      </div>
+      <Button
+        variant="outline"
+        className="w-full gap-2 font-semibold border-orange-200 dark:border-orange-800 text-orange-700 dark:text-orange-300 hover:bg-orange-50 dark:hover:bg-orange-900/20"
+        onClick={onMoreClick}
+      >
+        <Shuffle className="h-4 w-4" />
+        Generate Your NFT
+        {characters.length > 3 && (
+          <Badge variant="secondary" className="text-xs">{characters.length} characters</Badge>
+        )}
+        <ArrowRight className="h-4 w-4 ml-auto" />
+      </Button>
+    </div>
+  );
+}
+
 // ── Main App page ─────────────────────────────────────────
 
 export default function AppPage() {
@@ -481,8 +582,13 @@ export default function AppPage() {
               )}
             </div>
             {!user && (
-              <div className="pt-2">
-                <p className="text-sm text-muted-foreground mb-2">Log in for a personalised experience</p>
+              <div className="pt-2 space-y-2">
+                <p className="text-sm text-muted-foreground">
+                  Everything here is <strong>free to download</strong> — no login needed!
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Log in with Nostr for a few extras 👇
+                </p>
                 <LoginArea className="mx-auto max-w-48" />
               </div>
             )}
@@ -612,6 +718,20 @@ export default function AppPage() {
             </CardTitle>
           </CardHeader>
           <AnimationsPreview onMoreClick={() => navigate('/animations')} />
+        </section>
+
+        {/* ── NFTs ──────────────────────────────────────── */}
+        <section>
+          <CardHeader className="px-0 pb-3">
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <Bitcoin className="h-5 w-5 text-orange-500" />
+              Nostr Fungible Tokens
+              <Badge className="text-xs bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-700 ml-1">
+                Free
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <NFTPreview onMoreClick={() => navigate('/NFT')} />
         </section>
 
         {/* ── Games ─────────────────────────────────────── */}
