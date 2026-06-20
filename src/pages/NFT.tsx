@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useNFTCharacters, type NFTCharacter, type NFTLayerGroup } from '@/hooks/useNFTCharacters';
 import { getAdminPubkeyHex } from '@/lib/adminUtils';
 import { ZapButton } from '@/components/ZapButton';
@@ -17,6 +18,8 @@ import {
   Sparkles,
   ImageIcon,
   Images,
+  Expand,
+  X,
 } from 'lucide-react';
 
 const ADMIN_PUBKEY = getAdminPubkeyHex();
@@ -83,6 +86,7 @@ function GeneratorCard({ character }: GeneratorCardProps) {
   const [isDownloading, setIsDownloading] = useState(false);
   const [generatedDataUrl, setGeneratedDataUrl] = useState<string | null>(null);
   const [pickedUrls, setPickedUrls] = useState<string[]>([]);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const { layerGroups } = character;
   const totalVariants = layerGroups.reduce((sum, g) => sum + g.variants.length, 0);
@@ -160,6 +164,7 @@ function GeneratorCard({ character }: GeneratorCardProps) {
   const hasGenerated = pickedUrls.length > 0;
 
   return (
+    <>
     <Card className="overflow-hidden border-2 border-transparent hover:border-orange-200 dark:hover:border-orange-800 transition-colors">
       {/* Image area */}
       <div className="relative bg-gradient-to-br from-orange-50 to-pink-50 dark:from-orange-950/30 dark:to-pink-950/30 aspect-square">
@@ -186,15 +191,29 @@ function GeneratorCard({ character }: GeneratorCardProps) {
             </div>
           </div>
         ) : generatedDataUrl ? (
-          /* Canvas composite */
-          <img
-            src={generatedDataUrl}
-            alt={`${character.title} NFT`}
-            className="absolute inset-0 w-full h-full object-contain"
-          />
+          /* Canvas composite — clickable to open preview */
+          <div
+            className="absolute inset-0 cursor-zoom-in group"
+            onClick={() => setPreviewOpen(true)}
+          >
+            <img
+              src={generatedDataUrl}
+              alt={`${character.title} NFT`}
+              className="absolute inset-0 w-full h-full object-contain"
+            />
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center" style={{ zIndex: 10 }}>
+              <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 text-white text-xs px-3 py-1.5 rounded-full flex items-center gap-1.5">
+                <Expand className="h-3.5 w-3.5" />
+                View full size
+              </div>
+            </div>
+          </div>
         ) : (
-          /* Fallback: stack picked urls */
-          <div className="absolute inset-0">
+          /* Fallback: stack picked urls — also clickable */
+          <div
+            className="absolute inset-0 cursor-zoom-in group"
+            onClick={() => setPreviewOpen(true)}
+          >
             {pickedUrls.map((url, i) => (
               <img
                 key={i}
@@ -205,6 +224,12 @@ function GeneratorCard({ character }: GeneratorCardProps) {
                 crossOrigin="anonymous"
               />
             ))}
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center" style={{ zIndex: 10 }}>
+              <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 text-white text-xs px-3 py-1.5 rounded-full flex items-center gap-1.5">
+                <Expand className="h-3.5 w-3.5" />
+                View full size
+              </div>
+            </div>
           </div>
         )}
 
@@ -281,6 +306,82 @@ function GeneratorCard({ character }: GeneratorCardProps) {
         />
       </CardContent>
     </Card>
+
+    {/* ── Full-size preview popup ── */}
+    <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+      <DialogContent className="max-w-2xl w-full p-0 overflow-hidden bg-gradient-to-br from-orange-50 to-pink-50 dark:from-orange-950/40 dark:to-pink-950/40 border-2">
+        {/* Close button */}
+        <button
+          onClick={() => setPreviewOpen(false)}
+          className="absolute top-3 right-3 z-10 bg-black/50 hover:bg-black/70 text-white rounded-full p-1.5 transition-colors"
+        >
+          <X className="h-4 w-4" />
+        </button>
+
+        {/* Big image */}
+        <div className="relative w-full aspect-square">
+          {generatedDataUrl ? (
+            <img
+              src={generatedDataUrl}
+              alt={`${character.title} NFT`}
+              className="w-full h-full object-contain"
+            />
+          ) : (
+            <div className="absolute inset-0">
+              {pickedUrls.map((url, i) => (
+                <img
+                  key={i}
+                  src={url}
+                  alt=""
+                  className="absolute inset-0 w-full h-full object-contain"
+                  style={{ zIndex: i }}
+                  crossOrigin="anonymous"
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Actions bar */}
+        <div className="p-4 bg-background/80 backdrop-blur border-t flex flex-col sm:flex-row gap-3 items-center">
+          <div className="flex-1 min-w-0">
+            <p className="font-bold text-sm truncate">{character.title}</p>
+            <p className="text-xs text-muted-foreground">Nostr Fungible Token · Right-click save is fine 😄</p>
+          </div>
+          <div className="flex gap-2 shrink-0">
+            <Button
+              onClick={() => { setPreviewOpen(false); handleGenerate(); }}
+              disabled={isGenerating}
+              size="sm"
+              className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white gap-1.5"
+            >
+              <Shuffle className="h-3.5 w-3.5" />
+              Regenerate
+            </Button>
+            <Button
+              onClick={handleDownload}
+              disabled={isDownloading}
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+            >
+              <Download className="h-3.5 w-3.5" />
+              Download
+            </Button>
+            <ZapButton
+              authorPubkey={ADMIN_PUBKEY}
+              lightningAddress="bitpopart@walletofsatoshi.com"
+              event={character.event}
+              eventTitle={`${character.title} NFT`}
+              variant="outline"
+              size="sm"
+              alwaysShow
+            />
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
 
