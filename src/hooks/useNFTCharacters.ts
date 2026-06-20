@@ -45,6 +45,10 @@ export interface NFTCharacter {
   created_at: string;
 }
 
+export function parseNFTCharacter(event: NostrEvent): NFTCharacter | null {
+  return parseCharacter(event);
+}
+
 function parseCharacter(event: NostrEvent): NFTCharacter | null {
   try {
     const dTag = event.tags.find(([n]) => n === 'd')?.[1];

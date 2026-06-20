@@ -14,7 +14,9 @@ import {
   Type, Trash2, Download, Layers, RotateCcw, Copy,
   Palette, ImageIcon, Sticker, FileText, Monitor, SquareUser,
   LayoutTemplate, ChevronUp, ChevronDown, ZoomIn, ZoomOut,
+  UserCircle2,
 } from 'lucide-react';
+import { AvatarGeneratorCanvas } from '@/components/studio/AvatarGeneratorCanvas';
 
 // ─── Pop Art Colors ─────────────────────────────────────────────────────────
 const POP_COLORS = [
@@ -79,8 +81,12 @@ function FormatIcon({ id }: { id: string }) {
   if (id.includes('flyer')) return <FileText className="h-4 w-4" />;
   if (id === 'banner') return <Monitor className="h-4 w-4" />;
   if (id === 'avatar') return <SquareUser className="h-4 w-4" />;
+  if (id === 'avatar-generator') return <UserCircle2 className="h-4 w-4" />;
   return <LayoutTemplate className="h-4 w-4" />;
 }
+
+// Sentinel value used when the Avatar Generator mode is active
+const AVATAR_GENERATOR_ID = 'avatar-generator';
 
 // ─── Zoom steps ──────────────────────────────────────────────────────────────
 const ZOOM_STEPS = [0.5, 0.75, 1, 1.25, 1.5, 2, 2.5, 3];
@@ -97,6 +103,7 @@ export default function Studio() {
     description: 'Create pop art designs online: stickers, flyers, banners and avatars.',
   });
 
+  const [avatarGeneratorMode, setAvatarGeneratorMode] = useState(false);
   const [format, setFormat] = useState<CanvasFormat>(CANVAS_FORMATS[0]);
   const [elements, setElements] = useState<CanvasElement[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -510,9 +517,9 @@ export default function Studio() {
           {CANVAS_FORMATS.map(fmt => (
             <button
               key={fmt.id}
-              onClick={() => { setFormat(fmt); setElements([]); setSelectedId(null); }}
+              onClick={() => { setFormat(fmt); setElements([]); setSelectedId(null); setAvatarGeneratorMode(false); }}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border-2 transition-all ${
-                format.id === fmt.id
+                !avatarGeneratorMode && format.id === fmt.id
                   ? 'bg-orange-500 border-orange-500 text-white shadow-md'
                   : 'bg-white border-gray-200 text-gray-700 hover:border-orange-300 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200'
               }`}
@@ -520,14 +527,34 @@ export default function Studio() {
               <FormatIcon id={fmt.id} />
               {fmt.name}
               {fmt.category === 'print' && (
-                <span className={`text-[10px] ${format.id === fmt.id ? 'text-white/70' : 'text-orange-500'}`}>PRINT</span>
+                <span className={`text-[10px] ${!avatarGeneratorMode && format.id === fmt.id ? 'text-white/70' : 'text-orange-500'}`}>PRINT</span>
               )}
             </button>
           ))}
+
+          {/* Avatar Generator special button */}
+          <button
+            onClick={() => setAvatarGeneratorMode(true)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border-2 transition-all ${
+              avatarGeneratorMode
+                ? 'bg-violet-600 border-violet-600 text-white shadow-md'
+                : 'bg-white border-gray-200 text-gray-700 hover:border-violet-400 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200'
+            }`}
+          >
+            <UserCircle2 className="h-4 w-4" />
+            Avatar Generator
+          </button>
         </div>
 
+        {/* ── Avatar Generator mode ───────────────────────────────────── */}
+        {avatarGeneratorMode && (
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg border p-5">
+            <AvatarGeneratorCanvas />
+          </div>
+        )}
+
         {/* ── Editor row ─────────────────────────────────────────────── */}
-        <div className="flex gap-3 items-start">
+        <div className={`flex gap-3 items-start ${avatarGeneratorMode ? 'hidden' : ''}`}>
 
           {/* ── Left toolbar ─────────────────────────────────────────── */}
           <div className="w-52 shrink-0 bg-white dark:bg-gray-900 rounded-2xl p-3 shadow-lg border space-y-3">
@@ -855,7 +882,7 @@ export default function Studio() {
         </div>
 
         {/* ── Library panel ──────────────────────────────────────────── */}
-        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg border overflow-hidden">
+        <div className={`bg-white dark:bg-gray-900 rounded-2xl shadow-lg border overflow-hidden ${avatarGeneratorMode ? 'hidden' : ''}`}>
           <div className="p-4 border-b bg-gradient-to-r from-orange-50 to-pink-50 dark:from-orange-950/30 dark:to-pink-950/30">
             <h2 className="text-lg font-bold text-orange-600 flex items-center gap-2">
               <ImageIcon className="h-5 w-5" /> Pop Art Element Libraries
@@ -916,7 +943,7 @@ export default function Studio() {
         </div>
 
         {/* ── Tips ────────────────────────────────────────────────────── */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className={`grid grid-cols-2 md:grid-cols-4 gap-3 ${avatarGeneratorMode ? 'hidden' : ''}`}>
           {[
             { icon: '🖱️', tip: 'Click an element in the library to add it to your canvas' },
             { icon: '↔️', tip: 'Drag the corner handles to resize a selected element' },
