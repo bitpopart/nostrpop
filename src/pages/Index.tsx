@@ -71,12 +71,14 @@ import {
   Bell,
   Bookmark,
   Share,
+  Smartphone,
 } from 'lucide-react';
 import type { NostrEvent, NostrMetadata } from '@nostrify/nostrify';
 import type { ArtworkData } from '@/lib/artTypes';
 import type { HomepageButton, GridTile, HomepageView } from '@/hooks/useHomepageSettings';
 import { nip19 } from 'nostr-tools';
 
+// Banner: Love PopArt — Open App icon, "Join the community" only
 const ADMIN_NPUB = 'npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz';
 const ADMIN_HEX = nip19.decode(ADMIN_NPUB).data as string;
 
@@ -1452,7 +1454,7 @@ const Index = () => {
               {/* Left: icon + text */}
               <div className="flex items-center gap-4 z-10">
                 <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300">
-                  <Heart className="h-6 w-6 text-white fill-white" />
+                  <Smartphone className="h-6 w-6 text-white" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
@@ -1460,11 +1462,11 @@ const Index = () => {
                       Love PopArt
                     </span>
                     <Badge className="bg-gradient-to-r from-pink-500 to-orange-500 text-white border-0 text-xs">
-                      Community App
+                      Open App
                     </Badge>
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-300 mt-0.5">
-                    Share, explore & celebrate pop art together — join the community
+                    Join the community
                   </p>
                 </div>
               </div>
