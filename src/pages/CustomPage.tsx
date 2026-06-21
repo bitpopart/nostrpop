@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSeoMeta } from '@unhead/react';
 import { usePage } from '@/hooks/usePages';
@@ -9,7 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ZapButton } from '@/components/ZapButton';
 import { MediaShowcaseBlock } from '@/components/pages/MediaShowcaseBlock';
 import type { MediaShowcaseType } from '@/components/pages/MediaShowcaseBlock';
-import { ArrowLeft, ExternalLink, Globe, Image as ImageIcon, Coffee } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Globe, Image as ImageIcon, Coffee, Loader2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
 // Admin pubkey (page author for Zap recipient)
@@ -24,8 +24,6 @@ const FILE_RE = /\.(pdf|zip|docx?|xlsx?|pptx?|mp4|mp3|png|jpe?g|gif|svg|webp|exe
 // Replaces the real href with "#" and stores the URL in data-dl so the browser
 // never navigates away. A small inline script handles the click via postMessage.
 function injectDownloadScript(html: string): string {
-  // Step 1 — rewrite <a href="...file" ...> or <a ... download ...> so href="#"
-  // and stash the real URL in data-dl="..."
   const rewritten = html.replace(
     /<a\s([^>]*)>/gi,
     (match, attrs: string) => {
@@ -34,16 +32,13 @@ function injectDownloadScript(html: string): string {
       const href = hrefMatch[1];
       const hasDownload = /\bdownload\b/i.test(attrs);
       if (!hasDownload && !FILE_RE.test(href)) return match;
-      // Replace href with "#", add data-dl with real URL
       const newAttrs = attrs
         .replace(/href=["'][^"']*["']/i, `href="#"`)
-        .replace(/\btarget=["'][^"']*["']/i, ''); // remove any target
+        .replace(/\btarget=["'][^"']*["']/i, '');
       return `<a ${newAttrs} data-dl="${href}">`;
     }
   );
 
-  // Step 2 — inject a tiny script that listens for clicks on [data-dl] and
-  // posts the URL to the parent, which fetches it as a blob
   const script = `<script>
 document.addEventListener('click',function(e){
   var a=e.target&&e.target.closest?e.target.closest('[data-dl]'):null;
@@ -69,11 +64,37 @@ interface ContentBlock {
   selectedMediaIds?: string[];
 }
 
+/** Branded loading overlay shown while an iframe is loading its content */
+function IframeLoadingOverlay({ visible }: { visible: boolean }) {
+  if (!visible) return null;
+  return (
+    <div
+      className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20 transition-opacity duration-500"
+      aria-label="Loading page…"
+    >
+      <img
+        src="/bitpopart-logo.png"
+        alt="BitPopArt"
+        className="h-14 w-auto opacity-80 animate-pulse"
+        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+      />
+      <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400">
+        <Loader2 className="h-5 w-5 animate-spin" />
+        <span className="text-sm font-medium">Loading page…</span>
+      </div>
+    </div>
+  );
+}
+
 export default function CustomPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { data: page, isLoading } = usePage(slug || '');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+
+  // Track whether the iframe has fired its onLoad event
+  const [iframeLoaded, setIframeLoaded] = useState(false);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
   // Detect remote HTML page (Blossom URL)
   const isRemoteHtml = !!(
@@ -89,7 +110,12 @@ export default function CustomPage() {
   const [fetchingHtml, setFetchingHtml] = useState(false);
   const fetchingUrlRef = useRef<string | null>(null);
 
-  // Fetch HTML from Blossom URL when needed
+  // Reset iframe loaded state whenever the page/URL changes
+  useEffect(() => {
+    setIframeLoaded(false);
+  }, [page?.brand_site]);
+
+  // Fetch HTML from Blossom URL when needed — start as soon as we know the URL
   useEffect(() => {
     if (!isRemoteHtml || !page?.brand_site) return;
     const url = page.brand_site;
@@ -104,8 +130,6 @@ export default function CustomPage() {
   }, [page?.brand_site, isRemoteHtml]);
 
   // Listen for download requests posted from inside the iframe.
-  // The iframe posts { type: '__download__', url, filename } — we fetch it
-  // as a blob and trigger a real download without any page navigation.
   useEffect(() => {
     const handler = async (e: MessageEvent) => {
       if (!e.data || e.data.type !== '__download__') return;
@@ -134,6 +158,10 @@ export default function CustomPage() {
     description: page?.description || '',
   });
 
+  const handleIframeLoad = useCallback(() => {
+    setIframeLoaded(true);
+  }, []);
+
   // ── All hooks above this line ──────────────────────────────────────────────
 
   const getContentBlocks = (): ContentBlock[] => {
@@ -145,7 +173,10 @@ export default function CustomPage() {
     return [{ id: '1', type: 'markdown', content: page.description, images: page.gallery_images || [] }];
   };
 
-  if (isLoading || (isRemoteHtml && fetchingHtml && !fetchedHtml)) {
+  // Only show the full-page skeleton while the Nostr query hasn't returned yet.
+  // Once we have page data (even partial/cached), we render the layout immediately
+  // and show an overlay on the iframe itself.
+  if (isLoading && !page) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20">
         <div className="container mx-auto px-4 py-12">
@@ -202,37 +233,59 @@ export default function CustomPage() {
     isRemoteHtml ? (fetchedHtml ?? undefined) :
     undefined;
 
-  // Render iframe — always uses srcDoc (with injected download bridge) for HTML pages
-  const renderBrandSiteIframe = (className = 'flex-1 w-full border-0') => {
+  // Whether the iframe is still waiting for its HTML content
+  const iframeIsLoading = !!(page.brand_site && (!htmlSrcDoc || !iframeLoaded));
+
+  // Render iframe — uses srcDoc for HTML pages (with injected download bridge),
+  // or src= for plain external URLs. Shows a branded overlay while loading.
+  const renderBrandSiteIframe = (wrapperClassName = 'flex-1 w-full relative', iframeClassName = 'w-full h-full border-0') => {
+    const showOverlay = !iframeLoaded;
+
     if (htmlSrcDoc) {
       return (
-        <iframe
-          srcDoc={injectDownloadScript(htmlSrcDoc)}
-          title={page.title}
-          className={className}
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads"
-        />
+        <div className={wrapperClassName} style={{ position: 'relative' }}>
+          <IframeLoadingOverlay visible={showOverlay} />
+          <iframe
+            ref={iframeRef}
+            srcDoc={injectDownloadScript(htmlSrcDoc)}
+            title={page.title}
+            className={iframeClassName}
+            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads"
+            onLoad={handleIframeLoad}
+          />
+        </div>
       );
     }
-    // Plain external website URL (not an HTML file)
+
+    // Plain external website URL (not an HTML file) — use src= directly (fastest)
     return (
-      <iframe
-        src={page.brand_site}
-        title={page.title}
-        className={className}
-        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads"
-      />
+      <div className={wrapperClassName} style={{ position: 'relative' }}>
+        <IframeLoadingOverlay visible={showOverlay} />
+        <iframe
+          ref={iframeRef}
+          src={page.brand_site}
+          title={page.title}
+          className={iframeClassName}
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads"
+          onLoad={handleIframeLoad}
+        />
+      </div>
     );
   };
 
   // Full-screen inline mode — HTML fills everything below the header menu
   if (page.brand_site && page.brand_site_inline) {
     return (
-      <div style={{ height: 'calc(100vh - 64px)' }}>
-        {renderBrandSiteIframe('w-full h-full border-0')}
+      <div style={{ height: 'calc(100vh - 64px)', position: 'relative' }}>
+        {renderBrandSiteIframe('w-full h-full relative', 'w-full h-full border-0')}
+        {floatingButtons}
       </div>
     );
   }
+
+  // While the remote HTML is still being fetched (first visit, no cache),
+  // show a lightweight branded "warming up" state instead of a blank card
+  const showHtmlFetchingState = isRemoteHtml && fetchingHtml && !fetchedHtml;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20">
@@ -280,7 +333,33 @@ export default function CustomPage() {
           {page.brand_site && !page.brand_site_inline && (
             <Card className="overflow-hidden">
               <CardContent className="p-0">
-                {renderBrandSiteIframe('w-full border-0 min-h-[600px]')}
+                {showHtmlFetchingState ? (
+                  /* Show a slim skeleton bar while HTML is being fetched from Blossom.
+                     The full card area is reserved so layout doesn't jump. */
+                  <div className="relative w-full min-h-[600px] flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20">
+                    <img
+                      src="/bitpopart-logo.png"
+                      alt="BitPopArt"
+                      className="h-14 w-auto opacity-70 animate-pulse"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                    />
+                    <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400">
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      <span className="text-sm font-medium">Loading page…</span>
+                    </div>
+                    {/* Reserve space with skeleton bars */}
+                    <div className="absolute inset-x-0 bottom-0 p-6 space-y-2 opacity-30">
+                      <Skeleton className="h-4 w-3/4" />
+                      <Skeleton className="h-4 w-1/2" />
+                      <Skeleton className="h-4 w-5/6" />
+                    </div>
+                  </div>
+                ) : (
+                  renderBrandSiteIframe(
+                    'w-full relative',
+                    `w-full border-0 min-h-[600px] ${iframeIsLoading ? 'opacity-0' : 'opacity-100 transition-opacity duration-500'}`
+                  )
+                )}
               </CardContent>
             </Card>
           )}

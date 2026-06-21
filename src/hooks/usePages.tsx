@@ -212,8 +212,10 @@ export function usePage(slug: string) {
 
   return useQuery({
     queryKey: ['page', slug],
-    staleTime: 0,
-    gcTime: 30000,
+    // Keep fresh data for 60 s — avoids a Nostr round-trip on quick back/forward
+    // navigation while still revalidating after a minute.
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
     refetchOnMount: true,
     enabled: !!slug,
     // Return localStorage immediately as initial data so the page never shows
