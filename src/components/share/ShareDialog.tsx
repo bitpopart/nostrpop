@@ -214,13 +214,30 @@ export function ShareDialog({
     try {
       // Ensure URL is absolute
       const absoluteUrl = url.startsWith('http') ? url : `https://bitpopart.com${url}`;
+
+      // Build an naddr link for addressable events (kind 30000–39999) so Nostr
+      // clients can render a rich preview and the link resolves correctly.
+      let nostrShareUrl = absoluteUrl;
+      if (eventRef && eventRef.kind >= 30000 && eventRef.kind < 40000 && eventRef.dTag) {
+        try {
+          const naddrEncoded = nip19.naddrEncode({
+            kind: eventRef.kind,
+            pubkey: eventRef.pubkey,
+            identifier: eventRef.dTag,
+          });
+          // Use the naddr-based site URL so it routes correctly when clicked
+          nostrShareUrl = `https://bitpopart.com/blog/${naddrEncoded}`;
+        } catch {
+          // If encoding fails, fall back to the plain URL
+        }
+      }
       
       // Create the share content
-      let shareContent = `${title}\n\n${absoluteUrl}`;
+      let shareContent = `${title}\n\n${nostrShareUrl}`;
 
       // Add the image link if available
       if (imageUrl) {
-        shareContent = `${title}\n\n${absoluteUrl}\n\n${imageUrl}`;
+        shareContent = `${title}\n\n${nostrShareUrl}\n\n${imageUrl}`;
       }
 
       // Add hashtags at the end
@@ -239,7 +256,8 @@ export function ShareDialog({
       if (eventRef) {
         tags.push(['e', eventRef.id, '', 'mention']);
         
-        // Add the d-tag reference if available
+        // Add the a-tag reference for addressable events — this is what Nostr
+        // clients use to render a rich card preview of the linked article.
         if (eventRef.dTag) {
           tags.push(['a', `${eventRef.kind}:${eventRef.pubkey}:${eventRef.dTag}`, '', 'mention']);
         }
@@ -400,18 +418,28 @@ export function ShareDialog({
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 space-y-3">
-                  <div className="font-medium">{title}</div>
-                  <div className="text-blue-600 dark:text-blue-400 text-sm break-all">
-                    {url.startsWith('http') ? url : `https://bitpopart.com${url}`}
-                  </div>
-                  {imageUrl && (
-                    <div className="text-blue-600 dark:text-blue-400 text-sm break-all">{imageUrl}</div>
-                  )}
-                  <div className="text-orange-600 dark:text-orange-400 text-sm">
-                    #{contentType} #{category ? category.toLowerCase().replace(/[^a-z0-9]/g, '') : contentType} #bitpopart
-                  </div>
-                </div>
+                {(() => {
+                  const absoluteUrl = url.startsWith('http') ? url : `https://bitpopart.com${url}`;
+                  let previewUrl = absoluteUrl;
+                  if (eventRef && eventRef.kind >= 30000 && eventRef.kind < 40000 && eventRef.dTag) {
+                    try {
+                      const naddrEncoded = nip19.naddrEncode({ kind: eventRef.kind, pubkey: eventRef.pubkey, identifier: eventRef.dTag });
+                      previewUrl = `https://bitpopart.com/blog/${naddrEncoded}`;
+                    } catch { /* keep absolute URL */ }
+                  }
+                  return (
+                    <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 space-y-3">
+                      <div className="font-medium">{title}</div>
+                      <div className="text-blue-600 dark:text-blue-400 text-sm break-all">{previewUrl}</div>
+                      {imageUrl && (
+                        <div className="text-blue-600 dark:text-blue-400 text-sm break-all">{imageUrl}</div>
+                      )}
+                      <div className="text-orange-600 dark:text-orange-400 text-sm">
+                        #{contentType} #{category ? category.toLowerCase().replace(/[^a-z0-9]/g, '') : contentType} #bitpopart
+                      </div>
+                    </div>
+                  );
+                })()}
               </CardContent>
             </Card>
 

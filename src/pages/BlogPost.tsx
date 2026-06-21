@@ -15,6 +15,38 @@ import { format } from 'date-fns';
 import type { NostrEvent } from '@nostrify/nostrify';
 import ReactMarkdown from 'react-markdown';
 import { ShareDialog } from '@/components/share/ShareDialog';
+import { nip19 } from 'nostr-tools';
+
+// Known blog author pubkey — used when resolving naddr references that embed it
+const BLOG_AUTHOR_PUBKEY = '43baaf0c28e6cfb195b17ee083e19eb3a4afdfac54d9b6baf170270ed193e34c';
+
+/**
+ * Decode the :articleId route param, which can be either:
+ *  - a plain d-tag string  (e.g. "blog-1782041934859")
+ *  - an naddr1... identifier (NIP-19 addressable event reference)
+ *
+ * Returns { dTag, pubkey } to use in the Nostr filter.
+ */
+function decodeArticleParam(articleId: string): { dTag: string; pubkey: string } | null {
+  if (!articleId) return null;
+
+  if (articleId.startsWith('naddr1')) {
+    try {
+      const decoded = nip19.decode(articleId);
+      if (decoded.type === 'naddr' && decoded.data.kind === 30023) {
+        return {
+          dTag: decoded.data.identifier,
+          pubkey: decoded.data.pubkey,
+        };
+      }
+    } catch {
+      // fall through to plain d-tag handling
+    }
+  }
+
+  // Plain d-tag — use the known blog author pubkey as a hint but don't require it
+  return { dTag: articleId, pubkey: BLOG_AUTHOR_PUBKEY };
+}
 
 // Content block types
 interface ContentBlock {
@@ -32,24 +64,37 @@ export default function BlogPost() {
   const { user } = useCurrentUser();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
+  // Decode the articleId — it may be a plain d-tag or an naddr1... identifier
+  const decoded = articleId ? decodeArticleParam(articleId) : null;
+  const dTag = decoded?.dTag ?? articleId ?? '';
+  const authorPubkey = decoded?.pubkey ?? BLOG_AUTHOR_PUBKEY;
+
   // Fetch the specific blog post
   const { data: post, isLoading } = useQuery({
-    queryKey: ['blog-post', articleId, user?.pubkey],
+    queryKey: ['blog-post', dTag, authorPubkey],
     queryFn: async (c) => {
-      if (!articleId) return null;
+      if (!dTag) return null;
       
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(5000)]);
       
-      // Query by d tag (identifier)
-      const filters = user?.pubkey
-        ? [{ kinds: [30023], authors: [user.pubkey], '#d': [articleId] }]
-        : [{ kinds: [30023], '#d': [articleId] }];
+      // Always query by known author + d-tag for a precise, fast lookup.
+      // Fall back to a broader search if the author-scoped query returns nothing.
+      const events = await nostr.query(
+        [{ kinds: [30023], authors: [authorPubkey], '#d': [dTag] }],
+        { signal }
+      );
 
-      const events = await nostr.query(filters, { signal });
-      return events[0] || null;
+      if (events.length > 0) return events[0];
+
+      // Fallback: search without restricting author (covers edge cases)
+      const fallback = await nostr.query(
+        [{ kinds: [30023], '#d': [dTag], limit: 5 }],
+        { signal }
+      );
+      return fallback[0] || null;
     },
-    enabled: !!articleId,
-    staleTime: 0,
+    enabled: !!dTag,
+    staleTime: 60_000,
   });
 
   const getContentBlocks = (): ContentBlock[] => {
@@ -140,7 +185,7 @@ export default function BlogPost() {
     ogImage: seoImage || 'https://bitpopart.com/bitpopart-logo.png',
     ogImageAlt: seoTitle || 'BitPopArt Blog Article',
     ogSiteName: 'BitPopArt',
-    ogUrl: `https://bitpopart.com/blog/${articleId}`,
+    ogUrl: `https://bitpopart.com/blog/${dTag}`,
     twitterCard: 'summary_large_image',
     twitterTitle: seoTitle ? `${seoTitle} - BitPopArt Blog` : 'Blog Post - BitPopArt',
     twitterDescription: seoSummary || (post ? post.content.slice(0, 160) : 'Read this article on BitPopArt'),
@@ -272,7 +317,7 @@ export default function BlogPost() {
                 <ShareDialog
                   title={title}
                   description={summary}
-                  url={`${window.location.origin}/blog/${articleId}`}
+                  url={`${window.location.origin}/blog/${dTag}`}
                   imageUrl={image}
                   category={postTags[0]}
                   contentType="blog"
@@ -280,7 +325,7 @@ export default function BlogPost() {
                     id: post.id,
                     kind: post.kind,
                     pubkey: post.pubkey,
-                    dTag: articleId
+                    dTag: dTag
                   }}
                 >
                   <Button
