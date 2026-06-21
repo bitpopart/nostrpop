@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { useIsAdmin } from '@/hooks/useIsAdmin';
+
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useAppMedia } from '@/hooks/useAppContent';
 import { useFreeDownloads } from '@/hooks/useFreeDownloads';
@@ -1054,7 +1054,6 @@ type CreateSubTab = 'canvas' | 'avatar';
 export default function AppPage() {
   const navigate = useNavigate();
   const { user, metadata } = useCurrentUser();
-  const isAdmin = useIsAdmin();
   const { getGradientStyle } = useThemeColors();
 
   // Active tab
@@ -1139,13 +1138,13 @@ export default function AppPage() {
       <div className="container mx-auto px-4 py-5 max-w-xl">
 
         {/* ── Admin shortcut ── */}
-        {isAdmin && (
-          <div className="flex justify-end mb-3">
-            <Button variant="outline" size="sm" onClick={() => navigate('/admin?tab=app')}>
+        <div className="flex justify-end mb-3">
+          <Link to="/admin?tab=app">
+            <Button variant="outline" size="sm">
               <Settings className="h-4 w-4 mr-1" /> Manage App Content
             </Button>
-          </div>
-        )}
+          </Link>
+        </div>
 
         {/* ══ HOME TAB ══════════════════════════════════════ */}
         {activeTab === 'home' && (
