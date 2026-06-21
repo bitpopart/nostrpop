@@ -26,6 +26,8 @@ import {
   PanelTop,
   Sparkles,
   Printer,
+  ChevronLeft,
+  ChevronRight,
   LayoutGrid,
   Smartphone,
   Monitor,
