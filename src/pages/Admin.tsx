@@ -101,6 +101,14 @@ const Admin = () => {
     robots: 'noindex, nofollow',
   });
 
+  // Sync activeTab when URL search params change (e.g. navigating to /admin?tab=app)
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
+
   useEffect(() => {
     // Redirect non-admin users to cards page
     if (user && !isAdmin) {
