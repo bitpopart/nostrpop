@@ -323,8 +323,6 @@ type CanvasEl = {
   x: number; y: number;
   width: number; height: number;
   src?: string;
-  // cached loaded HTMLImageElement so we don't reload every frame
-  imgEl?: HTMLImageElement;
   text?: string;
   fontSize?: number;
   color?: string;
@@ -338,7 +336,7 @@ type PointerMode =
   | { kind: 'resize'; id: string; startX: number; startY: number; origX: number; origY: number; origW: number; origH: number };
 
 const CANVAS_SIZE = 320;
-const HANDLE = 10; // corner-handle hit-area radius in canvas-space pixels
+const HANDLE = 12; // corner-handle hit-area radius in canvas-space pixels
 
 const POP_COLORS = [
   '#FF0080','#FF4500','#FFD700','#00FF41','#00BFFF','#FF69B4',
@@ -347,20 +345,33 @@ const POP_COLORS = [
   '#FFFFFF','#000000','#C0C0C0','#808080',
 ];
 
-// Draw a single frame onto the given canvas context
+// Draw a single frame — imgCache maps element id → loaded HTMLImageElement
 function drawFrame(
   ctx: CanvasRenderingContext2D,
   elements: CanvasEl[],
   selected: string | null,
   bgColor: string,
+  imgCache: Map<string, HTMLImageElement>,
 ) {
   ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
   ctx.fillStyle = bgColor;
   ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
 
   for (const el of elements) {
-    if (el.kind === 'image' && el.imgEl?.complete) {
-      ctx.drawImage(el.imgEl, el.x, el.y, el.width, el.height);
+    if (el.kind === 'image') {
+      const img = imgCache.get(el.id);
+      if (img?.complete && img.naturalWidth > 0) {
+        ctx.drawImage(img, el.x, el.y, el.width, el.height);
+      } else {
+        // Placeholder while loading
+        ctx.fillStyle = '#f0f0f0';
+        ctx.fillRect(el.x, el.y, el.width, el.height);
+        ctx.fillStyle = '#aaa';
+        ctx.font = '11px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Loading…', el.x + el.width / 2, el.y + el.height / 2);
+      }
     } else if (el.kind === 'text' && el.text) {
       const fs = el.fontSize || 28;
       ctx.font = `bold ${fs}px ${el.fontFamily || 'Impact'}`;
@@ -379,12 +390,11 @@ function drawFrame(
       ctx.strokeRect(el.x - 1, el.y - 1, el.width + 2, el.height + 2);
       ctx.setLineDash([]);
 
-      // Corner handles (SE only for images, both SE corners + font controls shown in UI for text)
       const corners = [
-        { cx: el.x + el.width, cy: el.y + el.height }, // SE
-        { cx: el.x,            cy: el.y + el.height }, // SW
-        { cx: el.x + el.width, cy: el.y             }, // NE
-        { cx: el.x,            cy: el.y             }, // NW
+        { cx: el.x + el.width, cy: el.y + el.height },
+        { cx: el.x,            cy: el.y + el.height },
+        { cx: el.x + el.width, cy: el.y             },
+        { cx: el.x,            cy: el.y             },
       ];
       corners.forEach(({ cx, cy }) => {
         ctx.fillStyle = '#FFFFFF';
@@ -409,37 +419,46 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
   const [bgColor, setBgColor] = useState('#FFFFFF');
   const [saved, setSaved] = useState(false);
 
-  // Keep a stable ref to elements+selected for use inside event handlers
-  const elRef = useRef<CanvasEl[]>(elements);
+  // Stable refs so event handlers always see latest values without stale closures
+  const elRef  = useRef<CanvasEl[]>(elements);
   const selRef = useRef<string | null>(selected);
-  const bgRef = useRef(bgColor);
-  useEffect(() => { elRef.current = elements; }, [elements]);
+  const bgRef  = useRef(bgColor);
+  useEffect(() => { elRef.current  = elements; }, [elements]);
   useEffect(() => { selRef.current = selected; }, [selected]);
-  useEffect(() => { bgRef.current = bgColor; }, [bgColor]);
+  useEffect(() => { bgRef.current  = bgColor;  }, [bgColor]);
+
+  // Image cache: id → loaded HTMLImageElement (lives outside React state)
+  const imgCache = useRef<Map<string, HTMLImageElement>>(new Map());
 
   const ptrRef = useRef<PointerMode>({ kind: 'idle' });
 
   const { data: libraries = [] } = useStudioLibraries();
-  const allImages = libraries.flatMap(lib =>
-    lib.images.slice(0, 8).map((img, i) => ({ id: `${lib.id}-${i}`, url: img.url, name: img.name }))
+  // Show ALL images from ALL libraries (no per-library cap)
+  const allLibImages = libraries.flatMap(lib =>
+    lib.images.map((img, i) => ({ id: `${lib.id}-${i}`, url: img.url, name: img.name }))
   );
 
-  // ── Animation loop ───────────────────────────────────────
-  const scheduleRedraw = useCallback(() => {
-    if (rafRef.current !== null) return;
+  // ── Redraw ───────────────────────────────────────────────
+  const redraw = useCallback((els?: CanvasEl[], sel?: string | null, bg?: string) => {
+    if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
     rafRef.current = requestAnimationFrame(() => {
       rafRef.current = null;
       const canvas = canvasRef.current;
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
-      drawFrame(ctx, elRef.current, selRef.current, bgRef.current);
+      drawFrame(
+        ctx,
+        els  ?? elRef.current,
+        sel  !== undefined ? sel  : selRef.current,
+        bg   ?? bgRef.current,
+        imgCache.current,
+      );
     });
   }, []);
 
-  useEffect(() => {
-    scheduleRedraw();
-  }, [elements, selected, bgColor, scheduleRedraw]);
+  useEffect(() => { redraw(elements, selected, bgColor); },
+    [elements, selected, bgColor, redraw]);
 
   useEffect(() => () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); }, []);
 
@@ -453,7 +472,6 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
     };
   };
 
-  // Returns 'resize' if (px,py) is within HANDLE px of any corner of el
   const hitCorner = (el: CanvasEl, px: number, py: number): boolean => {
     const corners = [
       { cx: el.x + el.width, cy: el.y + el.height },
@@ -473,15 +491,12 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
     const { x, y } = getPos(e);
     const els = elRef.current;
 
-    // Hit-test top → bottom
     for (let i = els.length - 1; i >= 0; i--) {
       const el = els[i];
-      // Corner resize handle?
       if (selRef.current === el.id && hitCorner(el, x, y)) {
         ptrRef.current = { kind: 'resize', id: el.id, startX: x, startY: y, origX: el.x, origY: el.y, origW: el.width, origH: el.height };
         return;
       }
-      // Body hit?
       if (x >= el.x && x <= el.x + el.width && y >= el.y && y <= el.y + el.height) {
         setSelected(el.id);
         selRef.current = el.id;
@@ -492,7 +507,7 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
     setSelected(null);
     selRef.current = null;
     ptrRef.current = { kind: 'idle' };
-    scheduleRedraw();
+    redraw(undefined, null);
   };
 
   const onPointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -512,16 +527,11 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
       setElements(prev => prev.map(el => {
         if (el.id !== ptr.id) return el;
         const newW = Math.max(20, ptr.origW + dx);
-        const newH = Math.max(12, ptr.origH + dy);
         if (el.kind === 'image') {
-          // Aspect-ratio locked: use larger delta axis
-          const ratio = ptr.origW / ptr.origH;
-          const byW = newW;
-          const byH = newW / ratio;
-          return { ...el, width: Math.round(byW), height: Math.round(byH) };
+          const ratio = ptr.origW / Math.max(1, ptr.origH);
+          return { ...el, width: Math.round(newW), height: Math.round(newW / ratio) };
         }
-        // For text: width only (height driven by fontSize)
-        return { ...el, width: Math.round(newW), height: Math.round(newH) };
+        return { ...el, width: Math.round(newW), height: Math.max(12, Math.round(ptr.origH + dy)) };
       }));
     }
   };
@@ -536,7 +546,7 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
     const id = `txt-${Date.now()}`;
     const el: CanvasEl = {
       id, kind: 'text',
-      x: 20, y: 100,
+      x: 20, y: 120,
       width: CANVAS_SIZE - 40, height: 40,
       text, fontSize: 32, color: '#FF0080', fontFamily: 'Impact',
     };
@@ -548,20 +558,51 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
 
   const addImage = useCallback((src: string) => {
     const id = `img-${Date.now()}`;
-    const imgEl = new window.Image();
-    imgEl.crossOrigin = 'anonymous';
-    imgEl.onload = () => {
-      const ratio = imgEl.naturalWidth / imgEl.naturalHeight;
-      const w = Math.min(180, CANVAS_SIZE * 0.55);
-      const h = w / ratio;
-      const el: CanvasEl = { id, kind: 'image', x: 20, y: 20, width: Math.round(w), height: Math.round(h), src, imgEl };
-      setElements(prev => [...prev, el]);
-      setSelected(id);
-      selRef.current = id;
-      setSaved(false);
+
+    // Show a placeholder element immediately so user sees something
+    const placeholder: CanvasEl = {
+      id, kind: 'image',
+      x: 20, y: 20, width: 120, height: 120, src,
     };
-    imgEl.src = src;
-  }, []);
+    setElements(prev => [...prev, placeholder]);
+    setSelected(id);
+    selRef.current = id;
+    setSaved(false);
+
+    // Load image — use a CORS proxy if direct load fails
+    const tryLoad = (url: string, usedProxy: boolean) => {
+      const imgEl = new window.Image();
+      // Only set crossOrigin for non-proxied urls to avoid CORS preflight issues
+      if (!usedProxy) imgEl.crossOrigin = 'anonymous';
+
+      imgEl.onload = () => {
+        imgCache.current.set(id, imgEl);
+        const ratio = imgEl.naturalWidth / Math.max(1, imgEl.naturalHeight);
+        const w = Math.min(160, CANVAS_SIZE * 0.5);
+        const h = w / ratio;
+        // Update the placeholder with real dimensions
+        setElements(prev => prev.map(el =>
+          el.id === id ? { ...el, width: Math.round(w), height: Math.round(h) } : el
+        ));
+        // Force redraw now the image is ready
+        redraw();
+      };
+
+      imgEl.onerror = () => {
+        if (!usedProxy) {
+          // Retry via CORS proxy
+          tryLoad(`https://proxy.shakespeare.diy/?url=${encodeURIComponent(url)}`, true);
+        } else {
+          // Give up — remove placeholder
+          setElements(prev => prev.filter(el => el.id !== id));
+        }
+      };
+
+      imgEl.src = url;
+    };
+
+    tryLoad(src, false);
+  }, [redraw]);
 
   const removeSelected = () => {
     if (!selRef.current) return;
@@ -618,7 +659,7 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
     offscreen.height = CANVAS_SIZE;
     const ctx = offscreen.getContext('2d');
     if (!ctx) return;
-    drawFrame(ctx, elRef.current, null, bgRef.current);
+    drawFrame(ctx, elRef.current, null, bgRef.current, imgCache.current);
     const dataUrl = offscreen.toDataURL('image/png');
     onSave(dataUrl, 'My BitPopArt Creation');
     setSaved(true);
@@ -747,21 +788,37 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
       </div>
 
       {/* Library images */}
-      {allImages.length > 0 && (
+      {allLibImages.length > 0 && (
         <div>
-          <p className="text-xs text-muted-foreground mb-1.5 font-medium">Add from Library</p>
+          <p className="text-xs text-muted-foreground mb-1.5 font-medium">
+            Add from Library
+            <span className="ml-1 text-orange-500 font-bold">({allLibImages.length})</span>
+          </p>
           <div className="flex gap-2 overflow-x-auto pb-1">
-            {allImages.map(asset => (
+            {allLibImages.map(asset => (
               <button
                 key={asset.id}
-                className="shrink-0 w-14 h-14 rounded-lg overflow-hidden border border-gray-200 hover:border-orange-400 transition-colors"
+                className="shrink-0 w-14 h-14 rounded-lg overflow-hidden border border-gray-200 hover:border-orange-400 transition-colors bg-gray-100"
                 onClick={() => addImage(asset.url)}
+                title={asset.name}
               >
-                <img src={asset.url} alt={asset.name} className="w-full h-full object-cover" />
+                <img
+                  src={asset.url}
+                  alt={asset.name}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                  onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                />
               </button>
             ))}
           </div>
         </div>
+      )}
+
+      {libraries.length === 0 && (
+        <p className="text-xs text-muted-foreground text-center py-1">
+          No library images yet — add images in Admin → Studio Libraries
+        </p>
       )}
 
       {/* Save button */}
