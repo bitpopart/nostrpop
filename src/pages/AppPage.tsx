@@ -323,13 +323,23 @@ type CanvasEl = {
   x: number; y: number;
   width: number; height: number;
   src?: string;
+  // cached loaded HTMLImageElement so we don't reload every frame
+  imgEl?: HTMLImageElement;
   text?: string;
   fontSize?: number;
   color?: string;
   fontFamily?: string;
 };
 
-const CANVAS_SIZE = 320; // pixels, square
+// Interaction state: what the pointer is doing
+type PointerMode =
+  | { kind: 'idle' }
+  | { kind: 'drag';   id: string; startX: number; startY: number; origX: number; origY: number }
+  | { kind: 'resize'; id: string; startX: number; startY: number; origX: number; origY: number; origW: number; origH: number };
+
+const CANVAS_SIZE = 320;
+const HANDLE = 10; // corner-handle hit-area radius in canvas-space pixels
+
 const POP_COLORS = [
   '#FF0080','#FF4500','#FFD700','#00FF41','#00BFFF','#FF69B4',
   '#FF1493','#FF6600','#FFFF00','#39FF14','#00FFFF','#BF00FF',
@@ -337,175 +347,388 @@ const POP_COLORS = [
   '#FFFFFF','#000000','#C0C0C0','#808080',
 ];
 
+// Draw a single frame onto the given canvas context
+function drawFrame(
+  ctx: CanvasRenderingContext2D,
+  elements: CanvasEl[],
+  selected: string | null,
+  bgColor: string,
+) {
+  ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+
+  for (const el of elements) {
+    if (el.kind === 'image' && el.imgEl?.complete) {
+      ctx.drawImage(el.imgEl, el.x, el.y, el.width, el.height);
+    } else if (el.kind === 'text' && el.text) {
+      const fs = el.fontSize || 28;
+      ctx.font = `bold ${fs}px ${el.fontFamily || 'Impact'}`;
+      ctx.fillStyle = el.color || '#FF0080';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      ctx.fillText(el.text, el.x, el.y, el.width);
+    }
+
+    // Selection frame + handles
+    if (selected === el.id) {
+      ctx.save();
+      ctx.strokeStyle = '#FF0080';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 3]);
+      ctx.strokeRect(el.x - 1, el.y - 1, el.width + 2, el.height + 2);
+      ctx.setLineDash([]);
+
+      // Corner handles (SE only for images, both SE corners + font controls shown in UI for text)
+      const corners = [
+        { cx: el.x + el.width, cy: el.y + el.height }, // SE
+        { cx: el.x,            cy: el.y + el.height }, // SW
+        { cx: el.x + el.width, cy: el.y             }, // NE
+        { cx: el.x,            cy: el.y             }, // NW
+      ];
+      corners.forEach(({ cx, cy }) => {
+        ctx.fillStyle = '#FFFFFF';
+        ctx.beginPath();
+        ctx.arc(cx, cy, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#FF0080';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      });
+      ctx.restore();
+    }
+  }
+}
+
 function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const rafRef = useRef<number | null>(null);
+
   const [elements, setElements] = useState<CanvasEl[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [bgColor, setBgColor] = useState('#FFFFFF');
-  const [tool, setTool] = useState<'select' | 'text'>('select');
   const [saved, setSaved] = useState(false);
-  const dragging = useRef<{ id: string; startX: number; startY: number; origX: number; origY: number } | null>(null);
+
+  // Keep a stable ref to elements+selected for use inside event handlers
+  const elRef = useRef<CanvasEl[]>(elements);
+  const selRef = useRef<string | null>(selected);
+  const bgRef = useRef(bgColor);
+  useEffect(() => { elRef.current = elements; }, [elements]);
+  useEffect(() => { selRef.current = selected; }, [selected]);
+  useEffect(() => { bgRef.current = bgColor; }, [bgColor]);
+
+  const ptrRef = useRef<PointerMode>({ kind: 'idle' });
 
   const { data: libraries = [] } = useStudioLibraries();
-
   const allImages = libraries.flatMap(lib =>
-    lib.images.slice(0, 6).map((img, i) => ({ id: `${lib.id}-${i}`, url: img.url, name: img.name }))
+    lib.images.slice(0, 8).map((img, i) => ({ id: `${lib.id}-${i}`, url: img.url, name: img.name }))
   );
 
-  // Redraw canvas
+  // ── Animation loop ───────────────────────────────────────
+  const scheduleRedraw = useCallback(() => {
+    if (rafRef.current !== null) return;
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = null;
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      drawFrame(ctx, elRef.current, selRef.current, bgRef.current);
+    });
+  }, []);
+
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    scheduleRedraw();
+  }, [elements, selected, bgColor, scheduleRedraw]);
 
-    ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
-    ctx.fillStyle = bgColor;
-    ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+  useEffect(() => () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); }, []);
 
-    for (const el of elements) {
-      if (el.kind === 'image' && el.src) {
-        const img = new window.Image();
-        img.crossOrigin = 'anonymous';
-        img.onload = () => {
-          ctx.drawImage(img, el.x, el.y, el.width, el.height);
-          if (selected === el.id) {
-            ctx.strokeStyle = '#FF0080';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(el.x, el.y, el.width, el.height);
-          }
-        };
-        img.src = el.src;
-      } else if (el.kind === 'text' && el.text) {
-        ctx.font = `${el.bold ? 'bold ' : ''}${el.fontSize || 24}px ${el.fontFamily || 'Impact'}`;
-        ctx.fillStyle = el.color || '#000000';
-        ctx.textAlign = 'center';
-        ctx.fillText(el.text, el.x + el.width / 2, el.y + (el.fontSize || 24));
-        if (selected === el.id) {
-          ctx.strokeStyle = '#FF0080';
-          ctx.lineWidth = 1;
-          ctx.strokeRect(el.x, el.y, el.width, el.height);
-        }
-      }
-    }
-  }, [elements, selected, bgColor]);
+  // ── Helpers ──────────────────────────────────────────────
 
-  const addText = () => {
-    const text = prompt('Enter text:');
-    if (!text) return;
-    const el: CanvasEl = {
-      id: `txt-${Date.now()}`,
-      kind: 'text',
-      x: 40, y: 40,
-      width: 240, height: 40,
-      text,
-      fontSize: 28,
-      color: '#FF0080',
-      fontFamily: 'Impact',
-    };
-    setElements(prev => [...prev, el]);
-    setSelected(el.id);
-  };
-
-  const addImage = (src: string) => {
-    const el: CanvasEl = {
-      id: `img-${Date.now()}`,
-      kind: 'image',
-      x: 40, y: 40,
-      width: 140, height: 140,
-      src,
-    };
-    setElements(prev => [...prev, el]);
-    setSelected(el.id);
-  };
-
-  const removeSelected = () => {
-    if (!selected) return;
-    setElements(prev => prev.filter(e => e.id !== selected));
-    setSelected(null);
-  };
-
-  const clear = () => { setElements([]); setSelected(null); setSaved(false); };
-
-  const getCanvasPos = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const getPos = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const rect = canvasRef.current!.getBoundingClientRect();
-    const scaleX = CANVAS_SIZE / rect.width;
-    const scaleY = CANVAS_SIZE / rect.height;
     return {
-      x: (e.clientX - rect.left) * scaleX,
-      y: (e.clientY - rect.top) * scaleY,
+      x: (e.clientX - rect.left) * (CANVAS_SIZE / rect.width),
+      y: (e.clientY - rect.top)  * (CANVAS_SIZE / rect.height),
     };
   };
 
-  const onMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const { x, y } = getCanvasPos(e);
-    // Hit test in reverse order (top element first)
-    for (let i = elements.length - 1; i >= 0; i--) {
-      const el = elements[i];
+  // Returns 'resize' if (px,py) is within HANDLE px of any corner of el
+  const hitCorner = (el: CanvasEl, px: number, py: number): boolean => {
+    const corners = [
+      { cx: el.x + el.width, cy: el.y + el.height },
+      { cx: el.x,            cy: el.y + el.height },
+      { cx: el.x + el.width, cy: el.y             },
+      { cx: el.x,            cy: el.y             },
+    ];
+    return corners.some(({ cx, cy }) =>
+      Math.abs(px - cx) <= HANDLE && Math.abs(py - cy) <= HANDLE
+    );
+  };
+
+  // ── Pointer events ───────────────────────────────────────
+
+  const onPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    e.currentTarget.setPointerCapture(e.pointerId);
+    const { x, y } = getPos(e);
+    const els = elRef.current;
+
+    // Hit-test top → bottom
+    for (let i = els.length - 1; i >= 0; i--) {
+      const el = els[i];
+      // Corner resize handle?
+      if (selRef.current === el.id && hitCorner(el, x, y)) {
+        ptrRef.current = { kind: 'resize', id: el.id, startX: x, startY: y, origX: el.x, origY: el.y, origW: el.width, origH: el.height };
+        return;
+      }
+      // Body hit?
       if (x >= el.x && x <= el.x + el.width && y >= el.y && y <= el.y + el.height) {
         setSelected(el.id);
-        dragging.current = { id: el.id, startX: x, startY: y, origX: el.x, origY: el.y };
+        selRef.current = el.id;
+        ptrRef.current = { kind: 'drag', id: el.id, startX: x, startY: y, origX: el.x, origY: el.y };
         return;
       }
     }
     setSelected(null);
+    selRef.current = null;
+    ptrRef.current = { kind: 'idle' };
+    scheduleRedraw();
   };
 
-  const onMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!dragging.current) return;
-    const { x, y } = getCanvasPos(e);
-    const dx = x - dragging.current.startX;
-    const dy = y - dragging.current.startY;
+  const onPointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    const ptr = ptrRef.current;
+    if (ptr.kind === 'idle') return;
+    const { x, y } = getPos(e);
+
+    if (ptr.kind === 'drag') {
+      const dx = x - ptr.startX;
+      const dy = y - ptr.startY;
+      setElements(prev => prev.map(el =>
+        el.id === ptr.id ? { ...el, x: ptr.origX + dx, y: ptr.origY + dy } : el
+      ));
+    } else if (ptr.kind === 'resize') {
+      const dx = x - ptr.startX;
+      const dy = y - ptr.startY;
+      setElements(prev => prev.map(el => {
+        if (el.id !== ptr.id) return el;
+        const newW = Math.max(20, ptr.origW + dx);
+        const newH = Math.max(12, ptr.origH + dy);
+        if (el.kind === 'image') {
+          // Aspect-ratio locked: use larger delta axis
+          const ratio = ptr.origW / ptr.origH;
+          const byW = newW;
+          const byH = newW / ratio;
+          return { ...el, width: Math.round(byW), height: Math.round(byH) };
+        }
+        // For text: width only (height driven by fontSize)
+        return { ...el, width: Math.round(newW), height: Math.round(newH) };
+      }));
+    }
+  };
+
+  const onPointerUp = () => { ptrRef.current = { kind: 'idle' }; };
+
+  // ── Element actions ──────────────────────────────────────
+
+  const addText = () => {
+    const text = prompt('Enter text:');
+    if (!text) return;
+    const id = `txt-${Date.now()}`;
+    const el: CanvasEl = {
+      id, kind: 'text',
+      x: 20, y: 100,
+      width: CANVAS_SIZE - 40, height: 40,
+      text, fontSize: 32, color: '#FF0080', fontFamily: 'Impact',
+    };
+    setElements(prev => [...prev, el]);
+    setSelected(id);
+    selRef.current = id;
+    setSaved(false);
+  };
+
+  const addImage = useCallback((src: string) => {
+    const id = `img-${Date.now()}`;
+    const imgEl = new window.Image();
+    imgEl.crossOrigin = 'anonymous';
+    imgEl.onload = () => {
+      const ratio = imgEl.naturalWidth / imgEl.naturalHeight;
+      const w = Math.min(180, CANVAS_SIZE * 0.55);
+      const h = w / ratio;
+      const el: CanvasEl = { id, kind: 'image', x: 20, y: 20, width: Math.round(w), height: Math.round(h), src, imgEl };
+      setElements(prev => [...prev, el]);
+      setSelected(id);
+      selRef.current = id;
+      setSaved(false);
+    };
+    imgEl.src = src;
+  }, []);
+
+  const removeSelected = () => {
+    if (!selRef.current) return;
+    setElements(prev => prev.filter(e => e.id !== selRef.current));
+    setSelected(null);
+    selRef.current = null;
+    setSaved(false);
+  };
+
+  const clear = () => {
+    setElements([]);
+    setSelected(null);
+    selRef.current = null;
+    setSaved(false);
+  };
+
+  // Scale selected element
+  const scaleSelected = (factor: number) => {
+    if (!selRef.current) return;
+    setElements(prev => prev.map(el => {
+      if (el.id !== selRef.current) return el;
+      if (el.kind === 'image') {
+        return { ...el, width: Math.round(el.width * factor), height: Math.round(el.height * factor) };
+      }
+      // text: adjust fontSize
+      return { ...el, fontSize: Math.max(8, Math.round((el.fontSize || 28) * factor)) };
+    }));
+    setSaved(false);
+  };
+
+  // Font size step for text
+  const changeFontSize = (delta: number) => {
+    if (!selRef.current) return;
+    setElements(prev => prev.map(el => {
+      if (el.id !== selRef.current || el.kind !== 'text') return el;
+      return { ...el, fontSize: Math.max(8, Math.min(120, (el.fontSize || 28) + delta)) };
+    }));
+    setSaved(false);
+  };
+
+  // Color picker for selected text
+  const changeTextColor = (color: string) => {
+    if (!selRef.current) return;
     setElements(prev => prev.map(el =>
-      el.id === dragging.current!.id
-        ? { ...el, x: dragging.current!.origX + dx, y: dragging.current!.origY + dy }
-        : el
+      el.id === selRef.current && el.kind === 'text' ? { ...el, color } : el
     ));
+    setSaved(false);
   };
 
-  const onMouseUp = () => { dragging.current = null; };
-
-  const exportCanvas = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    // Redraw synchronously for export
-    const ctx = canvas.getContext('2d');
+  const exportCanvas = useCallback(() => {
+    // Render a clean frame (no selection handles) for export
+    const offscreen = document.createElement('canvas');
+    offscreen.width = CANVAS_SIZE;
+    offscreen.height = CANVAS_SIZE;
+    const ctx = offscreen.getContext('2d');
     if (!ctx) return;
-    const dataUrl = canvas.toDataURL('image/png');
+    drawFrame(ctx, elRef.current, null, bgRef.current);
+    const dataUrl = offscreen.toDataURL('image/png');
     onSave(dataUrl, 'My BitPopArt Creation');
     setSaved(true);
-  };
+  }, [onSave]);
+
+  const selectedEl = elements.find(e => e.id === selected) ?? null;
 
   return (
     <div className="space-y-3">
       {/* Canvas */}
-      <div className="flex justify-center">
+      <div className="flex justify-center touch-none">
         <canvas
           ref={canvasRef}
           width={CANVAS_SIZE}
           height={CANVAS_SIZE}
-          className="rounded-xl border-2 border-orange-200 dark:border-orange-700 shadow-md cursor-crosshair"
-          style={{ width: '100%', maxWidth: CANVAS_SIZE, touchAction: 'none' }}
-          onMouseDown={onMouseDown}
-          onMouseMove={onMouseMove}
-          onMouseUp={onMouseUp}
-          onMouseLeave={onMouseUp}
+          className="rounded-xl border-2 border-orange-200 dark:border-orange-700 shadow-md w-full"
+          style={{ maxWidth: CANVAS_SIZE, touchAction: 'none', cursor: 'crosshair' }}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerLeave={onPointerUp}
         />
       </div>
 
-      {/* Tools */}
-      <div className="flex gap-2 flex-wrap justify-center">
-        <Button size="sm" variant="outline" className="gap-1" onClick={addText}>
-          <Type className="h-3.5 w-3.5" /> Add Text
-        </Button>
-        {selected && (
-          <Button size="sm" variant="destructive" className="gap-1" onClick={removeSelected}>
-            <Trash2 className="h-3.5 w-3.5" /> Remove
-          </Button>
-        )}
-        <Button size="sm" variant="outline" className="gap-1" onClick={clear}>
-          <RotateCcw className="h-3.5 w-3.5" /> Clear
-        </Button>
+      {/* ── Selection controls (shown only when something is selected) ── */}
+      {selectedEl && (
+        <div className="rounded-xl border border-pink-200 dark:border-pink-800 bg-pink-50 dark:bg-pink-900/20 p-3 space-y-2">
+          <p className="text-[10px] font-semibold text-pink-600 dark:text-pink-400 uppercase tracking-wider">
+            Selected: {selectedEl.kind === 'text' ? `"${selectedEl.text}"` : 'Image'}
+          </p>
+
+          {/* Scale controls — same for both image and text */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground w-10 shrink-0">Size</span>
+            <div className="flex gap-1.5">
+              <button
+                className="flex items-center justify-center w-8 h-8 rounded-lg border border-pink-300 bg-white dark:bg-gray-800 hover:bg-pink-50 transition-colors font-bold text-sm"
+                onClick={() => scaleSelected(0.85)}
+                title="Scale down"
+              >－</button>
+              <button
+                className="flex items-center justify-center w-8 h-8 rounded-lg border border-pink-300 bg-white dark:bg-gray-800 hover:bg-pink-50 transition-colors font-bold text-sm"
+                onClick={() => scaleSelected(1.18)}
+                title="Scale up"
+              >＋</button>
+            </div>
+
+            {/* Font size stepper for text */}
+            {selectedEl.kind === 'text' && (
+              <>
+                <span className="text-xs text-muted-foreground ml-2 shrink-0">Font</span>
+                <div className="flex items-center gap-1">
+                  <button
+                    className="flex items-center justify-center w-8 h-8 rounded-lg border border-pink-300 bg-white dark:bg-gray-800 hover:bg-pink-50 transition-colors font-bold text-sm"
+                    onClick={() => changeFontSize(-2)}
+                    title="Smaller font"
+                  >A−</button>
+                  <span className="text-xs w-7 text-center font-mono text-muted-foreground">{selectedEl.fontSize}</span>
+                  <button
+                    className="flex items-center justify-center w-8 h-8 rounded-lg border border-pink-300 bg-white dark:bg-gray-800 hover:bg-pink-50 transition-colors font-bold text-sm"
+                    onClick={() => changeFontSize(2)}
+                    title="Larger font"
+                  >A+</button>
+                </div>
+              </>
+            )}
+
+            {/* Delete */}
+            <button
+              className="ml-auto flex items-center justify-center w-8 h-8 rounded-lg border border-red-200 bg-red-50 dark:bg-red-900/30 hover:bg-red-100 text-red-500 transition-colors"
+              onClick={removeSelected}
+              title="Delete"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
+
+          {/* Text color picker */}
+          {selectedEl.kind === 'text' && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground w-10 shrink-0">Color</span>
+              <div className="flex flex-wrap gap-1">
+                {POP_COLORS.slice(0, 16).map(c => (
+                  <button
+                    key={c}
+                    className={`w-5 h-5 rounded-full border-2 transition-transform hover:scale-110 ${selectedEl.color === c ? 'border-gray-800 scale-110' : 'border-transparent'}`}
+                    style={{ background: c, boxShadow: c === '#FFFFFF' ? 'inset 0 0 0 1px #ccc' : undefined }}
+                    onClick={() => changeTextColor(c)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── General tools ── */}
+      <div className="flex gap-2 flex-wrap">
+        <button
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-orange-400 transition-colors text-sm font-semibold"
+          onClick={addText}
+        >
+          <Type className="h-4 w-4 stroke-[1.5]" /> Add Text
+        </button>
+        <button
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-red-400 hover:text-red-500 transition-colors text-sm font-semibold ml-auto"
+          onClick={clear}
+        >
+          <RotateCcw className="h-4 w-4 stroke-[1.5]" /> Clear
+        </button>
       </div>
 
       {/* BG Colors */}
@@ -531,7 +754,7 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
             {allImages.map(asset => (
               <button
                 key={asset.id}
-                className="shrink-0 w-14 h-14 rounded-lg overflow-hidden border hover:border-orange-400 transition-colors"
+                className="shrink-0 w-14 h-14 rounded-lg overflow-hidden border border-gray-200 hover:border-orange-400 transition-colors"
                 onClick={() => addImage(asset.url)}
               >
                 <img src={asset.url} alt={asset.name} className="w-full h-full object-cover" />
