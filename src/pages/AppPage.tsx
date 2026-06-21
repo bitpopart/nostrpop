@@ -737,17 +737,19 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
             </button>
           </div>
 
-          {/* Text color picker */}
+          {/* Text color picker — always includes white + black */}
           {selectedEl.kind === 'text' && (
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground w-10 shrink-0">Color</span>
               <div className="flex flex-wrap gap-1">
-                {POP_COLORS.slice(0, 16).map(c => (
+                {/* White + Black first, then pop colors */}
+                {['#FFFFFF', '#000000', ...POP_COLORS.filter(c => c !== '#FFFFFF' && c !== '#000000').slice(0, 14)].map(c => (
                   <button
                     key={c}
-                    className={`w-5 h-5 rounded-full border-2 transition-transform hover:scale-110 ${selectedEl.color === c ? 'border-gray-800 scale-110' : 'border-transparent'}`}
-                    style={{ background: c, boxShadow: c === '#FFFFFF' ? 'inset 0 0 0 1px #ccc' : undefined }}
+                    className={`w-5 h-5 rounded-full border-2 transition-transform hover:scale-110 ${selectedEl.color === c ? 'border-orange-500 scale-110' : 'border-transparent'}`}
+                    style={{ background: c, boxShadow: (c === '#FFFFFF' || c === '#000000') ? 'inset 0 0 0 1px #aaa' : undefined }}
                     onClick={() => changeTextColor(c)}
+                    title={c === '#FFFFFF' ? 'White' : c === '#000000' ? 'Black' : c}
                   />
                 ))}
               </div>
@@ -872,25 +874,113 @@ interface PrintItemCardProps {
 
 function PrintItemCard({ imageDataUrl, title, onClose }: PrintItemCardProps) {
   const { getGradientStyle } = useThemeColors();
+  const [downloading, setDownloading] = useState(false);
+  const [printing, setPrinting] = useState(false);
 
-  const handleDownloadItem = () => {
-    const a = document.createElement('a');
-    a.href = imageDataUrl;
-    a.download = deriveFilename(imageDataUrl.slice(0, 40), title);
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+  const isDataUrl = imageDataUrl.startsWith('data:');
+
+  // Resolve a Blob URL from either a data: URL or an external URL
+  const getBlob = async (): Promise<{ blob: Blob; ext: string }> => {
+    if (isDataUrl) {
+      // data:[mime];base64,...
+      const mime = imageDataUrl.split(';')[0].split(':')[1] || 'image/png';
+      const ext = mime === 'image/jpeg' ? 'jpg' : 'png';
+      const byteString = atob(imageDataUrl.split(',')[1]);
+      const arr = new Uint8Array(byteString.length);
+      for (let i = 0; i < byteString.length; i++) arr[i] = byteString.charCodeAt(i);
+      return { blob: new Blob([arr], { type: mime }), ext };
+    }
+    // External URL — fetch via CORS proxy if needed
+    const tryFetch = async (url: string) => {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res;
+    };
+    let res: Response;
+    try {
+      res = await tryFetch(imageDataUrl);
+    } catch {
+      res = await tryFetch(`https://proxy.shakespeare.diy/?url=${encodeURIComponent(imageDataUrl)}`);
+    }
+    const blob = await res.blob();
+    const ext = blob.type === 'image/jpeg' ? 'jpg' : 'png';
+    return { blob, ext };
   };
 
-  const handlePrint = () => {
-    const html = `<!DOCTYPE html><html><head><style>
-      @page{margin:0}body{margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#fff}
-      img{max-width:100%;max-height:100vh;object-fit:contain}
-    </style></head><body><img src="${imageDataUrl}" /></body>
-    <script>window.onload=function(){setTimeout(function(){window.print();},300);}<\/script></html>`;
-    const win = window.open('', '_blank');
-    win?.document.write(html);
-    win?.document.close();
+  const handleDownloadItem = async () => {
+    setDownloading(true);
+    try {
+      const { blob, ext } = await getBlob();
+      const safeName = (title || 'bitpopart').replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 60);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${safeName}.${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    } catch {
+      // Last resort: open in new tab
+      window.open(imageDataUrl, '_blank');
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const handlePrint = async () => {
+    setPrinting(true);
+    try {
+      // Try Web Share API first (works on mobile — shares the image)
+      if (navigator.share && navigator.canShare) {
+        try {
+          const { blob, ext } = await getBlob();
+          const safeName = (title || 'bitpopart').replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 60);
+          const file = new File([blob], `${safeName}.${ext}`, { type: blob.type });
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              title: title || 'BitPopArt',
+              files: [file],
+            });
+            setPrinting(false);
+            return;
+          }
+        } catch (shareErr) {
+          // User cancelled or share failed — fall through to print
+          if ((shareErr as Error)?.name === 'AbortError') { setPrinting(false); return; }
+        }
+      }
+
+      // Desktop: inject a hidden iframe and call print() on it
+      // This avoids popup blockers entirely
+      const src = isDataUrl
+        ? imageDataUrl
+        : imageDataUrl; // external URLs also work in iframe src
+
+      const iframe = document.createElement('iframe');
+      iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:0;';
+      iframe.srcdoc = `<!DOCTYPE html><html><head><style>
+        @page{margin:0}
+        *{margin:0;padding:0;box-sizing:border-box}
+        html,body{width:100%;height:100%;background:#fff;display:flex;align-items:center;justify-content:center}
+        img{max-width:100%;max-height:100%;object-fit:contain}
+      </style></head><body><img src="${src}" /></body></html>`;
+
+      document.body.appendChild(iframe);
+
+      iframe.onload = () => {
+        try {
+          iframe.contentWindow?.focus();
+          iframe.contentWindow?.print();
+        } catch {
+          // Fallback for external images blocked in iframe
+          window.print();
+        }
+        setTimeout(() => document.body.removeChild(iframe), 3000);
+      };
+    } finally {
+      setPrinting(false);
+    }
   };
 
   return (
@@ -913,14 +1003,22 @@ function PrintItemCard({ imageDataUrl, title, onClose }: PrintItemCardProps) {
 
       {/* Actions */}
       <div className="grid grid-cols-2 gap-3">
-        <Button className="gap-2 text-white border-0 font-semibold" style={getGradientStyle('primary') as React.CSSProperties} onClick={handleDownloadItem}>
-          <Download className="h-4 w-4" />
-          Download
-        </Button>
-        <Button variant="outline" className="gap-2 font-semibold" onClick={handlePrint}>
-          <Printer className="h-4 w-4" />
-          Print
-        </Button>
+        <button
+          disabled={downloading}
+          onClick={handleDownloadItem}
+          className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border text-teal-600 bg-teal-50 dark:bg-teal-900/30 border-teal-200 dark:border-teal-800 hover:shadow-sm transition-all font-semibold disabled:opacity-60"
+        >
+          <Download className="h-4 w-4 stroke-[1.5]" />
+          {downloading ? 'Saving…' : 'Download PNG'}
+        </button>
+        <button
+          disabled={printing}
+          onClick={handlePrint}
+          className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border text-rose-600 bg-rose-50 dark:bg-rose-900/30 border-rose-200 dark:border-rose-800 hover:shadow-sm transition-all font-semibold disabled:opacity-60"
+        >
+          <Printer className="h-4 w-4 stroke-[1.5]" />
+          {printing ? 'Opening…' : 'Print / Share'}
+        </button>
       </div>
 
       {/* Zap tip */}
