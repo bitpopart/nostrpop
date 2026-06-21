@@ -89,9 +89,9 @@ function AppOverview() {
         <div className="flex flex-col sm:flex-row gap-6 items-start">
           {/* App Icon */}
           <div className="flex-shrink-0">
-            <div className="w-24 h-24 rounded-2xl overflow-hidden shadow-lg ring-4 ring-orange-200 dark:ring-orange-800">
+            <div className="w-24 h-24 rounded-2xl overflow-hidden shadow-lg ring-4 ring-orange-200 dark:ring-orange-800 bg-red-500">
               <img
-                src="/fan-app-icon.png"
+                src="/App_icon.svg"
                 alt="BitPopArt Fan App Icon"
                 className="w-full h-full object-cover"
               />
@@ -672,7 +672,9 @@ export function FanAppPublishing() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Smartphone className="h-6 w-6 text-orange-600" />
+        <div className="w-10 h-10 rounded-xl overflow-hidden shadow-md ring-2 ring-orange-200 dark:ring-orange-800 bg-red-500 flex-shrink-0">
+          <img src="/App_icon.svg" alt="BitPopArt Fan App" className="w-full h-full object-cover" />
+        </div>
         <div>
           <h2 className="text-xl font-bold">Fan App Publishing</h2>
           <p className="text-sm text-muted-foreground">

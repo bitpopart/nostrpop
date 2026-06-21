@@ -29,6 +29,12 @@
   ],
   "icons": [
     {
+      "src": "/App_icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
       "src": "/fan-app-icon.png",
       "sizes": "512x512",
       "type": "image/png",
@@ -39,12 +45,6 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
-    },
-    {
-      "src": "/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
     },
     {
       "src": "/bitpopart-logo.png",
@@ -59,7 +59,7 @@
       "short_name": "Downloads",
       "description": "Browse free wallpapers, GIFs and art",
       "url": "/app",
-      "icons": [{ "src": "/fan-app-icon.png", "sizes": "512x512" }]
+      "icons": [{ "src": "/App_icon.svg", "sizes": "any", "type": "image/svg+xml" }]
     },
     {
       "name": "Art Gallery",
