@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useSeoMeta } from '@unhead/react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +12,7 @@ import { useAppMedia } from '@/hooks/useAppContent';
 import { useFreeDownloads } from '@/hooks/useFreeDownloads';
 import { useAnimations } from '@/hooks/useAnimations';
 import { useStudioLibraries } from '@/hooks/useStudioLibraries';
+import { useHomepageSettings } from '@/hooks/useHomepageSettings';
 import { ZapButton } from '@/components/ZapButton';
 import { getAdminPubkeyHex } from '@/lib/adminUtils';
 import { AvatarGeneratorCanvas } from '@/components/studio/AvatarGeneratorCanvas';
@@ -25,9 +26,7 @@ import {
   PanelTop,
   Sparkles,
   Printer,
-  ChevronLeft,
-  ChevronRight,
-  BookOpen,
+  LayoutGrid,
   Smartphone,
   Monitor,
   Palette,
@@ -35,6 +34,8 @@ import {
   RotateCcw,
   Type,
   Trash2,
+  PenLine,
+  Home,
 } from 'lucide-react';
 
 const ADMIN_PUBKEY = getAdminPubkeyHex();
@@ -179,72 +180,66 @@ const MEDIA_CATEGORIES: { id: MediaTab; label: string; icon: React.ReactNode; co
   { id: 'desktop', label: 'Desktop', icon: <Monitor className="h-5 w-5" />, color: 'text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30' },
 ];
 
-// ── Magazine Section ──────────────────────────────────────
+// ── Photo Grid (same as /homepage grid view) ─────────────
 
-function MagazineSection({ items, isLoading }: { items: CarouselItem[]; isLoading: boolean }) {
-  const navigate = useNavigate();
-  const VISIBLE = 3;
-  const [start, setStart] = useState(0);
+interface GridTileItem {
+  id: string;
+  imageUrl: string;
+  linkUrl: string;
+  alt?: string;
+  order: number;
+}
 
-  const pages = items.slice(start, start + VISIBLE);
-  const canPrev = start > 0;
-  const canNext = start + VISIBLE < items.length;
-
+function AppPhotoGrid({ tiles, isLoading }: { tiles: GridTileItem[]; isLoading: boolean }) {
   if (isLoading) {
     return (
-      <div className="flex gap-3">
-        {[0, 1, 2].map(i => (
-          <Skeleton key={i} className="flex-1 aspect-[3/4] rounded-xl" />
+      <div className="grid grid-cols-3 gap-1">
+        {[...Array(9)].map((_, i) => (
+          <Skeleton key={i} className="aspect-square rounded-sm" />
         ))}
       </div>
     );
   }
 
-  if (items.length === 0) {
+  if (tiles.length === 0) {
     return (
-      <div className="text-center py-8 text-muted-foreground text-sm">
-        <BookOpen className="h-8 w-8 mx-auto mb-2 opacity-30" />
-        No magazine pages yet — check back soon!
+      <div className="text-center py-10 text-muted-foreground text-sm space-y-2">
+        <LayoutGrid className="h-8 w-8 mx-auto opacity-20" />
+        <p>No tiles configured yet.</p>
+        <p className="text-xs">Add tiles in Homepage Settings → Photo Grid.</p>
       </div>
     );
   }
+
+  const sorted = [...tiles].sort((a, b) => a.order - b.order);
 
   return (
-    <div className="relative">
-      <div className="flex gap-3">
-        {pages.map(item => (
-          <div
-            key={item.id}
-            className="flex-1 relative rounded-xl overflow-hidden shadow-md cursor-pointer group"
-            style={{ aspectRatio: '3/4' }}
-            onClick={() => navigate('/art')}
-          >
+    <div className="grid grid-cols-3 gap-1">
+      {sorted.map(tile => {
+        const isExternal = tile.linkUrl.startsWith('http://') || tile.linkUrl.startsWith('https://');
+        const inner = (
+          <div className="relative aspect-square overflow-hidden bg-gray-200 dark:bg-gray-800 group rounded-sm">
             <img
-              src={item.image_url}
-              alt={item.title}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              src={tile.imageUrl}
+              alt={tile.alt || ''}
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
               loading="lazy"
+              onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200" />
           </div>
-        ))}
-        {/* Fill empty slots */}
-        {pages.length < VISIBLE && Array.from({ length: VISIBLE - pages.length }).map((_, i) => (
-          <div key={`empty-${i}`} className="flex-1 aspect-[3/4]" />
-        ))}
-      </div>
-      {/* Prev/Next */}
-      {(canPrev || canNext) && (
-        <div className="flex justify-between mt-3">
-          <Button variant="outline" size="sm" onClick={() => setStart(s => Math.max(0, s - VISIBLE))} disabled={!canPrev}>
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <span className="text-xs text-muted-foreground self-center">{start + 1}–{Math.min(start + VISIBLE, items.length)} of {items.length}</span>
-          <Button variant="outline" size="sm" onClick={() => setStart(s => s + VISIBLE)} disabled={!canNext}>
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-      )}
+        );
+
+        return isExternal ? (
+          <a key={tile.id} href={tile.linkUrl} target="_blank" rel="noopener noreferrer" className="block overflow-hidden rounded-sm">
+            {inner}
+          </a>
+        ) : (
+          <Link key={tile.id} to={tile.linkUrl} className="block overflow-hidden rounded-sm">
+            {inner}
+          </Link>
+        );
+      })}
     </div>
   );
 }
@@ -701,6 +696,10 @@ export default function AppPage() {
   const { data: freeDownloads = [], isLoading: freeLoading } = useFreeDownloads();
   const { data: animations = [], isLoading: animLoading } = useAnimations();
 
+  // Homepage grid tiles
+  const { data: homepageSettings, isLoading: gridLoading } = useHomepageSettings();
+  const gridTiles = homepageSettings?.gridTiles || [];
+
   // Merge ALL media for carousel
   const allMediaItems: CarouselItem[] = [
     ...wallpapers.map(m => ({ id: `wp-${m.id}`, image_url: m.image_url, title: m.title })),
@@ -807,19 +806,13 @@ export default function AppPage() {
               </div>
             </div>
 
-            {/* ── Magazine ── */}
+            {/* ── Photo Grid (same grid as homepage) ── */}
             <section>
               <div className="flex items-center gap-2 mb-3">
-                <BookOpen className="h-5 w-5 text-purple-600" />
-                <h2 className="text-lg font-bold">Magazine</h2>
-                <Badge variant="secondary" className="text-xs ml-auto cursor-pointer" onClick={() => navigate('/art')}>
-                  View all →
-                </Badge>
+                <LayoutGrid className="h-5 w-5 text-purple-600" />
+                <h2 className="text-lg font-bold">Gallery</h2>
               </div>
-              <MagazineSection
-                items={[...wallpapers, ...freeDownloads].slice(0, 12).map(m => ({ id: m.id, image_url: m.image_url, title: m.title }))}
-                isLoading={wpLoading && freeLoading}
-              />
+              <AppPhotoGrid tiles={gridTiles} isLoading={gridLoading} />
             </section>
 
           </div>
@@ -940,16 +933,15 @@ export default function AppPage() {
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-t border-gray-200 dark:border-gray-700 shadow-2xl">
         <div className="container mx-auto max-w-xl">
           <div className="flex">
-            {/* Home (implicit) */}
+
+            {/* Home */}
             <button
               className={`flex-1 flex flex-col items-center gap-1 py-3 transition-colors ${activeTab === 'home' ? 'text-orange-500' : 'text-muted-foreground hover:text-foreground'}`}
               onClick={() => setActiveTab('home')}
             >
-              <img
-                src={`${import.meta.env.BASE_URL || '/'}B-Funny_avatar_orange.svg`}
-                alt="Home"
-                className={`h-6 w-6 transition-transform ${activeTab === 'home' ? 'scale-110' : 'opacity-60'}`}
-              />
+              <div className={`p-1.5 rounded-lg transition-all ${activeTab === 'home' ? 'bg-orange-50 dark:bg-orange-900/30' : ''}`}>
+                <Home className={`h-5 w-5 ${activeTab === 'home' ? 'stroke-[2]' : 'stroke-[1.5]'}`} />
+              </div>
               <span className="text-[10px] font-semibold">Home</span>
             </button>
 
@@ -958,7 +950,9 @@ export default function AppPage() {
               className={`flex-1 flex flex-col items-center gap-1 py-3 transition-colors ${activeTab === 'create' ? 'text-orange-500' : 'text-muted-foreground hover:text-foreground'}`}
               onClick={() => setActiveTab('create')}
             >
-              <div className={`text-xl leading-none transition-transform ${activeTab === 'create' ? 'scale-125' : ''}`}>✍️</div>
+              <div className={`p-1.5 rounded-lg transition-all ${activeTab === 'create' ? 'bg-orange-50 dark:bg-orange-900/30' : ''}`}>
+                <PenLine className={`h-5 w-5 ${activeTab === 'create' ? 'stroke-[2]' : 'stroke-[1.5]'}`} />
+              </div>
               <span className="text-[10px] font-semibold">Create</span>
             </button>
 
@@ -967,7 +961,9 @@ export default function AppPage() {
               className={`flex-1 flex flex-col items-center gap-1 py-3 transition-colors ${activeTab === 'download' ? 'text-orange-500' : 'text-muted-foreground hover:text-foreground'}`}
               onClick={() => setActiveTab('download')}
             >
-              <div className={`text-xl leading-none transition-transform ${activeTab === 'download' ? 'scale-125' : ''}`}>⬇️</div>
+              <div className={`p-1.5 rounded-lg transition-all ${activeTab === 'download' ? 'bg-orange-50 dark:bg-orange-900/30' : ''}`}>
+                <Download className={`h-5 w-5 ${activeTab === 'download' ? 'stroke-[2]' : 'stroke-[1.5]'}`} />
+              </div>
               <span className="text-[10px] font-semibold">Download</span>
             </button>
 
@@ -977,11 +973,14 @@ export default function AppPage() {
               onClick={() => setActiveTab('print')}
             >
               {printItem && (
-                <span className="absolute top-2 right-[calc(50%-14px)] h-2 w-2 bg-orange-500 rounded-full animate-pulse" />
+                <span className="absolute top-2 right-[calc(50%-10px)] h-2 w-2 bg-orange-500 rounded-full" />
               )}
-              <div className={`text-xl leading-none transition-transform ${activeTab === 'print' ? 'scale-125' : ''}`}>🖨️</div>
+              <div className={`p-1.5 rounded-lg transition-all ${activeTab === 'print' ? 'bg-orange-50 dark:bg-orange-900/30' : ''}`}>
+                <Printer className={`h-5 w-5 ${activeTab === 'print' ? 'stroke-[2]' : 'stroke-[1.5]'}`} />
+              </div>
               <span className="text-[10px] font-semibold">Print</span>
             </button>
+
           </div>
         </div>
       </div>
