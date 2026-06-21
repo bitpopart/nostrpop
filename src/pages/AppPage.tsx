@@ -38,6 +38,7 @@ import {
   Trash2,
   PenLine,
   Home,
+  Zap,
 } from 'lucide-react';
 
 const ADMIN_PUBKEY = getAdminPubkeyHex();
@@ -541,13 +542,13 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
       )}
 
       {/* Save button */}
-      <Button
-        className="w-full gap-2 text-white border-0 font-bold"
-        style={{ background: 'linear-gradient(135deg, #FF0080, #FF4500)' } as React.CSSProperties}
+      <button
+        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border text-rose-600 bg-rose-50 dark:bg-rose-900/30 border-rose-200 dark:border-rose-800 hover:shadow-sm transition-all font-semibold"
         onClick={exportCanvas}
       >
-        {saved ? '✅ Saved! Get This' : '💾 Save & Get This'}
-      </Button>
+        <Printer className="h-4 w-4 stroke-[1.5]" />
+        {saved ? 'Saved — Get This' : 'Save & Get This'}
+      </button>
     </div>
   );
 }
@@ -559,26 +560,24 @@ function AvatarGenMini({ onGetThis }: { onGetThis: (dataUrl: string, title: stri
     <div className="space-y-3">
       <p className="text-sm text-muted-foreground text-center">Mix & match layers to create your unique avatar, then tap "Get This"!</p>
       <AvatarGeneratorCanvas />
-      <Button
-        className="w-full gap-2 text-white border-0 font-bold"
-        style={{ background: 'linear-gradient(135deg, #7C3AED, #6D28D9)' } as React.CSSProperties}
+      <button
+        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border text-rose-600 bg-rose-50 dark:bg-rose-900/30 border-rose-200 dark:border-rose-800 hover:shadow-sm transition-all font-semibold"
         onClick={() => {
-          // Pull the canvas element from the DOM if available
           const canvas = document.querySelector('canvas') as HTMLCanvasElement | null;
           if (canvas) {
             try {
               const dataUrl = canvas.toDataURL('image/png');
               onGetThis(dataUrl, 'My Avatar');
             } catch {
-              // Cross-origin fallback
               const img = document.querySelector('.avatar-preview-img') as HTMLImageElement | null;
               if (img?.src) onGetThis(img.src, 'My Avatar');
             }
           }
         }}
       >
-        🖨️ Get This Avatar
-      </Button>
+        <Printer className="h-4 w-4 stroke-[1.5]" />
+        Get This Avatar
+      </button>
     </div>
   );
 }
@@ -774,6 +773,58 @@ export default function AppPage() {
         {activeTab === 'home' && (
           <div className="space-y-6">
 
+            {/* ── Store download buttons ── */}
+            <div className="flex gap-2 justify-center">
+              {/* Zapstore */}
+              <a
+                href="#"
+                aria-disabled="true"
+                onClick={e => e.preventDefault()}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl border border-dashed border-orange-200 dark:border-orange-800 bg-orange-50/60 dark:bg-orange-900/10 opacity-50 cursor-not-allowed select-none"
+                title="Coming soon on Zapstore"
+              >
+                <Zap className="h-4 w-4 text-orange-500 stroke-[1.5]" />
+                <div className="text-left">
+                  <p className="text-[9px] text-muted-foreground leading-none">Coming soon</p>
+                  <p className="text-xs font-bold leading-tight text-orange-700 dark:text-orange-300">Zapstore</p>
+                </div>
+              </a>
+
+              {/* Google Play */}
+              <a
+                href="#"
+                aria-disabled="true"
+                onClick={e => e.preventDefault()}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl border border-dashed border-gray-200 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-800/30 opacity-50 cursor-not-allowed select-none"
+                title="Coming soon on Google Play"
+              >
+                <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M3.18 23.76c.37.21.8.22 1.2.03l12.1-6.93-2.59-2.6-10.71 9.5zm-1.43-19.9c-.11.27-.17.57-.17.9v18.48c0 .33.06.63.17.9l.08.08 10.35-10.35v-.24L1.83 3.78l-.08.08zM20.48 10.6l-2.84-1.63-2.9 2.9 2.9 2.9 2.85-1.63c.81-.47.81-1.57-.01-2.04zM4.38.21c-.4-.2-.83-.19-1.2.03l10.73 9.51 2.59-2.6L4.38.21z"/>
+                </svg>
+                <div className="text-left">
+                  <p className="text-[9px] text-muted-foreground leading-none">Coming soon</p>
+                  <p className="text-xs font-bold leading-tight">Google Play</p>
+                </div>
+              </a>
+
+              {/* App Store */}
+              <a
+                href="#"
+                aria-disabled="true"
+                onClick={e => e.preventDefault()}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl border border-dashed border-gray-200 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-800/30 opacity-50 cursor-not-allowed select-none"
+                title="Coming soon on App Store"
+              >
+                <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                </svg>
+                <div className="text-left">
+                  <p className="text-[9px] text-muted-foreground leading-none">Coming soon</p>
+                  <p className="text-xs font-bold leading-tight">App Store</p>
+                </div>
+              </a>
+            </div>
+
             {/* Header logo */}
             <div className="flex items-center gap-3">
               <img
@@ -823,21 +874,30 @@ export default function AppPage() {
         {/* ══ CREATE TAB ════════════════════════════════════ */}
         {activeTab === 'create' && (
           <div className="space-y-4">
-            <h2 className="text-xl font-extrabold gradient-header-text">Create</h2>
+
+            {/* Tab heading — icon-pill style */}
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-orange-600 bg-orange-50 dark:bg-orange-900/30 border-orange-200 dark:border-orange-800">
+                <PenLine className="h-5 w-5 stroke-[1.5]" />
+                <span className="text-sm font-bold">Create</span>
+              </div>
+            </div>
 
             {/* Sub-tabs */}
             <div className="flex gap-2 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl">
               <button
-                className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${createSubTab === 'canvas' ? 'bg-white dark:bg-gray-700 shadow text-orange-600' : 'text-muted-foreground'}`}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-semibold transition-all ${createSubTab === 'canvas' ? 'bg-white dark:bg-gray-700 shadow text-orange-600' : 'text-muted-foreground'}`}
                 onClick={() => setCreateSubTab('canvas')}
               >
-                ✍️ Canvas
+                <PenLine className="h-4 w-4 stroke-[1.5]" />
+                Canvas
               </button>
               <button
-                className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${createSubTab === 'avatar' ? 'bg-white dark:bg-gray-700 shadow text-violet-600' : 'text-muted-foreground'}`}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-semibold transition-all ${createSubTab === 'avatar' ? 'bg-white dark:bg-gray-700 shadow text-violet-600' : 'text-muted-foreground'}`}
                 onClick={() => setCreateSubTab('avatar')}
               >
-                🎭 Avatar Generator
+                <UserCircle2 className="h-4 w-4 stroke-[1.5]" />
+                Avatar Generator
               </button>
             </div>
 
@@ -854,7 +914,14 @@ export default function AppPage() {
         {/* ══ DOWNLOAD TAB ═════════════════════════════════ */}
         {activeTab === 'download' && (
           <div className="space-y-4">
-            <h2 className="text-xl font-extrabold gradient-header-text">Download</h2>
+
+            {/* Tab heading — icon-pill style */}
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-teal-600 bg-teal-50 dark:bg-teal-900/30 border-teal-200 dark:border-teal-800">
+                <Download className="h-5 w-5 stroke-[1.5]" />
+                <span className="text-sm font-bold">Download</span>
+              </div>
+            </div>
 
             {/* Category icon bar */}
             <div className="overflow-x-auto pb-1 -mx-4 px-4">
@@ -899,7 +966,14 @@ export default function AppPage() {
         {/* ══ PRINT TAB ════════════════════════════════════ */}
         {activeTab === 'print' && (
           <div className="space-y-4">
-            <h2 className="text-xl font-extrabold gradient-header-text">🖨️ Get This</h2>
+
+            {/* Tab heading — icon-pill style */}
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-rose-600 bg-rose-50 dark:bg-rose-900/30 border-rose-200 dark:border-rose-800">
+                <Printer className="h-5 w-5 stroke-[1.5]" />
+                <span className="text-sm font-bold">Get This</span>
+              </div>
+            </div>
 
             {printItem ? (
               <PrintItemCard
@@ -908,7 +982,7 @@ export default function AppPage() {
                 onClose={() => { setPrintItem(null); setActiveTab('home'); }}
               />
             ) : (
-              <div className="text-center py-16 space-y-4">
+              <div className="text-center py-16 space-y-5">
                 <Printer className="h-14 w-14 mx-auto text-gray-300" />
                 <p className="text-muted-foreground text-sm">
                   No item selected yet.
@@ -917,12 +991,20 @@ export default function AppPage() {
                   Create something on the canvas, generate an avatar, or tap <strong>"Get This"</strong> on any download item — it'll appear here ready to print or download!
                 </p>
                 <div className="flex gap-3 justify-center flex-wrap">
-                  <Button variant="outline" size="sm" onClick={() => setActiveTab('create')}>
-                    ✍️ Go Create
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => setActiveTab('download')}>
-                    ⬇️ Browse Downloads
-                  </Button>
+                  <button
+                    onClick={() => setActiveTab('create')}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-orange-600 bg-orange-50 dark:bg-orange-900/30 border-orange-200 dark:border-orange-800 hover:shadow-sm transition-all"
+                  >
+                    <PenLine className="h-4 w-4 stroke-[1.5]" />
+                    <span className="text-sm font-semibold">Go Create</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('download')}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-teal-600 bg-teal-50 dark:bg-teal-900/30 border-teal-200 dark:border-teal-800 hover:shadow-sm transition-all"
+                  >
+                    <Download className="h-4 w-4 stroke-[1.5]" />
+                    <span className="text-sm font-semibold">Browse Downloads</span>
+                  </button>
                 </div>
               </div>
             )}
