@@ -63,7 +63,7 @@ export function useAppWelcome() {
   });
 }
 
-export type AppMediaType = 'app-wallpaper' | 'app-gif' | 'app-avatar' | 'app-banner' | 'app-coloring-page' | 'app-desktop-wallpaper';
+export type AppMediaType = 'app-wallpaper' | 'app-gif' | 'app-avatar' | 'app-banner' | 'app-coloring-page' | 'app-desktop-wallpaper' | 'app-meme';
 
 /**
  * Fetch app media items (wallpapers, gifs, avatars, banners, coloring pages, or desktop wallpapers).
@@ -117,7 +117,7 @@ export function useAppMedia(type: AppMediaType) {
             if (!imageTag) return null;
 
             // Collect hashtags: all t-tags excluding system ones
-            const systemTypeTags = new Set(['app-wallpaper', 'app-gif', 'app-avatar', 'app-banner', 'app-coloring-page', 'app-desktop-wallpaper']);
+            const systemTypeTags = new Set(['app-wallpaper', 'app-gif', 'app-avatar', 'app-banner', 'app-coloring-page', 'app-desktop-wallpaper', 'app-meme']);
             const hashtags = event.tags
               .filter(([n, v]) => n === 't' && v && !systemTypeTags.has(v))
               .map(([, v]) => v);

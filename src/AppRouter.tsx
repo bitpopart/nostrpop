@@ -42,6 +42,7 @@ import Avatars from "./pages/Avatars";
 import Banners from "./pages/Banners";
 import ColoringPages from "./pages/ColoringPages";
 import DesktopWallpapers from "./pages/DesktopWallpapers";
+import Memes from "./pages/Memes";
 import AppPage from "./pages/AppPage";
 import PopPost from "./pages/PopPost";
 import Community from "./pages/Community";
@@ -105,6 +106,7 @@ export function AppRouter() {
         <Route path="/banners" element={<Layout><Banners /></Layout>} />
         <Route path="/coloring-pages" element={<Layout><ColoringPages /></Layout>} />
         <Route path="/desktop-wallpapers" element={<Layout><DesktopWallpapers /></Layout>} />
+        <Route path="/memes" element={<Layout><Memes /></Layout>} />
         <Route path="/app" element={<Layout><AppPage /></Layout>} />
         <Route path="/poppost" element={<Layout><PopPost /></Layout>} />
         <Route path="/community" element={<Layout><Community /></Layout>} />

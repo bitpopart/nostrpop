@@ -38,6 +38,7 @@ import {
   Smartphone,
   Palette,
   Monitor,
+  Laugh,
 } from 'lucide-react';
 
 // ── Preview rows constant ─────────────────────────────────
@@ -120,6 +121,16 @@ const SECTIONS: SectionDef[] = [
     icon: Palette,
     color: 'from-rose-500 to-pink-500',
     tabValue: 'app-coloring-pages',
+    accept: 'image/*',
+    aspectClass: 'aspect-square',
+  },
+  {
+    type: 'app-meme',
+    label: 'Meme',
+    labelPlural: 'Memes',
+    icon: Laugh,
+    color: 'from-yellow-500 to-orange-500',
+    tabValue: 'app-memes',
     accept: 'image/*',
     aspectClass: 'aspect-square',
   },

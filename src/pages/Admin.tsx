@@ -39,6 +39,7 @@ import { AvatarsAdmin } from '@/components/app/AvatarsAdmin';
 import { BannersAdmin } from '@/components/app/BannersAdmin';
 import { ColoringPagesAdmin } from '@/components/app/ColoringPagesAdmin';
 import { DesktopWallpapersAdmin } from '@/components/app/DesktopWallpapersAdmin';
+import { MemesAdmin } from '@/components/app/MemesAdmin';
 import { FanAppPublishing } from '@/components/app/FanAppPublishing';
 import { AnimationsManagement } from '@/components/animations/AnimationsManagement';
 import { StudioLibrariesAdmin } from '@/components/studio/StudioLibrariesAdmin';
@@ -84,6 +85,7 @@ import {
   ImageIcon,
   LayoutTemplate,
   LayoutGrid,
+  Laugh,
 } from 'lucide-react';
 
 const Admin = () => {
@@ -322,6 +324,14 @@ const Admin = () => {
       badge: 'App'
     },
     {
+      title: 'Memes',
+      description: 'Upload and manage Bitcoin pop art memes',
+      icon: Laugh,
+      color: 'from-yellow-500 to-orange-500',
+      action: () => setActiveTab('app-memes'),
+      badge: 'Memes'
+    },
+    {
       title: 'Publish Fan App',
       description: 'Publish to Apple, Google Play & Zapstore',
       icon: Upload,
@@ -477,6 +487,7 @@ const Admin = () => {
             <TabsTrigger value="app-banners">Banners</TabsTrigger>
             <TabsTrigger value="app-coloring-pages">Coloring Pages</TabsTrigger>
             <TabsTrigger value="app-desktop-wallpapers">Desktop WP</TabsTrigger>
+            <TabsTrigger value="app-memes">Memes</TabsTrigger>
             <TabsTrigger
               value="app-publish"
               className="flex items-center gap-1 text-orange-600 dark:text-orange-400 font-semibold"
@@ -1061,6 +1072,10 @@ const Admin = () => {
 
           <TabsContent value="app-desktop-wallpapers">
             <DesktopWallpapersAdmin onBack={() => setActiveTab('app')} />
+          </TabsContent>
+
+          <TabsContent value="app-memes">
+            <MemesAdmin onBack={() => setActiveTab('app')} />
           </TabsContent>
 
           <TabsContent value="app-publish">

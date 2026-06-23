@@ -1267,7 +1267,7 @@ export default function AppPage() {
                 onClick={() => setCreateSubTab('canvas')}
               >
                 <PenLine className="h-4 w-4 stroke-[1.5]" />
-                Canvas
+                Meme Creator
               </button>
               <button
                 className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-semibold transition-all ${createSubTab === 'avatar' ? 'bg-white dark:bg-gray-700 shadow text-violet-600' : 'text-muted-foreground'}`}

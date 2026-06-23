@@ -18,8 +18,8 @@ import {
   ChevronRight,
   Sparkles,
   Palette,
-  Monitor,
   Smartphone,
+  Laugh,
 } from 'lucide-react';
 import { ZapButton } from '@/components/ZapButton';
 import { getAdminPubkeyHex } from '@/lib/adminUtils';
@@ -195,7 +195,7 @@ export default function FreeGallery() {
   const { data: banners = [], isLoading: loadingBanners } = useAppMedia('app-banner');
   const { data: animations = [], isLoading: loadingAnimations } = useAnimations();
   const { data: coloringPages = [], isLoading: loadingColoring } = useAppMedia('app-coloring-page');
-  const { data: desktopWallpapers = [], isLoading: loadingDesktop } = useAppMedia('app-desktop-wallpaper');
+  const { data: memes = [], isLoading: loadingMemes } = useAppMedia('app-meme');
 
   useSeoMeta({
     title: 'Free Downloads - BitPopArt | Free Bitcoin Pop Art',
@@ -223,7 +223,7 @@ export default function FreeGallery() {
   const latestBanners = banners.slice(0, LIMIT);
   const latestAnimations = animations.slice(0, LIMIT);
   const latestColoring = coloringPages.slice(0, LIMIT);
-  const latestDesktop = desktopWallpapers.slice(0, LIMIT);
+  const latestMemes = memes.slice(0, LIMIT);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-orange-900/20">
@@ -260,7 +260,7 @@ export default function FreeGallery() {
             {[
               { label: 'Images', href: '/free/images', icon: <Gift className="h-4 w-4" />, color: 'text-green-700 dark:text-green-400', bg: 'bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30 border-green-200 dark:border-green-800', count: freeImages.length, loading: loadingFree },
               { label: 'Wallpapers', href: '/wallpapers', icon: <span className="flex items-center gap-0.5"><ImageIcon className="h-3.5 w-3.5" /><Smartphone className="h-3 w-3" /></span>, color: 'text-teal-700 dark:text-teal-400', bg: 'bg-teal-50 dark:bg-teal-900/20 hover:bg-teal-100 dark:hover:bg-teal-900/30 border-teal-200 dark:border-teal-800', count: wallpapers.length, loading: loadingWallpapers },
-              { label: 'Desktop', href: '/desktop-wallpapers', icon: <Monitor className="h-4 w-4" />, color: 'text-indigo-700 dark:text-indigo-400', bg: 'bg-indigo-50 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 border-indigo-200 dark:border-indigo-800', count: desktopWallpapers.length, loading: loadingDesktop },
+              { label: 'Memes', href: '/memes', icon: <Laugh className="h-4 w-4" />, color: 'text-yellow-700 dark:text-yellow-400', bg: 'bg-yellow-50 dark:bg-yellow-900/20 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 border-yellow-200 dark:border-yellow-800', count: memes.length, loading: loadingMemes },
               { label: 'Avatars', href: '/avatars', icon: <UserCircle2 className="h-4 w-4" />, color: 'text-violet-700 dark:text-violet-400', bg: 'bg-violet-50 dark:bg-violet-900/20 hover:bg-violet-100 dark:hover:bg-violet-900/30 border-violet-200 dark:border-violet-800', count: avatars.length, loading: loadingAvatars },
               { label: 'GIFs', href: '/gifs', icon: <Clapperboard className="h-4 w-4" />, color: 'text-amber-700 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 border-amber-200 dark:border-amber-800', count: gifs.length, loading: loadingGifs },
               { label: 'Animations', href: '/animations', icon: <Play className="h-4 w-4" />, color: 'text-orange-700 dark:text-orange-400', bg: 'bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30 border-orange-200 dark:border-orange-800', count: animations.length, loading: loadingAnimations },
@@ -510,55 +510,29 @@ export default function FreeGallery() {
           )}
         </section>
 
-        {/* ── Desktop Wallpapers section ── */}
+        {/* ── Memes section ── */}
         <section className="mb-10">
           <SectionHeader
-            icon={<Monitor className="h-4 w-4 text-indigo-600" />}
-            title="Desktop Wallpapers"
-            count={desktopWallpapers.length}
-            href="/desktop-wallpapers"
-            accentColor="bg-indigo-100 dark:bg-indigo-900/30"
+            icon={<Laugh className="h-4 w-4 text-yellow-600" />}
+            title="Memes"
+            count={memes.length}
+            href="/memes"
+            accentColor="bg-yellow-100 dark:bg-yellow-900/30"
           />
-          {loadingDesktop ? (
-            <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <Skeleton key={i} className="w-full aspect-video rounded-xl" />
-              ))}
-            </div>
-          ) : latestDesktop.length === 0 ? (
-            <EmptySection label="desktop wallpapers" />
+          {loadingMemes ? (
+            <SkeletonRow count={LIMIT} />
+          ) : latestMemes.length === 0 ? (
+            <EmptySection label="memes" />
           ) : (
-            <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-              {latestDesktop.map((item: AppMedia) => (
-                <div
+            <div className="grid gap-3 grid-cols-3 sm:grid-cols-4 lg:grid-cols-5">
+              {latestMemes.map((item: AppMedia) => (
+                <ImageCard
                   key={item.id}
-                  className="group relative rounded-xl overflow-hidden bg-white dark:bg-gray-800 shadow-md hover:shadow-xl transition-all duration-300"
-                >
-                  <Link to="/desktop-wallpapers" className="block">
-                    <img
-                      src={item.image_url}
-                      alt={item.title}
-                      className="w-full h-auto block group-hover:scale-[1.02] transition-transform duration-500 aspect-video object-cover"
-                      loading="lazy"
-                    />
-                    {item.title !== 'Untitled' && (
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <p className="text-white text-[11px] font-medium truncate">{item.title}</p>
-                      </div>
-                    )}
-                  </Link>
-                  <Button
-                    size="icon"
-                    className="absolute top-2 right-2 h-8 w-8 rounded-full shadow-lg text-white border-0 opacity-0 group-hover:opacity-100 transition-opacity z-10 bg-indigo-500 hover:bg-indigo-600"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      triggerDownload(item.image_url, deriveFilename(item.image_url, item.title));
-                    }}
-                    title="Download"
-                  >
-                    <Download className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
+                  imageUrl={item.image_url}
+                  title={item.title}
+                  href="/memes"
+                  onDownload={() => triggerDownload(item.image_url, deriveFilename(item.image_url, item.title))}
+                />
               ))}
             </div>
           )}
