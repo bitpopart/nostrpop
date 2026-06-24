@@ -357,6 +357,7 @@ export default function Wallpapers() {
                     title={lightbox.title}
                     imageUrl={lightbox.image_url}
                     hashtags={[...lightbox.hashtags, 'wallpaper', ...(isMobile ? [] : ['desktop'])]}
+                    pageUrl="https://www.bitpopart.com/wallpapers"
                   />
                   <Button
                     className="gap-2 text-white border-0 font-semibold shadow"

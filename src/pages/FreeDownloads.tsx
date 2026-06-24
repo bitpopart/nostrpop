@@ -541,6 +541,7 @@ export default function FreeDownloads() {
                     title={lightboxItem.title}
                     imageUrl={lightboxItem.image_url}
                     hashtags={['freedownload', 'freeart']}
+                    pageUrl="https://www.bitpopart.com/free/images"
                   />
                   <Button
                     className="gap-2 text-white border-0 font-semibold shadow"

@@ -253,6 +253,7 @@ export default function Banners() {
                     title={lightbox.title}
                     imageUrl={lightbox.image_url}
                     hashtags={[...lightbox.hashtags, 'banner', 'nostr']}
+                    pageUrl="https://www.bitpopart.com/banners"
                   />
                   <Button
                     className="gap-2 text-white border-0 font-semibold shadow"

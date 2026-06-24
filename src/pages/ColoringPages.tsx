@@ -245,6 +245,7 @@ export default function ColoringPages() {
                     title={lightbox.title}
                     imageUrl={lightbox.image_url}
                     hashtags={[...lightbox.hashtags, 'coloringpage', 'art']}
+                    pageUrl="https://www.bitpopart.com/coloring-pages"
                   />
                   <Button
                     className="gap-2 text-white border-0 font-semibold shadow"

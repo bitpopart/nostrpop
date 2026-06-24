@@ -245,6 +245,7 @@ export default function Memes() {
                     title={lightbox.title}
                     imageUrl={lightbox.image_url}
                     hashtags={[...lightbox.hashtags, 'meme', 'bitcoin']}
+                    pageUrl="https://www.bitpopart.com/memes"
                   />
                   <Button
                     className="gap-2 text-white border-0 font-semibold shadow"

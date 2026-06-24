@@ -3,6 +3,11 @@
  *
  * Share to Nostr dialog with a live post preview that shows exactly
  * how the note will look in Nostr clients (avatar, name, text, image).
+ *
+ * Features:
+ * - Default hashtags always include #bitpopart and #nostr
+ * - Optional page URL appended to the note (toggleable, clickable on Nostr)
+ * - Compose + Preview tabs
  */
 
 import { useState } from 'react';
@@ -21,12 +26,14 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useToast } from '@/hooks/useToast';
 import { genUserName } from '@/lib/genUserName';
-import { Share2, Loader2, Eye, Pencil } from 'lucide-react';
+import { Share2, Loader2, Eye, Pencil, Link, Link2Off } from 'lucide-react';
 
 interface ShareToNostrMediaDialogProps {
   title: string;
   imageUrl: string;
   hashtags?: string[];
+  /** URL of the page where this content lives — shown as a clickable link in the note */
+  pageUrl?: string;
   children?: React.ReactNode;
 }
 
@@ -34,6 +41,7 @@ export function ShareToNostrMediaDialog({
   title,
   imageUrl,
   hashtags = [],
+  pageUrl,
   children,
 }: ShareToNostrMediaDialogProps) {
   const { user, metadata } = useCurrentUser();
@@ -43,26 +51,53 @@ export function ShareToNostrMediaDialog({
   const [isOpen, setIsOpen] = useState(false);
   const [tab, setTab] = useState<'compose' | 'preview'>('compose');
   const [customText, setCustomText] = useState('');
+  const [includeUrl, setIncludeUrl] = useState(true);
 
-  // Deduplicated hashtag list
-  const baseHashtags = ['bitpopart', 'bitcoin', 'art', ...hashtags].filter(
+  // Always include #bitpopart and #nostr, then the caller's hashtags — deduplicated
+  const baseHashtags = ['bitpopart', 'nostr', 'bitcoin', 'art', ...hashtags].filter(
     (h, i, arr) => h && arr.indexOf(h) === i,
   );
   const hashtagLine = baseHashtags.map(h => `#${h}`).join(' ');
 
-  // Default note — title (if any), image URL inline, hashtags
-  const defaultText = [
-    title && title !== 'Untitled' ? title : '',
-    imageUrl,
-    hashtagLine,
-  ]
-    .filter(Boolean)
-    .join('\n\n');
+  // Build the default note text
+  const buildDefaultText = (withUrl: boolean) => {
+    const parts = [
+      title && title !== 'Untitled' ? title : '',
+      withUrl && pageUrl ? pageUrl : '',
+      imageUrl,
+      hashtagLine,
+    ].filter(Boolean);
+    return parts.join('\n\n');
+  };
 
+  const defaultText = buildDefaultText(includeUrl);
+
+  // When user edits manually we store that; otherwise derive from state
   const noteText = customText || defaultText;
 
+  // When the URL toggle changes, update the derived text (only if user hasn't customised)
+  const handleToggleUrl = () => {
+    if (customText) {
+      // User has edited — update their text directly
+      if (includeUrl && pageUrl) {
+        setCustomText(prev => prev.replace(new RegExp(`\n\n${escapeRegex(pageUrl)}`, 'g'), '').replace(new RegExp(`${escapeRegex(pageUrl)}\n\n`, 'g'), '').replace(new RegExp(escapeRegex(pageUrl), 'g'), '').trim());
+      } else if (!includeUrl && pageUrl) {
+        // Re-insert URL before the image URL line
+        setCustomText(prev => {
+          const lines = prev.split('\n\n');
+          const imgIdx = lines.findIndex(l => l.trim() === imageUrl);
+          if (imgIdx >= 0) {
+            lines.splice(imgIdx, 0, pageUrl);
+            return lines.join('\n\n');
+          }
+          return pageUrl + '\n\n' + prev;
+        });
+      }
+    }
+    setIncludeUrl(v => !v);
+  };
+
   // Derived for preview: split text into lines, strip the bare image URL line
-  // (since we show the image separately), render the rest as the "text" part
   const previewLines = noteText
     .split('\n')
     .map(l => l.trim())
@@ -77,6 +112,7 @@ export function ShareToNostrMediaDialog({
     if (!v) {
       setCustomText('');
       setTab('compose');
+      setIncludeUrl(true);
     }
   };
 
@@ -90,6 +126,11 @@ export function ShareToNostrMediaDialog({
       ...baseHashtags.map(h => ['t', h]),
     ];
 
+    // Add page URL as an 'r' reference tag so Nostr clients can surface it
+    if (includeUrl && pageUrl) {
+      tags.push(['r', pageUrl]);
+    }
+
     createEvent(
       { kind: 1, content: noteText, tags },
       {
@@ -101,6 +142,7 @@ export function ShareToNostrMediaDialog({
           setIsOpen(false);
           setCustomText('');
           setTab('compose');
+          setIncludeUrl(true);
         },
         onError: () => {
           toast({
@@ -193,6 +235,28 @@ export function ShareToNostrMediaDialog({
                 </p>
               </div>
 
+              {/* Page URL toggle */}
+              {pageUrl && (
+                <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl border bg-muted/30 dark:bg-muted/10">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-muted-foreground mb-0.5">Page link</p>
+                    <p className="text-xs text-blue-600 dark:text-blue-400 truncate font-mono">{pageUrl}</p>
+                  </div>
+                  <button
+                    onClick={handleToggleUrl}
+                    title={includeUrl ? 'Remove link from post' : 'Add link to post'}
+                    className={`shrink-0 flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-all ${
+                      includeUrl
+                        ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/50'
+                        : 'bg-gray-100 dark:bg-gray-800 text-muted-foreground hover:bg-gray-200 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    {includeUrl ? <Link className="h-3.5 w-3.5" /> : <Link2Off className="h-3.5 w-3.5" />}
+                    {includeUrl ? 'Included' : 'Removed'}
+                  </button>
+                </div>
+              )}
+
               {/* Hashtag chips */}
               <div className="space-y-1.5">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Hashtags</p>
@@ -249,6 +313,20 @@ export function ShareToNostrMediaDialog({
                 {/* Post body — text lines (without raw image URL) */}
                 <div className="px-4 pb-2 space-y-1">
                   {previewLines.map((line, i) => {
+                    // URL line → render as a clickable link (as Nostr clients do)
+                    if (/^https?:\/\//.test(line)) {
+                      return (
+                        <a
+                          key={i}
+                          href={line}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-blue-600 dark:text-blue-400 hover:underline leading-relaxed block break-all"
+                        >
+                          {line}
+                        </a>
+                      );
+                    }
                     // Hashtag line → coloured
                     if (line.startsWith('#') || line.split(' ').every(w => w.startsWith('#'))) {
                       return (
@@ -326,4 +404,10 @@ export function ShareToNostrMediaDialog({
       </DialogContent>
     </Dialog>
   );
+}
+
+// ── Helper ────────────────────────────────────────────────────────────────────
+
+function escapeRegex(str: string) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }

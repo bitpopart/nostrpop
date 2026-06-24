@@ -253,6 +253,7 @@ export default function Avatars() {
                     title={lightbox.title}
                     imageUrl={lightbox.image_url}
                     hashtags={[...lightbox.hashtags, 'avatar', 'pfp', 'nostr']}
+                    pageUrl="https://www.bitpopart.com/avatars"
                   />
                   <Button
                     className="flex-1 gap-2 text-white border-0 font-semibold shadow"
