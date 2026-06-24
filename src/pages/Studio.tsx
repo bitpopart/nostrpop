@@ -15,8 +15,9 @@ import {
   Type, Trash2, Download, Layers, RotateCcw, Copy,
   Palette, ImageIcon, Sticker, FileText, Monitor, SquareUser,
   LayoutTemplate, ChevronUp, ChevronDown, ZoomIn, ZoomOut,
-  UserCircle2, Shapes,
+  UserCircle2, Shapes, Smartphone, ArrowRight,
 } from 'lucide-react';
+import { useIsMobile } from '@/hooks/useIsMobile';
 import { useAppMedia } from '@/hooks/useAppContent';
 import { AvatarGeneratorCanvas } from '@/components/studio/AvatarGeneratorCanvas';
 import { ZapButton } from '@/components/ZapButton';
@@ -135,6 +136,7 @@ export default function Studio() {
 
   const { data: memeTemplates = [], isLoading: templatesLoading } = useAppMedia('app-meme-template');
   const { data: memeIcons = [], isLoading: iconsLoading } = useAppMedia('app-meme-icon');
+  const isMobile = useIsMobile();
 
   const newId = () => `el-${++idCounter.current}`;
 
@@ -549,6 +551,47 @@ export default function Studio() {
           </div>
         </div>
       </div>
+
+      {/* ── Mobile notice ─────────────────────────────────────────────── */}
+      {isMobile && (
+        <div className="bg-gradient-to-r from-yellow-400 via-orange-400 to-pink-400 px-4 py-4">
+          <div className="max-w-7xl mx-auto">
+            <div className="bg-white/95 dark:bg-gray-900/95 rounded-2xl shadow-lg p-4 flex flex-col gap-3">
+              <div className="flex items-start gap-3">
+                <div className="bg-orange-100 dark:bg-orange-900/40 rounded-xl p-2 shrink-0">
+                  <Monitor className="h-5 w-5 text-orange-600" />
+                </div>
+                <div>
+                  <p className="font-bold text-sm text-foreground">Studio works best on desktop</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    The Pop Art Studio needs a bigger screen for the canvas, tools and layers to shine. 
+                    Grab your laptop or desktop for the full experience!
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-r from-orange-50 to-pink-50 dark:from-orange-900/20 dark:to-pink-900/20 rounded-xl p-3 flex items-center gap-3 border border-orange-200 dark:border-orange-800">
+                <div className="bg-orange-500 rounded-lg p-2 shrink-0">
+                  <Smartphone className="h-4 w-4 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-foreground">Like to create memes? 😄</p>
+                  <p className="text-xs text-muted-foreground">
+                    The BitPopArt App is built for mobile — browse, create &amp; share memes on the go!
+                  </p>
+                </div>
+                <a
+                  href="/app"
+                  className="shrink-0 inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold transition-colors whitespace-nowrap shadow-sm"
+                >
+                  Open App
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="max-w-7xl mx-auto px-2 py-4 space-y-4">
         {/* ── Format picker ───────────────────────────────────────────── */}
