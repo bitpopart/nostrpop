@@ -325,7 +325,7 @@ export function ZapButton({
   if (!authorPubkey) return null;
 
   const finalLightningAddress = lightningAddress || metadata?.lud16 || metadata?.lud06 || GUEST_LIGHTNING_ADDRESS;
-  const guestLightningAddress = lightningAddress || GUEST_LIGHTNING_ADDRESS;
+  const guestLightningAddress = GUEST_LIGHTNING_ADDRESS;
 
   const { sendZap, isZapping, canZap } = useZap(finalLightningAddress);
 
