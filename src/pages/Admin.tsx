@@ -41,6 +41,7 @@ import { ColoringPagesAdmin } from '@/components/app/ColoringPagesAdmin';
 import { DesktopWallpapersAdmin } from '@/components/app/DesktopWallpapersAdmin';
 import { MemesAdmin } from '@/components/app/MemesAdmin';
 import { FanAppPublishing } from '@/components/app/FanAppPublishing';
+import { MediaUploader, MediaList } from '@/components/app/AppContentManagement';
 import { AnimationsManagement } from '@/components/animations/AnimationsManagement';
 import { StudioLibrariesAdmin } from '@/components/studio/StudioLibrariesAdmin';
 import { CardTemplatesAdmin } from '@/components/cards/CardTemplatesAdmin';
@@ -86,6 +87,7 @@ import {
   LayoutTemplate,
   LayoutGrid,
   Laugh,
+  Shapes,
 } from 'lucide-react';
 
 const Admin = () => {
@@ -324,8 +326,8 @@ const Admin = () => {
       badge: 'App'
     },
     {
-      title: 'Memes',
-      description: 'Upload and manage Bitcoin pop art memes',
+      title: 'Meme Creator',
+      description: 'Memes, canvas Templates & Icons for the Meme Creator in Pop Art Studio',
       icon: Laugh,
       color: 'from-yellow-500 to-orange-500',
       action: () => setActiveTab('app-memes'),
@@ -487,7 +489,18 @@ const Admin = () => {
             <TabsTrigger value="app-banners">Banners</TabsTrigger>
             <TabsTrigger value="app-coloring-pages">Coloring Pages</TabsTrigger>
             <TabsTrigger value="app-desktop-wallpapers">Desktop WP</TabsTrigger>
-            <TabsTrigger value="app-memes">Memes</TabsTrigger>
+            <TabsTrigger value="app-memes" className="flex items-center gap-1">
+              <Laugh className="h-3.5 w-3.5" />
+              Meme Creator
+            </TabsTrigger>
+            <TabsTrigger value="app-meme-templates" className="flex items-center gap-1 text-orange-600 dark:text-orange-400">
+              <LayoutTemplate className="h-3.5 w-3.5" />
+              Templates
+            </TabsTrigger>
+            <TabsTrigger value="app-meme-icons" className="flex items-center gap-1 text-pink-600 dark:text-pink-400">
+              <Shapes className="h-3.5 w-3.5" />
+              Icons
+            </TabsTrigger>
             <TabsTrigger
               value="app-publish"
               className="flex items-center gap-1 text-orange-600 dark:text-orange-400 font-semibold"
@@ -1076,6 +1089,65 @@ const Admin = () => {
 
           <TabsContent value="app-memes">
             <MemesAdmin onBack={() => setActiveTab('app')} />
+          </TabsContent>
+
+          <TabsContent value="app-meme-templates">
+            <div className="space-y-4">
+              <Button variant="ghost" size="sm" onClick={() => setActiveTab('app-memes')} className="gap-1.5">
+                <ArrowRight className="h-4 w-4 rotate-180" />
+                Back to Meme Creator
+              </Button>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <LayoutTemplate className="h-5 w-5 text-orange-600" />
+                    Meme Creator — Templates
+                  </CardTitle>
+                  <CardDescription>
+                    Upload background / canvas template images that appear in the <strong>"Templates"</strong> panel
+                    below the canvas in the Pop Art Studio Meme Creator. Users click a template to use it as
+                    their canvas background.
+                    <br />
+                    <span className="text-xs text-muted-foreground block mt-1">
+                      Recommended: square or landscape JPG/PNG at 1080×1080 px or larger.
+                    </span>
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <MediaUploader type="app-meme-template" label="Template" />
+                  <MediaList type="app-meme-template" />
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="app-meme-icons">
+            <div className="space-y-4">
+              <Button variant="ghost" size="sm" onClick={() => setActiveTab('app-memes')} className="gap-1.5">
+                <ArrowRight className="h-4 w-4 rotate-180" />
+                Back to Meme Creator
+              </Button>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Shapes className="h-5 w-5 text-pink-600" />
+                    Meme Creator — Icons
+                  </CardTitle>
+                  <CardDescription>
+                    Upload SVG (or PNG) icons that users can add as extra layers in the Meme Creator. They appear
+                    in the <strong>"Icons"</strong> tab of the element library in the Pop Art Studio.
+                    <br />
+                    <span className="text-xs text-muted-foreground block mt-1">
+                      Best format: SVG files for crisp scaling. PNG with transparent background also works.
+                    </span>
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <MediaUploader type="app-meme-icon" label="Icon" />
+                  <MediaList type="app-meme-icon" />
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           <TabsContent value="app-publish">

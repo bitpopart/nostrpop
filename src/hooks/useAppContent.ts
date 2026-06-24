@@ -63,7 +63,7 @@ export function useAppWelcome() {
   });
 }
 
-export type AppMediaType = 'app-wallpaper' | 'app-gif' | 'app-avatar' | 'app-banner' | 'app-coloring-page' | 'app-desktop-wallpaper' | 'app-meme';
+export type AppMediaType = 'app-wallpaper' | 'app-gif' | 'app-avatar' | 'app-banner' | 'app-coloring-page' | 'app-desktop-wallpaper' | 'app-meme' | 'app-meme-template' | 'app-meme-icon';
 
 /**
  * Fetch app media items (wallpapers, gifs, avatars, banners, coloring pages, or desktop wallpapers).
@@ -117,7 +117,7 @@ export function useAppMedia(type: AppMediaType) {
             if (!imageTag) return null;
 
             // Collect hashtags: all t-tags excluding system ones
-            const systemTypeTags = new Set(['app-wallpaper', 'app-gif', 'app-avatar', 'app-banner', 'app-coloring-page', 'app-desktop-wallpaper', 'app-meme']);
+            const systemTypeTags = new Set(['app-wallpaper', 'app-gif', 'app-avatar', 'app-banner', 'app-coloring-page', 'app-desktop-wallpaper', 'app-meme', 'app-meme-template', 'app-meme-icon']);
             const hashtags = event.tags
               .filter(([n, v]) => n === 't' && v && !systemTypeTags.has(v))
               .map(([, v]) => v);
@@ -204,7 +204,7 @@ export function usePublishAppMedia() {
 
       const dTag = `${type}-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
 
-      const systemTypeTags = new Set(['app-wallpaper', 'app-gif', 'app-avatar', 'app-banner', 'app-coloring-page', 'app-desktop-wallpaper']);
+      const systemTypeTags = new Set(['app-wallpaper', 'app-gif', 'app-avatar', 'app-banner', 'app-coloring-page', 'app-desktop-wallpaper', 'app-meme', 'app-meme-template', 'app-meme-icon']);
       const extraTags: string[][] = hashtags
         .filter(t => t && !systemTypeTags.has(t))
         .map(t => ['t', t]);
@@ -215,7 +215,10 @@ export function usePublishAppMedia() {
         type === 'app-avatar' ? 'Avatar' :
         type === 'app-banner' ? 'Header Banner' :
         type === 'app-coloring-page' ? 'Coloring Page' :
-        'Desktop Wallpaper';
+        type === 'app-desktop-wallpaper' ? 'Desktop Wallpaper' :
+        type === 'app-meme' ? 'Meme' :
+        type === 'app-meme-template' ? 'Meme Template' :
+        'Meme Icon';
 
       const event = {
         kind: 34019,
@@ -267,7 +270,7 @@ export function useUpdateAppMedia() {
     }) => {
       if (!user) throw new Error('Must be logged in');
 
-      const systemTypeTags = new Set(['app-wallpaper', 'app-gif', 'app-avatar', 'app-banner', 'app-coloring-page', 'app-desktop-wallpaper']);
+      const systemTypeTags = new Set(['app-wallpaper', 'app-gif', 'app-avatar', 'app-banner', 'app-coloring-page', 'app-desktop-wallpaper', 'app-meme', 'app-meme-template', 'app-meme-icon']);
       const extraTags: string[][] = hashtags
         .filter(t => t && !systemTypeTags.has(t))
         .map(t => ['t', t]);
@@ -278,7 +281,10 @@ export function useUpdateAppMedia() {
         type === 'app-avatar' ? 'Avatar' :
         type === 'app-banner' ? 'Header Banner' :
         type === 'app-coloring-page' ? 'Coloring Page' :
-        'Desktop Wallpaper';
+        type === 'app-desktop-wallpaper' ? 'Desktop Wallpaper' :
+        type === 'app-meme' ? 'Meme' :
+        type === 'app-meme-template' ? 'Meme Template' :
+        'Meme Icon';
 
       const event = {
         kind: 34019,

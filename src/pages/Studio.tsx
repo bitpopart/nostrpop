@@ -15,8 +15,9 @@ import {
   Type, Trash2, Download, Layers, RotateCcw, Copy,
   Palette, ImageIcon, Sticker, FileText, Monitor, SquareUser,
   LayoutTemplate, ChevronUp, ChevronDown, ZoomIn, ZoomOut,
-  UserCircle2,
+  UserCircle2, Shapes,
 } from 'lucide-react';
+import { useAppMedia } from '@/hooks/useAppContent';
 import { AvatarGeneratorCanvas } from '@/components/studio/AvatarGeneratorCanvas';
 import { ZapButton } from '@/components/ZapButton';
 import { getAdminPubkeyHex } from '@/lib/adminUtils';
@@ -132,6 +133,9 @@ export default function Studio() {
   const { data: libraries, isLoading: librariesLoading } = useStudioLibraries();
   const activeLibraries = (libraries ?? []).filter(l => l.name !== '__deleted__' && l.images.length > 0);
 
+  const { data: memeTemplates = [], isLoading: templatesLoading } = useAppMedia('app-meme-template');
+  const { data: memeIcons = [], isLoading: iconsLoading } = useAppMedia('app-meme-icon');
+
   const newId = () => `el-${++idCounter.current}`;
 
   const selected = elements.find(e => e.id === selectedId) ?? null;
@@ -163,6 +167,24 @@ export default function Studio() {
     return prev ?? z;
   });
   const handleZoomReset = () => setZoomLevel(1);
+
+  // ─── Set template as background image ────────────────────────────────
+  const handleSetTemplate = useCallback((src: string) => {
+    // Remove existing background image (first image element tagged as template)
+    setElements(prev => {
+      const withoutBg = prev.filter(el => el.id !== 'template-bg');
+      const bgEl: CanvasElement = {
+        id: 'template-bg',
+        kind: 'image',
+        src,
+        x: 0,
+        y: 0,
+        width: format.width,
+        height: format.height,
+      };
+      return [bgEl, ...withoutBg];
+    });
+  }, [format]);
 
   // ─── Add image element ────────────────────────────────────────────────
   const handleAddImage = useCallback((src: string) => {
@@ -899,16 +921,65 @@ export default function Studio() {
           </div>
         </div>
 
+        {/* ── Templates panel (below canvas) ──────────────────────────── */}
+        <div className={`bg-white dark:bg-gray-900 rounded-2xl shadow-lg border overflow-hidden ${avatarGeneratorMode ? 'hidden' : ''}`}>
+          <div className="p-4 border-b bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-950/30 dark:to-yellow-950/30">
+            <h2 className="text-lg font-bold text-orange-600 flex items-center gap-2">
+              <LayoutTemplate className="h-5 w-5" /> Templates
+            </h2>
+            <p className="text-xs text-muted-foreground mt-0.5">Click a template to use it as your canvas background. Your other elements remain on top.</p>
+          </div>
+
+          {templatesLoading ? (
+            <div className="p-4">
+              <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2">
+                {Array.from({length: 10}).map((_, i) => <Skeleton key={i} className="aspect-square rounded-lg" />)}
+              </div>
+            </div>
+          ) : memeTemplates.length === 0 ? (
+            <div className="p-8 text-center text-muted-foreground">
+              <LayoutTemplate className="h-10 w-10 mx-auto mb-2 opacity-20" />
+              <p className="text-sm font-medium">No templates yet</p>
+              <p className="text-xs mt-1">The admin will add meme canvas templates here.</p>
+            </div>
+          ) : (
+            <div className="p-4">
+              <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2">
+                {memeTemplates.map((tmpl) => (
+                  <button
+                    key={tmpl.id}
+                    title={tmpl.title !== 'Untitled' ? tmpl.title : 'Template'}
+                    onClick={() => handleSetTemplate(tmpl.image_url)}
+                    className="group aspect-square rounded-xl border-2 border-transparent hover:border-orange-400 bg-gray-50 dark:bg-gray-800 overflow-hidden transition-all hover:shadow-lg hover:scale-105 active:scale-95 relative"
+                  >
+                    <img
+                      src={tmpl.image_url}
+                      alt={tmpl.title}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                    {tmpl.title !== 'Untitled' && (
+                      <div className="absolute bottom-0 left-0 right-0 bg-black/60 px-1 py-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <p className="text-white text-[9px] truncate text-center">{tmpl.title}</p>
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* ── Library panel ──────────────────────────────────────────── */}
         <div className={`bg-white dark:bg-gray-900 rounded-2xl shadow-lg border overflow-hidden ${avatarGeneratorMode ? 'hidden' : ''}`}>
           <div className="p-4 border-b bg-gradient-to-r from-orange-50 to-pink-50 dark:from-orange-950/30 dark:to-pink-950/30">
             <h2 className="text-lg font-bold text-orange-600 flex items-center gap-2">
-              <ImageIcon className="h-5 w-5" /> Pop Art Element Libraries
+              <ImageIcon className="h-5 w-5" /> Add from Library
             </h2>
-            <p className="text-xs text-muted-foreground mt-0.5">Click any element to add it to your canvas. Use tabs to switch libraries.</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Click any element to add it as a layer on your canvas.</p>
           </div>
 
-          {librariesLoading ? (
+          {(librariesLoading && iconsLoading) ? (
             <div className="p-4 space-y-3">
               <div className="flex gap-2">
                 {[1,2,3].map(i => <Skeleton key={i} className="h-8 w-24 rounded-full" />)}
@@ -917,16 +988,28 @@ export default function Studio() {
                 {Array.from({length:16}).map((_,i) => <Skeleton key={i} className="aspect-square rounded-lg" />)}
               </div>
             </div>
-          ) : activeLibraries.length === 0 ? (
+          ) : (activeLibraries.length === 0 && memeIcons.length === 0) ? (
             <div className="p-10 text-center text-muted-foreground">
               <ImageIcon className="h-12 w-12 mx-auto mb-3 opacity-20" />
               <p className="text-sm font-medium">No element libraries yet</p>
               <p className="text-xs mt-1">The admin will upload pop art elements here — check back soon!</p>
             </div>
           ) : (
-            <Tabs defaultValue={activeLibraries[0]?.id}>
+            <Tabs defaultValue={memeIcons.length > 0 ? 'icons' : activeLibraries[0]?.id}>
               <div className="px-4 pt-3 pb-1 overflow-x-auto">
                 <TabsList className="inline-flex h-9 gap-1 bg-transparent p-0 flex-wrap">
+                  {/* Icons tab first (always shown if icons exist) */}
+                  {memeIcons.length > 0 && (
+                    <TabsTrigger
+                      value="icons"
+                      className="rounded-full px-4 py-1.5 text-xs font-semibold border data-[state=active]:bg-pink-500 data-[state=active]:text-white data-[state=active]:border-pink-500 border-gray-200 hover:border-pink-300 transition-all flex items-center gap-1"
+                    >
+                      <Shapes className="h-3.5 w-3.5" />
+                      Icons
+                      <span className="ml-1 opacity-60 text-[10px]">({memeIcons.length})</span>
+                    </TabsTrigger>
+                  )}
+                  {/* Studio library tabs */}
                   {activeLibraries.map(lib => (
                     <TabsTrigger
                       key={lib.id} value={lib.id}
@@ -938,6 +1021,28 @@ export default function Studio() {
                   ))}
                 </TabsList>
               </div>
+
+              {/* Icons content */}
+              {memeIcons.length > 0 && (
+                <TabsContent value="icons" className="p-4 mt-0">
+                  <ScrollArea className="h-48">
+                    <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-14 gap-2 pr-2">
+                      {memeIcons.map((icon) => (
+                        <button
+                          key={icon.id} title={icon.title !== 'Untitled' ? icon.title : 'Icon'}
+                          onClick={() => handleAddImage(icon.image_url)}
+                          className="group aspect-square rounded-xl border-2 border-transparent hover:border-pink-400 bg-gray-50 dark:bg-gray-800 overflow-hidden transition-all hover:shadow-lg hover:scale-110 active:scale-95"
+                        >
+                          <img src={icon.image_url} alt={icon.title} className="w-full h-full object-contain p-1.5 group-hover:scale-105 transition-transform" loading="lazy" />
+                        </button>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                  <p className="text-xs text-muted-foreground mt-2 italic">SVG &amp; PNG icons — add as canvas layers</p>
+                </TabsContent>
+              )}
+
+              {/* Studio library contents */}
               {activeLibraries.map(lib => (
                 <TabsContent key={lib.id} value={lib.id} className="p-4 mt-0">
                   <ScrollArea className="h-48">
@@ -963,9 +1068,9 @@ export default function Studio() {
         {/* ── Tips ────────────────────────────────────────────────────── */}
         <div className={`grid grid-cols-2 md:grid-cols-4 gap-3 ${avatarGeneratorMode ? 'hidden' : ''}`}>
           {[
-            { icon: '🖱️', tip: 'Click an element in the library to add it to your canvas' },
+            { icon: '🖼️', tip: 'Click a Template below the canvas to use it as your background' },
+            { icon: '🖱️', tip: 'Click an icon or element in the library to add it as a layer' },
             { icon: '↔️', tip: 'Drag the corner handles to resize a selected element' },
-            { icon: '🎨', tip: 'Select a text object then click a color to change it' },
             { icon: '💾', tip: 'Click "Download Design" to save your full design as a PNG' },
           ].map((t, i) => (
             <div key={i} className="flex items-start gap-2 bg-white dark:bg-gray-900 rounded-xl p-3 border text-xs text-muted-foreground">
