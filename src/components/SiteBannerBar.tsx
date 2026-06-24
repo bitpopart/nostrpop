@@ -36,7 +36,18 @@ export function SiteBannerBar() {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-center gap-3 py-2 flex-wrap">
           <span className="text-sm font-medium text-center">
-            {activeBanner.text}
+            {(() => {
+              const text = activeBanner.text;
+              const cutoff = ' — download now, no signup needed!';
+              const idx = text.indexOf(cutoff);
+              if (idx === -1) return text;
+              return (
+                <>
+                  {text.slice(0, idx)}
+                  <span className="hidden sm:inline">{cutoff}</span>
+                </>
+              );
+            })()}
           </span>
           {activeBanner.url && activeBanner.urlLabel && (
             isExternal ? (
