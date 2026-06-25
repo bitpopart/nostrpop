@@ -12,7 +12,6 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { useAppMedia } from '@/hooks/useAppContent';
 import { useFreeDownloads } from '@/hooks/useFreeDownloads';
 import { useAnimations } from '@/hooks/useAnimations';
-import { useStudioLibraries } from '@/hooks/useStudioLibraries';
 import { useHomepageSettings } from '@/hooks/useHomepageSettings';
 import { ZapButton } from '@/components/ZapButton';
 import { getAdminPubkeyHex } from '@/lib/adminUtils';
@@ -439,12 +438,7 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
 
   const ptrRef = useRef<PointerMode>({ kind: 'idle' });
 
-  const { data: libraries = [] } = useStudioLibraries();
-  // Show ALL images from ALL libraries (no per-library cap)
-  const allLibImages = libraries.flatMap(lib =>
-    lib.images.map((img, i) => ({ id: `${lib.id}-${i}`, url: img.url, name: img.name }))
-  );
-
+  const { data: memes = [], isLoading: memesLoading } = useAppMedia('app-meme');
   const { data: memeTemplates = [], isLoading: templatesLoading } = useAppMedia('app-meme-template');
   const { data: memeIcons = [], isLoading: iconsLoading } = useAppMedia('app-meme-icon');
 
@@ -809,8 +803,8 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
           >
             <Library className="h-3.5 w-3.5" />
             Library
-            {allLibImages.length > 0 && (
-              <span className="ml-0.5 text-orange-500 font-bold">({allLibImages.length})</span>
+            {memes.length > 0 && (
+              <span className="ml-0.5 text-orange-500 font-bold">({memes.length})</span>
             )}
           </button>
           <button
@@ -837,21 +831,25 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
 
         {/* Picker content */}
         <div className="p-3 bg-white dark:bg-gray-800">
-          {/* Add from Library */}
+          {/* Add from Library (memes) */}
           {pickerTab === 'library' && (
             <>
-              {allLibImages.length > 0 ? (
+              {memesLoading ? (
+                <div className="flex gap-2 pb-1">
+                  {[...Array(4)].map((_, i) => <Skeleton key={i} className="shrink-0 w-16 h-16 rounded-lg" />)}
+                </div>
+              ) : memes.length > 0 ? (
                 <div className="flex gap-2 overflow-x-auto pb-1">
-                  {allLibImages.map(asset => (
+                  {memes.map(meme => (
                     <button
-                      key={asset.id}
+                      key={meme.id}
                       className="shrink-0 w-16 h-16 rounded-lg overflow-hidden border border-gray-200 hover:border-orange-400 transition-colors bg-gray-100"
-                      onClick={() => addImage(asset.url)}
-                      title={asset.name}
+                      onClick={() => addImage(meme.image_url)}
+                      title={meme.title}
                     >
                       <img
-                        src={asset.url}
-                        alt={asset.name}
+                        src={meme.image_url}
+                        alt={meme.title}
                         className="w-full h-full object-cover"
                         loading="lazy"
                         onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
@@ -861,7 +859,7 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
                 </div>
               ) : (
                 <p className="text-xs text-muted-foreground text-center py-3">
-                  No library images yet — add images in Admin → Studio Libraries
+                  No memes yet — add memes in Admin → App Content
                 </p>
               )}
             </>
