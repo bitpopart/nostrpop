@@ -40,6 +40,9 @@ import {
   PenLine,
   Home,
   Zap,
+  Library,
+  LayoutTemplate,
+  Sticker,
 } from 'lucide-react';
 
 const ADMIN_PUBKEY = getAdminPubkeyHex();
@@ -411,6 +414,8 @@ function drawFrame(
   }
 }
 
+type MemePickerTab = 'library' | 'templates' | 'icons';
+
 function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number | null>(null);
@@ -419,6 +424,7 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
   const [selected, setSelected] = useState<string | null>(null);
   const [bgColor, setBgColor] = useState('#FFFFFF');
   const [saved, setSaved] = useState(false);
+  const [pickerTab, setPickerTab] = useState<MemePickerTab>('library');
 
   // Stable refs so event handlers always see latest values without stale closures
   const elRef  = useRef<CanvasEl[]>(elements);
@@ -438,6 +444,9 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
   const allLibImages = libraries.flatMap(lib =>
     lib.images.map((img, i) => ({ id: `${lib.id}-${i}`, url: img.url, name: img.name }))
   );
+
+  const { data: memeTemplates = [], isLoading: templatesLoading } = useAppMedia('app-meme-template');
+  const { data: memeIcons = [], isLoading: iconsLoading } = useAppMedia('app-meme-icon');
 
   // ── Redraw ───────────────────────────────────────────────
   const redraw = useCallback((els?: CanvasEl[], sel?: string | null, bg?: string) => {
@@ -790,39 +799,143 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
         </div>
       </div>
 
-      {/* Library images */}
-      {allLibImages.length > 0 && (
-        <div>
-          <p className="text-xs text-muted-foreground mb-1.5 font-medium">
-            Add from Library
-            <span className="ml-1 text-orange-500 font-bold">({allLibImages.length})</span>
-          </p>
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            {allLibImages.map(asset => (
-              <button
-                key={asset.id}
-                className="shrink-0 w-14 h-14 rounded-lg overflow-hidden border border-gray-200 hover:border-orange-400 transition-colors bg-gray-100"
-                onClick={() => addImage(asset.url)}
-                title={asset.name}
-              >
-                <img
-                  src={asset.url}
-                  alt={asset.name}
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                  onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-                />
-              </button>
-            ))}
-          </div>
+      {/* ── Image Picker: Library / Templates / Icons ── */}
+      <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        {/* Picker tab bar */}
+        <div className="flex border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+          <button
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold transition-colors ${pickerTab === 'library' ? 'bg-white dark:bg-gray-800 text-orange-600 border-b-2 border-orange-500' : 'text-muted-foreground hover:text-foreground'}`}
+            onClick={() => setPickerTab('library')}
+          >
+            <Library className="h-3.5 w-3.5" />
+            Library
+            {allLibImages.length > 0 && (
+              <span className="ml-0.5 text-orange-500 font-bold">({allLibImages.length})</span>
+            )}
+          </button>
+          <button
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold transition-colors ${pickerTab === 'templates' ? 'bg-white dark:bg-gray-800 text-purple-600 border-b-2 border-purple-500' : 'text-muted-foreground hover:text-foreground'}`}
+            onClick={() => setPickerTab('templates')}
+          >
+            <LayoutTemplate className="h-3.5 w-3.5" />
+            Templates
+            {memeTemplates.length > 0 && (
+              <span className="ml-0.5 text-purple-500 font-bold">({memeTemplates.length})</span>
+            )}
+          </button>
+          <button
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold transition-colors ${pickerTab === 'icons' ? 'bg-white dark:bg-gray-800 text-pink-600 border-b-2 border-pink-500' : 'text-muted-foreground hover:text-foreground'}`}
+            onClick={() => setPickerTab('icons')}
+          >
+            <Sticker className="h-3.5 w-3.5" />
+            Icons
+            {memeIcons.length > 0 && (
+              <span className="ml-0.5 text-pink-500 font-bold">({memeIcons.length})</span>
+            )}
+          </button>
         </div>
-      )}
 
-      {libraries.length === 0 && (
-        <p className="text-xs text-muted-foreground text-center py-1">
-          No library images yet — add images in Admin → Studio Libraries
-        </p>
-      )}
+        {/* Picker content */}
+        <div className="p-3 bg-white dark:bg-gray-800">
+          {/* Add from Library */}
+          {pickerTab === 'library' && (
+            <>
+              {allLibImages.length > 0 ? (
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {allLibImages.map(asset => (
+                    <button
+                      key={asset.id}
+                      className="shrink-0 w-16 h-16 rounded-lg overflow-hidden border border-gray-200 hover:border-orange-400 transition-colors bg-gray-100"
+                      onClick={() => addImage(asset.url)}
+                      title={asset.name}
+                    >
+                      <img
+                        src={asset.url}
+                        alt={asset.name}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                        onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                      />
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground text-center py-3">
+                  No library images yet — add images in Admin → Studio Libraries
+                </p>
+              )}
+            </>
+          )}
+
+          {/* Templates */}
+          {pickerTab === 'templates' && (
+            <>
+              {templatesLoading ? (
+                <div className="flex gap-2 pb-1">
+                  {[...Array(4)].map((_, i) => <Skeleton key={i} className="shrink-0 w-16 h-16 rounded-lg" />)}
+                </div>
+              ) : memeTemplates.length > 0 ? (
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {memeTemplates.map(tpl => (
+                    <button
+                      key={tpl.id}
+                      className="shrink-0 w-16 h-16 rounded-lg overflow-hidden border border-gray-200 hover:border-purple-400 transition-colors bg-gray-100"
+                      onClick={() => addImage(tpl.image_url)}
+                      title={tpl.title}
+                    >
+                      <img
+                        src={tpl.image_url}
+                        alt={tpl.title}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                        onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                      />
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground text-center py-3">
+                  No templates yet — add templates in Admin → App Content
+                </p>
+              )}
+            </>
+          )}
+
+          {/* Icons */}
+          {pickerTab === 'icons' && (
+            <>
+              {iconsLoading ? (
+                <div className="flex gap-2 pb-1">
+                  {[...Array(4)].map((_, i) => <Skeleton key={i} className="shrink-0 w-16 h-16 rounded-lg" />)}
+                </div>
+              ) : memeIcons.length > 0 ? (
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {memeIcons.map(icon => (
+                    <button
+                      key={icon.id}
+                      className="shrink-0 w-16 h-16 rounded-lg overflow-hidden border border-gray-200 hover:border-pink-400 transition-colors bg-gray-100"
+                      onClick={() => addImage(icon.image_url)}
+                      title={icon.title}
+                    >
+                      <img
+                        src={icon.image_url}
+                        alt={icon.title}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                        onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                      />
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground text-center py-3">
+                  No icons yet — add icons in Admin → App Content
+                </p>
+              )}
+            </>
+          )}
+        </div>
+      </div>
 
       {/* Save button */}
       <button
