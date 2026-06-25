@@ -1,9 +1,13 @@
 import { useNostr } from '@nostrify/react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { PageData, SocialMediaLink } from '@/lib/pageTypes';
+import { getAdminPubkeyHex } from '@/lib/adminUtils';
 
-const ADMIN_PUBKEY = '43baaf0c28e6cfb195b17ee083e19eb3a4afdfac54d9b6baf170270ed193e34c';
+const ADMIN_PUBKEY = getAdminPubkeyHex();
 const PAGES_STORAGE_KEY = 'bitpopart:pages';
+
+/** Shared relay timeout for page queries (ms) */
+const RELAY_TIMEOUT = 2000;
 
 /** Key for per-page body content (description / blocks JSON) */
 function pageBodyKey(slug: string) {
@@ -143,13 +147,14 @@ function eventToPageData(event: { id: string; pubkey: string; kind: number; cont
  */
 export function usePages() {
   const { nostr } = useNostr();
+  const queryClient = useQueryClient();
 
   return useQuery({
     queryKey: ['pages'],
-    staleTime: 0,
-    gcTime: 30000,
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
     queryFn: async (c) => {
-      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(4000)]);
+      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(RELAY_TIMEOUT)]);
 
       // Fetch from Nostr
       let nostrPages: PageData[] = [];
@@ -168,8 +173,16 @@ export function usePages() {
       const nostrIds = new Set(nostrPages.map(p => p.id));
       const localOnly = localPages.filter(p => !nostrIds.has(p.id));
 
-      return [...nostrPages, ...localOnly]
+      const merged = [...nostrPages, ...localOnly]
         .sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+
+      // Seed the per-page cache so navigating to /:slug renders instantly
+      // without a second relay round-trip.
+      for (const page of merged) {
+        queryClient.setQueryData(['page', page.id], page);
+      }
+
+      return merged;
     },
   });
 }
@@ -180,10 +193,10 @@ export function useFooterPages() {
 
   return useQuery({
     queryKey: ['footer-pages'],
-    staleTime: 0,
-    gcTime: 30000,
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
     queryFn: async (c) => {
-      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(4000)]);
+      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(RELAY_TIMEOUT)]);
 
       let nostrPages: PageData[] = [];
       try {
@@ -212,18 +225,18 @@ export function usePage(slug: string) {
 
   return useQuery({
     queryKey: ['page', slug],
-    // Keep fresh data for 60 s — avoids a Nostr round-trip on quick back/forward
-    // navigation while still revalidating after a minute.
+    // Serve cached/local data instantly and only revalidate after 60s. This
+    // avoids a blocking Nostr round-trip on every navigation. When data is
+    // stale, React Query refetches in the background while showing cached data.
     staleTime: 60_000,
     gcTime: 5 * 60_000,
-    refetchOnMount: true,
     enabled: !!slug,
     // Return localStorage immediately as initial data so the page never shows
-    // "not found" while waiting for the relay
+    // "not found" while waiting for the relay. Treated as fresh (no forced
+    // refetch) — the 60s staleTime governs background revalidation instead.
     initialData: () => loadPagesFromStorage().find(p => p.id === slug) ?? undefined,
-    initialDataUpdatedAt: 0, // treat as immediately stale so Nostr is still queried
     queryFn: async (c) => {
-      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(5000)]);
+      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(RELAY_TIMEOUT)]);
 
       // Try Nostr — it is the source of truth for all visitors
       try {
@@ -249,9 +262,9 @@ export function useSocialMediaLinks() {
 
   return useQuery({
     queryKey: ['social-media-links'],
-    staleTime: 10000,
+    staleTime: 60_000,
     queryFn: async (c) => {
-      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(3000)]);
+      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(RELAY_TIMEOUT)]);
       const events = await nostr.query(
         [{ kinds: [38176], authors: [ADMIN_PUBKEY], '#t': ['social-media'], limit: 20 }],
         { signal }

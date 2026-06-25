@@ -36,12 +36,16 @@ const queryClient = new QueryClient({
 const defaultConfig: AppConfig = {
   theme: "light",
   relayUrl: "wss://relay.ditto.pub",
+  imageProxy: "https://wsrv.nl",
 };
 
 const presetRelays = [
-  { url: 'wss://relay.ditto.pub', name: 'Ditto' },
-  { url: 'wss://relay.dreamith.to', name: 'Dreamith' },
-  { url: 'wss://relay.primal.net', name: 'Primal' },
+  // read+write: queried for content AND published to.
+  { url: 'wss://relay.ditto.pub', name: 'Ditto', read: true, write: true },
+  { url: 'wss://relay.dreamith.to', name: 'Dreamith', read: true, write: true },
+  // write-only: published to for wide distribution, but NOT queried for reads
+  // so a slow relay can't gate every query. (Ditto uses this same pattern.)
+  { url: 'wss://relay.primal.net', name: 'Primal', read: false, write: true },
 ];
 
 export function App() {

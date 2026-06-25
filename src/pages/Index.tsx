@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 
 import { useAuthor } from '@/hooks/useAuthor';
+import { useThumbnailUrl } from '@/hooks/useThumbnailUrl';
 import { useLatestAdminNotes } from '@/hooks/useAdminNotes';
 import { useLatestCards } from '@/hooks/useLatestCards';
 import { useArtworks } from '@/hooks/useArtworks';
@@ -468,6 +469,38 @@ function InterSectionButtons({ buttons }: { buttons: HomepageButton[] }) {
 }
 
 /** Pure image grid — no text, tiles link to their destination */
+function PhotoGridTile({ tile }: { tile: GridTile }) {
+  const [loaded, setLoaded] = useState(false);
+  const [errored, setErrored] = useState(false);
+  const thumbnail = useThumbnailUrl();
+
+  return (
+    <div className="relative aspect-square overflow-hidden bg-gray-200 dark:bg-gray-800 group">
+      {/* Skeleton shown until the image has actually downloaded */}
+      {!loaded && !errored && (
+        <Skeleton className="absolute inset-0 h-full w-full" />
+      )}
+      <img
+        src={thumbnail(tile.imageUrl, 400)}
+        alt={tile.alt || ''}
+        className={`w-full h-full object-cover transition-all duration-300 group-hover:scale-105 ${
+          loaded ? 'opacity-100' : 'opacity-0'
+        }`}
+        loading="lazy"
+        ref={(el) => {
+          // If the image is already cached, onLoad may have fired before React
+          // attached the handler — reconcile immediately.
+          if (el?.complete && el.naturalWidth > 0 && !loaded) setLoaded(true);
+        }}
+        onLoad={() => setLoaded(true)}
+        onError={() => setErrored(true)}
+      />
+      {/* subtle overlay on hover */}
+      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200" />
+    </div>
+  );
+}
+
 function PhotoGrid({ tiles }: { tiles: GridTile[] }) {
   if (tiles.length === 0) {
     return (
@@ -484,21 +517,7 @@ function PhotoGrid({ tiles }: { tiles: GridTile[] }) {
     <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-1 sm:gap-1.5">
       {sorted.map(tile => {
         const isExternal = tile.linkUrl.startsWith('http://') || tile.linkUrl.startsWith('https://');
-        const inner = (
-          <div className="relative aspect-square overflow-hidden bg-gray-200 dark:bg-gray-800 group">
-            <img
-              src={tile.imageUrl}
-              alt={tile.alt || ''}
-              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-              loading="lazy"
-              onError={e => {
-                (e.currentTarget as HTMLImageElement).style.display = 'none';
-              }}
-            />
-            {/* subtle overlay on hover */}
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200" />
-          </div>
-        );
+        const inner = <PhotoGridTile tile={tile} />;
 
         return isExternal ? (
           <a key={tile.id} href={tile.linkUrl} target="_blank" rel="noopener noreferrer" className="block rounded-sm overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500">
@@ -541,6 +560,32 @@ function ThumbnailSkeleton() {
   );
 }
 
+/**
+ * Skeleton shown while homepage settings load. Until settings arrive we don't
+ * know which sections are enabled, so the gallery would otherwise render as a
+ * blank page that suddenly pops in. This reserves the layout with a couple of
+ * section placeholders so the cold start shows a loading state instead.
+ */
+function HomepageSectionsSkeleton() {
+  return (
+    <div className="space-y-16">
+      {[0, 1].map((section) => (
+        <div key={section} className="mb-16">
+          <div className="mb-8 space-y-2">
+            <Skeleton className="h-8 w-64" />
+            <Skeleton className="h-4 w-96 max-w-full" />
+          </div>
+          <div className="grid md:grid-cols-3 gap-6">
+            {[0, 1, 2].map((i) => (
+              <ThumbnailSkeleton key={i} />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 
 
 const Index = () => {
@@ -570,6 +615,11 @@ const Index = () => {
 
   // Get ordered section IDs based on settings
   const orderedSections = sections?.filter(s => s.enabled).map(s => s.id) || [];
+
+  // Whether settings have resolved enough to render the real view. While false
+  // (cold start, no cache) we show HomepageSectionsSkeleton instead of a blank
+  // page that suddenly pops in.
+  const settingsReady = !settingsLoading || !!homepageSettings;
   
   // Hero buttons (top of page) sorted by order
   const heroButtons = allButtons.filter(b => b.isHero).sort((a, b) => a.order - b.order);
@@ -586,27 +636,34 @@ const Index = () => {
     return orderedSections.includes(id);
   };
   
-  // Load data
-  const { data: adminNotes, isLoading: notesLoading, error: notesError } = useLatestAdminNotes(3);
-  const { data: latestCards, isLoading: cardsLoading, error: cardsError } = useLatestCards(3);
-  const { data: featuredArtworks, isLoading: artworksLoading, isFetching: artworksFetching, error: artworksError } = useArtworks('all');
-  const { data: featuredProjects } = useFeaturedProjects();
+  // Load data — gated by which view is active so we don't fire every query
+  // on cold start. The Photo Grid view ('grid') renders purely from settings
+  // and needs no event queries; gallery loads its section data; progress
+  // loads only the #bitpopart posts. We wait for settingsReady so we don't
+  // briefly fire gallery queries before defaultView resolves.
+  const galleryActive = settingsReady && viewMode === 'gallery';
+  const progressActive = settingsReady && viewMode === 'progress';
+
+  const { data: adminNotes, isLoading: notesLoading, error: notesError } = useLatestAdminNotes(3, { enabled: galleryActive });
+  const { data: latestCards, isLoading: cardsLoading, error: cardsError } = useLatestCards(3, { enabled: galleryActive });
+  const { data: featuredArtworks, isLoading: artworksLoading, isFetching: artworksFetching, error: artworksError } = useArtworks('all', { enabled: galleryActive });
+  const { data: featuredProjects } = useFeaturedProjects({ enabled: galleryActive });
   // Consider artworks still loading if there's no data yet (first load OR background refetch with empty cache)
   const artworksStillLoading = artworksLoading || (artworksFetching && !featuredArtworks);
   
-  // Get all #bitpopart posts
-  const { data: allArtProgressPosts, isLoading: allArtProgressLoading } = useBitPopArtPosts();
+  // Get all #bitpopart posts (used by both the progress view and gallery's news/art-progress)
+  const { data: allArtProgressPosts, isLoading: allArtProgressLoading } = useBitPopArtPosts({ enabled: galleryActive || progressActive });
   // Get selected posts (manually selected in admin)
-  const { data: selectedArtProgressPosts } = useFeaturedBitPopArtPosts();
+  const { data: selectedArtProgressPosts } = useFeaturedBitPopArtPosts({ enabled: galleryActive || progressActive });
   
   // Show only selected posts (those checked in admin panel)
   const artProgressPosts = selectedArtProgressPosts || [];
   const artProgressLoading = allArtProgressLoading;
   
-  // Free Downloads — latest wallpaper, gif, animation
-  const { data: wallpapers = [] } = useAppMedia('app-wallpaper');
-  const { data: gifs = [] } = useAppMedia('app-gif');
-  const { data: animations = [] } = useAnimations();
+  // Free Downloads — latest wallpaper, gif, animation (gallery view only)
+  const { data: wallpapers = [] } = useAppMedia('app-wallpaper', { enabled: galleryActive });
+  const { data: gifs = [] } = useAppMedia('app-gif', { enabled: galleryActive });
+  const { data: animations = [] } = useAnimations({ enabled: galleryActive });
 
   // Placeholder data for features not yet implemented
   const featuredNostrProjects: never[] = [];
@@ -1483,7 +1540,13 @@ const Index = () => {
         </Link>
 
         {/* Conditional Content Based on View Mode */}
-        {viewMode === 'progress' && (
+        {settingsLoading && !homepageSettings && (
+          /* Settings still loading on cold start — show a skeleton so the
+             page isn't blank until the relay responds and sections appear. */
+          <HomepageSectionsSkeleton />
+        )}
+
+        {viewMode === 'progress' && settingsReady && (
           /* Art Progress View */
           <div className="mb-16">
             <div className="mb-8">
@@ -1501,12 +1564,12 @@ const Index = () => {
           </div>
         )}
 
-        {viewMode === 'grid' && (
+        {viewMode === 'grid' && settingsReady && (
           /* Photo Grid View — pure images, no text */
           <PhotoGrid tiles={gridTiles} />
         )}
 
-        {viewMode === 'gallery' && (
+        {viewMode === 'gallery' && settingsReady && (
           /* Gallery View - Dynamic Sections with inter-section buttons */
           <>
             {orderedSections.map(sectionId => (

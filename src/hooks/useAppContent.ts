@@ -68,7 +68,7 @@ export type AppMediaType = 'app-wallpaper' | 'app-gif' | 'app-avatar' | 'app-ban
 /**
  * Fetch app media items (wallpapers, gifs, avatars, banners, coloring pages, or desktop wallpapers).
  */
-export function useAppMedia(type: AppMediaType) {
+export function useAppMedia(type: AppMediaType, options?: { enabled?: boolean }) {
   const { nostr } = useNostr();
   const adminPubkey = getAdminPubkeyHex();
 
@@ -137,7 +137,7 @@ export function useAppMedia(type: AppMediaType) {
         .filter((d): d is AppMedia => d !== null)
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     },
-    enabled: !!adminPubkey,
+    enabled: !!adminPubkey && options?.enabled !== false,
     staleTime: 30000,
     refetchInterval: 60000,
     retry: 2,

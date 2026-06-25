@@ -244,8 +244,11 @@ export function useHomepageSettings() {
       } as HomepageSettings;
     },
     enabled: !!adminPubkey,
-    staleTime: 0,
-    gcTime: 0,
+    // Cache settings so the home page isn't blank on every cold start while
+    // the relay responds. Admin edits still appear immediately because the
+    // 'homepage-settings-updated' event below invalidates this query.
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
   });
 
   // Listen for custom events from admin settings to refetch immediately

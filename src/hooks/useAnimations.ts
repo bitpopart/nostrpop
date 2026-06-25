@@ -31,7 +31,7 @@ function formatDuration(secs: number): string {
  * Fetch all animations published by BitPopArt admin.
  * Uses NIP-71 kind 34235 (landscape video) with t:bitpopart-animation.
  */
-export function useAnimations() {
+export function useAnimations(options?: { enabled?: boolean }) {
   const { nostr } = useNostr();
   const adminPubkey = getAdminPubkeyHex();
 
@@ -149,7 +149,7 @@ export function useAnimations() {
         .filter((a): a is AnimationItem => a !== null)
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     },
-    enabled: !!adminPubkey,
+    enabled: !!adminPubkey && options?.enabled !== false,
     staleTime: 30000,
     refetchInterval: 60000,
     retry: 2,

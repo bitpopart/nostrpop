@@ -1,7 +1,7 @@
 import { ReactNode, useEffect } from 'react';
 import { z } from 'zod';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
-import { AppContext, type AppConfig, type AppContextType, type Theme } from '@/contexts/AppContext';
+import { AppContext, type AppConfig, type AppContextType, type PresetRelay, type Theme } from '@/contexts/AppContext';
 
 interface AppProviderProps {
   children: ReactNode;
@@ -10,13 +10,16 @@ interface AppProviderProps {
   /** Default app configuration */
   defaultConfig: AppConfig;
   /** Optional list of preset relays to display in the RelaySelector */
-  presetRelays?: { name: string; url: string }[];
+  presetRelays?: PresetRelay[];
 }
 
 // Zod schema for AppConfig validation
 const AppConfigSchema = z.object({
   theme: z.enum(['dark', 'light', 'system']),
   relayUrl: z.string().url(),
+  // Optional with a default so configs persisted before this field existed
+  // still validate and transparently upgrade to the default proxy.
+  imageProxy: z.string().default('https://wsrv.nl'),
 });
 
 export function AppProvider(props: AppProviderProps) {
