@@ -56,7 +56,11 @@ const NostrProvider: React.FC<NostrProviderProps> = (props) => {
   // Update refs when config changes
   useEffect(() => {
     relayUrl.current = config.relayUrl;
-    queryClient.resetQueries();
+    // The user explicitly picked a different relay, so revalidate — but use
+    // invalidateQueries (not resetQueries) so cached content stays on screen
+    // while fresh data loads in the background, avoiding a disruptive blank
+    // flash of the whole page.
+    queryClient.invalidateQueries();
   }, [config.relayUrl, queryClient]);
 
   // Initialize NPool only once
@@ -84,32 +88,38 @@ const NostrProvider: React.FC<NostrProviderProps> = (props) => {
         });
       },
       reqRouter(filters) {
-        // Query the selected relay + all preset relays so content is found
-        // regardless of which relay it was originally published to
-        const allRelays = new Set<string>([relayUrl.current]);
-        for (const { url } of (presetRelays ?? [])) {
-          allRelays.add(url);
+        // Read pool: the user-selected relay plus every preset marked
+        // `read` (default true). Write-only presets are intentionally
+        // excluded so a slow distribution-only relay can't gate every query.
+        const readRelays = new Set<string>([relayUrl.current]);
+        for (const relay of (presetRelays ?? [])) {
+          if (relay.read !== false) {
+            readRelays.add(relay.url);
+          }
         }
         const map = new Map<string, typeof filters>();
-        for (const relay of allRelays) {
+        for (const relay of readRelays) {
           map.set(relay, filters);
         }
         return map;
       },
       eventRouter(_event: NostrEvent) {
-        // Publish to the selected relay + all preset relays for maximum distribution
-        const allRelays = new Set<string>([relayUrl.current]);
-        for (const { url } of (presetRelays ?? [])) {
-          allRelays.add(url);
+        // Write pool: publish to the user-selected relay plus every preset
+        // marked `write` (default true) for maximum distribution.
+        const writeRelays = new Set<string>([relayUrl.current]);
+        for (const relay of (presetRelays ?? [])) {
+          if (relay.write !== false) {
+            writeRelays.add(relay.url);
+          }
         }
-        return [...allRelays];
+        return [...writeRelays];
       },
-      // After the first relay sends EOSE, wait this many ms for additional
-      // relays to respond before resolving. A longer window gives slower
-      // relays time to return their events, ensuring we don't miss content.
-      // 4 s is enough for the slowest of the 3 preset relays while still
-      // being fast enough not to noticeably delay the UI.
-      eoseTimeout: 4000,
+      // After the first relay sends EOSE, wait this many ms for the other
+      // read-pool relays before resolving. Now that reads only hit the two
+      // fast relays (Ditto + Dreamith) instead of all presets, this can be
+      // short like Ditto (300ms). Previously 4000ms, which made the home
+      // page (which fires ~10 queries) feel sluggish.
+      eoseTimeout: 500,
     });
   }
 

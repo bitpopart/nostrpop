@@ -9,11 +9,12 @@ const ADMIN_HEX = nip19.decode(ADMIN_NPUB).data as string;
 /**
  * Hook to fetch Nostr posts with #bitpopart hashtag from admin only
  */
-export function useBitPopArtPosts() {
+export function useBitPopArtPosts(options?: { enabled?: boolean }) {
   const { nostr } = useNostr();
 
   return useQuery({
     queryKey: ['bitpopart-posts'],
+    enabled: options?.enabled !== false,
     queryFn: async (c) => {
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(3000)]);
       
@@ -61,9 +62,9 @@ export function useBitPopArtPosts() {
   });
 }
 
-export function useFeaturedBitPopArtPosts() {
-  const { data: allPosts } = useBitPopArtPosts();
-  
+export function useFeaturedBitPopArtPosts(options?: { enabled?: boolean }) {
+  const { data: allPosts } = useBitPopArtPosts(options);
+
   return useQuery({
     queryKey: ['featured-bitpopart-posts'],
     queryFn: () => {

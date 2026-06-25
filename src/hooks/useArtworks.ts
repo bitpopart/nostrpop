@@ -41,9 +41,12 @@ export function useArtworks(filter: ArtworkFilter = 'all', options?: { enabled?:
     // Retry up to 3 times on failure with exponential back-off
     retry: 3,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
+    refetchInterval: 120000, // Refetch every 2 minutes in the background
     queryFn: async (c) => {
-      // Use a generous timeout so slow relays still have time to respond
-      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(20000)]);
+      // Ceiling for an unresponsive relay. The NPool's eoseTimeout (1500ms)
+      // resolves normal queries long before this; this only bounds the case
+      // where a relay never sends EOSE.
+      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(10000)]);
 
       // Query for artwork events (kind 39239 and legacy kind 30023) and deletion events (kind 5)
       // ONLY query artworks from the admin (BitPopArt)
@@ -238,11 +241,6 @@ export function useArtworks(filter: ArtworkFilter = 'all', options?: { enabled?:
         }
       });
     },
-    staleTime: 120000, // 2 minutes — avoid re-fetching on every render
-    gcTime: 600000,   // 10 minutes — keep data in cache when navigating
-    retry: 3,
-    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
-    refetchInterval: 120000, // Refetch every 2 minutes in the background
   });
 }
 
@@ -251,6 +249,7 @@ export function useArtwork(artworkId: string, authorPubkey?: string) {
 
   return useQuery({
     queryKey: ['artwork', artworkId, authorPubkey],
+    enabled: !!artworkId,
     staleTime: 120000,
     gcTime: 600000,
     retry: 3,
@@ -381,8 +380,6 @@ export function useArtwork(artworkId: string, authorPubkey?: string) {
         order: orderTag ? parseInt(orderTag) : undefined
       } as ArtworkData;
     },
-    enabled: !!artworkId,
-    staleTime: 30000,
   });
 }
 

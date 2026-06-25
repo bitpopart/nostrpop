@@ -33,7 +33,6 @@ import {
   CheckCircle2,
   Heart,
 } from 'lucide-react';
-import { ZapButton } from '@/components/ZapButton';
 import { ShareToNostrMediaDialog } from '@/components/ShareToNostrMediaDialog';
 import type { FreeDownload } from '@/hooks/useFreeDownloads';
 

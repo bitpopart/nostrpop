@@ -115,6 +115,32 @@ export default function CustomPage() {
     setIframeLoaded(false);
   }, [page?.brand_site]);
 
+  // Warm the connection to the Blossom origin as soon as we know the URL, so
+  // the DNS lookup + TLS handshake happen in parallel with React rendering and
+  // the (now fast) Nostr query — not serialized after them. Shaves the
+  // connection-setup latency off the iframe's first paint.
+  useEffect(() => {
+    if (!page?.brand_site) return;
+    let origin: string;
+    try { origin = new URL(page.brand_site).origin; } catch { return; }
+
+    const preconnect = document.createElement('link');
+    preconnect.rel = 'preconnect';
+    preconnect.href = origin;
+    preconnect.crossOrigin = 'anonymous';
+    document.head.appendChild(preconnect);
+
+    const dnsPrefetch = document.createElement('link');
+    dnsPrefetch.rel = 'dns-prefetch';
+    dnsPrefetch.href = origin;
+    document.head.appendChild(dnsPrefetch);
+
+    return () => {
+      preconnect.remove();
+      dnsPrefetch.remove();
+    };
+  }, [page?.brand_site]);
+
   // Fetch HTML from Blossom URL when needed — start as soon as we know the URL
   useEffect(() => {
     if (!isRemoteHtml || !page?.brand_site) return;
@@ -123,10 +149,15 @@ export default function CustomPage() {
     if (fetchingUrlRef.current === url) return;
     fetchingUrlRef.current = url;
     setFetchingHtml(true);
-    fetch(url)
+    // Abort a hung Blossom request so the loading overlay can't get stuck forever.
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    fetch(url, { signal: controller.signal, priority: 'high' } as RequestInit)
       .then(r => r.text())
       .then(html => { htmlCache.set(url, html); setFetchedHtml(html); setFetchingHtml(false); })
-      .catch(() => setFetchingHtml(false));
+      .catch(() => setFetchingHtml(false))
+      .finally(() => clearTimeout(timeout));
+    return () => { clearTimeout(timeout); controller.abort(); fetchingUrlRef.current = null; };
   }, [page?.brand_site, isRemoteHtml]);
 
   // Listen for download requests posted from inside the iframe.

@@ -23,6 +23,7 @@ export function TestApp({ children }: TestAppProps) {
   const defaultConfig: AppConfig = {
     theme: 'light',
     relayUrl: 'wss://relay.ditto.pub',
+    imageProxy: 'https://wsrv.nl',
   };
 
   return (

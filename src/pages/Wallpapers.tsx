@@ -10,8 +10,7 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { recordDownload } from '@/hooks/useDownloadTracking';
 import { HashtagCloud } from '@/components/HashtagCloud';
-import { RelaySelector } from '@/components/RelaySelector';
-import { Download, Image as ImageIcon, ArrowLeft, Smartphone, Monitor } from 'lucide-react';
+import { Download, Image as ImageIcon, ArrowLeft, Smartphone, Monitor, RefreshCw } from 'lucide-react';
 import { ZapButton } from '@/components/ZapButton';
 import { ShareToNostrMediaDialog } from '@/components/ShareToNostrMediaDialog';
 import { getAdminPubkeyHex } from '@/lib/adminUtils';
@@ -53,6 +52,8 @@ function deriveFilename(url: string, title: string, prefix = 'wallpaper'): strin
 interface WallpaperGridProps {
   items: AppMedia[];
   isLoading: boolean;
+  isError: boolean;
+  onRetry: () => void;
   activeTag: string | undefined;
   onTagChange: (tag: string | undefined) => void;
   onSelect: (item: AppMedia) => void;
@@ -60,7 +61,7 @@ interface WallpaperGridProps {
   type: WallpaperTab;
 }
 
-function WallpaperGrid({ items, isLoading, activeTag, onTagChange, onSelect, accentColor, type }: WallpaperGridProps) {
+function WallpaperGrid({ items, isLoading, isError, onRetry, activeTag, onTagChange, onSelect, accentColor, type }: WallpaperGridProps) {
   const { getGradientStyle } = useThemeColors();
 
   const filtered = useMemo(() =>
@@ -96,14 +97,28 @@ function WallpaperGrid({ items, isLoading, activeTag, onTagChange, onSelect, acc
             <Skeleton key={i} className={`${aspectClass} rounded-xl`} />
           ))}
         </div>
+      ) : isError ? (
+        <Card className="border-dashed max-w-md mx-auto">
+          <CardContent className="py-12 text-center space-y-4">
+            {emptyIcon}
+            <p className="text-muted-foreground">
+              Couldn't load {type === 'mobile' ? 'mobile wallpapers' : 'desktop wallpapers'}.
+            </p>
+            <Button variant="outline" size="sm" onClick={onRetry}>
+              <RefreshCw className="h-4 w-4 mr-2" /> Retry
+            </Button>
+          </CardContent>
+        </Card>
       ) : items.length === 0 ? (
         <Card className="border-dashed max-w-md mx-auto">
           <CardContent className="py-12 text-center space-y-4">
             {emptyIcon}
             <p className="text-muted-foreground">
-              No {type === 'mobile' ? 'mobile wallpapers' : 'desktop wallpapers'} found. Try another relay?
+              No {type === 'mobile' ? 'mobile wallpapers' : 'desktop wallpapers'} yet. Check back soon!
             </p>
-            <RelaySelector className="w-full" />
+            <Button variant="outline" size="sm" onClick={onRetry}>
+              <RefreshCw className="h-4 w-4 mr-2" /> Refresh
+            </Button>
           </CardContent>
         </Card>
       ) : filtered.length === 0 ? (
@@ -185,8 +200,8 @@ function WallpaperGrid({ items, isLoading, activeTag, onTagChange, onSelect, acc
 export default function Wallpapers() {
   const navigate = useNavigate();
   const { getGradientStyle } = useThemeColors();
-  const { data: mobileWallpapers = [], isLoading: mobileLoading } = useAppMedia('app-wallpaper');
-  const { data: desktopWallpapers = [], isLoading: desktopLoading } = useAppMedia('app-desktop-wallpaper');
+  const { data: mobileWallpapers = [], isLoading: mobileLoading, error: mobileError, refetch: refetchMobile } = useAppMedia('app-wallpaper');
+  const { data: desktopWallpapers = [], isLoading: desktopLoading, error: desktopError, refetch: refetchDesktop } = useAppMedia('app-desktop-wallpaper');
 
   const [activeTab, setActiveTab] = useState<WallpaperTab>('mobile');
   const [lightbox, setLightbox] = useState<AppMedia | null>(null);
@@ -279,6 +294,8 @@ export default function Wallpapers() {
             key="mobile"
             items={mobileWallpapers}
             isLoading={mobileLoading}
+            isError={!!mobileError}
+            onRetry={() => refetchMobile()}
             activeTag={mobileTag}
             onTagChange={setMobileTag}
             onSelect={setLightbox}
@@ -290,6 +307,8 @@ export default function Wallpapers() {
             key="desktop"
             items={desktopWallpapers}
             isLoading={desktopLoading}
+            isError={!!desktopError}
+            onRetry={() => refetchDesktop()}
             activeTag={desktopTag}
             onTagChange={setDesktopTag}
             onSelect={setLightbox}
