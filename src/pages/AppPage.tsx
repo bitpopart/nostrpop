@@ -423,13 +423,13 @@ function drawFrame(
       ctx.strokeRect(el.x - 1, el.y - 1, el.width + 2, el.height + 2);
       ctx.setLineDash([]);
 
-      const corners = [
-        { cx: el.x + el.width, cy: el.y + el.height },
-        { cx: el.x,            cy: el.y + el.height },
-        { cx: el.x + el.width, cy: el.y             },
-        { cx: el.x,            cy: el.y             },
+      // Regular corner dots (all except bottom-right)
+      const dotCorners = [
+        { cx: el.x,            cy: el.y             }, // top-left
+        { cx: el.x + el.width, cy: el.y             }, // top-right
+        { cx: el.x,            cy: el.y + el.height }, // bottom-left
       ];
-      corners.forEach(({ cx, cy }) => {
+      dotCorners.forEach(({ cx, cy }) => {
         ctx.fillStyle = '#FFFFFF';
         ctx.beginPath();
         ctx.arc(cx, cy, 5, 0, Math.PI * 2);
@@ -438,6 +438,25 @@ function drawFrame(
         ctx.lineWidth = 1.5;
         ctx.stroke();
       });
+
+      // Bottom-right: resize grip icon — diagonal lines hint
+      const gx = el.x + el.width;
+      const gy = el.y + el.height;
+      const gr = 9; // grip radius
+      ctx.fillStyle = '#FF0080';
+      ctx.beginPath();
+      ctx.arc(gx, gy, gr, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#FFFFFF';
+      ctx.lineWidth = 1.5;
+      // Three diagonal tick marks inside the circle
+      for (let i = 1; i <= 3; i++) {
+        const off = i * 3 - 5;
+        ctx.beginPath();
+        ctx.moveTo(gx - gr + 3 + off, gy + gr - 3);
+        ctx.lineTo(gx + gr - 3,       gy - gr + 3 + off);
+        ctx.stroke();
+      }
       ctx.restore();
     }
   }
@@ -828,6 +847,41 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
               </button>
             );
           })()}
+
+          {/* Floating text input — appears over the text element when selected, tap to edit */}
+          {selectedEl?.kind === 'text' && (() => {
+            const scale = canvasDisplayW / CANVAS_SIZE;
+            const left  = selectedEl.x * scale;
+            const top   = selectedEl.y * scale;
+            const width = selectedEl.width * scale;
+            return (
+              <input
+                key={selectedEl.id}
+                defaultValue={selectedEl.text ?? ''}
+                onChange={e => {
+                  const val = e.target.value;
+                  setElements(prev => prev.map(el =>
+                    el.id === selectedEl.id ? { ...el, text: val } : el
+                  ));
+                  setSaved(false);
+                }}
+                placeholder="Type here…"
+                className="absolute z-20 bg-white/90 dark:bg-gray-900/90 border-2 border-orange-400 rounded-lg px-2 text-sm font-semibold outline-none shadow-lg"
+                style={{
+                  left,
+                  top,
+                  width,
+                  minWidth: 80,
+                  height: 36,
+                  touchAction: 'none',
+                  fontFamily: selectedEl.fontFamily ?? 'Impact',
+                  color: selectedEl.color ?? '#FF0080',
+                }}
+                onPointerDown={e => e.stopPropagation()}
+                autoFocus
+              />
+            );
+          })()}
         </div>
       </div>
 
@@ -917,24 +971,6 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
           {/* Text-specific controls */}
           {selectedEl.kind === 'text' && (
             <>
-              {/* Editable text — rewrite the text directly */}
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground w-10 shrink-0">Text</span>
-                <Input
-                  value={selectedEl.text ?? ''}
-                  onChange={e => {
-                    const val = e.target.value;
-                    setElements(prev => prev.map(el =>
-                      el.id === selectedEl.id ? { ...el, text: val } : el
-                    ));
-                    setSaved(false);
-                  }}
-                  placeholder="Enter text…"
-                  className="h-8 text-xs flex-1 bg-white dark:bg-gray-800"
-                  autoFocus
-                />
-              </div>
-
               {/* Font picker */}
               <div className="flex items-center gap-2">
                 <span className="text-xs text-muted-foreground w-10 shrink-0">Font</span>
