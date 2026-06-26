@@ -836,7 +836,7 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
         <div className="rounded-xl border border-pink-200 dark:border-pink-800 bg-pink-50 dark:bg-pink-900/20 p-3 space-y-2.5">
           <div className="flex items-center justify-between gap-2">
             <p className="text-[10px] font-semibold text-pink-600 dark:text-pink-400 uppercase tracking-wider truncate">
-              {selectedEl.kind === 'text' ? `✏️ "${selectedEl.text?.slice(0, 14)}${(selectedEl.text?.length ?? 0) > 14 ? '…' : ''}"` : '🖼 Image'}
+              {selectedEl.kind === 'text' ? '✏️ Edit Text' : '🖼 Image'}
               <span className="ml-1.5 text-pink-400 dark:text-pink-500 font-normal normal-case tracking-normal">
                 layer {selectedIdx + 1}/{elements.length}
               </span>
@@ -917,6 +917,24 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
           {/* Text-specific controls */}
           {selectedEl.kind === 'text' && (
             <>
+              {/* Editable text — rewrite the text directly */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground w-10 shrink-0">Text</span>
+                <Input
+                  value={selectedEl.text ?? ''}
+                  onChange={e => {
+                    const val = e.target.value;
+                    setElements(prev => prev.map(el =>
+                      el.id === selectedEl.id ? { ...el, text: val } : el
+                    ));
+                    setSaved(false);
+                  }}
+                  placeholder="Enter text…"
+                  className="h-8 text-xs flex-1 bg-white dark:bg-gray-800"
+                  autoFocus
+                />
+              </div>
+
               {/* Font picker */}
               <div className="flex items-center gap-2">
                 <span className="text-xs text-muted-foreground w-10 shrink-0">Font</span>
