@@ -867,7 +867,7 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
                   <Move className="h-3.5 w-3.5" />
                 </div>
 
-                {/* Text input */}
+                {/* Text input — font-size 16px prevents iOS auto-zoom on focus */}
                 <input
                   key={selectedEl.id}
                   defaultValue={selectedEl.text ?? ''}
@@ -879,12 +879,12 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
                     setSaved(false);
                   }}
                   placeholder="Type…"
-                  className="flex-1 min-w-0 h-8 px-1.5 text-xs font-semibold outline-none bg-transparent"
+                  className="flex-1 min-w-0 h-8 px-1.5 font-semibold outline-none bg-transparent"
                   style={{
+                    fontSize: 16,
                     fontFamily: selectedEl.fontFamily ?? 'Impact',
                     color: selectedEl.color ?? '#FF0080',
                   }}
-                  autoFocus
                 />
 
                 {/* Font size − */}
@@ -1079,8 +1079,8 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
             value={textInput}
             onChange={e => setTextInput(e.target.value)}
             placeholder="Type your text..."
-            className="h-9 text-sm"
-            autoFocus
+            className="h-9"
+            style={{ fontSize: 16 }}
             onKeyDown={e => { if (e.key === 'Enter') addText(); if (e.key === 'Escape') setShowTextInput(false); }}
           />
           <div className="flex items-center gap-2">
