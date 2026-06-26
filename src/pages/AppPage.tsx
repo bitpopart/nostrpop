@@ -134,7 +134,7 @@ function ImageCarousel({ items, isLoading }: { items: CarouselItem[]; isLoading:
   const item = items[index];
 
   return (
-    <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden shadow-xl group">
+    <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden group">
       {items.map((it, i) => (
         <img
           key={it.id}
@@ -173,13 +173,6 @@ function ImageCarousel({ items, isLoading }: { items: CarouselItem[]; isLoading:
               onClick={() => { setIndex(i); resetTimer(); }}
             />
           ))}
-        </div>
-      )}
-
-      {/* Title */}
-      {item.title !== 'Untitled' && (
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-3">
-          <p className="text-white text-sm font-medium truncate">{item.title}</p>
         </div>
       )}
     </div>
