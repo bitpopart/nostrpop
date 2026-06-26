@@ -1718,20 +1718,24 @@ export default function AppPage() {
   const { data: desktopWalls = [], isLoading: desktopLoading } = useAppMedia('app-desktop-wallpaper');
   const { data: freeDownloads = [], isLoading: freeLoading } = useFreeDownloads();
   const { data: animations = [], isLoading: animLoading } = useAnimations();
+  // Dedicated carousel images (managed from admin → App → Carousel)
+  const { data: carouselImages = [], isLoading: carouselLoading } = useAppMedia('app-carousel');
 
   // Homepage grid tiles
   const { data: homepageSettings, isLoading: gridLoading } = useHomepageSettings();
   const gridTiles = homepageSettings?.gridTiles || [];
 
-  // Merge ALL media for carousel
-  const allMediaItems: CarouselItem[] = [
-    ...wallpapers.map(m => ({ id: `wp-${m.id}`, image_url: m.image_url, title: m.title })),
-    ...gifs.map(m => ({ id: `gif-${m.id}`, image_url: m.image_url, title: m.title })),
-    ...avatars.map(m => ({ id: `av-${m.id}`, image_url: m.image_url, title: m.title })),
-    ...freeDownloads.map(m => ({ id: `fr-${m.id}`, image_url: m.image_url, title: m.title })),
-  ].slice(0, 20);
+  // Use dedicated carousel images when available, otherwise fall back to a mix
+  const allMediaItems: CarouselItem[] = carouselImages.length > 0
+    ? carouselImages.map(m => ({ id: `carousel-${m.id}`, image_url: m.image_url, title: m.title })).slice(0, 20)
+    : [
+        ...wallpapers.map(m => ({ id: `wp-${m.id}`, image_url: m.image_url, title: m.title })),
+        ...gifs.map(m => ({ id: `gif-${m.id}`, image_url: m.image_url, title: m.title })),
+        ...avatars.map(m => ({ id: `av-${m.id}`, image_url: m.image_url, title: m.title })),
+        ...freeDownloads.map(m => ({ id: `fr-${m.id}`, image_url: m.image_url, title: m.title })),
+      ].slice(0, 20);
 
-  const allMediaLoading = wpLoading && gifLoading && avatarLoading && freeLoading;
+  const allMediaLoading = carouselLoading || (wpLoading && gifLoading && avatarLoading && freeLoading);
 
   // Get items for the current download media tab
   const downloadItems = (() => {

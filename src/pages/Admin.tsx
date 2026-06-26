@@ -40,6 +40,7 @@ import { BannersAdmin } from '@/components/app/BannersAdmin';
 import { ColoringPagesAdmin } from '@/components/app/ColoringPagesAdmin';
 import { DesktopWallpapersAdmin } from '@/components/app/DesktopWallpapersAdmin';
 import { MemesAdmin } from '@/components/app/MemesAdmin';
+import { CarouselAdmin } from '@/components/app/CarouselAdmin';
 import { FanAppPublishing } from '@/components/app/FanAppPublishing';
 import { MediaUploader, MediaList } from '@/components/app/AppContentManagement';
 import { AnimationsManagement } from '@/components/animations/AnimationsManagement';
@@ -327,6 +328,14 @@ const Admin = () => {
       badge: 'App'
     },
     {
+      title: 'App Carousel',
+      description: 'Edit the sliding image carousel on the /app frontpage',
+      icon: ImageIcon,
+      color: 'from-orange-400 to-pink-500',
+      action: () => setActiveTab('app-carousel'),
+      badge: 'Carousel'
+    },
+    {
       title: 'Meme Creator',
       description: 'Memes, canvas Templates & Icons for the Meme Creator in Pop Art Studio',
       icon: Laugh,
@@ -492,6 +501,9 @@ const Admin = () => {
             </TabsTrigger>
             <TabsTrigger value="art">Art</TabsTrigger>
             <TabsTrigger value="app">App</TabsTrigger>
+            <TabsTrigger value="app-carousel" className="flex items-center gap-1 text-orange-600 dark:text-orange-400 font-semibold">
+              🎠 Carousel
+            </TabsTrigger>
             <TabsTrigger value="app-wallpapers">Wallpapers</TabsTrigger>
             <TabsTrigger value="app-gifs">GIFs</TabsTrigger>
             <TabsTrigger value="app-avatars">Avatars</TabsTrigger>
@@ -1070,6 +1082,10 @@ const Admin = () => {
                 <AppAnalyticsDashboard />
               </div>
             </div>
+          </TabsContent>
+
+          <TabsContent value="app-carousel">
+            <CarouselAdmin onBack={() => setActiveTab('app')} />
           </TabsContent>
 
           <TabsContent value="app-wallpapers">

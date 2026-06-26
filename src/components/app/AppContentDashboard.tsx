@@ -40,6 +40,7 @@ import {
   Monitor,
   Laugh,
   Sparkles,
+  SlidersHorizontal,
 } from 'lucide-react';
 
 // ── Preview rows constant ─────────────────────────────────
@@ -63,6 +64,17 @@ interface SectionDef {
 }
 
 const SECTIONS: SectionDef[] = [
+  {
+    type: 'app-carousel',
+    label: 'Carousel Image',
+    labelPlural: 'Home Carousel',
+    icon: SlidersHorizontal,
+    color: 'from-orange-500 to-pink-500',
+    tabValue: 'app-carousel',
+    accept: 'image/*',
+    aspectClass: 'aspect-[4/3]',
+    badge: '/app Home',
+  },
   {
     type: 'app-wallpaper',
     label: 'Wallpaper',
