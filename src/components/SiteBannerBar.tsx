@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { Smartphone } from 'lucide-react';
 import { useSiteBanner } from '@/hooks/useSiteBanner';
 import { useArtworks } from '@/hooks/useArtworks';
 import { isAuctionActive } from '@/lib/artTypes';
@@ -35,39 +36,37 @@ export function SiteBannerBar() {
     <div className={`w-full ${styleClass} shadow-md z-40`}>
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-center gap-3 py-2 flex-wrap">
-          <span className="text-sm font-medium text-center">
-            {(() => {
-              const text = activeBanner.text;
-              const cutoff = ' — download now, no signup needed!';
-              const idx = text.indexOf(cutoff);
-              if (idx === -1) return text;
-              return (
-                <>
-                  {text.slice(0, idx)}
-                  <span className="hidden sm:inline">{cutoff}</span>
-                </>
-              );
-            })()}
+          {/* Text: always visible on mobile, hidden on desktop (buttons-only on wide screens) */}
+          <span className="text-sm font-medium text-center sm:hidden">
+            {activeBanner.text}
           </span>
-          {activeBanner.url && activeBanner.urlLabel && (
-            isExternal ? (
-              <a
-                href={activeBanner.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-white/20 hover:bg-white/30 border border-white/40 transition-colors whitespace-nowrap"
-              >
-                {activeBanner.urlLabel}
-              </a>
-            ) : (
-              <Link
-                to={activeBanner.url}
-                className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-white/20 hover:bg-white/30 border border-white/40 transition-colors whitespace-nowrap"
-              >
-                {activeBanner.urlLabel}
-              </Link>
-            )
-          )}
+            {activeBanner.url && activeBanner.urlLabel && (
+              isExternal ? (
+                <a
+                  href={activeBanner.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-white/20 hover:bg-white/30 border border-white/40 transition-colors whitespace-nowrap"
+                >
+                  {activeBanner.urlLabel}
+                </a>
+              ) : (
+                <Link
+                  to={activeBanner.url}
+                  className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-white/20 hover:bg-white/30 border border-white/40 transition-colors whitespace-nowrap"
+                >
+                  {activeBanner.urlLabel}
+                </Link>
+              )
+            )}
+            {/* App button — desktop only */}
+            <Link
+              to="/app"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/20 hover:bg-white/30 border border-white/40 transition-colors whitespace-nowrap"
+            >
+              <Smartphone className="h-3.5 w-3.5" />
+              App
+            </Link>
         </div>
       </div>
     </div>
