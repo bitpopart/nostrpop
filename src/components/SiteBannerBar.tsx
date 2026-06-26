@@ -36,9 +36,14 @@ export function SiteBannerBar() {
     <div className={`w-full ${styleClass} shadow-md z-40`}>
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-center gap-3 py-2 flex-wrap">
-          {/* Mobile: show full dynamic banner text */}
+          {/* Mobile: show banner text but strip the " — download now, no signup needed!" suffix */}
           <span className="text-sm font-medium text-center sm:hidden">
-            {activeBanner.text}
+            {(() => {
+              const text = activeBanner.text;
+              const cutoff = ' — download now, no signup needed!';
+              const idx = text.indexOf(cutoff);
+              return idx !== -1 ? text.slice(0, idx) : text;
+            })()}
           </span>
           {/* Desktop: fixed short label before the buttons */}
           <span className="hidden sm:inline text-sm font-medium whitespace-nowrap">
