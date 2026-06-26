@@ -88,6 +88,7 @@ import {
   LayoutGrid,
   Laugh,
   Shapes,
+  Sparkles,
 } from 'lucide-react';
 
 const Admin = () => {
@@ -332,6 +333,14 @@ const Admin = () => {
       color: 'from-yellow-500 to-orange-500',
       action: () => setActiveTab('app-memes'),
       badge: 'Memes'
+    },
+    {
+      title: 'Pops',
+      description: 'Upload cartoon & pop art characters — shown in the Pops tab across Studio, Memes, Cards & App',
+      icon: Sparkles,
+      color: 'from-pink-500 to-violet-500',
+      action: () => setActiveTab('app-pops'),
+      badge: 'Pops'
     },
     {
       title: 'Publish Fan App',

@@ -1109,6 +1109,16 @@ function MiniCanvas({ onSave, onViewLibraryItem, mode = 'meme' }: {
         </div>
       )}
 
+      {/* ── Save & Get This — always visible directly below canvas ── */}
+      <button
+        className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold text-sm text-white shadow-lg active:scale-[0.98] transition-transform"
+        style={{ background: 'linear-gradient(135deg, #f97316 0%, #ec4899 50%, #a855f7 100%)' }}
+        onClick={exportCanvas}
+      >
+        <Printer className="h-4 w-4 stroke-[2]" />
+        {saved ? '✓ Saved — tap to get it again' : 'Save & Get This'}
+      </button>
+
       {/* ── Add Text panel ── */}
       {showTextInput ? (
         <div className="rounded-xl border border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900/10 p-3 space-y-2">
@@ -1359,14 +1369,6 @@ function MiniCanvas({ onSave, onViewLibraryItem, mode = 'meme' }: {
         </div>
       </div>
 
-      {/* Save button */}
-      <button
-        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border text-rose-600 bg-rose-50 dark:bg-rose-900/30 border-rose-200 dark:border-rose-800 hover:shadow-sm transition-all font-semibold"
-        onClick={exportCanvas}
-      >
-        <Printer className="h-4 w-4 stroke-[1.5]" />
-        {saved ? 'Saved — Get This' : 'Save & Get This'}
-      </button>
     </div>
   );
 }
