@@ -266,8 +266,8 @@ function CharactersPanel() {
                   />
             ))}
 
-            {/* New character form */}
-            {formState?.dTag === '__new__'
+            {/* New character form — shown when formState is set but doesn't match an existing character */}
+            {formState && !characters.some(c => c.id === formState.dTag)
               ? <CharacterForm
                   initial={formState}
                   onSave={handleSave}
