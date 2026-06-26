@@ -49,6 +49,8 @@ import {
   AlignCenter,
   AlignRight,
   Copy,
+  ArrowDown,
+  ArrowUp,
 } from 'lucide-react';
 
 const ADMIN_PUBKEY = getAdminPubkeyHex();
@@ -732,6 +734,32 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
     setSaved(false);
   };
 
+  // Send selected element one step backward (lower in the draw order = behind others)
+  const sendBackward = () => {
+    if (!selRef.current) return;
+    setElements(prev => {
+      const idx = prev.findIndex(e => e.id === selRef.current);
+      if (idx <= 0) return prev;
+      const next = [...prev];
+      [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
+      return next;
+    });
+    setSaved(false);
+  };
+
+  // Bring selected element one step forward (higher in the draw order = in front)
+  const bringForward = () => {
+    if (!selRef.current) return;
+    setElements(prev => {
+      const idx = prev.findIndex(e => e.id === selRef.current);
+      if (idx >= prev.length - 1) return prev;
+      const next = [...prev];
+      [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
+      return next;
+    });
+    setSaved(false);
+  };
+
   const exportCanvas = useCallback(() => {
     // Render a clean frame (no selection handles) for export
     const offscreen = document.createElement('canvas');
@@ -746,6 +774,7 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
   }, [onSave]);
 
   const selectedEl = elements.find(e => e.id === selected) ?? null;
+  const selectedIdx = selected ? elements.findIndex(e => e.id === selected) : -1;
 
   return (
     <div className="space-y-3">
@@ -767,11 +796,31 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
       {/* ── Selection controls (shown only when something is selected) ── */}
       {selectedEl && (
         <div className="rounded-xl border border-pink-200 dark:border-pink-800 bg-pink-50 dark:bg-pink-900/20 p-3 space-y-2.5">
-          <div className="flex items-center justify-between">
-            <p className="text-[10px] font-semibold text-pink-600 dark:text-pink-400 uppercase tracking-wider truncate max-w-[60%]">
-              {selectedEl.kind === 'text' ? `✏️ "${selectedEl.text?.slice(0, 18)}${(selectedEl.text?.length ?? 0) > 18 ? '…' : ''}"` : '🖼 Image'}
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-[10px] font-semibold text-pink-600 dark:text-pink-400 uppercase tracking-wider truncate">
+              {selectedEl.kind === 'text' ? `✏️ "${selectedEl.text?.slice(0, 14)}${(selectedEl.text?.length ?? 0) > 14 ? '…' : ''}"` : '🖼 Image'}
+              <span className="ml-1.5 text-pink-400 dark:text-pink-500 font-normal normal-case tracking-normal">
+                layer {selectedIdx + 1}/{elements.length}
+              </span>
             </p>
-            <div className="flex gap-1.5">
+            <div className="flex gap-1 shrink-0">
+              {/* Layer down — move behind other elements */}
+              <button
+                className="flex items-center justify-center w-7 h-7 rounded-lg border border-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-100 text-gray-500 transition-colors"
+                onClick={sendBackward}
+                title="Send backward (layer down)"
+              >
+                <ArrowDown className="h-3.5 w-3.5" />
+              </button>
+              {/* Layer up — move in front of other elements */}
+              <button
+                className="flex items-center justify-center w-7 h-7 rounded-lg border border-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-100 text-gray-500 transition-colors"
+                onClick={bringForward}
+                title="Bring forward (layer up)"
+              >
+                <ArrowUp className="h-3.5 w-3.5" />
+              </button>
+              {/* Duplicate */}
               <button
                 className="flex items-center justify-center w-7 h-7 rounded-lg border border-blue-200 bg-white dark:bg-gray-800 hover:bg-blue-50 text-blue-500 transition-colors"
                 onClick={duplicateSelected}
@@ -779,12 +828,13 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
               >
                 <Copy className="h-3.5 w-3.5" />
               </button>
+              {/* Delete / X */}
               <button
                 className="flex items-center justify-center w-7 h-7 rounded-lg border border-red-200 bg-red-50 dark:bg-red-900/30 hover:bg-red-100 text-red-500 transition-colors"
                 onClick={removeSelected}
                 title="Delete"
               >
-                <Trash2 className="h-3.5 w-3.5" />
+                <X className="h-3.5 w-3.5" />
               </button>
             </div>
           </div>
