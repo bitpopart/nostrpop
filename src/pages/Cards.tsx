@@ -3,6 +3,7 @@ import { useSeoMeta } from '@unhead/react';
 import { useSearchParams, Link, useLocation } from 'react-router-dom';
 import { CreateCardForm } from '@/components/cards/CreateCardForm';
 import { CardList } from '@/components/cards/CardList';
+import { CardLibraryBox } from '@/components/cards/CardLibraryBox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -215,6 +216,11 @@ const Cards = () => {
             <CardList showMyCards={false} selectedCategory={selectedCategory === 'All' ? undefined : selectedCategory} />
           </div>
         )}
+
+        {/* Ready-made Card Library */}
+        <div className="mt-8">
+          <CardLibraryBox />
+        </div>
 
         {/* Floating Admin Button */}
         {isAdmin && (

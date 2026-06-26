@@ -16,7 +16,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 import { useCardTemplates } from '@/hooks/useCardTemplates';
+import { useAppMedia } from '@/hooks/useAppContent';
 import { useUploadFile } from '@/hooks/useUploadFile';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -27,10 +30,11 @@ import { LoginArea } from '@/components/auth/LoginArea';
 import { nip19 } from 'nostr-tools';
 import {
   Type, Trash2, Download, RotateCcw, Copy,
-  Palette, ImageIcon, ChevronUp, ChevronDown,
+  ImageIcon, ChevronUp, ChevronDown,
   ZoomIn, ZoomOut, LayoutTemplate, Loader2, Sparkles,
-  Upload, Share2, Layers,
+  Upload, Share2, Layers, UserCircle2,
 } from 'lucide-react';
+
 
 // ─── Card Format (1200×900 — 4:3 landscape, matches all existing BitPop Cards) ──
 const CARD_FORMAT = {
@@ -116,6 +120,7 @@ export function CardEditor({ onPublished }: CardEditorProps) {
   const { mutateAsync: uploadFile, isPending: isUploading } = useUploadFile();
   const { data: templates, isLoading: templatesLoading } = useCardTemplates();
   const { allCategories } = useCardCategories();
+  const { data: cardPops = [], isLoading: popsLoading } = useAppMedia('app-pop');
 
   // Canvas state
   const [bgImage, setBgImage] = useState<string | null>(null);
@@ -564,64 +569,107 @@ export function CardEditor({ onPublished }: CardEditorProps) {
 
         <Separator />
 
-        {/* Templates panel */}
+        {/* Templates / Pops panel */}
         {activePanel === 'templates' && (
           <div className="space-y-3">
-            <p className="text-sm font-medium">Choose a background template</p>
+            <Tabs defaultValue="card-templates" className="w-full">
+              <TabsList className="grid grid-cols-2 w-full h-8 text-xs">
+                <TabsTrigger value="card-templates" className="text-xs gap-1">
+                  <LayoutTemplate className="h-3 w-3" /> Templates
+                </TabsTrigger>
+                <TabsTrigger value="card-pops" className="text-xs gap-1">
+                  <UserCircle2 className="h-3 w-3" /> Pops
+                </TabsTrigger>
+              </TabsList>
 
-            {/* Solid background color option */}
-            <div className="space-y-2">
-              <p className="text-xs text-muted-foreground">Or use a solid colour background:</p>
-              <div className="flex items-center gap-2">
-                <input
-                  type="color"
-                  value={bgColor}
-                  onChange={e => { setBgColor(e.target.value); setBgImage(null); }}
-                  className="w-8 h-8 rounded cursor-pointer border"
-                  title="Background colour"
-                />
-                <span className="text-xs text-muted-foreground">Background colour</span>
-              </div>
-            </div>
-
-            <Separator />
-
-            {templatesLoading ? (
-              <div className="grid grid-cols-2 gap-2">
-                {[...Array(4)].map((_, i) => <Skeleton key={i} className="aspect-[4/3] rounded" />)}
-              </div>
-            ) : !templates || templates.length === 0 ? (
-              <div className="text-center py-6">
-                <LayoutTemplate className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                <p className="text-sm text-muted-foreground">No templates yet.</p>
-                <p className="text-xs text-muted-foreground">The admin can add templates in the backend.</p>
-              </div>
-            ) : (
-              <ScrollArea className="h-80">
-                <div className="grid grid-cols-2 gap-2 pr-2">
-                  {templates.map(tpl => (
-                    <button
-                      key={tpl.id}
-                      onClick={() => setBgImage(tpl.coverImage)}
-                      className={`rounded overflow-hidden border-2 transition-all hover:scale-105 ${
-                        bgImage === tpl.coverImage ? 'border-pink-500 shadow-md' : 'border-transparent hover:border-pink-300'
-                      }`}
-                      title={tpl.name}
-                    >
-                      <div className="aspect-[4/3] relative">
-                        <img src={tpl.coverImage} alt={tpl.name} className="w-full h-full object-cover" />
-                        {bgImage === tpl.coverImage && (
-                          <div className="absolute inset-0 bg-pink-500/20 flex items-center justify-center">
-                            <Badge className="text-xs bg-pink-500">✓</Badge>
-                          </div>
-                        )}
-                      </div>
-                      <p className="text-xs p-1 truncate text-center bg-white dark:bg-gray-800">{tpl.name}</p>
-                    </button>
-                  ))}
+              {/* Card templates */}
+              <TabsContent value="card-templates" className="mt-2 space-y-3">
+                {/* Solid background color option */}
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={bgColor}
+                    onChange={e => { setBgColor(e.target.value); setBgImage(null); }}
+                    className="w-7 h-7 rounded cursor-pointer border"
+                    title="Background colour"
+                  />
+                  <span className="text-xs text-muted-foreground">Solid colour background</span>
                 </div>
-              </ScrollArea>
-            )}
+
+                <Separator />
+
+                {templatesLoading ? (
+                  <div className="grid grid-cols-2 gap-2">
+                    {[...Array(4)].map((_, i) => <Skeleton key={i} className="aspect-[4/3] rounded" />)}
+                  </div>
+                ) : !templates || templates.length === 0 ? (
+                  <div className="text-center py-6">
+                    <LayoutTemplate className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground">No templates yet.</p>
+                  </div>
+                ) : (
+                  <ScrollArea className="h-72">
+                    <div className="grid grid-cols-2 gap-2 pr-2">
+                      {templates.map(tpl => (
+                        <button
+                          key={tpl.id}
+                          onClick={() => setBgImage(tpl.coverImage)}
+                          className={`rounded overflow-hidden border-2 transition-all hover:scale-105 ${
+                            bgImage === tpl.coverImage ? 'border-pink-500 shadow-md' : 'border-transparent hover:border-pink-300'
+                          }`}
+                          title={tpl.name}
+                        >
+                          <div className="aspect-[4/3] relative">
+                            <img src={tpl.coverImage} alt={tpl.name} className="w-full h-full object-cover" />
+                            {bgImage === tpl.coverImage && (
+                              <div className="absolute inset-0 bg-pink-500/20 flex items-center justify-center">
+                                <Badge className="text-xs bg-pink-500">✓</Badge>
+                              </div>
+                            )}
+                          </div>
+                          <p className="text-xs p-1 truncate text-center bg-white dark:bg-gray-800">{tpl.name}</p>
+                        </button>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                )}
+              </TabsContent>
+
+              {/* Pops — cartoon/pop characters to add as layers */}
+              <TabsContent value="card-pops" className="mt-2">
+                {popsLoading ? (
+                  <div className="grid grid-cols-3 gap-2">
+                    {[...Array(6)].map((_, i) => <Skeleton key={i} className="aspect-square rounded" />)}
+                  </div>
+                ) : cardPops.length === 0 ? (
+                  <div className="text-center py-6">
+                    <UserCircle2 className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground">No pop characters yet.</p>
+                    <p className="text-xs text-muted-foreground">The admin will upload cartoons &amp; pops here.</p>
+                  </div>
+                ) : (
+                  <ScrollArea className="h-80">
+                    <div className="grid grid-cols-3 gap-2 pr-2">
+                      {cardPops.map(pop => (
+                        <button
+                          key={pop.id}
+                          title={pop.title}
+                          onClick={() => handleAddImage(pop.image_url)}
+                          className="group aspect-square rounded-lg border-2 border-transparent hover:border-pink-400 bg-gray-50 dark:bg-gray-800 overflow-hidden transition-all hover:shadow-md hover:scale-105 active:scale-95"
+                        >
+                          <img
+                            src={pop.image_url}
+                            alt={pop.title}
+                            className="w-full h-full object-contain p-1 group-hover:scale-105 transition-transform"
+                            loading="lazy"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                )}
+              </TabsContent>
+            </Tabs>
           </div>
         )}
 
@@ -1051,3 +1099,5 @@ export function CardEditor({ onPublished }: CardEditorProps) {
     </div>
   );
 }
+
+

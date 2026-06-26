@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useSeoMeta } from '@unhead/react';
 import { Link, useNavigate } from 'react-router-dom';
 import { CardEditor } from '@/components/cards/CardEditor';
+import { CardLibraryBox } from '@/components/cards/CardLibraryBox';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Sparkles } from 'lucide-react';
 
@@ -60,6 +61,9 @@ const CreateCard = () => {
         <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-xl border-0 p-6">
           <CardEditor onPublished={handlePublished} />
         </div>
+
+        {/* Ready-made Card Library */}
+        <CardLibraryBox />
 
         {/* Footer */}
         <div className="text-center mt-12 text-sm text-gray-500 dark:text-gray-400">
