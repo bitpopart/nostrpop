@@ -12,6 +12,8 @@ import { useIsAdmin } from '@/hooks/useIsAdmin';
 
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useAppMedia } from '@/hooks/useAppContent';
+import { useCardTemplates } from '@/hooks/useCardTemplates';
+import { useLatestCards } from '@/hooks/useLatestCards';
 import { useFreeDownloads } from '@/hooks/useFreeDownloads';
 import { useAnimations } from '@/hooks/useAnimations';
 import { useHomepageSettings } from '@/hooks/useHomepageSettings';
@@ -364,7 +366,9 @@ type PointerMode =
   | { kind: 'drag';   id: string; startX: number; startY: number; origX: number; origY: number }
   | { kind: 'resize'; id: string; startX: number; startY: number; origX: number; origY: number; origW: number; origH: number };
 
-const CANVAS_SIZE = 320;
+const CANVAS_SIZE = 320;           // meme: square
+const CARD_CANVAS_W = 320;          // card: 4:3 landscape
+const CARD_CANVAS_H = 240;
 const HANDLE = 12; // corner-handle hit-area radius in canvas-space pixels
 
 const POP_COLORS = [
@@ -381,10 +385,12 @@ function drawFrame(
   selected: string | null,
   bgColor: string,
   imgCache: Map<string, HTMLImageElement>,
+  canvasW = CANVAS_SIZE,
+  canvasH = CANVAS_SIZE,
 ) {
-  ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+  ctx.clearRect(0, 0, canvasW, canvasH);
   ctx.fillStyle = bgColor;
-  ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+  ctx.fillRect(0, 0, canvasW, canvasH);
 
   for (const el of elements) {
     if (el.kind === 'image') {
@@ -465,7 +471,11 @@ function drawFrame(
 
 type MemePickerTab = 'library' | 'templates' | 'icons';
 
-function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => void }) {
+function MiniCanvas({ onSave, mode = 'meme' }: { onSave: (dataUrl: string, title: string) => void; mode?: 'meme' | 'card' }) {
+  const isCard = mode === 'card';
+  const CW = isCard ? CARD_CANVAS_W : CANVAS_SIZE;
+  const CH = isCard ? CARD_CANVAS_H : CANVAS_SIZE;
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number | null>(null);
 
@@ -481,7 +491,7 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
   const [showTextInput, setShowTextInput] = useState(false);
 
   // Track canvas display width so overlay buttons can be positioned accurately
-  const [canvasDisplayW, setCanvasDisplayW] = useState(CANVAS_SIZE);
+  const [canvasDisplayW, setCanvasDisplayW] = useState(CW);
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -506,9 +516,29 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
 
   const ptrRef = useRef<PointerMode>({ kind: 'idle' });
 
+  // Meme library data
   const { data: memes = [], isLoading: memesLoading } = useAppMedia('app-meme');
-  const { data: memeTemplates = [], isLoading: templatesLoading } = useAppMedia('app-meme-template');
+  const { data: memeTemplates = [], isLoading: memeTemplatesLoading } = useAppMedia('app-meme-template');
   const { data: memeIcons = [], isLoading: iconsLoading } = useAppMedia('app-meme-icon');
+
+  // Card library data
+  const { data: cardTemplatesRaw = [], isLoading: cardTemplatesLoading } = useCardTemplates();
+  const { data: cardLibraryRaw = [], isLoading: cardLibraryLoading } = useLatestCards(100);
+
+  // Normalise card library to the same shape used by the picker thumbnails
+  interface PickerItem { id: string; image_url: string; title: string; }
+  const cardLibrary: PickerItem[] = cardLibraryRaw
+    .map(c => ({ id: c.id, image_url: (c as unknown as { images?: string[] }).images?.[0] ?? '', title: c.title }))
+    .filter(c => !!c.image_url);
+  const cardTemplates: PickerItem[] = cardTemplatesRaw
+    .map(t => ({ id: t.id, image_url: t.coverImage, title: t.name }));
+
+  // Pick library/template sources based on mode
+  const libraryItems   = isCard ? cardLibrary        : memes;
+  const templateItems  = isCard ? cardTemplates      : memeTemplates.map(m => ({ id: m.id, image_url: m.image_url, title: m.title }));
+  const iconItems      = memeIcons.map(m => ({ id: m.id, image_url: m.image_url, title: m.title }));
+  const libraryLoading = isCard ? cardLibraryLoading  : memesLoading;
+  const templateLoading= isCard ? cardTemplatesLoading: memeTemplatesLoading;
 
   // ── Redraw ───────────────────────────────────────────────
   const redraw = useCallback((els?: CanvasEl[], sel?: string | null, bg?: string) => {
@@ -525,6 +555,7 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
         sel  !== undefined ? sel  : selRef.current,
         bg   ?? bgRef.current,
         imgCache.current,
+        CW, CH,
       );
     });
   }, []);
@@ -539,8 +570,8 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
   const getPos = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const rect = canvasRef.current!.getBoundingClientRect();
     return {
-      x: (e.clientX - rect.left) * (CANVAS_SIZE / rect.width),
-      y: (e.clientY - rect.top)  * (CANVAS_SIZE / rect.height),
+      x: (e.clientX - rect.left) * (CW / rect.width),
+      y: (e.clientY - rect.top)  * (CH / rect.height),
     };
   };
 
@@ -618,9 +649,9 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
     const id = `txt-${Date.now()}`;
     const el: CanvasEl = {
       id, kind: 'text',
-      x: 20, y: 120,
-      width: CANVAS_SIZE - 40, height: 50,
-      text, fontSize: 32, color: '#FF0080', fontFamily,
+      x: 20, y: Math.round(CH * 0.35),
+      width: CW - 40, height: 50,
+      text, fontSize: isCard ? 24 : 32, color: '#FF0080', fontFamily,
       bold: true, align: 'left',
     };
     setElements(prev => [...prev, el]);
@@ -653,7 +684,7 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
       imgEl.onload = () => {
         imgCache.current.set(id, imgEl);
         const ratio = imgEl.naturalWidth / Math.max(1, imgEl.naturalHeight);
-        const w = Math.min(160, CANVAS_SIZE * 0.5);
+        const w = Math.min(160, CW * 0.5);
         const h = w / ratio;
         // Update the placeholder with real dimensions
         setElements(prev => prev.map(el =>
@@ -802,15 +833,15 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
   const exportCanvas = useCallback(() => {
     // Render a clean frame (no selection handles) for export
     const offscreen = document.createElement('canvas');
-    offscreen.width = CANVAS_SIZE;
-    offscreen.height = CANVAS_SIZE;
+    offscreen.width = CW;
+    offscreen.height = CH;
     const ctx = offscreen.getContext('2d');
     if (!ctx) return;
-    drawFrame(ctx, elRef.current, null, bgRef.current, imgCache.current);
+    drawFrame(ctx, elRef.current, null, bgRef.current, imgCache.current, CW, CH);
     const dataUrl = offscreen.toDataURL('image/png');
-    onSave(dataUrl, 'My BitPopArt Creation');
+    onSave(dataUrl, isCard ? 'My BitPop Card' : 'My BitPopArt Meme');
     setSaved(true);
-  }, [onSave]);
+  }, [onSave, CW, CH, isCard]);
 
   const selectedEl = elements.find(e => e.id === selected) ?? null;
   const selectedIdx = selected ? elements.findIndex(e => e.id === selected) : -1;
@@ -822,8 +853,8 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
         <div className="relative w-full" style={{ maxWidth: CANVAS_SIZE }}>
           <canvas
             ref={canvasRef}
-            width={CANVAS_SIZE}
-            height={CANVAS_SIZE}
+            width={CW}
+            height={CH}
             className="rounded-xl border-2 border-orange-200 dark:border-orange-700 shadow-md w-full block"
             style={{ touchAction: 'none', cursor: 'crosshair' }}
             onPointerDown={onPointerDown}
@@ -833,7 +864,7 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
           />
           {/* Overlay X button on the selected element — visible shortcut to delete */}
           {selectedEl && (() => {
-            const scale = canvasDisplayW / CANVAS_SIZE;
+            const scale = canvasDisplayW / CW;
             const left = selectedEl.x * scale;
             const top  = selectedEl.y * scale;
             return (
@@ -851,7 +882,7 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
 
           {/* Text toolbar — sits just below the dashed selection box, solid white, compact */}
           {selectedEl?.kind === 'text' && (() => {
-            const scale  = canvasDisplayW / CANVAS_SIZE;
+            const scale  = canvasDisplayW / CW;
             const left   = selectedEl.x * scale;
             // Position below the element's bottom edge, +4px gap
             const top    = (selectedEl.y + selectedEl.height) * scale + 4;
@@ -1154,8 +1185,8 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
           >
             <Library className="h-3.5 w-3.5" />
             Library
-            {memes.length > 0 && (
-              <span className="ml-0.5 text-orange-500 font-bold">({memes.length})</span>
+            {libraryItems.length > 0 && (
+              <span className="ml-0.5 text-orange-500 font-bold">({libraryItems.length})</span>
             )}
           </button>
           <button
@@ -1164,8 +1195,8 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
           >
             <LayoutTemplate className="h-3.5 w-3.5" />
             Templates
-            {memeTemplates.length > 0 && (
-              <span className="ml-0.5 text-purple-500 font-bold">({memeTemplates.length})</span>
+            {templateItems.length > 0 && (
+              <span className="ml-0.5 text-purple-500 font-bold">({templateItems.length})</span>
             )}
           </button>
           <button
@@ -1174,43 +1205,37 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
           >
             <Sticker className="h-3.5 w-3.5" />
             Icons
-            {memeIcons.length > 0 && (
-              <span className="ml-0.5 text-pink-500 font-bold">({memeIcons.length})</span>
+            {iconItems.length > 0 && (
+              <span className="ml-0.5 text-pink-500 font-bold">({iconItems.length})</span>
             )}
           </button>
         </div>
 
         {/* Picker content */}
         <div className="p-3 bg-white dark:bg-gray-800">
-          {/* Add from Library (memes) */}
+          {/* Library */}
           {pickerTab === 'library' && (
             <>
-              {memesLoading ? (
+              {libraryLoading ? (
                 <div className="flex gap-2 pb-1">
                   {[...Array(4)].map((_, i) => <Skeleton key={i} className="shrink-0 w-16 h-16 rounded-lg" />)}
                 </div>
-              ) : memes.length > 0 ? (
+              ) : libraryItems.length > 0 ? (
                 <div className="flex gap-2 overflow-x-auto pb-1">
-                  {memes.map(meme => (
+                  {libraryItems.map(item => (
                     <button
-                      key={meme.id}
+                      key={item.id}
                       className="shrink-0 w-16 h-16 rounded-lg overflow-hidden border border-gray-200 hover:border-orange-400 transition-colors bg-gray-100"
-                      onClick={() => addImage(meme.image_url)}
-                      title={meme.title}
+                      onClick={() => addImage(item.image_url)}
+                      title={item.title}
                     >
-                      <img
-                        src={meme.image_url}
-                        alt={meme.title}
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                        onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-                      />
+                      <img src={item.image_url} alt={item.title} className="w-full h-full object-cover" loading="lazy" onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
                     </button>
                   ))}
                 </div>
               ) : (
                 <p className="text-xs text-muted-foreground text-center py-3">
-                  No memes yet — add memes in Admin → App Content
+                  {isCard ? 'No cards yet — publish cards to add them here' : 'No memes yet — add memes in Admin → App Content'}
                 </p>
               )}
             </>
@@ -1219,67 +1244,53 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
           {/* Templates */}
           {pickerTab === 'templates' && (
             <>
-              {templatesLoading ? (
+              {templateLoading ? (
                 <div className="flex gap-2 pb-1">
                   {[...Array(4)].map((_, i) => <Skeleton key={i} className="shrink-0 w-16 h-16 rounded-lg" />)}
                 </div>
-              ) : memeTemplates.length > 0 ? (
+              ) : templateItems.length > 0 ? (
                 <div className="flex gap-2 overflow-x-auto pb-1">
-                  {memeTemplates.map(tpl => (
+                  {templateItems.map(tpl => (
                     <button
                       key={tpl.id}
                       className="shrink-0 w-16 h-16 rounded-lg overflow-hidden border border-gray-200 hover:border-purple-400 transition-colors bg-gray-100"
                       onClick={() => addImage(tpl.image_url)}
                       title={tpl.title}
                     >
-                      <img
-                        src={tpl.image_url}
-                        alt={tpl.title}
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                        onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-                      />
+                      <img src={tpl.image_url} alt={tpl.title} className="w-full h-full object-cover" loading="lazy" onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
                     </button>
                   ))}
                 </div>
               ) : (
                 <p className="text-xs text-muted-foreground text-center py-3">
-                  No templates yet — add templates in Admin → App Content
+                  {isCard ? 'No card templates yet — add them in Admin → Cards' : 'No templates yet — add templates in Admin → App Content'}
                 </p>
               )}
             </>
           )}
 
-          {/* Icons */}
+          {/* Icons — same for both modes */}
           {pickerTab === 'icons' && (
             <>
               {iconsLoading ? (
                 <div className="flex gap-2 pb-1">
                   {[...Array(4)].map((_, i) => <Skeleton key={i} className="shrink-0 w-16 h-16 rounded-lg" />)}
                 </div>
-              ) : memeIcons.length > 0 ? (
+              ) : iconItems.length > 0 ? (
                 <div className="flex gap-2 overflow-x-auto pb-1">
-                  {memeIcons.map(icon => (
+                  {iconItems.map(icon => (
                     <button
                       key={icon.id}
                       className="shrink-0 w-16 h-16 rounded-lg overflow-hidden border border-gray-200 hover:border-pink-400 transition-colors bg-gray-100"
                       onClick={() => addImage(icon.image_url)}
                       title={icon.title}
                     >
-                      <img
-                        src={icon.image_url}
-                        alt={icon.title}
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                        onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-                      />
+                      <img src={icon.image_url} alt={icon.title} className="w-full h-full object-cover" loading="lazy" onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
                     </button>
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-muted-foreground text-center py-3">
-                  No icons yet — add icons in Admin → App Content
-                </p>
+                <p className="text-xs text-muted-foreground text-center py-3">No icons yet — add icons in Admin → App Content</p>
               )}
             </>
           )}
@@ -1510,7 +1521,7 @@ function PrintItemCard({ imageDataUrl, title, onClose }: PrintItemCardProps) {
 // ── Active tab types ──────────────────────────────────────
 
 type AppTab = 'home' | 'create' | 'download' | 'print';
-type CreateSubTab = 'canvas' | 'avatar';
+type CreateSubTab = 'meme' | 'card' | 'avatar';
 
 // ── Main App page ─────────────────────────────────────────
 
@@ -1522,7 +1533,7 @@ export default function AppPage() {
 
   // Active tab
   const [activeTab, setActiveTab] = useState<AppTab>('home');
-  const [createSubTab, setCreateSubTab] = useState<CreateSubTab>('canvas');
+  const [createSubTab, setCreateSubTab] = useState<CreateSubTab>('meme');
   const [activeMediaTab, setActiveMediaTab] = useState<MediaTab>('wallpaper');
 
   // Print item
@@ -1727,25 +1738,36 @@ export default function AppPage() {
             </div>
 
             {/* Sub-tabs */}
-            <div className="flex gap-2 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl">
+            <div className="flex gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl">
               <button
-                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-semibold transition-all ${createSubTab === 'canvas' ? 'bg-white dark:bg-gray-700 shadow text-orange-600' : 'text-muted-foreground'}`}
-                onClick={() => setCreateSubTab('canvas')}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${createSubTab === 'meme' ? 'bg-white dark:bg-gray-700 shadow text-orange-600' : 'text-muted-foreground'}`}
+                onClick={() => setCreateSubTab('meme')}
               >
-                <PenLine className="h-4 w-4 stroke-[1.5]" />
-                Meme Creator
+                <PenLine className="h-3.5 w-3.5 stroke-[1.5]" />
+                Meme
               </button>
               <button
-                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-semibold transition-all ${createSubTab === 'avatar' ? 'bg-white dark:bg-gray-700 shadow text-violet-600' : 'text-muted-foreground'}`}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${createSubTab === 'card' ? 'bg-white dark:bg-gray-700 shadow text-pink-600' : 'text-muted-foreground'}`}
+                onClick={() => setCreateSubTab('card')}
+              >
+                <ImageIcon className="h-3.5 w-3.5 stroke-[1.5]" />
+                Card
+              </button>
+              <button
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${createSubTab === 'avatar' ? 'bg-white dark:bg-gray-700 shadow text-violet-600' : 'text-muted-foreground'}`}
                 onClick={() => setCreateSubTab('avatar')}
               >
-                <UserCircle2 className="h-4 w-4 stroke-[1.5]" />
-                Avatar Generator
+                <UserCircle2 className="h-3.5 w-3.5 stroke-[1.5]" />
+                Avatar
               </button>
             </div>
 
-            {createSubTab === 'canvas' && (
-              <MiniCanvas onSave={handleCanvasSave} />
+            {createSubTab === 'meme' && (
+              <MiniCanvas onSave={handleCanvasSave} mode="meme" />
+            )}
+
+            {createSubTab === 'card' && (
+              <MiniCanvas onSave={handleCanvasSave} mode="card" />
             )}
 
             {createSubTab === 'avatar' && (
