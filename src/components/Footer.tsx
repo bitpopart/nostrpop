@@ -162,6 +162,11 @@ export function Footer() {
                   News
                 </Link>
               </li>
+              <li>
+                <Link to="/sitemap" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  Sitemap
+                </Link>
+              </li>
             </ul>
           </div>
 
