@@ -469,9 +469,13 @@ function drawFrame(
   }
 }
 
-type MemePickerTab = 'library' | 'templates' | 'icons';
+type MemePickerTab = 'library' | 'templates' | 'pops' | 'icons';
 
-function MiniCanvas({ onSave, mode = 'meme' }: { onSave: (dataUrl: string, title: string) => void; mode?: 'meme' | 'card' }) {
+function MiniCanvas({ onSave, onViewLibraryItem, mode = 'meme' }: {
+  onSave: (dataUrl: string, title: string) => void;
+  onViewLibraryItem?: (item: { id: string; image_url: string; title: string }) => void;
+  mode?: 'meme' | 'card';
+}) {
   const isCard = mode === 'card';
   const CW = isCard ? CARD_CANVAS_W : CANVAS_SIZE;
   const CH = isCard ? CARD_CANVAS_H : CANVAS_SIZE;
@@ -520,6 +524,7 @@ function MiniCanvas({ onSave, mode = 'meme' }: { onSave: (dataUrl: string, title
   const { data: memes = [], isLoading: memesLoading } = useAppMedia('app-meme');
   const { data: memeTemplates = [], isLoading: memeTemplatesLoading } = useAppMedia('app-meme-template');
   const { data: memeIcons = [], isLoading: iconsLoading } = useAppMedia('app-meme-icon');
+  const { data: memePops = [], isLoading: popsLoading } = useAppMedia('app-pop');
 
   // Card library data
   const { data: cardTemplatesRaw = [], isLoading: cardTemplatesLoading } = useCardTemplates();
@@ -537,6 +542,7 @@ function MiniCanvas({ onSave, mode = 'meme' }: { onSave: (dataUrl: string, title
   const libraryItems   = isCard ? cardLibrary        : memes;
   const templateItems  = isCard ? cardTemplates      : memeTemplates.map(m => ({ id: m.id, image_url: m.image_url, title: m.title }));
   const iconItems      = memeIcons.map(m => ({ id: m.id, image_url: m.image_url, title: m.title }));
+  const popItems       = memePops.map(m => ({ id: m.id, image_url: m.image_url, title: m.title }));
   const libraryLoading = isCard ? cardLibraryLoading  : memesLoading;
   const templateLoading= isCard ? cardTemplatesLoading: memeTemplatesLoading;
 
@@ -1200,6 +1206,16 @@ function MiniCanvas({ onSave, mode = 'meme' }: { onSave: (dataUrl: string, title
             )}
           </button>
           <button
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold transition-colors ${pickerTab === 'pops' ? 'bg-white dark:bg-gray-800 text-violet-600 border-b-2 border-violet-500' : 'text-muted-foreground hover:text-foreground'}`}
+            onClick={() => setPickerTab('pops')}
+          >
+            <UserCircle2 className="h-3.5 w-3.5" />
+            Pops
+            {popItems.length > 0 && (
+              <span className="ml-0.5 text-violet-500 font-bold">({popItems.length})</span>
+            )}
+          </button>
+          <button
             className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold transition-colors ${pickerTab === 'icons' ? 'bg-white dark:bg-gray-800 text-pink-600 border-b-2 border-pink-500' : 'text-muted-foreground hover:text-foreground'}`}
             onClick={() => setPickerTab('icons')}
           >
@@ -1213,9 +1229,12 @@ function MiniCanvas({ onSave, mode = 'meme' }: { onSave: (dataUrl: string, title
 
         {/* Picker content */}
         <div className="p-3 bg-white dark:bg-gray-800">
-          {/* Library */}
+          {/* Library — ready-made designs, view-only (full screen print/download) */}
           {pickerTab === 'library' && (
             <>
+              <p className="text-[10px] text-muted-foreground mb-2 italic">
+                Tap a design to view &amp; download — these are ready-made and cannot be edited.
+              </p>
               {libraryLoading ? (
                 <div className="flex gap-2 pb-1">
                   {[...Array(4)].map((_, i) => <Skeleton key={i} className="shrink-0 w-16 h-16 rounded-lg" />)}
@@ -1225,17 +1244,20 @@ function MiniCanvas({ onSave, mode = 'meme' }: { onSave: (dataUrl: string, title
                   {libraryItems.map(item => (
                     <button
                       key={item.id}
-                      className="shrink-0 w-16 h-16 rounded-lg overflow-hidden border border-gray-200 hover:border-orange-400 transition-colors bg-gray-100"
-                      onClick={() => addImage(item.image_url)}
+                      className="shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 border-gray-200 hover:border-orange-400 transition-colors bg-gray-100 relative group"
+                      onClick={() => onViewLibraryItem ? onViewLibraryItem(item) : addImage(item.image_url)}
                       title={item.title}
                     >
                       <img src={item.image_url} alt={item.title} className="w-full h-full object-cover" loading="lazy" onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                        <ArrowDown className="h-4 w-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
                     </button>
                   ))}
                 </div>
               ) : (
                 <p className="text-xs text-muted-foreground text-center py-3">
-                  {isCard ? 'No cards yet — publish cards to add them here' : 'No memes yet — add memes in Admin → App Content'}
+                  {isCard ? 'No ready cards yet' : 'No ready memes yet'}
                 </p>
               )}
             </>
@@ -1265,6 +1287,32 @@ function MiniCanvas({ onSave, mode = 'meme' }: { onSave: (dataUrl: string, title
                 <p className="text-xs text-muted-foreground text-center py-3">
                   {isCard ? 'No card templates yet — add them in Admin → Cards' : 'No templates yet — add templates in Admin → App Content'}
                 </p>
+              )}
+            </>
+          )}
+
+          {/* Pops — cartoon/pop characters */}
+          {pickerTab === 'pops' && (
+            <>
+              {popsLoading ? (
+                <div className="flex gap-2 pb-1">
+                  {[...Array(4)].map((_, i) => <Skeleton key={i} className="shrink-0 w-16 h-16 rounded-lg" />)}
+                </div>
+              ) : popItems.length > 0 ? (
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {popItems.map(pop => (
+                    <button
+                      key={pop.id}
+                      className="shrink-0 w-16 h-16 rounded-lg overflow-hidden border border-gray-200 hover:border-violet-400 transition-colors bg-gray-50"
+                      onClick={() => addImage(pop.image_url)}
+                      title={pop.title}
+                    >
+                      <img src={pop.image_url} alt={pop.title} className="w-full h-full object-contain p-1" loading="lazy" onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground text-center py-3">No pops yet — admin will upload cartoon characters here</p>
               )}
             </>
           )}
@@ -1539,6 +1587,9 @@ export default function AppPage() {
   // Print item
   const [printItem, setPrintItem] = useState<{ dataUrl: string; title: string } | null>(null);
 
+  // Library item view (ready-made meme or card — view only, no edit)
+  const [libraryItem, setLibraryItem] = useState<{ id: string; image_url: string; title: string } | null>(null);
+
   // Data
   const { data: wallpapers = [], isLoading: wpLoading } = useAppMedia('app-wallpaper');
   const { data: gifs = [], isLoading: gifLoading } = useAppMedia('app-gif');
@@ -1763,11 +1814,11 @@ export default function AppPage() {
             </div>
 
             {createSubTab === 'meme' && (
-              <MiniCanvas onSave={handleCanvasSave} mode="meme" />
+              <MiniCanvas onSave={handleCanvasSave} onViewLibraryItem={setLibraryItem} mode="meme" />
             )}
 
             {createSubTab === 'card' && (
-              <MiniCanvas onSave={handleCanvasSave} mode="card" />
+              <MiniCanvas onSave={handleCanvasSave} onViewLibraryItem={setLibraryItem} mode="card" />
             )}
 
             {createSubTab === 'avatar' && (
@@ -1877,6 +1928,62 @@ export default function AppPage() {
         )}
 
       </div>
+
+      {/* ══ LIBRARY ITEM FULL-VIEW DIALOG (view-only: print/download only) ══ */}
+      {libraryItem && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 flex flex-col"
+          onClick={() => setLibraryItem(null)}
+        >
+          {/* Image fills the screen */}
+          <div
+            className="flex-1 flex items-center justify-center overflow-hidden"
+            onClick={e => e.stopPropagation()}
+          >
+            <img
+              src={libraryItem.image_url}
+              alt={libraryItem.title}
+              className="max-w-full max-h-full w-auto h-auto object-contain"
+            />
+          </div>
+
+          {/* Bottom action bar */}
+          <div
+            className="bg-white dark:bg-gray-900 px-4 py-4 space-y-3"
+            onClick={e => e.stopPropagation()}
+          >
+            <div>
+              <p className="font-semibold text-sm">{libraryItem.title}</p>
+              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                <Library className="h-3 w-3" /> Ready-made design · cannot be edited
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-200 transition-colors text-sm font-semibold"
+                onClick={() => window.print()}
+              >
+                <Printer className="h-4 w-4" /> Print
+              </button>
+              <button
+                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border-0 text-white text-sm font-semibold"
+                style={getGradientStyle('primary') as React.CSSProperties}
+                onClick={() => {
+                  handleDownload(libraryItem.image_url, deriveFilename(libraryItem.image_url, libraryItem.title));
+                }}
+              >
+                <Download className="h-4 w-4" /> Download Free
+              </button>
+            </div>
+            <button
+              className="w-full py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              onClick={() => setLibraryItem(null)}
+            >
+              ✕ Close
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ══ BOTTOM APP BAR ═══════════════════════════════════ */}
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-t border-gray-200 dark:border-gray-700 shadow-2xl">
