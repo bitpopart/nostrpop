@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 
@@ -2045,102 +2046,95 @@ export default function AppPage() {
 
       </div>
 
-      {/* ══ LIBRARY ITEM FULL-VIEW OVERLAY (view-only: print/download only) ══ */}
-      {libraryItem && (
-        <div
-          className="fixed inset-0 z-[60] bg-black/90 flex flex-col"
-          onClick={() => setLibraryItem(null)}
-        >
-          {/* X close button — top-right, always visible */}
-          <div className="flex items-center justify-between px-4 py-3 shrink-0">
-            <p className="text-white/70 text-xs font-medium truncate max-w-[80%]">{libraryItem.title}</p>
-            <button
-              className="w-9 h-9 flex items-center justify-center rounded-full bg-white/15 hover:bg-white/30 active:bg-white/40 transition-colors text-white shrink-0"
-              onClick={e => { e.stopPropagation(); setLibraryItem(null); }}
-              aria-label="Close"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
+      {/* ══ LIBRARY ITEM FULL-VIEW DIALOG (view-only: print/download/share) ══ */}
+      <Dialog open={!!libraryItem} onOpenChange={open => { if (!open) setLibraryItem(null); }}>
+        <DialogContent className="p-0 gap-0 max-w-lg w-full overflow-hidden bg-black border-0 rounded-2xl flex flex-col max-h-[92dvh]">
+          {libraryItem && (
+            <>
+              <DialogTitle className="sr-only">{libraryItem.title}</DialogTitle>
 
-          {/* Image — tap anywhere on the image also closes */}
-          <div className="flex-1 flex items-center justify-center overflow-hidden px-4">
-            <img
-              src={libraryItem.image_url}
-              alt={libraryItem.title}
-              className="max-w-full max-h-full w-auto h-auto object-contain rounded-xl shadow-2xl"
-              onClick={() => setLibraryItem(null)}
-            />
-          </div>
+              {/* Title bar */}
+              <div className="flex items-center justify-between px-4 py-3 shrink-0">
+                <p className="text-white/70 text-xs font-medium truncate">{libraryItem.title}</p>
+              </div>
 
-          {/* Bottom action bar — stop propagation so buttons don't close the overlay */}
-          <div
-            className="bg-white dark:bg-gray-900 px-4 pt-4 pb-5 space-y-3 rounded-t-2xl mt-4"
-            onClick={e => e.stopPropagation()}
-          >
-            <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <Library className="h-3 w-3" /> Ready-made · cannot be edited
-            </p>
-
-            {/* Primary: Print + Download */}
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 active:bg-gray-200 transition-colors text-sm font-semibold"
-                onClick={() => window.print()}
+              {/* Image — tap to close */}
+              <div
+                className="flex-1 flex items-center justify-center overflow-hidden px-4 cursor-pointer min-h-0"
+                onClick={() => setLibraryItem(null)}
               >
-                <Printer className="h-4 w-4" /> Print
-              </button>
-              <button
-                className="flex items-center justify-center gap-2 py-2.5 rounded-xl border-0 text-white text-sm font-semibold shadow-md"
-                style={getGradientStyle('primary') as React.CSSProperties}
-                onClick={() => handleDownload(libraryItem.image_url, deriveFilename(libraryItem.image_url, libraryItem.title))}
-              >
-                <Download className="h-4 w-4" /> Download
-              </button>
-            </div>
+                <img
+                  src={libraryItem.image_url}
+                  alt={libraryItem.title}
+                  className="max-w-full max-h-full w-auto h-auto object-contain rounded-xl shadow-2xl"
+                />
+              </div>
 
-            {/* Share row */}
-            <div className="grid grid-cols-2 gap-2">
-              {/* Share to Nostr */}
-              <ShareToNostrMediaDialog
-                title={libraryItem.title}
-                imageUrl={libraryItem.image_url}
-                hashtags={['bitpopart', 'bitcoin', 'art', 'popart']}
-                pageUrl="https://www.bitpopart.com/app"
-              >
-                <button className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/20 active:bg-purple-100 transition-colors text-sm font-semibold w-full">
-                  <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm-1.5 14.5v-9l7 4.5-7 4.5z" />
-                  </svg>
-                  Nostr
-                </button>
-              </ShareToNostrMediaDialog>
+              {/* Bottom action bar */}
+              <div className="bg-white dark:bg-gray-900 px-4 pt-4 pb-5 space-y-3 rounded-t-2xl mt-3 shrink-0">
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Library className="h-3 w-3" /> Ready-made · cannot be edited
+                </p>
 
-              {/* Native / social share */}
-              <button
-                className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-sky-300 dark:border-sky-700 text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-900/20 active:bg-sky-100 transition-colors text-sm font-semibold"
-                onClick={async () => {
-                  if (navigator.share) {
-                    try {
-                      await navigator.share({
-                        title: libraryItem.title || 'BitPopArt',
-                        text: `${libraryItem.title || 'Check this out!'} 🎨 #bitpopart #bitcoin`,
-                        url: libraryItem.image_url,
-                      });
-                    } catch { /* cancelled */ }
-                  } else {
-                    const text = encodeURIComponent(`${libraryItem.title || 'BitPopArt'} 🎨 #bitpopart #bitcoin`);
-                    const url = encodeURIComponent(libraryItem.image_url);
-                    window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank', 'width=600,height=400');
-                  }
-                }}
-              >
-                <Share2 className="h-4 w-4" /> Share
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+                {/* Print + Download */}
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 active:bg-gray-200 transition-colors text-sm font-semibold"
+                    onClick={() => window.print()}
+                  >
+                    <Printer className="h-4 w-4" /> Print
+                  </button>
+                  <button
+                    className="flex items-center justify-center gap-2 py-2.5 rounded-xl border-0 text-white text-sm font-semibold shadow-md"
+                    style={getGradientStyle('primary') as React.CSSProperties}
+                    onClick={() => handleDownload(libraryItem.image_url, deriveFilename(libraryItem.image_url, libraryItem.title))}
+                  >
+                    <Download className="h-4 w-4" /> Download
+                  </button>
+                </div>
+
+                {/* Share row */}
+                <div className="grid grid-cols-2 gap-2">
+                  <ShareToNostrMediaDialog
+                    title={libraryItem.title}
+                    imageUrl={libraryItem.image_url}
+                    hashtags={['bitpopart', 'bitcoin', 'art', 'popart']}
+                    pageUrl="https://www.bitpopart.com/app"
+                  >
+                    <button className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/20 active:bg-purple-100 transition-colors text-sm font-semibold w-full">
+                      <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm-1.5 14.5v-9l7 4.5-7 4.5z" />
+                      </svg>
+                      Nostr
+                    </button>
+                  </ShareToNostrMediaDialog>
+
+                  <button
+                    className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-sky-300 dark:border-sky-700 text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-900/20 active:bg-sky-100 transition-colors text-sm font-semibold"
+                    onClick={async () => {
+                      if (navigator.share) {
+                        try {
+                          await navigator.share({
+                            title: libraryItem.title || 'BitPopArt',
+                            text: `${libraryItem.title || 'Check this out!'} 🎨 #bitpopart #bitcoin`,
+                            url: libraryItem.image_url,
+                          });
+                        } catch { /* cancelled */ }
+                      } else {
+                        const text = encodeURIComponent(`${libraryItem.title || 'BitPopArt'} 🎨 #bitpopart #bitcoin`);
+                        const url = encodeURIComponent(libraryItem.image_url);
+                        window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank', 'width=600,height=400');
+                      }
+                    }}
+                  >
+                    <Share2 className="h-4 w-4" /> Share
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* ══ BOTTOM APP BAR ═══════════════════════════════════ */}
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-t border-gray-200 dark:border-gray-700 shadow-2xl">
