@@ -51,9 +51,22 @@ export interface ChatScene {
   event: NostrEvent;
 }
 
-// ── Kind constant ─────────────────────────────────────────
+/** A reusable chat character — stored independently so the same
+ *  avatar/name can be picked in many scenes without re-uploading. */
+export interface ChatCharacter {
+  /** d-tag identifier */
+  id: string;
+  /** Display name shown in chat bubbles */
+  name: string;
+  /** Avatar image URL */
+  avatar: string;
+}
+
+// ── Kind constants ─────────────────────────────────────────
 
 export const CHAT_SPLASH_KIND = 38159;
+/** Kind for saved chat characters (reusable messengers) */
+export const CHAT_CHARACTER_KIND = 37181;
 
 // ── Validator ─────────────────────────────────────────────
 
@@ -199,6 +212,145 @@ export function useDeleteChatScene() {
       queryClient.setQueryData(
         ['chat-splash-scenes', adminPubkey],
         (old: ChatScene[] | undefined) => old?.filter(s => s.id !== data.dTag) ?? [],
+      );
+    },
+    onError: () => {
+      toast({ title: 'Delete failed', variant: 'destructive' });
+    },
+  });
+}
+
+// ════════════════════════════════════════════════════════════
+// Chat Characters  (kind 37181 — reusable messengers)
+// ════════════════════════════════════════════════════════════
+
+function parseCharacter(event: NostrEvent): ChatCharacter | null {
+  try {
+    const id = event.tags.find(([n]) => n === 'd')?.[1];
+    if (!id) return null;
+    const name = event.tags.find(([n]) => n === 'name')?.[1] || '';
+    const avatar = event.tags.find(([n]) => n === 'image')?.[1] || '';
+    if (!name) return null;
+    return { id, name, avatar };
+  } catch {
+    return null;
+  }
+}
+
+// ── Query: all characters ─────────────────────────────────
+
+export function useChatCharacters() {
+  const { nostr } = useNostr();
+  const adminPubkey = getAdminPubkeyHex();
+
+  return useQuery({
+    queryKey: ['chat-characters', adminPubkey],
+    queryFn: async (c) => {
+      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(8000)]);
+
+      const [charEvents, deletionEvents] = await Promise.all([
+        nostr.query([{
+          kinds: [CHAT_CHARACTER_KIND],
+          authors: [adminPubkey],
+          limit: 100,
+        }], { signal }),
+        nostr.query([{
+          kinds: [5],
+          authors: [adminPubkey],
+          limit: 200,
+        }], { signal }),
+      ]);
+
+      const deletedAddresses = new Set<string>();
+      for (const del of deletionEvents) {
+        for (const tag of del.tags) {
+          if (tag[0] === 'a') deletedAddresses.add(tag[1]);
+        }
+      }
+
+      return charEvents
+        .filter(e => {
+          const dTag = e.tags.find(([n]) => n === 'd')?.[1];
+          return dTag && !deletedAddresses.has(`${CHAT_CHARACTER_KIND}:${adminPubkey}:${dTag}`);
+        })
+        .map(parseCharacter)
+        .filter((c): c is ChatCharacter => c !== null)
+        .sort((a, b) => a.name.localeCompare(b.name));
+    },
+    enabled: !!adminPubkey,
+    staleTime: 60_000,
+  });
+}
+
+// ── Mutation: save / update a character ───────────────────
+
+export function usePublishChatCharacter() {
+  const { nostr } = useNostr();
+  const { user } = useCurrentUser();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const adminPubkey = getAdminPubkeyHex();
+
+  return useMutation({
+    mutationFn: async ({ dTag, name, avatar }: { dTag: string; name: string; avatar: string }) => {
+      if (!user) throw new Error('Must be logged in');
+
+      const event = {
+        kind: CHAT_CHARACTER_KIND,
+        content: '',
+        tags: [
+          ['d', dTag],
+          ['name', name],
+          ['image', avatar],
+          ['t', 'app-chat-character'],
+          ['alt', `Chat character: ${name}`],
+        ],
+        created_at: Math.floor(Date.now() / 1000),
+      };
+
+      const signed = await user.signer.signEvent(event);
+      await nostr.event(signed, { signal: AbortSignal.timeout(10000) });
+      return { dTag, name };
+    },
+    onSuccess: (data) => {
+      toast({ title: 'Character saved', description: `"${data.name}" saved.` });
+      queryClient.invalidateQueries({ queryKey: ['chat-characters', adminPubkey] });
+    },
+    onError: () => {
+      toast({ title: 'Save failed', variant: 'destructive' });
+    },
+  });
+}
+
+// ── Mutation: delete a character ──────────────────────────
+
+export function useDeleteChatCharacter() {
+  const { nostr } = useNostr();
+  const { user } = useCurrentUser();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const adminPubkey = getAdminPubkeyHex();
+
+  return useMutation({
+    mutationFn: async ({ dTag }: { dTag: string }) => {
+      if (!user) throw new Error('Must be logged in');
+
+      const event = {
+        kind: 5,
+        content: 'Deleted',
+        tags: [['a', `${CHAT_CHARACTER_KIND}:${user.pubkey}:${dTag}`]],
+        created_at: Math.floor(Date.now() / 1000),
+      };
+
+      const signed = await user.signer.signEvent(event);
+      await nostr.event(signed, { signal: AbortSignal.timeout(5000) });
+      return { dTag };
+    },
+    onSuccess: (data) => {
+      toast({ title: 'Character deleted' });
+      queryClient.setQueryData(
+        ['chat-characters', adminPubkey],
+        (old: ChatCharacter[] | undefined) => old?.filter(c => c.id !== data.dTag) ?? [],
       );
     },
     onError: () => {
