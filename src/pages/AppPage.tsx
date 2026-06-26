@@ -5,6 +5,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 
@@ -42,6 +44,11 @@ import {
   Library,
   LayoutTemplate,
   Sticker,
+  Bold,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  Copy,
 } from 'lucide-react';
 
 const ADMIN_PUBKEY = getAdminPubkeyHex();
@@ -320,6 +327,20 @@ function MediaScrollGrid({
 
 // ── Mini Canvas (Create tab) ──────────────────────────────
 
+// Same font library as the desktop Studio
+const MEME_FONTS = [
+  { label: 'Impact', value: 'Impact' },
+  { label: 'Arial Black', value: 'Arial Black' },
+  { label: 'Bebas Neue', value: 'Bebas Neue' },
+  { label: 'Oswald', value: 'Oswald Variable' },
+  { label: 'Montserrat', value: 'Montserrat Variable' },
+  { label: 'Raleway', value: 'Raleway Variable' },
+  { label: 'Black Ops One', value: 'Black Ops One' },
+  { label: 'Righteous', value: 'Righteous' },
+  { label: 'Marker', value: 'Permanent Marker' },
+  { label: 'Verdana', value: 'Verdana' },
+];
+
 type CanvasEl = {
   id: string;
   kind: 'image' | 'text';
@@ -330,6 +351,8 @@ type CanvasEl = {
   fontSize?: number;
   color?: string;
   fontFamily?: string;
+  bold?: boolean;
+  align?: 'left' | 'center' | 'right';
 };
 
 // Interaction state: what the pointer is doing
@@ -377,11 +400,16 @@ function drawFrame(
       }
     } else if (el.kind === 'text' && el.text) {
       const fs = el.fontSize || 28;
-      ctx.font = `bold ${fs}px ${el.fontFamily || 'Impact'}`;
+      const weight = el.bold !== false ? 'bold' : 'normal';
+      ctx.font = `${weight} ${fs}px "${el.fontFamily || 'Impact'}"`;
       ctx.fillStyle = el.color || '#FF0080';
-      ctx.textAlign = 'left';
+      const align = el.align || 'left';
+      ctx.textAlign = align as CanvasTextAlign;
       ctx.textBaseline = 'top';
-      ctx.fillText(el.text, el.x, el.y, el.width);
+      const x = align === 'center' ? el.x + el.width / 2
+               : align === 'right'  ? el.x + el.width
+               : el.x;
+      ctx.fillText(el.text, x, el.y, el.width);
     }
 
     // Selection frame + handles
@@ -424,6 +452,11 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
   const [bgColor, setBgColor] = useState('#FFFFFF');
   const [saved, setSaved] = useState(false);
   const [pickerTab, setPickerTab] = useState<MemePickerTab>('library');
+
+  // Text input state — replaces prompt()
+  const [textInput, setTextInput] = useState('');
+  const [fontFamily, setFontFamily] = useState('Impact');
+  const [showTextInput, setShowTextInput] = useState(false);
 
   // Stable refs so event handlers always see latest values without stale closures
   const elRef  = useRef<CanvasEl[]>(elements);
@@ -545,18 +578,21 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
   // ── Element actions ──────────────────────────────────────
 
   const addText = () => {
-    const text = prompt('Enter text:');
+    const text = textInput.trim();
     if (!text) return;
     const id = `txt-${Date.now()}`;
     const el: CanvasEl = {
       id, kind: 'text',
       x: 20, y: 120,
-      width: CANVAS_SIZE - 40, height: 40,
-      text, fontSize: 32, color: '#FF0080', fontFamily: 'Impact',
+      width: CANVAS_SIZE - 40, height: 50,
+      text, fontSize: 32, color: '#FF0080', fontFamily,
+      bold: true, align: 'left',
     };
     setElements(prev => [...prev, el]);
     setSelected(id);
     selRef.current = id;
+    setTextInput('');
+    setShowTextInput(false);
     setSaved(false);
   };
 
@@ -656,6 +692,46 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
     setSaved(false);
   };
 
+  // Change font family for selected text
+  const changeTextFont = (font: string) => {
+    if (!selRef.current) return;
+    setElements(prev => prev.map(el =>
+      el.id === selRef.current && el.kind === 'text' ? { ...el, fontFamily: font } : el
+    ));
+    setSaved(false);
+  };
+
+  // Toggle bold for selected text
+  const toggleBold = () => {
+    if (!selRef.current) return;
+    setElements(prev => prev.map(el =>
+      el.id === selRef.current && el.kind === 'text' ? { ...el, bold: !(el.bold !== false) } : el
+    ));
+    setSaved(false);
+  };
+
+  // Change text alignment for selected text
+  const changeAlign = (align: 'left' | 'center' | 'right') => {
+    if (!selRef.current) return;
+    setElements(prev => prev.map(el =>
+      el.id === selRef.current && el.kind === 'text' ? { ...el, align } : el
+    ));
+    setSaved(false);
+  };
+
+  // Duplicate selected element
+  const duplicateSelected = () => {
+    if (!selRef.current) return;
+    const el = elRef.current.find(e => e.id === selRef.current);
+    if (!el) return;
+    const newId = `dup-${Date.now()}`;
+    const clone: CanvasEl = { ...el, id: newId, x: Math.min(el.x + 20, CANVAS_SIZE - el.width), y: Math.min(el.y + 20, CANVAS_SIZE - el.height) };
+    setElements(prev => [...prev, clone]);
+    setSelected(newId);
+    selRef.current = newId;
+    setSaved(false);
+  };
+
   const exportCanvas = useCallback(() => {
     // Render a clean frame (no selection handles) for export
     const offscreen = document.createElement('canvas');
@@ -690,12 +766,30 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
 
       {/* ── Selection controls (shown only when something is selected) ── */}
       {selectedEl && (
-        <div className="rounded-xl border border-pink-200 dark:border-pink-800 bg-pink-50 dark:bg-pink-900/20 p-3 space-y-2">
-          <p className="text-[10px] font-semibold text-pink-600 dark:text-pink-400 uppercase tracking-wider">
-            Selected: {selectedEl.kind === 'text' ? `"${selectedEl.text}"` : 'Image'}
-          </p>
+        <div className="rounded-xl border border-pink-200 dark:border-pink-800 bg-pink-50 dark:bg-pink-900/20 p-3 space-y-2.5">
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] font-semibold text-pink-600 dark:text-pink-400 uppercase tracking-wider truncate max-w-[60%]">
+              {selectedEl.kind === 'text' ? `✏️ "${selectedEl.text?.slice(0, 18)}${(selectedEl.text?.length ?? 0) > 18 ? '…' : ''}"` : '🖼 Image'}
+            </p>
+            <div className="flex gap-1.5">
+              <button
+                className="flex items-center justify-center w-7 h-7 rounded-lg border border-blue-200 bg-white dark:bg-gray-800 hover:bg-blue-50 text-blue-500 transition-colors"
+                onClick={duplicateSelected}
+                title="Duplicate"
+              >
+                <Copy className="h-3.5 w-3.5" />
+              </button>
+              <button
+                className="flex items-center justify-center w-7 h-7 rounded-lg border border-red-200 bg-red-50 dark:bg-red-900/30 hover:bg-red-100 text-red-500 transition-colors"
+                onClick={removeSelected}
+                title="Delete"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
 
-          {/* Scale controls — same for both image and text */}
+          {/* Scale controls */}
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground w-10 shrink-0">Size</span>
             <div className="flex gap-1.5">
@@ -714,69 +808,161 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
             {/* Font size stepper for text */}
             {selectedEl.kind === 'text' && (
               <>
-                <span className="text-xs text-muted-foreground ml-2 shrink-0">Font</span>
+                <span className="text-xs text-muted-foreground ml-1 shrink-0">Sz</span>
                 <div className="flex items-center gap-1">
                   <button
                     className="flex items-center justify-center w-8 h-8 rounded-lg border border-pink-300 bg-white dark:bg-gray-800 hover:bg-pink-50 transition-colors font-bold text-sm"
                     onClick={() => changeFontSize(-2)}
                     title="Smaller font"
-                  >A−</button>
+                  >−</button>
                   <span className="text-xs w-7 text-center font-mono text-muted-foreground">{selectedEl.fontSize}</span>
                   <button
                     className="flex items-center justify-center w-8 h-8 rounded-lg border border-pink-300 bg-white dark:bg-gray-800 hover:bg-pink-50 transition-colors font-bold text-sm"
                     onClick={() => changeFontSize(2)}
                     title="Larger font"
-                  >A+</button>
+                  >+</button>
                 </div>
               </>
             )}
-
-            {/* Delete */}
-            <button
-              className="ml-auto flex items-center justify-center w-8 h-8 rounded-lg border border-red-200 bg-red-50 dark:bg-red-900/30 hover:bg-red-100 text-red-500 transition-colors"
-              onClick={removeSelected}
-              title="Delete"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
           </div>
 
-          {/* Text color picker — always includes white + black */}
+          {/* Text-specific controls */}
           {selectedEl.kind === 'text' && (
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground w-10 shrink-0">Color</span>
-              <div className="flex flex-wrap gap-1">
-                {/* White + Black first, then pop colors */}
-                {['#FFFFFF', '#000000', ...POP_COLORS.filter(c => c !== '#FFFFFF' && c !== '#000000').slice(0, 14)].map(c => (
-                  <button
-                    key={c}
-                    className={`w-5 h-5 rounded-full border-2 transition-transform hover:scale-110 ${selectedEl.color === c ? 'border-orange-500 scale-110' : 'border-transparent'}`}
-                    style={{ background: c, boxShadow: (c === '#FFFFFF' || c === '#000000') ? 'inset 0 0 0 1px #aaa' : undefined }}
-                    onClick={() => changeTextColor(c)}
-                    title={c === '#FFFFFF' ? 'White' : c === '#000000' ? 'Black' : c}
-                  />
-                ))}
+            <>
+              {/* Font picker */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground w-10 shrink-0">Font</span>
+                <Select
+                  value={selectedEl.fontFamily ?? 'Impact'}
+                  onValueChange={changeTextFont}
+                >
+                  <SelectTrigger className="h-8 text-xs flex-1 min-w-0 bg-white dark:bg-gray-800">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MEME_FONTS.map(f => (
+                      <SelectItem key={f.value} value={f.value} style={{ fontFamily: f.value }}>
+                        {f.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {/* Bold toggle */}
+                <button
+                  className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors font-bold text-sm shrink-0 ${
+                    selectedEl.bold !== false
+                      ? 'bg-orange-500 border-orange-500 text-white'
+                      : 'border-pink-300 bg-white dark:bg-gray-800 hover:bg-pink-50'
+                  }`}
+                  onClick={toggleBold}
+                  title="Toggle bold"
+                >
+                  <Bold className="h-3.5 w-3.5" />
+                </button>
               </div>
-            </div>
+
+              {/* Alignment */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground w-10 shrink-0">Align</span>
+                <div className="flex gap-1">
+                  {(['left', 'center', 'right'] as const).map(a => (
+                    <button
+                      key={a}
+                      className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors ${
+                        (selectedEl.align ?? 'left') === a
+                          ? 'bg-orange-500 border-orange-500 text-white'
+                          : 'border-pink-300 bg-white dark:bg-gray-800 hover:bg-pink-50'
+                      }`}
+                      onClick={() => changeAlign(a)}
+                      title={a}
+                    >
+                      {a === 'left' && <AlignLeft className="h-3.5 w-3.5" />}
+                      {a === 'center' && <AlignCenter className="h-3.5 w-3.5" />}
+                      {a === 'right' && <AlignRight className="h-3.5 w-3.5" />}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Text color picker */}
+              <div className="flex items-start gap-2">
+                <span className="text-xs text-muted-foreground w-10 shrink-0 mt-1">Color</span>
+                <div className="flex flex-wrap gap-1">
+                  {['#FFFFFF', '#000000', ...POP_COLORS.filter(c => c !== '#FFFFFF' && c !== '#000000').slice(0, 14)].map(c => (
+                    <button
+                      key={c}
+                      className={`w-5 h-5 rounded-full border-2 transition-transform hover:scale-110 ${selectedEl.color === c ? 'border-orange-500 scale-110' : 'border-transparent'}`}
+                      style={{ background: c, boxShadow: (c === '#FFFFFF' || c === '#000000') ? 'inset 0 0 0 1px #aaa' : undefined }}
+                      onClick={() => changeTextColor(c)}
+                      title={c}
+                    />
+                  ))}
+                </div>
+              </div>
+            </>
           )}
         </div>
       )}
 
-      {/* ── General tools ── */}
-      <div className="flex gap-2 flex-wrap">
-        <button
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-orange-400 transition-colors text-sm font-semibold"
-          onClick={addText}
-        >
-          <Type className="h-4 w-4 stroke-[1.5]" /> Add Text
-        </button>
-        <button
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-red-400 hover:text-red-500 transition-colors text-sm font-semibold ml-auto"
-          onClick={clear}
-        >
-          <RotateCcw className="h-4 w-4 stroke-[1.5]" /> Clear
-        </button>
-      </div>
+      {/* ── Add Text panel ── */}
+      {showTextInput ? (
+        <div className="rounded-xl border border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900/10 p-3 space-y-2">
+          <p className="text-xs font-semibold text-orange-600 dark:text-orange-400 flex items-center gap-1">
+            <Type className="h-3.5 w-3.5" /> Add Text
+          </p>
+          <Input
+            value={textInput}
+            onChange={e => setTextInput(e.target.value)}
+            placeholder="Type your text..."
+            className="h-9 text-sm"
+            autoFocus
+            onKeyDown={e => { if (e.key === 'Enter') addText(); if (e.key === 'Escape') setShowTextInput(false); }}
+          />
+          <div className="flex items-center gap-2">
+            <Select value={fontFamily} onValueChange={setFontFamily}>
+              <SelectTrigger className="h-8 text-xs flex-1 min-w-0">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {MEME_FONTS.map(f => (
+                  <SelectItem key={f.value} value={f.value} style={{ fontFamily: f.value }}>
+                    {f.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex gap-2">
+            <button
+              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold transition-colors"
+              onClick={addText}
+            >
+              <Type className="h-4 w-4" /> Add to Meme
+            </button>
+            <button
+              className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 text-sm transition-colors"
+              onClick={() => { setShowTextInput(false); setTextInput(''); }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex gap-2 flex-wrap">
+          <button
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-orange-200 dark:border-orange-700 bg-orange-50 dark:bg-orange-900/20 hover:border-orange-400 hover:bg-orange-100 transition-colors text-sm font-semibold text-orange-700 dark:text-orange-300"
+            onClick={() => setShowTextInput(true)}
+          >
+            <Type className="h-4 w-4 stroke-[1.5]" /> Add Text
+          </button>
+          <button
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-red-400 hover:text-red-500 transition-colors text-sm font-semibold ml-auto"
+            onClick={clear}
+          >
+            <RotateCcw className="h-4 w-4 stroke-[1.5]" /> Clear
+          </button>
+        </div>
+      )}
 
       {/* BG Colors */}
       <div>
