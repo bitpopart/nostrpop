@@ -51,6 +51,7 @@ import {
   Copy,
   ArrowDown,
   ArrowUp,
+  Move,
 } from 'lucide-react';
 
 const ADMIN_PUBKEY = getAdminPubkeyHex();
@@ -848,38 +849,49 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
             );
           })()}
 
-          {/* Floating text input — appears over the text element when selected, tap to edit */}
+          {/* Floating text input + move hint — appears over the text element when selected */}
           {selectedEl?.kind === 'text' && (() => {
-            const scale = canvasDisplayW / CANVAS_SIZE;
-            const left  = selectedEl.x * scale;
-            const top   = selectedEl.y * scale;
-            const width = selectedEl.width * scale;
+            const scale     = canvasDisplayW / CANVAS_SIZE;
+            const left      = selectedEl.x * scale;
+            const top       = selectedEl.y * scale;
+            const width     = selectedEl.width * scale;
+            const inputH    = 36;
             return (
-              <input
-                key={selectedEl.id}
-                defaultValue={selectedEl.text ?? ''}
-                onChange={e => {
-                  const val = e.target.value;
-                  setElements(prev => prev.map(el =>
-                    el.id === selectedEl.id ? { ...el, text: val } : el
-                  ));
-                  setSaved(false);
-                }}
-                placeholder="Type here…"
-                className="absolute z-20 bg-white/90 dark:bg-gray-900/90 border-2 border-orange-400 rounded-lg px-2 text-sm font-semibold outline-none shadow-lg"
-                style={{
-                  left,
-                  top,
-                  width,
-                  minWidth: 80,
-                  height: 36,
-                  touchAction: 'none',
-                  fontFamily: selectedEl.fontFamily ?? 'Impact',
-                  color: selectedEl.color ?? '#FF0080',
-                }}
-                onPointerDown={e => e.stopPropagation()}
-                autoFocus
-              />
+              <>
+                <input
+                  key={selectedEl.id}
+                  defaultValue={selectedEl.text ?? ''}
+                  onChange={e => {
+                    const val = e.target.value;
+                    setElements(prev => prev.map(el =>
+                      el.id === selectedEl.id ? { ...el, text: val } : el
+                    ));
+                    setSaved(false);
+                  }}
+                  placeholder="Type here…"
+                  className="absolute z-20 bg-white/90 dark:bg-gray-900/90 border-2 border-orange-400 rounded-lg px-2 text-sm font-semibold outline-none shadow-lg"
+                  style={{
+                    left,
+                    top,
+                    width,
+                    minWidth: 80,
+                    height: inputH,
+                    touchAction: 'none',
+                    fontFamily: selectedEl.fontFamily ?? 'Impact',
+                    color: selectedEl.color ?? '#FF0080',
+                  }}
+                  onPointerDown={e => e.stopPropagation()}
+                  autoFocus
+                />
+                {/* Move hint — sits just below the input, pointer-events:none so drags pass through to canvas */}
+                <div
+                  className="absolute z-20 flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-orange-500 text-white text-[10px] font-semibold shadow pointer-events-none select-none"
+                  style={{ left, top: top + inputH + 2 }}
+                >
+                  <Move className="h-2.5 w-2.5 shrink-0" />
+                  drag to move
+                </div>
+              </>
             );
           })()}
         </div>
