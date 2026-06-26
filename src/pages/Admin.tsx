@@ -1091,6 +1091,36 @@ const Admin = () => {
             <MemesAdmin onBack={() => setActiveTab('app')} />
           </TabsContent>
 
+          <TabsContent value="app-pops">
+            <div className="space-y-4">
+              <Button variant="ghost" size="sm" onClick={() => setActiveTab('app')} className="gap-1.5">
+                <ArrowRight className="h-4 w-4 rotate-180" />
+                Back to Fan App Overview
+              </Button>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Shapes className="h-5 w-5 text-violet-600" />
+                    Pops — Cartoon &amp; Pop Characters
+                  </CardTitle>
+                  <CardDescription>
+                    Upload cartoon illustrations, pop art characters, and sticker-style images. These appear in the
+                    <strong> "Pops"</strong> tab in the Studio, Memes page, Cards editor, and the App meme/card creator.
+                    Users tap a Pop to add it as a canvas layer on top of their design.
+                    <br />
+                    <span className="text-xs text-muted-foreground block mt-1">
+                      Best format: PNG with transparent background, or SVG. Recommended: at least 500×500 px.
+                    </span>
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <MediaUploader type="app-pop" label="Pop" />
+                  <MediaList type="app-pop" aspectClass="aspect-square" />
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
           <TabsContent value="app-meme-templates">
             <div className="space-y-4">
               <Button variant="ghost" size="sm" onClick={() => setActiveTab('app-memes')} className="gap-1.5">

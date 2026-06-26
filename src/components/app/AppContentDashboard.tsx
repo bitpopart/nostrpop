@@ -39,6 +39,7 @@ import {
   Palette,
   Monitor,
   Laugh,
+  Sparkles,
 } from 'lucide-react';
 
 // ── Preview rows constant ─────────────────────────────────
@@ -133,6 +134,17 @@ const SECTIONS: SectionDef[] = [
     tabValue: 'app-memes',
     accept: 'image/*',
     aspectClass: 'aspect-square',
+  },
+  {
+    type: 'app-pop',
+    label: 'Pop',
+    labelPlural: 'Pops',
+    icon: Sparkles,
+    color: 'from-pink-500 to-violet-500',
+    tabValue: 'app-pops',
+    accept: 'image/*',
+    aspectClass: 'aspect-square',
+    badge: 'New',
   },
 ];
 

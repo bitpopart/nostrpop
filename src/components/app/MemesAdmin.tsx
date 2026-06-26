@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Laugh, LayoutTemplate, Shapes } from 'lucide-react';
+import { ArrowLeft, Laugh, LayoutTemplate, Shapes, Sparkles } from 'lucide-react';
 import { MediaUploader, MediaList } from './AppContentManagement';
 import { useAppMedia } from '@/hooks/useAppContent';
 
@@ -14,6 +14,7 @@ export function MemesAdmin({ onBack }: MemesAdminProps) {
   const { data: memes = [] } = useAppMedia('app-meme');
   const { data: templates = [] } = useAppMedia('app-meme-template');
   const { data: icons = [] } = useAppMedia('app-meme-icon');
+  const { data: pops = [] } = useAppMedia('app-pop');
 
   return (
     <div className="space-y-4">
@@ -34,7 +35,7 @@ export function MemesAdmin({ onBack }: MemesAdminProps) {
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <Card className="bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800">
           <CardContent className="p-4 text-center">
             <Laugh className="h-6 w-6 mx-auto mb-1 text-yellow-600" />
@@ -54,6 +55,13 @@ export function MemesAdmin({ onBack }: MemesAdminProps) {
             <Shapes className="h-6 w-6 mx-auto mb-1 text-pink-600" />
             <p className="text-2xl font-bold text-pink-700 dark:text-pink-300">{icons.length}</p>
             <p className="text-xs text-muted-foreground">Icons</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-violet-50 dark:bg-violet-900/20 border-violet-200 dark:border-violet-800">
+          <CardContent className="p-4 text-center">
+            <Sparkles className="h-6 w-6 mx-auto mb-1 text-violet-600" />
+            <p className="text-2xl font-bold text-violet-700 dark:text-violet-300">{pops.length}</p>
+            <p className="text-xs text-muted-foreground">Pops</p>
           </CardContent>
         </Card>
       </div>
@@ -80,6 +88,13 @@ export function MemesAdmin({ onBack }: MemesAdminProps) {
             Icons
             {icons.length > 0 && (
               <Badge variant="secondary" className="text-[10px] h-4 px-1 ml-1">{icons.length}</Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="pops" className="flex items-center gap-1.5">
+            <Sparkles className="h-3.5 w-3.5 text-violet-500" />
+            Pops
+            {pops.length > 0 && (
+              <Badge variant="secondary" className="text-[10px] h-4 px-1 ml-1">{pops.length}</Badge>
             )}
           </TabsTrigger>
         </TabsList>
@@ -148,6 +163,31 @@ export function MemesAdmin({ onBack }: MemesAdminProps) {
             <CardContent className="space-y-4">
               <MediaUploader type="app-meme-icon" label="Icon" />
               <MediaList type="app-meme-icon" aspectClass="aspect-square" />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ── Pops tab ── */}
+        <TabsContent value="pops" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-violet-600" />
+                Pops — Cartoon &amp; Pop Characters
+              </CardTitle>
+              <CardDescription>
+                Upload cartoon illustrations, pop art characters, and sticker-style images. These appear in the
+                <strong> "Pops"</strong> tab in the Studio, Memes page, Cards editor, and the App meme/card creator.
+                Users tap a Pop to add it as a canvas layer on top of their design.
+                <br />
+                <span className="text-xs text-muted-foreground mt-1 block">
+                  Best format: PNG with transparent background, or SVG. Recommended size: at least 500×500 px.
+                </span>
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <MediaUploader type="app-pop" label="Pop" />
+              <MediaList type="app-pop" aspectClass="aspect-square" />
             </CardContent>
           </Card>
         </TabsContent>
