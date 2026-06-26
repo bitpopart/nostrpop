@@ -36,9 +36,13 @@ export function SiteBannerBar() {
     <div className={`w-full ${styleClass} shadow-md z-40`}>
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-center gap-3 py-2 flex-wrap">
-          {/* Text: always visible on mobile, hidden on desktop (buttons-only on wide screens) */}
+          {/* Mobile: show full dynamic banner text */}
           <span className="text-sm font-medium text-center sm:hidden">
             {activeBanner.text}
+          </span>
+          {/* Desktop: fixed short label before the buttons */}
+          <span className="hidden sm:inline text-sm font-medium whitespace-nowrap">
+            🎁 Free wallpapers, GIFs &amp; animations
           </span>
             {activeBanner.url && activeBanner.urlLabel && (
               isExternal ? (
