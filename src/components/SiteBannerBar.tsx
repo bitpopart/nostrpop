@@ -63,10 +63,10 @@ export function SiteBannerBar() {
                 </Link>
               )
             )}
-            {/* App button — desktop only */}
+            {/* App button — desktop only, matches "Open App" button style */}
             <Link
               to="/app"
-              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/20 hover:bg-white/30 border border-white/40 transition-colors whitespace-nowrap"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 hover:from-pink-600 hover:via-rose-600 hover:to-orange-600 text-white border-0 shadow transition-all whitespace-nowrap"
             >
               <Smartphone className="h-3.5 w-3.5" />
               App
