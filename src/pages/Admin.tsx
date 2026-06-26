@@ -41,6 +41,7 @@ import { ColoringPagesAdmin } from '@/components/app/ColoringPagesAdmin';
 import { DesktopWallpapersAdmin } from '@/components/app/DesktopWallpapersAdmin';
 import { MemesAdmin } from '@/components/app/MemesAdmin';
 import { CarouselAdmin } from '@/components/app/CarouselAdmin';
+import { ChatSplashAdmin } from '@/components/app/ChatSplashAdmin';
 import { FanAppPublishing } from '@/components/app/FanAppPublishing';
 import { MediaUploader, MediaList } from '@/components/app/AppContentManagement';
 import { AnimationsManagement } from '@/components/animations/AnimationsManagement';
@@ -90,6 +91,7 @@ import {
   Laugh,
   Shapes,
   Sparkles,
+  MessageSquare,
 } from 'lucide-react';
 
 const Admin = () => {
@@ -336,6 +338,14 @@ const Admin = () => {
       badge: 'Carousel'
     },
     {
+      title: 'Chat Splash',
+      description: 'Create animated group-chat scenes shown below the carousel on /app',
+      icon: MessageSquare,
+      color: 'from-pink-500 to-violet-500',
+      action: () => setActiveTab('app-chat-splash'),
+      badge: 'Chat'
+    },
+    {
       title: 'Meme Creator',
       description: 'Memes, canvas Templates & Icons for the Meme Creator in Pop Art Studio',
       icon: Laugh,
@@ -503,6 +513,9 @@ const Admin = () => {
             <TabsTrigger value="app">App</TabsTrigger>
             <TabsTrigger value="app-carousel" className="flex items-center gap-1 text-orange-600 dark:text-orange-400 font-semibold">
               🎠 Carousel
+            </TabsTrigger>
+            <TabsTrigger value="app-chat-splash" className="flex items-center gap-1 text-pink-600 dark:text-pink-400 font-semibold">
+              💬 Chat Splash
             </TabsTrigger>
             <TabsTrigger value="app-wallpapers">Wallpapers</TabsTrigger>
             <TabsTrigger value="app-gifs">GIFs</TabsTrigger>
@@ -1086,6 +1099,10 @@ const Admin = () => {
 
           <TabsContent value="app-carousel">
             <CarouselAdmin onBack={() => setActiveTab('app')} />
+          </TabsContent>
+
+          <TabsContent value="app-chat-splash">
+            <ChatSplashAdmin onBack={() => setActiveTab('app')} />
           </TabsContent>
 
           <TabsContent value="app-wallpapers">

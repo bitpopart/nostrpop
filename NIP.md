@@ -866,6 +866,54 @@ Design thumbnail entries displayed on the `/projects` page between "Nostr Projec
 - Clicking a thumbnail navigates to the linked project page
 - Delete by publishing a kind-5 deletion event referencing `38178:<pubkey>:<id>`
 
+## Chat Splash Scenes (Kind 38159)
+
+Animated group-chat-style conversations shown below the image carousel on the `/app` homepage. Multiple scenes can be published; one enabled scene is chosen at random per page load so visitors see a fresh conversation each visit.
+
+### Event Structure
+
+```json
+{
+  "kind": 38159,
+  "content": "[{\"id\":\"msg-1\",\"avatar\":\"<url>\",\"name\":\"<speaker>\",\"text\":\"<message>\",\"side\":\"left\",\"delay\":0}, ...]",
+  "tags": [
+    ["d", "<unique_scene_id>"],
+    ["title", "<human-readable scene title>"],
+    ["enabled", "true"],
+    ["t", "app-chat-splash"],
+    ["alt", "Chat splash scene: <title>"]
+  ]
+}
+```
+
+### Fields
+
+- **d tag**: Unique scene identifier (auto-generated)
+- **title tag**: Human-readable label shown in the admin UI only
+- **enabled tag**: `"true"` or `"false"` — disabled scenes are never shown
+- **t tag**: Always `app-chat-splash` for filtering
+- **content**: JSON array of `ChatMessage` objects (see below)
+
+### ChatMessage Object
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | string | Unique message identifier |
+| `avatar` | string | URL of the speaker's avatar image |
+| `name` | string | Display name of the speaker |
+| `text` | string | Message text; URLs are auto-linked |
+| `side` | `"left"` \| `"right"` | Which side the bubble appears on |
+| `delay` | number | Milliseconds delay before this message animates in (informational) |
+
+### Usage
+
+- Admin creates scenes in Admin → 💬 Chat Splash
+- Each scene can be enabled/disabled individually
+- The `/app` page picks one enabled scene at random on each page load
+- Messages animate in sequentially with a typing-dots effect before each bubble appears
+- URLs in message text are rendered as tappable links (internal or external)
+- Deletion uses a standard kind-5 event referencing `38159:<pubkey>:<d-tag>`
+
 ## References
 
 - [NIP-15: Nostr Marketplace](https://github.com/nostr-protocol/nips/blob/master/15.md)

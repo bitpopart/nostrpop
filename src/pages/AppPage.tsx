@@ -58,6 +58,7 @@ import {
   Share2,
 } from 'lucide-react';
 import { ShareToNostrMediaDialog } from '@/components/ShareToNostrMediaDialog';
+import { AnimatedChatSplash } from '@/components/app/AnimatedChatSplash';
 
 const ADMIN_PUBKEY = getAdminPubkeyHex();
 
@@ -1868,6 +1869,9 @@ export default function AppPage() {
 
             {/* ── Image Carousel ── */}
             <ImageCarousel items={allMediaItems} isLoading={allMediaLoading} />
+
+            {/* ── Animated Chat Splash ── */}
+            <AnimatedChatSplash />
 
             {/* ── Category icon bar ── */}
             <div>
