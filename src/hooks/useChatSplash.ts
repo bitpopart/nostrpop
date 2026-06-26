@@ -26,6 +26,12 @@ export interface ChatMessage {
   name: string;
   /** Message text — may contain URLs (rendered as links) */
   text: string;
+  /** Optional image shown inside the bubble (below text) */
+  imageUrl?: string;
+  /** Optional CTA link shown as a button below the bubble */
+  linkUrl?: string;
+  /** Label for the CTA link button (defaults to the URL hostname) */
+  linkLabel?: string;
   /** Which side to show the bubble on */
   side: 'left' | 'right';
   /** Delay in ms before this message animates in */

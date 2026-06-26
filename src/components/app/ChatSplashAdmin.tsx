@@ -33,6 +33,8 @@ import {
   UserCircle2,
   ToggleLeft,
   ToggleRight,
+  Image as ImageIcon,
+  Link as LinkIcon,
 } from 'lucide-react';
 import { useUploadFile } from '@/hooks/useUploadFile';
 import {
@@ -56,6 +58,9 @@ function emptyMessage(side: 'left' | 'right' = 'left', index = 0): ChatMessage {
     avatar: '',
     name: '',
     text: '',
+    imageUrl: undefined,
+    linkUrl: undefined,
+    linkLabel: undefined,
     side,
     delay: index * 800,
   };
@@ -113,6 +118,59 @@ function AvatarUpload({
               ) : (
                 <Upload className="h-3 w-3" />
               )}
+            </span>
+          </Button>
+          <input type="file" accept="image/*" className="hidden" onChange={handleFile} />
+        </label>
+      </div>
+    </div>
+  );
+}
+
+// ── Image upload field ─────────────────────────────────────
+
+function ImageUpload({
+  value,
+  onChange,
+  placeholder = 'Image URL…',
+}: {
+  value: string;
+  onChange: (url: string) => void;
+  placeholder?: string;
+}) {
+  const { mutateAsync: uploadFile, isPending } = useUploadFile();
+
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const [[, url]] = await uploadFile(file);
+      onChange(url);
+    } catch { /* noop */ }
+    e.target.value = '';
+  };
+
+  return (
+    <div className="flex items-center gap-2">
+      {/* Preview */}
+      <div className="w-10 h-10 rounded-lg overflow-hidden border-2 border-gray-200 dark:border-gray-600 flex-shrink-0 bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+        {value ? (
+          <img src={value} alt="" className="w-full h-full object-cover" />
+        ) : (
+          <ImageIcon className="h-4 w-4 text-muted-foreground" />
+        )}
+      </div>
+      <div className="flex-1 flex gap-1.5">
+        <Input
+          placeholder={placeholder}
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          className="text-xs h-8"
+        />
+        <label className="cursor-pointer">
+          <Button size="sm" variant="outline" className="h-8 px-2 pointer-events-none" asChild>
+            <span>
+              {isPending ? <RefreshCw className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
             </span>
           </Button>
           <input type="file" accept="image/*" className="hidden" onChange={handleFile} />
@@ -214,16 +272,58 @@ function MessageRow({
       />
 
       {/* Avatar URL + upload */}
-      <AvatarUpload value={msg.avatar} onChange={url => onUpdate({ ...msg, avatar: url })} />
+      <div>
+        <Label className="text-[10px] text-muted-foreground mb-1 block">Avatar</Label>
+        <AvatarUpload value={msg.avatar} onChange={url => onUpdate({ ...msg, avatar: url })} />
+      </div>
 
       {/* Message text */}
-      <Textarea
-        placeholder="Message text… (URLs become clickable links)"
-        value={msg.text}
-        onChange={e => onUpdate({ ...msg, text: e.target.value })}
-        rows={2}
-        className="text-xs resize-none"
-      />
+      <div>
+        <Label className="text-[10px] text-muted-foreground mb-1 block">Message text (URLs auto-link)</Label>
+        <Textarea
+          placeholder="What does this person say?"
+          value={msg.text}
+          onChange={e => onUpdate({ ...msg, text: e.target.value })}
+          rows={2}
+          className="text-xs resize-none"
+        />
+      </div>
+
+      {/* Image in bubble */}
+      <div>
+        <Label className="text-[10px] text-muted-foreground mb-1 flex items-center gap-1">
+          <ImageIcon className="h-3 w-3" /> Image in bubble (optional)
+        </Label>
+        <ImageUpload
+          value={msg.imageUrl || ''}
+          onChange={url => onUpdate({ ...msg, imageUrl: url || undefined })}
+          placeholder="Image URL or upload…"
+        />
+      </div>
+
+      {/* CTA link */}
+      <div className="grid grid-cols-2 gap-2">
+        <div>
+          <Label className="text-[10px] text-muted-foreground mb-1 flex items-center gap-1">
+            <LinkIcon className="h-3 w-3" /> Link URL (optional)
+          </Label>
+          <Input
+            placeholder="https://… or /app/wallpapers"
+            value={msg.linkUrl || ''}
+            onChange={e => onUpdate({ ...msg, linkUrl: e.target.value || undefined })}
+            className="text-xs h-8"
+          />
+        </div>
+        <div>
+          <Label className="text-[10px] text-muted-foreground mb-1 block">Link button label</Label>
+          <Input
+            placeholder="e.g. Get wallpapers"
+            value={msg.linkLabel || ''}
+            onChange={e => onUpdate({ ...msg, linkLabel: e.target.value || undefined })}
+            className="text-xs h-8"
+          />
+        </div>
+      </div>
     </div>
   );
 }

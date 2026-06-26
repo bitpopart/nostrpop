@@ -17,7 +17,7 @@ import { useCardTemplates } from '@/hooks/useCardTemplates';
 import { useLatestCards } from '@/hooks/useLatestCards';
 import { useFreeDownloads } from '@/hooks/useFreeDownloads';
 import { useAnimations } from '@/hooks/useAnimations';
-import { useHomepageSettings } from '@/hooks/useHomepageSettings';
+
 import { ZapButton } from '@/components/ZapButton';
 import { getAdminPubkeyHex } from '@/lib/adminUtils';
 import { AvatarGeneratorCanvas } from '@/components/studio/AvatarGeneratorCanvas';
@@ -33,7 +33,6 @@ import {
   Printer,
   ChevronLeft,
   ChevronRight,
-  LayoutGrid,
   Smartphone,
   Monitor,
   Palette,
@@ -201,70 +200,6 @@ const MEDIA_CATEGORIES: { id: MediaTab; label: string; icon: React.ReactNode; co
   { id: 'coloring', label: 'Color', icon: <Palette className="h-5 w-5" />, color: 'text-pink-600 bg-pink-50 dark:bg-pink-900/30' },
   { id: 'desktop', label: 'Desktop', icon: <Monitor className="h-5 w-5" />, color: 'text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30' },
 ];
-
-// ── Photo Grid (same as /homepage grid view) ─────────────
-
-interface GridTileItem {
-  id: string;
-  imageUrl: string;
-  linkUrl: string;
-  alt?: string;
-  order: number;
-}
-
-function AppPhotoGrid({ tiles, isLoading }: { tiles: GridTileItem[]; isLoading: boolean }) {
-  if (isLoading) {
-    return (
-      <div className="grid grid-cols-3 gap-1">
-        {[...Array(9)].map((_, i) => (
-          <Skeleton key={i} className="aspect-square rounded-sm" />
-        ))}
-      </div>
-    );
-  }
-
-  if (tiles.length === 0) {
-    return (
-      <div className="text-center py-10 text-muted-foreground text-sm space-y-2">
-        <LayoutGrid className="h-8 w-8 mx-auto opacity-20" />
-        <p>No tiles configured yet.</p>
-        <p className="text-xs">Add tiles in Homepage Settings → Photo Grid.</p>
-      </div>
-    );
-  }
-
-  const sorted = [...tiles].sort((a, b) => a.order - b.order);
-
-  return (
-    <div className="grid grid-cols-3 gap-1">
-      {sorted.map(tile => {
-        const isExternal = tile.linkUrl.startsWith('http://') || tile.linkUrl.startsWith('https://');
-        const inner = (
-          <div className="relative aspect-square overflow-hidden bg-gray-200 dark:bg-gray-800 group rounded-sm">
-            <img
-              src={tile.imageUrl}
-              alt={tile.alt || ''}
-              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-              loading="lazy"
-              onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-            />
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200" />
-          </div>
-        );
-
-        return isExternal ? (
-          <a key={tile.id} href={tile.linkUrl} target="_blank" rel="noopener noreferrer" className="block overflow-hidden rounded-sm">
-            {inner}
-          </a>
-        ) : (
-          <Link key={tile.id} to={tile.linkUrl} className="block overflow-hidden rounded-sm">
-            {inner}
-          </Link>
-        );
-      })}
-    </div>
-  );
-}
 
 // ── Media Grid (for Download tab) ─────────────────────────
 
@@ -1722,10 +1657,6 @@ export default function AppPage() {
   // Dedicated carousel images (managed from admin → App → Carousel)
   const { data: carouselImages = [], isLoading: carouselLoading } = useAppMedia('app-carousel');
 
-  // Homepage grid tiles
-  const { data: homepageSettings, isLoading: gridLoading } = useHomepageSettings();
-  const gridTiles = homepageSettings?.gridTiles || [];
-
   // Use dedicated carousel images when available, otherwise fall back to a mix
   const allMediaItems: CarouselItem[] = carouselImages.length > 0
     ? carouselImages.map(m => ({ id: `carousel-${m.id}`, image_url: m.image_url, title: m.title })).slice(0, 20)
@@ -1870,9 +1801,6 @@ export default function AppPage() {
             {/* ── Image Carousel ── */}
             <ImageCarousel items={allMediaItems} isLoading={allMediaLoading} />
 
-            {/* ── Animated Chat Splash ── */}
-            <AnimatedChatSplash />
-
             {/* ── Category icon bar ── */}
             <div>
               <div className="overflow-x-auto pb-1 -mx-4 px-4">
@@ -1891,14 +1819,8 @@ export default function AppPage() {
               </div>
             </div>
 
-            {/* ── Photo Grid (same grid as homepage) ── */}
-            <section>
-              <div className="flex items-center gap-2 mb-3">
-                <LayoutGrid className="h-5 w-5 text-purple-600" />
-                <h2 className="text-lg font-bold">Gallery</h2>
-              </div>
-              <AppPhotoGrid tiles={gridTiles} isLoading={gridLoading} />
-            </section>
+            {/* ── Animated Chat Splash ── */}
+            <AnimatedChatSplash />
 
           </div>
         )}
