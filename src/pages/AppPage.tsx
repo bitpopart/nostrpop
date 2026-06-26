@@ -849,15 +849,25 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
             );
           })()}
 
-          {/* Floating text input + move hint — appears over the text element when selected */}
+          {/* Text toolbar — sits just below the dashed selection box, solid white, compact */}
           {selectedEl?.kind === 'text' && (() => {
-            const scale     = canvasDisplayW / CANVAS_SIZE;
-            const left      = selectedEl.x * scale;
-            const top       = selectedEl.y * scale;
-            const width     = selectedEl.width * scale;
-            const inputH    = 36;
+            const scale  = canvasDisplayW / CANVAS_SIZE;
+            const left   = selectedEl.x * scale;
+            // Position below the element's bottom edge, +4px gap
+            const top    = (selectedEl.y + selectedEl.height) * scale + 4;
+            const width  = selectedEl.width * scale;
             return (
-              <>
+              <div
+                className="absolute z-20 flex items-center gap-0 rounded-xl border-2 border-orange-400 bg-white dark:bg-gray-900 shadow-lg overflow-hidden"
+                style={{ left, top, width: Math.max(width, 120), touchAction: 'none' }}
+                onPointerDown={e => e.stopPropagation()}
+              >
+                {/* Move hint — non-interactive, leftmost */}
+                <div className="flex items-center justify-center w-7 h-8 shrink-0 text-orange-400 pointer-events-none select-none border-r border-orange-200 dark:border-orange-700">
+                  <Move className="h-3.5 w-3.5" />
+                </div>
+
+                {/* Text input */}
                 <input
                   key={selectedEl.id}
                   defaultValue={selectedEl.text ?? ''}
@@ -868,30 +878,31 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
                     ));
                     setSaved(false);
                   }}
-                  placeholder="Type here…"
-                  className="absolute z-20 bg-white/90 dark:bg-gray-900/90 border-2 border-orange-400 rounded-lg px-2 text-sm font-semibold outline-none shadow-lg"
+                  placeholder="Type…"
+                  className="flex-1 min-w-0 h-8 px-1.5 text-xs font-semibold outline-none bg-transparent"
                   style={{
-                    left,
-                    top,
-                    width,
-                    minWidth: 80,
-                    height: inputH,
-                    touchAction: 'none',
                     fontFamily: selectedEl.fontFamily ?? 'Impact',
                     color: selectedEl.color ?? '#FF0080',
                   }}
-                  onPointerDown={e => e.stopPropagation()}
                   autoFocus
                 />
-                {/* Move hint — sits just below the input, pointer-events:none so drags pass through to canvas */}
-                <div
-                  className="absolute z-20 flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-orange-500 text-white text-[10px] font-semibold shadow pointer-events-none select-none"
-                  style={{ left, top: top + inputH + 2 }}
-                >
-                  <Move className="h-2.5 w-2.5 shrink-0" />
-                  drag to move
-                </div>
-              </>
+
+                {/* Font size − */}
+                <button
+                  className="flex items-center justify-center w-7 h-8 shrink-0 text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-orange-50 dark:hover:bg-orange-900/30 border-l border-orange-200 dark:border-orange-700 transition-colors"
+                  onPointerDown={e => e.stopPropagation()}
+                  onClick={e => { e.stopPropagation(); changeFontSize(-2); }}
+                  title="Smaller"
+                >−</button>
+
+                {/* Font size + */}
+                <button
+                  className="flex items-center justify-center w-7 h-8 shrink-0 text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-orange-50 dark:hover:bg-orange-900/30 border-l border-orange-200 dark:border-orange-700 transition-colors"
+                  onPointerDown={e => e.stopPropagation()}
+                  onClick={e => { e.stopPropagation(); changeFontSize(2); }}
+                  title="Bigger"
+                >+</button>
+              </div>
             );
           })()}
         </div>
