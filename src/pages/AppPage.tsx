@@ -460,6 +460,19 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
   const [fontFamily, setFontFamily] = useState('Impact');
   const [showTextInput, setShowTextInput] = useState(false);
 
+  // Track canvas display width so overlay buttons can be positioned accurately
+  const [canvasDisplayW, setCanvasDisplayW] = useState(CANVAS_SIZE);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const obs = new ResizeObserver(entries => {
+      const w = entries[0]?.contentRect.width;
+      if (w) setCanvasDisplayW(w);
+    });
+    obs.observe(canvas);
+    return () => obs.disconnect();
+  }, []);
+
   // Stable refs so event handlers always see latest values without stale closures
   const elRef  = useRef<CanvasEl[]>(elements);
   const selRef = useRef<string | null>(selected);
@@ -646,12 +659,18 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
     tryLoad(src, false);
   }, [redraw]);
 
+  const removeById = (id: string) => {
+    setElements(prev => prev.filter(e => e.id !== id));
+    if (selRef.current === id) {
+      setSelected(null);
+      selRef.current = null;
+    }
+    setSaved(false);
+  };
+
   const removeSelected = () => {
     if (!selRef.current) return;
-    setElements(prev => prev.filter(e => e.id !== selRef.current));
-    setSelected(null);
-    selRef.current = null;
-    setSaved(false);
+    removeById(selRef.current);
   };
 
   const clear = () => {
@@ -780,17 +799,36 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
     <div className="space-y-3">
       {/* Canvas */}
       <div className="flex justify-center touch-none">
-        <canvas
-          ref={canvasRef}
-          width={CANVAS_SIZE}
-          height={CANVAS_SIZE}
-          className="rounded-xl border-2 border-orange-200 dark:border-orange-700 shadow-md w-full"
-          style={{ maxWidth: CANVAS_SIZE, touchAction: 'none', cursor: 'crosshair' }}
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={onPointerUp}
-          onPointerLeave={onPointerUp}
-        />
+        <div className="relative w-full" style={{ maxWidth: CANVAS_SIZE }}>
+          <canvas
+            ref={canvasRef}
+            width={CANVAS_SIZE}
+            height={CANVAS_SIZE}
+            className="rounded-xl border-2 border-orange-200 dark:border-orange-700 shadow-md w-full block"
+            style={{ touchAction: 'none', cursor: 'crosshair' }}
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+            onPointerLeave={onPointerUp}
+          />
+          {/* Overlay X button on the selected element — visible shortcut to delete */}
+          {selectedEl && (() => {
+            const scale = canvasDisplayW / CANVAS_SIZE;
+            const left = selectedEl.x * scale;
+            const top  = selectedEl.y * scale;
+            return (
+              <button
+                className="absolute flex items-center justify-center w-6 h-6 rounded-full bg-red-500 hover:bg-red-600 text-white shadow-lg border-2 border-white transition-colors z-10"
+                style={{ left: left - 10, top: top - 10, touchAction: 'none' }}
+                onPointerDown={e => e.stopPropagation()}
+                onClick={e => { e.stopPropagation(); removeById(selectedEl.id); }}
+                title="Delete"
+              >
+                <X className="h-3 w-3 stroke-[2.5]" />
+              </button>
+            );
+          })()}
+        </div>
       </div>
 
       {/* ── Selection controls (shown only when something is selected) ── */}
@@ -828,10 +866,10 @@ function MiniCanvas({ onSave }: { onSave: (dataUrl: string, title: string) => vo
               >
                 <Copy className="h-3.5 w-3.5" />
               </button>
-              {/* Delete / X */}
+              {/* Delete / X — uses explicit id to avoid stale selRef */}
               <button
                 className="flex items-center justify-center w-7 h-7 rounded-lg border border-red-200 bg-red-50 dark:bg-red-900/30 hover:bg-red-100 text-red-500 transition-colors"
-                onClick={removeSelected}
+                onClick={() => removeById(selectedEl.id)}
                 title="Delete"
               >
                 <X className="h-3.5 w-3.5" />
