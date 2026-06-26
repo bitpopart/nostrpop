@@ -469,7 +469,7 @@ function drawFrame(
   }
 }
 
-type MemePickerTab = 'library' | 'templates' | 'pops' | 'icons';
+type MemePickerTab = 'templates' | 'pops' | 'icons';
 
 function MiniCanvas({ onSave, onViewLibraryItem, mode = 'meme' }: {
   onSave: (dataUrl: string, title: string) => void;
@@ -487,7 +487,7 @@ function MiniCanvas({ onSave, onViewLibraryItem, mode = 'meme' }: {
   const [selected, setSelected] = useState<string | null>(null);
   const [bgColor, setBgColor] = useState('#FFFFFF');
   const [saved, setSaved] = useState(false);
-  const [pickerTab, setPickerTab] = useState<MemePickerTab>('library');
+  const [pickerTab, setPickerTab] = useState<MemePickerTab>('templates');
 
   // Text input state — replaces prompt()
   const [textInput, setTextInput] = useState('');
@@ -1181,88 +1181,42 @@ function MiniCanvas({ onSave, onViewLibraryItem, mode = 'meme' }: {
         </div>
       </div>
 
-      {/* ── Image Picker: Library / Templates / Icons ── */}
+      {/* ── BOX 1: Creator tools — Templates / Pops / Icons ── */}
       <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-        {/* Picker tab bar */}
+        {/* Header */}
+        <div className="px-3 py-2 bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-950/30 dark:to-yellow-950/30 border-b border-gray-200 dark:border-gray-700">
+          <p className="text-xs font-bold text-orange-600 uppercase tracking-wide">Add to canvas</p>
+        </div>
+        {/* Tab bar */}
         <div className="flex border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
           <button
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold transition-colors ${pickerTab === 'library' ? 'bg-white dark:bg-gray-800 text-orange-600 border-b-2 border-orange-500' : 'text-muted-foreground hover:text-foreground'}`}
-            onClick={() => setPickerTab('library')}
-          >
-            <Library className="h-3.5 w-3.5" />
-            Library
-            {libraryItems.length > 0 && (
-              <span className="ml-0.5 text-orange-500 font-bold">({libraryItems.length})</span>
-            )}
-          </button>
-          <button
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold transition-colors ${pickerTab === 'templates' ? 'bg-white dark:bg-gray-800 text-purple-600 border-b-2 border-purple-500' : 'text-muted-foreground hover:text-foreground'}`}
+            className={`flex-1 flex items-center justify-center gap-1 py-2.5 text-xs font-semibold transition-colors ${pickerTab === 'templates' ? 'bg-white dark:bg-gray-800 text-purple-600 border-b-2 border-purple-500' : 'text-muted-foreground hover:text-foreground'}`}
             onClick={() => setPickerTab('templates')}
           >
             <LayoutTemplate className="h-3.5 w-3.5" />
             Templates
-            {templateItems.length > 0 && (
-              <span className="ml-0.5 text-purple-500 font-bold">({templateItems.length})</span>
-            )}
+            {templateItems.length > 0 && <span className="ml-0.5 text-purple-500 font-bold">({templateItems.length})</span>}
           </button>
           <button
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold transition-colors ${pickerTab === 'pops' ? 'bg-white dark:bg-gray-800 text-violet-600 border-b-2 border-violet-500' : 'text-muted-foreground hover:text-foreground'}`}
+            className={`flex-1 flex items-center justify-center gap-1 py-2.5 text-xs font-semibold transition-colors ${pickerTab === 'pops' ? 'bg-white dark:bg-gray-800 text-violet-600 border-b-2 border-violet-500' : 'text-muted-foreground hover:text-foreground'}`}
             onClick={() => setPickerTab('pops')}
           >
             <UserCircle2 className="h-3.5 w-3.5" />
             Pops
-            {popItems.length > 0 && (
-              <span className="ml-0.5 text-violet-500 font-bold">({popItems.length})</span>
-            )}
+            {popItems.length > 0 && <span className="ml-0.5 text-violet-500 font-bold">({popItems.length})</span>}
           </button>
           <button
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold transition-colors ${pickerTab === 'icons' ? 'bg-white dark:bg-gray-800 text-pink-600 border-b-2 border-pink-500' : 'text-muted-foreground hover:text-foreground'}`}
+            className={`flex-1 flex items-center justify-center gap-1 py-2.5 text-xs font-semibold transition-colors ${pickerTab === 'icons' ? 'bg-white dark:bg-gray-800 text-pink-600 border-b-2 border-pink-500' : 'text-muted-foreground hover:text-foreground'}`}
             onClick={() => setPickerTab('icons')}
           >
             <Sticker className="h-3.5 w-3.5" />
             Icons
-            {iconItems.length > 0 && (
-              <span className="ml-0.5 text-pink-500 font-bold">({iconItems.length})</span>
-            )}
+            {iconItems.length > 0 && <span className="ml-0.5 text-pink-500 font-bold">({iconItems.length})</span>}
           </button>
         </div>
 
-        {/* Picker content */}
+        {/* Tab content */}
         <div className="p-3 bg-white dark:bg-gray-800">
-          {/* Library — ready-made designs, view-only (full screen print/download) */}
-          {pickerTab === 'library' && (
-            <>
-              <p className="text-[10px] text-muted-foreground mb-2 italic">
-                Tap a design to view &amp; download — these are ready-made and cannot be edited.
-              </p>
-              {libraryLoading ? (
-                <div className="flex gap-2 pb-1">
-                  {[...Array(4)].map((_, i) => <Skeleton key={i} className="shrink-0 w-16 h-16 rounded-lg" />)}
-                </div>
-              ) : libraryItems.length > 0 ? (
-                <div className="flex gap-2 overflow-x-auto pb-1">
-                  {libraryItems.map(item => (
-                    <button
-                      key={item.id}
-                      className="shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 border-gray-200 hover:border-orange-400 transition-colors bg-gray-100 relative group"
-                      onClick={() => onViewLibraryItem ? onViewLibraryItem(item) : addImage(item.image_url)}
-                      title={item.title}
-                    >
-                      <img src={item.image_url} alt={item.title} className="w-full h-full object-cover" loading="lazy" onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
-                        <ArrowDown className="h-4 w-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-xs text-muted-foreground text-center py-3">
-                  {isCard ? 'No ready cards yet' : 'No ready memes yet'}
-                </p>
-              )}
-            </>
-          )}
-
           {/* Templates */}
           {pickerTab === 'templates' && (
             <>
@@ -1285,7 +1239,7 @@ function MiniCanvas({ onSave, onViewLibraryItem, mode = 'meme' }: {
                 </div>
               ) : (
                 <p className="text-xs text-muted-foreground text-center py-3">
-                  {isCard ? 'No card templates yet — add them in Admin → Cards' : 'No templates yet — add templates in Admin → App Content'}
+                  {isCard ? 'No card templates yet' : 'No templates yet'}
                 </p>
               )}
             </>
@@ -1312,12 +1266,12 @@ function MiniCanvas({ onSave, onViewLibraryItem, mode = 'meme' }: {
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-muted-foreground text-center py-3">No pops yet — admin will upload cartoon characters here</p>
+                <p className="text-xs text-muted-foreground text-center py-3">No pops yet — cartoon characters coming soon</p>
               )}
             </>
           )}
 
-          {/* Icons — same for both modes */}
+          {/* Icons */}
           {pickerTab === 'icons' && (
             <>
               {iconsLoading ? (
@@ -1338,9 +1292,66 @@ function MiniCanvas({ onSave, onViewLibraryItem, mode = 'meme' }: {
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-muted-foreground text-center py-3">No icons yet — add icons in Admin → App Content</p>
+                <p className="text-xs text-muted-foreground text-center py-3">No icons yet</p>
               )}
             </>
+          )}
+        </div>
+      </div>
+
+      {/* ── BOX 2: Library — ready-made designs (view-only) ── */}
+      <div className="rounded-xl border-2 border-orange-200 dark:border-orange-800 overflow-hidden">
+        {/* Header */}
+        <div className="px-3 py-2.5 bg-gradient-to-r from-orange-500 to-pink-500 flex items-center gap-2">
+          <Library className="h-4 w-4 text-white shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-bold text-white">
+              {isCard ? 'Library Cards' : 'Library Memes'}
+            </p>
+            <p className="text-[10px] text-white/80 leading-tight">Ready-made · tap to print or download · cannot be edited</p>
+          </div>
+          {libraryItems.length > 0 && (
+            <span className="text-xs font-bold text-white/90 bg-white/20 px-2 py-0.5 rounded-full shrink-0">
+              {libraryItems.length}
+            </span>
+          )}
+        </div>
+
+        <div className="p-3 bg-white dark:bg-gray-800">
+          {libraryLoading ? (
+            <div className="grid grid-cols-3 gap-2">
+              {[...Array(6)].map((_, i) => <Skeleton key={i} className="aspect-square rounded-lg" />)}
+            </div>
+          ) : libraryItems.length > 0 ? (
+            <div className="grid grid-cols-3 gap-2">
+              {libraryItems.map(item => (
+                <button
+                  key={item.id}
+                  className="relative aspect-square rounded-lg overflow-hidden border-2 border-transparent hover:border-orange-400 active:scale-95 transition-all bg-gray-100 group"
+                  onClick={() => onViewLibraryItem?.(item)}
+                  title={item.title}
+                >
+                  <img
+                    src={item.image_url}
+                    alt={item.title}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                    onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                  />
+                  {/* Download hint */}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 rounded-full p-1.5">
+                      <Download className="h-3.5 w-3.5 text-orange-600" />
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-6 text-muted-foreground">
+              <Library className="h-8 w-8 mx-auto mb-2 opacity-20" />
+              <p className="text-xs">{isCard ? 'No library cards yet' : 'No library memes yet'}</p>
+            </div>
           )}
         </div>
       </div>
@@ -1929,58 +1940,57 @@ export default function AppPage() {
 
       </div>
 
-      {/* ══ LIBRARY ITEM FULL-VIEW DIALOG (view-only: print/download only) ══ */}
+      {/* ══ LIBRARY ITEM FULL-VIEW OVERLAY (view-only: print/download only) ══ */}
       {libraryItem && (
         <div
-          className="fixed inset-0 z-50 bg-black/80 flex flex-col"
+          className="fixed inset-0 z-[60] bg-black/90 flex flex-col"
           onClick={() => setLibraryItem(null)}
         >
-          {/* Image fills the screen */}
-          <div
-            className="flex-1 flex items-center justify-center overflow-hidden"
-            onClick={e => e.stopPropagation()}
-          >
+          {/* X close button — top-right, always visible */}
+          <div className="flex items-center justify-between px-4 py-3 shrink-0">
+            <p className="text-white/70 text-xs font-medium truncate max-w-[80%]">{libraryItem.title}</p>
+            <button
+              className="w-9 h-9 flex items-center justify-center rounded-full bg-white/15 hover:bg-white/30 active:bg-white/40 transition-colors text-white shrink-0"
+              onClick={e => { e.stopPropagation(); setLibraryItem(null); }}
+              aria-label="Close"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+
+          {/* Image — tap anywhere on the image also closes */}
+          <div className="flex-1 flex items-center justify-center overflow-hidden px-4">
             <img
               src={libraryItem.image_url}
               alt={libraryItem.title}
-              className="max-w-full max-h-full w-auto h-auto object-contain"
+              className="max-w-full max-h-full w-auto h-auto object-contain rounded-xl shadow-2xl"
+              onClick={() => setLibraryItem(null)}
             />
           </div>
 
-          {/* Bottom action bar */}
+          {/* Bottom action bar — stop propagation so buttons don't close the overlay */}
           <div
-            className="bg-white dark:bg-gray-900 px-4 py-4 space-y-3"
+            className="bg-white dark:bg-gray-900 px-4 py-4 space-y-3 rounded-t-2xl mt-4"
             onClick={e => e.stopPropagation()}
           >
-            <div>
-              <p className="font-semibold text-sm">{libraryItem.title}</p>
-              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                <Library className="h-3 w-3" /> Ready-made design · cannot be edited
-              </p>
-            </div>
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
+              <Library className="h-3 w-3" /> Ready-made · cannot be edited
+            </p>
             <div className="flex gap-2">
               <button
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-200 transition-colors text-sm font-semibold"
+                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 active:bg-gray-200 transition-colors text-sm font-semibold"
                 onClick={() => window.print()}
               >
                 <Printer className="h-4 w-4" /> Print
               </button>
               <button
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border-0 text-white text-sm font-semibold"
+                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border-0 text-white text-sm font-semibold shadow-lg"
                 style={getGradientStyle('primary') as React.CSSProperties}
-                onClick={() => {
-                  handleDownload(libraryItem.image_url, deriveFilename(libraryItem.image_url, libraryItem.title));
-                }}
+                onClick={() => handleDownload(libraryItem.image_url, deriveFilename(libraryItem.image_url, libraryItem.title))}
               >
                 <Download className="h-4 w-4" /> Download Free
               </button>
             </div>
-            <button
-              className="w-full py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
-              onClick={() => setLibraryItem(null)}
-            >
-              ✕ Close
-            </button>
           </div>
         </div>
       )}
