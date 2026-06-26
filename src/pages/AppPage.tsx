@@ -54,7 +54,9 @@ import {
   ArrowDown,
   ArrowUp,
   Move,
+  Share2,
 } from 'lucide-react';
+import { ShareToNostrMediaDialog } from '@/components/ShareToNostrMediaDialog';
 
 const ADMIN_PUBKEY = getAdminPubkeyHex();
 
@@ -1409,6 +1411,10 @@ function PrintItemCard({ imageDataUrl, title, onClose }: PrintItemCardProps) {
   const { getGradientStyle } = useThemeColors();
   const [downloading, setDownloading] = useState(false);
   const [printing, setPrinting] = useState(false);
+  const [sharing, setSharing] = useState(false);
+
+  // Is this a real URL (not a canvas data: URL)?
+  const isExternalUrl = !imageDataUrl.startsWith('data:');
 
   const isDataUrl = imageDataUrl.startsWith('data:');
 
@@ -1516,6 +1522,51 @@ function PrintItemCard({ imageDataUrl, title, onClose }: PrintItemCardProps) {
     }
   };
 
+  // Native social share (Web Share API — works great on mobile)
+  const handleNativeShare = async () => {
+    setSharing(true);
+    try {
+      if (navigator.share) {
+        const shareData: ShareData = {
+          title: title || 'BitPopArt',
+          text: `${title || 'Check out this BitPopArt!'} 🎨 #bitpopart #bitcoin`,
+        };
+        // For external URLs, add the URL so apps can show a preview
+        if (isExternalUrl) {
+          shareData.url = imageDataUrl;
+        } else {
+          // data: URL — share as a file
+          try {
+            const { blob, ext } = await getBlob();
+            const safeName = (title || 'bitpopart').replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 60);
+            const file = new File([blob], `${safeName}.${ext}`, { type: blob.type });
+            if (navigator.canShare?.({ files: [file] })) {
+              await navigator.share({ title: title || 'BitPopArt', files: [file] });
+              setSharing(false);
+              return;
+            }
+          } catch {
+            // fall through to text share
+          }
+        }
+        await navigator.share(shareData);
+      } else {
+        // Fallback: open Twitter/X share
+        const text = encodeURIComponent(`${title || 'BitPopArt'} 🎨 #bitpopart #bitcoin`);
+        const url = isExternalUrl ? encodeURIComponent(imageDataUrl) : '';
+        window.open(`https://twitter.com/intent/tweet?text=${text}${url ? `&url=${url}` : ''}`, '_blank', 'width=600,height=400');
+      }
+    } catch (err) {
+      if ((err as Error)?.name !== 'AbortError') {
+        // User didn't cancel — try Twitter fallback
+        const text = encodeURIComponent(`${title || 'BitPopArt'} 🎨 #bitpopart #bitcoin`);
+        window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank', 'width=600,height=400');
+      }
+    } finally {
+      setSharing(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       {/* Preview */}
@@ -1534,7 +1585,7 @@ function PrintItemCard({ imageDataUrl, title, onClose }: PrintItemCardProps) {
         <Badge className="text-xs mt-1 bg-green-100 text-green-700 border-green-200">Free · No login required</Badge>
       </div>
 
-      {/* Actions */}
+      {/* ── Primary actions: Download + Print ── */}
       <div className="grid grid-cols-2 gap-3">
         <button
           disabled={downloading}
@@ -1542,7 +1593,7 @@ function PrintItemCard({ imageDataUrl, title, onClose }: PrintItemCardProps) {
           className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border text-teal-600 bg-teal-50 dark:bg-teal-900/30 border-teal-200 dark:border-teal-800 hover:shadow-sm transition-all font-semibold disabled:opacity-60"
         >
           <Download className="h-4 w-4 stroke-[1.5]" />
-          {downloading ? 'Saving…' : 'Download PNG'}
+          {downloading ? 'Saving…' : 'Download'}
         </button>
         <button
           disabled={printing}
@@ -1550,8 +1601,62 @@ function PrintItemCard({ imageDataUrl, title, onClose }: PrintItemCardProps) {
           className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border text-rose-600 bg-rose-50 dark:bg-rose-900/30 border-rose-200 dark:border-rose-800 hover:shadow-sm transition-all font-semibold disabled:opacity-60"
         >
           <Printer className="h-4 w-4 stroke-[1.5]" />
-          {printing ? 'Opening…' : 'Print / Share'}
+          {printing ? 'Opening…' : 'Print'}
         </button>
+      </div>
+
+      {/* ── Share row ── */}
+      <div className="space-y-2">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+          <Share2 className="h-3.5 w-3.5" /> Share this
+        </p>
+        <div className="grid grid-cols-2 gap-3">
+
+          {/* Share to Nostr — only for external URLs (canvas data: URLs aren't shareable as Nostr images) */}
+          {isExternalUrl ? (
+            <ShareToNostrMediaDialog
+              title={title}
+              imageUrl={imageDataUrl}
+              hashtags={['bitpopart', 'bitcoin', 'art', 'popart']}
+              pageUrl="https://www.bitpopart.com/app"
+            >
+              <button className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/40 hover:shadow-sm transition-all font-semibold text-sm w-full">
+                {/* Nostr "N" logo */}
+                <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm-1.5 14.5v-9l7 4.5-7 4.5z" />
+                </svg>
+                Nostr
+              </button>
+            </ShareToNostrMediaDialog>
+          ) : (
+            /* Canvas creation — upload hint instead */
+            <button
+              disabled
+              title="Download first, then share from your gallery"
+              className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-purple-200 dark:border-purple-800 text-purple-400 dark:text-purple-600 bg-purple-50/50 dark:bg-purple-900/10 font-semibold text-sm w-full opacity-50 cursor-not-allowed"
+            >
+              <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm-1.5 14.5v-9l7 4.5-7 4.5z" />
+              </svg>
+              Nostr
+            </button>
+          )}
+
+          {/* Share to social / native share sheet */}
+          <button
+            disabled={sharing}
+            onClick={handleNativeShare}
+            className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-sky-300 dark:border-sky-700 text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-900/20 hover:bg-sky-100 dark:hover:bg-sky-900/40 hover:shadow-sm transition-all font-semibold text-sm disabled:opacity-60"
+          >
+            <Share2 className="h-4 w-4 stroke-[1.5]" />
+            {sharing ? 'Sharing…' : 'Share'}
+          </button>
+        </div>
+        <p className="text-[10px] text-muted-foreground text-center">
+          {isExternalUrl
+            ? 'Nostr posts with image · Share opens your apps'
+            : 'Download first to share on Nostr · Share sends to your apps'}
+        </p>
       </div>
 
       {/* Zap tip */}
@@ -1970,25 +2075,67 @@ export default function AppPage() {
 
           {/* Bottom action bar — stop propagation so buttons don't close the overlay */}
           <div
-            className="bg-white dark:bg-gray-900 px-4 py-4 space-y-3 rounded-t-2xl mt-4"
+            className="bg-white dark:bg-gray-900 px-4 pt-4 pb-5 space-y-3 rounded-t-2xl mt-4"
             onClick={e => e.stopPropagation()}
           >
             <p className="text-xs text-muted-foreground flex items-center gap-1">
               <Library className="h-3 w-3" /> Ready-made · cannot be edited
             </p>
-            <div className="flex gap-2">
+
+            {/* Primary: Print + Download */}
+            <div className="grid grid-cols-2 gap-2">
               <button
-                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 active:bg-gray-200 transition-colors text-sm font-semibold"
+                className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 active:bg-gray-200 transition-colors text-sm font-semibold"
                 onClick={() => window.print()}
               >
                 <Printer className="h-4 w-4" /> Print
               </button>
               <button
-                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border-0 text-white text-sm font-semibold shadow-lg"
+                className="flex items-center justify-center gap-2 py-2.5 rounded-xl border-0 text-white text-sm font-semibold shadow-md"
                 style={getGradientStyle('primary') as React.CSSProperties}
                 onClick={() => handleDownload(libraryItem.image_url, deriveFilename(libraryItem.image_url, libraryItem.title))}
               >
-                <Download className="h-4 w-4" /> Download Free
+                <Download className="h-4 w-4" /> Download
+              </button>
+            </div>
+
+            {/* Share row */}
+            <div className="grid grid-cols-2 gap-2">
+              {/* Share to Nostr */}
+              <ShareToNostrMediaDialog
+                title={libraryItem.title}
+                imageUrl={libraryItem.image_url}
+                hashtags={['bitpopart', 'bitcoin', 'art', 'popart']}
+                pageUrl="https://www.bitpopart.com/app"
+              >
+                <button className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/20 active:bg-purple-100 transition-colors text-sm font-semibold w-full">
+                  <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm-1.5 14.5v-9l7 4.5-7 4.5z" />
+                  </svg>
+                  Nostr
+                </button>
+              </ShareToNostrMediaDialog>
+
+              {/* Native / social share */}
+              <button
+                className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-sky-300 dark:border-sky-700 text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-900/20 active:bg-sky-100 transition-colors text-sm font-semibold"
+                onClick={async () => {
+                  if (navigator.share) {
+                    try {
+                      await navigator.share({
+                        title: libraryItem.title || 'BitPopArt',
+                        text: `${libraryItem.title || 'Check this out!'} 🎨 #bitpopart #bitcoin`,
+                        url: libraryItem.image_url,
+                      });
+                    } catch { /* cancelled */ }
+                  } else {
+                    const text = encodeURIComponent(`${libraryItem.title || 'BitPopArt'} 🎨 #bitpopart #bitcoin`);
+                    const url = encodeURIComponent(libraryItem.image_url);
+                    window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank', 'width=600,height=400');
+                  }
+                }}
+              >
+                <Share2 className="h-4 w-4" /> Share
               </button>
             </div>
           </div>
