@@ -97,6 +97,8 @@ interface CarouselItem {
 function ImageCarousel({ items, isLoading }: { items: CarouselItem[]; isLoading: boolean }) {
   const [index, setIndex] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Track natural aspect ratios per image id so the container resizes to match each image
+  const [aspectRatios, setAspectRatios] = useState<Record<string, number>>({});
 
   const resetTimer = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -131,17 +133,32 @@ function ImageCarousel({ items, isLoading }: { items: CarouselItem[]; isLoading:
     );
   }
 
-  const item = items[index];
+  const currentItem = items[index];
+  // Use the detected aspect ratio for the active image, fall back to 4/3 until loaded
+  const currentAspect = aspectRatios[currentItem.id] ?? (4 / 3);
+  // Clamp to sensible range: no taller than square (1:1), no wider than 16:9
+  const clampedAspect = Math.max(9 / 16, Math.min(16 / 9, currentAspect));
+  const paddingBottom = `${(1 / clampedAspect) * 100}%`;
 
   return (
-    <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden group">
+    <div
+      className="relative w-full rounded-2xl overflow-hidden group transition-all duration-700"
+      style={{ paddingBottom }}
+    >
       {items.map((it, i) => (
         <img
           key={it.id}
           src={it.image_url}
           alt={it.title}
-          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${i === index ? 'opacity-100' : 'opacity-0'}`}
+          className={`absolute inset-0 w-full h-full object-contain transition-opacity duration-700 ${i === index ? 'opacity-100' : 'opacity-0'}`}
           loading={i === 0 ? 'eager' : 'lazy'}
+          onLoad={(e) => {
+            const img = e.currentTarget;
+            if (img.naturalWidth && img.naturalHeight) {
+              const ratio = img.naturalWidth / img.naturalHeight;
+              setAspectRatios(prev => ({ ...prev, [it.id]: ratio }));
+            }
+          }}
         />
       ))}
 

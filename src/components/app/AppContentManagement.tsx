@@ -443,9 +443,65 @@ export function MediaList({ type, aspectClass = 'aspect-square' }: { type: AppMe
 
   return (
     <>
-      <div className={`grid gap-3 ${aspectClass === 'aspect-video' ? 'grid-cols-2 md:grid-cols-3' : 'grid-cols-3 md:grid-cols-4'}`}>
+      <div className={`grid gap-3 ${aspectClass === 'aspect-video' ? 'grid-cols-2 md:grid-cols-3' : aspectClass === 'aspect-natural' ? 'grid-cols-2 md:grid-cols-3' : 'grid-cols-3 md:grid-cols-4'}`}>
         {items.map(item => (
           <div key={item.id} className="group relative rounded-lg overflow-hidden border bg-white dark:bg-gray-800 shadow-sm">
+            {aspectClass === 'aspect-natural' ? (
+              /* Natural size: image sets its own height */
+              <>
+                <div className="relative">
+                  <img
+                    src={item.image_url}
+                    alt={item.title}
+                    className="w-full h-auto object-contain"
+                    loading="lazy"
+                  />
+                  {/* Hover action buttons */}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors" />
+                  <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className="h-6 w-6 shadow"
+                      onClick={() => setEditingItem(item)}
+                      title="Edit"
+                    >
+                      <Edit className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="h-6 w-6 shadow"
+                      onClick={() => deleteItem({ id: item.id, type })}
+                      title="Delete"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+                {/* Title + hashtag strip (natural branch) */}
+                <div className="p-1.5">
+                  <p className="text-[10px] font-medium truncate text-foreground">
+                    {item.title !== 'Untitled' ? item.title : <span className="text-muted-foreground italic">Untitled</span>}
+                  </p>
+                  {item.hashtags.length > 0 && (
+                    <div className="flex flex-wrap gap-0.5 mt-0.5">
+                      {item.hashtags.slice(0, 3).map(tag => (
+                        <span key={tag} className="text-[9px] px-1 py-0.5 rounded bg-muted text-muted-foreground">
+                          #{tag}
+                        </span>
+                      ))}
+                      {item.hashtags.length > 3 && (
+                        <span className="text-[9px] px-1 py-0.5 rounded bg-muted text-muted-foreground">
+                          +{item.hashtags.length - 3}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+            <>
             <div className={`${aspectClass} relative`}>
               <img
                 src={item.image_url}
@@ -498,6 +554,8 @@ export function MediaList({ type, aspectClass = 'aspect-square' }: { type: AppMe
                 </div>
               )}
             </div>
+            </>
+            )}
           </div>
         ))}
       </div>

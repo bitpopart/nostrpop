@@ -30,14 +30,14 @@ export function CarouselAdmin({ onBack }: CarouselAdminProps) {
             carousel automatically falls back to a mix of wallpapers, GIFs, avatars and free downloads.
             <br />
             <span className="text-xs text-muted-foreground block mt-1">
-              Recommended: 4:3 landscape images (e.g. 1200×900 px) for best appearance. Upload up to 20 images.
+              Any image size is supported — the carousel adapts to the natural dimensions of each uploaded image. Upload up to 20 images.
               Drag to reorder is not yet supported — images are shown newest-first.
             </span>
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <MediaUploader type="app-carousel" label="Carousel Image" />
-          <MediaList type="app-carousel" aspectClass="aspect-[4/3]" />
+          <MediaList type="app-carousel" aspectClass="aspect-natural" />
         </CardContent>
       </Card>
     </div>
