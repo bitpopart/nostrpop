@@ -312,11 +312,11 @@ type PointerMode =
   | { kind: 'drag';   id: string; startX: number; startY: number; origX: number; origY: number }
   | { kind: 'resize'; id: string; startX: number; startY: number; origX: number; origY: number; origW: number; origH: number };
 
-const CANVAS_SIZE = 1000;          // meme: internal resolution (exported PNG size)
-const CARD_CANVAS_W = 1000;         // card: internal resolution
-const CARD_CANVAS_H = 750;
+const CANVAS_SIZE = 700;           // meme: internal resolution (exported PNG size)
+const CARD_CANVAS_W = 700;          // card: internal resolution
+const CARD_CANVAS_H = 525;
 const CANVAS_DISPLAY_MAX = 280;    // max on-screen display width (keeps it compact on mobile)
-const HANDLE = 38; // corner-handle hit-area radius in canvas-space pixels
+const HANDLE = 27; // corner-handle hit-area radius in canvas-space pixels
 
 const POP_COLORS = [
   '#FF0080','#FF4500','#FFD700','#00FF41','#00BFFF','#FF69B4',
