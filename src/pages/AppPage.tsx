@@ -312,10 +312,10 @@ type PointerMode =
   | { kind: 'drag';   id: string; startX: number; startY: number; origX: number; origY: number }
   | { kind: 'resize'; id: string; startX: number; startY: number; origX: number; origY: number; origW: number; origH: number };
 
-const CANVAS_SIZE = 320;           // meme: square
-const CARD_CANVAS_W = 320;          // card: 4:3 landscape
-const CARD_CANVAS_H = 240;
-const HANDLE = 12; // corner-handle hit-area radius in canvas-space pixels
+const CANVAS_SIZE = 1000;          // meme: square — 1000px export
+const CARD_CANVAS_W = 1000;         // card: 4:3 landscape
+const CARD_CANVAS_H = 750;
+const HANDLE = 38; // corner-handle hit-area radius in canvas-space pixels
 
 const POP_COLORS = [
   '#FF0080','#FF4500','#FFD700','#00FF41','#00BFFF','#FF69B4',
@@ -348,7 +348,8 @@ function drawFrame(
         ctx.fillStyle = '#f0f0f0';
         ctx.fillRect(el.x, el.y, el.width, el.height);
         ctx.fillStyle = '#aaa';
-        ctx.font = '11px sans-serif';
+        const placeholderScale = canvasW / 320;
+        ctx.font = `${Math.round(11 * placeholderScale)}px sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText('Loading…', el.x + el.width / 2, el.y + el.height / 2);
@@ -369,14 +370,18 @@ function drawFrame(
 
     // Selection frame + handles
     if (selected === el.id) {
+      // Scale handle decorations relative to canvas size so they look the
+      // same on-screen regardless of the internal resolution.
+      const scale = canvasW / 320;
       ctx.save();
       ctx.strokeStyle = '#FF0080';
-      ctx.lineWidth = 1.5;
-      ctx.setLineDash([4, 3]);
+      ctx.lineWidth = 1.5 * scale;
+      ctx.setLineDash([4 * scale, 3 * scale]);
       ctx.strokeRect(el.x - 1, el.y - 1, el.width + 2, el.height + 2);
       ctx.setLineDash([]);
 
       // Regular corner dots (all except bottom-right)
+      const dotR = 5 * scale;
       const dotCorners = [
         { cx: el.x,            cy: el.y             }, // top-left
         { cx: el.x + el.width, cy: el.y             }, // top-right
@@ -385,29 +390,29 @@ function drawFrame(
       dotCorners.forEach(({ cx, cy }) => {
         ctx.fillStyle = '#FFFFFF';
         ctx.beginPath();
-        ctx.arc(cx, cy, 5, 0, Math.PI * 2);
+        ctx.arc(cx, cy, dotR, 0, Math.PI * 2);
         ctx.fill();
         ctx.strokeStyle = '#FF0080';
-        ctx.lineWidth = 1.5;
+        ctx.lineWidth = 1.5 * scale;
         ctx.stroke();
       });
 
       // Bottom-right: resize grip icon — diagonal lines hint
       const gx = el.x + el.width;
       const gy = el.y + el.height;
-      const gr = 9; // grip radius
+      const gr = 9 * scale; // grip radius
       ctx.fillStyle = '#FF0080';
       ctx.beginPath();
       ctx.arc(gx, gy, gr, 0, Math.PI * 2);
       ctx.fill();
       ctx.strokeStyle = '#FFFFFF';
-      ctx.lineWidth = 1.5;
+      ctx.lineWidth = 1.5 * scale;
       // Three diagonal tick marks inside the circle
       for (let i = 1; i <= 3; i++) {
-        const off = i * 3 - 5;
+        const off = (i * 3 - 5) * scale;
         ctx.beginPath();
-        ctx.moveTo(gx - gr + 3 + off, gy + gr - 3);
-        ctx.lineTo(gx + gr - 3,       gy - gr + 3 + off);
+        ctx.moveTo(gx - gr + 3 * scale + off, gy + gr - 3 * scale);
+        ctx.lineTo(gx + gr - 3 * scale,       gy - gr + 3 * scale + off);
         ctx.stroke();
       }
       ctx.restore();
@@ -601,9 +606,9 @@ function MiniCanvas({ onSave, onViewLibraryItem, mode = 'meme' }: {
     const id = `txt-${Date.now()}`;
     const el: CanvasEl = {
       id, kind: 'text',
-      x: 20, y: Math.round(CH * 0.35),
-      width: CW - 40, height: 50,
-      text, fontSize: isCard ? 24 : 32, color: '#FF0080', fontFamily,
+      x: Math.round(CW * 0.02), y: Math.round(CH * 0.35),
+      width: Math.round(CW * 0.96), height: Math.round(CH * 0.12),
+      text, fontSize: isCard ? 72 : 100, color: '#FF0080', fontFamily,
       bold: true, align: 'left',
     };
     setElements(prev => [...prev, el]);
@@ -620,7 +625,7 @@ function MiniCanvas({ onSave, onViewLibraryItem, mode = 'meme' }: {
     // Show a placeholder element immediately so user sees something
     const placeholder: CanvasEl = {
       id, kind: 'image',
-      x: 20, y: 20, width: 120, height: 120, src,
+      x: Math.round(CW * 0.02), y: Math.round(CW * 0.02), width: Math.round(CW * 0.375), height: Math.round(CW * 0.375), src,
     };
     setElements(prev => [...prev, placeholder]);
     setSelected(id);
@@ -636,7 +641,7 @@ function MiniCanvas({ onSave, onViewLibraryItem, mode = 'meme' }: {
       imgEl.onload = () => {
         imgCache.current.set(id, imgEl);
         const ratio = imgEl.naturalWidth / Math.max(1, imgEl.naturalHeight);
-        const w = Math.min(160, CW * 0.5);
+        const w = Math.min(500, CW * 0.5);
         const h = w / ratio;
         // Update the placeholder with real dimensions
         setElements(prev => prev.map(el =>
@@ -749,7 +754,7 @@ function MiniCanvas({ onSave, onViewLibraryItem, mode = 'meme' }: {
     const el = elRef.current.find(e => e.id === selRef.current);
     if (!el) return;
     const newId = `dup-${Date.now()}`;
-    const clone: CanvasEl = { ...el, id: newId, x: Math.min(el.x + 20, CANVAS_SIZE - el.width), y: Math.min(el.y + 20, CANVAS_SIZE - el.height) };
+    const clone: CanvasEl = { ...el, id: newId, x: Math.min(el.x + Math.round(CANVAS_SIZE * 0.06), CANVAS_SIZE - el.width), y: Math.min(el.y + Math.round(CANVAS_SIZE * 0.06), CANVAS_SIZE - el.height) };
     setElements(prev => [...prev, clone]);
     setSelected(newId);
     selRef.current = newId;
