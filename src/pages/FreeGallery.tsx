@@ -20,9 +20,11 @@ import {
   Palette,
   Smartphone,
   Laugh,
+  CreditCard,
 } from 'lucide-react';
 import { ZapButton } from '@/components/ZapButton';
 import { getAdminPubkeyHex } from '@/lib/adminUtils';
+import { useLatestCards } from '@/hooks/useLatestCards';
 
 const ADMIN_PUBKEY = getAdminPubkeyHex();
 const LIMIT = 5;
@@ -196,6 +198,7 @@ export default function FreeGallery() {
   const { data: animations = [], isLoading: loadingAnimations } = useAnimations();
   const { data: coloringPages = [], isLoading: loadingColoring } = useAppMedia('app-coloring-page');
   const { data: memes = [], isLoading: loadingMemes } = useAppMedia('app-meme');
+  const { data: latestCards = [], isLoading: loadingCards } = useLatestCards(5);
 
   useSeoMeta({
     title: 'Free Downloads - BitPopArt | Free Bitcoin Pop Art',
@@ -534,6 +537,37 @@ export default function FreeGallery() {
                   onDownload={() => triggerDownload(item.image_url, deriveFilename(item.image_url, item.title))}
                 />
               ))}
+            </div>
+          )}
+        </section>
+
+        {/* ── Cards section ── */}
+        <section className="mb-10">
+          <SectionHeader
+            icon={<CreditCard className="h-4 w-4 text-pink-600" />}
+            title="BitPop Cards"
+            count={latestCards.length}
+            href="/cards"
+            accentColor="bg-pink-100 dark:bg-pink-900/30"
+          />
+          {loadingCards ? (
+            <SkeletonRow count={LIMIT} />
+          ) : latestCards.length === 0 ? (
+            <EmptySection label="cards" />
+          ) : (
+            <div className="grid gap-3 grid-cols-3 sm:grid-cols-4 lg:grid-cols-5">
+              {latestCards.map((card) => {
+                const thumb = card.images?.[0];
+                if (!thumb) return null;
+                return (
+                  <ImageCard
+                    key={card.id}
+                    imageUrl={thumb}
+                    title={card.title}
+                    href="/cards"
+                  />
+                );
+              })}
             </div>
           )}
         </section>
