@@ -97,8 +97,6 @@ interface CarouselItem {
 function ImageCarousel({ items, isLoading }: { items: CarouselItem[]; isLoading: boolean }) {
   const [index, setIndex] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  // Track natural aspect ratios per image id so the container resizes to match each image
-  const [aspectRatios, setAspectRatios] = useState<Record<string, number>>({});
 
   const resetTimer = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -134,17 +132,17 @@ function ImageCarousel({ items, isLoading }: { items: CarouselItem[]; isLoading:
   }
 
   const currentItem = items[index];
-  // Use the detected aspect ratio for the active image, fall back to 4/3 until loaded
-  const currentAspect = aspectRatios[currentItem.id] ?? (4 / 3);
-  // Clamp to sensible range: no taller than square (1:1), no wider than 16:9
-  const clampedAspect = Math.max(9 / 16, Math.min(16 / 9, currentAspect));
-  const paddingBottom = `${(1 / clampedAspect) * 100}%`;
 
   return (
-    <div
-      className="relative w-full rounded-2xl overflow-hidden group transition-all duration-700"
-      style={{ paddingBottom }}
-    >
+    <div className="relative w-full rounded-2xl overflow-hidden group">
+      {/* Invisible spacer image keeps the container sized to the active image's natural dimensions */}
+      <img
+        key={currentItem.id + '-spacer'}
+        src={currentItem.image_url}
+        alt=""
+        aria-hidden="true"
+        className="w-full h-auto block opacity-0 pointer-events-none"
+      />
       {items.map((it, i) => (
         <img
           key={it.id}
@@ -152,13 +150,6 @@ function ImageCarousel({ items, isLoading }: { items: CarouselItem[]; isLoading:
           alt={it.title}
           className={`absolute inset-0 w-full h-full object-contain transition-opacity duration-700 ${i === index ? 'opacity-100' : 'opacity-0'}`}
           loading={i === 0 ? 'eager' : 'lazy'}
-          onLoad={(e) => {
-            const img = e.currentTarget;
-            if (img.naturalWidth && img.naturalHeight) {
-              const ratio = img.naturalWidth / img.naturalHeight;
-              setAspectRatios(prev => ({ ...prev, [it.id]: ratio }));
-            }
-          }}
         />
       ))}
 
@@ -1796,7 +1787,7 @@ export default function AppPage() {
             </div>
 
             {/* Header logo + Carousel + Category bar — compact block */}
-            <div className="space-y-2">
+            <div className="space-y-1">
               <div className="flex items-center gap-3">
                 <img
                   src={`${import.meta.env.BASE_URL || '/'}B-Funny_avatar_orange.svg`}
