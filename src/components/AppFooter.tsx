@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useSocialMediaLinks } from '@/hooks/usePages';
 import { Button } from '@/components/ui/button';
-import { Users, Zap, ShoppingBag, MessageCircleQuestion } from 'lucide-react';
+import { Users, Zap, ShoppingBag } from 'lucide-react';
 import BitPopArtLogo from '@/assets/bitpopart-logo.png';
 
 export function AppFooter() {
@@ -91,19 +91,6 @@ export function AppFooter() {
             ))}
           </div>
         )}
-
-        {/* Community Support button */}
-        <div className="mb-6">
-          <Button
-            asChild
-            className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl"
-          >
-            <Link to="/community" className="flex items-center justify-center gap-2">
-              <MessageCircleQuestion className="h-4 w-4" />
-              Community Support
-            </Link>
-          </Button>
-        </div>
 
         {/* Copyright */}
         <div className="border-t pt-4 text-center space-y-1">
