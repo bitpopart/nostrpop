@@ -36,6 +36,10 @@ export function SiteBannerBar() {
     <div className={`w-full ${styleClass} shadow-md z-40`}>
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-center gap-3 py-2 flex-wrap">
+          {/* Mobile: white "Love PopArt" text */}
+          <span className="sm:hidden text-sm font-bold text-white whitespace-nowrap">
+            Love PopArt
+          </span>
           {/* Desktop: fixed short label before the buttons */}
           <span className="hidden sm:inline text-sm font-medium whitespace-nowrap">
             🎁 Free wallpapers, GIFs &amp; animations
@@ -59,14 +63,20 @@ export function SiteBannerBar() {
                 </Link>
               )
             )}
-            {/* App button — desktop + mobile, "Love PopArt" label on mobile */}
+            {/* Desktop: original App button */}
             <Link
               to="/app"
-              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 hover:from-pink-600 hover:via-rose-600 hover:to-orange-600 text-white border-0 shadow transition-all whitespace-nowrap"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 hover:from-pink-600 hover:via-rose-600 hover:to-orange-600 text-white border-0 shadow transition-all whitespace-nowrap"
             >
               <Smartphone className="h-3.5 w-3.5" />
-              <span className="sm:hidden">Love PopArt</span>
-              <span className="hidden sm:inline">App</span>
+              App
+            </Link>
+            {/* Mobile: red "Open App →" button */}
+            <Link
+              to="/app"
+              className="sm:hidden inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-red-600 hover:bg-red-700 text-white border-0 shadow transition-all whitespace-nowrap"
+            >
+              Open App →
             </Link>
         </div>
       </div>

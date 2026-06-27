@@ -1497,8 +1497,8 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Love PopArt Community App Banner */}
-        <Link to="/app" className="block mb-12 group">
+        {/* Love PopArt Community App Banner — desktop only */}
+        <Link to="/app" className="hidden sm:block mb-12 group">
           <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 p-[2px] shadow-lg hover:shadow-xl transition-shadow duration-300">
             <div className="relative rounded-2xl bg-gradient-to-r from-pink-50 via-rose-50 to-orange-50 dark:from-pink-950/80 dark:via-rose-950/80 dark:to-orange-950/80 px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-4 overflow-hidden">
               {/* Decorative background hearts */}
