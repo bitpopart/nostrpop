@@ -2172,20 +2172,22 @@ export default function AppPage() {
               </div>
             </div>
 
+            {/* ── Animated Chat Splash ── */}
+            <AnimatedChatSplash />
+
             {/* ── Hashtag Cloud ── */}
-            <div className="pt-1">
-              <AppHashtagCloud
-                allMedia={[
-                  ...wallpapers, ...gifs, ...avatars, ...banners,
-                  ...coloringPages, ...desktopWalls, ...memes,
-                ]}
-                isLoading={wpLoading && gifLoading}
-                onHashtagClick={(tag) => {
-                  setActiveHashtag(tag);
-                  setActiveTab('search');
-                }}
-              />
-            </div>
+            <AppHashtagCloud
+              allMedia={[
+                ...wallpapers, ...gifs, ...avatars, ...banners,
+                ...coloringPages, ...desktopWalls, ...memes,
+              ]}
+              isLoading={wpLoading && gifLoading}
+              maxTags={10}
+              onHashtagClick={(tag) => {
+                setActiveHashtag(tag);
+                setActiveTab('search');
+              }}
+            />
 
             {/* ── Community link pill ── */}
             <button
@@ -2203,9 +2205,6 @@ export default function AppPage() {
               </div>
               <ChevronRight className="h-4 w-4 text-orange-400 group-hover:translate-x-1 transition-transform" />
             </button>
-
-            {/* ── Animated Chat Splash ── */}
-            <AnimatedChatSplash />
 
           </div>
         )}
