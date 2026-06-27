@@ -312,9 +312,10 @@ type PointerMode =
   | { kind: 'drag';   id: string; startX: number; startY: number; origX: number; origY: number }
   | { kind: 'resize'; id: string; startX: number; startY: number; origX: number; origY: number; origW: number; origH: number };
 
-const CANVAS_SIZE = 1000;          // meme: square — 1000px export
-const CARD_CANVAS_W = 1000;         // card: 4:3 landscape
+const CANVAS_SIZE = 1000;          // meme: internal resolution (exported PNG size)
+const CARD_CANVAS_W = 1000;         // card: internal resolution
 const CARD_CANVAS_H = 750;
+const CANVAS_DISPLAY_MAX = 280;    // max on-screen display width (keeps it compact on mobile)
 const HANDLE = 38; // corner-handle hit-area radius in canvas-space pixels
 
 const POP_COLORS = [
@@ -856,7 +857,7 @@ function MiniCanvas({ onSave, onViewLibraryItem, mode = 'meme' }: {
     <div className="space-y-3">
       {/* Canvas */}
       <div className="flex justify-center touch-none">
-        <div className="relative w-full" style={{ maxWidth: CANVAS_SIZE }}>
+        <div className="relative w-full" style={{ maxWidth: CANVAS_DISPLAY_MAX }}>
           <canvas
             ref={canvasRef}
             width={CW}
