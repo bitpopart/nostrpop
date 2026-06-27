@@ -55,6 +55,9 @@ import {
   ArrowUp,
   Move,
   Share2,
+  Laugh,
+  CreditCard,
+  Play,
 } from 'lucide-react';
 import { ShareToNostrMediaDialog } from '@/components/ShareToNostrMediaDialog';
 import { AnimatedChatSplash } from '@/components/app/AnimatedChatSplash';
@@ -1655,6 +1658,8 @@ export default function AppPage() {
   const { data: desktopWalls = [], isLoading: desktopLoading } = useAppMedia('app-desktop-wallpaper');
   const { data: freeDownloads = [], isLoading: freeLoading } = useFreeDownloads();
   const { data: animations = [], isLoading: animLoading } = useAnimations();
+  const { data: memes = [], isLoading: memesLoading } = useAppMedia('app-meme');
+  const { data: latestCards = [], isLoading: cardsLoading } = useLatestCards(5);
   // Dedicated carousel images (managed from admin → App → Carousel)
   const { data: carouselImages = [], isLoading: carouselLoading } = useAppMedia('app-carousel');
 
@@ -1803,18 +1808,29 @@ export default function AppPage() {
               {/* ── Image Carousel ── */}
               <ImageCarousel items={allMediaItems} isLoading={allMediaLoading} />
 
-              {/* ── Category icon bar ── */}
+              {/* ── Category quick-links ── */}
               <div className="overflow-x-auto -mx-4 px-4">
-                <div className="flex gap-1.5 w-max">
-                  {MEDIA_CATEGORIES.map(cat => (
-                    <button
-                      key={cat.id}
-                      onClick={() => { setActiveMediaTab(cat.id); setActiveTab('download'); }}
-                      className={`flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-xl border transition-all ${cat.color} hover:shadow-sm`}
-                    >
-                      {cat.icon}
-                      <span className="text-[10px] font-semibold whitespace-nowrap">{cat.label}</span>
-                    </button>
+                <div className="flex gap-1.5 w-max pb-0.5">
+                  {[
+                    { label: 'Images',      href: '/free/images',       icon: <Gift className="h-4 w-4" />,         color: 'text-green-700 dark:text-green-400',  bg: 'bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30 border-green-200 dark:border-green-800',   count: freeDownloads.length, loading: freeLoading },
+                    { label: 'Wallpapers',  href: '/wallpapers',         icon: <Smartphone className="h-4 w-4" />,   color: 'text-teal-700 dark:text-teal-400',    bg: 'bg-teal-50 dark:bg-teal-900/20 hover:bg-teal-100 dark:hover:bg-teal-900/30 border-teal-200 dark:border-teal-800',       count: wallpapers.length + desktopWalls.length, loading: wpLoading || desktopLoading },
+                    { label: 'Memes',       href: '/memes',              icon: <Laugh className="h-4 w-4" />,        color: 'text-yellow-700 dark:text-yellow-400', bg: 'bg-yellow-50 dark:bg-yellow-900/20 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 border-yellow-200 dark:border-yellow-800', count: memes.length, loading: memesLoading },
+                    { label: 'Avatars',     href: '/avatars',            icon: <UserCircle2 className="h-4 w-4" />,  color: 'text-violet-700 dark:text-violet-400', bg: 'bg-violet-50 dark:bg-violet-900/20 hover:bg-violet-100 dark:hover:bg-violet-900/30 border-violet-200 dark:border-violet-800', count: avatars.length, loading: avatarLoading },
+                    { label: 'GIFs',        href: '/gifs',               icon: <Clapperboard className="h-4 w-4" />, color: 'text-amber-700 dark:text-amber-400',  bg: 'bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 border-amber-200 dark:border-amber-800',   count: gifs.length, loading: gifLoading },
+                    { label: 'Animations',  href: '/animations',         icon: <Play className="h-4 w-4" />,         color: 'text-orange-700 dark:text-orange-400', bg: 'bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30 border-orange-200 dark:border-orange-800', count: animations.length, loading: animLoading },
+                    { label: 'Banners',     href: '/banners',            icon: <PanelTop className="h-4 w-4" />,     color: 'text-sky-700 dark:text-sky-400',      bg: 'bg-sky-50 dark:bg-sky-900/20 hover:bg-sky-100 dark:hover:bg-sky-900/30 border-sky-200 dark:border-sky-800',             count: banners.length, loading: bannerLoading },
+                    { label: 'Coloring',    href: '/coloring-pages',     icon: <Palette className="h-4 w-4" />,      color: 'text-rose-700 dark:text-rose-400',    bg: 'bg-rose-50 dark:bg-rose-900/20 hover:bg-rose-100 dark:hover:bg-rose-900/30 border-rose-200 dark:border-rose-800',       count: coloringPages.length, loading: coloringLoading },
+                    { label: 'Cards',       href: '/cards',              icon: <CreditCard className="h-4 w-4" />,   color: 'text-pink-700 dark:text-pink-400',    bg: 'bg-pink-50 dark:bg-pink-900/20 hover:bg-pink-100 dark:hover:bg-pink-900/30 border-pink-200 dark:border-pink-800',       count: latestCards.length, loading: cardsLoading },
+                  ].map(({ label, href, icon, color, bg, count, loading }) => (
+                    <Link key={label} to={href}>
+                      <div className={`flex flex-col items-center gap-0.5 py-2 px-2.5 rounded-xl border text-center transition-all duration-200 cursor-pointer ${bg} ${color}`}>
+                        {icon}
+                        <span className="font-semibold text-[10px] leading-tight whitespace-nowrap">{label}</span>
+                        <span className="text-[9px] font-bold opacity-70">
+                          {loading ? '…' : `(${count})`}
+                        </span>
+                      </div>
+                    </Link>
                   ))}
                 </div>
               </div>
