@@ -630,8 +630,8 @@ function MiniCanvas({ onSave, onViewLibraryItem, mode = 'meme' }: {
     // Load image — use a CORS proxy if direct load fails
     const tryLoad = (url: string, usedProxy: boolean) => {
       const imgEl = new window.Image();
-      // Only set crossOrigin for non-proxied urls to avoid CORS preflight issues
-      if (!usedProxy) imgEl.crossOrigin = 'anonymous';
+      // Always set crossOrigin so canvas.toDataURL() works without taint errors
+      imgEl.crossOrigin = 'anonymous';
 
       imgEl.onload = () => {
         imgCache.current.set(id, imgEl);
@@ -790,7 +790,56 @@ function MiniCanvas({ onSave, onViewLibraryItem, mode = 'meme' }: {
     const ctx = offscreen.getContext('2d');
     if (!ctx) return;
     drawFrame(ctx, elRef.current, null, bgRef.current, imgCache.current, CW, CH);
-    const dataUrl = offscreen.toDataURL('image/png');
+    let dataUrl: string;
+    try {
+      dataUrl = offscreen.toDataURL('image/png');
+    } catch {
+      // Canvas may be tainted by cross-origin images loaded without CORS headers.
+      // Reload all images via proxy and retry once.
+      const retryWithProxy = () => {
+        const newCache = new Map<string, HTMLImageElement>();
+        let pending = 0;
+        const els = elRef.current.filter(e => e.kind === 'image');
+        if (els.length === 0) {
+          // No images — just use background color canvas
+          const fallback = document.createElement('canvas');
+          fallback.width = CW; fallback.height = CH;
+          const fc = fallback.getContext('2d');
+          if (!fc) return;
+          fc.fillStyle = bgRef.current;
+          fc.fillRect(0, 0, CW, CH);
+          try {
+            onSave(fallback.toDataURL('image/png'), isCard ? 'My BitPop Card' : 'My BitPopArt Meme');
+            setSaved(true);
+          } catch { /* ignore */ }
+          return;
+        }
+        pending = els.length;
+        els.forEach(el => {
+          const img = new window.Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = () => {
+            newCache.set(el.id, img);
+            pending--;
+            if (pending === 0) {
+              const retry = document.createElement('canvas');
+              retry.width = CW; retry.height = CH;
+              const rc = retry.getContext('2d');
+              if (!rc) return;
+              drawFrame(rc, elRef.current, null, bgRef.current, newCache, CW, CH);
+              try {
+                onSave(retry.toDataURL('image/png'), isCard ? 'My BitPop Card' : 'My BitPopArt Meme');
+                setSaved(true);
+              } catch { /* ignore */ }
+            }
+          };
+          img.onerror = () => { pending--; };
+          img.src = `https://proxy.shakespeare.diy/?url=${encodeURIComponent(el.src || '')}`;
+        });
+      };
+      retryWithProxy();
+      return;
+    }
     onSave(dataUrl, isCard ? 'My BitPop Card' : 'My BitPopArt Meme');
     setSaved(true);
   }, [onSave, CW, CH, isCard]);
