@@ -233,7 +233,7 @@ export function Footer() {
         {/* Bottom Bar */}
         <div className="border-t pt-8 mt-8 text-center">
           <p className="text-sm text-muted-foreground mb-2">
-            © {new Date().getFullYear()} BitPopArt by Johannes Oppewal. All rights reserved.
+            © {new Date().getFullYear()} BitPopArt. All rights reserved.
           </p>
           <p className="text-xs text-muted-foreground">
             Powered by <a href="https://nostr.com" target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:underline">Nostr Protocol</a> & Bitcoin Lightning ⚡

@@ -1,6 +1,7 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { ScrollToTop } from "./components/ScrollToTop";
 import { Layout } from "./components/Layout";
+import { AppLayout } from "./components/AppLayout";
 
 import Index from "./pages/Index";
 import Cards from "./pages/Cards";
@@ -108,7 +109,7 @@ export function AppRouter() {
         <Route path="/coloring-pages" element={<Layout><ColoringPages /></Layout>} />
         <Route path="/desktop-wallpapers" element={<Layout><DesktopWallpapers /></Layout>} />
         <Route path="/memes" element={<Layout><Memes /></Layout>} />
-        <Route path="/app" element={<Layout><AppPage /></Layout>} />
+        <Route path="/app" element={<AppLayout><AppPage /></AppLayout>} />
         <Route path="/poppost" element={<Layout><PopPost /></Layout>} />
         <Route path="/community" element={<Layout><Community /></Layout>} />
         <Route path="/studio" element={<Layout><Studio /></Layout>} />

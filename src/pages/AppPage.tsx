@@ -1721,7 +1721,7 @@ export default function AppPage() {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-pink-50 to-yellow-50 dark:from-gray-900 dark:via-orange-900/20 dark:to-yellow-900/20 pb-24">
+    <div className="pb-24">
       <div className="container mx-auto px-4 py-5 max-w-xl">
 
         {/* ── Admin shortcut — only visible to admin ── */}
@@ -1738,58 +1738,6 @@ export default function AppPage() {
         {/* ══ HOME TAB ══════════════════════════════════════ */}
         {activeTab === 'home' && (
           <div className="space-y-6">
-
-            {/* ── Store download buttons ── */}
-            <div className="flex gap-2 justify-center">
-              {/* Zapstore */}
-              <a
-                href="#"
-                aria-disabled="true"
-                onClick={e => e.preventDefault()}
-                className="flex items-center gap-2 px-3 py-2 rounded-xl border border-dashed border-orange-200 dark:border-orange-800 bg-orange-50/60 dark:bg-orange-900/10 opacity-50 cursor-not-allowed select-none"
-                title="Coming soon on Zapstore"
-              >
-                <Zap className="h-4 w-4 text-orange-500 stroke-[1.5]" />
-                <div className="text-left">
-                  <p className="text-[9px] text-muted-foreground leading-none">Coming soon</p>
-                  <p className="text-xs font-bold leading-tight text-orange-700 dark:text-orange-300">Zapstore</p>
-                </div>
-              </a>
-
-              {/* Google Play */}
-              <a
-                href="#"
-                aria-disabled="true"
-                onClick={e => e.preventDefault()}
-                className="flex items-center gap-2 px-3 py-2 rounded-xl border border-dashed border-gray-200 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-800/30 opacity-50 cursor-not-allowed select-none"
-                title="Coming soon on Google Play"
-              >
-                <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                  <path d="M3.18 23.76c.37.21.8.22 1.2.03l12.1-6.93-2.59-2.6-10.71 9.5zm-1.43-19.9c-.11.27-.17.57-.17.9v18.48c0 .33.06.63.17.9l.08.08 10.35-10.35v-.24L1.83 3.78l-.08.08zM20.48 10.6l-2.84-1.63-2.9 2.9 2.9 2.9 2.85-1.63c.81-.47.81-1.57-.01-2.04zM4.38.21c-.4-.2-.83-.19-1.2.03l10.73 9.51 2.59-2.6L4.38.21z"/>
-                </svg>
-                <div className="text-left">
-                  <p className="text-[9px] text-muted-foreground leading-none">Coming soon</p>
-                  <p className="text-xs font-bold leading-tight">Google Play</p>
-                </div>
-              </a>
-
-              {/* App Store */}
-              <a
-                href="#"
-                aria-disabled="true"
-                onClick={e => e.preventDefault()}
-                className="flex items-center gap-2 px-3 py-2 rounded-xl border border-dashed border-gray-200 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-800/30 opacity-50 cursor-not-allowed select-none"
-                title="Coming soon on App Store"
-              >
-                <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                  <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
-                </svg>
-                <div className="text-left">
-                  <p className="text-[9px] text-muted-foreground leading-none">Coming soon</p>
-                  <p className="text-xs font-bold leading-tight">App Store</p>
-                </div>
-              </a>
-            </div>
 
             {/* Header logo + Carousel + Category bar — compact block */}
             <div className="space-y-1">
