@@ -2085,48 +2085,49 @@ export default function AppPage() {
 
   return (
     <div className="pb-24">
-      <div className="container mx-auto px-4 py-5 max-w-xl">
+      <div className="container mx-auto px-4 py-3 max-w-xl">
 
-        {/* ── Top bar: Admin shortcut + Search ── */}
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex-1">
-            {isAdmin && (
-              <Link to="/admin?tab=app">
-                <Button variant="outline" size="sm">
-                  <Settings className="h-4 w-4 mr-1" /> Manage App Content
-                </Button>
-              </Link>
-            )}
+        {/* ── Admin shortcut — only visible to admin ── */}
+        {isAdmin && (
+          <div className="flex justify-end mb-2">
+            <Link to="/admin?tab=app">
+              <Button variant="outline" size="sm">
+                <Settings className="h-4 w-4 mr-1" /> Manage App Content
+              </Button>
+            </Link>
           </div>
-          <button
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm font-semibold transition-all ${
-              activeTab === 'search'
-                ? 'bg-orange-500 text-white border-orange-500'
-                : 'bg-white dark:bg-gray-800 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-700 hover:bg-orange-50'
-            }`}
-            onClick={() => setActiveTab(activeTab === 'search' ? 'home' : 'search')}
-          >
-            <Search className="h-4 w-4" />
-            Search
-          </button>
-        </div>
+        )}
 
         {/* ══ HOME TAB ══════════════════════════════════════ */}
         {activeTab === 'home' && (
-          <div className="space-y-6">
+          <div className="space-y-3">
 
-            {/* Header logo + Carousel + Category bar — compact block */}
+            {/* Header logo + Search button + Carousel + Category bar — compact block */}
             <div className="space-y-1">
-              <div className="flex items-center gap-3">
-                <img
-                  src={`${import.meta.env.BASE_URL || '/'}B-Funny_avatar_orange.svg`}
-                  alt="BitPopArt"
-                  className="h-8 w-8"
-                />
-                <div>
-                  <h1 className="text-lg font-extrabold gradient-header-text leading-tight">BitPopArt App</h1>
-                  <p className="text-xs text-muted-foreground">Free art for the people ⚡</p>
+              {/* Logo row + Search button on right */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <img
+                    src={`${import.meta.env.BASE_URL || '/'}B-Funny_avatar_orange.svg`}
+                    alt="BitPopArt"
+                    className="h-8 w-8"
+                  />
+                  <div>
+                    <h1 className="text-lg font-extrabold gradient-header-text leading-tight">BitPopArt App</h1>
+                    <p className="text-xs text-muted-foreground">Free art for the people ⚡</p>
+                  </div>
                 </div>
+                <button
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm font-semibold transition-all ${
+                    activeTab === 'search'
+                      ? 'bg-orange-500 text-white border-orange-500'
+                      : 'bg-white dark:bg-gray-800 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-700 hover:bg-orange-50'
+                  }`}
+                  onClick={() => setActiveTab(activeTab === 'search' ? 'home' : 'search')}
+                >
+                  <Search className="h-4 w-4" />
+                  Search
+                </button>
               </div>
 
               {/* ── Image Carousel ── */}
@@ -2172,26 +2173,28 @@ export default function AppPage() {
             </div>
 
             {/* ── Hashtag Cloud ── */}
-            <AppHashtagCloud
-              allMedia={[
-                ...wallpapers, ...gifs, ...avatars, ...banners,
-                ...coloringPages, ...desktopWalls, ...memes,
-              ]}
-              isLoading={wpLoading && gifLoading}
-              onHashtagClick={(tag) => {
-                setActiveHashtag(tag);
-                setActiveTab('search');
-              }}
-            />
+            <div className="pt-1">
+              <AppHashtagCloud
+                allMedia={[
+                  ...wallpapers, ...gifs, ...avatars, ...banners,
+                  ...coloringPages, ...desktopWalls, ...memes,
+                ]}
+                isLoading={wpLoading && gifLoading}
+                onHashtagClick={(tag) => {
+                  setActiveHashtag(tag);
+                  setActiveTab('search');
+                }}
+              />
+            </div>
 
             {/* ── Community link pill ── */}
             <button
-              className="w-full flex items-center justify-between px-4 py-3 rounded-2xl border-2 border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-all group"
+              className="w-full flex items-center justify-between px-4 py-2.5 rounded-2xl border-2 border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-all group"
               onClick={() => setActiveTab('community')}
             >
               <div className="flex items-center gap-2.5">
-                <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-orange-500 shadow">
-                  <Users className="h-5 w-5 text-white" />
+                <div className="flex items-center justify-center w-8 h-8 rounded-xl bg-orange-500 shadow">
+                  <Users className="h-4 w-4 text-white" />
                 </div>
                 <div className="text-left">
                   <p className="text-sm font-bold text-orange-700 dark:text-orange-300">Community</p>
