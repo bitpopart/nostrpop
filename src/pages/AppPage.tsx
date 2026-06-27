@@ -1795,31 +1795,31 @@ export default function AppPage() {
               </a>
             </div>
 
-            {/* Header logo */}
-            <div className="flex items-center gap-3">
-              <img
-                src={`${import.meta.env.BASE_URL || '/'}B-Funny_avatar_orange.svg`}
-                alt="BitPopArt"
-                className="h-10 w-10"
-              />
-              <div>
-                <h1 className="text-xl font-extrabold gradient-header-text leading-tight">BitPopArt App</h1>
-                <p className="text-xs text-muted-foreground">Free art for the people ⚡</p>
+            {/* Header logo + Carousel + Category bar — compact block */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-3">
+                <img
+                  src={`${import.meta.env.BASE_URL || '/'}B-Funny_avatar_orange.svg`}
+                  alt="BitPopArt"
+                  className="h-8 w-8"
+                />
+                <div>
+                  <h1 className="text-lg font-extrabold gradient-header-text leading-tight">BitPopArt App</h1>
+                  <p className="text-xs text-muted-foreground">Free art for the people ⚡</p>
+                </div>
               </div>
-            </div>
 
-            {/* ── Image Carousel ── */}
-            <ImageCarousel items={allMediaItems} isLoading={allMediaLoading} />
+              {/* ── Image Carousel ── */}
+              <ImageCarousel items={allMediaItems} isLoading={allMediaLoading} />
 
-            {/* ── Category icon bar ── */}
-            <div>
-              <div className="overflow-x-auto pb-1 -mx-4 px-4">
-                <div className="flex gap-2 w-max">
+              {/* ── Category icon bar ── */}
+              <div className="overflow-x-auto -mx-4 px-4">
+                <div className="flex gap-1.5 w-max">
                   {MEDIA_CATEGORIES.map(cat => (
                     <button
                       key={cat.id}
                       onClick={() => { setActiveMediaTab(cat.id); setActiveTab('download'); }}
-                      className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl border transition-all ${cat.color} hover:shadow-sm`}
+                      className={`flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-xl border transition-all ${cat.color} hover:shadow-sm`}
                     >
                       {cat.icon}
                       <span className="text-[10px] font-semibold whitespace-nowrap">{cat.label}</span>
