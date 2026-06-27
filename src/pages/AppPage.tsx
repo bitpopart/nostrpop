@@ -2136,16 +2136,16 @@ export default function AppPage() {
               {/* ── Category quick-links — 5-col grid, wraps to 2 rows ── */}
               <div className="grid grid-cols-5 gap-1.5">
                 {([
-                  { label: 'Images',     icon: <Gift className="h-4 w-4" />,         color: 'text-green-700 dark:text-green-400',  bg: 'bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30 border-green-200 dark:border-green-800',   count: freeDownloads.length, loading: freeLoading,                          href: '/free/images' },
-                  { label: 'Wallpapers', icon: <Smartphone className="h-4 w-4" />,   color: 'text-teal-700 dark:text-teal-400',    bg: 'bg-teal-50 dark:bg-teal-900/20 hover:bg-teal-100 dark:hover:bg-teal-900/30 border-teal-200 dark:border-teal-800',       count: wallpapers.length + desktopWalls.length, loading: wpLoading || desktopLoading, href: '/wallpapers' },
+                  { label: 'Images',     icon: <Gift className="h-4 w-4" />,         color: 'text-green-700 dark:text-green-400',  bg: 'bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30 border-green-200 dark:border-green-800',   count: freeDownloads.length, loading: freeLoading,                          onDownload: 'free' as MediaTab },
+                  { label: 'Wallpapers', icon: <Smartphone className="h-4 w-4" />,   color: 'text-teal-700 dark:text-teal-400',    bg: 'bg-teal-50 dark:bg-teal-900/20 hover:bg-teal-100 dark:hover:bg-teal-900/30 border-teal-200 dark:border-teal-800',       count: wallpapers.length + desktopWalls.length, loading: wpLoading || desktopLoading, onDownload: 'wallpaper' as MediaTab },
                   { label: 'Memes',      icon: <Laugh className="h-4 w-4" />,        color: 'text-yellow-700 dark:text-yellow-400', bg: 'bg-yellow-50 dark:bg-yellow-900/20 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 border-yellow-200 dark:border-yellow-800', count: memes.length, loading: memesLoading,                            onCreate: 'meme' as const },
                   { label: 'Avatars',    icon: <UserCircle2 className="h-4 w-4" />,  color: 'text-violet-700 dark:text-violet-400', bg: 'bg-violet-50 dark:bg-violet-900/20 hover:bg-violet-100 dark:hover:bg-violet-900/30 border-violet-200 dark:border-violet-800', count: avatars.length, loading: avatarLoading,                         onCreate: 'avatar' as const },
-                  { label: 'GIFs',       icon: <Clapperboard className="h-4 w-4" />, color: 'text-amber-700 dark:text-amber-400',  bg: 'bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 border-amber-200 dark:border-amber-800',   count: gifs.length, loading: gifLoading,                                href: '/gifs' },
-                  { label: 'Animations', icon: <Play className="h-4 w-4" />,         color: 'text-orange-700 dark:text-orange-400', bg: 'bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30 border-orange-200 dark:border-orange-800', count: animations.length, loading: animLoading,                        href: '/animations' },
-                  { label: 'Banners',    icon: <PanelTop className="h-4 w-4" />,     color: 'text-sky-700 dark:text-sky-400',      bg: 'bg-sky-50 dark:bg-sky-900/20 hover:bg-sky-100 dark:hover:bg-sky-900/30 border-sky-200 dark:border-sky-800',             count: banners.length, loading: bannerLoading,                          href: '/banners' },
-                  { label: 'Coloring',   icon: <Palette className="h-4 w-4" />,      color: 'text-rose-700 dark:text-rose-400',    bg: 'bg-rose-50 dark:bg-rose-900/20 hover:bg-rose-100 dark:hover:bg-rose-900/30 border-rose-200 dark:border-rose-800',       count: coloringPages.length, loading: coloringLoading,                   href: '/coloring-pages' },
+                  { label: 'GIFs',       icon: <Clapperboard className="h-4 w-4" />, color: 'text-amber-700 dark:text-amber-400',  bg: 'bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 border-amber-200 dark:border-amber-800',   count: gifs.length, loading: gifLoading,                                onDownload: 'gif' as MediaTab },
+                  { label: 'Animations', icon: <Play className="h-4 w-4" />,         color: 'text-orange-700 dark:text-orange-400', bg: 'bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30 border-orange-200 dark:border-orange-800', count: animations.length, loading: animLoading,                        onDownload: 'animation' as MediaTab },
+                  { label: 'Banners',    icon: <PanelTop className="h-4 w-4" />,     color: 'text-sky-700 dark:text-sky-400',      bg: 'bg-sky-50 dark:bg-sky-900/20 hover:bg-sky-100 dark:hover:bg-sky-900/30 border-sky-200 dark:border-sky-800',             count: banners.length, loading: bannerLoading,                          onDownload: 'banner' as MediaTab },
+                  { label: 'Coloring',   icon: <Palette className="h-4 w-4" />,      color: 'text-rose-700 dark:text-rose-400',    bg: 'bg-rose-50 dark:bg-rose-900/20 hover:bg-rose-100 dark:hover:bg-rose-900/30 border-rose-200 dark:border-rose-800',       count: coloringPages.length, loading: coloringLoading,                   onDownload: 'coloring' as MediaTab },
                   { label: 'Cards',      icon: <CreditCard className="h-4 w-4" />,   color: 'text-pink-700 dark:text-pink-400',    bg: 'bg-pink-50 dark:bg-pink-900/20 hover:bg-pink-100 dark:hover:bg-pink-900/30 border-pink-200 dark:border-pink-800',       count: latestCards.length, loading: cardsLoading,                       onCreate: 'card' as const },
-                ] as Array<{ label: string; icon: React.ReactNode; color: string; bg: string; count: number; loading: boolean; href?: string; onCreate?: 'meme' | 'card' | 'avatar' }>).map((cat) => {
+                ] as Array<{ label: string; icon: React.ReactNode; color: string; bg: string; count: number; loading: boolean; onDownload?: MediaTab; onCreate?: 'meme' | 'card' | 'avatar' }>).map((cat) => {
                   const inner = (
                     <div className={`flex flex-col items-center gap-0.5 py-2 px-1 rounded-xl border text-center transition-all duration-200 cursor-pointer w-full ${cat.bg} ${cat.color}`}>
                       {cat.icon}
@@ -2155,18 +2155,25 @@ export default function AppPage() {
                       </span>
                     </div>
                   );
-                  return cat.onCreate ? (
+                  if (cat.onCreate) {
+                    return (
+                      <button
+                        key={cat.label}
+                        className="contents"
+                        onClick={() => { setCreateSubTab(cat.onCreate!); setActiveTab('create'); }}
+                      >
+                        {inner}
+                      </button>
+                    );
+                  }
+                  return (
                     <button
                       key={cat.label}
                       className="contents"
-                      onClick={() => { setCreateSubTab(cat.onCreate!); setActiveTab('create'); }}
+                      onClick={() => { setActiveMediaTab(cat.onDownload!); setActiveTab('download'); }}
                     >
                       {inner}
                     </button>
-                  ) : (
-                    <Link key={cat.label} to={cat.href!}>
-                      {inner}
-                    </Link>
                   );
                 })}
               </div>
