@@ -1471,53 +1471,57 @@ function PrintItemCard({ imageDataUrl, title, onClose }: PrintItemCardProps) {
   const handlePrint = async () => {
     setPrinting(true);
     try {
-      // Try Web Share API first (works on mobile — shares the image)
-      if (navigator.share && navigator.canShare) {
-        try {
-          const { blob, ext } = await getBlob();
-          const safeName = (title || 'bitpopart').replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 60);
-          const file = new File([blob], `${safeName}.${ext}`, { type: blob.type });
-          if (navigator.canShare({ files: [file] })) {
-            await navigator.share({
-              title: title || 'BitPopArt',
-              files: [file],
-            });
-            setPrinting(false);
-            return;
+      // Inject a temporary print-only stylesheet that hides everything except
+      // our print image element. This works on all browsers including mobile.
+      const styleId = '__bpa_print_style__';
+      const imgId   = '__bpa_print_img__';
+
+      // Clean up any previous leftovers
+      document.getElementById(styleId)?.remove();
+      document.getElementById(imgId)?.remove();
+
+      const style = document.createElement('style');
+      style.id = styleId;
+      style.textContent = `
+        @media print {
+          body > *:not(#${imgId}) { display: none !important; }
+          #${imgId} {
+            display: block !important;
+            position: fixed !important;
+            inset: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            object-fit: contain !important;
+            background: #fff !important;
+            z-index: 99999 !important;
           }
-        } catch (shareErr) {
-          // User cancelled or share failed — fall through to print
-          if ((shareErr as Error)?.name === 'AbortError') { setPrinting(false); return; }
+          @page { margin: 0; }
         }
-      }
+      `;
+      document.head.appendChild(style);
 
-      // Desktop: inject a hidden iframe and call print() on it
-      // This avoids popup blockers entirely
-      const src = isDataUrl
-        ? imageDataUrl
-        : imageDataUrl; // external URLs also work in iframe src
+      const img = document.createElement('img');
+      img.id  = imgId;
+      img.src = imageDataUrl;
+      img.alt = title || 'BitPopArt';
+      img.style.cssText = 'display:none;'; // hidden on screen, shown only in print
+      document.body.appendChild(img);
 
-      const iframe = document.createElement('iframe');
-      iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:0;';
-      iframe.srcdoc = `<!DOCTYPE html><html><head><style>
-        @page{margin:0}
-        *{margin:0;padding:0;box-sizing:border-box}
-        html,body{width:100%;height:100%;background:#fff;display:flex;align-items:center;justify-content:center}
-        img{max-width:100%;max-height:100%;object-fit:contain}
-      </style></head><body><img src="${src}" /></body></html>`;
+      // Give the image a moment to load before opening print dialog
+      await new Promise<void>(resolve => {
+        if (img.complete) { resolve(); return; }
+        img.onload  = () => resolve();
+        img.onerror = () => resolve();
+        setTimeout(resolve, 1500); // safety timeout
+      });
 
-      document.body.appendChild(iframe);
+      window.print();
 
-      iframe.onload = () => {
-        try {
-          iframe.contentWindow?.focus();
-          iframe.contentWindow?.print();
-        } catch {
-          // Fallback for external images blocked in iframe
-          window.print();
-        }
-        setTimeout(() => document.body.removeChild(iframe), 3000);
-      };
+      // Clean up after the print dialog closes
+      setTimeout(() => {
+        document.getElementById(styleId)?.remove();
+        document.getElementById(imgId)?.remove();
+      }, 1000);
     } finally {
       setPrinting(false);
     }
