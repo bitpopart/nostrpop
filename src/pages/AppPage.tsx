@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useSeoMeta } from '@unhead/react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -58,6 +58,9 @@ import {
   Laugh,
   CreditCard,
   Play,
+  Search,
+  Hash,
+  Users,
 } from 'lucide-react';
 import { ShareToNostrMediaDialog } from '@/components/ShareToNostrMediaDialog';
 import { AnimatedChatSplash } from '@/components/app/AnimatedChatSplash';
@@ -1625,9 +1628,365 @@ function PrintItemCard({ imageDataUrl, title, onClose }: PrintItemCardProps) {
   );
 }
 
+// ── App Hashtag Cloud ─────────────────────────────────────
+
+interface AppHashtagCloudProps {
+  allMedia: Array<{ hashtags: string[] }>;
+  isLoading: boolean;
+  searchFilter?: string;
+  activeTag?: string;
+  onHashtagClick: (tag: string | undefined) => void;
+  maxTags?: number;
+}
+
+// Default pinned hashtags shown even if not frequently used
+const DEFAULT_PINNED_HASHTAGS = ['bitcoin', 'popart', 'bitpopart', 'nostr', 'art', 'wallpaper', 'meme', 'avatar'];
+
+function usePinnedHashtags(): string[] {
+  try {
+    const stored = localStorage.getItem('bpa:pinned-hashtags');
+    if (stored) return JSON.parse(stored) as string[];
+  } catch { /* ignore */ }
+  return DEFAULT_PINNED_HASHTAGS;
+}
+
+function AppHashtagCloud({
+  allMedia,
+  isLoading,
+  searchFilter = '',
+  activeTag,
+  onHashtagClick,
+  maxTags = 20,
+}: AppHashtagCloudProps) {
+  const pinnedHashtags = usePinnedHashtags();
+
+  const tagCounts = useMemo(() => {
+    const freq = new Map<string, number>();
+    for (const m of allMedia) {
+      for (const tag of m.hashtags) {
+        if (tag) freq.set(tag, (freq.get(tag) ?? 0) + 1);
+      }
+    }
+    // Also ensure pinned tags appear with at least count 0
+    for (const pt of pinnedHashtags) {
+      if (!freq.has(pt)) freq.set(pt, 0);
+    }
+    return freq;
+  }, [allMedia, pinnedHashtags]);
+
+  const topTags = useMemo(() => {
+    let entries = [...tagCounts.entries()].sort((a, b) => b[1] - a[1]);
+    if (searchFilter.trim()) {
+      const q = searchFilter.toLowerCase().replace(/^#/, '');
+      entries = entries.filter(([tag]) => tag.includes(q));
+    }
+    return entries.slice(0, maxTags);
+  }, [tagCounts, searchFilter, maxTags]);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-wrap gap-2 py-1">
+        {[...Array(8)].map((_, i) => (
+          <Skeleton key={i} className="h-7 rounded-full" style={{ width: `${55 + i * 10}px` }} />
+        ))}
+      </div>
+    );
+  }
+
+  if (topTags.length === 0) return null;
+
+  const maxCount = Math.max(...topTags.map(([, c]) => c), 1);
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <Hash className="h-4 w-4 text-muted-foreground" />
+        <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Browse by hashtag</span>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {activeTag !== undefined && (
+          <button
+            onClick={() => onHashtagClick(undefined)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-200 border-orange-200 dark:border-orange-700 hover:bg-orange-200 dark:hover:bg-orange-800/40 transition-all"
+          >
+            All
+          </button>
+        )}
+        {topTags.map(([tag, count]) => {
+          const ratio = count / maxCount;
+          const sizeClass = ratio >= 0.7 ? 'text-sm font-semibold' : ratio >= 0.35 ? 'text-xs font-medium' : 'text-[11px] font-normal';
+          const isActive = activeTag === tag;
+          return (
+            <button
+              key={tag}
+              onClick={() => onHashtagClick(isActive ? undefined : tag)}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all duration-200 ${sizeClass} ${
+                isActive
+                  ? 'bg-orange-500 text-white border-orange-500 shadow-md scale-105'
+                  : 'bg-white dark:bg-gray-800 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-700 hover:bg-orange-50 dark:hover:bg-orange-900/20 hover:border-orange-400'
+              }`}
+            >
+              {!isActive && <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-orange-400" />}
+              #{tag}
+              {count > 0 && (
+                <span className={`text-[10px] opacity-60 ${isActive ? 'text-white/80' : ''}`}>{count}</span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ── App Hashtag Results ───────────────────────────────────
+
+interface AppHashtagResultsProps {
+  allMedia: Array<{ id: string; image_url: string; title: string; hashtags: string[] }>;
+  isLoading: boolean;
+  activeTag?: string;
+  onGetThis: (item: { id: string; image_url: string; title: string }) => void;
+}
+
+function AppHashtagResults({ allMedia, isLoading, activeTag, onGetThis }: AppHashtagResultsProps) {
+  const { getGradientStyle } = useThemeColors();
+
+  const results = useMemo(() => {
+    if (!activeTag) return [];
+    return allMedia.filter(m => m.hashtags.includes(activeTag));
+  }, [allMedia, activeTag]);
+
+  if (!activeTag) {
+    return (
+      <div className="text-center py-10 text-muted-foreground text-sm">
+        <Hash className="h-8 w-8 mx-auto mb-2 opacity-30" />
+        <p>Select a hashtag above to browse media</p>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-3 gap-2">
+        {[...Array(6)].map((_, i) => <Skeleton key={i} className="aspect-square rounded-xl" />)}
+      </div>
+    );
+  }
+
+  if (results.length === 0) {
+    return (
+      <div className="text-center py-10 text-muted-foreground text-sm">
+        <Hash className="h-8 w-8 mx-auto mb-2 opacity-30" />
+        <p>No media found for <span className="font-semibold">#{activeTag}</span></p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs text-muted-foreground font-medium">
+        {results.length} item{results.length !== 1 ? 's' : ''} tagged <span className="font-bold text-orange-600">#{activeTag}</span>
+      </p>
+      <div className="grid grid-cols-3 gap-2">
+        {results.map(item => (
+          <div key={item.id} className="group relative rounded-xl overflow-hidden bg-white dark:bg-gray-800 shadow-sm">
+            <div className="aspect-square">
+              <img
+                src={item.image_url}
+                alt={item.title}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                loading="lazy"
+              />
+            </div>
+            <button
+              className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all flex items-end justify-center pb-2 opacity-0 group-hover:opacity-100"
+              onClick={() => onGetThis(item)}
+            >
+              <span
+                className="text-white text-xs font-bold px-3 py-1 rounded-full shadow"
+                style={getGradientStyle('primary') as React.CSSProperties}
+              >
+                Get This
+              </span>
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── App Community Section ─────────────────────────────────
+
+function AppCommunitySection() {
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [contactName, setContactName] = useState('');
+  const [contactEmail, setContactEmail] = useState('');
+  const [contactMsg, setContactMsg] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+
+  const faqItems = [
+    {
+      q: 'What is BitPopArt?',
+      a: 'BitPopArt is a free Bitcoin & Pop Art creative platform by Johannes Oppewal. Download wallpapers, GIFs, avatars, banners, coloring pages and more — all Bitcoin-themed and completely free.',
+    },
+    {
+      q: 'Is everything really free?',
+      a: 'Yes! All downloads are free. If you enjoy the art, you can support the creator with a Bitcoin Lightning tip (zap). Every zap helps keep the art flowing ⚡',
+    },
+    {
+      q: 'How do I download art?',
+      a: 'Browse any category (Wallpapers, GIFs, Avatars, etc.), tap on an image, then hit the "Download" button. You can also share directly to Nostr or your social apps.',
+    },
+    {
+      q: 'What is Nostr?',
+      a: 'Nostr is a decentralized social protocol. BitPopArt uses Nostr to publish and store all content — meaning no central server can censor or remove the art.',
+    },
+    {
+      q: 'How can I support BitPopArt?',
+      a: 'The best way is to zap (Bitcoin Lightning tip) any art you love, follow @bitpopart on Nostr, share the art with your friends, and join the community!',
+    },
+    {
+      q: 'Can I use the art for my profile or social media?',
+      a: 'Absolutely! That\'s what it\'s made for. Feel free to use BitPopArt wallpapers, GIFs and avatars for personal use. Please credit @bitpopart when sharing.',
+    },
+    {
+      q: 'How do I create my own meme or avatar?',
+      a: 'Tap the "Create" button in the bottom nav. You\'ll find the Meme Creator, Card Creator and Avatar Generator — all running directly in your browser.',
+    },
+    {
+      q: 'I found a bug or have a suggestion. How do I report it?',
+      a: 'Use the contact form below! We read every message. You can also reach out directly on Nostr by searching for @bitpopart.',
+    },
+  ];
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Open mailto as fallback
+    const subject = encodeURIComponent('BitPopArt App Contact');
+    const body = encodeURIComponent(`Name: ${contactName}\n\n${contactMsg}`);
+    window.open(`mailto:hello@bitpopart.com?subject=${subject}&body=${body}`, '_blank');
+    setSubmitted(true);
+  };
+
+  return (
+    <div className="space-y-6 pb-4">
+      {/* Heading */}
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-orange-600 bg-orange-50 dark:bg-orange-900/30 border-orange-200 dark:border-orange-800">
+          <Users className="h-5 w-5 stroke-[1.5]" />
+          <span className="text-sm font-bold">Community</span>
+        </div>
+      </div>
+
+      {/* Quick links */}
+      <div className="grid grid-cols-2 gap-2">
+        <a
+          href="https://njump.me/npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 hover:bg-purple-100 transition-all"
+        >
+          <svg className="h-6 w-6 text-purple-600" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm-1.5 14.5v-9l7 4.5-7 4.5z" />
+          </svg>
+          <span className="text-xs font-semibold text-purple-700 dark:text-purple-300">Follow on Nostr</span>
+        </a>
+        <Link
+          to="/community"
+          className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 hover:bg-orange-100 transition-all"
+        >
+          <Users className="h-6 w-6 text-orange-600" />
+          <span className="text-xs font-semibold text-orange-700 dark:text-orange-300">PopFans Hub</span>
+        </Link>
+      </div>
+
+      {/* FAQ */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-sm font-bold text-foreground">Frequently Asked Questions</span>
+        </div>
+        {faqItems.map((item, i) => (
+          <div
+            key={i}
+            className="border border-border rounded-xl overflow-hidden bg-white dark:bg-gray-800"
+          >
+            <button
+              className="w-full flex items-center justify-between px-4 py-3 text-left"
+              onClick={() => setOpenFaq(openFaq === i ? null : i)}
+            >
+              <span className="text-sm font-semibold pr-4">{item.q}</span>
+              <ChevronRight className={`h-4 w-4 text-muted-foreground flex-shrink-0 transition-transform ${openFaq === i ? 'rotate-90' : ''}`} />
+            </button>
+            {openFaq === i && (
+              <div className="px-4 pb-4 pt-0">
+                <p className="text-sm text-muted-foreground">{item.a}</p>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Contact form */}
+      <div className="border-2 border-orange-200 dark:border-orange-800 rounded-2xl bg-orange-50 dark:bg-orange-900/10 p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center">
+            <svg className="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <p className="text-sm font-bold text-orange-800 dark:text-orange-200">Contact &amp; Support</p>
+        </div>
+        <p className="text-xs text-muted-foreground">Questions, suggestions or issues? Drop us a message!</p>
+        {submitted ? (
+          <div className="text-center py-4">
+            <p className="text-sm font-semibold text-green-600 dark:text-green-400">✓ Message sent! We'll be in touch soon.</p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-2">
+            <Input
+              placeholder="Your name"
+              value={contactName}
+              onChange={e => setContactName(e.target.value)}
+              className="bg-white dark:bg-gray-800 text-sm"
+              required
+            />
+            <Input
+              placeholder="Email (optional)"
+              type="email"
+              value={contactEmail}
+              onChange={e => setContactEmail(e.target.value)}
+              className="bg-white dark:bg-gray-800 text-sm"
+            />
+            <textarea
+              placeholder="Your message…"
+              value={contactMsg}
+              onChange={e => setContactMsg(e.target.value)}
+              rows={4}
+              required
+              className="w-full px-3 py-2 text-sm border border-input rounded-md bg-white dark:bg-gray-800 resize-none focus:outline-none focus:ring-2 focus:ring-orange-400"
+            />
+            <button
+              type="submit"
+              className="w-full py-2.5 rounded-xl text-white text-sm font-bold shadow"
+              style={{ background: 'linear-gradient(90deg, #f7931a, #ff6b6b)' }}
+            >
+              Send Message
+            </button>
+          </form>
+        )}
+        <p className="text-[10px] text-center text-muted-foreground">
+          Or reach out directly:{' '}
+          <a href="mailto:hello@bitpopart.com" className="underline text-orange-600 dark:text-orange-400">hello@bitpopart.com</a>
+        </p>
+      </div>
+    </div>
+  );
+}
+
 // ── Active tab types ──────────────────────────────────────
 
-type AppTab = 'home' | 'create' | 'download' | 'print';
+type AppTab = 'home' | 'create' | 'download' | 'print' | 'search' | 'community';
 type CreateSubTab = 'meme' | 'card' | 'avatar';
 
 // ── Main App page ─────────────────────────────────────────
@@ -1642,6 +2001,10 @@ export default function AppPage() {
   const [activeTab, setActiveTab] = useState<AppTab>('home');
   const [createSubTab, setCreateSubTab] = useState<CreateSubTab>('meme');
   const [activeMediaTab, setActiveMediaTab] = useState<MediaTab>('wallpaper');
+
+  // Search & hashtag state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeHashtag, setActiveHashtag] = useState<string | undefined>(undefined);
 
   // Print item
   const [printItem, setPrintItem] = useState<{ dataUrl: string; title: string } | null>(null);
@@ -1724,16 +2087,29 @@ export default function AppPage() {
     <div className="pb-24">
       <div className="container mx-auto px-4 py-5 max-w-xl">
 
-        {/* ── Admin shortcut — only visible to admin ── */}
-        {isAdmin && (
-          <div className="flex justify-end mb-3">
-            <Link to="/admin?tab=app">
-              <Button variant="outline" size="sm">
-                <Settings className="h-4 w-4 mr-1" /> Manage App Content
-              </Button>
-            </Link>
+        {/* ── Top bar: Admin shortcut + Search ── */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex-1">
+            {isAdmin && (
+              <Link to="/admin?tab=app">
+                <Button variant="outline" size="sm">
+                  <Settings className="h-4 w-4 mr-1" /> Manage App Content
+                </Button>
+              </Link>
+            )}
           </div>
-        )}
+          <button
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm font-semibold transition-all ${
+              activeTab === 'search'
+                ? 'bg-orange-500 text-white border-orange-500'
+                : 'bg-white dark:bg-gray-800 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-700 hover:bg-orange-50'
+            }`}
+            onClick={() => setActiveTab(activeTab === 'search' ? 'home' : 'search')}
+          >
+            <Search className="h-4 w-4" />
+            Search
+          </button>
+        </div>
 
         {/* ══ HOME TAB ══════════════════════════════════════ */}
         {activeTab === 'home' && (
@@ -1794,6 +2170,36 @@ export default function AppPage() {
                 })}
               </div>
             </div>
+
+            {/* ── Hashtag Cloud ── */}
+            <AppHashtagCloud
+              allMedia={[
+                ...wallpapers, ...gifs, ...avatars, ...banners,
+                ...coloringPages, ...desktopWalls, ...memes,
+              ]}
+              isLoading={wpLoading && gifLoading}
+              onHashtagClick={(tag) => {
+                setActiveHashtag(tag);
+                setActiveTab('search');
+              }}
+            />
+
+            {/* ── Community link pill ── */}
+            <button
+              className="w-full flex items-center justify-between px-4 py-3 rounded-2xl border-2 border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-all group"
+              onClick={() => setActiveTab('community')}
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-orange-500 shadow">
+                  <Users className="h-5 w-5 text-white" />
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-bold text-orange-700 dark:text-orange-300">Community</p>
+                  <p className="text-xs text-orange-600/70 dark:text-orange-400/70">FAQ, support &amp; contact</p>
+                </div>
+              </div>
+              <ChevronRight className="h-4 w-4 text-orange-400 group-hover:translate-x-1 transition-transform" />
+            </button>
 
             {/* ── Animated Chat Splash ── */}
             <AnimatedChatSplash />
@@ -1902,6 +2308,76 @@ export default function AppPage() {
               onGetThis={handleGetThis}
             />
           </div>
+        )}
+
+        {/* ══ SEARCH / HASHTAG TAB ═════════════════════════ */}
+        {activeTab === 'search' && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-orange-600 bg-orange-50 dark:bg-orange-900/30 border-orange-200 dark:border-orange-800">
+                <Search className="h-5 w-5 stroke-[1.5]" />
+                <span className="text-sm font-bold">Search</span>
+              </div>
+              {activeHashtag && (
+                <button
+                  onClick={() => setActiveHashtag(undefined)}
+                  className="flex items-center gap-1 px-2 py-1 rounded-full bg-orange-500 text-white text-xs font-semibold"
+                >
+                  <Hash className="h-3 w-3" />
+                  {activeHashtag}
+                  <X className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+
+            {/* Search input */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search hashtags…"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+              {searchQuery && (
+                <button
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  onClick={() => setSearchQuery('')}
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+
+            {/* Hashtag cloud for search */}
+            <AppHashtagCloud
+              allMedia={[
+                ...wallpapers, ...gifs, ...avatars, ...banners,
+                ...coloringPages, ...desktopWalls, ...memes,
+              ]}
+              isLoading={wpLoading && gifLoading}
+              searchFilter={searchQuery}
+              activeTag={activeHashtag}
+              onHashtagClick={setActiveHashtag}
+              maxTags={30}
+            />
+
+            {/* Results grid */}
+            <AppHashtagResults
+              allMedia={[
+                ...wallpapers, ...gifs, ...avatars, ...banners,
+                ...coloringPages, ...desktopWalls, ...memes,
+              ]}
+              isLoading={wpLoading || gifLoading || avatarLoading || bannerLoading || coloringLoading || desktopLoading || memesLoading}
+              activeTag={activeHashtag}
+              onGetThis={handleGetThis}
+            />
+          </div>
+        )}
+
+        {/* ══ COMMUNITY TAB ════════════════════════════════ */}
+        {activeTab === 'community' && (
+          <AppCommunitySection />
         )}
 
         {/* ══ PRINT TAB ════════════════════════════════════ */}
@@ -2094,6 +2570,17 @@ export default function AppPage() {
                 <Printer className={`h-5 w-5 ${activeTab === 'print' ? 'stroke-[2]' : 'stroke-[1.5]'}`} />
               </div>
               <span className="text-[10px] font-semibold">Print</span>
+            </button>
+
+            {/* Community — orange accent */}
+            <button
+              className={`flex-1 flex flex-col items-center gap-1 py-3 transition-colors ${activeTab === 'community' ? 'text-orange-600' : 'text-orange-500 hover:text-orange-600'}`}
+              onClick={() => setActiveTab('community')}
+            >
+              <div className={`p-1.5 rounded-lg transition-all ${activeTab === 'community' ? 'bg-orange-100 dark:bg-orange-900/40 ring-2 ring-orange-400' : 'bg-orange-50 dark:bg-orange-900/20'}`}>
+                <Users className={`h-5 w-5 ${activeTab === 'community' ? 'stroke-[2]' : 'stroke-[1.5]'}`} />
+              </div>
+              <span className="text-[10px] font-bold">Community</span>
             </button>
 
           </div>

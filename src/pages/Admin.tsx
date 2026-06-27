@@ -5,6 +5,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LoginArea } from '@/components/auth/LoginArea';
 import { CardManagement } from '@/components/cards/CardManagement';
@@ -51,6 +52,7 @@ import { PrintPostersAdmin } from '@/components/print/PrintPostersAdmin';
 import { NFTCharacterAdmin } from '@/components/nft/NFTCharacterAdmin';
 import { MediaGeneratorAdmin } from '@/components/mediagenerator/MediaGeneratorAdmin';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
 import {
   Plus,
   BarChart3,
@@ -92,7 +94,99 @@ import {
   Shapes,
   Sparkles,
   MessageSquare,
+  Hash,
+  X,
 } from 'lucide-react';
+
+// ── Pinned Hashtags Admin ─────────────────────────────────
+
+const DEFAULT_HASHTAGS = ['bitcoin', 'popart', 'bitpopart', 'nostr', 'art', 'wallpaper', 'meme', 'avatar'];
+
+function PinnedHashtagsAdmin() {
+  const [pinnedHashtags, setPinnedHashtags] = useLocalStorage<string[]>(
+    'bpa:pinned-hashtags',
+    DEFAULT_HASHTAGS,
+  );
+  const [newTag, setNewTag] = useState('');
+
+  const addTag = () => {
+    const clean = newTag.replace(/^#/, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (clean && !pinnedHashtags.includes(clean)) {
+      setPinnedHashtags([...pinnedHashtags, clean]);
+    }
+    setNewTag('');
+  };
+
+  const removeTag = (tag: string) => {
+    setPinnedHashtags(pinnedHashtags.filter(t => t !== tag));
+  };
+
+  const resetToDefaults = () => setPinnedHashtags(DEFAULT_HASHTAGS);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Hash className="h-5 w-5 text-orange-600" />
+          Pinned Hashtags
+        </CardTitle>
+        <CardDescription>
+          These hashtags always appear in the App Search cloud, even if not frequently used.
+          Shown to all visitors on the /app page.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Current tags */}
+        <div className="flex flex-wrap gap-2">
+          {pinnedHashtags.map(tag => (
+            <span
+              key={tag}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm font-medium bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-700"
+            >
+              #{tag}
+              <button
+                onClick={() => removeTag(tag)}
+                className="text-orange-400 hover:text-orange-600 transition-colors"
+                title={`Remove #${tag}`}
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </span>
+          ))}
+          {pinnedHashtags.length === 0 && (
+            <p className="text-sm text-muted-foreground italic">No pinned hashtags. Add some below.</p>
+          )}
+        </div>
+
+        {/* Add new tag */}
+        <div className="flex gap-2">
+          <Input
+            placeholder="Add hashtag (e.g. bitcoin)"
+            value={newTag}
+            onChange={e => setNewTag(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addTag(); } }}
+            className="flex-1"
+          />
+          <Button onClick={addTag} variant="outline" className="border-orange-300 text-orange-700 hover:bg-orange-50">
+            <Hash className="h-4 w-4 mr-1" />
+            Add
+          </Button>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="sm" onClick={resetToDefaults} className="text-muted-foreground">
+            Reset to defaults
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            {pinnedHashtags.length} pinned hashtag{pinnedHashtags.length !== 1 ? 's' : ''}
+          </p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ── Main Admin page ───────────────────────────────────────
 
 const Admin = () => {
   const { user } = useCurrentUser();
@@ -1085,6 +1179,9 @@ const Admin = () => {
                 </div>
               </div>
               <AppContentDashboard onNavigate={setActiveTab} />
+
+              {/* Pinned Hashtags admin */}
+              <PinnedHashtagsAdmin />
 
               {/* Download analytics — inline in the same tab */}
               <div>

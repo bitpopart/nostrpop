@@ -45,6 +45,7 @@ import ColoringPages from "./pages/ColoringPages";
 import DesktopWallpapers from "./pages/DesktopWallpapers";
 import Memes from "./pages/Memes";
 import AppPage from "./pages/AppPage";
+import AppHashtagPage from "./pages/AppHashtagPage";
 import PopPost from "./pages/PopPost";
 import Community from "./pages/Community";
 import Studio from "./pages/Studio";
@@ -110,6 +111,7 @@ export function AppRouter() {
         <Route path="/desktop-wallpapers" element={<Layout><DesktopWallpapers /></Layout>} />
         <Route path="/memes" element={<Layout><Memes /></Layout>} />
         <Route path="/app" element={<AppLayout><AppPage /></AppLayout>} />
+        <Route path="/app/hashtag/:tag" element={<AppLayout><AppHashtagPage /></AppLayout>} />
         <Route path="/poppost" element={<Layout><PopPost /></Layout>} />
         <Route path="/community" element={<Layout><Community /></Layout>} />
         <Route path="/studio" element={<Layout><Studio /></Layout>} />

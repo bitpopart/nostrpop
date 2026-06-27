@@ -1206,6 +1206,234 @@ function SiteOverview() {
   );
 }
 
+// ── FAQ & Contact section ─────────────────────────────────────────────────────
+
+const FAQ_ITEMS = [
+  {
+    q: 'What is BitPopArt?',
+    a: 'BitPopArt is a free Bitcoin & Pop Art creative platform by Johannes Oppewal (World Traveler, 88+ countries). Download wallpapers, GIFs, avatars, banners, coloring pages and more — all Bitcoin-themed and completely free.',
+  },
+  {
+    q: 'How do I download art?',
+    a: 'Browse any category on the App page (Wallpapers, GIFs, Avatars, etc.), click on an image, then hit the "Download" button. You can also share directly to Nostr or your social apps.',
+  },
+  {
+    q: 'Is everything really free?',
+    a: 'Yes! All downloads are free. If you enjoy the art, you can support the creator with a Bitcoin Lightning tip (zap). Every zap helps keep the art flowing ⚡',
+  },
+  {
+    q: 'What is Nostr?',
+    a: 'Nostr is a decentralized social protocol. BitPopArt uses Nostr to publish and store all content — meaning no central server can censor or remove the art.',
+  },
+  {
+    q: 'How do I support BitPopArt?',
+    a: 'Zap (Bitcoin Lightning tip) any art you love, follow @bitpopart on Nostr, share the art with your friends, and join the community on the /app page!',
+  },
+  {
+    q: 'Can I use the art for my profile or social media?',
+    a: "Absolutely! That's what it's made for. Feel free to use BitPopArt wallpapers, GIFs and avatars for personal use. Please credit @bitpopart when sharing.",
+  },
+  {
+    q: 'How do I create my own meme or avatar?',
+    a: 'Go to /app and tap "Create" in the bottom bar. You\'ll find the Meme Creator, Card Creator and Avatar Generator — all running directly in your browser.',
+  },
+  {
+    q: 'How can I contact BitPopArt?',
+    a: 'Use the contact form below, send an email to hello@bitpopart.com, or reach out on Nostr by searching for @bitpopart.',
+  },
+  {
+    q: 'Where is BitPopArt from?',
+    a: 'BitPopArt is created by Johannes Oppewal, a World Traveler who has visited 88+ countries. The art is inspired by global travels and Bitcoin culture.',
+  },
+  {
+    q: 'I found a bug or have a suggestion. How do I report it?',
+    a: 'Use the contact form below! We read every message. You can also reach out directly on Nostr by searching for @bitpopart.',
+  },
+];
+
+function CommunityFaqContact() {
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [contactName, setContactName] = useState('');
+  const [contactEmail, setContactEmail] = useState('');
+  const [contactMsg, setContactMsg] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const subject = encodeURIComponent('BitPopArt Community Contact');
+    const body = encodeURIComponent(`Name: ${contactName}\nEmail: ${contactEmail}\n\n${contactMsg}`);
+    window.open(`mailto:hello@bitpopart.com?subject=${subject}&body=${body}`, '_blank');
+    setSubmitted(true);
+  };
+
+  return (
+    <div className="space-y-10 pt-4">
+      {/* Section divider */}
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-border" />
+        </div>
+        <div className="relative flex justify-center">
+          <span className="bg-background px-4 text-sm text-muted-foreground flex items-center gap-2">
+            <MessageSquare className="h-4 w-4" />
+            FAQ &amp; Support
+          </span>
+        </div>
+      </div>
+
+      {/* FAQ */}
+      <div>
+        <div className="flex items-center gap-3 mb-6">
+          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400 to-pink-500 shadow-md flex-shrink-0">
+            <Search className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <h2 className="text-xl font-black tracking-tight">Frequently Asked Questions</h2>
+            <p className="text-xs text-muted-foreground">Everything you need to know about BitPopArt</p>
+          </div>
+        </div>
+        <div className="space-y-2">
+          {FAQ_ITEMS.map((item, i) => (
+            <div
+              key={i}
+              className="border border-border rounded-xl overflow-hidden bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm"
+            >
+              <button
+                className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-orange-50/50 dark:hover:bg-orange-900/10 transition-colors"
+                onClick={() => setOpenFaq(openFaq === i ? null : i)}
+              >
+                <span className="text-sm font-semibold pr-4 leading-snug">{item.q}</span>
+                <ArrowRight className={`h-4 w-4 text-orange-500 flex-shrink-0 transition-transform ${openFaq === i ? 'rotate-90' : ''}`} />
+              </button>
+              {openFaq === i && (
+                <div className="px-5 pb-4 pt-0 border-t border-border/50">
+                  <p className="text-sm text-muted-foreground leading-relaxed pt-3">{item.a}</p>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Contact form */}
+      <div>
+        <div className="flex items-center gap-3 mb-6">
+          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400 to-pink-500 shadow-md flex-shrink-0">
+            <ExternalLink className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <h2 className="text-xl font-black tracking-tight">Contact &amp; Support</h2>
+            <p className="text-xs text-muted-foreground">Questions, suggestions, or issues? We're here to help.</p>
+          </div>
+        </div>
+
+        <div className="grid sm:grid-cols-2 gap-4 mb-6">
+          {/* Direct channels */}
+          <a
+            href="mailto:hello@bitpopart.com"
+            className="flex items-center gap-3 p-4 rounded-2xl border border-border bg-white/80 dark:bg-gray-800/80 hover:border-orange-300 hover:shadow-md transition-all"
+          >
+            <div className="w-10 h-10 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
+              <svg className="h-5 w-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold">Email</p>
+              <p className="text-xs text-muted-foreground truncate">hello@bitpopart.com</p>
+            </div>
+          </a>
+          <a
+            href="https://njump.me/npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 p-4 rounded-2xl border border-border bg-white/80 dark:bg-gray-800/80 hover:border-purple-300 hover:shadow-md transition-all"
+          >
+            <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center flex-shrink-0">
+              <svg className="h-5 w-5 text-purple-600" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm-1.5 14.5v-9l7 4.5-7 4.5z" />
+              </svg>
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold">Nostr</p>
+              <p className="text-xs text-muted-foreground truncate">@bitpopart</p>
+            </div>
+          </a>
+        </div>
+
+        {/* Contact form */}
+        <Card className="border-2 border-orange-100 dark:border-orange-900 overflow-hidden">
+          <div className="h-1 bg-gradient-to-r from-orange-400 to-pink-500" />
+          <CardContent className="pt-5 pb-6 px-6">
+            <h3 className="text-base font-bold mb-4">Send a Message</h3>
+            {submitted ? (
+              <div className="text-center py-8 space-y-2">
+                <div className="text-4xl">📬</div>
+                <p className="font-bold text-green-600 dark:text-green-400">Message sent successfully!</p>
+                <p className="text-sm text-muted-foreground">We'll get back to you as soon as possible.</p>
+                <button
+                  className="mt-4 px-4 py-2 rounded-lg bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 text-sm font-semibold"
+                  onClick={() => setSubmitted(false)}
+                >
+                  Send another message
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-3">
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground mb-1 block">Name *</label>
+                    <input
+                      type="text"
+                      placeholder="Your name"
+                      value={contactName}
+                      onChange={e => setContactName(e.target.value)}
+                      required
+                      className="w-full px-3 py-2 text-sm border border-input rounded-lg bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground mb-1 block">Email</label>
+                    <input
+                      type="email"
+                      placeholder="your@email.com"
+                      value={contactEmail}
+                      onChange={e => setContactEmail(e.target.value)}
+                      className="w-full px-3 py-2 text-sm border border-input rounded-lg bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground mb-1 block">Message *</label>
+                  <textarea
+                    placeholder="Your question, suggestion or report…"
+                    value={contactMsg}
+                    onChange={e => setContactMsg(e.target.value)}
+                    rows={5}
+                    required
+                    className="w-full px-3 py-2 text-sm border border-input rounded-lg bg-white dark:bg-gray-800 resize-none focus:outline-none focus:ring-2 focus:ring-orange-400"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="w-full py-3 rounded-xl text-white text-sm font-bold shadow-md hover:opacity-90 transition-opacity"
+                  style={{ background: 'linear-gradient(90deg, #f7931a, #ff6b6b)' }}
+                >
+                  Send Message ✉️
+                </button>
+                <p className="text-xs text-center text-muted-foreground">
+                  Or email directly:{' '}
+                  <a href="mailto:hello@bitpopart.com" className="underline text-orange-600 dark:text-orange-400">hello@bitpopart.com</a>
+                </p>
+              </form>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function Community() {
@@ -1691,6 +1919,9 @@ export default function Community() {
             </Link>
           </p>
         </div>
+
+        {/* ── FAQ & Contact Section ── */}
+        <CommunityFaqContact />
 
       </div>
     </div>
