@@ -1865,7 +1865,7 @@ function AppCommunitySection() {
     // Open mailto as fallback
     const subject = encodeURIComponent('BitPopArt App Contact');
     const body = encodeURIComponent(`Name: ${contactName}\n\n${contactMsg}`);
-    window.open(`mailto:hello@bitpopart.com?subject=${subject}&body=${body}`, '_blank');
+    window.open(`mailto:shop@bitpopart.com?subject=${subject}&body=${body}`, '_blank');
     setSubmitted(true);
   };
 
@@ -1975,10 +1975,7 @@ function AppCommunitySection() {
             </button>
           </form>
         )}
-        <p className="text-[10px] text-center text-muted-foreground">
-          Or reach out directly:{' '}
-          <a href="mailto:hello@bitpopart.com" className="underline text-orange-600 dark:text-orange-400">hello@bitpopart.com</a>
-        </p>
+
       </div>
     </div>
   );
