@@ -36,15 +36,6 @@ export function SiteBannerBar() {
     <div className={`w-full ${styleClass} shadow-md z-40`}>
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-center gap-3 py-2 flex-wrap">
-          {/* Mobile: show banner text but strip the " — download now, no signup needed!" suffix */}
-          <span className="text-sm font-medium text-center sm:hidden">
-            {(() => {
-              const text = activeBanner.text;
-              const cutoff = ' — download now, no signup needed!';
-              const idx = text.indexOf(cutoff);
-              return idx !== -1 ? text.slice(0, idx) : text;
-            })()}
-          </span>
           {/* Desktop: fixed short label before the buttons */}
           <span className="hidden sm:inline text-sm font-medium whitespace-nowrap">
             🎁 Free wallpapers, GIFs &amp; animations
@@ -55,26 +46,27 @@ export function SiteBannerBar() {
                   href={activeBanner.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-white/20 hover:bg-white/30 border border-white/40 transition-colors whitespace-nowrap"
+                  className="hidden sm:inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-white/20 hover:bg-white/30 border border-white/40 transition-colors whitespace-nowrap"
                 >
                   {activeBanner.urlLabel}
                 </a>
               ) : (
                 <Link
                   to={activeBanner.url}
-                  className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-white/20 hover:bg-white/30 border border-white/40 transition-colors whitespace-nowrap"
+                  className="hidden sm:inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-white/20 hover:bg-white/30 border border-white/40 transition-colors whitespace-nowrap"
                 >
                   {activeBanner.urlLabel}
                 </Link>
               )
             )}
-            {/* App button — desktop only, matches "Open App" button style */}
+            {/* App button — desktop + mobile, "Love PopArt" label on mobile */}
             <Link
               to="/app"
-              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 hover:from-pink-600 hover:via-rose-600 hover:to-orange-600 text-white border-0 shadow transition-all whitespace-nowrap"
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 hover:from-pink-600 hover:via-rose-600 hover:to-orange-600 text-white border-0 shadow transition-all whitespace-nowrap"
             >
               <Smartphone className="h-3.5 w-3.5" />
-              App
+              <span className="sm:hidden">Love PopArt</span>
+              <span className="hidden sm:inline">App</span>
             </Link>
         </div>
       </div>
