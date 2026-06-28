@@ -1239,7 +1239,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'How can I contact BitPopArt?',
-    a: 'Use the contact form below, send an email to hello@bitpopart.com, or reach out on Nostr by searching for @bitpopart.',
+    a: 'Use the contact form below, or reach out on Nostr by searching for @bitpopart.',
   },
   {
     q: 'Where is BitPopArt from?',
@@ -1262,7 +1262,7 @@ function CommunityFaqContact() {
     e.preventDefault();
     const subject = encodeURIComponent('BitPopArt Community Contact');
     const body = encodeURIComponent(`Name: ${contactName}\nEmail: ${contactEmail}\n\n${contactMsg}`);
-    window.open(`mailto:hello@bitpopart.com?subject=${subject}&body=${body}`, '_blank');
+    window.open(`mailto:shop@bitpopart.com?subject=${subject}&body=${body}`, '_blank');
     setSubmitted(true);
   };
 
@@ -1330,7 +1330,7 @@ function CommunityFaqContact() {
         <div className="grid sm:grid-cols-2 gap-4 mb-6">
           {/* Direct channels */}
           <a
-            href="mailto:hello@bitpopart.com"
+            href="mailto:shop@bitpopart.com"
             className="flex items-center gap-3 p-4 rounded-2xl border border-border bg-white/80 dark:bg-gray-800/80 hover:border-orange-300 hover:shadow-md transition-all"
           >
             <div className="w-10 h-10 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
@@ -1340,7 +1340,7 @@ function CommunityFaqContact() {
             </div>
             <div className="min-w-0">
               <p className="text-sm font-semibold">Email</p>
-              <p className="text-xs text-muted-foreground truncate">hello@bitpopart.com</p>
+              <p className="text-xs text-muted-foreground truncate">Send us a message</p>
             </div>
           </a>
           <a
@@ -1422,8 +1422,7 @@ function CommunityFaqContact() {
                   Send Message ✉️
                 </button>
                 <p className="text-xs text-center text-muted-foreground">
-                  Or email directly:{' '}
-                  <a href="mailto:hello@bitpopart.com" className="underline text-orange-600 dark:text-orange-400">hello@bitpopart.com</a>
+                  Or reach out on Nostr by searching for <span className="font-semibold text-orange-600 dark:text-orange-400">@bitpopart</span>
                 </p>
               </form>
             )}
