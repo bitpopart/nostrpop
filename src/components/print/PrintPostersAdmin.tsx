@@ -7,6 +7,7 @@ import {
   useUpdatePrintPoster,
   useDeletePrintPoster,
   DEFAULT_FORMAT_PRICES,
+  DEFAULT_ART_FORMAT_PRICES,
   POSTER_CATEGORIES,
   getPosterCategories,
   useBtcEurRate,
@@ -46,9 +47,11 @@ const FORMAT_LABELS: Record<PosterFormat, string> = {
   A4: 'A4 — 210×297 mm',
   A5: 'A5 — 148×210 mm',
   A6: 'A6 Postcard — 105×148 mm',
+  '50x70': '50×70 cm — Gallery Art Print',
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
+  Art:          'bg-rose-100 text-rose-700 border-rose-200',
   Bitcoin:      'bg-orange-100 text-orange-700 border-orange-200',
   'Pop Art':    'bg-pink-100 text-pink-700 border-pink-200',
   Travel:       'bg-cyan-100 text-cyan-700 border-cyan-200',
@@ -115,9 +118,22 @@ function PosterForm({
   const [previewUrl, setPreviewUrl] = useState(initialPreviewUrl || initialSvgUrl);
   const [isUploading, setIsUploading] = useState(false);
   const [formats, setFormats] = useState<PosterFormatPrice[]>(
-    initialFormats ? initialFormats.map(f => ({ ...f })) : DEFAULT_FORMAT_PRICES.map(f => ({ ...f }))
+    initialFormats ? initialFormats.map(f => ({ ...f })) :
+    initialCategory === 'Art' ? DEFAULT_ART_FORMAT_PRICES.map(f => ({ ...f })) :
+    DEFAULT_FORMAT_PRICES.map(f => ({ ...f }))
   );
   const [showPricing, setShowPricing] = useState(false);
+
+  // Auto-switch to art prices when Art category is selected
+  const handleCategorySelect = (cat: string) => {
+    setCategory(cat);
+    setCustomCategory('');
+    if (cat === 'Art' && !initialFormats) {
+      setFormats(DEFAULT_ART_FORMAT_PRICES.map(f => ({ ...f })));
+    } else if (cat !== 'Art' && category === 'Art' && !initialFormats) {
+      setFormats(DEFAULT_FORMAT_PRICES.map(f => ({ ...f })));
+    }
+  };
 
   // live BTC rate for sats preview
   const { data: btcRate } = useBtcEurRate();
@@ -220,14 +236,14 @@ function PosterForm({
               <button
                 key={cat}
                 type="button"
-                onClick={() => { setCategory(cat); setCustomCategory(''); }}
+                onClick={() => handleCategorySelect(cat)}
                 className={`text-xs px-2.5 py-1 rounded-full border font-medium transition-colors ${
                   category === cat
-                    ? 'bg-orange-500 border-orange-500 text-white'
+                    ? cat === 'Art' ? 'bg-rose-500 border-rose-500 text-white' : 'bg-orange-500 border-orange-500 text-white'
                     : 'border-gray-200 dark:border-gray-700 hover:border-orange-300'
                 }`}
               >
-                {cat}
+                {cat}{cat === 'Art' ? ' 🎨' : ''}
               </button>
             ))}
             <button
@@ -279,12 +295,12 @@ function PosterForm({
 
           {/* Always show compact price summary; expand for editing */}
           {!showPricing && (
-            <div className="grid grid-cols-4 gap-2">
+            <div className={`grid gap-2 ${formats.length >= 5 ? 'grid-cols-5' : 'grid-cols-4'}`}>
               {formats.map(fp => {
                 const liveSats = btcRate ? eurToLiveSats(fp.priceEur, btcRate) : fp.priceSats;
                 return (
-                  <div key={fp.format} className="text-xs text-center rounded-lg border p-2">
-                    <div className="font-bold">{fp.format}</div>
+                  <div key={fp.format} className={`text-xs text-center rounded-lg border p-2 ${fp.format === '50x70' ? 'border-rose-200 bg-rose-50/50 dark:border-rose-800 dark:bg-rose-900/10' : ''}`}>
+                    <div className="font-bold">{fp.format === '50x70' ? '50×70' : fp.format}</div>
                     <div className="text-muted-foreground">€{fp.priceEur}</div>
                     <div className="flex items-center justify-center gap-0.5 text-yellow-600">
                       <Zap className="h-2.5 w-2.5" />{liveSats.toLocaleString()}
@@ -300,8 +316,11 @@ function PosterForm({
               {formats.map(fp => {
                 const liveSats = btcRate ? eurToLiveSats(fp.priceEur, btcRate) : null;
                 return (
-                  <div key={fp.format} className="rounded-lg border p-3 space-y-2">
-                    <p className="text-sm font-semibold">{FORMAT_LABELS[fp.format]}</p>
+                  <div key={fp.format} className={`rounded-lg border p-3 space-y-2 ${fp.format === '50x70' ? 'border-rose-200 dark:border-rose-800 bg-rose-50/30 dark:bg-rose-900/10 sm:col-span-2' : ''}`}>
+                    <p className="text-sm font-semibold flex items-center gap-2">
+                      {FORMAT_LABELS[fp.format] ?? fp.format}
+                      {fp.format === '50x70' && <span className="text-xs text-rose-600 dark:text-rose-400 font-normal">🎨 Art only</span>}
+                    </p>
                     <div className="grid grid-cols-3 gap-2">
                       <div className="space-y-1">
                         <Label className="text-xs">USD ($)</Label>
@@ -439,7 +458,7 @@ export function PrintPostersAdmin() {
           {/* Default price reference */}
           <div className="rounded-lg bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-800 p-3">
             <p className="text-xs font-semibold text-orange-700 dark:text-orange-300 mb-2">
-              Default prices per format{btcRate && <span className="font-normal"> (live sats from current BTC rate)</span>}:
+              Default poster prices{btcRate && <span className="font-normal"> (live sats from current BTC rate)</span>}:
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {DEFAULT_FORMAT_PRICES.map(fp => {
@@ -455,6 +474,30 @@ export function PrintPostersAdmin() {
                 );
               })}
             </div>
+          </div>
+
+          {/* Art prices reference (includes 50x70) */}
+          <div className="rounded-lg bg-rose-50 dark:bg-rose-900/10 border border-rose-200 dark:border-rose-800 p-3">
+            <p className="text-xs font-semibold text-rose-700 dark:text-rose-300 mb-1 flex items-center gap-1.5">
+              🎨 Art category prices — includes 50×70 cm gallery format:
+            </p>
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+              {DEFAULT_ART_FORMAT_PRICES.map(fp => {
+                const liveSats = btcRate ? eurToLiveSats(fp.priceEur, btcRate) : fp.priceSats;
+                return (
+                  <div key={fp.format} className={`text-xs text-center rounded border p-1.5 ${fp.format === '50x70' ? 'border-rose-300 bg-rose-100/50 dark:bg-rose-900/20' : 'border-rose-100'}`}>
+                    <span className="font-bold">{fp.format === '50x70' ? '50×70' : fp.format}</span>
+                    <div className="text-muted-foreground">€{fp.priceEur}</div>
+                    <div className="flex items-center justify-center gap-0.5 text-yellow-600">
+                      <Zap className="h-2.5 w-2.5" />{liveSats.toLocaleString()}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="text-[10px] text-rose-600 dark:text-rose-400 mt-2">
+              Selecting the "Art 🎨" category automatically loads these prices. You can adjust them per poster.
+            </p>
           </div>
         </CardContent>
       </Card>

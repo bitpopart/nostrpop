@@ -37,6 +37,7 @@ import {
   Eye,
   CheckCircle,
   Megaphone,
+  Printer,
 } from 'lucide-react';
 
 const Art = () => {
@@ -53,7 +54,8 @@ const Art = () => {
   const [activeTab, setActiveTab] = useState(initialTab);
 
   // Get initial filter from URL params
-  const initialFilter = (searchParams.get('filter') as ArtworkFilter) || 'all';
+  const rawFilter = searchParams.get('filter') as ArtworkFilter;
+  const initialFilter: ArtworkFilter = rawFilter && ['all', 'for_sale', 'auction', 'sold', 'print'].includes(rawFilter) ? rawFilter : 'all';
   const [selectedFilter, setSelectedFilter] = useState<ArtworkFilter>(initialFilter);
 
   // Update tab when URL params change
@@ -69,7 +71,7 @@ const Art = () => {
   // Update filter when URL params change
   useEffect(() => {
     const filterParam = searchParams.get('filter') as ArtworkFilter;
-    if (filterParam && ['all', 'for_sale', 'auction', 'sold'].includes(filterParam)) {
+    if (filterParam && ['all', 'for_sale', 'auction', 'sold', 'print'].includes(filterParam)) {
       setSelectedFilter(filterParam);
     } else {
       setSelectedFilter('all');
@@ -199,13 +201,14 @@ const Art = () => {
   };
 
   const getFilterStats = () => {
-    if (!artworks) return { total: 0, forSale: 0, auction: 0, sold: 0 };
+    if (!artworks) return { total: 0, forSale: 0, auction: 0, sold: 0, print: 0 };
 
     return {
       total: artworks.length,
       forSale: artworks.filter(a => a.sale_type === 'fixed').length,
       auction: artworks.filter(a => a.sale_type === 'auction').length,
       sold: artworks.filter(a => a.sale_type === 'sold').length,
+      print: artworks.filter(a => a.print_available === true).length,
     };
   };
 
@@ -319,7 +322,7 @@ const Art = () => {
               </div>
 
               {/* Stats Cards */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 <Card className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
                   <CardContent className="p-4 text-center">
                     <div className="flex items-center justify-center mb-2">
@@ -359,6 +362,18 @@ const Art = () => {
                     <div className="text-xs text-muted-foreground">Sold</div>
                   </CardContent>
                 </Card>
+
+                <Card className="bg-rose-50/80 dark:bg-rose-900/20 backdrop-blur-sm border-rose-200 dark:border-rose-800 cursor-pointer hover:shadow-md transition-shadow"
+                  onClick={() => setSelectedFilter('print')}
+                >
+                  <CardContent className="p-4 text-center">
+                    <div className="flex items-center justify-center mb-2">
+                      <Printer className="h-5 w-5 text-rose-500" />
+                    </div>
+                    <div className="text-2xl font-bold text-rose-600 dark:text-rose-400">{stats.print}</div>
+                    <div className="text-xs text-rose-600 dark:text-rose-400 font-medium">Available as Print</div>
+                  </CardContent>
+                </Card>
               </div>
 
               {/* Filters */}
@@ -380,6 +395,7 @@ const Art = () => {
                           <SelectItem value="for_sale">For sale ({stats.forSale})</SelectItem>
                           <SelectItem value="auction">Live auctions ({stats.auction})</SelectItem>
                           <SelectItem value="sold">Sold ({stats.sold})</SelectItem>
+                          <SelectItem value="print">🖨 Available as Print ({stats.print})</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -469,7 +485,8 @@ const Art = () => {
                   <div className="flex justify-between items-center">
                     <p className="text-sm text-muted-foreground">
                       {artworks.length} artwork{artworks.length !== 1 ? 's' : ''} found
-                      {selectedFilter !== 'all' && ` with "${selectedFilter}" filter`}
+                      {selectedFilter === 'print' && ' available as Art Print'}
+                      {selectedFilter !== 'all' && selectedFilter !== 'print' && ` with "${selectedFilter}" filter`}
                     </p>
                   </div>
 

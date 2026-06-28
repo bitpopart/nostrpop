@@ -5,7 +5,7 @@ import { useCurrentUser } from './useCurrentUser';
 import { useToast } from './useToast';
 import { getAdminPubkeyHex } from '@/lib/adminUtils';
 
-export type PosterFormat = 'A3' | 'A4' | 'A5' | 'A6';
+export type PosterFormat = 'A3' | 'A4' | 'A5' | 'A6' | '50x70';
 
 export interface PosterFormatPrice {
   format: PosterFormat;
@@ -29,6 +29,7 @@ export interface PrintPoster {
 
 // ─── Default poster categories ────────────────────────────────────────────────
 export const POSTER_CATEGORIES = [
+  'Art',
   'Bitcoin',
   'Pop Art',
   'Travel',
@@ -56,24 +57,47 @@ export const DEFAULT_FORMAT_PRICES: PosterFormatPrice[] = [
   { format: 'A6', priceUsd: 0.99, priceEur: 0.90, priceSats: 1500 },
 ];
 
+// Art-specific default prices (includes 50x70 format)
+export const DEFAULT_ART_FORMAT_PRICES: PosterFormatPrice[] = [
+  { format: 'A6', priceUsd: 2.99, priceEur: 2.75, priceSats: 4500 },
+  { format: 'A5', priceUsd: 4.99, priceEur: 4.59, priceSats: 7500 },
+  { format: 'A4', priceUsd: 7.99, priceEur: 7.49, priceSats: 12000 },
+  { format: 'A3', priceUsd: 12.99, priceEur: 11.99, priceSats: 19000 },
+  { format: '50x70', priceUsd: 24.99, priceEur: 22.99, priceSats: 37000 },
+];
+
 /**
  * Parse format prices from Nostr event tags.
  * Tags look like: ["price_a3_usd", "4.99"], ["price_a3_eur", "4.59"], ["price_a3_sats", "7500"]
+ * For 50x70: ["price_50x70_usd", ...], etc.
  */
-function parseFormatPrices(tags: string[][]): PosterFormatPrice[] {
-  const formats: PosterFormat[] = ['A3', 'A4', 'A5', 'A6'];
+function parseFormatPrices(tags: string[][], isArtCategory = false): PosterFormatPrice[] {
+  const standardFormats: PosterFormat[] = ['A3', 'A4', 'A5', 'A6'];
+  const allDefaults = isArtCategory ? DEFAULT_ART_FORMAT_PRICES : DEFAULT_FORMAT_PRICES;
+
+  // Determine which formats to parse based on tags present
+  const formats: PosterFormat[] = [...standardFormats];
+  // Include 50x70 if there are price tags for it OR if it's an Art category
+  const has50x70Tag = tags.some(([n]) => n === 'price_50x70_usd' || n === 'price_50x70_eur' || n === 'price_50x70_sats');
+  if (has50x70Tag || isArtCategory) {
+    formats.push('50x70');
+  }
+
   return formats.map((format) => {
-    const key = format.toLowerCase();
+    const key = format.toLowerCase().replace('x', 'x'); // e.g. '50x70' stays '50x70'
     const usdTag = tags.find(([n]) => n === `price_${key}_usd`)?.[1];
     const eurTag = tags.find(([n]) => n === `price_${key}_eur`)?.[1];
     const satsTag = tags.find(([n]) => n === `price_${key}_sats`)?.[1];
 
-    const defaults = DEFAULT_FORMAT_PRICES.find(p => p.format === format)!;
+    const defaultPrice = allDefaults.find(p => p.format === format) ??
+      DEFAULT_FORMAT_PRICES.find(p => p.format === format) ??
+      { format, priceUsd: 9.99, priceEur: 9.49, priceSats: 15000 };
+
     return {
       format,
-      priceUsd: usdTag ? parseFloat(usdTag) : defaults.priceUsd,
-      priceEur: eurTag ? parseFloat(eurTag) : defaults.priceEur,
-      priceSats: satsTag ? parseInt(satsTag) : defaults.priceSats,
+      priceUsd: usdTag ? parseFloat(usdTag) : defaultPrice.priceUsd,
+      priceEur: eurTag ? parseFloat(eurTag) : defaultPrice.priceEur,
+      priceSats: satsTag ? parseInt(satsTag) : defaultPrice.priceSats,
     };
   });
 }
@@ -144,7 +168,8 @@ export function usePrintPosters() {
               .filter(([n, v]) => n === 't' && v && v !== 'print-poster')
               .map(([, v]) => v);
 
-            const formats = parseFormatPrices(event.tags);
+            const isArtCategory = (categoryTag || '').toLowerCase() === 'art';
+            const formats = parseFormatPrices(event.tags, isArtCategory);
 
             return {
               id: dTag,
@@ -210,6 +235,7 @@ export function useCreatePrintPoster() {
 
       const priceTags: string[][] = [];
       for (const fp of input.formats) {
+        // Use lowercase key; '50x70' stays as '50x70'
         const key = fp.format.toLowerCase();
         priceTags.push([`price_${key}_usd`, fp.priceUsd.toString()]);
         priceTags.push([`price_${key}_eur`, fp.priceEur.toString()]);

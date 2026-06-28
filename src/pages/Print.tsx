@@ -9,6 +9,7 @@ import {
   useCreatePrintPoster,
   useDeletePrintPoster,
   DEFAULT_FORMAT_PRICES,
+  DEFAULT_ART_FORMAT_PRICES,
   POSTER_CATEGORIES,
   getPosterCategories,
   useBtcEurRate,
@@ -44,6 +45,8 @@ import {
   Settings,
   Tag,
   LayoutGrid,
+  Palette,
+  Sparkles,
 } from 'lucide-react';
 import QRCode from 'qrcode';
 
@@ -53,10 +56,12 @@ const FORMAT_DIMENSIONS: Record<PosterFormat, { width: number; height: number; l
   A4: { width: 210, height: 297, label: 'A4 Poster', description: '210 × 297 mm — standard print' },
   A5: { width: 148, height: 210, label: 'A5 Poster', description: '148 × 210 mm — half-sheet' },
   A6: { width: 105, height: 148, label: 'A6 Postcard', description: '105 × 148 mm — postcard size' },
+  '50x70': { width: 500, height: 700, label: '50×70 cm Art Print', description: '500 × 700 mm — gallery art print' },
 };
 
 // ─── Category accent colors ───────────────────────────────────────────────────
 const CATEGORY_COLORS: Record<string, string> = {
+  Art:          'bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-900/30 dark:text-rose-300',
   Bitcoin:      'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300',
   'Pop Art':    'bg-pink-100 text-pink-700 border-pink-200 dark:bg-pink-900/30 dark:text-pink-300',
   Travel:       'bg-cyan-100 text-cyan-700 border-cyan-200 dark:bg-cyan-900/30 dark:text-cyan-300',
@@ -84,8 +89,12 @@ const LIGHTNING_ADDRESS = 'bitpopart@walletofsatoshi.com';
 // Uses the browser's native Print → Save as PDF, zero dependencies.
 async function openPrintWindow(svgUrl: string, format: PosterFormat, title: string): Promise<void> {
   const { width, height } = FORMAT_DIMENSIONS[format];
-  // Portrait for all A-sizes (width < height)
+  // For mm-based formats: portrait if width < height; 50x70 is always portrait
   const orientation = width < height ? 'portrait' : 'landscape';
+  // For 50x70, use cm units
+  const isArtFormat = format === '50x70';
+  const unitW = isArtFormat ? '50cm' : `${width}mm`;
+  const unitH = isArtFormat ? '70cm' : `${height}mm`;
 
   // Fetch SVG and embed inline so it renders correctly cross-origin
   let svgContent = '';
@@ -104,19 +113,19 @@ async function openPrintWindow(svgUrl: string, format: PosterFormat, title: stri
   <title>${title} — ${format}</title>
   <style>
     @page {
-      size: ${width}mm ${height}mm ${orientation};
+      size: ${unitW} ${unitH} ${orientation};
       margin: 0;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body {
-      width: ${width}mm;
-      height: ${height}mm;
+      width: ${unitW};
+      height: ${unitH};
       overflow: hidden;
       background: white;
     }
     .poster {
-      width: ${width}mm;
-      height: ${height}mm;
+      width: ${unitW};
+      height: ${unitH};
       display: flex;
       align-items: center;
       justify-content: center;
@@ -212,7 +221,7 @@ function PosterCard({ poster, isAdmin, onDelete, onBuy, btcRate }: PosterCardPro
           <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             Choose Format
           </Label>
-          <div className="grid grid-cols-4 gap-1.5">
+          <div className={`grid gap-1.5 ${poster.formats.length >= 5 ? 'grid-cols-5' : 'grid-cols-4'}`}>
             {poster.formats.map((fp) => (
               <button
                 key={fp.format}
@@ -227,7 +236,7 @@ function PosterCard({ poster, isAdmin, onDelete, onBuy, btcRate }: PosterCardPro
               </button>
             ))}
           </div>
-          <p className="text-xs text-muted-foreground">{FORMAT_DIMENSIONS[selectedFormat].description}</p>
+          <p className="text-xs text-muted-foreground">{FORMAT_DIMENSIONS[selectedFormat]?.description ?? selectedFormat}</p>
         </div>
 
         {/* Price */}
@@ -351,7 +360,7 @@ function PrintPaymentDialog({ open, onOpenChange, poster, format }: PrintPayment
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
             <Printer className="h-5 w-5 text-orange-500 shrink-0" />
-            {paymentDone ? 'Print Your Poster' : `Purchase ${FORMAT_DIMENSIONS[format].label}`}
+            {paymentDone ? 'Print Your Poster' : `Purchase ${FORMAT_DIMENSIONS[format]?.label ?? format}`}
           </DialogTitle>
           <DialogDescription className="text-xs sm:text-sm">
             {paymentDone
@@ -360,7 +369,7 @@ function PrintPaymentDialog({ open, onOpenChange, poster, format }: PrintPayment
           </DialogDescription>
         </DialogHeader>
 
-        {paymentDone ? (
+          {paymentDone ? (
           <div className="space-y-4 py-2">
             <div className="flex items-center justify-center py-3">
               <div className="h-14 w-14 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
@@ -370,7 +379,7 @@ function PrintPaymentDialog({ open, onOpenChange, poster, format }: PrintPayment
             <Card className="border-green-200 bg-green-50 dark:bg-green-900/10">
               <CardContent className="pt-4 space-y-1 text-sm">
                 <p className="font-semibold">{poster.title}</p>
-                <p className="text-muted-foreground text-xs">{FORMAT_DIMENSIONS[format].label} — {FORMAT_DIMENSIONS[format].description}</p>
+                <p className="text-muted-foreground text-xs">{FORMAT_DIMENSIONS[format]?.label ?? format} — {FORMAT_DIMENSIONS[format]?.description ?? format}</p>
                 <p className="text-muted-foreground text-xs">Paid: {selectedPrice.priceSats.toLocaleString()} sats</p>
               </CardContent>
             </Card>
@@ -381,10 +390,10 @@ function PrintPaymentDialog({ open, onOpenChange, poster, format }: PrintPayment
             >
               {isDownloading
                 ? <><Loader2 className="h-4 w-4 animate-spin" /> Opening…</>
-                : <><Printer className="h-5 w-5" /> Open Print Dialog — {format}</>}
+                : <><Printer className="h-5 w-5" /> Open Print Dialog — {FORMAT_DIMENSIONS[format]?.label ?? format}</>}
             </Button>
             <p className="text-xs text-muted-foreground text-center">
-              A print window opens — choose "Save as PDF" or print directly. Sized for {FORMAT_DIMENSIONS[format].description}.
+              A print window opens — choose "Save as PDF" or print directly. Sized for {FORMAT_DIMENSIONS[format]?.description ?? format}.
             </p>
             <Button variant="outline" className="w-full" onClick={handleClose}>Close</Button>
           </div>
@@ -398,7 +407,7 @@ function PrintPaymentDialog({ open, onOpenChange, poster, format }: PrintPayment
                 </div>
                 <div className="flex justify-between gap-2">
                   <span className="text-muted-foreground shrink-0">Format</span>
-                  <span className="font-medium">{FORMAT_DIMENSIONS[format].label}</span>
+                  <span className="font-medium">{FORMAT_DIMENSIONS[format]?.label ?? format}</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between items-end">
@@ -508,6 +517,18 @@ function AdminUploadForm({ onClose }: AdminUploadFormProps) {
   const [formats, setFormats] = useState<PosterFormatPrice[]>(DEFAULT_FORMAT_PRICES.map(f => ({ ...f })));
   const [showPricing, setShowPricing] = useState(false);
 
+  // When Art category is selected, auto-load art-specific prices including 50x70
+  const handleCategorySelect = (cat: string) => {
+    setCategory(cat);
+    setCustomCategory('');
+    if (cat === 'Art') {
+      setFormats(DEFAULT_ART_FORMAT_PRICES.map(f => ({ ...f })));
+    } else if (category === 'Art') {
+      // Switching away from Art — reset to standard prices
+      setFormats(DEFAULT_FORMAT_PRICES.map(f => ({ ...f })));
+    }
+  };
+
   const resolvedCategory = category === '__custom__' ? customCategory : category;
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -597,14 +618,14 @@ function AdminUploadForm({ onClose }: AdminUploadFormProps) {
               <button
                 key={cat}
                 type="button"
-                onClick={() => { setCategory(cat); setCustomCategory(''); }}
+                onClick={() => handleCategorySelect(cat)}
                 className={`text-xs px-3 py-1 rounded-full border font-medium transition-colors ${
                   category === cat
-                    ? 'bg-orange-500 border-orange-500 text-white'
+                    ? cat === 'Art' ? 'bg-rose-500 border-rose-500 text-white' : 'bg-orange-500 border-orange-500 text-white'
                     : 'border-gray-200 dark:border-gray-700 hover:border-orange-300'
                 }`}
               >
-                {cat}
+                {cat}{cat === 'Art' ? ' 🎨' : ''}
               </button>
             ))}
             <button
@@ -637,20 +658,30 @@ function AdminUploadForm({ onClose }: AdminUploadFormProps) {
 
         {/* Pricing per format */}
         <div className="space-y-2">
-          <button
-            type="button"
-            className="flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
-            onClick={() => setShowPricing(v => !v)}
-          >
-            <Settings className="h-4 w-4" />
-            Set Prices per Format
-            {showPricing ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          </button>
+          <div className="flex items-center justify-between">
+            <button
+              type="button"
+              className="flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
+              onClick={() => setShowPricing(v => !v)}
+            >
+              <Settings className="h-4 w-4" />
+              Set Prices per Format
+              {showPricing ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </button>
+            {category === 'Art' && (
+              <span className="text-xs text-rose-600 dark:text-rose-400 font-medium">
+                🎨 Art — includes 50×70 cm format
+              </span>
+            )}
+          </div>
           {showPricing && (
             <div className="space-y-3 pt-1">
               {formats.map(fp => (
-                <div key={fp.format} className="rounded-lg border p-3 space-y-2">
-                  <p className="text-sm font-semibold">{FORMAT_DIMENSIONS[fp.format].label}</p>
+                <div key={fp.format} className={`rounded-lg border p-3 space-y-2 ${fp.format === '50x70' ? 'border-rose-200 dark:border-rose-800 bg-rose-50/30 dark:bg-rose-900/10' : ''}`}>
+                  <p className="text-sm font-semibold flex items-center gap-2">
+                    {FORMAT_DIMENSIONS[fp.format]?.label ?? fp.format}
+                    {fp.format === '50x70' && <span className="text-xs text-rose-600 dark:text-rose-400 font-normal">Gallery Art Print</span>}
+                  </p>
                   <div className="grid grid-cols-3 gap-2">
                     <div className="space-y-1">
                       <Label className="text-xs">USD ($)</Label>
@@ -754,12 +785,16 @@ export default function Print() {
 
           {/* Format info badges */}
           <div className="flex flex-wrap items-center justify-center gap-2 mt-5">
-            {(Object.entries(FORMAT_DIMENSIONS) as [PosterFormat, (typeof FORMAT_DIMENSIONS)[PosterFormat]][]).map(([f, d]) => (
+            {(['A6', 'A5', 'A4', 'A3'] as PosterFormat[]).map((f) => (
               <Badge key={f} variant="outline" className="text-xs px-3 py-1 font-medium">
                 <span className="sm:hidden">{f}</span>
-                <span className="hidden sm:inline">{f} — {d.description}</span>
+                <span className="hidden sm:inline">{f} — {FORMAT_DIMENSIONS[f].description}</span>
               </Badge>
             ))}
+            <Badge variant="outline" className="text-xs px-3 py-1 font-medium border-rose-300 text-rose-700 dark:text-rose-300 dark:border-rose-700">
+              <span className="sm:hidden">50×70</span>
+              <span className="hidden sm:inline">50×70 cm — gallery art print (Art only)</span>
+            </Badge>
           </div>
 
           {/* Lightning address notice */}
@@ -790,6 +825,50 @@ export default function Print() {
             ) : (
               <AdminUploadForm onClose={() => setShowUploadForm(false)} />
             )}
+          </div>
+        )}
+
+        {/* ── Art Prints Section ── */}
+        {!isLoading && posters.filter(p => p.category === 'Art').length > 0 && (
+          <div className="mb-10">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="h-8 w-8 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center">
+                <Palette className="h-4 w-4 text-rose-600 dark:text-rose-400" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold flex items-center gap-2">
+                  Art Prints
+                  <span className="text-xs font-normal px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 border border-rose-200 dark:bg-rose-900/30 dark:text-rose-300 dark:border-rose-800">
+                    A6 · A5 · A4 · A3 · 50×70 cm
+                  </span>
+                </h2>
+                <p className="text-sm text-muted-foreground">Gallery-quality fine art prints — available in larger 50×70 cm format</p>
+              </div>
+              <Sparkles className="h-5 w-5 text-rose-400 ml-auto" />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {posters.filter(p => p.category === 'Art').map(poster => (
+                <PosterCard
+                  key={poster.id}
+                  poster={poster}
+                  isAdmin={isAdmin}
+                  onDelete={deletePoster}
+                  onBuy={handleBuy}
+                  btcRate={btcRate}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Divider if both Art and other posters exist ── */}
+        {!isLoading && posters.filter(p => p.category === 'Art').length > 0 && posters.filter(p => p.category !== 'Art').length > 0 && (
+          <div className="flex items-center gap-4 mb-8">
+            <div className="h-px flex-1 bg-border" />
+            <span className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+              <Printer className="h-4 w-4" /> All Posters
+            </span>
+            <div className="h-px flex-1 bg-border" />
           </div>
         )}
 

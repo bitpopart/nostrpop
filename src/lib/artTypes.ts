@@ -39,6 +39,9 @@ export interface ArtworkData {
   // Gallery display
   featured?: boolean; // Shows in tile gallery
   order?: number; // Display order in gallery
+
+  // Print availability — artwork is available as a print in the Print Shop
+  print_available?: boolean;
 }
 
 export interface ArtworkBid {
@@ -51,7 +54,7 @@ export interface ArtworkBid {
   event?: NostrEvent;
 }
 
-export type ArtworkFilter = 'all' | 'for_sale' | 'auction' | 'sold';
+export type ArtworkFilter = 'all' | 'for_sale' | 'auction' | 'sold' | 'print';
 
 // Sample artwork data for demonstration
 export const SAMPLE_ARTWORKS: ArtworkData[] = [

@@ -32,7 +32,8 @@ import {
   ShoppingCart,
   Eye,
   Truck,
-  Share2
+  Share2,
+  Printer,
 } from 'lucide-react';
 
 const CURRENCIES = [
@@ -80,6 +81,8 @@ const artworkSchema = z.object({
   shareMessage: z.string().optional(),
   // Gallery display
   featured: z.boolean().optional(),
+  // Print availability
+  printAvailable: z.boolean().optional(),
 });
 
 type ArtworkFormData = z.infer<typeof artworkSchema>;
@@ -116,7 +119,8 @@ export function CreateArtworkForm({ onSuccess, onCancel }: CreateArtworkFormProp
       currency: 'SAT',
       auctionDuration: 24,
       shareToNostr: false, // Default to not sharing (user must check the box)
-      shareMessage: ''
+      shareMessage: '',
+      printAvailable: false,
     }
   });
 
@@ -363,6 +367,7 @@ export function CreateArtworkForm({ onSuccess, onCancel }: CreateArtworkFormProp
         edition: data.edition,
         certificateUrl: data.certificateUrl,
         featured: data.featured,
+        printAvailable: data.printAvailable,
         shipping: (data.localCountries || data.localShippingCost || data.internationalShippingCost) ? {
           localCountries: data.localCountries,
           localShippingCost: data.localShippingCost,
@@ -852,6 +857,27 @@ export function CreateArtworkForm({ onSuccess, onCancel }: CreateArtworkFormProp
             <p className="text-sm text-muted-foreground">
               Display this artwork in the featured tile gallery at the top of the Art page for maximum visibility.
               {watch('featured') ? ' (Will be featured)' : ' (Not featured)'}
+            </p>
+          </div>
+
+          {/* Available as Print */}
+          <div className="space-y-2 p-4 border rounded-lg bg-gradient-to-r from-rose-50 to-orange-50 dark:from-rose-900/20 dark:to-orange-900/20 border-rose-200 dark:border-rose-800">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="printAvailable"
+                checked={watch('printAvailable') ?? false}
+                onCheckedChange={(checked) => {
+                  setValue('printAvailable', checked === true, { shouldValidate: true });
+                }}
+              />
+              <Label htmlFor="printAvailable" className="text-base font-medium flex items-center gap-2 cursor-pointer">
+                <Printer className="h-4 w-4 text-rose-600" />
+                Available as Art Print
+              </Label>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Show a "Print" button on this artwork in the Art Gallery. This artwork must also be uploaded to the Print Shop (/print) under the "Art" category with print files attached.
+              {watch('printAvailable') ? ' ✓ Print button will be shown' : ''}
             </p>
           </div>
 

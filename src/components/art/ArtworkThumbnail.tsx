@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,7 +12,8 @@ import {
   Eye,
   Timer,
   Edit,
-  Trash2
+  Trash2,
+  Printer,
 } from 'lucide-react';
 import type { NostrMetadata } from '@nostrify/nostrify';
 
@@ -25,6 +27,7 @@ interface ArtworkThumbnailProps {
 }
 
 export function ArtworkThumbnail({ artwork, onViewDetails, onBuy, onBid, onEdit, onDelete }: ArtworkThumbnailProps) {
+  const navigate = useNavigate();
   const author = useAuthor(artwork.artist_pubkey);
   const metadata: NostrMetadata | undefined = author.data?.metadata;
 
@@ -33,14 +36,27 @@ export function ArtworkThumbnail({ artwork, onViewDetails, onBuy, onBid, onEdit,
   const isForSale = artwork.sale_type === 'fixed';
   const isSold = artwork.sale_type === 'sold';
   const auctionActive = isAuction && isAuctionActive(artwork);
+  const isPrintAvailable = artwork.print_available === true;
 
   const getSaleTypeInfo = () => {
+    // Print-available artworks: show only "Print" badge, skip Buy/Sold/Auction
+    if (isPrintAvailable) {
+      return {
+        label: 'Print',
+        variant: 'outline' as const,
+        icon: Printer,
+        color: 'text-rose-600',
+        isPrint: true,
+      };
+    }
+
     if (isSold) {
       return {
         label: 'Sold',
         variant: 'secondary' as const,
         icon: CheckCircle,
-        color: 'text-green-600'
+        color: 'text-green-600',
+        isPrint: false,
       };
     }
 
@@ -49,7 +65,8 @@ export function ArtworkThumbnail({ artwork, onViewDetails, onBuy, onBid, onEdit,
         label: 'Buy Now',
         variant: 'default' as const,
         icon: ShoppingCart,
-        color: 'text-blue-600'
+        color: 'text-blue-600',
+        isPrint: false,
       };
     }
 
@@ -58,7 +75,8 @@ export function ArtworkThumbnail({ artwork, onViewDetails, onBuy, onBid, onEdit,
         label: auctionActive ? 'Live Auction' : 'Auction Ended',
         variant: auctionActive ? 'destructive' as const : 'secondary' as const,
         icon: Gavel,
-        color: auctionActive ? 'text-red-600' : 'text-gray-600'
+        color: auctionActive ? 'text-red-600' : 'text-gray-600',
+        isPrint: false,
       };
     }
 
@@ -66,7 +84,8 @@ export function ArtworkThumbnail({ artwork, onViewDetails, onBuy, onBid, onEdit,
       label: 'View Only',
       variant: 'outline' as const,
       icon: Eye,
-      color: 'text-gray-600'
+      color: 'text-gray-600',
+      isPrint: false,
     };
   };
 
@@ -120,7 +139,10 @@ export function ArtworkThumbnail({ artwork, onViewDetails, onBuy, onBid, onEdit,
 
         {/* Sale Type Badge */}
         <div className="absolute top-3 left-3">
-          <Badge variant={saleInfo.variant} className="flex items-center space-x-1">
+          <Badge
+            variant={saleInfo.variant}
+            className={`flex items-center space-x-1 ${saleInfo.isPrint ? 'border-rose-300 bg-rose-50 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300 dark:border-rose-700' : ''}`}
+          >
             <SaleIcon className="w-3 h-3" />
             <span className="text-xs font-medium">{saleInfo.label}</span>
           </Badge>
@@ -195,8 +217,8 @@ export function ArtworkThumbnail({ artwork, onViewDetails, onBuy, onBid, onEdit,
             </p>
           </div>
 
-          {/* Price/Bid Info */}
-          {(isForSale || isAuction || isSold) && artwork.currency && (
+          {/* Price/Bid Info — hidden for print-only artworks */}
+          {!isPrintAvailable && (isForSale || isAuction || isSold) && artwork.currency && (
             <div className="space-y-1">
               {isForSale && artwork.price && (
                 <div className="flex items-center justify-between">
@@ -241,7 +263,20 @@ export function ArtworkThumbnail({ artwork, onViewDetails, onBuy, onBid, onEdit,
 
           {/* Action Buttons */}
           <div className="flex space-x-2 pt-2">
-            {isForSale && onBuy && (
+            {/* Print-available: show only Print button */}
+            {isPrintAvailable && (
+              <Button
+                size="sm"
+                onClick={() => navigate('/print?category=Art')}
+                className="flex-1 bg-gradient-to-r from-rose-500 to-orange-500 hover:from-rose-600 hover:to-orange-600 text-white border-0"
+              >
+                <Printer className="w-3 h-3 mr-1" />
+                Print
+              </Button>
+            )}
+
+            {/* Non-print artworks: show buy/bid/view as before */}
+            {!isPrintAvailable && isForSale && onBuy && (
               <Button
                 size="sm"
                 onClick={() => onBuy(artwork)}
@@ -252,7 +287,7 @@ export function ArtworkThumbnail({ artwork, onViewDetails, onBuy, onBid, onEdit,
               </Button>
             )}
 
-            {isAuction && auctionActive && onBid && (
+            {!isPrintAvailable && isAuction && auctionActive && onBid && (
               <Button
                 size="sm"
                 onClick={() => onBid(artwork)}
@@ -263,7 +298,7 @@ export function ArtworkThumbnail({ artwork, onViewDetails, onBuy, onBid, onEdit,
               </Button>
             )}
 
-            {(isSold || !auctionActive || artwork.sale_type === 'not_for_sale') && (
+            {!isPrintAvailable && (isSold || !auctionActive || artwork.sale_type === 'not_for_sale') && (
               <Button
                 size="sm"
                 variant="outline"

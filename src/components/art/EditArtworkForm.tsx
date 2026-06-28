@@ -30,7 +30,8 @@ import {
   Eye,
   Truck,
   Save,
-  CheckCircle
+  CheckCircle,
+  Printer,
 } from 'lucide-react';
 
 const CURRENCIES = [
@@ -78,6 +79,8 @@ const artworkSchema = z.object({
   internationalShippingCost: z.preprocess(v => (typeof v === 'number' && isNaN(v) ? undefined : v), z.number().min(0, 'International shipping cost must be 0 or greater').optional()),
   // Gallery display
   featured: z.boolean().optional(),
+  // Print availability
+  printAvailable: z.boolean().optional(),
 });
 
 type ArtworkFormData = z.infer<typeof artworkSchema>;
@@ -123,6 +126,7 @@ export function EditArtworkForm({ artwork, onSuccess, onCancel }: EditArtworkFor
       localShippingCost: artwork.shipping?.local_cost,
       internationalShippingCost: artwork.shipping?.international_cost,
       featured: artwork.featured || false,
+      printAvailable: artwork.print_available || false,
     }
   });
 
@@ -149,6 +153,7 @@ export function EditArtworkForm({ artwork, onSuccess, onCancel }: EditArtworkFor
     setValue('internationalShippingCost', artwork.shipping?.international_cost);
     // Explicitly set featured state - false if not present
     setValue('featured', artwork.featured === true);
+    setValue('printAvailable', artwork.print_available === true);
   }, [artwork, setValue]);
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -277,6 +282,7 @@ export function EditArtworkForm({ artwork, onSuccess, onCancel }: EditArtworkFor
         ['t', 'art'],
         ...(data.saleType !== 'not_for_sale' ? [['sale', data.saleType]] : []),
         ...(data.featured ? [['featured', 'true']] : []),
+        ...(data.printAvailable ? [['print_available', 'true']] : []),
         ...(tags.map(tag => ['t', tag.toLowerCase()]))
       ];
 
@@ -753,6 +759,27 @@ export function EditArtworkForm({ artwork, onSuccess, onCancel }: EditArtworkFor
             <p className="text-sm text-muted-foreground">
               Display this artwork in the featured tile gallery at the top of the Art page for maximum visibility.
               {watch('featured') ? ' (Currently featured)' : ' (Not featured)'}
+            </p>
+          </div>
+
+          {/* Available as Print */}
+          <div className="space-y-2 p-4 border rounded-lg bg-gradient-to-r from-rose-50 to-orange-50 dark:from-rose-900/20 dark:to-orange-900/20 border-rose-200 dark:border-rose-800">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="printAvailable"
+                checked={watch('printAvailable') ?? false}
+                onCheckedChange={(checked) => {
+                  setValue('printAvailable', checked === true, { shouldValidate: true });
+                }}
+              />
+              <Label htmlFor="printAvailable" className="text-base font-medium flex items-center gap-2 cursor-pointer">
+                <Printer className="h-4 w-4 text-rose-600" />
+                Available as Art Print
+              </Label>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Show a "Print" button on this artwork in the Art Gallery. This artwork must also be uploaded to the Print Shop (/print) under the "Art" category.
+              {watch('printAvailable') ? ' ✓ Print button will be shown' : ''}
             </p>
           </div>
 
