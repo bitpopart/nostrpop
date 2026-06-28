@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useEmojiPacks } from '@/hooks/useEmojiPacks';
 import { useSeoMeta } from '@unhead/react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -64,6 +65,7 @@ import {
 } from 'lucide-react';
 import { ShareToNostrMediaDialog } from '@/components/ShareToNostrMediaDialog';
 import { AnimatedChatSplash } from '@/components/app/AnimatedChatSplash';
+import { GifMemeCreator } from '@/components/app/GifMemeCreator';
 
 const ADMIN_PUBKEY = getAdminPubkeyHex();
 
@@ -421,7 +423,7 @@ function drawFrame(
   }
 }
 
-type MemePickerTab = 'templates' | 'pops' | 'icons';
+type MemePickerTab = 'templates' | 'pops' | 'icons' | 'emojis';
 
 function MiniCanvas({ onSave, onViewLibraryItem, mode = 'meme' }: {
   onSave: (dataUrl: string, title: string) => void;
@@ -477,6 +479,8 @@ function MiniCanvas({ onSave, onViewLibraryItem, mode = 'meme' }: {
   const { data: memeTemplates = [], isLoading: memeTemplatesLoading } = useAppMedia('app-meme-template');
   const { data: memeIcons = [], isLoading: iconsLoading } = useAppMedia('app-meme-icon');
   const { data: memePops = [], isLoading: popsLoading } = useAppMedia('app-pop');
+  const { data: emojiPacks = [], isLoading: emojisLoading } = useEmojiPacks();
+  const emojiItems = useMemo(() => emojiPacks.flatMap(p => p.emojis.map(e => ({ id: `${p.id}:${e.shortcode}`, image_url: e.url, title: e.shortcode }))), [emojiPacks]);
 
   // Card library data
   const { data: cardTemplatesRaw = [], isLoading: cardTemplatesLoading } = useCardTemplates();
@@ -1224,6 +1228,14 @@ function MiniCanvas({ onSave, onViewLibraryItem, mode = 'meme' }: {
             Icons
             {iconItems.length > 0 && <span className="ml-0.5 text-pink-500 font-bold">({iconItems.length})</span>}
           </button>
+          <button
+            className={`flex-1 flex items-center justify-center gap-1 py-2.5 text-xs font-semibold transition-colors ${pickerTab === 'emojis' ? 'bg-white dark:bg-gray-800 text-yellow-600 border-b-2 border-yellow-500' : 'text-muted-foreground hover:text-foreground'}`}
+            onClick={() => setPickerTab('emojis')}
+          >
+            😄
+            Emojis
+            {emojiItems.length > 0 && <span className="ml-0.5 text-yellow-500 font-bold">({emojiItems.length})</span>}
+          </button>
         </div>
 
         {/* Tab content */}
@@ -1304,6 +1316,32 @@ function MiniCanvas({ onSave, onViewLibraryItem, mode = 'meme' }: {
                 </div>
               ) : (
                 <p className="text-xs text-muted-foreground text-center py-3">No icons yet</p>
+              )}
+            </>
+          )}
+
+          {/* Emojis */}
+          {pickerTab === 'emojis' && (
+            <>
+              {emojisLoading ? (
+                <div className="flex gap-2 pb-1">
+                  {[...Array(6)].map((_, i) => <Skeleton key={i} className="shrink-0 w-12 h-12 rounded-lg" />)}
+                </div>
+              ) : emojiItems.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5 pb-1 max-h-48 overflow-y-auto">
+                  {emojiItems.map(emoji => (
+                    <button
+                      key={emoji.id}
+                      className="shrink-0 w-12 h-12 rounded-lg overflow-hidden border border-gray-200 hover:border-yellow-400 transition-colors bg-gray-50 flex items-center justify-center p-1"
+                      onClick={() => addImage(emoji.image_url)}
+                      title={`:${emoji.title}:`}
+                    >
+                      <img src={emoji.image_url} alt={emoji.title} className="w-full h-full object-contain" loading="lazy" onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground text-center py-3">No emojis yet — add some in the Admin panel</p>
               )}
             </>
           )}
@@ -2043,7 +2081,7 @@ function AppCommunitySection() {
 // ── Active tab types ──────────────────────────────────────
 
 type AppTab = 'home' | 'create' | 'download' | 'print' | 'search' | 'community';
-type CreateSubTab = 'meme' | 'card' | 'avatar';
+type CreateSubTab = 'meme' | 'gif-meme' | 'card' | 'avatar';
 
 // ── Main App page ─────────────────────────────────────────
 
@@ -2285,13 +2323,20 @@ export default function AppPage() {
             </div>
 
             {/* Sub-tabs */}
-            <div className="flex gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl">
+            <div className="flex gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl flex-wrap">
               <button
                 className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${createSubTab === 'meme' ? 'bg-white dark:bg-gray-700 shadow text-orange-600' : 'text-muted-foreground'}`}
                 onClick={() => setCreateSubTab('meme')}
               >
                 <PenLine className="h-3.5 w-3.5 stroke-[1.5]" />
                 Meme
+              </button>
+              <button
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${createSubTab === 'gif-meme' ? 'bg-white dark:bg-gray-700 shadow text-purple-600' : 'text-muted-foreground'}`}
+                onClick={() => setCreateSubTab('gif-meme')}
+              >
+                <Play className="h-3.5 w-3.5 stroke-[1.5]" />
+                GIF Meme
               </button>
               <button
                 className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${createSubTab === 'card' ? 'bg-white dark:bg-gray-700 shadow text-pink-600' : 'text-muted-foreground'}`}
@@ -2311,6 +2356,10 @@ export default function AppPage() {
 
             {createSubTab === 'meme' && (
               <MiniCanvas onSave={handleCanvasSave} onViewLibraryItem={setLibraryItem} mode="meme" />
+            )}
+
+            {createSubTab === 'gif-meme' && (
+              <GifMemeCreator onSave={handleCanvasSave} />
             )}
 
             {createSubTab === 'card' && (

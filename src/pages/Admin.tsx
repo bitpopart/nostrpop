@@ -51,6 +51,7 @@ import { CardTemplatesAdmin } from '@/components/cards/CardTemplatesAdmin';
 import { PrintPostersAdmin } from '@/components/print/PrintPostersAdmin';
 import { NFTCharacterAdmin } from '@/components/nft/NFTCharacterAdmin';
 import { MediaGeneratorAdmin } from '@/components/mediagenerator/MediaGeneratorAdmin';
+import { EmojiPacksAdmin } from '@/components/emoji/EmojiPacksAdmin';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import {
@@ -92,10 +93,10 @@ import {
   LayoutGrid,
   Laugh,
   Shapes,
-  Sparkles,
   MessageSquare,
   Hash,
   X,
+  Smile,
 } from 'lucide-react';
 
 // ── Pinned Hashtags Admin ─────────────────────────────────
@@ -348,6 +349,14 @@ const Admin = () => {
       action: () => { setActiveTab('shop'); },
       badge: 'Markets'
     },
+    {
+      title: 'Emoji Packs',
+      description: 'Create & manage custom emoji packs (NIP-51) for free download and the meme creator',
+      icon: Smile,
+      color: 'from-yellow-500 to-orange-500',
+      action: () => setActiveTab('emoji-packs'),
+      badge: 'Emojis'
+    },
   ];
 
   const contentActions = [
@@ -596,6 +605,10 @@ const Admin = () => {
             <TabsTrigger value="card-templates" className="flex items-center gap-1 text-pink-600 dark:text-pink-400 font-semibold">
               <LayoutTemplate className="h-3.5 w-3.5" />
               Card Templates
+            </TabsTrigger>
+            <TabsTrigger value="emoji-packs" className="flex items-center gap-1 text-yellow-600 dark:text-yellow-400 font-semibold">
+              <Smile className="h-3.5 w-3.5" />
+              Emojis
             </TabsTrigger>
             <TabsTrigger value="badges">Badges</TabsTrigger>
             <TabsTrigger value="shop">Shop</TabsTrigger>
@@ -1071,6 +1084,24 @@ const Admin = () => {
               </CardHeader>
               <CardContent>
                 <CardTemplatesAdmin />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="emoji-packs">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Smile className="h-6 w-6 text-yellow-500" />
+                  Emoji Packs
+                </CardTitle>
+                <CardDescription>
+                  Create and manage custom emoji packs. Packs appear on the Free Downloads page and can be used as icons in the Meme Creator.
+                  Uses Nostr NIP-51 kind 30030 (emoji sets) + NIP-30 custom emoji standard.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <EmojiPacksAdmin onBack={() => setActiveTab('cards')} />
               </CardContent>
             </Card>
           </TabsContent>

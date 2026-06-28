@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { useFreeDownloads } from '@/hooks/useFreeDownloads';
 import { useAppMedia, type AppMedia } from '@/hooks/useAppContent';
 import { useAnimations, type AnimationItem } from '@/hooks/useAnimations';
+import { useEmojiPacks } from '@/hooks/useEmojiPacks';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import {
   Gift,
@@ -21,6 +22,8 @@ import {
   Smartphone,
   Laugh,
   CreditCard,
+  Smile,
+  Package,
 } from 'lucide-react';
 import { ZapButton } from '@/components/ZapButton';
 import { getAdminPubkeyHex } from '@/lib/adminUtils';
@@ -199,6 +202,7 @@ export default function FreeGallery() {
   const { data: coloringPages = [], isLoading: loadingColoring } = useAppMedia('app-coloring-page');
   const { data: memes = [], isLoading: loadingMemes } = useAppMedia('app-meme');
   const { data: latestCards = [], isLoading: loadingCards } = useLatestCards(5);
+  const { data: emojiPacks = [], isLoading: loadingEmojis } = useEmojiPacks();
 
   useSeoMeta({
     title: 'Free Downloads - BitPopArt | Free Bitcoin Pop Art',
@@ -259,7 +263,7 @@ export default function FreeGallery() {
           </div>
 
           {/* ── Category quick-links with counts ── */}
-          <div className="grid grid-cols-4 sm:grid-cols-4 lg:grid-cols-8 gap-2">
+          <div className="grid grid-cols-4 sm:grid-cols-5 lg:grid-cols-9 gap-2">
             {[
               { label: 'Images', href: '/free/images', icon: <Gift className="h-4 w-4" />, color: 'text-green-700 dark:text-green-400', bg: 'bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30 border-green-200 dark:border-green-800', count: freeImages.length, loading: loadingFree },
               { label: 'Wallpapers', href: '/wallpapers', icon: <span className="flex items-center gap-0.5"><ImageIcon className="h-3.5 w-3.5" /><Smartphone className="h-3 w-3" /></span>, color: 'text-teal-700 dark:text-teal-400', bg: 'bg-teal-50 dark:bg-teal-900/20 hover:bg-teal-100 dark:hover:bg-teal-900/30 border-teal-200 dark:border-teal-800', count: wallpapers.length, loading: loadingWallpapers },
@@ -269,6 +273,7 @@ export default function FreeGallery() {
               { label: 'Animations', href: '/animations', icon: <Play className="h-4 w-4" />, color: 'text-orange-700 dark:text-orange-400', bg: 'bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30 border-orange-200 dark:border-orange-800', count: animations.length, loading: loadingAnimations },
               { label: 'Banners', href: '/banners', icon: <PanelTop className="h-4 w-4" />, color: 'text-sky-700 dark:text-sky-400', bg: 'bg-sky-50 dark:bg-sky-900/20 hover:bg-sky-100 dark:hover:bg-sky-900/30 border-sky-200 dark:border-sky-800', count: banners.length, loading: loadingBanners },
               { label: 'Coloring', href: '/coloring-pages', icon: <Palette className="h-4 w-4" />, color: 'text-rose-700 dark:text-rose-400', bg: 'bg-rose-50 dark:bg-rose-900/20 hover:bg-rose-100 dark:hover:bg-rose-900/30 border-rose-200 dark:border-rose-800', count: coloringPages.length, loading: loadingColoring },
+              { label: 'Emojis', href: '#emojis', icon: <Smile className="h-4 w-4" />, color: 'text-yellow-700 dark:text-yellow-400', bg: 'bg-yellow-50 dark:bg-yellow-900/20 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 border-yellow-200 dark:border-yellow-800', count: emojiPacks.reduce((a, p) => a + p.emojis.length, 0), loading: loadingEmojis },
             ].map(({ label, href, icon, color, bg, count, loading }) => (
               <Link key={label} to={href}>
                 <div className={`w-full flex flex-col items-center gap-1 py-3 px-2 rounded-xl border text-center transition-all duration-200 cursor-pointer ${bg} ${color}`}>
@@ -536,6 +541,128 @@ export default function FreeGallery() {
                   href="/memes"
                   onDownload={() => triggerDownload(item.image_url, deriveFilename(item.image_url, item.title))}
                 />
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* ── Emoji Packs section ── */}
+        <section id="emojis" className="mb-10">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-yellow-100 dark:bg-yellow-900/30">
+                <Smile className="h-4 w-4 text-yellow-600" />
+              </div>
+              <h2 className="text-xl font-bold">Emoji Packs</h2>
+              {emojiPacks.length > 0 && (
+                <Badge variant="secondary" className="text-xs">{emojiPacks.length} packs</Badge>
+              )}
+            </div>
+          </div>
+          {loadingEmojis ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="rounded-xl border bg-white dark:bg-gray-800 p-4">
+                  <Skeleton className="h-5 w-32 mb-2" />
+                  <Skeleton className="h-4 w-48 mb-3" />
+                  <div className="flex gap-2">
+                    {[1,2,3,4,5].map(j => <Skeleton key={j} className="w-10 h-10 rounded-lg" />)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : emojiPacks.length === 0 ? (
+            <div className="flex items-center justify-center h-24 rounded-xl border border-dashed text-sm text-muted-foreground">
+              No emoji packs yet — check back soon!
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {emojiPacks.map(pack => (
+                <div key={pack.id} className="rounded-xl border bg-white dark:bg-gray-800 shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden">
+                  {/* Pack header */}
+                  <div className="flex items-center gap-3 p-4 pb-2">
+                    <div className="w-11 h-11 rounded-xl overflow-hidden border bg-yellow-50 dark:bg-yellow-900/20 flex items-center justify-center shrink-0">
+                      {pack.picture ? (
+                        <img src={pack.picture} alt={pack.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <Smile className="h-5 w-5 text-yellow-500" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-sm truncate">{pack.name}</p>
+                      {pack.description && (
+                        <p className="text-xs text-muted-foreground truncate">{pack.description}</p>
+                      )}
+                      <Badge variant="secondary" className="text-[10px] mt-0.5">{pack.emojis.length} emojis</Badge>
+                    </div>
+                  </div>
+                  {/* Emoji grid */}
+                  <div className="px-4 pb-3">
+                    <div className="flex flex-wrap gap-1.5">
+                      {pack.emojis.slice(0, 20).map(emoji => (
+                        <div
+                          key={emoji.shortcode}
+                          className="group relative w-9 h-9 rounded-lg border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex items-center justify-center hover:border-yellow-400 transition-colors cursor-pointer"
+                          title={`:${emoji.shortcode}:`}
+                          onClick={() => {
+                            const a = document.createElement('a');
+                            a.href = emoji.url;
+                            a.download = `${emoji.shortcode}.${emoji.url.split('.').pop()?.split('?')[0] || 'png'}`;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                          }}
+                        >
+                          <img
+                            src={emoji.url}
+                            alt={emoji.shortcode}
+                            className="w-7 h-7 object-contain"
+                            loading="lazy"
+                          />
+                          {/* Hover: tiny download overlay */}
+                          <div className="absolute inset-0 bg-yellow-500/10 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <Download className="h-3 w-3 text-yellow-700 dark:text-yellow-300" />
+                          </div>
+                        </div>
+                      ))}
+                      {pack.emojis.length > 20 && (
+                        <div className="w-9 h-9 rounded-lg border border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center">
+                          <span className="text-[9px] text-muted-foreground font-bold">+{pack.emojis.length - 20}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  {/* Download all button */}
+                  <div className="px-4 pb-4">
+                    <button
+                      className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold text-yellow-700 dark:text-yellow-300 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition-colors"
+                      onClick={async () => {
+                        // Download each emoji sequentially
+                        for (const emoji of pack.emojis) {
+                          const ext = emoji.url.split('.').pop()?.split('?')[0] || 'png';
+                          try {
+                            const res = await fetch(emoji.url);
+                            const blob = await res.blob();
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `${emoji.shortcode}.${ext}`;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(url);
+                            await new Promise(r => setTimeout(r, 150)); // small delay between downloads
+                          } catch {
+                            window.open(emoji.url, '_blank');
+                          }
+                        }
+                      }}
+                    >
+                      <Package className="h-3.5 w-3.5" />
+                      Download All {pack.emojis.length} Emojis
+                    </button>
+                  </div>
+                </div>
               ))}
             </div>
           )}
