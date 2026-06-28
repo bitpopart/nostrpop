@@ -15,11 +15,12 @@ import {
   Type, Trash2, Download, Layers, RotateCcw, Copy,
   Palette, ImageIcon, Sticker, FileText, Monitor, SquareUser,
   LayoutTemplate, ChevronUp, ChevronDown, ZoomIn, ZoomOut,
-  UserCircle2, Shapes, Smartphone, ArrowRight,
+  UserCircle2, Shapes, Smartphone, ArrowRight, Film,
 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { useAppMedia } from '@/hooks/useAppContent';
 import { AvatarGeneratorCanvas } from '@/components/studio/AvatarGeneratorCanvas';
+import { MediaEditor } from '@/components/studio/MediaEditor';
 import { ZapButton } from '@/components/ZapButton';
 import { getAdminPubkeyHex } from '@/lib/adminUtils';
 
@@ -113,6 +114,9 @@ export default function Studio() {
   const [searchParams] = useSearchParams();
   const [avatarGeneratorMode, setAvatarGeneratorMode] = useState(
     () => searchParams.get('mode') === 'avatar-generator'
+  );
+  const [mediaEditorMode, setMediaEditorMode] = useState(
+    () => searchParams.get('mode') === 'media-editor'
   );
   const [format, setFormat] = useState<CanvasFormat>(CANVAS_FORMATS[0]);
   const [elements, setElements] = useState<CanvasElement[]>([]);
@@ -601,7 +605,7 @@ export default function Studio() {
           {CANVAS_FORMATS.map(fmt => (
             <button
               key={fmt.id}
-              onClick={() => { setFormat(fmt); setElements([]); setSelectedId(null); setAvatarGeneratorMode(false); }}
+              onClick={() => { setFormat(fmt); setElements([]); setSelectedId(null); setAvatarGeneratorMode(false); setMediaEditorMode(false); }}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border-2 transition-all ${
                 !avatarGeneratorMode && format.id === fmt.id
                   ? 'bg-orange-500 border-orange-500 text-white shadow-md'
@@ -618,7 +622,7 @@ export default function Studio() {
 
           {/* Avatar Generator special button */}
           <button
-            onClick={() => setAvatarGeneratorMode(true)}
+            onClick={() => { setAvatarGeneratorMode(true); setMediaEditorMode(false); }}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border-2 transition-all ${
               avatarGeneratorMode
                 ? 'bg-violet-600 border-violet-600 text-white shadow-md'
@@ -627,6 +631,19 @@ export default function Studio() {
           >
             <UserCircle2 className="h-4 w-4" />
             Avatar Generator
+          </button>
+
+          {/* Media Editor special button */}
+          <button
+            onClick={() => { setMediaEditorMode(true); setAvatarGeneratorMode(false); }}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border-2 transition-all ${
+              mediaEditorMode
+                ? 'bg-pink-600 border-pink-600 text-white shadow-md'
+                : 'bg-white border-gray-200 text-gray-700 hover:border-pink-400 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200'
+            }`}
+          >
+            <Film className="h-4 w-4" />
+            Media Editor
           </button>
         </div>
 
@@ -637,8 +654,15 @@ export default function Studio() {
           </div>
         )}
 
+        {/* ── Media Editor mode ─────────────────────────────────────────── */}
+        {mediaEditorMode && (
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg border overflow-hidden">
+            <MediaEditor />
+          </div>
+        )}
+
         {/* ── Editor row ─────────────────────────────────────────────── */}
-        <div className={`flex gap-3 items-start ${avatarGeneratorMode ? 'hidden' : ''}`}>
+        <div className={`flex gap-3 items-start ${(avatarGeneratorMode || mediaEditorMode) ? 'hidden' : ''}`}>
 
           {/* ── Left toolbar ─────────────────────────────────────────── */}
           <div className="w-52 shrink-0 bg-white dark:bg-gray-900 rounded-2xl p-3 shadow-lg border space-y-3">
@@ -966,7 +990,7 @@ export default function Studio() {
         </div>
 
         {/* ── Templates / Pops / Icons panel (below canvas) ─────────── */}
-        <div className={`bg-white dark:bg-gray-900 rounded-2xl shadow-lg border overflow-hidden ${avatarGeneratorMode ? 'hidden' : ''}`}>
+        <div className={`bg-white dark:bg-gray-900 rounded-2xl shadow-lg border overflow-hidden ${(avatarGeneratorMode || mediaEditorMode) ? 'hidden' : ''}`}>
           <div className="p-4 border-b bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-950/30 dark:to-yellow-950/30">
             <h2 className="text-lg font-bold text-orange-600 flex items-center gap-2">
               <LayoutTemplate className="h-5 w-5" /> Add to Canvas
@@ -1123,7 +1147,7 @@ export default function Studio() {
         </div>
 
         {/* ── Library panel (studio asset libraries) ──────────────────── */}
-        <div className={`bg-white dark:bg-gray-900 rounded-2xl shadow-lg border overflow-hidden ${avatarGeneratorMode ? 'hidden' : ''}`}>
+        <div className={`bg-white dark:bg-gray-900 rounded-2xl shadow-lg border overflow-hidden ${(avatarGeneratorMode || mediaEditorMode) ? 'hidden' : ''}`}>
           <div className="p-4 border-b bg-gradient-to-r from-orange-50 to-pink-50 dark:from-orange-950/30 dark:to-pink-950/30">
             <h2 className="text-lg font-bold text-orange-600 flex items-center gap-2">
               <ImageIcon className="h-5 w-5" /> Library
@@ -1186,7 +1210,7 @@ export default function Studio() {
         </div>
 
         {/* ── Tips ────────────────────────────────────────────────────── */}
-        <div className={`grid grid-cols-2 md:grid-cols-4 gap-3 ${avatarGeneratorMode ? 'hidden' : ''}`}>
+        <div className={`grid grid-cols-2 md:grid-cols-4 gap-3 ${(avatarGeneratorMode || mediaEditorMode) ? 'hidden' : ''}`}>
           {[
             { icon: '🖼️', tip: 'Click a Template below the canvas to use it as your background' },
             { icon: '🖱️', tip: 'Click an icon or element in the library to add it as a layer' },

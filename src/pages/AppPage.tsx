@@ -65,7 +65,6 @@ import {
 } from 'lucide-react';
 import { ShareToNostrMediaDialog } from '@/components/ShareToNostrMediaDialog';
 import { AnimatedChatSplash } from '@/components/app/AnimatedChatSplash';
-import { GifMemeCreator } from '@/components/app/GifMemeCreator';
 
 const ADMIN_PUBKEY = getAdminPubkeyHex();
 
@@ -2089,7 +2088,7 @@ function AppCommunitySection() {
 // ── Active tab types ──────────────────────────────────────
 
 type AppTab = 'home' | 'create' | 'download' | 'print' | 'search' | 'community';
-type CreateSubTab = 'meme' | 'gif-meme' | 'card' | 'avatar';
+type CreateSubTab = 'meme' | 'card' | 'avatar';
 
 // ── Main App page ─────────────────────────────────────────
 
@@ -2340,13 +2339,6 @@ export default function AppPage() {
                 Meme
               </button>
               <button
-                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${createSubTab === 'gif-meme' ? 'bg-white dark:bg-gray-700 shadow text-purple-600' : 'text-muted-foreground'}`}
-                onClick={() => setCreateSubTab('gif-meme')}
-              >
-                <Play className="h-3.5 w-3.5 stroke-[1.5]" />
-                GIF Meme
-              </button>
-              <button
                 className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${createSubTab === 'card' ? 'bg-white dark:bg-gray-700 shadow text-pink-600' : 'text-muted-foreground'}`}
                 onClick={() => setCreateSubTab('card')}
               >
@@ -2364,10 +2356,6 @@ export default function AppPage() {
 
             {createSubTab === 'meme' && (
               <MiniCanvas onSave={handleCanvasSave} onViewLibraryItem={setLibraryItem} mode="meme" />
-            )}
-
-            {createSubTab === 'gif-meme' && (
-              <GifMemeCreator onSave={handleCanvasSave} />
             )}
 
             {createSubTab === 'card' && (
