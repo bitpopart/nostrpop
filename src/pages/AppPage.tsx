@@ -1452,23 +1452,26 @@ function PrintItemCard({ imageDataUrl, title, onClose }: PrintItemCardProps) {
   const [printing, setPrinting] = useState(false);
   const [sharing, setSharing] = useState(false);
 
-  // Is this a real URL (not a canvas data: URL)?
-  const isExternalUrl = !imageDataUrl.startsWith('data:');
-
+  const isBlobUrl = imageDataUrl.startsWith('blob:');
   const isDataUrl = imageDataUrl.startsWith('data:');
+  // Blob URLs and external https URLs are "external" (not canvas data:)
+  const isExternalUrl = !isDataUrl;
+  // Detect GIF (blob URLs from GIF creator, or data:image/gif)
+  const isGif = isBlobUrl || imageDataUrl.startsWith('data:image/gif');
 
-  // Resolve a Blob URL from either a data: URL or an external URL
+  // Resolve a Blob URL from either a data: URL, blob: URL, or external URL
   const getBlob = async (): Promise<{ blob: Blob; ext: string }> => {
     if (isDataUrl) {
       // data:[mime];base64,...
       const mime = imageDataUrl.split(';')[0].split(':')[1] || 'image/png';
-      const ext = mime === 'image/jpeg' ? 'jpg' : 'png';
+      const extMap: Record<string, string> = { 'image/jpeg': 'jpg', 'image/gif': 'gif', 'image/webp': 'webp' };
+      const ext = extMap[mime] ?? 'png';
       const byteString = atob(imageDataUrl.split(',')[1]);
       const arr = new Uint8Array(byteString.length);
       for (let i = 0; i < byteString.length; i++) arr[i] = byteString.charCodeAt(i);
       return { blob: new Blob([arr], { type: mime }), ext };
     }
-    // External URL — fetch via CORS proxy if needed
+    // Blob URL or external URL — fetch directly (blob: URLs work in same origin)
     const tryFetch = async (url: string) => {
       const res = await fetch(url);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -1478,10 +1481,12 @@ function PrintItemCard({ imageDataUrl, title, onClose }: PrintItemCardProps) {
     try {
       res = await tryFetch(imageDataUrl);
     } catch {
+      if (isBlobUrl) throw new Error('Cannot load blob URL'); // blob URLs don't need proxy
       res = await tryFetch(`https://proxy.shakespeare.diy/?url=${encodeURIComponent(imageDataUrl)}`);
     }
     const blob = await res.blob();
-    const ext = blob.type === 'image/jpeg' ? 'jpg' : 'png';
+    const mimeExt: Record<string, string> = { 'image/jpeg': 'jpg', 'image/gif': 'gif', 'image/webp': 'webp' };
+    const ext = mimeExt[blob.type] ?? 'png';
     return { blob, ext };
   };
 
@@ -1617,15 +1622,18 @@ function PrintItemCard({ imageDataUrl, title, onClose }: PrintItemCardProps) {
         <img
           src={imageDataUrl}
           alt={title}
-          className="w-full object-contain max-h-60"
-          style={{ background: '#f9f9f9' }}
+          className="w-full object-contain"
+          style={{ background: '#f9f9f9', maxHeight: isGif ? 320 : 240 }}
         />
       </div>
 
       {/* Info */}
       <div className="text-center">
         <p className="font-bold text-lg">{title}</p>
-        <Badge className="text-xs mt-1 bg-green-100 text-green-700 border-green-200">Free · No login required</Badge>
+        <div className="flex items-center justify-center gap-2 mt-1">
+          <Badge className="text-xs bg-green-100 text-green-700 border-green-200">Free · No login required</Badge>
+          {isGif && <Badge className="text-xs bg-purple-100 text-purple-700 border-purple-200">Animated GIF</Badge>}
+        </div>
       </div>
 
       {/* ── Primary actions: Download + Print ── */}
