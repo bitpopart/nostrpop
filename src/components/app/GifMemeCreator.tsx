@@ -251,6 +251,7 @@ export function GifMemeCreator({ onSave }: GifMemeCreatorProps) {
   const [pickerTab, setPickerTab] = useState<PickerTab>('templates');
   const [isExporting, setIsExporting] = useState(false);
   const [exportedGifUrl, setExportedGifUrl] = useState<string | null>(null);
+  const exportedBlobRef = useRef<Blob | null>(null);
 
   // Live preview cycling
   const [previewFrameIdx, setPreviewFrameIdx] = useState(0);
@@ -385,7 +386,7 @@ export function GifMemeCreator({ onSave }: GifMemeCreatorProps) {
 
   const handleExport = async () => {
     setIsExporting(true);
-    setExportedGifUrl(null);
+    setExportedGifUrl(prev => { if (prev) URL.revokeObjectURL(prev); return null; });
     try {
       // Preload all images
       const allUrls = [...new Set(frames.flatMap(f => f.layers.map(l => l.url)).filter(Boolean))];
@@ -401,36 +402,68 @@ export function GifMemeCreator({ onSave }: GifMemeCreatorProps) {
       const offscreen = document.createElement('canvas');
       offscreen.width = GIF_SIZE;
       offscreen.height = GIF_SIZE;
+      const ctx = offscreen.getContext('2d')!;
 
       for (const frame of frames) {
         renderFrameToCanvas(offscreen, frame, imgCache.current);
-        const ctx = offscreen.getContext('2d');
-        if (!ctx) continue;
-        const imageData = ctx.getImageData(0, 0, GIF_SIZE, GIF_SIZE);
+        let imageData: ImageData;
+        try {
+          imageData = ctx.getImageData(0, 0, GIF_SIZE, GIF_SIZE);
+        } catch {
+          // Canvas tainted — reload all images via proxy and retry this frame
+          const proxyCache = new Map<string, HTMLImageElement>();
+          await Promise.all(
+            frame.layers.map(layer =>
+              new Promise<void>(resolve => {
+                if (!layer.url) { resolve(); return; }
+                const img = new window.Image();
+                img.crossOrigin = 'anonymous';
+                img.onload = () => { proxyCache.set(layer.url, img); resolve(); };
+                img.onerror = () => resolve();
+                img.src = `https://proxy.shakespeare.diy/?url=${encodeURIComponent(layer.url)}`;
+              })
+            )
+          );
+          // Re-render with proxy-loaded images
+          const mergedCache = new Map([...imgCache.current, ...proxyCache]);
+          renderFrameToCanvas(offscreen, frame, mergedCache);
+          imageData = ctx.getImageData(0, 0, GIF_SIZE, GIF_SIZE);
+        }
         encoder.addFrame(imageData.data, frame.delay);
       }
 
       const blob = encoder.finish();
+      console.log('[GifMemeCreator] GIF blob size:', blob.size, 'bytes');
+      exportedBlobRef.current = blob;
       const gifUrl = URL.createObjectURL(blob);
       setExportedGifUrl(gifUrl);
 
-      // Notify parent using blob URL directly (works in img src, no FileReader needed)
+      // Notify parent so it shows on the download/print page too
       onSave(gifUrl, 'My BitPopArt GIF Meme');
     } catch (err) {
-      console.error('GIF export error:', err);
+      console.error('[GifMemeCreator] Export error:', err);
     } finally {
       setIsExporting(false);
     }
   };
 
   const handleDirectDownload = () => {
-    if (!exportedGifUrl) return;
+    const blob = exportedBlobRef.current;
+    if (!blob) return;
+    const filename = `bitpopart-gif-meme-${Date.now()}.gif`;
+    // Use a fresh object URL for the download anchor to avoid any stale-URL issues
+    const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = exportedGifUrl;
-    a.download = `bitpopart-gif-meme-${Date.now()}.gif`;
+    a.style.display = 'none';
+    a.href = url;
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
-    document.body.removeChild(a);
+    // Cleanup after a short delay
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 2000);
   };
 
   // ── Picker items ──────────────────────────────────────────────────────────────
@@ -931,13 +964,16 @@ export function GifMemeCreator({ onSave }: GifMemeCreatorProps) {
             </Badge>
           </div>
 
-          {/* Preview */}
-          <div className="flex justify-center rounded-xl overflow-hidden border border-gray-200">
+          {/* Preview — key forces remount so animated GIF restarts */}
+          <div className="flex justify-center rounded-xl overflow-hidden border border-gray-200 bg-gray-50">
             <img
-              src={exportedGifUrl}
+              key={exportedGifUrl}
+              src={exportedGifUrl ?? ''}
               alt="Animated GIF preview"
               className="max-w-full rounded-xl"
-              style={{ maxHeight: 280 }}
+              style={{ maxHeight: 300, display: 'block' }}
+              onError={e => { console.error('[GifMemeCreator] Preview img failed to load', e); }}
+              onLoad={() => { console.log('[GifMemeCreator] Preview img loaded OK'); }}
             />
           </div>
 
