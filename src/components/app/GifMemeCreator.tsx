@@ -581,10 +581,10 @@ export function GifMemeCreator({ onSave }: GifMemeCreatorProps) {
       </div>
 
       {/* ── TRANSPORT ───────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-2 px-3 py-2 bg-[#1a1a1a] border-b border-gray-800">
+      <div className="flex items-center gap-2 px-3 py-2 bg-white border-b border-gray-200">
         {/* Skip to start */}
         <button
-          className="text-gray-400 hover:text-white transition-colors"
+          className="text-gray-500 hover:text-gray-800 transition-colors"
           onClick={() => { setIsPlaying(false); setCurrentFrame(0); }}
           title="Go to start"
         >
@@ -601,7 +601,7 @@ export function GifMemeCreator({ onSave }: GifMemeCreatorProps) {
 
         {/* Skip to end */}
         <button
-          className="text-gray-400 hover:text-white transition-colors"
+          className="text-gray-500 hover:text-gray-800 transition-colors"
           onClick={() => { setIsPlaying(false); setCurrentFrame(project.totalFrames - 1); }}
           title="Go to end"
         >
@@ -610,20 +610,20 @@ export function GifMemeCreator({ onSave }: GifMemeCreatorProps) {
 
         {/* Frame stepper */}
         <button
-          className="text-gray-400 hover:text-white ml-1 transition-colors"
+          className="text-gray-500 hover:text-gray-800 ml-1 transition-colors"
           onClick={() => setCurrentFrame(f => Math.max(0, f - 1))}
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
         <button
-          className="text-gray-400 hover:text-white transition-colors"
+          className="text-gray-500 hover:text-gray-800 transition-colors"
           onClick={() => setCurrentFrame(f => Math.min(project.totalFrames - 1, f + 1))}
         >
           <ChevronRight className="h-4 w-4" />
         </button>
 
         {/* Timecode */}
-        <span className="text-[11px] text-gray-400 font-mono ml-auto">
+        <span className="text-[11px] text-gray-500 font-mono ml-auto">
           {(currentFrame / FPS).toFixed(2)}s
         </span>
 
@@ -632,7 +632,7 @@ export function GifMemeCreator({ onSave }: GifMemeCreatorProps) {
           value={String(project.totalFrames)}
           onValueChange={v => { setIsPlaying(false); updateProject({ totalFrames: Number(v) }); setCurrentFrame(0); }}
         >
-          <SelectTrigger className="h-6 text-[10px] w-20 bg-gray-800 border-gray-700 text-gray-200">
+          <SelectTrigger className="h-6 text-[10px] w-20 bg-gray-100 border-gray-300 text-gray-700">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -645,13 +645,13 @@ export function GifMemeCreator({ onSave }: GifMemeCreatorProps) {
       </div>
 
       {/* ── TIMELINE ────────────────────────────────────────────────────── */}
-      <div className="bg-[#141414] px-2 pb-2 pt-1 border-b border-gray-800">
+      <div className="bg-gray-50 px-2 pb-2 pt-1 border-b border-gray-200">
         {/* Time ruler */}
         <div className="flex items-center mb-0.5 pl-[72px]">
           {Array.from({ length: Math.ceil(totalSeconds) + 1 }).map((_, i) => (
             <div
               key={i}
-              className="text-[8px] text-gray-600 font-mono"
+              className="text-[8px] text-gray-400 font-mono"
               style={{ width: `${(FPS / project.totalFrames) * 100}%`, position: 'absolute',
                        left: `calc(72px + ${(i * FPS / project.totalFrames) * 100}%)` }}
             >
@@ -664,7 +664,7 @@ export function GifMemeCreator({ onSave }: GifMemeCreatorProps) {
         <div className="relative pl-[72px] mb-1" style={{ height: 16 }}>
           <div
             ref={timelineRef}
-            className="absolute inset-y-0 right-0 left-[72px] bg-gray-800 rounded cursor-pointer"
+            className="absolute inset-y-0 right-0 left-[72px] bg-gray-200 rounded cursor-pointer"
             style={{ marginLeft: 0 }}
             onPointerDown={e => { e.currentTarget.setPointerCapture(e.pointerId); scrubToX(e.clientX); setIsPlaying(false); }}
             onPointerMove={e => { if (e.buttons) scrubToX(e.clientX); }}
@@ -674,7 +674,7 @@ export function GifMemeCreator({ onSave }: GifMemeCreatorProps) {
               i % FPS === 0 ? (
                 <div
                   key={i}
-                  className="absolute top-0 bottom-0 w-px bg-gray-600 opacity-50"
+                  className="absolute top-0 bottom-0 w-px bg-gray-400 opacity-50"
                   style={{ left: framesPct(i) }}
                 />
               ) : null
@@ -691,7 +691,7 @@ export function GifMemeCreator({ onSave }: GifMemeCreatorProps) {
 
         {/* Layer tracks */}
         {project.layers.length === 0 ? (
-          <div className="text-[10px] text-gray-600 text-center py-2 pl-[72px]">
+          <div className="text-[10px] text-gray-400 text-center py-2 pl-[72px]">
             Add layers below to build your animation
           </div>
         ) : (
@@ -705,14 +705,14 @@ export function GifMemeCreator({ onSave }: GifMemeCreatorProps) {
               return (
                 <div
                   key={layer.id}
-                  className={`flex items-center gap-1 cursor-pointer rounded transition-colors ${isSelected ? 'bg-gray-700/60' : 'hover:bg-gray-800/40'}`}
+                  className={`flex items-center gap-1 cursor-pointer rounded transition-colors ${isSelected ? 'bg-purple-100' : 'hover:bg-gray-100'}`}
                   style={{ height: TIMELINE_H }}
                   onClick={() => setSelectedLayerId(isSelected ? null : layer.id)}
                 >
                   {/* Layer name */}
                   <div className="w-[68px] shrink-0 flex items-center gap-1 px-1">
                     <div className={`w-1.5 h-4 rounded-sm shrink-0 ${color} ${isActive ? 'opacity-100' : 'opacity-40'}`} />
-                    <span className="text-[9px] text-gray-300 truncate leading-tight max-w-[50px]">
+                    <span className="text-[9px] text-gray-600 truncate leading-tight max-w-[50px]">
                       {layer.label}
                     </span>
                   </div>
@@ -779,7 +779,7 @@ export function GifMemeCreator({ onSave }: GifMemeCreatorProps) {
       </div>
 
       {/* ── ADD BUTTONS ─────────────────────────────────────────────────── */}
-      <div className="flex gap-2 px-3 py-2 bg-[#1a1a1a] border-b border-gray-800">
+      <div className="flex gap-2 px-3 py-2 bg-white border-b border-gray-200">
         <button
           className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold transition-colors"
           onClick={() => { setShowPicker(p => !p); }}
@@ -810,9 +810,9 @@ export function GifMemeCreator({ onSave }: GifMemeCreatorProps) {
 
       {/* ── IMAGE PICKER ─────────────────────────────────────────────────── */}
       {showPicker && (
-        <div className="bg-[#1c1c1c] border-b border-gray-800">
+        <div className="bg-white border-b border-gray-200">
           {/* Picker tabs */}
-          <div className="flex border-b border-gray-800">
+          <div className="flex border-b border-gray-200">
             {([
               { id: 'templates' as PickerTab, label: 'Templates', icon: <LayoutTemplate className="h-3 w-3" /> },
               { id: 'pops'      as PickerTab, label: 'Pops',      icon: <UserCircle2 className="h-3 w-3" /> },
@@ -821,13 +821,13 @@ export function GifMemeCreator({ onSave }: GifMemeCreatorProps) {
             ] as { id: PickerTab; label: string; icon: React.ReactNode }[]).map(tab => (
               <button
                 key={tab.id}
-                className={`flex-1 flex items-center justify-center gap-1 py-2 text-[10px] font-semibold transition-colors ${pickerTab === tab.id ? 'bg-gray-800 text-purple-400 border-b-2 border-purple-500' : 'text-gray-500 hover:text-gray-300'}`}
+                className={`flex-1 flex items-center justify-center gap-1 py-2 text-[10px] font-semibold transition-colors ${pickerTab === tab.id ? 'bg-purple-50 text-purple-600 border-b-2 border-purple-500' : 'text-gray-500 hover:text-gray-700'}`}
                 onClick={() => setPickerTab(tab.id)}
               >
                 {tab.icon}{tab.label}
               </button>
             ))}
-            <button className="px-3 text-gray-500 hover:text-white" onClick={() => setShowPicker(false)}>
+            <button className="px-3 text-gray-400 hover:text-gray-700" onClick={() => setShowPicker(false)}>
               <X className="h-3.5 w-3.5" />
             </button>
           </div>
@@ -835,16 +835,16 @@ export function GifMemeCreator({ onSave }: GifMemeCreatorProps) {
           <div className="p-2">
             {pickerLoading ? (
               <div className="flex gap-2">
-                {[...Array(5)].map((_,i) => <Skeleton key={i} className="w-14 h-14 rounded-lg bg-gray-700" />)}
+                {[...Array(5)].map((_,i) => <Skeleton key={i} className="w-14 h-14 rounded-lg bg-gray-100" />)}
               </div>
             ) : pickerItems.length === 0 ? (
-              <p className="text-[10px] text-gray-500 text-center py-3">Nothing here yet</p>
+              <p className="text-[10px] text-gray-400 text-center py-3">Nothing here yet</p>
             ) : (
               <div className="grid grid-cols-6 gap-1.5 max-h-36 overflow-y-auto">
                 {pickerItems.map(item => (
                   <button
                     key={item.id}
-                    className="relative aspect-square rounded-lg overflow-hidden border border-gray-700 hover:border-purple-400 transition-all bg-gray-800"
+                    className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 hover:border-purple-400 transition-all bg-gray-50"
                     onClick={() => addImageLayer(item.url, item.label)}
                     title={item.label}
                   >
@@ -859,50 +859,50 @@ export function GifMemeCreator({ onSave }: GifMemeCreatorProps) {
 
       {/* ── SELECTED LAYER PROPERTIES ────────────────────────────────────── */}
       {selectedLayer ? (
-        <div className="bg-[#1c1c1c] border-b border-gray-800 p-3 space-y-2.5">
+        <div className="bg-white border-b border-gray-200 p-3 space-y-2.5">
           {/* Header */}
           <div className="flex items-center gap-2">
-            <Layers className="h-3.5 w-3.5 text-purple-400 shrink-0" />
-            <span className="text-[11px] font-bold text-gray-200 flex-1 truncate">
+            <Layers className="h-3.5 w-3.5 text-purple-500 shrink-0" />
+            <span className="text-[11px] font-bold text-gray-700 flex-1 truncate">
               {selectedLayer.label}
               {selectedLayer.isAnimatedGif && (
-                <span className="ml-1.5 text-[9px] text-purple-400 font-normal">● animated GIF ({selectedLayer.gifFrames.length} frames @ {selectedLayer.gifFps}fps)</span>
+                <span className="ml-1.5 text-[9px] text-purple-500 font-normal">● animated GIF ({selectedLayer.gifFrames.length} frames @ {selectedLayer.gifFps}fps)</span>
               )}
             </span>
             {/* Delete */}
             <button
-              className="p-1 rounded hover:bg-red-900/40 text-gray-500 hover:text-red-400 transition-colors"
+              className="p-1 rounded hover:bg-red-100 text-gray-400 hover:text-red-500 transition-colors"
               onClick={() => deleteLayer(selectedLayer.id)}
             >
               <Trash2 className="h-3.5 w-3.5" />
             </button>
             {/* Layer order */}
-            <button className="p-1 rounded hover:bg-gray-700 text-gray-500 hover:text-gray-200 transition-colors" onClick={() => moveLayerUp(selectedLayer.id)} title="Bring forward">↑</button>
-            <button className="p-1 rounded hover:bg-gray-700 text-gray-500 hover:text-gray-200 transition-colors" onClick={() => moveLayerDown(selectedLayer.id)} title="Send backward">↓</button>
+            <button className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors" onClick={() => moveLayerUp(selectedLayer.id)} title="Bring forward">↑</button>
+            <button className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors" onClick={() => moveLayerDown(selectedLayer.id)} title="Send backward">↓</button>
           </div>
 
           {/* Timeline span */}
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1">
-              <label className="text-[9px] text-gray-500 uppercase tracking-wide">Start frame</label>
+              <label className="text-[9px] text-gray-400 uppercase tracking-wide">Start frame</label>
               <input
                 type="number"
                 min={0}
                 max={selectedLayer.endFrame - 1}
                 value={selectedLayer.startFrame}
                 onChange={e => updateLayer(selectedLayer.id, { startFrame: Math.max(0, Math.min(Number(e.target.value), selectedLayer.endFrame - 1)) })}
-                className="w-full bg-gray-800 border border-gray-700 text-gray-200 text-xs rounded px-2 py-1"
+                className="w-full bg-gray-50 border border-gray-300 text-gray-700 text-xs rounded px-2 py-1"
               />
             </div>
             <div className="space-y-1">
-              <label className="text-[9px] text-gray-500 uppercase tracking-wide">End frame</label>
+              <label className="text-[9px] text-gray-400 uppercase tracking-wide">End frame</label>
               <input
                 type="number"
                 min={selectedLayer.startFrame + 1}
                 max={project.totalFrames - 1}
                 value={selectedLayer.endFrame}
                 onChange={e => updateLayer(selectedLayer.id, { endFrame: Math.max(selectedLayer.startFrame + 1, Math.min(Number(e.target.value), project.totalFrames - 1)) })}
-                className="w-full bg-gray-800 border border-gray-700 text-gray-200 text-xs rounded px-2 py-1"
+                className="w-full bg-gray-50 border border-gray-300 text-gray-700 text-xs rounded px-2 py-1"
               />
             </div>
           </div>
@@ -914,12 +914,12 @@ export function GifMemeCreator({ onSave }: GifMemeCreatorProps) {
                 value={selectedLayer.text}
                 onChange={e => updateLayer(selectedLayer.id, { text: e.target.value })}
                 placeholder="Text content…"
-                className="bg-gray-800 border-gray-700 text-gray-200 text-sm h-8"
+                className="bg-gray-50 border-gray-300 text-gray-700 text-sm h-8"
                 style={{ fontSize: 16 }}
               />
               <div className="flex gap-2">
                 <Select value={selectedLayer.fontFamily} onValueChange={v => updateLayer(selectedLayer.id, { fontFamily: v })}>
-                  <SelectTrigger className="h-7 text-[10px] flex-1 bg-gray-800 border-gray-700 text-gray-200">
+                  <SelectTrigger className="h-7 text-[10px] flex-1 bg-gray-50 border-gray-300 text-gray-700">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -929,7 +929,7 @@ export function GifMemeCreator({ onSave }: GifMemeCreatorProps) {
                   </SelectContent>
                 </Select>
                 <Select value={selectedLayer.textPosition} onValueChange={v => updateLayer(selectedLayer.id, { textPosition: v as 'top'|'center'|'bottom' })}>
-                  <SelectTrigger className="h-7 text-[10px] w-20 bg-gray-800 border-gray-700 text-gray-200">
+                  <SelectTrigger className="h-7 text-[10px] w-20 bg-gray-50 border-gray-300 text-gray-700">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -949,7 +949,7 @@ export function GifMemeCreator({ onSave }: GifMemeCreatorProps) {
                 <span className="text-[9px] text-gray-500 mr-1">Color</span>
                 {POP_COLORS.map(c => (
                   <button key={c} className={`w-4 h-4 rounded-full border-2 transition-transform hover:scale-110 ${selectedLayer.textColor === c ? 'border-purple-400 scale-110' : 'border-transparent'}`}
-                    style={{ background: c, boxShadow: (c==='#FFFFFF'||c==='#000000') ? 'inset 0 0 0 1px #555' : undefined }}
+                    style={{ background: c, boxShadow: (c==='#FFFFFF'||c==='#000000') ? 'inset 0 0 0 1px #ccc' : undefined }}
                     onClick={() => updateLayer(selectedLayer.id, { textColor: c })}
                   />
                 ))}
@@ -1003,7 +1003,7 @@ export function GifMemeCreator({ onSave }: GifMemeCreatorProps) {
               ].map(p => (
                 <button
                   key={p.label}
-                  className="px-2 py-0.5 rounded bg-gray-700 hover:bg-gray-600 text-gray-300 text-[9px] font-medium transition-colors"
+                  className="px-2 py-0.5 rounded bg-gray-100 hover:bg-gray-200 text-gray-600 text-[9px] font-medium transition-colors"
                   onClick={() => updateLayer(selectedLayer.id, { x: p.x, y: p.y, scale: p.scale })}
                 >
                   {p.label}
@@ -1013,13 +1013,13 @@ export function GifMemeCreator({ onSave }: GifMemeCreatorProps) {
           )}
         </div>
       ) : project.layers.length > 0 ? (
-        <div className="bg-[#1c1c1c] border-b border-gray-800 px-3 py-2">
-          <p className="text-[10px] text-gray-500 text-center">Click a layer track to select and edit it</p>
+        <div className="bg-white border-b border-gray-200 px-3 py-2">
+          <p className="text-[10px] text-gray-400 text-center">Click a layer track to select and edit it</p>
         </div>
       ) : null}
 
       {/* ── EXPORT ──────────────────────────────────────────────────────── */}
-      <div className="bg-[#141414] px-3 py-3 rounded-b-xl space-y-2">
+      <div className="bg-white px-3 py-3 rounded-b-xl space-y-2 border-t border-gray-200">
         <button
           className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm text-white shadow-lg active:scale-[0.98] transition-all disabled:opacity-50"
           style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #ec4899 60%, #f97316 100%)' }}
@@ -1035,7 +1035,7 @@ export function GifMemeCreator({ onSave }: GifMemeCreatorProps) {
 
         {/* Progress bar */}
         {isExporting && (
-          <div className="w-full bg-gray-800 rounded-full h-1.5">
+          <div className="w-full bg-gray-200 rounded-full h-1.5">
             <div
               className="h-1.5 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all"
               style={{ width: `${exportProgress}%` }}
@@ -1045,11 +1045,11 @@ export function GifMemeCreator({ onSave }: GifMemeCreatorProps) {
 
         {/* Result */}
         {exportedUrl && !isExporting && (
-          <div className="rounded-xl border border-purple-500/50 overflow-hidden bg-black/40 space-y-2 p-3">
+          <div className="rounded-xl border border-purple-300 overflow-hidden bg-purple-50 space-y-2 p-3">
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-green-400 shrink-0" />
-              <span className="text-sm font-bold text-green-400">GIF Ready!</span>
-              <Badge className="bg-purple-900 text-purple-300 border-0 text-[10px] ml-auto">
+              <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+              <span className="text-sm font-bold text-green-600">GIF Ready!</span>
+              <Badge className="bg-purple-100 text-purple-600 border-0 text-[10px] ml-auto">
                 {project.totalFrames}f @ {FPS}fps
               </Badge>
             </div>
