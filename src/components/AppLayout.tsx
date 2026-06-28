@@ -18,10 +18,11 @@ export function AppLayout({ children }: AppLayoutProps) {
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto px-4">
           <div className="flex h-14 items-center justify-between">
-            {/* Logo only */}
+            {/* Logo — links back to the main site */}
             <Link
-              to="/app"
+              to="/"
               className="flex items-center hover:opacity-80 transition-opacity"
+              title="Back to BitPopArt site"
             >
               <img
                 src={BitPopArtLogo}
