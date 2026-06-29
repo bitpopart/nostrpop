@@ -16,6 +16,8 @@ import {
   eurToLiveSats,
 } from '@/hooks/usePrintPosters';
 import type { PrintPoster, PosterFormat, PosterFormatPrice } from '@/hooks/usePrintPosters';
+import { useArtworks } from '@/hooks/useArtworks';
+import type { ArtworkData } from '@/lib/artTypes';
 import { useLNURL } from '@/hooks/useLNURL';
 import { useEnhancedPaymentDetection } from '@/hooks/usePaymentDetection';
 import { useToast } from '@/hooks/useToast';
@@ -47,6 +49,7 @@ import {
   LayoutGrid,
   Palette,
   Sparkles,
+  Image,
 } from 'lucide-react';
 import QRCode from 'qrcode';
 
@@ -717,16 +720,164 @@ function AdminUploadForm({ onClose }: AdminUploadFormProps) {
   );
 }
 
+// ─── Convert an ArtworkData (kind 39239) with print_available into a PrintPoster ──
+function artworkToPrintPoster(artwork: ArtworkData): PrintPoster {
+  const imageUrl = artwork.images?.[0] ?? '';
+  return {
+    id: `artwork-${artwork.id}`,
+    event: artwork.event!,
+    title: artwork.title,
+    description: artwork.description || '',
+    svgUrl: imageUrl,
+    previewUrl: imageUrl,
+    formats: DEFAULT_ART_FORMAT_PRICES.map(f => ({ ...f })),
+    category: 'Art',
+    tags: artwork.tags ?? [],
+    created_at: artwork.created_at,
+  };
+}
+
+// ─── Admin: pick from existing artworks to add as print poster ────────────────
+interface ArtworkPickerProps {
+  onPick: (artwork: ArtworkData) => void;
+  onClose: () => void;
+}
+
+function ArtworkPicker({ onPick, onClose }: ArtworkPickerProps) {
+  const { data: artworks = [], isLoading } = useArtworks('all');
+  const { mutate: createPoster, isPending: isPublishing } = useCreatePrintPoster();
+  const { toast } = useToast();
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [publishing, setPublishing] = useState(false);
+
+  const printableArtworks = artworks.filter(a => a.images?.length > 0);
+
+  const handlePublish = () => {
+    const artwork = printableArtworks.find(a => a.id === selectedId);
+    if (!artwork) {
+      toast({ title: 'No artwork selected', description: 'Please select an artwork first.', variant: 'destructive' });
+      return;
+    }
+    const imageUrl = artwork.images[0];
+    setPublishing(true);
+    createPoster(
+      {
+        title: artwork.title,
+        description: artwork.description || '',
+        svgUrl: imageUrl,
+        previewUrl: imageUrl,
+        formats: DEFAULT_ART_FORMAT_PRICES.map(f => ({ ...f })),
+        category: 'Art',
+        extraTags: artwork.tags ?? [],
+      },
+      {
+        onSuccess: () => {
+          setPublishing(false);
+          onPick(artwork);
+        },
+        onError: () => setPublishing(false),
+      }
+    );
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between">
+          <span className="flex items-center gap-2">
+            <Image className="h-5 w-5" />
+            Add Artwork as Print Poster
+          </span>
+          <Button variant="ghost" size="icon" onClick={onClose}><X className="h-4 w-4" /></Button>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <p className="text-sm text-muted-foreground">
+          Select an existing artwork to publish as a print poster (Art category, gallery prices).
+        </p>
+
+        {isLoading && (
+          <div className="grid grid-cols-3 gap-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="aspect-square rounded-lg" />
+            ))}
+          </div>
+        )}
+
+        {!isLoading && printableArtworks.length === 0 && (
+          <p className="text-sm text-muted-foreground text-center py-6">No artworks with images found.</p>
+        )}
+
+        {!isLoading && printableArtworks.length > 0 && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-80 overflow-y-auto pr-1">
+            {printableArtworks.map(artwork => (
+              <button
+                key={artwork.id}
+                type="button"
+                onClick={() => setSelectedId(artwork.id)}
+                className={`relative rounded-xl border-2 overflow-hidden aspect-square text-left transition-all ${
+                  selectedId === artwork.id
+                    ? 'border-orange-500 ring-2 ring-orange-300'
+                    : 'border-transparent hover:border-orange-300'
+                }`}
+              >
+                <img
+                  src={artwork.images[0]}
+                  alt={artwork.title}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-2">
+                  <p className="text-white text-xs font-semibold truncate">{artwork.title}</p>
+                </div>
+                {selectedId === artwork.id && (
+                  <div className="absolute top-2 right-2 h-5 w-5 rounded-full bg-orange-500 flex items-center justify-center">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-white" />
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+
+        <Button
+          onClick={handlePublish}
+          disabled={!selectedId || isPublishing || publishing}
+          className="w-full bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white border-0"
+        >
+          {isPublishing || publishing
+            ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Publishing…</>
+            : <><Plus className="h-4 w-4 mr-2" />Publish as Print Poster</>}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
 // ─── Main Print page ──────────────────────────────────────────────────────────
 export default function Print() {
   const { user } = useCurrentUser();
   const isAdmin = useIsAdmin();
   const { getGradientStyle } = useThemeColors();
-  const { data: posters = [], isLoading } = usePrintPosters();
+  const { data: posters = [], isLoading: postersLoading } = usePrintPosters();
+  const { data: allArtworks = [], isLoading: artworksLoading } = useArtworks('print');
   const { mutate: deletePoster } = useDeletePrintPoster();
   const { data: btcRate } = useBtcEurRate();
 
+  const isLoading = postersLoading || artworksLoading;
+
+  // Convert print_available artworks into PrintPoster shape.
+  // Exclude any artwork whose id already has a matching print poster (to avoid duplicates).
+  const artworkPosters: PrintPoster[] = allArtworks
+    .filter(a => a.images?.length > 0)
+    .map(artworkToPrintPoster)
+    .filter(ap => !posters.some(p => p.svgUrl === ap.svgUrl || p.title === ap.title));
+
+  // Merged list: explicit print-posters first, then artwork-derived ones
+  const allPosters: PrintPoster[] = [...posters, ...artworkPosters];
+
   const [showUploadForm, setShowUploadForm] = useState(false);
+  const [showArtworkPicker, setShowArtworkPicker] = useState(false);
   const [payDialogOpen, setPayDialogOpen] = useState(false);
   const [selectedPoster, setSelectedPoster] = useState<PrintPoster | null>(null);
   const [selectedFormat, setSelectedFormat] = useState<PosterFormat>('A4');
@@ -756,13 +907,19 @@ export default function Print() {
     setPayDialogOpen(true);
   };
 
+  // Artwork-derived posters use id prefix "artwork-" — can't be deleted as print posters
+  const handleDeletePoster = (id: string) => {
+    if (id.startsWith('artwork-')) return; // artwork-derived items can't be deleted here
+    deletePoster(id);
+  };
+
   // Derive available categories from actual poster data
-  const availableCategories = getPosterCategories(posters);
+  const availableCategories = getPosterCategories(allPosters);
 
   // Filter posters by active category
   const filteredPosters = activeCategory === 'All'
-    ? posters
-    : posters.filter(p => p.category === activeCategory);
+    ? allPosters
+    : allPosters.filter(p => p.category === activeCategory);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-rose-50 to-yellow-50 dark:from-gray-900 dark:via-orange-900/20 dark:to-yellow-900/20">
@@ -812,24 +969,41 @@ export default function Print() {
 
         {/* ── Admin upload ── */}
         {user && isAdmin && (
-          <div className="max-w-2xl mx-auto mb-10">
-            {!showUploadForm ? (
-              <Button
-                onClick={() => setShowUploadForm(true)}
-                className="w-full text-white border-0 gap-2"
-                style={getGradientStyle('primary')}
-              >
-                <Plus className="h-4 w-4" />
-                Upload New Print Poster
-              </Button>
-            ) : (
+          <div className="max-w-2xl mx-auto mb-10 space-y-3">
+            {!showUploadForm && !showArtworkPicker && (
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button
+                  onClick={() => setShowUploadForm(true)}
+                  className="flex-1 text-white border-0 gap-2"
+                  style={getGradientStyle('primary')}
+                >
+                  <Upload className="h-4 w-4" />
+                  Upload New Print Poster
+                </Button>
+                <Button
+                  onClick={() => setShowArtworkPicker(true)}
+                  variant="outline"
+                  className="flex-1 gap-2 border-rose-300 text-rose-700 dark:text-rose-300 dark:border-rose-700 hover:bg-rose-50 dark:hover:bg-rose-900/20"
+                >
+                  <Image className="h-4 w-4" />
+                  Add from Artwork Gallery
+                </Button>
+              </div>
+            )}
+            {showUploadForm && (
               <AdminUploadForm onClose={() => setShowUploadForm(false)} />
+            )}
+            {showArtworkPicker && (
+              <ArtworkPicker
+                onPick={() => setShowArtworkPicker(false)}
+                onClose={() => setShowArtworkPicker(false)}
+              />
             )}
           </div>
         )}
 
         {/* ── Art Prints Section ── */}
-        {!isLoading && posters.filter(p => p.category === 'Art').length > 0 && (
+        {!isLoading && allPosters.filter(p => p.category === 'Art').length > 0 && (
           <div className="mb-10">
             <div className="flex items-center gap-3 mb-4">
               <div className="h-8 w-8 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center">
@@ -847,12 +1021,12 @@ export default function Print() {
               <Sparkles className="h-5 w-5 text-rose-400 ml-auto" />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {posters.filter(p => p.category === 'Art').map(poster => (
+              {allPosters.filter(p => p.category === 'Art').map(poster => (
                 <PosterCard
                   key={poster.id}
                   poster={poster}
-                  isAdmin={isAdmin}
-                  onDelete={deletePoster}
+                  isAdmin={isAdmin && !poster.id.startsWith('artwork-')}
+                  onDelete={handleDeletePoster}
                   onBuy={handleBuy}
                   btcRate={btcRate}
                 />
@@ -862,7 +1036,7 @@ export default function Print() {
         )}
 
         {/* ── Divider if both Art and other posters exist ── */}
-        {!isLoading && posters.filter(p => p.category === 'Art').length > 0 && posters.filter(p => p.category !== 'Art').length > 0 && (
+        {!isLoading && allPosters.filter(p => p.category === 'Art').length > 0 && allPosters.filter(p => p.category !== 'Art').length > 0 && (
           <div className="flex items-center gap-4 mb-8">
             <div className="h-px flex-1 bg-border" />
             <span className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
@@ -891,11 +1065,11 @@ export default function Print() {
                 }`}
               >
                 All
-                <span className="ml-1.5 text-xs opacity-70">({posters.length})</span>
+                <span className="ml-1.5 text-xs opacity-70">({allPosters.length})</span>
               </button>
               {/* Per-category buttons */}
               {availableCategories.map(cat => {
-                const count = posters.filter(p => p.category === cat).length;
+                const count = allPosters.filter(p => p.category === cat).length;
                 const isActive = activeCategory === cat;
                 return (
                   <button
@@ -933,7 +1107,7 @@ export default function Print() {
         )}
 
         {/* ── Empty ── */}
-        {!isLoading && posters.length === 0 && (
+        {!isLoading && allPosters.length === 0 && (
           <Card className="border-dashed max-w-md mx-auto">
             <CardContent className="py-12 px-8 text-center">
               <div className="max-w-sm mx-auto space-y-6">
@@ -949,7 +1123,7 @@ export default function Print() {
         )}
 
         {/* ── No results in this category ── */}
-        {!isLoading && posters.length > 0 && filteredPosters.length === 0 && (
+        {!isLoading && allPosters.length > 0 && filteredPosters.length === 0 && (
           <Card className="border-dashed max-w-md mx-auto">
             <CardContent className="py-10 text-center">
               <p className="text-muted-foreground text-sm">No posters in "{activeCategory}" yet.</p>
@@ -966,14 +1140,19 @@ export default function Print() {
             <p className="text-sm text-muted-foreground">
               {filteredPosters.length} poster{filteredPosters.length !== 1 ? 's' : ''}
               {activeCategory !== 'All' && <> in <span className={`inline-block mx-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${categoryColorClass(activeCategory)}`}>{activeCategory}</span></>}
+              {artworkPosters.length > 0 && activeCategory === 'All' && (
+                <span className="ml-2 text-xs text-rose-600 dark:text-rose-400">
+                  (includes {artworkPosters.length} from art gallery)
+                </span>
+              )}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredPosters.map(poster => (
                 <PosterCard
                   key={poster.id}
                   poster={poster}
-                  isAdmin={isAdmin}
-                  onDelete={deletePoster}
+                  isAdmin={isAdmin && !poster.id.startsWith('artwork-')}
+                  onDelete={handleDeletePoster}
                   onBuy={handleBuy}
                   btcRate={btcRate}
                 />
