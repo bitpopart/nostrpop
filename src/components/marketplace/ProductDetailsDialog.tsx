@@ -26,6 +26,7 @@ interface MarketplaceProduct {
   images: string[];
   currency: string;
   price: number;
+  discount?: number; // Discount percentage (0-100)
   quantity?: number;
   category: string;
   type: 'physical' | 'digital';
@@ -50,6 +51,8 @@ export function ProductDetailsDialog({ open, onOpenChange, product }: ProductDet
   const hasShipping = product.shipping && product.shipping.length > 0;
   const shippingCost = hasShipping ? product.shipping![0].cost : 0;
   const createdDate = new Date(product.created_at);
+  const hasDiscount = product.discount && product.discount > 0;
+  const discountedPrice = hasDiscount ? product.price * (1 - product.discount! / 100) : null;
 
   const nextImage = () => {
     setSelectedImage((prev) => (prev + 1) % product.images.length);
@@ -203,8 +206,18 @@ export function ProductDetailsDialog({ open, onOpenChange, product }: ProductDet
                   )}
                 </div>
 
+                {hasDiscount && (
+                  <div className="flex items-center space-x-2">
+                    <span className="line-through text-lg text-muted-foreground">
+                      {formatCurrency(product.price, product.currency)}
+                    </span>
+                    <span className="text-sm font-bold bg-orange-500 text-white px-2 py-0.5 rounded-full">
+                      -{product.discount}%
+                    </span>
+                  </div>
+                )}
                 <div className="text-3xl font-bold text-green-600 dark:text-green-400">
-                  {formatCurrency(product.price, product.currency)}
+                  {formatCurrency(discountedPrice ?? product.price, product.currency)}
                 </div>
 
                 {product.type === 'physical' && hasShipping && (
@@ -302,7 +315,7 @@ export function ProductDetailsDialog({ open, onOpenChange, product }: ProductDet
                 size="lg"
               >
                 <ShoppingCart className="w-5 h-5 mr-2" />
-                {isOutOfStock ? 'Out of Stock' : `Buy Now - ${formatCurrency(product.price + (product.type === 'physical' ? shippingCost : 0), product.currency)}`}
+                {isOutOfStock ? 'Out of Stock' : `Buy Now - ${formatCurrency((discountedPrice ?? product.price) + (product.type === 'physical' ? shippingCost : 0), product.currency)}`}
               </Button>
             </div>
           </div>

@@ -29,7 +29,8 @@ import {
   Truck,
   Loader2,
   Image as ImageIcon,
-  Save
+  Save,
+  Percent
 } from 'lucide-react';
 
 // Categories are now loaded dynamically from useCategories hook
@@ -47,6 +48,7 @@ const productSchema = z.object({
   description: z.string().min(10, 'Description must be at least 10 characters').max(1000, 'Description too long'),
   price: z.number().min(0.01, 'Price must be greater than 0'),
   currency: z.string().min(1, 'Currency is required'),
+  discount: z.number().min(0, 'Discount cannot be negative').max(99, 'Discount cannot exceed 99%').optional(),
   category: z.string().min(1, 'Category is required'),
   type: z.enum(['physical', 'digital']),
   quantity: z.number().min(0).optional(),
@@ -96,6 +98,7 @@ export function EditProductForm({ product, onSuccess, onCancel }: EditProductFor
       description: product.description,
       price: product.price,
       currency: product.currency,
+      discount: product.discount || undefined,
       category: product.category,
       type: product.type,
       quantity: product.quantity,
@@ -107,6 +110,14 @@ export function EditProductForm({ product, onSuccess, onCancel }: EditProductFor
 
   const productType = watch('type');
   const isPhysical = productType === 'physical';
+  const watchedPrice = watch('price');
+  const watchedDiscount = watch('discount');
+  const watchedCurrency = watch('currency');
+
+  // Calculate discounted price for preview
+  const discountedPrice = watchedDiscount && watchedDiscount > 0 && watchedPrice > 0
+    ? watchedPrice * (1 - watchedDiscount / 100)
+    : null;
 
   // Set initial form values
   useEffect(() => {
@@ -114,6 +125,7 @@ export function EditProductForm({ product, onSuccess, onCancel }: EditProductFor
     setValue('description', product.description);
     setValue('price', product.price);
     setValue('currency', product.currency);
+    setValue('discount', product.discount || undefined);
     setValue('category', product.category);
     setValue('type', product.type);
     setValue('quantity', product.quantity);
@@ -233,6 +245,7 @@ export function EditProductForm({ product, onSuccess, onCancel }: EditProductFor
         images: images,
         price: data.price,
         currency: data.currency,
+        discount: data.discount || undefined,
         quantity: data.quantity,
         specs: validSpecs.length > 0 ? validSpecs.map(spec => [spec.key, spec.value]) : undefined,
         shipping: isPhysical && data.shippingCost ? [{ id: 'standard', cost: data.shippingCost }] : undefined,
@@ -251,6 +264,11 @@ export function EditProductForm({ product, onSuccess, onCancel }: EditProductFor
         ['price', data.price.toString()],
         ['currency', data.currency]
       ];
+
+      // Add discount tag if specified
+      if (data.discount && data.discount > 0) {
+        tags.push(['discount', data.discount.toString()]);
+      }
 
       // Add quantity tag if specified
       if (data.quantity !== undefined) {
@@ -451,6 +469,54 @@ export function EditProductForm({ product, onSuccess, onCancel }: EditProductFor
                   {...register('quantity', { valueAsNumber: true })}
                   placeholder="Unlimited"
                 />
+              </div>
+            </div>
+
+            {/* Discount */}
+            <div className="space-y-3 p-4 rounded-lg border border-orange-200 dark:border-orange-800 bg-orange-50/50 dark:bg-orange-900/10">
+              <div className="flex items-center space-x-2">
+                <Percent className="w-4 h-4 text-orange-600" />
+                <Label className="font-medium text-orange-700 dark:text-orange-400">Discount (optional)</Label>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="discount">Discount Percentage (%)</Label>
+                  <div className="relative">
+                    <Input
+                      id="discount"
+                      type="number"
+                      min="0"
+                      max="99"
+                      step="1"
+                      {...register('discount', { valueAsNumber: true })}
+                      placeholder="e.g. 21"
+                      className="pr-8"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
+                  </div>
+                  {errors.discount && (
+                    <p className="text-sm text-red-500">{errors.discount.message}</p>
+                  )}
+                  <p className="text-xs text-muted-foreground">Leave empty or set to 0 to remove discount</p>
+                </div>
+                {discountedPrice !== null && watchedPrice > 0 && (
+                  <div className="space-y-2">
+                    <Label className="text-muted-foreground">Price Preview</Label>
+                    <div className="p-3 rounded-lg bg-white dark:bg-gray-800 border space-y-1">
+                      <div className="flex items-center space-x-2">
+                        <span className="line-through text-muted-foreground text-sm">
+                          {watchedCurrency} {watchedPrice.toFixed(2)}
+                        </span>
+                        <span className="text-xs font-semibold bg-orange-500 text-white px-1.5 py-0.5 rounded">
+                          -{watchedDiscount}%
+                        </span>
+                      </div>
+                      <div className="text-lg font-bold text-green-600 dark:text-green-400">
+                        {watchedCurrency} {discountedPrice.toFixed(2)}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

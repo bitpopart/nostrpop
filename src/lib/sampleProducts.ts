@@ -8,6 +8,7 @@ export interface MarketplaceProduct {
   images: string[];
   currency: string;
   price: number;
+  discount?: number; // Discount percentage (0-100), e.g. 21 means 21% off
   quantity?: number;
   category: string;
   type: 'physical' | 'digital';

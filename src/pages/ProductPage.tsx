@@ -34,6 +34,11 @@ export function ProductPage() {
   // Convert to USD if needed
   const [priceInUSD, setPriceInUSD] = useState<number>(displayPrice);
 
+  // Discount calculation
+  const hasDiscount = product?.discount && product.discount > 0;
+  const discountedPriceUSD = hasDiscount && priceInUSD > 0 ? priceInUSD * (1 - product!.discount! / 100) : null;
+  const finalPriceUSD = discountedPriceUSD ?? priceInUSD;
+
   // Fetch BTC price and calculate sats
   const { data: btcPrice } = useQuery({
     queryKey: ['btc-price-usd'],
@@ -54,9 +59,9 @@ export function ProductPage() {
     refetchInterval: 300000,
   });
 
-  // Calculate price in sats
-  const displayPriceInSats = btcPrice && priceInUSD > 0 
-    ? Math.round((priceInUSD / btcPrice) * 100000000)
+  // Calculate price in sats (use discounted price if applicable)
+  const displayPriceInSats = btcPrice && finalPriceUSD > 0 
+    ? Math.round((finalPriceUSD / btcPrice) * 100000000)
     : livePrice?.priceInSats;
 
   // Convert source currency to USD if needed
@@ -205,8 +210,20 @@ export function ProductPage() {
             <p className="text-xl text-muted-foreground mb-4">{product.description}</p>
 
             <div className="flex items-baseline flex-wrap gap-4 mb-4">
-              <div className="text-3xl font-bold text-green-600">
-                {formatCurrency(priceInUSD, displayCurrency)}
+              <div className="space-y-1">
+                {hasDiscount && (
+                  <div className="flex items-center gap-2">
+                    <span className="line-through text-xl text-muted-foreground">
+                      {formatCurrency(priceInUSD, displayCurrency)}
+                    </span>
+                    <span className="text-sm font-bold bg-orange-500 text-white px-2 py-0.5 rounded-full">
+                      -{product!.discount}% OFF
+                    </span>
+                  </div>
+                )}
+                <div className="text-3xl font-bold text-green-600">
+                  {formatCurrency(finalPriceUSD, displayCurrency)}
+                </div>
               </div>
               {displayPriceInSats && (
                 <div className="flex items-center text-xl text-orange-600">

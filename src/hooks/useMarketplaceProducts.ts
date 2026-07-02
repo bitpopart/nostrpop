@@ -33,6 +33,7 @@ interface MarketplaceProduct {
   images: string[];
   currency: string;
   price: number;
+  discount?: number; // Discount percentage (0-100)
   quantity?: number;
   category: string;
   type: 'physical' | 'digital';
@@ -107,10 +108,12 @@ export function useMarketplaceProducts(category?: string) {
             const titleTag = event.tags.find(([name]) => name === 'title')?.[1];
             const nameTag = event.tags.find(([name]) => name === 'name')?.[1];
             const priceTag = event.tags.find(([name]) => name === 'price')?.[1];
+            const discountTag = event.tags.find(([name]) => name === 'discount')?.[1];
             const imageTags = event.tags.filter(([name]) => name === 'image' || name === 'thumb').map(([, value]) => value).filter(Boolean);
             const categoryTags = event.tags.filter(([name]) => name === 't').map(([, value]) => value);
             const name = content.name || titleTag || nameTag || 'Untitled product';
             const price = Number(content.price ?? priceTag ?? 0);
+            const discount = content.discount !== undefined ? Number(content.discount) : (discountTag ? Number(discountTag) : undefined);
 
             // Basic validation: NIP-15 requires d/content id and product name. Price may be 0 for freebies.
             if (!dTag || !name) {
@@ -139,6 +142,7 @@ export function useMarketplaceProducts(category?: string) {
               images: Array.isArray(content.images) && content.images.length > 0 ? content.images : imageTags,
               currency: content.currency || event.tags.find(([tagName]) => tagName === 'currency')?.[1] || 'USD',
               price,
+              discount: discount && discount > 0 ? discount : undefined,
               quantity: content.quantity,
               category: mainCategory,
               type,
@@ -233,10 +237,12 @@ export function useMarketplaceProduct(productId: string) {
       const titleTag = event.tags.find(([name]) => name === 'title')?.[1];
       const nameTag = event.tags.find(([name]) => name === 'name')?.[1];
       const priceTag = event.tags.find(([name]) => name === 'price')?.[1];
+      const discountTag = event.tags.find(([name]) => name === 'discount')?.[1];
       const imageTags = event.tags.filter(([name]) => name === 'image' || name === 'thumb').map(([, value]) => value).filter(Boolean);
       const categoryTags = event.tags.filter(([name]) => name === 't').map(([, value]) => value);
       const name = content.name || titleTag || nameTag || 'Untitled product';
       const price = Number(content.price ?? priceTag ?? 0);
+      const discount = content.discount !== undefined ? Number(content.discount) : (discountTag ? Number(discountTag) : undefined);
 
       const isDigital = categoryTags.includes('digital');
       const isPhysical = categoryTags.includes('physical');
@@ -251,6 +257,7 @@ export function useMarketplaceProduct(productId: string) {
         images: Array.isArray(content.images) && content.images.length > 0 ? content.images : imageTags,
         currency: content.currency || event.tags.find(([tagName]) => tagName === 'currency')?.[1] || 'USD',
         price,
+        discount: discount && discount > 0 ? discount : undefined,
         quantity: content.quantity,
         category: mainCategory,
         type,

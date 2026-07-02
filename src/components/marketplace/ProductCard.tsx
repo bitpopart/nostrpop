@@ -31,6 +31,7 @@ interface MarketplaceProduct {
   images: string[];
   currency: string;
   price: number;
+  discount?: number; // Discount percentage (0-100)
   quantity?: number;
   category: string;
   type: 'physical' | 'digital';
@@ -67,9 +68,14 @@ export function ProductCard({ product, onViewDetails }: ProductCardProps) {
   
   // Convert price to USD if needed
   const priceInUSD = displayCurrency === 'USD' ? displayPrice : displayPrice; // For now, keep original price
+
+  // Calculate discounted price if discount is set
+  const hasDiscount = product.discount && product.discount > 0;
+  const discountedPriceUSD = hasDiscount ? priceInUSD * (1 - product.discount! / 100) : null;
+  const finalDisplayPrice = discountedPriceUSD ?? priceInUSD;
   
-  // Always get sats conversion for USD prices
-  const { data: satsConversion } = useFiatToSats(priceInUSD, 'USD');
+  // Always get sats conversion for USD prices (use discounted price for sats)
+  const { data: satsConversion } = useFiatToSats(finalDisplayPrice, 'USD');
   const displayPriceInSats = livePrice?.priceInSats ?? satsConversion;
 
   const isOutOfStock = product.quantity !== undefined && product.quantity <= 0;
@@ -135,6 +141,15 @@ export function ProductCard({ product, onViewDetails }: ProductCardProps) {
             </Badge>
           </div>
 
+          {/* Discount badge on image */}
+          {hasDiscount && !isOutOfStock && (
+            <div className="absolute top-2 right-2 z-10">
+              <span className="text-xs font-bold bg-orange-500 text-white px-2 py-1 rounded-full shadow-md">
+                -{product.discount}%
+              </span>
+            </div>
+          )}
+
           {/* Stock status */}
           {isOutOfStock && (
             <div className="absolute top-2 right-2 z-10">
@@ -180,8 +195,18 @@ export function ProductCard({ product, onViewDetails }: ProductCardProps) {
               <Skeleton className="h-6 w-20" />
             ) : (
               <>
+                {hasDiscount && (
+                  <div className="flex items-center space-x-2 mb-0.5">
+                    <span className="line-through text-sm text-muted-foreground">
+                      {formatCurrency(priceInUSD, 'USD')}
+                    </span>
+                    <span className="text-xs font-bold bg-orange-500 text-white px-1.5 py-0.5 rounded-full">
+                      -{product.discount}%
+                    </span>
+                  </div>
+                )}
                 <div className="text-xl font-bold text-green-600 dark:text-green-400">
-                  {formatCurrency(priceInUSD, 'USD')}
+                  {formatCurrency(finalDisplayPrice, 'USD')}
                 </div>
                 {displayPriceInSats && (
                   <div className="flex items-center text-xs text-orange-600 dark:text-orange-400 mt-1">
