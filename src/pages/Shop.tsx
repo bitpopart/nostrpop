@@ -313,11 +313,10 @@ const Shop = () => {
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
                       <div className="text-center sm:text-left">
                         <h3 className="font-semibold text-purple-700 dark:text-purple-300 text-sm mb-0.5">
-                          Ready to Purchase?
+                          Browse &amp; Buy — No Login Required
                         </h3>
                         <p className="text-xs text-purple-600 dark:text-purple-400">
-                          Log in with Nostr to buy products
-                          {" • Login required for purchases"}
+                          Pay with Bitcoin Lightning ⚡ — or log in with Nostr for extra features
                         </p>
                       </div>
                       <LoginArea className="max-w-48" />

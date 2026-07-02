@@ -11,6 +11,7 @@ import { useLivePrice } from '@/hooks/useLivePrice';
 import { useToast } from '@/hooks/useToast';
 import { useQuery } from '@tanstack/react-query';
 import { ImageGallery } from '@/components/marketplace/ImageGallery';
+import { PaymentDialog } from '@/components/marketplace/PaymentDialog';
 import { ArrowLeft, Package, Truck, Star, Shield, Heart, Share2, ExternalLink, Zap, ShoppingCart } from 'lucide-react';
 
 export function ProductPage() {
@@ -33,6 +34,8 @@ export function ProductPage() {
 
   // Convert to USD if needed
   const [priceInUSD, setPriceInUSD] = useState<number>(displayPrice);
+
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
 
   // Discount calculation
   const hasDiscount = product?.discount && product.discount > 0;
@@ -161,12 +164,8 @@ export function ProductPage() {
         description: "Opening product page on storeofvalue.eu...",
       });
     } else {
-      // Fallback action when no contact URL is provided
-      toast({
-        title: "Purchase Link Unavailable",
-        description: "This product doesn't have a purchase link. Please check the product description.",
-        variant: "destructive"
-      });
+      // No external URL — open Lightning payment dialog directly
+      setPaymentDialogOpen(true);
     }
   };
 
@@ -318,8 +317,8 @@ export function ProductPage() {
                       </>
                     ) : (
                       <>
-                        <ShoppingCart className="w-5 h-5 mr-2" />
-                        {isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
+                        <Zap className="w-5 h-5 mr-2" />
+                        {isOutOfStock ? 'Out of Stock' : 'Buy Now with Lightning'}
                       </>
                     )}
                   </Button>
@@ -413,6 +412,15 @@ export function ProductPage() {
 
         </div>
       </div>
+
+      {/* Lightning Payment Dialog — available without Nostr login */}
+      {product && (
+        <PaymentDialog
+          open={paymentDialogOpen}
+          onOpenChange={setPaymentDialogOpen}
+          product={product}
+        />
+      )}
     </div>
   );
 }
