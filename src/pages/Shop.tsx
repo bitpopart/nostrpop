@@ -81,14 +81,14 @@ function ShopCarousel({ items, isLoading }: { items: CarouselItem[]; isLoading: 
   const currentItem = items[index];
 
   return (
-    <div className="relative w-full rounded-2xl overflow-hidden group">
+    <div className="relative w-full rounded-2xl overflow-hidden group max-h-[320px] sm:max-h-[400px]">
       {/* Invisible spacer image keeps the container sized to the active image's natural dimensions */}
       <img
         key={currentItem.id + '-spacer'}
         src={currentItem.image_url}
         alt=""
         aria-hidden="true"
-        className="w-full h-auto block opacity-0 pointer-events-none"
+        className="w-full h-auto block opacity-0 pointer-events-none max-h-[320px] sm:max-h-[400px] object-contain"
       />
       {items.map((it, i) => (
         <img
@@ -227,64 +227,66 @@ const Shop = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-pink-50 to-yellow-50 dark:from-gray-900 dark:via-orange-900/20 dark:to-yellow-900/20">
       <div className="container mx-auto px-4 py-4 sm:py-6">
-        {/* Compact Header */}
-        <div className="flex items-center justify-between mb-3 gap-3">
-          <div className="flex items-center gap-2 min-w-0">
-            <img
-              src={`${import.meta.env.BASE_URL || '/'}Shop_button_1.svg`}
-              alt="Shop"
-              className="h-9 w-9 flex-shrink-0"
-            />
-            <h1 className="text-2xl sm:text-3xl font-bold leading-tight gradient-header-text truncate">
-              BitPop Marketplace
-            </h1>
+        <div className="w-full max-w-6xl mx-auto">
+          {/* Compact Header */}
+          <div className="flex items-center justify-between mb-3 gap-3">
+            <div className="flex items-center gap-2 min-w-0">
+              <img
+                src={`${import.meta.env.BASE_URL || '/'}Shop_button_1.svg`}
+                alt="Shop"
+                className="h-9 w-9 flex-shrink-0"
+              />
+              <h1 className="text-2xl sm:text-3xl font-bold leading-tight gradient-header-text truncate">
+                BitPop Marketplace
+              </h1>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <LightningStatusIndicator />
+              {user && isAdmin && (
+                <Badge
+                  className="hidden sm:inline-flex text-white border-0 text-xs"
+                  style={getGradientStyle('primary')}
+                >
+                  Admin
+                </Badge>
+              )}
+            </div>
           </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <LightningStatusIndicator />
-            {user && isAdmin && (
-              <Badge
-                className="hidden sm:inline-flex text-white border-0 text-xs"
-                style={getGradientStyle('primary')}
-              >
-                Admin
-              </Badge>
-            )}
+
+          {/* Lightning address row */}
+          <div className="flex items-center gap-1.5 mb-3 text-xs text-muted-foreground">
+            <Zap className="h-3.5 w-3.5 text-yellow-500 flex-shrink-0" />
+            <span className="truncate">Pay via Lightning: <code className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">bitpopart@walletofsatoshi.com</code></span>
           </div>
-        </div>
 
-        {/* Lightning address row */}
-        <div className="flex items-center gap-1.5 mb-3 text-xs text-muted-foreground">
-          <Zap className="h-3.5 w-3.5 text-yellow-500 flex-shrink-0" />
-          <span className="truncate">Pay via Lightning: <code className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">bitpopart@walletofsatoshi.com</code></span>
-        </div>
+          {/* Carousel — constrained to same width as content, capped height */}
+          {(carouselLoading || carouselMedia.length > 0) && (
+            <div className="mb-4">
+              <ShopCarousel items={carouselMedia} isLoading={carouselLoading} />
+            </div>
+          )}
 
-        {/* Carousel */}
-        {(carouselLoading || carouselMedia.length > 0) && (
-          <div className="mb-4">
-            <ShopCarousel items={carouselMedia} isLoading={carouselLoading} />
+          {/* Quick action buttons */}
+          <div className="flex flex-wrap gap-2 mb-5">
+            <Button
+              size="sm"
+              onClick={() => navigate('/free')}
+              className="gap-1.5 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white border-0 shadow-sm"
+            >
+              <Gift className="h-4 w-4" />
+              Free Downloads
+              <Download className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => navigate('/print')}
+              className="gap-1.5 bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white border-0 shadow-sm"
+            >
+              <Printer className="h-4 w-4" />
+              Print Posters
+            </Button>
+            <span className="text-xs text-muted-foreground self-center hidden sm:inline">A3 · A4 · A5 · A6 — pay &amp; download PDF</span>
           </div>
-        )}
-
-        {/* Quick action buttons */}
-        <div className="flex flex-wrap gap-2 mb-5">
-          <Button
-            size="sm"
-            onClick={() => navigate('/free')}
-            className="gap-1.5 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white border-0 shadow-sm"
-          >
-            <Gift className="h-4 w-4" />
-            Free Downloads
-            <Download className="h-3.5 w-3.5" />
-          </Button>
-          <Button
-            size="sm"
-            onClick={() => navigate('/print')}
-            className="gap-1.5 bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white border-0 shadow-sm"
-          >
-            <Printer className="h-4 w-4" />
-            Print Posters
-          </Button>
-          <span className="text-xs text-muted-foreground self-center hidden sm:inline">A3 · A4 · A5 · A6 — pay &amp; download PDF</span>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full max-w-6xl mx-auto">
