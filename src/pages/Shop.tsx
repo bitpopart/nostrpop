@@ -71,7 +71,7 @@ function ShopCarousel({ items, isLoading }: { items: CarouselItem[]; isLoading: 
   const next = () => { setIndex(i => (i + 1) % items.length); resetTimer(); };
 
   if (isLoading) {
-    return <Skeleton className="w-full rounded-2xl" style={{ aspectRatio: '16/7' }} />;
+    return <Skeleton className="w-full aspect-[4/3] rounded-2xl" />;
   }
 
   if (items.length === 0) {
@@ -81,21 +81,21 @@ function ShopCarousel({ items, isLoading }: { items: CarouselItem[]; isLoading: 
   const currentItem = items[index];
 
   return (
-    <div className="relative w-full rounded-2xl overflow-hidden group shadow-md">
-      {/* Spacer keeps the container height matching the image */}
+    <div className="relative w-full rounded-2xl overflow-hidden group">
+      {/* Invisible spacer image keeps the container sized to the active image's natural dimensions */}
       <img
         key={currentItem.id + '-spacer'}
         src={currentItem.image_url}
         alt=""
         aria-hidden="true"
-        className="w-full h-auto block opacity-0 pointer-events-none max-h-[320px] sm:max-h-[420px] object-contain"
+        className="w-full h-auto block opacity-0 pointer-events-none"
       />
       {items.map((it, i) => (
         <img
           key={it.id}
           src={it.image_url}
           alt={it.title}
-          className={`absolute inset-0 w-full h-full object-contain transition-opacity duration-700 bg-black/5 dark:bg-black/20 ${i === index ? 'opacity-100' : 'opacity-0'}`}
+          className={`absolute inset-0 w-full h-full object-contain transition-opacity duration-700 ${i === index ? 'opacity-100' : 'opacity-0'}`}
           loading={i === 0 ? 'eager' : 'lazy'}
         />
       ))}
@@ -143,8 +143,8 @@ const Shop = () => {
   const [searchParams] = useSearchParams();
   const { getGradientStyle } = useThemeColors();
 
-  // Fetch carousel images (same source as /app page)
-  const { data: carouselMedia = [], isLoading: carouselLoading } = useAppMedia('app-carousel');
+  // Fetch shop carousel images (separate from the /app carousel)
+  const { data: carouselMedia = [], isLoading: carouselLoading } = useAppMedia('shop-carousel');
 
   // Check if current user is admin
   const isAdmin = useIsAdmin();

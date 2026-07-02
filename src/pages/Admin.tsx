@@ -441,6 +441,14 @@ const Admin = () => {
       badge: 'Carousel'
     },
     {
+      title: 'Shop Carousel',
+      description: 'Edit the sliding image carousel on the /shop page',
+      icon: Store,
+      color: 'from-pink-500 to-rose-500',
+      action: () => setActiveTab('shop-carousel'),
+      badge: 'Shop Carousel'
+    },
+    {
       title: 'Chat Splash',
       description: 'Create animated group-chat scenes shown below the carousel on /app',
       icon: MessageSquare,
@@ -620,6 +628,9 @@ const Admin = () => {
             <TabsTrigger value="app">App</TabsTrigger>
             <TabsTrigger value="app-carousel" className="flex items-center gap-1 text-orange-600 dark:text-orange-400 font-semibold">
               🎠 Carousel
+            </TabsTrigger>
+            <TabsTrigger value="shop-carousel" className="flex items-center gap-1 text-pink-600 dark:text-pink-400 font-semibold">
+              🛍️ Shop Carousel
             </TabsTrigger>
             <TabsTrigger value="app-chat-splash" className="flex items-center gap-1 text-pink-600 dark:text-pink-400 font-semibold">
               💬 Chat Splash
@@ -1227,6 +1238,10 @@ const Admin = () => {
 
           <TabsContent value="app-carousel">
             <CarouselAdmin onBack={() => setActiveTab('app')} />
+          </TabsContent>
+
+          <TabsContent value="shop-carousel">
+            <CarouselAdmin onBack={() => setActiveTab('app-carousel')} />
           </TabsContent>
 
           <TabsContent value="app-chat-splash">
