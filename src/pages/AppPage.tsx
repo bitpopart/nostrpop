@@ -1932,7 +1932,7 @@ function AppCommunitySection() {
   const faqItems = [
     {
       q: 'What is BitPopArt?',
-      a: 'BitPopArt is a free Bitcoin & Pop Art creative platform by Johannes Oppewal. Download wallpapers, GIFs, avatars, banners, coloring pages and more — all Bitcoin-themed and completely free.',
+      a: 'BitPopArt is a free Bitcoin & Pop Art creative platform by Johannes Oppewal. Download wallpapers, GIFs, avatars, banners, coloring pages and more — completely free.',
     },
     {
       q: 'Is everything really free?',
