@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSeoMeta } from '@unhead/react';
 import { useSearchParams } from 'react-router-dom';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useMarketplaceProducts } from '@/hooks/useMarketplaceProducts';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useAppMedia } from '@/hooks/useAppContent';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -32,17 +33,118 @@ import {
   Download,
   Gift,
   Printer,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 
 import { useCategories } from '@/hooks/useCategories';
 import { usePrintPosters, useBtcEurRate, eurToLiveSats } from '@/hooks/usePrintPosters';
 import type { PrintPoster, PosterFormat } from '@/hooks/usePrintPosters';
 
+// ── Shop Image Carousel ────────────────────────────────────
+
+interface CarouselItem {
+  id: string;
+  image_url: string;
+  title: string;
+}
+
+function ShopCarousel({ items, isLoading }: { items: CarouselItem[]; isLoading: boolean }) {
+  const [index, setIndex] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const resetTimer = useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    if (items.length > 1) {
+      timerRef.current = setInterval(() => {
+        setIndex(i => (i + 1) % items.length);
+      }, 3500);
+    }
+  }, [items.length]);
+
+  useEffect(() => {
+    resetTimer();
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [resetTimer]);
+
+  const prev = () => { setIndex(i => (i - 1 + items.length) % items.length); resetTimer(); };
+  const next = () => { setIndex(i => (i + 1) % items.length); resetTimer(); };
+
+  if (isLoading) {
+    return <Skeleton className="w-full rounded-2xl" style={{ aspectRatio: '16/7' }} />;
+  }
+
+  if (items.length === 0) {
+    return null;
+  }
+
+  const currentItem = items[index];
+
+  return (
+    <div className="relative w-full rounded-2xl overflow-hidden group shadow-md">
+      {/* Spacer keeps the container height matching the image */}
+      <img
+        key={currentItem.id + '-spacer'}
+        src={currentItem.image_url}
+        alt=""
+        aria-hidden="true"
+        className="w-full h-auto block opacity-0 pointer-events-none max-h-[320px] sm:max-h-[420px] object-contain"
+      />
+      {items.map((it, i) => (
+        <img
+          key={it.id}
+          src={it.image_url}
+          alt={it.title}
+          className={`absolute inset-0 w-full h-full object-contain transition-opacity duration-700 bg-black/5 dark:bg-black/20 ${i === index ? 'opacity-100' : 'opacity-0'}`}
+          loading={i === 0 ? 'eager' : 'lazy'}
+        />
+      ))}
+
+      {/* Nav buttons */}
+      {items.length > 1 && (
+        <>
+          <button
+            className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/40 hover:bg-black/60 text-white rounded-full flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
+            onClick={prev}
+            aria-label="Previous image"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <button
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/40 hover:bg-black/60 text-white rounded-full flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
+            onClick={next}
+            aria-label="Next image"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </>
+      )}
+
+      {/* Dots */}
+      {items.length > 1 && (
+        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
+          {items.map((_, i) => (
+            <button
+              key={i}
+              aria-label={`Go to image ${i + 1}`}
+              className={`h-1.5 rounded-full transition-all ${i === index ? 'w-5 bg-white' : 'w-1.5 bg-white/50'}`}
+              onClick={() => { setIndex(i); resetTimer(); }}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 const Shop = () => {
   const { user } = useCurrentUser();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { getGradientStyle } = useThemeColors();
+
+  // Fetch carousel images (same source as /app page)
+  const { data: carouselMedia = [], isLoading: carouselLoading } = useAppMedia('app-carousel');
 
   // Check if current user is admin
   const isAdmin = useIsAdmin();
@@ -124,98 +226,96 @@ const Shop = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-pink-50 to-yellow-50 dark:from-gray-900 dark:via-orange-900/20 dark:to-yellow-900/20">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center mb-4 gap-3">
-            <img 
-              src={`${import.meta.env.BASE_URL || '/'}Shop_button_1.svg`} 
-              alt="Shop" 
-              className="h-12 w-12 flex-shrink-0" 
+      <div className="container mx-auto px-4 py-4 sm:py-6">
+        {/* Compact Header */}
+        <div className="flex items-center justify-between mb-3 gap-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <img
+              src={`${import.meta.env.BASE_URL || '/'}Shop_button_1.svg`}
+              alt="Shop"
+              className="h-9 w-9 flex-shrink-0"
             />
-            <h1 className="text-4xl font-bold leading-tight gradient-header-text">
+            <h1 className="text-2xl sm:text-3xl font-bold leading-tight gradient-header-text truncate">
               BitPop Marketplace
             </h1>
           </div>
-          <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            Discover and purchase amazing products on the Nostr network
-          </p>
-          <div className="mt-4 flex items-center justify-center space-x-4 text-sm text-muted-foreground">
-            <div className="flex items-center space-x-2">
-              <Zap className="h-4 w-4 text-yellow-500" />
-              <span>Lightning payments to: <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-xs">bitpopart@walletofsatoshi.com</code></span>
-            </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
             <LightningStatusIndicator />
-          </div>
-          {/* Free Downloads + Print Posters Buttons */}
-          <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
-            <div className="flex flex-col items-center gap-1">
-              <Button
-                size="lg"
-                onClick={() => navigate('/free')}
-                className="gap-2 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white border-0 shadow-md text-base px-8"
+            {user && isAdmin && (
+              <Badge
+                className="hidden sm:inline-flex text-white border-0 text-xs"
+                style={getGradientStyle('primary')}
               >
-                <Gift className="h-5 w-5" />
-                Free Downloads
-                <Download className="h-4 w-4 ml-1" />
-              </Button>
-              <p className="text-xs text-muted-foreground">
-                Free digital art — zap what you like
-              </p>
-            </div>
-            <div className="flex flex-col items-center gap-1">
-              <Button
-                size="lg"
-                onClick={() => navigate('/print')}
-                className="gap-2 bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white border-0 shadow-md text-base px-8"
-              >
-                <Printer className="h-5 w-5" />
-                Print Posters
-              </Button>
-              <p className="text-xs text-muted-foreground">
-                A3 · A4 · A5 · A6 — pay &amp; download PDF
-              </p>
-            </div>
+                Admin
+              </Badge>
+            )}
           </div>
+        </div>
 
-          {user && isAdmin && (
-            <Badge 
-              className="mt-4 text-white border-0"
-              style={getGradientStyle('primary')}
-            >
-              Admin Access • NIP-15 Marketplace
-            </Badge>
-          )}
+        {/* Lightning address row */}
+        <div className="flex items-center gap-1.5 mb-3 text-xs text-muted-foreground">
+          <Zap className="h-3.5 w-3.5 text-yellow-500 flex-shrink-0" />
+          <span className="truncate">Pay via Lightning: <code className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">bitpopart@walletofsatoshi.com</code></span>
+        </div>
+
+        {/* Carousel */}
+        {(carouselLoading || carouselMedia.length > 0) && (
+          <div className="mb-4">
+            <ShopCarousel items={carouselMedia} isLoading={carouselLoading} />
+          </div>
+        )}
+
+        {/* Quick action buttons */}
+        <div className="flex flex-wrap gap-2 mb-5">
+          <Button
+            size="sm"
+            onClick={() => navigate('/free')}
+            className="gap-1.5 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white border-0 shadow-sm"
+          >
+            <Gift className="h-4 w-4" />
+            Free Downloads
+            <Download className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => navigate('/print')}
+            className="gap-1.5 bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white border-0 shadow-sm"
+          >
+            <Printer className="h-4 w-4" />
+            Print Posters
+          </Button>
+          <span className="text-xs text-muted-foreground self-center hidden sm:inline">A3 · A4 · A5 · A6 — pay &amp; download PDF</span>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full max-w-6xl mx-auto">
           {isAdmin ? (
-            <TabsList className="grid w-full grid-cols-4 max-w-3xl mx-auto mb-8">
+            <TabsList className="grid w-full grid-cols-4 max-w-3xl mx-auto mb-5">
               <TabsTrigger value="marketplace">Marketplace</TabsTrigger>
               <TabsTrigger value="fundraisers">Fundraisers</TabsTrigger>
               <TabsTrigger value="admin">Products</TabsTrigger>
               <TabsTrigger value="fundraiser-admin">Fundraiser Admin</TabsTrigger>
             </TabsList>
           ) : (
-            <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto mb-8">
+            <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto mb-5">
               <TabsTrigger value="marketplace">Marketplace</TabsTrigger>
               <TabsTrigger value="fundraisers">Fundraisers</TabsTrigger>
             </TabsList>
           )}
 
           <TabsContent value="marketplace">
-            <div className="space-y-6">
+            <div className="space-y-4">
               {/* Login Prompt for Non-Logged-In Users */}
               {!user && (
                 <Card className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-purple-200 dark:border-purple-800">
-                  <CardContent className="pt-6">
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <CardContent className="py-3 px-4">
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
                       <div className="text-center sm:text-left">
-                        <h3 className="font-semibold text-purple-700 dark:text-purple-300 mb-1">
+                        <h3 className="font-semibold text-purple-700 dark:text-purple-300 text-sm mb-0.5">
                           Ready to Purchase?
                         </h3>
-                        <p className="text-sm text-purple-600 dark:text-purple-400">
-                          Log in with your Nostr account to buy products and access all marketplace features
+                        <p className="text-xs text-purple-600 dark:text-purple-400">
+                          Log in with Nostr to buy products
+                          {" • Login required for purchases"}
                         </p>
                       </div>
                       <LoginArea className="max-w-48" />
@@ -224,28 +324,19 @@ const Shop = () => {
                 </Card>
               )}
 
-              {/* Marketplace Header */}
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div>
-                  <h2 className="text-2xl font-bold">Marketplace</h2>
-                  <p className="text-muted-foreground">
-                    Discover products on the Nostr network
-                    {!user && " • Login required for purchases"}
-                  </p>
-                </div>
-
-                <div className="flex items-center space-x-2">
+              {/* Marketplace sub-header */}
+              <div className="flex flex-wrap justify-between items-center gap-2">
+                <div className="flex items-center gap-2">
                   {user && isAdmin && (
                     <Button
                       onClick={() => setActiveTab('admin')}
                       variant="outline"
                       size="sm"
                     >
-                      <Plus className="mr-2 h-4 w-4" />
+                      <Plus className="mr-1.5 h-3.5 w-3.5" />
                       Add Product
                     </Button>
                   )}
-
                   <Button
                     variant="outline"
                     size="sm"
