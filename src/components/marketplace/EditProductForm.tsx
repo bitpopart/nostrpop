@@ -30,7 +30,7 @@ import {
   Loader2,
   Image as ImageIcon,
   Save,
-  Percent
+  Percent,
 } from 'lucide-react';
 
 // Categories are now loaded dynamically from useCategories hook
@@ -53,7 +53,6 @@ const productSchema = z.object({
   type: z.enum(['physical', 'digital']),
   quantity: z.number().min(0).optional(),
   stallId: z.string().min(1, 'Stall ID is required'),
-  shippingCost: z.number().min(0).optional(),
   contactUrl: z.string().url('Must be a valid URL').optional().or(z.literal('')),
   specs: z.array(z.object({
     key: z.string().min(1),
@@ -61,12 +60,32 @@ const productSchema = z.object({
   })).optional()
 });
 
+interface ShippingRegion {
+  id: string;
+  name: string;
+  countries: string;
+  cost: number;
+}
+
 type ProductFormData = z.infer<typeof productSchema>;
 
 interface EditProductFormProps {
   product: MarketplaceProduct;
   onSuccess?: () => void;
   onCancel?: () => void;
+}
+
+// Convert old-format shipping (just {id, cost}) to new region format
+function normalizeShipping(shipping: MarketplaceProduct['shipping']): ShippingRegion[] {
+  if (!shipping || shipping.length === 0) {
+    return [{ id: 'region-1', name: '', countries: '', cost: 0 }];
+  }
+  return shipping.map((s, i) => ({
+    id: s.id || `region-${i}`,
+    name: (s as ShippingRegion).name || s.id || '',
+    countries: (s as ShippingRegion).countries || '',
+    cost: s.cost ?? 0,
+  }));
 }
 
 export function EditProductForm({ product, onSuccess, onCancel }: EditProductFormProps) {
@@ -78,6 +97,19 @@ export function EditProductForm({ product, onSuccess, onCancel }: EditProductFor
   const [specs, setSpecs] = useState<Array<{ key: string; value: string }>>(
     product.specs?.map(([key, value]) => ({ key, value })) || []
   );
+  const [shippingRegions, setShippingRegions] = useState<ShippingRegion[]>(() => normalizeShipping(product.shipping));
+
+  const addShippingRegion = () => {
+    setShippingRegions(prev => [...prev, { id: `region-${Date.now()}`, name: '', countries: '', cost: 0 }]);
+  };
+
+  const updateShippingRegion = (idx: number, field: keyof ShippingRegion, value: string | number) => {
+    setShippingRegions(prev => prev.map((r, i) => i === idx ? { ...r, [field]: value } : r));
+  };
+
+  const removeShippingRegion = (idx: number) => {
+    setShippingRegions(prev => prev.filter((_, i) => i !== idx));
+  };
 
   const { user } = useCurrentUser();
   const { mutate: createEvent, isPending: isPublishing } = useNostrPublish();
@@ -103,7 +135,6 @@ export function EditProductForm({ product, onSuccess, onCancel }: EditProductFor
       type: product.type,
       quantity: product.quantity,
       stallId: product.stall_id,
-      shippingCost: product.shipping?.[0]?.cost || 0,
       contactUrl: product.contact_url || ''
     }
   });
@@ -130,8 +161,8 @@ export function EditProductForm({ product, onSuccess, onCancel }: EditProductFor
     setValue('type', product.type);
     setValue('quantity', product.quantity);
     setValue('stallId', product.stall_id);
-    setValue('shippingCost', product.shipping?.[0]?.cost || 0);
     setValue('contactUrl', product.contact_url || '');
+    setShippingRegions(normalizeShipping(product.shipping));
   }, [product, setValue]);
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -238,6 +269,16 @@ export function EditProductForm({ product, onSuccess, onCancel }: EditProductFor
       // Filter out empty specs
       const validSpecs = specs.filter(spec => spec.key.trim() && spec.value.trim());
 
+      // Build shipping data: filter regions that have a name set
+      const validShipping = isPhysical
+        ? shippingRegions.filter(r => r.name.trim()).map(r => ({
+            id: r.id,
+            name: r.name.trim(),
+            countries: r.countries.trim(),
+            cost: Number(r.cost) || 0,
+          }))
+        : undefined;
+
       // Create updated product content
       const productContent = {
         name: data.name,
@@ -248,7 +289,7 @@ export function EditProductForm({ product, onSuccess, onCancel }: EditProductFor
         discount: data.discount || undefined,
         quantity: data.quantity,
         specs: validSpecs.length > 0 ? validSpecs.map(spec => [spec.key, spec.value]) : undefined,
-        shipping: isPhysical && data.shippingCost ? [{ id: 'standard', cost: data.shippingCost }] : undefined,
+        shipping: validShipping && validShipping.length > 0 ? validShipping : undefined,
         contact_url: data.contactUrl || undefined,
         stall_id: data.stallId,
         digital_files: digitalFiles.length > 0 ? digitalFiles : undefined,
@@ -522,18 +563,63 @@ export function EditProductForm({ product, onSuccess, onCancel }: EditProductFor
 
             {isPhysical && (
               <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="shippingCost" className="flex items-center">
-                    <Truck className="w-4 h-4 mr-1" />
-                    Shipping Cost
-                  </Label>
-                  <Input
-                    id="shippingCost"
-                    type="number"
-                    step="0.01"
-                    {...register('shippingCost', { valueAsNumber: true })}
-                    placeholder="0.00"
-                  />
+                {/* Region-based shipping */}
+                <div className="space-y-3 p-4 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-900/10">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Truck className="w-4 h-4 text-blue-600" />
+                      <Label className="font-medium text-blue-700 dark:text-blue-400">Shipping Regions</Label>
+                    </div>
+                    <Button type="button" variant="outline" size="sm" onClick={addShippingRegion}>
+                      <Plus className="w-3 h-3 mr-1" />
+                      Add Region
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Set shipping costs per region. Use 0 for free shipping. Leave countries blank to match all.
+                  </p>
+                  <div className="space-y-2">
+                    {shippingRegions.map((region, idx) => (
+                      <div key={region.id} className="grid grid-cols-[1fr_1.5fr_auto_auto] gap-2 items-center">
+                        <Input
+                          placeholder="Region name (e.g. Netherlands)"
+                          value={region.name}
+                          onChange={(e) => updateShippingRegion(idx, 'name', e.target.value)}
+                          className="text-sm"
+                        />
+                        <Input
+                          placeholder="Countries (e.g. NL, BE, DE)"
+                          value={region.countries}
+                          onChange={(e) => updateShippingRegion(idx, 'countries', e.target.value)}
+                          className="text-sm"
+                        />
+                        <div className="relative w-24">
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            placeholder="0.00"
+                            value={region.cost === 0 ? '' : region.cost}
+                            onChange={(e) => updateShippingRegion(idx, 'cost', parseFloat(e.target.value) || 0)}
+                            className="text-sm pr-6"
+                          />
+                          {region.cost === 0 && (
+                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-green-600 font-semibold pointer-events-none">Free</span>
+                          )}
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeShippingRegion(idx)}
+                          className="text-red-500 hover:text-red-700 px-2"
+                          disabled={shippingRegions.length === 1}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
                 <div className="space-y-2">

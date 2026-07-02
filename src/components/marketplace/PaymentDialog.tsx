@@ -27,6 +27,13 @@ import {
   MapPin
 } from 'lucide-react';
 
+interface ShippingRegion {
+  id: string;
+  name: string;
+  countries: string;
+  cost: number;
+}
+
 interface MarketplaceProduct {
   id: string;
   event?: unknown; // NostrEvent - optional for sample data
@@ -39,12 +46,23 @@ interface MarketplaceProduct {
   category: string;
   type: 'physical' | 'digital';
   specs?: Array<[string, string]>;
-  shipping?: Array<{ id: string; cost: number }>;
+  shipping?: ShippingRegion[];
   digital_files?: string[];
   digital_file_names?: string[];
   product_url?: string;
   stall_id: string;
   created_at: string;
+}
+
+// Find the matching shipping region for a given country code/name
+function findShippingRegion(regions: ShippingRegion[], country: string): ShippingRegion | undefined {
+  if (!country.trim()) return undefined;
+  const needle = country.trim().toLowerCase();
+  // Exact or partial match within the countries field
+  return regions.find(r => {
+    const haystack = r.countries.toLowerCase().split(',').map(c => c.trim());
+    return haystack.some(c => c === needle || c.startsWith(needle) || needle.startsWith(c));
+  }) ?? regions.find(r => r.countries.trim() === ''); // fallback: region with no country restriction
 }
 
 interface PaymentDialogProps {
@@ -90,8 +108,13 @@ export function PaymentDialog({ open, onOpenChange, product }: PaymentDialogProp
   const { isDetecting: isDetectingPayment, startDetection, stopDetection, payWithWebLN, openLightningWallet } = useEnhancedPaymentDetection();
   const { toast } = useToast();
 
-  const hasShipping = product.shipping && product.shipping.length > 0;
-  const shippingCost = hasShipping ? product.shipping![0].cost : 0;
+  const hasShipping = product.type === 'physical' && product.shipping && product.shipping.length > 0;
+
+  // Dynamically match shipping region based on buyer country
+  const matchedRegion = hasShipping
+    ? findShippingRegion(product.shipping!, buyerInfo.address.country)
+    : undefined;
+  const shippingCost = matchedRegion ? matchedRegion.cost : (hasShipping ? product.shipping![0].cost : 0);
   const totalPrice = product.price + (product.type === 'physical' ? shippingCost : 0);
 
   // Reset state when dialog opens/closes
@@ -445,11 +468,26 @@ export function PaymentDialog({ open, onOpenChange, product }: PaymentDialogProp
 
               {product.type === 'physical' && hasShipping && (
                 <div className="flex justify-between text-sm text-muted-foreground">
-                  <span className="flex items-center">
-                    <Truck className="w-4 h-4 mr-1" />
+                  <span className="flex items-center gap-1">
+                    <Truck className="w-4 h-4" />
                     Shipping
+                    {matchedRegion && (
+                      <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded">
+                        {matchedRegion.name}
+                      </span>
+                    )}
                   </span>
-                  <span>{formatCurrency(shippingCost, product.currency)}</span>
+                  <span>
+                    {shippingCost === 0
+                      ? <span className="text-green-600 font-medium">Free</span>
+                      : formatCurrency(shippingCost, product.currency)
+                    }
+                  </span>
+                </div>
+              )}
+              {product.type === 'physical' && hasShipping && !matchedRegion && buyerInfo.address.country && (
+                <div className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 p-2 rounded">
+                  ⚠️ No shipping region matched for "{buyerInfo.address.country}". Please check with the seller.
                 </div>
               )}
 

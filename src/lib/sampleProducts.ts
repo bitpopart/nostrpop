@@ -1,5 +1,12 @@
 // Sample marketplace products for demonstration
 
+export interface ShippingRegion {
+  id: string;
+  name: string;       // e.g. "Netherlands", "Europe", "Worldwide"
+  countries: string;  // comma-separated ISO codes or country names, e.g. "NL" or "NL, BE, DE"
+  cost: number;       // 0 = free shipping
+}
+
 export interface MarketplaceProduct {
   id: string;
   event?: unknown; // NostrEvent - optional for sample data
@@ -13,7 +20,7 @@ export interface MarketplaceProduct {
   category: string;
   type: 'physical' | 'digital';
   specs?: Array<[string, string]>;
-  shipping?: Array<{ id: string; cost: number }>;
+  shipping?: ShippingRegion[];
   digital_files?: string[];
   digital_file_names?: string[];
   product_url?: string; // URL for physical products - opens in same site

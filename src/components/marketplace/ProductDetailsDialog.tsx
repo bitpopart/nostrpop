@@ -18,6 +18,13 @@ import {
   ChevronRight
 } from 'lucide-react';
 
+interface ShippingRegion {
+  id: string;
+  name: string;
+  countries: string;
+  cost: number;
+}
+
 interface MarketplaceProduct {
   id: string;
   event?: unknown; // NostrEvent - optional for sample data
@@ -31,7 +38,7 @@ interface MarketplaceProduct {
   category: string;
   type: 'physical' | 'digital';
   specs?: Array<[string, string]>;
-  shipping?: Array<{ id: string; cost: number }>;
+  shipping?: ShippingRegion[];
   digital_files?: string[];
   stall_id: string;
   created_at: string;
@@ -49,7 +56,6 @@ export function ProductDetailsDialog({ open, onOpenChange, product }: ProductDet
 
   const isOutOfStock = product.quantity !== undefined && product.quantity <= 0;
   const hasShipping = product.shipping && product.shipping.length > 0;
-  const shippingCost = hasShipping ? product.shipping![0].cost : 0;
   const createdDate = new Date(product.created_at);
   const hasDiscount = product.discount && product.discount > 0;
   const discountedPrice = hasDiscount ? product.price * (1 - product.discount! / 100) : null;
@@ -221,9 +227,22 @@ export function ProductDetailsDialog({ open, onOpenChange, product }: ProductDet
                 </div>
 
                 {product.type === 'physical' && hasShipping && (
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <Truck className="w-4 h-4 mr-1" />
-                    <span>+ {formatCurrency(shippingCost, product.currency)} shipping</span>
+                  <div className="mt-1 space-y-1">
+                    <div className="flex items-center text-xs text-muted-foreground">
+                      <Truck className="w-3 h-3 mr-1" />
+                      <span>Shipping by region:</span>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {product.shipping!.map((region) => (
+                        <span key={region.id} className="text-xs bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full border border-blue-200 dark:border-blue-800">
+                          {region.name || region.id}:&nbsp;
+                          {region.cost === 0
+                            ? <span className="text-green-600 font-semibold">Free</span>
+                            : formatCurrency(region.cost, product.currency)
+                          }
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 )}
 
@@ -315,7 +334,7 @@ export function ProductDetailsDialog({ open, onOpenChange, product }: ProductDet
                 size="lg"
               >
                 <ShoppingCart className="w-5 h-5 mr-2" />
-                {isOutOfStock ? 'Out of Stock' : `Buy Now - ${formatCurrency((discountedPrice ?? product.price) + (product.type === 'physical' ? shippingCost : 0), product.currency)}`}
+                {isOutOfStock ? 'Out of Stock' : `Buy Now - ${formatCurrency(discountedPrice ?? product.price, product.currency)}${product.type === 'physical' && hasShipping ? ' + shipping' : ''}`}
               </Button>
             </div>
           </div>
