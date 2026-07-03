@@ -48,6 +48,8 @@ export interface GridTile {
   alt?: string;
   /** Display order */
   order: number;
+  /** Optional discount percentage to show as a badge (e.g. 20 = "-20%") */
+  discount?: number;
 }
 
 export type HomepageView = 'gallery' | 'grid' | 'progress';

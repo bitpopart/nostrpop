@@ -9,16 +9,20 @@ import { formatCurrency } from '@/hooks/usePayment';
 import { useMarketplaceProduct } from '@/hooks/useMarketplaceProducts';
 import { useLivePrice } from '@/hooks/useLivePrice';
 import { useToast } from '@/hooks/useToast';
+import { useCart } from '@/hooks/useCart';
 import { useQuery } from '@tanstack/react-query';
 import { ImageGallery } from '@/components/marketplace/ImageGallery';
 import { PaymentDialog } from '@/components/marketplace/PaymentDialog';
-import { ArrowLeft, Package, Truck, Star, Shield, Heart, Share2, ExternalLink, Zap, ShoppingCart } from 'lucide-react';
+import { CartDrawer } from '@/components/marketplace/CartDrawer';
+import { ArrowLeft, Package, Truck, Star, Shield, Heart, Share2, ExternalLink, Zap, ShoppingCart, Plus } from 'lucide-react';
 
 export function ProductPage() {
   const { productId } = useParams<{ productId: string }>();
   const navigate = useNavigate();
   const { data: product, isLoading } = useMarketplaceProduct(productId || '');
   const { toast } = useToast();
+  const { addItem, totalItems } = useCart();
+  const [cartOpen, setCartOpen] = useState(false);
 
   // Fetch live price from source URL
   const { data: livePrice } = useLivePrice(
@@ -162,9 +166,22 @@ export function ProductPage() {
         description: "Opening product page on storeofvalue.eu...",
       });
     } else {
-      // No external URL — open Lightning payment dialog directly
       setPaymentDialogOpen(true);
     }
+  };
+
+  const handleAddToCart = () => {
+    addItem({
+      id: product.id,
+      name: product.name,
+      price: finalPriceUSD,
+      currency: 'USD',
+      discount: product.discount,
+      images: product.images || [],
+      type: product.type,
+      category: product.category,
+    });
+    toast({ title: 'Added to cart 🛒', description: `${product.name} added. View your cart to checkout.` });
   };
 
   return (
@@ -328,6 +345,29 @@ export function ProductPage() {
                   </Button>
                 </div>
 
+                {/* Add to Cart + Cart viewer */}
+                {!isOutOfStock && !hasBuyUrl && (
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      onClick={handleAddToCart}
+                      className="flex-1 gap-2 border-orange-300 text-orange-700 hover:bg-orange-50 dark:border-orange-700 dark:text-orange-400 dark:hover:bg-orange-900/20"
+                    >
+                      <Plus className="w-5 h-5" />
+                      Add to Cart
+                    </Button>
+                    {totalItems > 0 && (
+                      <Button variant="outline" size="lg" onClick={() => setCartOpen(true)} className="relative">
+                        <ShoppingCart className="w-5 h-5" />
+                        <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-orange-500 text-white text-[10px] font-bold flex items-center justify-center">
+                          {totalItems > 9 ? '9+' : totalItems}
+                        </span>
+                      </Button>
+                    )}
+                  </div>
+                )}
+
                 {/* Trust Indicators */}
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div className="flex items-center space-x-2 text-green-600">
@@ -419,6 +459,9 @@ export function ProductPage() {
           product={product}
         />
       )}
+
+      {/* Cart Drawer */}
+      <CartDrawer open={cartOpen} onOpenChange={setCartOpen} />
     </div>
   );
 }

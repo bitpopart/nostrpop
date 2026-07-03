@@ -15,6 +15,7 @@ interface PickerItem {
   imageUrl: string;
   linkUrl: string;
   alt: string;
+  discount?: number;
 }
 
 interface TilePickerDialogProps {
@@ -76,6 +77,14 @@ function PickerTile({
       <div className="placeholder absolute inset-0 bg-gray-100 dark:bg-gray-800 hidden items-center justify-center">
         <ImageIcon className="h-5 w-5 text-gray-300" />
       </div>
+      {/* discount badge */}
+      {item.discount && item.discount > 0 && (
+        <div className="absolute top-1 right-1 z-10">
+          <span className="text-[9px] font-bold bg-orange-500 text-white px-1 py-0.5 rounded-full shadow leading-none">
+            -{item.discount}%
+          </span>
+        </div>
+      )}
       {/* selected overlay */}
       {selected && (
         <div className="absolute inset-0 bg-purple-600/40 flex items-center justify-center">
@@ -116,7 +125,12 @@ export function TilePickerDialog({ open, onClose, onAdd }: TilePickerDialogProps
 
   const shopItems: PickerItem[] = shopProducts
     .filter(p => p.images?.[0])
-    .map(p => ({ imageUrl: p.images[0], linkUrl: `/shop`, alt: p.name }));
+    .map(p => ({
+      imageUrl: p.images[0],
+      linkUrl: p.type === 'physical' ? `/shop/${p.id}` : `/shop`,
+      alt: p.name,
+      discount: p.discount && p.discount > 0 ? p.discount : undefined,
+    }));
 
   const tabItems: Record<Tab, PickerItem[]> = {
     art: artItems,
@@ -160,7 +174,7 @@ export function TilePickerDialog({ open, onClose, onAdd }: TilePickerDialogProps
       for (const item of tabItems[tab.id]) {
         const key = itemKey(item);
         if (selected.has(key)) {
-          tiles.push({ imageUrl: item.imageUrl, linkUrl: item.linkUrl, alt: item.alt });
+          tiles.push({ imageUrl: item.imageUrl, linkUrl: item.linkUrl, alt: item.alt, discount: item.discount });
         }
       }
     }

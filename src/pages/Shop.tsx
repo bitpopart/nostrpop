@@ -5,6 +5,7 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useMarketplaceProducts } from '@/hooks/useMarketplaceProducts';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useAppMedia } from '@/hooks/useAppContent';
+import { useCart } from '@/hooks/useCart';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -16,6 +17,7 @@ import { RelaySelector } from '@/components/RelaySelector';
 import { ProductCard } from '@/components/marketplace/ProductCard';
 import { ProductManagement } from '@/components/marketplace/ProductManagement';
 import { LightningStatusIndicator } from '@/components/marketplace/LightningStatusIndicator';
+import { CartDrawer } from '@/components/marketplace/CartDrawer';
 import { FundraiserCard } from '@/components/fundraiser/FundraiserCard';
 import { FundraiserManagement } from '@/components/fundraiser/FundraiserManagement';
 import { useFundraisers } from '@/hooks/useFundraisers';
@@ -142,6 +144,8 @@ const Shop = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { getGradientStyle } = useThemeColors();
+  const { totalItems } = useCart();
+  const [cartOpen, setCartOpen] = useState(false);
 
   // Fetch shop carousel images (separate from the /app carousel)
   const { data: carouselMedia = [], isLoading: carouselLoading } = useAppMedia('shop-carousel');
@@ -242,6 +246,21 @@ const Shop = () => {
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
               <LightningStatusIndicator />
+              {/* Cart button */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCartOpen(true)}
+                className="relative gap-1.5"
+              >
+                <ShoppingCart className="h-4 w-4" />
+                <span className="hidden sm:inline">Cart</span>
+                {totalItems > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-orange-500 text-white text-[10px] font-bold flex items-center justify-center">
+                    {totalItems > 9 ? '9+' : totalItems}
+                  </span>
+                )}
+              </Button>
               {user && isAdmin && (
                 <Badge
                   className="hidden sm:inline-flex text-white border-0 text-xs"
@@ -641,6 +660,9 @@ const Shop = () => {
           <p>Nostr & BitPopArt {new Date().getFullYear()}</p>
         </div>
       </div>
+
+      {/* Cart Drawer */}
+      <CartDrawer open={cartOpen} onOpenChange={setCartOpen} />
     </div>
   );
 };

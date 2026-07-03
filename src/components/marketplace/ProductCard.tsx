@@ -9,6 +9,8 @@ import { useLivePrice } from '@/hooks/useLivePrice';
 import { useFiatToSats } from '@/hooks/useFiatToSats';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useCart } from '@/hooks/useCart';
+import { useToast } from '@/hooks/useToast';
 import { SocialShareButtons } from '@/components/SocialShareButtons';
 import { PaymentDialog } from './PaymentDialog';
 import { ProductDetailsDialog } from './ProductDetailsDialog';
@@ -19,7 +21,8 @@ import {
   Download,
   Eye,
   Truck,
-  Zap
+  Zap,
+  Plus
 } from 'lucide-react';
 import type { NostrEvent } from '@nostrify/nostrify';
 
@@ -62,6 +65,8 @@ export function ProductCard({ product, onViewDetails }: ProductCardProps) {
   const isAdmin = useIsAdmin();
   const navigate = useNavigate();
   const { getGradientStyle } = useThemeColors();
+  const { addItem } = useCart();
+  const { toast } = useToast();
 
   // Fetch live price from source URL if available
   const { data: livePrice, isLoading: priceLoading } = useLivePrice(
@@ -106,14 +111,28 @@ export function ProductCard({ product, onViewDetails }: ProductCardProps) {
   };
 
   const handleImageClick = () => {
-    // Same behavior as "Buy Now" button
     if (product.type === 'physical') {
-      // For physical products, navigate to the internal product page
       navigate(`/shop/${product.id}`);
     } else if (product.type === 'digital') {
-      // For digital products, open payment dialog
       setPaymentDialogOpen(true);
     }
+  };
+
+  const handleAddToCart = () => {
+    addItem({
+      id: product.id,
+      name: product.name,
+      price: finalDisplayPrice,
+      currency: 'USD',
+      discount: product.discount,
+      images: product.images,
+      type: product.type,
+      category: product.category,
+    });
+    toast({
+      title: 'Added to cart 🛒',
+      description: `${product.name} added. Open cart to checkout.`,
+    });
   };
 
   return (
@@ -243,29 +262,42 @@ export function ProductCard({ product, onViewDetails }: ProductCardProps) {
           )}
 
           {/* Actions */}
-          <div className="flex space-x-2">
-            {product.type === 'digital' && (
+          <div className="flex flex-col gap-2">
+            <div className="flex gap-2">
+              {product.type === 'digital' && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleViewDetails}
+                  className="flex items-center gap-1 flex-1"
+                >
+                  <Eye className="w-4 h-4" />
+                  <span>View</span>
+                </Button>
+              )}
+              <Button
+                size="sm"
+                onClick={handleBuyNow}
+                disabled={isOutOfStock}
+                className="text-white border-0 flex-1"
+                style={!isOutOfStock ? getGradientStyle('primary') : undefined}
+              >
+                <ShoppingCart className="w-4 h-4 mr-1" />
+                {isOutOfStock ? 'Sold Out' : (product.type === 'physical' ? 'View Product' : 'Buy Now')}
+              </Button>
+            </div>
+            {/* Add to Cart button */}
+            {!isOutOfStock && (
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handleViewDetails}
-                className="flex items-center space-x-1 flex-1"
+                onClick={handleAddToCart}
+                className="w-full gap-1.5 border-orange-300 text-orange-700 hover:bg-orange-50 dark:border-orange-700 dark:text-orange-400 dark:hover:bg-orange-900/20"
               >
-                <Eye className="w-4 h-4" />
-                <span>View</span>
+                <Plus className="w-3.5 h-3.5" />
+                Add to Cart
               </Button>
             )}
-
-            <Button
-              size="sm"
-              onClick={handleBuyNow}
-              disabled={isOutOfStock}
-              className="text-white border-0 flex-1"
-              style={!isOutOfStock ? getGradientStyle('primary') : undefined}
-            >
-              <ShoppingCart className="w-4 h-4 mr-1" />
-              {isOutOfStock ? 'Sold Out' : (product.type === 'physical' ? 'View Product' : 'Buy Now')}
-            </Button>
           </div>
         </CardContent>
       </Card>

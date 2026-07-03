@@ -578,8 +578,6 @@ function PhotoGridTile({ tile }: { tile: GridTile }) {
         }`}
         loading="lazy"
         ref={(el) => {
-          // If the image is already cached, onLoad may have fired before React
-          // attached the handler — reconcile immediately.
           if (el?.complete && el.naturalWidth > 0 && !loaded) setLoaded(true);
         }}
         onLoad={() => setLoaded(true)}
@@ -587,6 +585,14 @@ function PhotoGridTile({ tile }: { tile: GridTile }) {
       />
       {/* subtle overlay on hover */}
       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200" />
+      {/* Discount badge */}
+      {tile.discount && tile.discount > 0 && (
+        <div className="absolute top-1 right-1 z-10">
+          <span className="text-[10px] font-bold bg-orange-500 text-white px-1.5 py-0.5 rounded-full shadow leading-none">
+            -{tile.discount}%
+          </span>
+        </div>
+      )}
     </div>
   );
 }
