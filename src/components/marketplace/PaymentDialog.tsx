@@ -87,6 +87,7 @@ interface BuyerInfo {
 export function PaymentDialog({ open, onOpenChange, product }: PaymentDialogProps) {
   const navigate = useNavigate();
   const [paymentMethod] = useState<'lightning' | 'stripe'>('lightning');
+  const [quantity, setQuantity] = useState(1);
   const [buyerInfo, setBuyerInfo] = useState<BuyerInfo>({
     email: '',
     name: '',
@@ -108,20 +109,16 @@ export function PaymentDialog({ open, onOpenChange, product }: PaymentDialogProp
   const { isDetecting: isDetectingPayment, startDetection, stopDetection, payWithWebLN, openLightningWallet } = useEnhancedPaymentDetection();
   const { toast } = useToast();
 
-  const hasShipping = product.type === 'physical' && product.shipping && product.shipping.length > 0;
-
-  // Dynamically match shipping region based on buyer country
-  const matchedRegion = hasShipping
-    ? findShippingRegion(product.shipping!, buyerInfo.address.country)
-    : undefined;
-  const shippingCost = matchedRegion ? matchedRegion.cost : (hasShipping ? product.shipping![0].cost : 0);
-  const totalPrice = product.price + (product.type === 'physical' ? shippingCost : 0);
+  // Shipping is calculated at checkout / after order placement — not added here
+  const subtotal = product.price * quantity;
+  const totalPrice = subtotal; // Shipping calculated separately
 
   // Reset state when dialog opens/closes
   useEffect(() => {
     if (!open) {
       setPaymentCompleted(false);
       setIsProcessing(false);
+      setQuantity(1);
       stopDetection();
       clearInvoice();
       setBuyerInfo({
@@ -174,6 +171,7 @@ export function PaymentDialog({ open, onOpenChange, product }: PaymentDialogProp
         `Hello,\n\nI have just purchased an artwork from BitPopArt.\n\n` +
         `Order Number: ${savedOrder.order_number}\n` +
         `Artwork: ${product.name}\n` +
+        `Quantity: ${quantity}\n` +
         `Price Paid: ${totalPrice} ${product.currency}\n` +
         `Buyer Name: ${buyerInfo.name}\n` +
         `Buyer Email: ${buyerInfo.email}\n` +
@@ -386,19 +384,21 @@ export function PaymentDialog({ open, onOpenChange, product }: PaymentDialogProp
                     <span className="font-medium">{product.name}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Price:</span>
-                    <span className="font-medium">{formatCurrency(product.price, product.currency)}</span>
+                    <span>Quantity:</span>
+                    <span className="font-medium">×{quantity}</span>
                   </div>
-                  {hasShipping && (
-                    <div className="flex justify-between">
-                      <span>Shipping:</span>
-                      <span className="font-medium">{formatCurrency(shippingCost, product.currency)}</span>
-                    </div>
-                  )}
+                  <div className="flex justify-between">
+                    <span>Price:</span>
+                    <span className="font-medium">{formatCurrency(product.price, product.currency)} each</span>
+                  </div>
                   <Separator />
                   <div className="flex justify-between font-semibold">
-                    <span>Total:</span>
+                    <span>Subtotal:</span>
                     <span className="text-green-600">{formatCurrency(totalPrice, product.currency)}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-blue-50 dark:bg-blue-900/20 px-3 py-2 rounded-lg">
+                    <Truck className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
+                    <span>Shipping will be arranged separately</span>
                   </div>
 
                   <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
@@ -461,40 +461,45 @@ export function PaymentDialog({ open, onOpenChange, product }: PaymentDialogProp
               <CardTitle className="text-lg">Order Summary</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="flex justify-between">
-                <span>{product.name}</span>
-                <span>{formatCurrency(product.price, product.currency)}</span>
+              {/* Product row with quantity controls */}
+              <div className="flex justify-between items-start gap-2">
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium truncate">{product.name}</p>
+                  <p className="text-xs text-muted-foreground">{formatCurrency(product.price, product.currency)} each</p>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                    className="w-7 h-7 rounded-full border border-gray-300 dark:border-gray-600 flex items-center justify-center text-sm font-bold hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-40"
+                    disabled={quantity <= 1}
+                  >
+                    −
+                  </button>
+                  <span className="w-6 text-center font-semibold text-sm">{quantity}</span>
+                  <button
+                    type="button"
+                    onClick={() => setQuantity(q => q + 1)}
+                    className="w-7 h-7 rounded-full border border-gray-300 dark:border-gray-600 flex items-center justify-center text-sm font-bold hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    +
+                  </button>
+                  <span className="text-sm font-semibold w-16 text-right">{formatCurrency(subtotal, product.currency)}</span>
+                </div>
               </div>
 
-              {product.type === 'physical' && hasShipping && (
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <Truck className="w-4 h-4" />
-                    Shipping
-                    {matchedRegion && (
-                      <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded">
-                        {matchedRegion.name}
-                      </span>
-                    )}
-                  </span>
-                  <span>
-                    {shippingCost === 0
-                      ? <span className="text-green-600 font-medium">Free</span>
-                      : formatCurrency(shippingCost, product.currency)
-                    }
-                  </span>
-                </div>
-              )}
-              {product.type === 'physical' && hasShipping && !matchedRegion && buyerInfo.address.country && (
-                <div className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 p-2 rounded">
-                  ⚠️ No shipping region matched for "{buyerInfo.address.country}". Please check with the seller.
+              {/* Shipping note for physical products */}
+              {product.type === 'physical' && (
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-blue-50 dark:bg-blue-900/20 px-3 py-2 rounded-lg">
+                  <Truck className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
+                  <span>Shipping cost calculated at checkout — one flat rate regardless of quantity</span>
                 </div>
               )}
 
               <Separator />
 
               <div className="flex justify-between font-semibold text-lg">
-                <span>Total</span>
+                <span>Subtotal{quantity > 1 ? ` (×${quantity})` : ''}</span>
                 <span className="text-green-600">
                   {formatCurrency(totalPrice, product.currency)}
                 </span>

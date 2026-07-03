@@ -151,7 +151,6 @@ export function ProductPage() {
     return null; // Will redirect in useEffect
   }
 
-  const hasShipping = product.shipping && product.shipping.length > 0;
   const isOutOfStock = product.quantity !== undefined && product.quantity <= 0;
   const hasBuyUrl = product.contact_url && product.contact_url.trim() !== '';
 
@@ -237,30 +236,10 @@ export function ProductPage() {
                 </p>
               </div>
             )}
-            {hasShipping && (
-              <div className="mb-4 space-y-1">
-                <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                  <Truck className="w-4 h-4" />
-                  <span>Shipping by region:</span>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {product.shipping!.map((region) => (
-                    <span
-                      key={region.id}
-                      className="inline-flex items-center text-xs bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 px-2.5 py-1 rounded-full border border-blue-200 dark:border-blue-800"
-                    >
-                      <span className="font-medium">{region.name || region.id}</span>
-                      {region.countries && (
-                        <span className="ml-1 text-blue-500 dark:text-blue-400">({region.countries})</span>
-                      )}
-                      <span className="mx-1">·</span>
-                      {region.cost === 0
-                        ? <span className="text-green-600 dark:text-green-400 font-semibold">Free</span>
-                        : <span>{formatCurrency(region.cost, displayCurrency)}</span>
-                      }
-                    </span>
-                  ))}
-                </div>
+            {product.type === 'physical' && (
+              <div className="mb-4 flex items-center gap-1.5 text-sm text-muted-foreground bg-blue-50 dark:bg-blue-900/20 px-3 py-2 rounded-lg w-fit">
+                <Truck className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                <span>Shipping calculated at checkout — one flat rate, no matter how many items</span>
               </div>
             )}
 
@@ -385,7 +364,7 @@ export function ProductPage() {
               )}
 
               {/* Shipping Info */}
-              {hasShipping && (
+              {product.type === 'physical' && (
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-lg flex items-center">
@@ -394,22 +373,9 @@ export function ProductPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-2">
-                      {product.shipping!.map((region) => (
-                        <div key={region.id} className="flex items-center justify-between text-sm">
-                          <div>
-                            <span className="font-medium">{region.name || region.id}</span>
-                            {region.countries && (
-                              <span className="ml-2 text-xs text-muted-foreground">({region.countries})</span>
-                            )}
-                          </div>
-                          {region.cost === 0
-                            ? <span className="text-green-600 font-semibold">Free</span>
-                            : <span className="text-muted-foreground">{formatCurrency(region.cost, displayCurrency)}</span>
-                          }
-                        </div>
-                      ))}
-                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Shipping cost is calculated at checkout based on your location. One flat shipping rate applies — no matter how many items you order.
+                    </p>
                   </CardContent>
                 </Card>
               )}

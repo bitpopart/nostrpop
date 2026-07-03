@@ -187,27 +187,11 @@ export function ProductCard({ product, onViewDetails }: ProductCardProps) {
             {product.description}
           </CardDescription>
 
-          {/* Shipping info for physical products */}
-          {product.type === 'physical' && hasShipping && (
-            <div className="mb-3">
-              <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
-                <Truck className="w-3 h-3 flex-shrink-0" />
-                <span className="font-medium">Shipping:</span>
-              </div>
-              <div className="flex flex-wrap gap-1">
-                {product.shipping!.map((region) => (
-                  <span
-                    key={region.id}
-                    className="inline-flex items-center gap-1 text-xs bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full border border-blue-200 dark:border-blue-800"
-                  >
-                    {region.name || region.id}:&nbsp;
-                    {region.cost === 0
-                      ? <span className="text-green-600 dark:text-green-400 font-semibold">Free</span>
-                      : <span>{formatCurrency(region.cost, product.currency)}</span>
-                    }
-                  </span>
-                ))}
-              </div>
+          {/* Shipping info for physical products — calculated at checkout */}
+          {product.type === 'physical' && (
+            <div className="mb-3 flex items-center gap-1 text-xs text-muted-foreground">
+              <Truck className="w-3 h-3 flex-shrink-0" />
+              <span>Shipping calculated at checkout</span>
             </div>
           )}
 

@@ -17,6 +17,7 @@ import { useHomepageSettings } from '@/hooks/useHomepageSettings';
 import { useBitPopArtPosts, useFeaturedBitPopArtPosts } from '@/hooks/useBitPopArtPosts';
 import { useAppMedia } from '@/hooks/useAppContent';
 import { useAnimations } from '@/hooks/useAnimations';
+import { useMarketplaceProducts } from '@/hooks/useMarketplaceProducts';
 import { genUserName } from '@/lib/genUserName';
 import { RelaySelector } from '@/components/RelaySelector';
 import { ArtProgressToggle } from '@/components/ArtProgressToggle';
@@ -73,6 +74,7 @@ import {
   Bookmark,
   Share,
   Smartphone,
+  Package,
 } from 'lucide-react';
 import type { NostrEvent, NostrMetadata } from '@nostrify/nostrify';
 import type { ArtworkData } from '@/lib/artTypes';
@@ -325,6 +327,94 @@ function ArtworkThumbnail({ artwork }: { artwork: ArtworkData }) {
           <ArrowRight className="h-3 w-3 ml-1 group-hover:translate-x-1 transition-transform" />
         </div>
       </CardContent>
+    </Card>
+  );
+}
+
+interface ShopProduct {
+  id: string;
+  name: string;
+  description: string;
+  images: string[];
+  price: number;
+  currency: string;
+  discount?: number;
+  type: 'physical' | 'digital';
+  category: string;
+}
+
+function ShopProductThumbnail({ product }: { product: ShopProduct }) {
+  const hasDiscount = product.discount && product.discount > 0;
+  const discountedPrice = hasDiscount ? product.price * (1 - product.discount! / 100) : null;
+  const displayPrice = discountedPrice ?? product.price;
+
+  return (
+    <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm group overflow-hidden h-full flex flex-col">
+      {/* Product Image */}
+      <div className="relative aspect-square overflow-hidden bg-gray-100 dark:bg-gray-700 flex-shrink-0">
+        {product.images && product.images.length > 0 ? (
+          <img
+            src={product.images[0]}
+            alt={product.name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            onError={(e) => {
+              const container = e.currentTarget.parentElement;
+              if (container) container.style.background = 'linear-gradient(135deg, #fde68a, #fca5a5)';
+              e.currentTarget.style.display = 'none';
+            }}
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-orange-100 to-pink-100 dark:from-orange-900/20 dark:to-pink-900/20 flex items-center justify-center">
+            <ShoppingCart className="h-10 w-10 text-orange-300" />
+          </div>
+        )}
+
+        {/* Discount badge */}
+        {hasDiscount && (
+          <div className="absolute top-2 right-2 z-10">
+            <span className="text-xs font-bold bg-orange-500 text-white px-2 py-1 rounded-full shadow-md">
+              -{product.discount}%
+            </span>
+          </div>
+        )}
+
+        {/* Product type badge */}
+        <div className="absolute top-2 left-2 z-10">
+          <Badge variant={product.type === 'digital' ? 'default' : 'secondary'} className="text-[10px] px-1.5 py-0.5">
+            {product.type === 'digital' ? (
+              <><Download className="w-2.5 h-2.5 mr-0.5" />Digital</>
+            ) : (
+              <><Package className="w-2.5 h-2.5 mr-0.5" />Physical</>
+            )}
+          </Badge>
+        </div>
+
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+      </div>
+
+      {/* Info */}
+      <div className="p-3 flex flex-col gap-1.5 flex-1">
+        <p className="text-sm font-semibold line-clamp-2 leading-tight group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
+          {product.name}
+        </p>
+
+        {/* Price */}
+        <div className="mt-auto">
+          {hasDiscount && (
+            <span className="text-xs line-through text-muted-foreground mr-1">
+              ${product.price.toFixed(2)}
+            </span>
+          )}
+          <span className="text-sm font-bold text-green-600 dark:text-green-400">
+            ${displayPrice.toFixed(2)}
+          </span>
+        </div>
+
+        <div className="flex items-center text-orange-600 group-hover:text-orange-700 transition-colors mt-1">
+          <span className="text-xs font-medium">View product</span>
+          <ArrowRight className="h-3 w-3 ml-1 group-hover:translate-x-1 transition-transform" />
+        </div>
+      </div>
     </Card>
   );
 }
@@ -646,6 +736,8 @@ const Index = () => {
 
   const { data: adminNotes, isLoading: notesLoading, error: notesError } = useLatestAdminNotes(3, { enabled: galleryActive });
   const { data: latestCards, isLoading: cardsLoading, error: cardsError } = useLatestCards(3, { enabled: galleryActive });
+  // Shop products for homepage section (up to 6 featured)
+  const { data: allShopProducts, isLoading: shopProductsLoading } = useMarketplaceProducts(undefined);
   const { data: featuredArtworks, isLoading: artworksLoading, isFetching: artworksFetching, error: artworksError } = useArtworks('all', { enabled: galleryActive });
   const { data: featuredProjects } = useFeaturedProjects({ enabled: galleryActive });
   // Consider artworks still loading if there's no data yet (first load OR background refetch with empty cache)
@@ -677,6 +769,8 @@ const Index = () => {
   const featuredNostrProjectsList = featuredNostrProjects?.slice(0, 3) || [];
   // Get first 3 custom pages
   const featuredPagesList = customPages?.slice(0, 3) || [];
+  // Get first 6 shop products for homepage
+  const featuredShopProducts = allShopProducts?.slice(0, 6) || [];
 
   // Get section settings
   const getSectionSettings = (id: string) => {
@@ -700,6 +794,8 @@ const Index = () => {
         return renderCardsSection(settings);
       case 'free-downloads':
         return renderFreeDownloadsSection(settings);
+      case 'shop':
+        return renderShopSection(settings);
       case 'pages':
         return renderPagesSection(settings);
       case 'news':
@@ -1275,6 +1371,88 @@ const Index = () => {
               </div>
             ))}
           </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderShopSection = (settings: ReturnType<typeof getSectionSettings>) => {
+    return (
+      <div key="shop" className="mb-16">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h2 className="text-3xl font-bold mb-2">{settings?.title || 'Shop'}</h2>
+            <p className="text-gray-600 dark:text-gray-300">
+              {settings?.subtitle || 'Buy exclusive Bitcoin pop art — pay with Lightning ⚡'}
+            </p>
+          </div>
+          <Button variant="outline" asChild>
+            <Link to="/shop" className="flex items-center space-x-2">
+              <ShoppingCart className="h-4 w-4" />
+              <span>View All</span>
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
+
+        {/* Products grid */}
+        {shopProductsLoading && (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="space-y-2">
+                <Skeleton className="aspect-square w-full rounded-lg" />
+                <Skeleton className="h-3 w-3/4" />
+                <Skeleton className="h-3 w-1/2" />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!shopProductsLoading && featuredShopProducts.length === 0 && (
+          <Card className="border-dashed">
+            <CardContent className="py-8 px-6 text-center">
+              <div className="max-w-sm mx-auto space-y-4">
+                <ShoppingCart className="h-8 w-8 mx-auto text-gray-400" />
+                <div>
+                  <CardTitle className="mb-2">No Products Yet</CardTitle>
+                  <CardDescription>
+                    Check back soon for new products, or visit the shop directly.
+                  </CardDescription>
+                </div>
+                <Button size="sm" asChild>
+                  <Link to="/shop">Visit Shop</Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {featuredShopProducts.length > 0 && (
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              {featuredShopProducts.map((product, index) => (
+                <Link
+                  key={product.id}
+                  to={product.type === 'physical' ? `/shop/${product.id}` : `/shop`}
+                  className="block animate-in fade-in slide-in-from-bottom-4"
+                  style={{ animationDelay: `${index * 80}ms` }}
+                >
+                  <ShopProductThumbnail product={product} />
+                </Link>
+              ))}
+            </div>
+            {(allShopProducts?.length ?? 0) > 6 && (
+              <div className="mt-6 text-center">
+                <Button variant="outline" asChild>
+                  <Link to="/shop" className="gap-2">
+                    <ShoppingCart className="h-4 w-4" />
+                    View all {allShopProducts!.length} products
+                  </Link>
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </div>
     );

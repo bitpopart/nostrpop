@@ -104,12 +104,20 @@ const DEFAULT_SECTIONS: HomepageSection[] = [
     order: 4,
   },
   {
+    id: 'shop',
+    title: 'Shop',
+    subtitle: 'Buy exclusive Bitcoin pop art — pay with Lightning ⚡',
+    icon: 'ShoppingCart',
+    enabled: true,
+    order: 5,
+  },
+  {
     id: 'news',
     title: 'Nostr News',
     subtitle: 'Latest updates and articles',
     icon: 'Rss',
     enabled: true,
-    order: 5,
+    order: 6,
   },
   {
     id: 'pages',
@@ -117,7 +125,7 @@ const DEFAULT_SECTIONS: HomepageSection[] = [
     subtitle: 'Explore custom content',
     icon: 'FileText',
     enabled: false,
-    order: 6,
+    order: 7,
   },
 ];
 
