@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { useCart } from '@/hooks/useCart';
+import { useCart, findShippingRegion } from '@/hooks/useCart';
 import { useLightningPayment, formatCurrency, convertCurrency } from '@/hooks/usePayment';
 import { useToast } from '@/hooks/useToast';
 import { useEnhancedPaymentDetection } from '@/hooks/usePaymentDetection';
@@ -26,6 +26,7 @@ import {
   QrCode,
   Loader2,
   Package,
+  AlertCircle,
 } from 'lucide-react';
 
 interface CartDrawerProps {
@@ -37,7 +38,11 @@ type Step = 'cart' | 'address' | 'payment' | 'done';
 
 export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
   const navigate = useNavigate();
-  const { items, address, updateQty, removeItem, clearCart, updateAddress, subtotal, currency, totalItems } = useCart();
+  const {
+    items, address, updateQty, removeItem, clearCart,
+    updateAddress, subtotal, shippingCost, total, currency, totalItems,
+  } = useCart();
+
   const [step, setStep] = useState<Step>('cart');
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState('');
 
@@ -46,6 +51,23 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
   const { toast } = useToast();
 
   const hasPhysical = items.some(i => i.type === 'physical');
+
+  // Determine shipping status for the address step
+  const physicalWithShipping = items.filter(i => i.type === 'physical' && i.shipping && i.shipping.length > 0);
+  const hasShippingData = physicalWithShipping.length > 0;
+  const countryEntered = address.country.trim().length > 0;
+
+  // Check if country matches a known shipping region
+  const shippingResolved = !hasPhysical || !hasShippingData || (countryEntered && (
+    // At least one physical item has a matching region for this country
+    physicalWithShipping.some(item => !!findShippingRegion(item.shipping!, address.country))
+  ));
+
+  // Build per-item matched region for display
+  const shippingRows = physicalWithShipping.map(item => {
+    const region = countryEntered ? findShippingRegion(item.shipping!, address.country) : undefined;
+    return { item, region };
+  });
 
   // Reset on close
   useEffect(() => {
@@ -76,6 +98,10 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
         toast({ title: 'Missing address', description: 'Please fill in your complete shipping address.', variant: 'destructive' });
         return false;
       }
+      if (!shippingResolved) {
+        toast({ title: 'No shipping to your country', description: 'We cannot ship to this country. Please contact us.', variant: 'destructive' });
+        return false;
+      }
     }
     return true;
   };
@@ -85,9 +111,9 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
     setStep('payment');
     try {
       await createInvoice({
-        amount: subtotal,
+        amount: total,
         currency,
-        description: `BitPopArt order — ${items.length} item${items.length > 1 ? 's' : ''}`,
+        description: `BitPopArt order — ${items.length} item${items.length > 1 ? 's' : ''}${shippingCost > 0 ? ' + shipping' : ''}`,
         productId: 'cart',
         buyerInfo: {
           email: address.email,
@@ -111,13 +137,12 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
   const confirmPayment = useCallback(() => {
     stopDetection();
 
-    // Save order
     const savedOrder = createCheckoutOrder({
       productId: 'cart',
       productName: `Order — ${items.map(i => i.name).join(', ')}`,
       productType: hasPhysical ? 'physical' : 'digital',
       productImage: items[0]?.images?.[0],
-      price: subtotal,
+      price: total,
       currency,
       buyerName: address.name || undefined,
       buyerEmail: address.email || undefined,
@@ -132,14 +157,15 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
       paymentMethod: 'Lightning',
     });
 
-    // Send email for physical orders
     if (hasPhysical && address.name) {
       const itemLines = items.map(i => `  • ${i.name} ×${i.quantity}`).join('\n');
       const subject = encodeURIComponent(`Order ${savedOrder.order_number} — BitPopArt`);
       const body = encodeURIComponent(
         `Hello,\n\nI just placed an order on BitPopArt.\n\n` +
         `Order: ${savedOrder.order_number}\n\nItems:\n${itemLines}\n\n` +
-        `Total: ${subtotal.toFixed(2)} ${currency}\n\n` +
+        `Subtotal: ${subtotal.toFixed(2)} ${currency}\n` +
+        `Shipping: ${shippingCost > 0 ? shippingCost.toFixed(2) + ' ' + currency : 'Free'}\n` +
+        `Total: ${total.toFixed(2)} ${currency}\n\n` +
         `Name: ${address.name}\nEmail: ${address.email}\n` +
         (address.line1
           ? `\nShip to:\n${address.line1}\n${address.line2 ? address.line2 + '\n' : ''}` +
@@ -157,10 +183,14 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
       clearCart();
       onOpenChange(false);
       navigate(`/order-confirmation?product=cart&type=${hasPhysical ? 'physical' : 'digital'}`, {
-        state: { buyerInfo: { name: address.name, email: address.email, address }, totalPrice: subtotal, orderNumber: savedOrder.order_number },
+        state: {
+          buyerInfo: { name: address.name, email: address.email, address },
+          totalPrice: total,
+          orderNumber: savedOrder.order_number,
+        },
       });
     }, 2000);
-  }, [stopDetection, items, subtotal, currency, address, hasPhysical, clearCart, onOpenChange, navigate, toast]);
+  }, [stopDetection, items, subtotal, shippingCost, total, currency, address, hasPhysical, clearCart, onOpenChange, navigate, toast]);
 
   const handleStartDetection = useCallback(() => {
     if (!invoice) return;
@@ -229,7 +259,6 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
               </div>
             ) : (
               <>
-                {/* Items list */}
                 <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
                   {items.map(item => {
                     const effectivePrice = item.discount && item.discount > 0
@@ -237,12 +266,11 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                       : item.price;
                     return (
                       <div key={item.id} className="flex gap-3 items-start">
-                        {/* Thumbnail */}
                         <div className="w-14 h-14 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 flex-shrink-0 relative">
                           {item.images[0] ? (
                             <img src={item.images[0]} alt={item.name} className="w-full h-full object-cover" />
                           ) : (
-                            <Package className="w-6 h-6 text-gray-300 m-auto" />
+                            <Package className="w-6 h-6 text-gray-300 m-auto mt-4" />
                           )}
                           {item.discount && item.discount > 0 && (
                             <span className="absolute top-0.5 right-0.5 text-[9px] font-bold bg-orange-500 text-white px-1 rounded-full leading-4">
@@ -251,7 +279,6 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                           )}
                         </div>
 
-                        {/* Details */}
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium leading-tight line-clamp-2">{item.name}</p>
                           <div className="flex items-center gap-1 mt-0.5">
@@ -264,11 +291,12 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                               {formatCurrency(effectivePrice, item.currency)}
                             </span>
                             <Badge variant="outline" className="text-[9px] px-1 py-0">
-                              {item.type === 'physical' ? <><Truck className="w-2.5 h-2.5 mr-0.5" />Ship</> : <><Package className="w-2.5 h-2.5 mr-0.5" />Digital</>}
+                              {item.type === 'physical'
+                                ? <><Truck className="w-2.5 h-2.5 mr-0.5" />Ship</>
+                                : <><Package className="w-2.5 h-2.5 mr-0.5" />Digital</>}
                             </Badge>
                           </div>
 
-                          {/* Qty controls */}
                           <div className="flex items-center gap-2 mt-1.5">
                             <button
                               type="button"
@@ -291,7 +319,6 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                           </div>
                         </div>
 
-                        {/* Remove */}
                         <button
                           type="button"
                           onClick={() => removeItem(item.id)}
@@ -304,16 +331,14 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                     );
                   })}
 
-                  {/* Shipping note */}
                   {hasPhysical && (
                     <div className="flex items-start gap-1.5 text-xs text-muted-foreground bg-blue-50 dark:bg-blue-900/20 px-3 py-2 rounded-lg">
                       <Truck className="w-3.5 h-3.5 text-blue-500 flex-shrink-0 mt-0.5" />
-                      <span>One flat shipping rate calculated at checkout — regardless of how many physical items you order.</span>
+                      <span>Shipping fee added at checkout based on your country — one flat rate for the whole order.</span>
                     </div>
                   )}
                 </div>
 
-                {/* Footer */}
                 <div className="border-t px-4 py-3 space-y-3 bg-white dark:bg-gray-950 flex-shrink-0">
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-medium">Subtotal</span>
@@ -321,9 +346,9 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                       {formatCurrency(subtotal, currency)}
                     </span>
                   </div>
-                  {currency !== 'SAT' && (
-                    <p className="text-xs text-muted-foreground text-right -mt-1">
-                      ≈ {Math.round(convertCurrency(subtotal, currency, 'SAT')).toLocaleString()} sats
+                  {hasPhysical && (
+                    <p className="text-xs text-muted-foreground text-right -mt-1 flex items-center justify-end gap-1">
+                      <Truck className="w-3 h-3" /> + shipping at next step
                     </p>
                   )}
                   <div className="flex gap-2">
@@ -377,7 +402,7 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                 </div>
               </div>
 
-              {/* Shipping address (only for physical products) */}
+              {/* Shipping address */}
               {hasPhysical && (
                 <div className="space-y-3">
                   <div className="flex items-center gap-1.5">
@@ -443,11 +468,55 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                         />
                       </div>
                     </div>
+
+                    {/* Live shipping cost feedback */}
+                    {hasShippingData && countryEntered && (
+                      <div className={`rounded-lg px-3 py-2.5 text-sm border mt-1 space-y-1.5 ${
+                        shippingResolved
+                          ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                          : 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800'
+                      }`}>
+                        {shippingResolved ? (
+                          <>
+                            <p className="font-semibold text-green-800 dark:text-green-300 flex items-center gap-1.5">
+                              <Truck className="w-4 h-4" />
+                              Shipping to {address.country}
+                            </p>
+                            {shippingRows.map(({ item, region }) => region && (
+                              <div key={item.id} className="flex justify-between text-xs text-green-700 dark:text-green-400">
+                                <span className="truncate mr-2">{item.name}</span>
+                                <span className="font-semibold flex-shrink-0">
+                                  {region.cost === 0
+                                    ? <span className="text-green-600 dark:text-green-400">Free</span>
+                                    : formatCurrency(region.cost, currency)}
+                                </span>
+                              </div>
+                            ))}
+                            <div className="flex justify-between text-xs font-bold text-green-800 dark:text-green-200 pt-0.5 border-t border-green-200 dark:border-green-700">
+                              <span>Total shipping</span>
+                              <span>{shippingCost === 0 ? 'Free' : formatCurrency(shippingCost, currency)}</span>
+                            </div>
+                          </>
+                        ) : (
+                          <p className="text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                            No shipping available for <strong>{address.country}</strong>. Please contact us.
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {hasShippingData && !countryEntered && (
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-blue-50 dark:bg-blue-900/20 px-3 py-2 rounded-lg">
+                        <Truck className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
+                        Fill in your country to see the shipping cost
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
 
-              {/* Order summary mini */}
+              {/* Order summary */}
               <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 space-y-1.5">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Your order</p>
                 {items.map(item => {
@@ -460,29 +529,60 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                   );
                 })}
                 <Separator />
-                <div className="flex justify-between text-sm font-semibold">
-                  <span>Subtotal</span>
-                  <span className="text-green-600">{formatCurrency(subtotal, currency)}</span>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Subtotal</span>
+                  <span className="font-medium">{formatCurrency(subtotal, currency)}</span>
                 </div>
                 {hasPhysical && (
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Truck className="w-3 h-3" /> Shipping added after address
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground flex items-center gap-1"><Truck className="w-3 h-3" /> Shipping</span>
+                    <span className={`font-medium ${countryEntered && !shippingResolved ? 'text-amber-600' : ''}`}>
+                      {!countryEntered
+                        ? <span className="text-muted-foreground italic text-xs">enter country</span>
+                        : shippingResolved
+                          ? (shippingCost === 0 ? 'Free' : formatCurrency(shippingCost, currency))
+                          : <span className="text-amber-600 text-xs">unavailable</span>
+                      }
+                    </span>
+                  </div>
+                )}
+                <Separator />
+                <div className="flex justify-between text-sm font-bold">
+                  <span>Total</span>
+                  <span className="text-green-600">
+                    {(!hasPhysical || shippingResolved)
+                      ? formatCurrency(total, currency)
+                      : <span className="text-muted-foreground">—</span>
+                    }
+                  </span>
+                </div>
+                {currency !== 'SAT' && (!hasPhysical || shippingResolved) && (
+                  <p className="text-xs text-muted-foreground text-right">
+                    ≈ {Math.round(convertCurrency(total, currency, 'SAT')).toLocaleString()} sats
                   </p>
                 )}
               </div>
             </div>
 
             {/* Footer */}
-            <div className="border-t px-4 py-3 bg-white dark:bg-gray-950 flex-shrink-0">
+            <div className="border-t px-4 py-3 bg-white dark:bg-gray-950 flex-shrink-0 space-y-2">
+              {hasPhysical && hasShippingData && countryEntered && !shippingResolved && (
+                <p className="text-xs text-amber-600 dark:text-amber-400 text-center flex items-center justify-center gap-1">
+                  <AlertCircle className="w-3.5 h-3.5" />
+                  We can't ship to this country — please contact us
+                </p>
+              )}
               <Button
-                className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white border-0"
+                className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white border-0 disabled:opacity-50"
                 onClick={handleProceedToPayment}
-                disabled={lightningLoading}
+                disabled={lightningLoading || (hasPhysical && hasShippingData && countryEntered && !shippingResolved)}
               >
                 {lightningLoading ? (
                   <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Creating invoice…</>
                 ) : (
-                  <><Zap className="w-4 h-4 mr-2" />Pay {formatCurrency(subtotal, currency)} with Lightning</>
+                  <><Zap className="w-4 h-4 mr-2" />
+                    Pay {(!hasPhysical || shippingResolved) ? formatCurrency(total, currency) : '…'} with Lightning
+                  </>
                 )}
               </Button>
             </div>
@@ -499,16 +599,28 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                 </div>
               ) : (
                 <>
-                  {/* Amount */}
-                  <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-lg p-4 border border-yellow-200 dark:border-yellow-800 text-center space-y-1">
+                  {/* Amount breakdown */}
+                  <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-lg p-4 border border-yellow-200 dark:border-yellow-800 space-y-2">
                     <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200 flex items-center justify-center gap-1.5">
                       <Zap className="w-4 h-4" /> Lightning payment to {lightningAddress}
                     </p>
-                    <p className="text-2xl font-bold text-yellow-900 dark:text-yellow-100">
+                    {shippingCost > 0 && (
+                      <div className="space-y-1 text-xs text-yellow-700 dark:text-yellow-300 border-t border-yellow-200 dark:border-yellow-700 pt-2 mt-1">
+                        <div className="flex justify-between">
+                          <span>Products</span>
+                          <span>{formatCurrency(subtotal, currency)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="flex items-center gap-1"><Truck className="w-3 h-3" /> Shipping</span>
+                          <span>{formatCurrency(shippingCost, currency)}</span>
+                        </div>
+                      </div>
+                    )}
+                    <p className="text-2xl font-bold text-yellow-900 dark:text-yellow-100 text-center">
                       {invoice.amount_sats.toLocaleString()} sats
                     </p>
-                    <p className="text-xs text-yellow-700 dark:text-yellow-300">
-                      {formatCurrency(subtotal, currency)}
+                    <p className="text-xs text-yellow-700 dark:text-yellow-300 text-center">
+                      {formatCurrency(total, currency)}
                     </p>
                   </div>
 
@@ -529,7 +641,6 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                     Scan with your Lightning wallet, or copy the invoice below
                   </p>
 
-                  {/* Copy invoice */}
                   <div className="flex gap-2">
                     <Input value={invoice.payment_request} readOnly className="font-mono text-xs" />
                     <Button variant="outline" size="sm" onClick={copyInvoice}>
@@ -537,12 +648,10 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                     </Button>
                   </div>
 
-                  {/* Expires */}
                   <p className="text-xs text-center text-muted-foreground">
                     Expires in ~{Math.max(0, Math.round((invoice.expires_at - Date.now()) / 60000))} min
                   </p>
 
-                  {/* Pay buttons */}
                   <Button
                     className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white border-0"
                     onClick={() => payWithWebLN(invoice.payment_request, confirmPayment, () => {

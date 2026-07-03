@@ -1,5 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 
+export interface ShippingRegion {
+  id: string;
+  name: string;
+  countries: string;
+  cost: number;
+}
+
 export interface CartItem {
   id: string;
   name: string;
@@ -10,6 +17,8 @@ export interface CartItem {
   type: 'physical' | 'digital';
   category: string;
   quantity: number;
+  /** Shipping regions defined on this product (for physical items) */
+  shipping?: ShippingRegion[];
 }
 
 export interface CartAddress {
@@ -52,6 +61,39 @@ function emptyAddress(): CartAddress {
   return { name: '', email: '', line1: '', line2: '', city: '', state: '', postal_code: '', country: '' };
 }
 
+/**
+ * Find the shipping region that matches a given country string.
+ * Falls back to a catch-all region (empty countries field) if no match.
+ */
+export function findShippingRegion(regions: ShippingRegion[], country: string): ShippingRegion | undefined {
+  if (!country.trim()) return undefined;
+  const needle = country.trim().toLowerCase();
+  return (
+    regions.find(r => {
+      const haystack = r.countries.toLowerCase().split(',').map(c => c.trim()).filter(Boolean);
+      return haystack.some(c => c === needle || c.startsWith(needle) || needle.startsWith(c));
+    }) ?? regions.find(r => !r.countries.trim()) // fallback: catch-all region
+  );
+}
+
+/**
+ * Calculate the single flat shipping cost for the whole cart given a destination country.
+ * We take the highest applicable shipping cost across all physical items.
+ * (One flat rate — the most expensive region wins, never charged per-item.)
+ */
+export function calcShipping(items: CartItem[], country: string): number {
+  if (!country.trim()) return 0;
+  const physicalItems = items.filter(i => i.type === 'physical' && i.shipping && i.shipping.length > 0);
+  if (physicalItems.length === 0) return 0;
+
+  let max = 0;
+  for (const item of physicalItems) {
+    const region = findShippingRegion(item.shipping!, country);
+    if (region) max = Math.max(max, region.cost);
+  }
+  return max;
+}
+
 export function useCart() {
   const [items, setItems] = useState<CartItem[]>(loadCart);
   const [address, setAddress] = useState<CartAddress>(loadAddress);
@@ -59,7 +101,6 @@ export function useCart() {
   // Persist to localStorage whenever items change
   useEffect(() => {
     saveCart(items);
-    // Broadcast to other components
     window.dispatchEvent(new CustomEvent('cart-updated'));
   }, [items]);
 
@@ -115,6 +156,9 @@ export function useCart() {
 
   const currency = items[0]?.currency || 'USD';
 
+  const shippingCost = calcShipping(items, address.country);
+  const total = subtotal + shippingCost;
+
   return {
     items,
     address,
@@ -125,6 +169,8 @@ export function useCart() {
     updateAddress,
     totalItems,
     subtotal,
+    shippingCost,
+    total,
     currency,
   };
 }

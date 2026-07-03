@@ -128,6 +128,7 @@ export function ProductCard({ product, onViewDetails }: ProductCardProps) {
       images: product.images,
       type: product.type,
       category: product.category,
+      shipping: product.shipping,
     });
     toast({
       title: 'Added to cart 🛒',

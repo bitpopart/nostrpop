@@ -180,6 +180,7 @@ export function ProductPage() {
       images: product.images || [],
       type: product.type,
       category: product.category,
+      shipping: product.shipping,
     });
     toast({ title: 'Added to cart 🛒', description: `${product.name} added. View your cart to checkout.` });
   };
