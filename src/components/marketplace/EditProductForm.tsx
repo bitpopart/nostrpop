@@ -16,6 +16,7 @@ import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useUploadFile } from '@/hooks/useUploadFile';
 import { useToast } from '@/hooks/useToast';
 import { useCategories } from '@/hooks/useCategories';
+import { useShopTags } from '@/hooks/useShopTags';
 import type { MarketplaceProduct } from '@/lib/sampleProducts';
 import {
   Package,
@@ -119,6 +120,7 @@ export function EditProductForm({ product, onSuccess, onCancel }: EditProductFor
   const { mutateAsync: uploadFile } = useUploadFile();
   const { toast } = useToast();
   const { categoryNames } = useCategories();
+  const { tags: presetTags } = useShopTags();
 
   const {
     register,
@@ -477,6 +479,32 @@ export function EditProductForm({ product, onSuccess, onCancel }: EditProductFor
                       </button>
                     </span>
                   ))}
+                </div>
+              )}
+              {/* Preset tag quick-add chips */}
+              {presetTags.length > 0 && (
+                <div className="space-y-1 pt-1">
+                  <p className="text-xs text-muted-foreground font-medium">Quick-add from your tag library:</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {presetTags.map(tag => {
+                      const already = keywordTags.includes(tag);
+                      return (
+                        <button
+                          key={tag}
+                          type="button"
+                          disabled={already}
+                          onClick={() => !already && setKeywordTags(prev => [...prev, tag])}
+                          className={`text-xs px-2.5 py-1 rounded-full border transition-all ${
+                            already
+                              ? 'bg-orange-500 text-white border-orange-500 cursor-default opacity-80'
+                              : 'bg-white dark:bg-gray-800 text-muted-foreground border-gray-200 dark:border-gray-700 hover:border-orange-400 hover:text-orange-600'
+                          }`}
+                        >
+                          {already ? '✓ ' : '+ '}#{tag}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
               <p className="text-xs text-muted-foreground">Press Enter or comma to add. Buyers can filter the shop by these tags.</p>

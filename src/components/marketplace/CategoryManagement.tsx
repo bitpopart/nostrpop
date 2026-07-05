@@ -8,6 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useCategories } from '@/hooks/useCategories';
+import { useShopTags } from '@/hooks/useShopTags';
 import { ProductCategory } from '@/config/categories';
 import {
   Plus,
@@ -18,7 +19,9 @@ import {
   Tag,
   Sparkles,
   Save,
-  X
+  X,
+  Hash,
+  Check,
 } from 'lucide-react';
 
 export function CategoryManagement() {
@@ -32,6 +35,8 @@ export function CategoryManagement() {
     setFeaturedCategories,
   } = useCategories();
 
+  const { tags: shopTags, addTag, deleteTag, renameTag } = useShopTags();
+
   // Derive a Set of featured ids for O(1) lookup — avoids relying on category.featured
   // which is never populated by the hook (featured ids are stored separately)
   const featuredIds = new Set(featuredCategories.map(c => c.id));
@@ -43,6 +48,11 @@ export function CategoryManagement() {
     description: '',
     icon: ''
   });
+
+  // Tag management state
+  const [tagInput, setTagInput] = useState('');
+  const [editingTag, setEditingTag] = useState<string | null>(null);
+  const [editingTagValue, setEditingTagValue] = useState('');
 
   const handleAddCategory = () => {
     if (!newCategory.name.trim()) return;
@@ -238,6 +248,150 @@ export function CategoryManagement() {
           </CardContent>
         </Card>
       )}
+
+      {/* ── Tag Library ─────────────────────────────────────────────────────── */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Hash className="w-5 h-5 text-orange-500" />
+            Tag Library
+          </CardTitle>
+          <CardDescription>
+            Add and manage keyword tags for your products. These tags appear as quick-add chips in the product forms and as a clickable tag cloud in the shop.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+
+          {/* Add new tag input */}
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">#</span>
+              <Input
+                value={tagInput}
+                onChange={e => setTagInput(e.target.value)}
+                onKeyDown={e => {
+                  if ((e.key === 'Enter' || e.key === ',') && tagInput.trim()) {
+                    e.preventDefault();
+                    addTag(tagInput);
+                    setTagInput('');
+                  }
+                }}
+                placeholder="bitcoin, sneek, amsterdam, logo…"
+                className="pl-7"
+              />
+            </div>
+            <Button
+              onClick={() => { addTag(tagInput); setTagInput(''); }}
+              disabled={!tagInput.trim()}
+              className="bg-orange-500 hover:bg-orange-600 text-white"
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              Add Tag
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground -mt-1">Press Enter or comma to add quickly. Only letters, numbers, hyphens and underscores.</p>
+
+          {/* Tag pills */}
+          {shopTags.length === 0 ? (
+            <div className="py-8 border-2 border-dashed rounded-xl text-center text-muted-foreground">
+              <Hash className="w-8 h-8 mx-auto mb-2 opacity-30" />
+              <p className="text-sm font-medium">No tags yet</p>
+              <p className="text-xs mt-1">Add your first tag above to get started.</p>
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {shopTags.map(tag => (
+                <div key={tag} className="group relative">
+                  {editingTag === tag ? (
+                    /* Inline rename */
+                    <div className="flex items-center gap-1 bg-orange-50 dark:bg-orange-900/20 border border-orange-300 dark:border-orange-700 rounded-full px-2 py-1">
+                      <span className="text-orange-500 text-xs font-bold">#</span>
+                      <input
+                        value={editingTagValue}
+                        onChange={e => setEditingTagValue(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') {
+                            renameTag(tag, editingTagValue);
+                            setEditingTag(null);
+                          }
+                          if (e.key === 'Escape') setEditingTag(null);
+                        }}
+                        className="bg-transparent text-xs w-24 outline-none text-orange-700 dark:text-orange-300 font-medium"
+                        autoFocus
+                      />
+                      <button
+                        type="button"
+                        onClick={() => { renameTag(tag, editingTagValue); setEditingTag(null); }}
+                        className="text-green-600 hover:text-green-700"
+                        title="Save rename"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditingTag(null)}
+                        className="text-muted-foreground hover:text-foreground"
+                        title="Cancel"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    /* Normal pill */
+                    <span className="inline-flex items-center gap-1.5 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 text-sm px-3 py-1.5 rounded-full border border-orange-200 dark:border-orange-800 font-medium select-none">
+                      #{tag}
+                      <span className="flex items-center gap-0.5 ml-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          type="button"
+                          onClick={() => { setEditingTag(tag); setEditingTagValue(tag); }}
+                          className="hover:text-blue-600 transition-colors"
+                          title={`Rename #${tag}`}
+                        >
+                          <Edit className="w-3 h-3" />
+                        </button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <button
+                              type="button"
+                              className="hover:text-red-600 transition-colors"
+                              title={`Delete #${tag}`}
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete tag #{tag}?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This removes <strong>#{tag}</strong> from your tag library. Existing products that already have this tag won't be changed — you'd need to edit those products individually to remove the tag from them.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => deleteTag(tag)}
+                                className="bg-red-500 hover:bg-red-600"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </span>
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {shopTags.length > 0 && (
+            <p className="text-xs text-muted-foreground pt-1">
+              {shopTags.length} tag{shopTags.length !== 1 ? 's' : ''} in your library · Hover a tag to rename or delete it.
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Categories List */}
       <Card>
