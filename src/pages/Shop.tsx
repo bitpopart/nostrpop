@@ -40,6 +40,7 @@ import {
 } from 'lucide-react';
 
 import { useCategories } from '@/hooks/useCategories';
+import { useShopTags } from '@/hooks/useShopTags';
 import { usePrintPosters, useBtcEurRate, eurToLiveSats } from '@/hooks/usePrintPosters';
 import type { PrintPoster, PosterFormat } from '@/hooks/usePrintPosters';
 
@@ -155,6 +156,8 @@ const Shop = () => {
 
   // Admin-created categories (localStorage via useCategories)
   const { categoryNames } = useCategories();
+  // Admin-curated tag library — only show visible tags in the cloud
+  const { visibleTags: visibleShopTags } = useShopTags();
 
   // Get initial tab from URL params
   const getInitialTab = () => {
@@ -213,21 +216,23 @@ const Shop = () => {
     return counts;
   }, [allProducts]);
 
-  // All keyword tags + counts (across ALL products, before any filter)
+  // Tag cloud: only tags that are in the visible library, with product counts
+  // Order follows the admin's library order (alphabetical), not by count
   const tagCounts = useMemo(() => {
+    if (visibleShopTags.length === 0) return [];
+    const visibleSet = new Set(visibleShopTags.map(t => t.tag));
     const counts: Record<string, number> = {};
     allProducts?.forEach(p => {
-      // keyword_tags exists on the extended type from useMarketplaceProducts
       const kwTags = (p as { keyword_tags?: string[] }).keyword_tags ?? [];
       kwTags.forEach(tag => {
-        counts[tag] = (counts[tag] ?? 0) + 1;
+        if (visibleSet.has(tag)) {
+          counts[tag] = (counts[tag] ?? 0) + 1;
+        }
       });
     });
-    // Sort by count desc
-    return Object.entries(counts)
-      .sort((a, b) => b[1] - a[1])
-      .map(([tag, count]) => ({ tag, count }));
-  }, [allProducts]);
+    // Return in library order, include tags with 0 products so admin can see all visible tags
+    return visibleShopTags.map(({ tag }) => ({ tag, count: counts[tag] ?? 0 }));
+  }, [allProducts, visibleShopTags]);
 
   // Filter products by selected category AND selected tag
   const products = useMemo(() => {

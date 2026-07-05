@@ -120,7 +120,7 @@ export function EditProductForm({ product, onSuccess, onCancel }: EditProductFor
   const { mutateAsync: uploadFile } = useUploadFile();
   const { toast } = useToast();
   const { categoryNames } = useCategories();
-  const { tags: presetTags } = useShopTags();
+  const { tagNames: presetTags } = useShopTags();
 
   const {
     register,

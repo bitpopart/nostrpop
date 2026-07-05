@@ -22,6 +22,8 @@ import {
   X,
   Hash,
   Check,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 
 export function CategoryManagement() {
@@ -35,7 +37,7 @@ export function CategoryManagement() {
     setFeaturedCategories,
   } = useCategories();
 
-  const { tags: shopTags, addTag, deleteTag, renameTag } = useShopTags();
+  const { tags: shopTags, addTag, deleteTag, renameTag, toggleVisibility } = useShopTags();
 
   // Derive a Set of featured ids for O(1) lookup — avoids relying on category.featured
   // which is never populated by the hook (featured ids are stored separately)
@@ -252,13 +254,21 @@ export function CategoryManagement() {
       {/* ── Tag Library ─────────────────────────────────────────────────────── */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Hash className="w-5 h-5 text-orange-500" />
-            Tag Library
-          </CardTitle>
-          <CardDescription>
-            Add and manage keyword tags for your products. These tags appear as quick-add chips in the product forms and as a clickable tag cloud in the shop.
-          </CardDescription>
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Hash className="w-5 h-5 text-orange-500" />
+                Tag Library
+              </CardTitle>
+              <CardDescription className="mt-1">
+                Add keyword tags and control which ones appear as filters in the shop. Tags marked <strong>visible</strong> show in the frontend tag cloud; hidden tags are kept in your library for product labelling but won't clutter the shop.
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground flex-shrink-0">
+              <span className="flex items-center gap-1"><Eye className="w-3.5 h-3.5 text-green-500" /> Visible in shop</span>
+              <span className="flex items-center gap-1"><EyeOff className="w-3.5 h-3.5 text-gray-400" /> Hidden</span>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
 
@@ -289,9 +299,9 @@ export function CategoryManagement() {
               Add Tag
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground -mt-1">Press Enter or comma to add quickly. Only letters, numbers, hyphens and underscores.</p>
+          <p className="text-xs text-muted-foreground -mt-1">Press Enter or comma to add quickly. New tags are visible by default.</p>
 
-          {/* Tag pills */}
+          {/* Tag rows */}
           {shopTags.length === 0 ? (
             <div className="py-8 border-2 border-dashed rounded-xl text-center text-muted-foreground">
               <Hash className="w-8 h-8 mx-auto mb-2 opacity-30" />
@@ -299,87 +309,103 @@ export function CategoryManagement() {
               <p className="text-xs mt-1">Add your first tag above to get started.</p>
             </div>
           ) : (
-            <div className="flex flex-wrap gap-2">
-              {shopTags.map(tag => (
-                <div key={tag} className="group relative">
-                  {editingTag === tag ? (
-                    /* Inline rename */
-                    <div className="flex items-center gap-1 bg-orange-50 dark:bg-orange-900/20 border border-orange-300 dark:border-orange-700 rounded-full px-2 py-1">
-                      <span className="text-orange-500 text-xs font-bold">#</span>
+            <div className="rounded-lg border overflow-hidden">
+              {/* Header row */}
+              <div className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-3 px-4 py-2 bg-muted/50 border-b text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                <span>Tag</span>
+                <span className="text-center w-20">Shop visibility</span>
+                <span className="w-7" />
+                <span className="w-7" />
+              </div>
+
+              {shopTags.map((entry, idx) => (
+                <div
+                  key={entry.tag}
+                  className={`grid grid-cols-[1fr_auto_auto_auto] items-center gap-3 px-4 py-2.5 transition-colors
+                    ${idx % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-muted/20'}
+                    ${!entry.visible ? 'opacity-50' : ''}
+                  `}
+                >
+                  {/* Tag name / inline rename */}
+                  {editingTag === entry.tag ? (
+                    <div className="flex items-center gap-1">
+                      <span className="text-orange-500 font-bold text-sm">#</span>
                       <input
                         value={editingTagValue}
                         onChange={e => setEditingTagValue(e.target.value)}
                         onKeyDown={e => {
-                          if (e.key === 'Enter') {
-                            renameTag(tag, editingTagValue);
-                            setEditingTag(null);
-                          }
+                          if (e.key === 'Enter') { renameTag(entry.tag, editingTagValue); setEditingTag(null); }
                           if (e.key === 'Escape') setEditingTag(null);
                         }}
-                        className="bg-transparent text-xs w-24 outline-none text-orange-700 dark:text-orange-300 font-medium"
+                        className="bg-orange-50 dark:bg-orange-900/20 border border-orange-300 rounded px-2 py-0.5 text-sm outline-none text-orange-700 dark:text-orange-300 font-medium w-36"
                         autoFocus
                       />
-                      <button
-                        type="button"
-                        onClick={() => { renameTag(tag, editingTagValue); setEditingTag(null); }}
-                        className="text-green-600 hover:text-green-700"
-                        title="Save rename"
-                      >
-                        <Check className="w-3.5 h-3.5" />
+                      <button type="button" onClick={() => { renameTag(entry.tag, editingTagValue); setEditingTag(null); }} className="text-green-600 hover:text-green-700 ml-1" title="Save">
+                        <Check className="w-4 h-4" />
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => setEditingTag(null)}
-                        className="text-muted-foreground hover:text-foreground"
-                        title="Cancel"
-                      >
-                        <X className="w-3.5 h-3.5" />
+                      <button type="button" onClick={() => setEditingTag(null)} className="text-muted-foreground hover:text-foreground" title="Cancel">
+                        <X className="w-4 h-4" />
                       </button>
                     </div>
                   ) : (
-                    /* Normal pill */
-                    <span className="inline-flex items-center gap-1.5 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 text-sm px-3 py-1.5 rounded-full border border-orange-200 dark:border-orange-800 font-medium select-none">
-                      #{tag}
-                      <span className="flex items-center gap-0.5 ml-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          type="button"
-                          onClick={() => { setEditingTag(tag); setEditingTagValue(tag); }}
-                          className="hover:text-blue-600 transition-colors"
-                          title={`Rename #${tag}`}
-                        >
-                          <Edit className="w-3 h-3" />
-                        </button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <button
-                              type="button"
-                              className="hover:text-red-600 transition-colors"
-                              title={`Delete #${tag}`}
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete tag #{tag}?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This removes <strong>#{tag}</strong> from your tag library. Existing products that already have this tag won't be changed — you'd need to edit those products individually to remove the tag from them.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => deleteTag(tag)}
-                                className="bg-red-500 hover:bg-red-600"
-                              >
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </span>
+                    <span className={`text-sm font-semibold ${entry.visible ? 'text-orange-700 dark:text-orange-300' : 'text-muted-foreground line-through'}`}>
+                      #{entry.tag}
                     </span>
                   )}
+
+                  {/* Visibility toggle */}
+                  <button
+                    type="button"
+                    onClick={() => toggleVisibility(entry.tag)}
+                    className={`w-20 flex items-center justify-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border transition-all
+                      ${entry.visible
+                        ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800 hover:bg-green-200'
+                        : 'bg-gray-100 dark:bg-gray-800 text-gray-500 border-gray-200 dark:border-gray-700 hover:bg-gray-200'
+                      }`}
+                    title={entry.visible ? 'Click to hide from shop' : 'Click to show in shop'}
+                  >
+                    {entry.visible
+                      ? <><Eye className="w-3 h-3" /> Visible</>
+                      : <><EyeOff className="w-3 h-3" /> Hidden</>
+                    }
+                  </button>
+
+                  {/* Rename */}
+                  <button
+                    type="button"
+                    onClick={() => { setEditingTag(entry.tag); setEditingTagValue(entry.tag); }}
+                    className="w-7 h-7 flex items-center justify-center rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                    title={`Rename #${entry.tag}`}
+                  >
+                    <Edit className="w-3.5 h-3.5" />
+                  </button>
+
+                  {/* Delete */}
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <button
+                        type="button"
+                        className="w-7 h-7 flex items-center justify-center rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-muted-foreground hover:text-red-600"
+                        title={`Delete #${entry.tag}`}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete tag #{entry.tag}?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This removes <strong>#{entry.tag}</strong> from your tag library. Existing products that already have this tag won't be changed — you'd need to edit those products individually to remove it.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => deleteTag(entry.tag)} className="bg-red-500 hover:bg-red-600">
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               ))}
             </div>
@@ -387,7 +413,7 @@ export function CategoryManagement() {
 
           {shopTags.length > 0 && (
             <p className="text-xs text-muted-foreground pt-1">
-              {shopTags.length} tag{shopTags.length !== 1 ? 's' : ''} in your library · Hover a tag to rename or delete it.
+              {shopTags.filter(t => t.visible).length} of {shopTags.length} tag{shopTags.length !== 1 ? 's' : ''} visible in the shop frontend.
             </p>
           )}
         </CardContent>

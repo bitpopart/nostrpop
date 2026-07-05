@@ -3,28 +3,42 @@ import { useToast } from '@/hooks/useToast';
 
 const SHOP_TAGS_KEY = 'nostrpop_shop_tags';
 
-function readTags(): string[] {
+export interface ShopTag {
+  tag: string;
+  /** Whether this tag is shown in the shop frontend tag cloud */
+  visible: boolean;
+}
+
+function readTags(): ShopTag[] {
   try {
     const stored = localStorage.getItem(SHOP_TAGS_KEY);
-    return stored ? JSON.parse(stored) : [];
+    if (!stored) return [];
+    const parsed = JSON.parse(stored);
+    // Migrate old format (plain string[]) to ShopTag[]
+    if (Array.isArray(parsed) && parsed.length > 0 && typeof parsed[0] === 'string') {
+      const migrated: ShopTag[] = (parsed as string[]).map(t => ({ tag: t, visible: true }));
+      localStorage.setItem(SHOP_TAGS_KEY, JSON.stringify(migrated));
+      return migrated;
+    }
+    return parsed as ShopTag[];
   } catch {
     return [];
   }
 }
 
-function writeTags(tags: string[]) {
+function writeTags(tags: ShopTag[]) {
   localStorage.setItem(SHOP_TAGS_KEY, JSON.stringify(tags));
   window.dispatchEvent(new CustomEvent('shop-tags-updated'));
 }
 
 /**
  * Manages the admin-curated tag library stored in localStorage.
- * These tags appear as quick-add chips in the product forms
- * and serve as the "master list" for the shop's tag cloud.
+ * Each tag has a `visible` flag that controls whether it shows
+ * in the shop frontend tag cloud.
  */
 export function useShopTags() {
   const { toast } = useToast();
-  const [tags, setTags] = useState<string[]>(readTags);
+  const [tags, setTags] = useState<ShopTag[]>(readTags);
 
   // Re-sync when another component updates tags
   useEffect(() => {
@@ -41,11 +55,11 @@ export function useShopTags() {
     const tag = raw.trim().toLowerCase().replace(/[^a-z0-9-_]/g, '');
     if (!tag) return false;
     const current = readTags();
-    if (current.includes(tag)) {
+    if (current.find(t => t.tag === tag)) {
       toast({ title: 'Tag already exists', description: `#${tag} is already in your tag library.`, variant: 'destructive' });
       return false;
     }
-    const updated = [...current, tag].sort();
+    const updated = [...current, { tag, visible: true }].sort((a, b) => a.tag.localeCompare(b.tag));
     writeTags(updated);
     setTags(updated);
     toast({ title: 'Tag Added', description: `#${tag} added to your tag library.` });
@@ -54,7 +68,7 @@ export function useShopTags() {
 
   const deleteTag = useCallback((tag: string) => {
     const current = readTags();
-    const updated = current.filter(t => t !== tag);
+    const updated = current.filter(t => t.tag !== tag);
     writeTags(updated);
     setTags(updated);
     toast({ title: 'Tag Removed', description: `#${tag} removed from your tag library.` });
@@ -64,16 +78,31 @@ export function useShopTags() {
     const newTag = newRaw.trim().toLowerCase().replace(/[^a-z0-9-_]/g, '');
     if (!newTag || newTag === oldTag) return false;
     const current = readTags();
-    if (current.includes(newTag)) {
+    if (current.find(t => t.tag === newTag)) {
       toast({ title: 'Tag already exists', description: `#${newTag} is already in your library.`, variant: 'destructive' });
       return false;
     }
-    const updated = current.map(t => (t === oldTag ? newTag : t)).sort();
+    const updated = current
+      .map(t => t.tag === oldTag ? { ...t, tag: newTag } : t)
+      .sort((a, b) => a.tag.localeCompare(b.tag));
     writeTags(updated);
     setTags(updated);
     toast({ title: 'Tag Renamed', description: `#${oldTag} → #${newTag}` });
     return true;
   }, [toast]);
 
-  return { tags, addTag, deleteTag, renameTag };
+  const toggleVisibility = useCallback((tag: string) => {
+    const current = readTags();
+    const updated = current.map(t => t.tag === tag ? { ...t, visible: !t.visible } : t);
+    writeTags(updated);
+    setTags(updated);
+  }, []);
+
+  /** Only the tag strings (for quick-add chips in product forms) */
+  const tagNames = tags.map(t => t.tag);
+
+  /** Only tags marked visible — used in shop frontend tag cloud */
+  const visibleTags = tags.filter(t => t.visible);
+
+  return { tags, tagNames, visibleTags, addTag, deleteTag, renameTag, toggleVisibility };
 }
