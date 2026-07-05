@@ -216,22 +216,29 @@ const Shop = () => {
     return counts;
   }, [allProducts]);
 
-  // Tag cloud: only tags that are in the visible library, with product counts
-  // Order follows the admin's library order (alphabetical), not by count
+  // Tag cloud: count all keyword tags from products
+  // If the admin has a visible tag library, filter to only those + respect their order.
+  // If no library exists (e.g. visitor on a different browser), show all product tags sorted by count.
   const tagCounts = useMemo(() => {
-    if (visibleShopTags.length === 0) return [];
-    const visibleSet = new Set(visibleShopTags.map(t => t.tag));
+    // Count every tag that actually appears on at least one product
     const counts: Record<string, number> = {};
     allProducts?.forEach(p => {
       const kwTags = (p as { keyword_tags?: string[] }).keyword_tags ?? [];
       kwTags.forEach(tag => {
-        if (visibleSet.has(tag)) {
-          counts[tag] = (counts[tag] ?? 0) + 1;
-        }
+        counts[tag] = (counts[tag] ?? 0) + 1;
       });
     });
-    // Return in library order, include tags with 0 products so admin can see all visible tags
-    return visibleShopTags.map(({ tag }) => ({ tag, count: counts[tag] ?? 0 }));
+
+    if (visibleShopTags.length > 0) {
+      // Admin has a library: show visible library tags (even 0-count ones so admin sees all),
+      // filtered to those that exist in product data or are in the library
+      return visibleShopTags.map(({ tag }) => ({ tag, count: counts[tag] ?? 0 }));
+    }
+
+    // No library / visitor browser: derive tags directly from products, sort by count desc
+    return Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .map(([tag, count]) => ({ tag, count }));
   }, [allProducts, visibleShopTags]);
 
   // Filter products by selected category AND selected tag
