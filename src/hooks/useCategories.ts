@@ -33,10 +33,29 @@ export function useCategories() {
     }
   });
 
-  // Persist categories to localStorage
+  // Persist categories to localStorage and broadcast to other hook instances
   useEffect(() => {
     localStorage.setItem(CATEGORIES_STORAGE_KEY, JSON.stringify(categories));
+    // Dispatch a custom event so other useCategories instances in the same tab re-sync
+    window.dispatchEvent(new CustomEvent('categories-updated'));
   }, [categories]);
+
+  // Re-sync when another instance updates the category list (same tab)
+  useEffect(() => {
+    const handler = () => {
+      try {
+        const stored = localStorage.getItem(CATEGORIES_STORAGE_KEY);
+        if (stored) setCategories(JSON.parse(stored));
+      } catch { /* ignore */ }
+    };
+    window.addEventListener('categories-updated', handler);
+    // Also listen for cross-tab storage changes
+    window.addEventListener('storage', handler);
+    return () => {
+      window.removeEventListener('categories-updated', handler);
+      window.removeEventListener('storage', handler);
+    };
+  }, []);
 
   // Persist featured categories to localStorage
   useEffect(() => {
