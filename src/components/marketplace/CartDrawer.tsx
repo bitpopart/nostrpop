@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
@@ -6,7 +6,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { useCart, findShippingRegion } from '@/hooks/useCart';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useCart } from '@/hooks/useCart';
+import { useShippingConfig, getShippingFee, DEFAULT_SHIPPING_CONFIG } from '@/hooks/useShippingConfig';
 import { useLightningPayment, formatCurrency, convertCurrency } from '@/hooks/usePayment';
 import { useToast } from '@/hooks/useToast';
 import { useEnhancedPaymentDetection } from '@/hooks/usePaymentDetection';
@@ -26,7 +36,7 @@ import {
   QrCode,
   Loader2,
   Package,
-  AlertCircle,
+  Globe,
 } from 'lucide-react';
 
 interface CartDrawerProps {
@@ -40,7 +50,7 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
   const navigate = useNavigate();
   const {
     items, address, updateQty, removeItem, clearCart,
-    updateAddress, subtotal, shippingCost, total, currency, totalItems,
+    updateAddress, subtotal, currency, totalItems,
   } = useCart();
 
   const [step, setStep] = useState<Step>('cart');
@@ -50,26 +60,49 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
   const { isDetecting, startDetection, stopDetection, payWithWebLN, openLightningWallet } = useEnhancedPaymentDetection();
   const { toast } = useToast();
 
+  // Load global shipping zones from Nostr (admin-configured)
+  const { data: shippingConfig } = useShippingConfig();
+  const config = shippingConfig ?? DEFAULT_SHIPPING_CONFIG;
+
   const hasPhysical = items.some(i => i.type === 'physical');
+  const countrySelected = address.country.trim().length > 0;
 
-  // Determine shipping status for the address step
-  const physicalWithShipping = items.filter(i => i.type === 'physical' && i.shipping && i.shipping.length > 0);
-  const hasShippingData = physicalWithShipping.length > 0;
-  const countryEntered = address.country.trim().length > 0;
+  // Calculate shipping fee from Global Shipping Zones
+  const shippingCost = useMemo(() => {
+    if (!hasPhysical || !countrySelected) return 0;
+    return getShippingFee(config, address.country) ?? 0;
+  }, [hasPhysical, countrySelected, config, address.country]);
 
-  // Check if country matches a known shipping region
-  const shippingResolved = !hasPhysical || !hasShippingData || (countryEntered && (
-    // At least one physical item has a matching region for this country
-    physicalWithShipping.some(item => !!findShippingRegion(item.shipping!, address.country))
-  ));
+  const total = subtotal + shippingCost;
 
-  // Build per-item matched region for display
-  const shippingRows = physicalWithShipping.map(item => {
-    const region = countryEntered ? findShippingRegion(item.shipping!, address.country) : undefined;
-    return { item, region };
-  });
+  // Find the matched zone name for display
+  const matchedZone = useMemo(() => {
+    if (!countrySelected) return undefined;
+    return config.zones.find(zone => {
+      if (zone.countries.length === 0) return false; // skip catch-all for display
+      return zone.countries.some(
+        c => c.name.toLowerCase() === address.country.toLowerCase() ||
+             c.code.toLowerCase() === address.country.toLowerCase()
+      );
+    }) ?? config.zones.find(z => z.countries.length === 0); // catch-all
+  }, [config, address.country, countrySelected]);
 
-  // Reset on close
+  // Build flat sorted country list grouped by zone for the Select
+  const countryOptions = useMemo(() => {
+    return config.zones
+      .filter(z => z.countries.length > 0)
+      .map(zone => ({
+        zoneId: zone.id,
+        zoneName: zone.name,
+        zoneFee: zone.fee,
+        currency: zone.currency,
+        countries: [...zone.countries].sort((a, b) => a.name.localeCompare(b.name)),
+      }));
+  }, [config]);
+
+  const shippingResolved = !hasPhysical || !countrySelected || shippingCost >= 0;
+
+  // Reset on close — do NOT clear address (user might re-open)
   useEffect(() => {
     if (!open) {
       setStep('cart');
@@ -95,11 +128,7 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
     }
     if (hasPhysical) {
       if (!address.line1 || !address.city || !address.postal_code || !address.country) {
-        toast({ title: 'Missing address', description: 'Please fill in your complete shipping address.', variant: 'destructive' });
-        return false;
-      }
-      if (!shippingResolved) {
-        toast({ title: 'No shipping to your country', description: 'We cannot ship to this country. Please contact us.', variant: 'destructive' });
+        toast({ title: 'Missing address', description: 'Please fill in your complete shipping address and select a country.', variant: 'destructive' });
         return false;
       }
     }
@@ -191,6 +220,7 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
       });
     }, 2000);
   }, [stopDetection, items, subtotal, shippingCost, total, currency, address, hasPhysical, clearCart, onOpenChange, navigate, toast]);
+
 
   const handleStartDetection = useCallback(() => {
     if (!invoice) return;
@@ -459,57 +489,56 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-xs">Country *</Label>
-                        <Input
+                        <Label className="text-xs flex items-center gap-1">
+                          <Globe className="w-3 h-3" /> Country *
+                        </Label>
+                        <Select
                           value={address.country}
-                          onChange={e => updateAddress({ country: e.target.value })}
-                          placeholder="Netherlands"
-                          className="h-8 text-sm"
-                        />
+                          onValueChange={val => updateAddress({ country: val })}
+                        >
+                          <SelectTrigger className="h-8 text-sm">
+                            <SelectValue placeholder="Select country…" />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-64">
+                            {countryOptions.map(group => (
+                              <SelectGroup key={group.zoneId}>
+                                <SelectLabel className="text-xs font-bold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5 py-1.5">
+                                  <Truck className="w-3 h-3" />
+                                  {group.zoneName} — {formatCurrency(group.zoneFee, group.currency)}
+                                </SelectLabel>
+                                {group.countries.map(c => (
+                                  <SelectItem key={c.code} value={c.name} className="text-sm pl-5">
+                                    {c.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectGroup>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
 
-                    {/* Live shipping cost feedback */}
-                    {hasShippingData && countryEntered && (
-                      <div className={`rounded-lg px-3 py-2.5 text-sm border mt-1 space-y-1.5 ${
-                        shippingResolved
-                          ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
-                          : 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800'
-                      }`}>
-                        {shippingResolved ? (
-                          <>
-                            <p className="font-semibold text-green-800 dark:text-green-300 flex items-center gap-1.5">
-                              <Truck className="w-4 h-4" />
-                              Shipping to {address.country}
-                            </p>
-                            {shippingRows.map(({ item, region }) => region && (
-                              <div key={item.id} className="flex justify-between text-xs text-green-700 dark:text-green-400">
-                                <span className="truncate mr-2">{item.name}</span>
-                                <span className="font-semibold flex-shrink-0">
-                                  {region.cost === 0
-                                    ? <span className="text-green-600 dark:text-green-400">Free</span>
-                                    : formatCurrency(region.cost, currency)}
-                                </span>
-                              </div>
-                            ))}
-                            <div className="flex justify-between text-xs font-bold text-green-800 dark:text-green-200 pt-0.5 border-t border-green-200 dark:border-green-700">
-                              <span>Total shipping</span>
-                              <span>{shippingCost === 0 ? 'Free' : formatCurrency(shippingCost, currency)}</span>
-                            </div>
-                          </>
-                        ) : (
-                          <p className="text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
-                            <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                            No shipping available for <strong>{address.country}</strong>. Please contact us.
-                          </p>
-                        )}
+                    {/* Live shipping cost feedback from Global Shipping Zones */}
+                    {hasPhysical && countrySelected && matchedZone && (
+                      <div className="rounded-lg px-3 py-2.5 text-sm border mt-1 space-y-1.5 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
+                        <p className="font-semibold text-green-800 dark:text-green-300 flex items-center gap-1.5">
+                          <Truck className="w-4 h-4" />
+                          Shipping to {address.country}
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 ml-1 border-green-300 text-green-700 dark:text-green-300">
+                            {matchedZone.name}
+                          </Badge>
+                        </p>
+                        <div className="flex justify-between text-xs font-bold text-green-800 dark:text-green-200 pt-0.5 border-t border-green-200 dark:border-green-700">
+                          <span>Flat shipping rate</span>
+                          <span>{shippingCost === 0 ? 'Free' : formatCurrency(shippingCost, currency)}</span>
+                        </div>
                       </div>
                     )}
 
-                    {hasShippingData && !countryEntered && (
+                    {hasPhysical && !countrySelected && (
                       <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-blue-50 dark:bg-blue-900/20 px-3 py-2 rounded-lg">
-                        <Truck className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
-                        Fill in your country to see the shipping cost
+                        <Globe className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
+                        Select your country to see the shipping cost
                       </div>
                     )}
                   </div>
@@ -536,12 +565,12 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                 {hasPhysical && (
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground flex items-center gap-1"><Truck className="w-3 h-3" /> Shipping</span>
-                    <span className={`font-medium ${countryEntered && !shippingResolved ? 'text-amber-600' : ''}`}>
-                      {!countryEntered
-                        ? <span className="text-muted-foreground italic text-xs">enter country</span>
-                        : shippingResolved
-                          ? (shippingCost === 0 ? 'Free' : formatCurrency(shippingCost, currency))
-                          : <span className="text-amber-600 text-xs">unavailable</span>
+                    <span className="font-medium">
+                      {!countrySelected
+                        ? <span className="text-muted-foreground italic text-xs">select country</span>
+                        : shippingCost === 0
+                          ? 'Free'
+                          : formatCurrency(shippingCost, currency)
                       }
                     </span>
                   </div>
@@ -550,13 +579,13 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                 <div className="flex justify-between text-sm font-bold">
                   <span>Total</span>
                   <span className="text-green-600">
-                    {(!hasPhysical || shippingResolved)
+                    {(!hasPhysical || countrySelected)
                       ? formatCurrency(total, currency)
                       : <span className="text-muted-foreground">—</span>
                     }
                   </span>
                 </div>
-                {currency !== 'SAT' && (!hasPhysical || shippingResolved) && (
+                {currency !== 'SAT' && (!hasPhysical || countrySelected) && (
                   <p className="text-xs text-muted-foreground text-right">
                     ≈ {Math.round(convertCurrency(total, currency, 'SAT')).toLocaleString()} sats
                   </p>
@@ -566,22 +595,22 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
 
             {/* Footer */}
             <div className="border-t px-4 py-3 bg-white dark:bg-gray-950 flex-shrink-0 space-y-2">
-              {hasPhysical && hasShippingData && countryEntered && !shippingResolved && (
-                <p className="text-xs text-amber-600 dark:text-amber-400 text-center flex items-center justify-center gap-1">
-                  <AlertCircle className="w-3.5 h-3.5" />
-                  We can't ship to this country — please contact us
+              {hasPhysical && countrySelected && shippingCost > 0 && (
+                <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1">
+                  <Truck className="w-3 h-3" />
+                  Includes {formatCurrency(shippingCost, currency)} shipping to {address.country}
                 </p>
               )}
               <Button
                 className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white border-0 disabled:opacity-50"
                 onClick={handleProceedToPayment}
-                disabled={lightningLoading || (hasPhysical && hasShippingData && countryEntered && !shippingResolved)}
+                disabled={lightningLoading || (hasPhysical && !countrySelected)}
               >
                 {lightningLoading ? (
                   <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Creating invoice…</>
                 ) : (
                   <><Zap className="w-4 h-4 mr-2" />
-                    Pay {(!hasPhysical || shippingResolved) ? formatCurrency(total, currency) : '…'} with Lightning
+                    Pay {(!hasPhysical || countrySelected) ? formatCurrency(total, currency) : '…'} with Lightning
                   </>
                 )}
               </Button>

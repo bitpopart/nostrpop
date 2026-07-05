@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -8,11 +8,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useLightningPayment, formatCurrency, convertCurrency } from '@/hooks/usePayment';
 import { useToast } from '@/hooks/useToast';
 import { useEnhancedPaymentDetection } from '@/hooks/usePaymentDetection';
 import { DigitalDownload } from './DigitalDownload';
 import { createCheckoutOrder } from '@/hooks/useOrders';
+import { useShippingConfig, getShippingFee, DEFAULT_SHIPPING_CONFIG } from '@/hooks/useShippingConfig';
 import QRCode from 'qrcode';
 import {
   Zap,
@@ -24,15 +34,9 @@ import {
   Download,
   Truck,
   Mail,
-  MapPin
+  MapPin,
+  Globe,
 } from 'lucide-react';
-
-interface ShippingRegion {
-  id: string;
-  name: string;
-  countries: string;
-  cost: number;
-}
 
 interface MarketplaceProduct {
   id: string;
@@ -46,23 +50,11 @@ interface MarketplaceProduct {
   category: string;
   type: 'physical' | 'digital';
   specs?: Array<[string, string]>;
-  shipping?: ShippingRegion[];
   digital_files?: string[];
   digital_file_names?: string[];
   product_url?: string;
   stall_id: string;
   created_at: string;
-}
-
-// Find the matching shipping region for a given country code/name
-function findShippingRegion(regions: ShippingRegion[], country: string): ShippingRegion | undefined {
-  if (!country.trim()) return undefined;
-  const needle = country.trim().toLowerCase();
-  // Exact or partial match within the countries field
-  return regions.find(r => {
-    const haystack = r.countries.toLowerCase().split(',').map(c => c.trim());
-    return haystack.some(c => c === needle || c.startsWith(needle) || needle.startsWith(c));
-  }) ?? regions.find(r => r.countries.trim() === ''); // fallback: region with no country restriction
 }
 
 interface PaymentDialogProps {
@@ -105,13 +97,48 @@ export function PaymentDialog({ open, onOpenChange, product }: PaymentDialogProp
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
 
   const { createInvoice, invoice, isLoading: lightningLoading, clearInvoice, lightningAddress } = useLightningPayment();
-
   const { isDetecting: isDetectingPayment, startDetection, stopDetection, payWithWebLN, openLightningWallet } = useEnhancedPaymentDetection();
   const { toast } = useToast();
 
-  // Shipping is calculated at checkout / after order placement — not added here
+  // Load global shipping zones
+  const { data: shippingConfig } = useShippingConfig();
+  const config = shippingConfig ?? DEFAULT_SHIPPING_CONFIG;
+
+  // Build grouped country list from zones
+  const countryOptions = useMemo(() => {
+    return config.zones
+      .filter(z => z.countries.length > 0)
+      .map(zone => ({
+        zoneId: zone.id,
+        zoneName: zone.name,
+        zoneFee: zone.fee,
+        currency: zone.currency,
+        countries: [...zone.countries].sort((a, b) => a.name.localeCompare(b.name)),
+      }));
+  }, [config]);
+
   const subtotal = product.price * quantity;
-  const totalPrice = subtotal; // Shipping calculated separately
+  const countrySelected = buyerInfo.address.country.trim().length > 0;
+
+  // Calculate shipping fee from Global Shipping Zones
+  const shippingFee = useMemo(() => {
+    if (product.type !== 'physical' || !countrySelected) return 0;
+    return getShippingFee(config, buyerInfo.address.country) ?? 0;
+  }, [product.type, countrySelected, config, buyerInfo.address.country]);
+
+  // Find matched zone for display
+  const matchedZone = useMemo(() => {
+    if (!countrySelected) return undefined;
+    return config.zones.find(zone => {
+      if (zone.countries.length === 0) return false;
+      return zone.countries.some(
+        c => c.name.toLowerCase() === buyerInfo.address.country.toLowerCase() ||
+             c.code.toLowerCase() === buyerInfo.address.country.toLowerCase()
+      );
+    }) ?? config.zones.find(z => z.countries.length === 0);
+  }, [config, buyerInfo.address.country, countrySelected]);
+
+  const totalPrice = subtotal + shippingFee;
 
   // Reset state when dialog opens/closes
   useEffect(() => {
@@ -392,13 +419,19 @@ export function PaymentDialog({ open, onOpenChange, product }: PaymentDialogProp
                     <span className="font-medium">{formatCurrency(product.price, product.currency)} each</span>
                   </div>
                   <Separator />
-                  <div className="flex justify-between font-semibold">
+                  <div className="flex justify-between text-sm text-muted-foreground">
                     <span>Subtotal:</span>
-                    <span className="text-green-600">{formatCurrency(totalPrice, product.currency)}</span>
+                    <span>{formatCurrency(subtotal, product.currency)}</span>
                   </div>
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-blue-50 dark:bg-blue-900/20 px-3 py-2 rounded-lg">
-                    <Truck className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
-                    <span>Shipping will be arranged separately</span>
+                  {shippingFee > 0 && (
+                    <div className="flex justify-between text-sm text-muted-foreground">
+                      <span className="flex items-center gap-1"><Truck className="w-3 h-3" /> Shipping:</span>
+                      <span>{formatCurrency(shippingFee, product.currency)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between font-semibold">
+                    <span>Total:</span>
+                    <span className="text-green-600">{formatCurrency(totalPrice, product.currency)}</span>
                   </div>
 
                   <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
@@ -488,22 +521,51 @@ export function PaymentDialog({ open, onOpenChange, product }: PaymentDialogProp
                 </div>
               </div>
 
-              {/* Shipping note for physical products */}
+              <Separator />
+
+              {/* Shipping row — live from Global Shipping Zones */}
               {product.type === 'physical' && (
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-blue-50 dark:bg-blue-900/20 px-3 py-2 rounded-lg">
-                  <Truck className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
-                  <span>Shipping cost calculated at checkout — one flat rate regardless of quantity</span>
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span className="flex items-center gap-1"><Truck className="w-3.5 h-3.5" /> Shipping</span>
+                    <span>
+                      {!countrySelected
+                        ? <span className="italic text-xs">select country below</span>
+                        : shippingFee === 0
+                          ? 'Free'
+                          : formatCurrency(shippingFee, product.currency)
+                      }
+                    </span>
+                  </div>
+                  {countrySelected && matchedZone && (
+                    <div className="flex items-center gap-1.5 text-xs bg-green-50 dark:bg-green-900/20 px-2.5 py-1.5 rounded-lg text-green-700 dark:text-green-300">
+                      <Globe className="w-3 h-3 flex-shrink-0" />
+                      <span>Zone: <strong>{matchedZone.name}</strong> — flat rate</span>
+                    </div>
+                  )}
+                  {!countrySelected && (
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-blue-50 dark:bg-blue-900/20 px-2.5 py-1.5 rounded-lg">
+                      <Globe className="w-3 h-3 flex-shrink-0" />
+                      Shipping fee will update when you select your country
+                    </div>
+                  )}
                 </div>
               )}
 
               <Separator />
 
               <div className="flex justify-between font-semibold text-lg">
-                <span>Subtotal{quantity > 1 ? ` (×${quantity})` : ''}</span>
+                <span>Total</span>
                 <span className="text-green-600">
                   {formatCurrency(totalPrice, product.currency)}
                 </span>
               </div>
+              {product.type === 'physical' && shippingFee > 0 && (
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>Products ({quantity > 1 ? `×${quantity}` : '1'})</span>
+                  <span>{formatCurrency(subtotal, product.currency)}</span>
+                </div>
+              )}
 
               {product.currency !== 'SAT' && (
                 <div className="text-sm text-muted-foreground text-right">
@@ -610,14 +672,32 @@ export function PaymentDialog({ open, onOpenChange, product }: PaymentDialogProp
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="country">Country *</Label>
-                        <Input
-                          id="country"
+                        <Label htmlFor="country" className="flex items-center gap-1">
+                          <Globe className="w-3.5 h-3.5" /> Country *
+                        </Label>
+                        <Select
                           value={buyerInfo.address.country}
-                          onChange={(e) => handleBuyerInfoChange('address.country', e.target.value)}
-                          placeholder="United States"
-                          required
-                        />
+                          onValueChange={val => handleBuyerInfoChange('address.country', val)}
+                        >
+                          <SelectTrigger id="country">
+                            <SelectValue placeholder="Select country…" />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-72">
+                            {countryOptions.map(group => (
+                              <SelectGroup key={group.zoneId}>
+                                <SelectLabel className="text-xs font-bold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5 py-1.5">
+                                  <Truck className="w-3 h-3" />
+                                  {group.zoneName} — {formatCurrency(group.zoneFee, group.currency)}
+                                </SelectLabel>
+                                {group.countries.map(c => (
+                                  <SelectItem key={c.code} value={c.name} className="text-sm pl-5">
+                                    {c.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectGroup>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
                   </div>
