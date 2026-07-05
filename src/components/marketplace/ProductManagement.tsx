@@ -18,6 +18,7 @@ import { CategoryManagement } from './CategoryManagement';
 import { PublishToMarketplaces } from './PublishToMarketplaces';
 import { OrdersManagement } from './OrdersManagement';
 import { ShippingConfigAdmin } from './ShippingConfigAdmin';
+import { StockManagement } from './StockManagement';
 import { formatCurrency } from '@/hooks/usePayment';
 import { useToast } from '@/hooks/useToast';
 import type { MarketplaceProduct } from '@/lib/sampleProducts';
@@ -40,6 +41,7 @@ import {
   ArrowUpRight,
   ClipboardList,
   Truck,
+  BarChart2,
 } from 'lucide-react';
 
 import { useCategories } from '@/hooks/useCategories';
@@ -476,10 +478,14 @@ export function ProductManagement() {
 
       {/* Main Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-8 max-w-5xl">
+        <TabsList className="grid w-full grid-cols-9 max-w-6xl">
           <TabsTrigger value="orders" className="flex items-center gap-1 text-orange-600 dark:text-orange-400 font-semibold">
             <ClipboardList className="h-3.5 w-3.5" />
             Orders
+          </TabsTrigger>
+          <TabsTrigger value="stock" className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
+            <BarChart2 className="h-3.5 w-3.5" />
+            Stock
           </TabsTrigger>
           <TabsTrigger value="products">Products</TabsTrigger>
           <TabsTrigger value="create">Create</TabsTrigger>
@@ -495,6 +501,10 @@ export function ProductManagement() {
 
         <TabsContent value="orders" className="space-y-6">
           <OrdersManagement />
+        </TabsContent>
+
+        <TabsContent value="stock" className="space-y-6">
+          <StockManagement />
         </TabsContent>
 
         <TabsContent value="products" className="space-y-6">
