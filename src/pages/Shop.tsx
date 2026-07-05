@@ -151,8 +151,8 @@ const Shop = () => {
   // Check if current user is admin
   const isAdmin = useIsAdmin();
 
-  // Get categories from localStorage (admin-managed list)
-  const { categoryNames: storedCategoryNames } = useCategories();
+  // Admin-created categories (localStorage via useCategories)
+  const { categoryNames } = useCategories();
 
   // Get initial tab from URL params
   const getInitialTab = () => {
@@ -199,35 +199,23 @@ const Shop = () => {
   // Fetch ALL marketplace products (category filtering done client-side)
   const { data: allProducts, isLoading: productsLoading, error: productsError } = useMarketplaceProducts();
 
-  // Build category pill list from ALL t-tags on ALL products
-  // This catches every tag (stickers, buttons, art, etc.) regardless of admin localStorage list
-  const liveCategories = useMemo(() => {
-    if (!allProducts) return storedCategoryNames.sort((a, b) => a.localeCompare(b));
-    // Collect every non-empty tag from every product
-    const fromProducts = allProducts.flatMap(p => p.tags ?? [p.category]).filter(Boolean);
-    const all = [...new Set([...fromProducts])];
-    return all.sort((a, b) => a.localeCompare(b));
-  }, [allProducts, storedCategoryNames]);
-
-  // Count per tag (a product contributes to every tag it has)
-  const tagCounts = useMemo(() => {
+  // Tabs = only the admin-created categories (from useCategories / localStorage)
+  // Count how many products match each category name (case-insensitive against p.category)
+  const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     allProducts?.forEach(p => {
-      const ptags = p.tags?.length ? p.tags : [p.category];
-      ptags.forEach(t => { counts[t] = (counts[t] ?? 0) + 1; });
+      const key = p.category.toLowerCase();
+      counts[key] = (counts[key] ?? 0) + 1;
     });
     return counts;
   }, [allProducts]);
 
-  // Filter: a product matches if ANY of its tags matches the selected category
+  // Filter products by selected category (matches p.category)
   const products = useMemo(() => {
     if (!allProducts) return allProducts;
     if (selectedCategory === 'all') return allProducts;
     const needle = selectedCategory.toLowerCase();
-    return allProducts.filter(p => {
-      const ptags = p.tags?.length ? p.tags : [p.category];
-      return ptags.some(t => t.toLowerCase() === needle);
-    });
+    return allProducts.filter(p => p.category.toLowerCase() === needle);
   }, [allProducts, selectedCategory]);
 
   // Fetch fundraisers
@@ -414,26 +402,22 @@ const Shop = () => {
                       )}
                     </TabsTrigger>
 
-                    {/* One tab per live category tag — auto-adds new ones */}
-                    {productsLoading
-                      ? Array.from({ length: 4 }).map((_, i) => (
-                          <div key={i} className="h-9 w-20 mx-1 animate-pulse rounded bg-muted/50" />
-                        ))
-                      : liveCategories.map(cat => {
-                          const count = tagCounts[cat] ?? 0;
-                          if (count === 0) return null;
-                          return (
-                            <TabsTrigger
-                              key={cat}
-                              value={cat}
-                              className="relative h-9 rounded-none border-b-2 border-transparent px-4 text-sm font-medium text-muted-foreground transition-none data-[state=active]:border-orange-500 data-[state=active]:text-orange-600 data-[state=active]:shadow-none bg-transparent hover:text-foreground whitespace-nowrap"
-                            >
-                              {cat.charAt(0).toUpperCase() + cat.slice(1)}
-                              <span className="ml-1.5 text-xs text-muted-foreground">{count}</span>
-                            </TabsTrigger>
-                          );
-                        })
-                    }
+                    {/* One tab per admin-created category */}
+                    {categoryNames.map(cat => {
+                      const count = categoryCounts[cat.toLowerCase()] ?? 0;
+                      return (
+                        <TabsTrigger
+                          key={cat}
+                          value={cat}
+                          className="relative h-9 rounded-none border-b-2 border-transparent px-4 text-sm font-medium text-muted-foreground transition-none data-[state=active]:border-orange-500 data-[state=active]:text-orange-600 data-[state=active]:shadow-none bg-transparent hover:text-foreground whitespace-nowrap"
+                        >
+                          {cat}
+                          {count > 0 && (
+                            <span className="ml-1.5 text-xs text-muted-foreground">{count}</span>
+                          )}
+                        </TabsTrigger>
+                      );
+                    })}
                   </TabsList>
                 </div>
 
