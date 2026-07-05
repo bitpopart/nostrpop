@@ -104,9 +104,11 @@ export function PaymentDialog({ open, onOpenChange, product }: PaymentDialogProp
   const { data: shippingConfig } = useShippingConfig();
   const config = shippingConfig ?? DEFAULT_SHIPPING_CONFIG;
 
-  // Build grouped country list from zones
+  // Build grouped country list from zones.
+  // Zones with countries are listed normally; the catch-all zone (empty countries)
+  // appears last as a single "Rest of World" selectable entry.
   const countryOptions = useMemo(() => {
-    return config.zones
+    const regular = config.zones
       .filter(z => z.countries.length > 0)
       .map(zone => ({
         zoneId: zone.id,
@@ -114,7 +116,22 @@ export function PaymentDialog({ open, onOpenChange, product }: PaymentDialogProp
         zoneFee: zone.fee,
         currency: zone.currency,
         countries: [...zone.countries].sort((a, b) => a.name.localeCompare(b.name)),
+        isCatchAll: false,
       }));
+
+    const catchAll = config.zones.find(z => z.countries.length === 0);
+    if (catchAll) {
+      regular.push({
+        zoneId: catchAll.id,
+        zoneName: catchAll.name,
+        zoneFee: catchAll.fee,
+        currency: catchAll.currency,
+        countries: [{ code: '__catchall__', name: catchAll.name }],
+        isCatchAll: true,
+      });
+    }
+
+    return regular;
   }, [config]);
 
   const subtotal = product.price * quantity;
@@ -689,11 +706,17 @@ export function PaymentDialog({ open, onOpenChange, product }: PaymentDialogProp
                                   <Truck className="w-3 h-3" />
                                   {group.zoneName} — {formatCurrency(group.zoneFee, group.currency)}
                                 </SelectLabel>
-                                {group.countries.map(c => (
-                                  <SelectItem key={c.code} value={c.name} className="text-sm pl-5">
-                                    {c.name}
+                                {group.isCatchAll ? (
+                                  <SelectItem value={group.countries[0].name} className="text-sm pl-5 italic text-muted-foreground">
+                                    🌐 {group.zoneName} (any other country)
                                   </SelectItem>
-                                ))}
+                                ) : (
+                                  group.countries.map(c => (
+                                    <SelectItem key={c.code} value={c.name} className="text-sm pl-5">
+                                      {c.name}
+                                    </SelectItem>
+                                  ))
+                                )}
                               </SelectGroup>
                             ))}
                           </SelectContent>

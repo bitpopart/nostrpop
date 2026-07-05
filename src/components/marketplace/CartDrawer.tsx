@@ -87,9 +87,11 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
     }) ?? config.zones.find(z => z.countries.length === 0); // catch-all
   }, [config, address.country, countrySelected]);
 
-  // Build flat sorted country list grouped by zone for the Select
+  // Build flat sorted country list grouped by zone for the Select.
+  // Zones with countries get listed normally; the catch-all zone (empty countries)
+  // appears last as a single "Rest of World" selectable entry.
   const countryOptions = useMemo(() => {
-    return config.zones
+    const regular = config.zones
       .filter(z => z.countries.length > 0)
       .map(zone => ({
         zoneId: zone.id,
@@ -97,7 +99,24 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
         zoneFee: zone.fee,
         currency: zone.currency,
         countries: [...zone.countries].sort((a, b) => a.name.localeCompare(b.name)),
+        isCatchAll: false,
       }));
+
+    // Add catch-all zone as a special selectable group
+    const catchAll = config.zones.find(z => z.countries.length === 0);
+    if (catchAll) {
+      regular.push({
+        zoneId: catchAll.id,
+        zoneName: catchAll.name,
+        zoneFee: catchAll.fee,
+        currency: catchAll.currency,
+        // The value stored will be the zone name itself so getShippingFee can match via catch-all
+        countries: [{ code: '__catchall__', name: catchAll.name }],
+        isCatchAll: true,
+      });
+    }
+
+    return regular;
   }, [config]);
 
   const shippingResolved = !hasPhysical || !countrySelected || shippingCost >= 0;
@@ -506,11 +525,17 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                                   <Truck className="w-3 h-3" />
                                   {group.zoneName} — {formatCurrency(group.zoneFee, group.currency)}
                                 </SelectLabel>
-                                {group.countries.map(c => (
-                                  <SelectItem key={c.code} value={c.name} className="text-sm pl-5">
-                                    {c.name}
+                                {group.isCatchAll ? (
+                                  <SelectItem value={group.countries[0].name} className="text-sm pl-5 italic text-muted-foreground">
+                                    🌐 {group.zoneName} (any other country)
                                   </SelectItem>
-                                ))}
+                                ) : (
+                                  group.countries.map(c => (
+                                    <SelectItem key={c.code} value={c.name} className="text-sm pl-5">
+                                      {c.name}
+                                    </SelectItem>
+                                  ))
+                                )}
                               </SelectGroup>
                             ))}
                           </SelectContent>
