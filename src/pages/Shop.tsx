@@ -380,48 +380,50 @@ const Shop = () => {
                 <RelaySelector />
               </div>
 
-              {/* ── Category tab menu — auto-updates from live product tags ── */}
-              <Tabs
-                value={selectedCategory}
-                onValueChange={setSelectedCategory}
-                className="w-full"
-              >
-                {/* Scrollable tab list */}
+              {/* ── Category tab bar — plain buttons, avoids nesting inside outer Tabs ── */}
+              <div className="w-full">
                 <div className="overflow-x-auto pb-px">
-                  <TabsList className="inline-flex h-9 w-max min-w-full rounded-none border-b border-border bg-transparent p-0 gap-0">
+                  <div className="inline-flex h-9 w-max min-w-full border-b border-border gap-0">
                     {/* All tab */}
-                    <TabsTrigger
-                      value="all"
-                      className="relative h-9 rounded-none border-b-2 border-transparent px-4 text-sm font-medium text-muted-foreground transition-none data-[state=active]:border-orange-500 data-[state=active]:text-orange-600 data-[state=active]:shadow-none bg-transparent hover:text-foreground"
+                    <button
+                      type="button"
+                      onClick={() => setSelectedCategory('all')}
+                      className={`relative h-9 border-b-2 px-4 text-sm font-medium transition-colors whitespace-nowrap
+                        ${selectedCategory === 'all'
+                          ? 'border-orange-500 text-orange-600'
+                          : 'border-transparent text-muted-foreground hover:text-foreground'}`}
                     >
                       All
                       {allProducts && (
-                        <span className="ml-1.5 text-xs text-muted-foreground">
-                          {allProducts.length}
-                        </span>
+                        <span className="ml-1.5 text-xs text-muted-foreground">{allProducts.length}</span>
                       )}
-                    </TabsTrigger>
+                    </button>
 
                     {/* One tab per admin-created category */}
                     {categoryNames.map(cat => {
+                      const isActive = selectedCategory.toLowerCase() === cat.toLowerCase();
                       const count = categoryCounts[cat.toLowerCase()] ?? 0;
                       return (
-                        <TabsTrigger
+                        <button
                           key={cat}
-                          value={cat}
-                          className="relative h-9 rounded-none border-b-2 border-transparent px-4 text-sm font-medium text-muted-foreground transition-none data-[state=active]:border-orange-500 data-[state=active]:text-orange-600 data-[state=active]:shadow-none bg-transparent hover:text-foreground whitespace-nowrap"
+                          type="button"
+                          onClick={() => setSelectedCategory(cat)}
+                          className={`relative h-9 border-b-2 px-4 text-sm font-medium transition-colors whitespace-nowrap
+                            ${isActive
+                              ? 'border-orange-500 text-orange-600'
+                              : 'border-transparent text-muted-foreground hover:text-foreground'}`}
                         >
                           {cat}
                           {count > 0 && (
                             <span className="ml-1.5 text-xs text-muted-foreground">{count}</span>
                           )}
-                        </TabsTrigger>
+                        </button>
                       );
                     })}
-                  </TabsList>
+                  </div>
                 </div>
 
-                {/* Single shared content panel — reacts to tab value via `products` memo */}
+                {/* Products panel */}
                 <div className="mt-4">
                   {productsLoading && (
                     <div className={`grid gap-6 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'}`}>
@@ -507,7 +509,7 @@ const Shop = () => {
                     </div>
                   )}
                 </div>
-              </Tabs>
+              </div>
             </div>
           </TabsContent>
 
