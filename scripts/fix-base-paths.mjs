@@ -4,7 +4,6 @@ import { join } from 'path';
 const distDir = 'dist';
 const indexPath = join(distDir, 'index.html');
 const manifestPath = join(distDir, 'manifest.webmanifest');
-
 // Check if dist directory exists
 if (!existsSync(distDir)) {
   console.error('❌ dist directory does not exist');
@@ -19,9 +18,17 @@ try {
   }
 
   let indexHtml = readFileSync(indexPath, 'utf-8');
+
+  // Fix base paths
   indexHtml = indexHtml.replace(/%VITE_BASE%/g, '/');
+
+  // Remove Shakespeare dev-environment Tailwind config script injection
+  // This script is injected by the Shakespeare build system but should not be in production
+  indexHtml = indexHtml.replace(/<script type="module" src="\/shakespeare_tailwind\.config[^"]*\.js"><\/script>/g, '');
+
   writeFileSync(indexPath, indexHtml);
   console.log('✅ Fixed base paths in index.html');
+  console.log('✅ Removed Shakespeare dev-environment script tags from index.html');
 } catch (e) {
   console.error('❌ Error fixing index.html:', e.message);
   process.exit(1);
