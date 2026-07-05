@@ -185,6 +185,30 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
   const confirmPayment = useCallback(() => {
     stopDetection();
 
+    // Build proper per-item list for the order record
+    const orderItems = items.map(i => ({
+      product_id: i.id,
+      product_name: i.name,
+      quantity: i.quantity,
+      price: (i.discount && i.discount > 0 ? i.price * (1 - i.discount / 100) : i.price) * i.quantity,
+      currency: i.currency,
+      type: i.type,
+      image: i.images?.[0],
+    }));
+
+    // Add shipping as a line item if applicable
+    if (hasPhysical && shippingCost > 0) {
+      orderItems.push({
+        product_id: 'shipping',
+        product_name: `Shipping to ${address.country}`,
+        quantity: 1,
+        price: shippingCost,
+        currency,
+        type: 'physical',
+        image: undefined,
+      });
+    }
+
     const savedOrder = createCheckoutOrder({
       productId: 'cart',
       productName: `Order — ${items.map(i => i.name).join(', ')}`,
@@ -203,26 +227,9 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
         country: address.country,
       } : undefined,
       paymentMethod: 'Lightning',
+      items: orderItems,
+      // createCheckoutOrder will auto-send the shop email
     });
-
-    if (hasPhysical && address.name) {
-      const itemLines = items.map(i => `  • ${i.name} ×${i.quantity}`).join('\n');
-      const subject = encodeURIComponent(`Order ${savedOrder.order_number} — BitPopArt`);
-      const body = encodeURIComponent(
-        `Hello,\n\nI just placed an order on BitPopArt.\n\n` +
-        `Order: ${savedOrder.order_number}\n\nItems:\n${itemLines}\n\n` +
-        `Subtotal: ${subtotal.toFixed(2)} ${currency}\n` +
-        `Shipping: ${shippingCost > 0 ? shippingCost.toFixed(2) + ' ' + currency : 'Free'}\n` +
-        `Total: ${total.toFixed(2)} ${currency}\n\n` +
-        `Name: ${address.name}\nEmail: ${address.email}\n` +
-        (address.line1
-          ? `\nShip to:\n${address.line1}\n${address.line2 ? address.line2 + '\n' : ''}` +
-            `${address.city}, ${address.state} ${address.postal_code}\n${address.country}\n`
-          : '') +
-        `\nPayment: Lightning Network\nThank you!`
-      );
-      try { window.open(`mailto:shop@bitpopart.com?subject=${subject}&body=${body}`, '_blank'); } catch { /* ignore */ }
-    }
 
     toast({ title: 'Payment confirmed! ⚡', description: 'Thank you for your order.' });
     setStep('done');

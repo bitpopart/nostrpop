@@ -335,11 +335,19 @@ const Admin = () => {
     },
     {
       title: 'Orders',
-      description: 'View purchases, manage shipping & digital downloads',
+      description: 'View all sales, print order documents, manage shipping',
       icon: ClipboardList,
       color: 'from-green-500 to-teal-500',
-      action: () => setActiveTab('shop'),
+      action: () => navigate('/orders'),
       badge: 'Orders'
+    },
+    {
+      title: 'Shop Debug',
+      description: 'Debug shipping zones, email tests, raw order data',
+      icon: Store,
+      color: 'from-slate-500 to-gray-600',
+      action: () => navigate('/debug'),
+      badge: 'Debug'
     },
     {
       title: 'Publish to Markets',

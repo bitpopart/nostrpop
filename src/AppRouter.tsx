@@ -33,6 +33,8 @@ import { CategoryDemo } from "./pages/CategoryDemo";
 import { ProductPage } from "./pages/ProductPage";
 import { DeleteProductPage } from "./pages/DeleteProductPage";
 import OrderConfirmation from "./pages/OrderConfirmation";
+import OrdersPage from "./pages/Orders";
+import ShopDebugPage from "./pages/ShopDebug";
 import FreeDownloads from "./pages/FreeDownloads";
 import FreeGallery from "./pages/FreeGallery";
 import Games from "./pages/Games";
@@ -99,6 +101,8 @@ export function AppRouter() {
         <Route path="/shop/:productId/delete" element={<Layout><DeleteProductPage /></Layout>} />
         <Route path="/shop/:productId" element={<Layout><ProductPage /></Layout>} />
         <Route path="/order-confirmation" element={<Layout><OrderConfirmation /></Layout>} />
+        <Route path="/orders" element={<Layout><OrdersPage /></Layout>} />
+        <Route path="/debug" element={<Layout><ShopDebugPage /></Layout>} />
         <Route path="/free" element={<Layout><FreeGallery /></Layout>} />
         <Route path="/free/images" element={<Layout><FreeDownloads /></Layout>} />
         <Route path="/games" element={<Layout><Games /></Layout>} />

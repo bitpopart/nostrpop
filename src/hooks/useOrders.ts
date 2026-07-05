@@ -303,10 +303,60 @@ export function useDeleteOrder() {
   });
 }
 
+// ─── Email helper ─────────────────────────────────────────────────────────────
+
+/**
+ * Open the system email client to send a new-order notification to shop@bitpopart.com.
+ * This runs best-effort; errors are silently ignored.
+ */
+export function sendOrderEmailToShop(order: Order): void {
+  try {
+    const hasPhysical = order.items.some(i => i.type === 'physical');
+    const itemLines = order.items
+      .map(i => `  • ${i.product_name}  ×${i.quantity}  ${i.price} ${i.currency}`)
+      .join('\n');
+
+    const addr = order.shipping_address;
+    const shippingBlock = hasPhysical && addr
+      ? `\nSHIP TO:\n${addr.line1}${addr.line2 ? '\n' + addr.line2 : ''}\n${addr.city}${addr.state ? ', ' + addr.state : ''} ${addr.postal_code}\n${addr.country}\n`
+      : '';
+
+    const trackingBlock = order.tracking_number
+      ? `\nTracking: ${order.tracking_number}`
+      : '';
+
+    const body =
+      `NEW ORDER — BitPopArt\n` +
+      `${'─'.repeat(40)}\n` +
+      `Order Number : ${order.order_number}\n` +
+      `Date         : ${new Date(order.created_at).toLocaleString()}\n` +
+      `Status       : ${order.status.toUpperCase()}\n` +
+      `\nITEMS:\n${itemLines}\n` +
+      `\nTOTAL        : ${order.total_price} ${order.currency}\n` +
+      `Payment      : ${order.payment_method ?? 'Lightning Network ⚡'}\n` +
+      `\nBUYER:\n` +
+      `Name  : ${order.buyer_name ?? '—'}\n` +
+      `Email : ${order.buyer_email ?? '—'}\n` +
+      shippingBlock +
+      trackingBlock +
+      `\n${'─'.repeat(40)}\n` +
+      `View in orders dashboard: /orders\n` +
+      `shop@bitpopart.com · bitpopart.com`;
+
+    const subject = `NEW ORDER ${order.order_number} — BitPopArt`;
+    window.open(
+      `mailto:shop@bitpopart.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`,
+      '_blank'
+    );
+  } catch {
+    // silently ignore — email is best-effort
+  }
+}
+
 // ─── Utility: create a checkout order ────────────────────────────────────────
 
 /**
- * Called from the OrderConfirmation page to persist an order.
+ * Called from the checkout flows to persist an order and send an email to the shop.
  */
 export function createCheckoutOrder(params: {
   productId: string;
@@ -319,25 +369,39 @@ export function createCheckoutOrder(params: {
   buyerEmail?: string;
   shippingAddress?: Order['shipping_address'];
   paymentMethod?: string;
+  /** Pass items array for multi-item cart orders */
+  items?: Array<{
+    product_id: string;
+    product_name: string;
+    quantity: number;
+    price: number;
+    currency: string;
+    type: ProductType;
+    image?: string;
+  }>;
+  /** If true, skip auto-sending the shop email (caller handles it) */
+  skipEmail?: boolean;
 }): Order {
   const id = `checkout-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const now = new Date().toISOString();
+
+  const orderItems = params.items ?? [
+    {
+      product_id: params.productId,
+      product_name: params.productName,
+      quantity: 1,
+      price: params.price,
+      currency: params.currency,
+      type: params.productType,
+      image: params.productImage,
+    },
+  ];
 
   const order: Order = {
     id,
     order_number: `ORD-${Date.now().toString(36).toUpperCase()}`,
     status: 'paid',
-    items: [
-      {
-        product_id: params.productId,
-        product_name: params.productName,
-        quantity: 1,
-        price: params.price,
-        currency: params.currency,
-        type: params.productType,
-        image: params.productImage,
-      },
-    ],
+    items: orderItems,
     total_price: params.price,
     currency: params.currency,
     buyer_name: params.buyerName,
@@ -350,5 +414,11 @@ export function createCheckoutOrder(params: {
   };
 
   storeOrder(order);
+
+  // Auto-send email to shop@bitpopart.com
+  if (!params.skipEmail) {
+    sendOrderEmailToShop(order);
+  }
+
   return order;
 }
