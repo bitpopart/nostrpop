@@ -39,6 +39,8 @@ interface MarketplaceProduct {
   category: string;
   /** All non-type t tags — used for multi-tag filtering in the shop */
   tags: string[];
+  /** Extra keyword tags beyond the primary category (e.g. "bitcoin", "sneek") */
+  keyword_tags: string[];
   type: 'physical' | 'digital';
   specs?: Array<[string, string]>;
   shipping?: Array<{ id: string; cost: number }>;
@@ -138,6 +140,8 @@ export function useMarketplaceProducts(category?: string) {
             const productTags = categoryTags.filter(tag => !['digital', 'physical'].includes(tag));
             // Primary category = first non-type tag (back-compat)
             const mainCategory = productTags[0] || 'Other';
+            // Keyword tags = all non-type t-tags AFTER the primary category (index >= 1)
+            const keywordTags = productTags.slice(1);
 
             return {
               id: dTag,
@@ -151,6 +155,7 @@ export function useMarketplaceProducts(category?: string) {
               quantity: content.quantity,
               category: mainCategory,
               tags: productTags,
+              keyword_tags: keywordTags,
               type,
               specs: content.specs || [],
               shipping: content.shipping || [],
@@ -255,6 +260,7 @@ export function useMarketplaceProduct(productId: string) {
       const type = isDigital ? 'digital' : isPhysical ? 'physical' : 'physical';
       const productTags = categoryTags.filter(tag => !['digital', 'physical'].includes(tag));
       const mainCategory = productTags[0] || 'Other';
+      const keywordTags = productTags.slice(1);
 
       return {
         id: productId,
@@ -268,6 +274,7 @@ export function useMarketplaceProduct(productId: string) {
         quantity: content.quantity,
         category: mainCategory,
         tags: productTags,
+        keyword_tags: keywordTags,
         type,
         specs: content.specs || [],
         shipping: content.shipping || [],

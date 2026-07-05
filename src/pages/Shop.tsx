@@ -35,6 +35,8 @@ import {
   Printer,
   ChevronLeft,
   ChevronRight,
+  Tag,
+  X,
 } from 'lucide-react';
 
 import { useCategories } from '@/hooks/useCategories';
@@ -195,6 +197,7 @@ const Shop = () => {
     }
   }, [searchParams]);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
 
   // Fetch ALL marketplace products (category filtering done client-side)
   const { data: allProducts, isLoading: productsLoading, error: productsError } = useMarketplaceProducts();
@@ -210,13 +213,39 @@ const Shop = () => {
     return counts;
   }, [allProducts]);
 
-  // Filter products by selected category (matches p.category)
+  // All keyword tags + counts (across ALL products, before any filter)
+  const tagCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    allProducts?.forEach(p => {
+      // keyword_tags exists on the extended type from useMarketplaceProducts
+      const kwTags = (p as { keyword_tags?: string[] }).keyword_tags ?? [];
+      kwTags.forEach(tag => {
+        counts[tag] = (counts[tag] ?? 0) + 1;
+      });
+    });
+    // Sort by count desc
+    return Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .map(([tag, count]) => ({ tag, count }));
+  }, [allProducts]);
+
+  // Filter products by selected category AND selected tag
   const products = useMemo(() => {
     if (!allProducts) return allProducts;
-    if (selectedCategory === 'all') return allProducts;
-    const needle = selectedCategory.toLowerCase();
-    return allProducts.filter(p => p.category.toLowerCase() === needle);
-  }, [allProducts, selectedCategory]);
+    let filtered = allProducts;
+    if (selectedCategory !== 'all') {
+      const needle = selectedCategory.toLowerCase();
+      filtered = filtered.filter(p => p.category.toLowerCase() === needle);
+    }
+    if (selectedTag) {
+      const needle = selectedTag.toLowerCase();
+      filtered = filtered.filter(p => {
+        const kwTags = (p as { keyword_tags?: string[] }).keyword_tags ?? [];
+        return kwTags.some(t => t.toLowerCase() === needle);
+      });
+    }
+    return filtered;
+  }, [allProducts, selectedCategory, selectedTag]);
 
   // Fetch fundraisers
   const { data: fundraisers = [], isLoading: fundraisersLoading } = useFundraisers();
@@ -380,14 +409,54 @@ const Shop = () => {
                 <RelaySelector />
               </div>
 
+              {/* ── Tag Cloud ─────────────────────────────────────────── */}
+              {tagCounts.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Tag className="h-3.5 w-3.5 text-orange-400 flex-shrink-0" />
+                    <span className="font-medium">Filter by tag</span>
+                    {selectedTag && (
+                      <button
+                        type="button"
+                        onClick={() => setSelectedTag(null)}
+                        className="ml-2 flex items-center gap-0.5 text-orange-600 hover:text-orange-800 font-semibold"
+                      >
+                        <X className="h-3 w-3" />
+                        Clear #{selectedTag}
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {tagCounts.map(({ tag, count }) => {
+                      const isActive = selectedTag === tag;
+                      return (
+                        <button
+                          key={tag}
+                          type="button"
+                          onClick={() => setSelectedTag(isActive ? null : tag)}
+                          className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border transition-all font-medium
+                            ${isActive
+                              ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
+                              : 'bg-white dark:bg-gray-800 text-muted-foreground border-gray-200 dark:border-gray-700 hover:border-orange-300 hover:text-orange-600'
+                            }`}
+                        >
+                          #{tag}
+                          <span className={`text-[10px] ${isActive ? 'text-orange-100' : 'text-muted-foreground'}`}>{count}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               {/* ── Category tab bar — plain buttons, avoids nesting inside outer Tabs ── */}
               <div className="w-full">
                 <div className="overflow-x-auto pb-px">
                   <div className="inline-flex h-9 w-max min-w-full border-b border-border gap-0">
                     {/* All tab */}
-                    <button
+                     <button
                       type="button"
-                      onClick={() => setSelectedCategory('all')}
+                      onClick={() => { setSelectedCategory('all'); setSelectedTag(null); }}
                       className={`relative h-9 border-b-2 px-4 text-sm font-medium transition-colors whitespace-nowrap
                         ${selectedCategory === 'all'
                           ? 'border-orange-500 text-orange-600'
@@ -407,7 +476,7 @@ const Shop = () => {
                         <button
                           key={cat}
                           type="button"
-                          onClick={() => setSelectedCategory(cat)}
+                          onClick={() => { setSelectedCategory(cat); setSelectedTag(null); }}
                           className={`relative h-9 border-b-2 px-4 text-sm font-medium transition-colors whitespace-nowrap
                             ${isActive
                               ? 'border-orange-500 text-orange-600'
@@ -472,7 +541,9 @@ const Shop = () => {
                           <div>
                             <CardTitle className="mb-2">No Products Found</CardTitle>
                             <CardDescription>
-                              {selectedCategory !== 'all'
+                              {selectedTag
+                                ? `No products tagged #${selectedTag}${selectedCategory !== 'all' ? ` in "${selectedCategory}"` : ''}. Try clearing the tag filter.`
+                                : selectedCategory !== 'all'
                                 ? `No products tagged "${selectedCategory}". Try a different tab or relay.`
                                 : 'No products have been listed yet. Try switching to a different relay or be the first to list a product!'}
                             </CardDescription>
@@ -493,9 +564,17 @@ const Shop = () => {
 
                   {!productsLoading && products && products.length > 0 && (
                     <div className="space-y-3">
-                      <p className="text-xs text-muted-foreground">
-                        {products.length} product{products.length !== 1 ? 's' : ''}
-                        {selectedCategory !== 'all' && ` in "${selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)}"`}
+                      <p className="text-xs text-muted-foreground flex items-center gap-1.5 flex-wrap">
+                        <span>{products.length} product{products.length !== 1 ? 's' : ''}</span>
+                        {selectedCategory !== 'all' && <span>in "{selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)}"</span>}
+                        {selectedTag && (
+                          <span className="inline-flex items-center gap-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 px-2 py-0.5 rounded-full border border-orange-200 dark:border-orange-800">
+                            <Tag className="h-3 w-3" />#{selectedTag}
+                            <button type="button" onClick={() => setSelectedTag(null)} className="hover:text-red-600 ml-0.5">
+                              <X className="h-3 w-3" />
+                            </button>
+                          </span>
+                        )}
                       </p>
                       <div className={`grid gap-6 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'}`}>
                         {products.map((product) => (

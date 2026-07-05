@@ -98,6 +98,9 @@ export function EditProductForm({ product, onSuccess, onCancel }: EditProductFor
     product.specs?.map(([key, value]) => ({ key, value })) || []
   );
   const [shippingRegions, setShippingRegions] = useState<ShippingRegion[]>(() => normalizeShipping(product.shipping));
+  // keyword_tags exist on the extended MarketplaceProduct from useMarketplaceProducts but not the slim sampleProducts type
+  const [keywordTags, setKeywordTags] = useState<string[]>((product as { keyword_tags?: string[] }).keyword_tags || []);
+  const [tagInput, setTagInput] = useState('');
 
   const addShippingRegion = () => {
     setShippingRegions(prev => [...prev, { id: `region-${Date.now()}`, name: '', countries: '', cost: 0 }]);
@@ -163,6 +166,7 @@ export function EditProductForm({ product, onSuccess, onCancel }: EditProductFor
     setValue('stallId', product.stall_id);
     setValue('contactUrl', product.contact_url || '');
     setShippingRegions(normalizeShipping(product.shipping));
+    setKeywordTags((product as { keyword_tags?: string[] }).keyword_tags || []);
   }, [product, setValue]);
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -316,6 +320,9 @@ export function EditProductForm({ product, onSuccess, onCancel }: EditProductFor
         tags.push(['quantity', data.quantity.toString()]);
       }
 
+      // Add keyword tags
+      keywordTags.forEach(tag => tags.push(['t', tag.toLowerCase()]));
+
       // Publish as updated NIP-15 product event (kind 30018)
       createEvent({
         kind: 30018,
@@ -421,6 +428,58 @@ export function EditProductForm({ product, onSuccess, onCancel }: EditProductFor
               {errors.description && (
                 <p className="text-sm text-red-500">{errors.description.message}</p>
               )}
+            </div>
+
+            {/* Keyword Tags */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1.5">
+                <Tag className="w-3.5 h-3.5 text-orange-500" />
+                Keyword Tags
+                <span className="text-xs text-muted-foreground font-normal ml-1">(helps buyers find your product)</span>
+              </Label>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="e.g. bitcoin, sneek, amsterdam…"
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if ((e.key === 'Enter' || e.key === ',') && tagInput.trim()) {
+                      e.preventDefault();
+                      const t = tagInput.trim().toLowerCase().replace(/[^a-z0-9-_]/g, '');
+                      if (t && !keywordTags.includes(t)) setKeywordTags(prev => [...prev, t]);
+                      setTagInput('');
+                    }
+                  }}
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const t = tagInput.trim().toLowerCase().replace(/[^a-z0-9-_]/g, '');
+                    if (t && !keywordTags.includes(t)) setKeywordTags(prev => [...prev, t]);
+                    setTagInput('');
+                  }}
+                  disabled={!tagInput.trim()}
+                >
+                  <Plus className="w-4 h-4" />
+                  Add
+                </Button>
+              </div>
+              {keywordTags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {keywordTags.map((tag) => (
+                    <span key={tag} className="inline-flex items-center gap-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 text-xs px-2.5 py-1 rounded-full border border-orange-200 dark:border-orange-800">
+                      #{tag}
+                      <button type="button" onClick={() => setKeywordTags(prev => prev.filter(t => t !== tag))} className="ml-0.5 hover:text-red-600 transition-colors">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground">Press Enter or comma to add. Buyers can filter the shop by these tags.</p>
             </div>
           </div>
 

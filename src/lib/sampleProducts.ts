@@ -27,6 +27,8 @@ export interface MarketplaceProduct {
   contact_url?: string; // URL for contacting the seller
   stall_id: string;
   created_at: string;
+  /** Extra keyword tags for fast filtering (e.g. "bitcoin", "sneek", "amsterdam") */
+  keyword_tags?: string[];
 }
 
 export const sampleProducts: MarketplaceProduct[] = [
