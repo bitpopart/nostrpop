@@ -17,6 +17,7 @@ import { LightningAddressDebugger } from './LightningAddressDebugger';
 import { CategoryManagement } from './CategoryManagement';
 import { PublishToMarketplaces } from './PublishToMarketplaces';
 import { OrdersManagement } from './OrdersManagement';
+import { ShippingConfigAdmin } from './ShippingConfigAdmin';
 import { formatCurrency } from '@/hooks/usePayment';
 import { useToast } from '@/hooks/useToast';
 import type { MarketplaceProduct } from '@/lib/sampleProducts';
@@ -38,6 +39,7 @@ import {
   Clock,
   ArrowUpRight,
   ClipboardList,
+  Truck,
 } from 'lucide-react';
 
 import { useCategories } from '@/hooks/useCategories';
@@ -474,7 +476,7 @@ export function ProductManagement() {
 
       {/* Main Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-7 max-w-5xl">
+        <TabsList className="grid w-full grid-cols-8 max-w-5xl">
           <TabsTrigger value="orders" className="flex items-center gap-1 text-orange-600 dark:text-orange-400 font-semibold">
             <ClipboardList className="h-3.5 w-3.5" />
             Orders
@@ -482,6 +484,10 @@ export function ProductManagement() {
           <TabsTrigger value="products">Products</TabsTrigger>
           <TabsTrigger value="create">Create</TabsTrigger>
           <TabsTrigger value="import">Import URL</TabsTrigger>
+          <TabsTrigger value="shipping" className="flex items-center gap-1 text-blue-600 dark:text-blue-400 font-semibold">
+            <Truck className="h-3.5 w-3.5" />
+            Shipping
+          </TabsTrigger>
           <TabsTrigger value="publish" className="text-purple-600 dark:text-purple-400 font-semibold">Marketplaces</TabsTrigger>
           <TabsTrigger value="categories">Categories</TabsTrigger>
           <TabsTrigger value="debug">Debug</TabsTrigger>
@@ -712,6 +718,10 @@ export function ProductManagement() {
               });
             }}
           />
+        </TabsContent>
+
+        <TabsContent value="shipping" className="space-y-6">
+          <ShippingConfigAdmin />
         </TabsContent>
 
         <TabsContent value="publish" className="space-y-6">

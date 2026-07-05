@@ -162,6 +162,7 @@ const Shop = () => {
     if (tabParam === 'admin' && isAdmin) return 'admin';
     if (tabParam === 'fundraiser-admin' && isAdmin) return 'fundraiser-admin';
     if (tabParam === 'fundraisers') return 'fundraisers';
+    if (tabParam === 'print-posters') return 'print-posters';
     return 'marketplace';
   };
   const [activeTab, setActiveTab] = useState(getInitialTab());
@@ -179,6 +180,8 @@ const Shop = () => {
       setActiveTab('fundraiser-admin');
     } else if (tabParam === 'fundraisers') {
       setActiveTab('fundraisers');
+    } else if (tabParam === 'print-posters') {
+      setActiveTab('print-posters');
     } else {
       setActiveTab('marketplace');
     }
@@ -204,8 +207,13 @@ const Shop = () => {
   // Fetch print posters
   const { data: printPosters = [], isLoading: printersLoading } = usePrintPosters();
   const { data: btcRate } = useBtcEurRate();
-  // Show max 6 on shop page
+  // Show max 6 on shop page in marketplace tab
   const featuredPosters = printPosters.slice(0, 6);
+
+  // Print posters tab: category filter
+  const [posterCategory, setPosterCategory] = useState<string>('all');
+  const posterCategories = Array.from(new Set(printPosters.map((p: PrintPoster) => p.category).filter(Boolean)));
+  const filteredPosters = posterCategory === 'all' ? printPosters : printPosters.filter((p: PrintPoster) => p.category === posterCategory);
 
   useSeoMeta({
     title: 'Shop - BitPopArt Marketplace | Buy Bitcoin Pop Art',
@@ -310,15 +318,17 @@ const Shop = () => {
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full max-w-6xl mx-auto">
           {isAdmin ? (
-            <TabsList className="grid w-full grid-cols-4 max-w-3xl mx-auto mb-5">
+            <TabsList className="grid w-full grid-cols-5 max-w-4xl mx-auto mb-5">
               <TabsTrigger value="marketplace">Marketplace</TabsTrigger>
+              <TabsTrigger value="print-posters" className="gap-1"><Printer className="h-3.5 w-3.5" />Print Posters</TabsTrigger>
               <TabsTrigger value="fundraisers">Fundraisers</TabsTrigger>
               <TabsTrigger value="admin">Products</TabsTrigger>
               <TabsTrigger value="fundraiser-admin">Fundraiser Admin</TabsTrigger>
             </TabsList>
           ) : (
-            <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto mb-5">
+            <TabsList className="grid w-full grid-cols-3 max-w-xl mx-auto mb-5">
               <TabsTrigger value="marketplace">Marketplace</TabsTrigger>
+              <TabsTrigger value="print-posters" className="gap-1"><Printer className="h-3.5 w-3.5" />Print Posters</TabsTrigger>
               <TabsTrigger value="fundraisers">Fundraisers</TabsTrigger>
             </TabsList>
           )}
@@ -443,35 +453,31 @@ const Shop = () => {
                 </div>
               )}
 
-              {/* Filters */}
-              <Card className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
-                <CardContent className="pt-6">
-                  <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-                    <div className="flex items-center space-x-2">
-                      <Filter className="h-4 w-4 text-muted-foreground" />
-                      <Label className="text-sm font-medium">Filter by category:</Label>
-                    </div>
+              {/* Filters — inline, no card wrapper */}
+              <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center py-1">
+                <div className="flex items-center space-x-2 flex-shrink-0">
+                  <Filter className="h-4 w-4 text-muted-foreground" />
+                  <Label className="text-sm font-medium">Filter by category:</Label>
+                </div>
 
-                    <div className="flex-1">
-                      <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                        <SelectTrigger className="w-full sm:w-64">
-                          <SelectValue placeholder="All categories" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All categories</SelectItem>
-                          {categoryNames.map((category) => (
-                            <SelectItem key={category} value={category}>
-                              {category}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                <div className="flex-1">
+                  <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                    <SelectTrigger className="w-full sm:w-64">
+                      <SelectValue placeholder="All categories" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All categories</SelectItem>
+                      {categoryNames.map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-                    <RelaySelector />
-                  </div>
-                </CardContent>
-              </Card>
+                <RelaySelector />
+              </div>
 
               {/* Products Display */}
               {productsLoading && (
@@ -568,6 +574,119 @@ const Shop = () => {
                     ))}
                   </div>
                 </div>
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="print-posters">
+            <div className="space-y-4">
+              {/* Print Posters header */}
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <Printer className="h-5 w-5 text-orange-500" />
+                  <h2 className="text-xl font-bold">Print Posters</h2>
+                  <Badge variant="outline" className="text-xs">A3 · A4 · A5 · A6</Badge>
+                </div>
+                <p className="text-sm text-muted-foreground">Pay with Bitcoin Lightning — print at home or at any print shop</p>
+              </div>
+
+              {/* Category filter for posters — inline, no card */}
+              {posterCategories.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2">
+                  <Filter className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <Label className="text-sm font-medium flex-shrink-0">Filter by category:</Label>
+                  <div className="flex flex-wrap gap-1.5">
+                    <button
+                      onClick={() => setPosterCategory('all')}
+                      className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${posterCategory === 'all' ? 'bg-orange-500 text-white border-orange-500' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-orange-300'}`}
+                    >
+                      All
+                    </button>
+                    {posterCategories.map((cat) => (
+                      <button
+                        key={cat}
+                        onClick={() => setPosterCategory(cat)}
+                        className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${posterCategory === cat ? 'bg-orange-500 text-white border-orange-500' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-orange-300'}`}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Posters grid */}
+              {printersLoading && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  {Array.from({ length: 10 }).map((_, i) => (
+                    <div key={i} className="space-y-2">
+                      <Skeleton className="aspect-[3/4] w-full rounded-xl" />
+                      <Skeleton className="h-3 w-3/4" />
+                      <Skeleton className="h-3 w-1/2" />
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {!printersLoading && filteredPosters.length === 0 && (
+                <Card className="border-dashed">
+                  <CardContent className="py-12 px-8 text-center">
+                    <Printer className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                    <CardTitle className="mb-2">No Posters Found</CardTitle>
+                    <CardDescription>
+                      {posterCategory !== 'all' ? `No posters in the "${posterCategory}" category.` : 'No print posters have been added yet.'}
+                    </CardDescription>
+                  </CardContent>
+                </Card>
+              )}
+
+              {!printersLoading && filteredPosters.length > 0 && (
+                <>
+                  <p className="text-sm text-muted-foreground">{filteredPosters.length} poster design{filteredPosters.length !== 1 ? 's' : ''}</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    {filteredPosters.map((poster: PrintPoster) => {
+                      const a4 = poster.formats.find((f: { format: PosterFormat }) => f.format === 'A4');
+                      const liveSats = btcRate && a4 ? eurToLiveSats(a4.priceEur, btcRate) : a4?.priceSats;
+                      return (
+                        <div
+                          key={poster.id}
+                          className="group cursor-pointer rounded-xl overflow-hidden border bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow"
+                          onClick={() => navigate('/print')}
+                        >
+                          <div className="aspect-[3/4] bg-gray-100 dark:bg-gray-700 overflow-hidden">
+                            <img
+                              src={poster.previewUrl}
+                              alt={poster.title}
+                              className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+                              loading="lazy"
+                            />
+                          </div>
+                          <div className="p-2.5">
+                            <p className="text-sm font-semibold truncate">{poster.title}</p>
+                            {poster.category && (
+                              <p className="text-xs text-muted-foreground truncate mb-1">{poster.category}</p>
+                            )}
+                            {a4 && (
+                              <div className="flex items-center gap-1 text-xs text-orange-600 font-medium">
+                                €{a4.priceEur}
+                                {liveSats && (
+                                  <span className="text-yellow-600 flex items-center gap-0.5 ml-1">
+                                    <Zap className="h-2.5 w-2.5" />{liveSats.toLocaleString()}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                            <Badge variant="outline" className="text-[10px] mt-1.5">A3·A4·A5·A6</Badge>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <Button variant="outline" className="w-full gap-2 mt-2" onClick={() => navigate('/print')}>
+                    <Printer className="h-4 w-4" />
+                    Go to Full Print Shop
+                  </Button>
+                </>
               )}
             </div>
           </TabsContent>

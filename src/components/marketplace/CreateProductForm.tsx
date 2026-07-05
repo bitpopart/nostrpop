@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 
 import { useCategories } from '@/hooks/useCategories';
+import { useShippingConfig } from '@/hooks/useShippingConfig';
 
 const CURRENCIES = [
   { value: 'USD', label: 'USD ($)' },
@@ -57,13 +58,6 @@ const productSchema = z.object({
     value: z.string().min(1)
   })).optional()
 });
-
-interface ShippingRegion {
-  id: string;
-  name: string;
-  countries: string;
-  cost: number; // 0 = free
-}
 
 type ProductFormData = z.infer<typeof productSchema>;
 

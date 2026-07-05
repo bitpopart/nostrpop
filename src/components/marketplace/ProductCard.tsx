@@ -144,7 +144,7 @@ export function ProductCard({ product, onViewDetails }: ProductCardProps) {
           <ImageGallery
             images={product.images}
             productName={product.name}
-            showThumbnails={false}
+            showThumbnails={product.images.length > 1}
             aspectRatio="square"
             onClick={handleImageClick}
             enableFullscreen={false}
