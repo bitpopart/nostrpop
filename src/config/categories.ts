@@ -25,6 +25,18 @@ export const CATEGORIES: Category[] = [
     icon: '👕'
   },
   {
+    id: 'buttons',
+    name: 'Buttons',
+    description: 'Pin buttons and badges',
+    icon: '🔵'
+  },
+  {
+    id: 'stickers',
+    name: 'Stickers',
+    description: 'Stickers and decals',
+    icon: '🏷️'
+  },
+  {
     id: 'keychains',
     name: 'Keychains',
     description: 'Accessories and keychains',
