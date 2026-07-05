@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useSeoMeta } from '@unhead/react';
 import { useSearchParams } from 'react-router-dom';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -8,7 +8,7 @@ import { useAppMedia } from '@/hooks/useAppContent';
 import { useCart } from '@/hooks/useCart';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -153,8 +153,8 @@ const Shop = () => {
   // Check if current user is admin
   const isAdmin = useIsAdmin();
 
-  // Get categories
-  const { categoryNames } = useCategories();
+  // Get categories from localStorage (admin-managed list)
+  const { categoryNames: storedCategoryNames } = useCategories();
 
   // Get initial tab from URL params
   const getInitialTab = () => {
@@ -198,8 +198,23 @@ const Shop = () => {
   }, [searchParams]);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-  // Fetch marketplace products
-  const { data: products, isLoading: productsLoading, error: productsError } = useMarketplaceProducts(selectedCategory === 'all' ? undefined : selectedCategory);
+  // Fetch ALL marketplace products (category filtering done client-side)
+  const { data: allProducts, isLoading: productsLoading, error: productsError } = useMarketplaceProducts();
+
+  // Build category list: union of admin-managed list + categories actually present in products
+  // This ensures newly created categories (Buttons, Stickers, etc.) always appear
+  const liveCategories = useMemo(() => {
+    const fromProducts = allProducts?.map(p => p.category).filter(Boolean) ?? [];
+    const all = [...new Set([...storedCategoryNames, ...fromProducts])];
+    return all.sort((a, b) => a.localeCompare(b));
+  }, [allProducts, storedCategoryNames]);
+
+  // Apply category filter client-side
+  const products = useMemo(() => {
+    if (!allProducts) return allProducts;
+    if (selectedCategory === 'all') return allProducts;
+    return allProducts.filter(p => p.category.toLowerCase() === selectedCategory.toLowerCase());
+  }, [allProducts, selectedCategory]);
 
   // Fetch fundraisers
   const { data: fundraisers = [], isLoading: fundraisersLoading } = useFundraisers();
@@ -368,30 +383,62 @@ const Shop = () => {
 
 
 
-              {/* Filters — inline, no card wrapper */}
-              <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center py-1">
-                <div className="flex items-center space-x-2 flex-shrink-0">
-                  <Filter className="h-4 w-4 text-muted-foreground" />
-                  <Label className="text-sm font-medium">Filter by category:</Label>
+              {/* Category filter — scrollable pill row */}
+              <div className="space-y-2 py-1">
+                <div className="flex items-center gap-2">
+                  <Filter className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <Label className="text-sm font-medium flex-shrink-0">Category:</Label>
+                  <RelaySelector className="ml-auto" />
                 </div>
+                <div className="flex flex-wrap gap-2">
+                  {/* All button */}
+                  <button
+                    onClick={() => setSelectedCategory('all')}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border transition-all ${
+                      selectedCategory === 'all'
+                        ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
+                        : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-orange-300 hover:text-orange-600'
+                    }`}
+                  >
+                    All
+                    {allProducts && (
+                      <span className={`text-xs px-1.5 py-0.5 rounded-full font-semibold ${
+                        selectedCategory === 'all'
+                          ? 'bg-white/30 text-white'
+                          : 'bg-gray-100 dark:bg-gray-700 text-muted-foreground'
+                      }`}>
+                        {allProducts.length}
+                      </span>
+                    )}
+                  </button>
 
-                <div className="flex-1">
-                  <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                    <SelectTrigger className="w-full sm:w-64">
-                      <SelectValue placeholder="All categories" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All categories</SelectItem>
-                      {categoryNames.map((category) => (
-                        <SelectItem key={category} value={category}>
-                          {category}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {/* Category pills — driven by live products + admin list */}
+                  {liveCategories.map(category => {
+                    const count = allProducts?.filter(p => p.category.toLowerCase() === category.toLowerCase()).length ?? 0;
+                    if (count === 0) return null; // Only show categories that have products
+                    const isActive = selectedCategory.toLowerCase() === category.toLowerCase();
+                    return (
+                      <button
+                        key={category}
+                        onClick={() => setSelectedCategory(isActive ? 'all' : category)}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border transition-all ${
+                          isActive
+                            ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
+                            : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-orange-300 hover:text-orange-600'
+                        }`}
+                      >
+                        {category}
+                        <span className={`text-xs px-1.5 py-0.5 rounded-full font-semibold ${
+                          isActive
+                            ? 'bg-white/30 text-white'
+                            : 'bg-gray-100 dark:bg-gray-700 text-muted-foreground'
+                        }`}>
+                          {count}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
-
-                <RelaySelector />
               </div>
 
               {/* Products Display */}
