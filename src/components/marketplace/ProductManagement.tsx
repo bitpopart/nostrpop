@@ -373,7 +373,21 @@ export function ProductManagement() {
 
   // Calculate stats
   const totalProducts = products?.length || 0;
-  const totalValue = products?.reduce((sum, product) => sum + product.price, 0) || 0;
+
+  // Total stock value: price × quantity (1 for digital/unlimited), grouped by currency
+  const stockValueByCurrency = useMemo(() => {
+    const totals: Record<string, number> = {};
+    products?.forEach(product => {
+      const qty = product.type === 'digital'
+        ? 1  // digital = count once (no stock limit)
+        : (product.quantity ?? 1);
+      const value = product.price * Math.max(qty, 0);
+      const cur = product.currency || 'USD';
+      totals[cur] = (totals[cur] ?? 0) + value;
+    });
+    return totals;
+  }, [products]);
+
   const outOfStockProducts = products?.filter(product =>
     product.quantity !== undefined && product.quantity <= 0
   ).length || 0;
@@ -442,11 +456,24 @@ export function ProductManagement() {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Value</p>
-                <p className="text-2xl font-bold">${totalValue.toFixed(2)}</p>
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-muted-foreground">Stock Value</p>
+                {Object.keys(stockValueByCurrency).length === 0 ? (
+                  <p className="text-2xl font-bold text-muted-foreground">—</p>
+                ) : (
+                  <div className="space-y-0.5">
+                    {Object.entries(stockValueByCurrency).map(([currency, value]) => (
+                      <p key={currency} className="text-xl font-bold leading-tight">
+                        {currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency === 'GBP' ? '£' : ''}
+                        {value.toFixed(2)}
+                        {!['USD','EUR','GBP'].includes(currency) && ` ${currency}`}
+                      </p>
+                    ))}
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground mt-1">price × stock qty</p>
               </div>
-              <DollarSign className="h-8 w-8 text-green-600" />
+              <DollarSign className="h-8 w-8 text-green-600 flex-shrink-0" />
             </div>
           </CardContent>
         </Card>
