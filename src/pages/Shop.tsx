@@ -542,8 +542,7 @@ const Shop = () => {
               {/* Category filter for posters — inline, no card */}
               {posterCategories.length > 0 && (
                 <div className="flex flex-wrap items-center gap-2">
-                  <Filter className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                  <Label className="text-sm font-medium flex-shrink-0">Filter by category:</Label>
+                  <span className="text-sm font-medium flex-shrink-0">Filter by category:</span>
                   <div className="flex flex-wrap gap-1.5">
                     <button
                       onClick={() => setPosterCategory('all')}
