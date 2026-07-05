@@ -35,7 +35,10 @@ interface MarketplaceProduct {
   price: number;
   discount?: number; // Discount percentage (0-100)
   quantity?: number;
+  /** Primary category (first non-type t tag) — kept for back-compat */
   category: string;
+  /** All non-type t tags — used for multi-tag filtering in the shop */
+  tags: string[];
   type: 'physical' | 'digital';
   specs?: Array<[string, string]>;
   shipping?: Array<{ id: string; cost: number }>;
@@ -131,8 +134,10 @@ export function useMarketplaceProducts(category?: string) {
             const isPhysical = categoryTags.includes('physical');
             const type = isDigital ? 'digital' : isPhysical ? 'physical' : 'physical';
 
-            // Get main category (exclude type tags)
-            const mainCategory = categoryTags.find(tag => !['digital', 'physical'].includes(tag)) || 'Other';
+            // Get all non-type category tags (used for multi-tag filtering)
+            const productTags = categoryTags.filter(tag => !['digital', 'physical'].includes(tag));
+            // Primary category = first non-type tag (back-compat)
+            const mainCategory = productTags[0] || 'Other';
 
             return {
               id: dTag,
@@ -145,6 +150,7 @@ export function useMarketplaceProducts(category?: string) {
               discount: discount && discount > 0 ? discount : undefined,
               quantity: content.quantity,
               category: mainCategory,
+              tags: productTags,
               type,
               specs: content.specs || [],
               shipping: content.shipping || [],
@@ -247,7 +253,8 @@ export function useMarketplaceProduct(productId: string) {
       const isDigital = categoryTags.includes('digital');
       const isPhysical = categoryTags.includes('physical');
       const type = isDigital ? 'digital' : isPhysical ? 'physical' : 'physical';
-      const mainCategory = categoryTags.find(tag => !['digital', 'physical'].includes(tag)) || 'Other';
+      const productTags = categoryTags.filter(tag => !['digital', 'physical'].includes(tag));
+      const mainCategory = productTags[0] || 'Other';
 
       return {
         id: productId,
@@ -260,6 +267,7 @@ export function useMarketplaceProduct(productId: string) {
         discount: discount && discount > 0 ? discount : undefined,
         quantity: content.quantity,
         category: mainCategory,
+        tags: productTags,
         type,
         specs: content.specs || [],
         shipping: content.shipping || [],

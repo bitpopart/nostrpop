@@ -201,19 +201,35 @@ const Shop = () => {
   // Fetch ALL marketplace products (category filtering done client-side)
   const { data: allProducts, isLoading: productsLoading, error: productsError } = useMarketplaceProducts();
 
-  // Build category list: union of admin-managed list + categories actually present in products
-  // This ensures newly created categories (Buttons, Stickers, etc.) always appear
+  // Build category pill list from ALL t-tags on ALL products
+  // This catches every tag (stickers, buttons, art, etc.) regardless of admin localStorage list
   const liveCategories = useMemo(() => {
-    const fromProducts = allProducts?.map(p => p.category).filter(Boolean) ?? [];
-    const all = [...new Set([...storedCategoryNames, ...fromProducts])];
+    if (!allProducts) return storedCategoryNames.sort((a, b) => a.localeCompare(b));
+    // Collect every non-empty tag from every product
+    const fromProducts = allProducts.flatMap(p => p.tags ?? [p.category]).filter(Boolean);
+    const all = [...new Set([...fromProducts])];
     return all.sort((a, b) => a.localeCompare(b));
   }, [allProducts, storedCategoryNames]);
 
-  // Apply category filter client-side
+  // Count per tag (a product contributes to every tag it has)
+  const tagCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    allProducts?.forEach(p => {
+      const ptags = p.tags?.length ? p.tags : [p.category];
+      ptags.forEach(t => { counts[t] = (counts[t] ?? 0) + 1; });
+    });
+    return counts;
+  }, [allProducts]);
+
+  // Filter: a product matches if ANY of its tags matches the selected category
   const products = useMemo(() => {
     if (!allProducts) return allProducts;
     if (selectedCategory === 'all') return allProducts;
-    return allProducts.filter(p => p.category.toLowerCase() === selectedCategory.toLowerCase());
+    const needle = selectedCategory.toLowerCase();
+    return allProducts.filter(p => {
+      const ptags = p.tags?.length ? p.tags : [p.category];
+      return ptags.some(t => t.toLowerCase() === needle);
+    });
   }, [allProducts, selectedCategory]);
 
   // Fetch fundraisers
@@ -412,10 +428,10 @@ const Shop = () => {
                     )}
                   </button>
 
-                  {/* Category pills — driven by live products + admin list */}
+                  {/* Category pills — one per unique t-tag across all products */}
                   {liveCategories.map(category => {
-                    const count = allProducts?.filter(p => p.category.toLowerCase() === category.toLowerCase()).length ?? 0;
-                    if (count === 0) return null; // Only show categories that have products
+                    const count = tagCounts[category] ?? 0;
+                    if (count === 0) return null;
                     const isActive = selectedCategory.toLowerCase() === category.toLowerCase();
                     return (
                       <button
@@ -427,7 +443,7 @@ const Shop = () => {
                             : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-orange-300 hover:text-orange-600'
                         }`}
                       >
-                        {category}
+                        {category.charAt(0).toUpperCase() + category.slice(1)}
                         <span className={`text-xs px-1.5 py-0.5 rounded-full font-semibold ${
                           isActive
                             ? 'bg-white/30 text-white'
@@ -496,7 +512,7 @@ const Shop = () => {
                         <CardTitle className="mb-2">No Products Found</CardTitle>
                         <CardDescription>
                           {selectedCategory && selectedCategory !== 'all'
-                            ? `No products found in the "${selectedCategory}" category. Try a different category or relay.`
+                            ? `No products tagged "${selectedCategory}". Try a different tag or relay.`
                             : "No products have been listed yet. Try switching to a different relay or be the first to list a product!"
                           }
                         </CardDescription>
@@ -519,9 +535,9 @@ const Shop = () => {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <p className="text-sm text-muted-foreground">
-                      {products.length} product{products.length !== 1 ? 's' : ''} found
-                      {selectedCategory && selectedCategory !== 'all' && ` in "${selectedCategory}"`}
-                    </p>
+                        {products.length} product{products.length !== 1 ? 's' : ''} found
+                        {selectedCategory && selectedCategory !== 'all' && ` tagged "${selectedCategory}"`}
+                      </p>
                   </div>
 
                   <div className={`grid gap-6 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'}`}>
