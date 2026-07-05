@@ -21,13 +21,11 @@ import { CartDrawer } from '@/components/marketplace/CartDrawer';
 import { FundraiserCard } from '@/components/fundraiser/FundraiserCard';
 import { FundraiserManagement } from '@/components/fundraiser/FundraiserManagement';
 import { useFundraisers } from '@/hooks/useFundraisers';
-import { Label } from '@/components/ui/label';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useNavigate } from 'react-router-dom';
 import {
   ShoppingCart,
   Plus,
-  Filter,
   Grid3X3,
   List,
   Zap,
@@ -374,15 +372,11 @@ const Shop = () => {
                 </Card>
               )}
 
-              {/* Marketplace sub-header */}
-              <div className="flex flex-wrap justify-between items-center gap-2">
+              {/* Toolbar: Add Product + View toggle + RelaySelector */}
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   {user && isAdmin && (
-                    <Button
-                      onClick={() => setActiveTab('admin')}
-                      variant="outline"
-                      size="sm"
-                    >
+                    <Button onClick={() => setActiveTab('admin')} variant="outline" size="sm">
                       <Plus className="mr-1.5 h-3.5 w-3.5" />
                       Add Product
                     </Button>
@@ -395,164 +389,141 @@ const Shop = () => {
                     {viewMode === 'grid' ? <List className="h-4 w-4" /> : <Grid3X3 className="h-4 w-4" />}
                   </Button>
                 </div>
+                <RelaySelector />
               </div>
 
-
-
-              {/* Category filter — scrollable pill row */}
-              <div className="space-y-2 py-1">
-                <div className="flex items-center gap-2">
-                  <Filter className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                  <Label className="text-sm font-medium flex-shrink-0">Category:</Label>
-                  <RelaySelector className="ml-auto" />
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {/* All button */}
-                  <button
-                    onClick={() => setSelectedCategory('all')}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border transition-all ${
-                      selectedCategory === 'all'
-                        ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
-                        : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-orange-300 hover:text-orange-600'
-                    }`}
-                  >
-                    All
-                    {allProducts && (
-                      <span className={`text-xs px-1.5 py-0.5 rounded-full font-semibold ${
-                        selectedCategory === 'all'
-                          ? 'bg-white/30 text-white'
-                          : 'bg-gray-100 dark:bg-gray-700 text-muted-foreground'
-                      }`}>
-                        {allProducts.length}
-                      </span>
-                    )}
-                  </button>
-
-                  {/* Category pills — one per unique t-tag across all products */}
-                  {liveCategories.map(category => {
-                    const count = tagCounts[category] ?? 0;
-                    if (count === 0) return null;
-                    const isActive = selectedCategory.toLowerCase() === category.toLowerCase();
-                    return (
-                      <button
-                        key={category}
-                        onClick={() => setSelectedCategory(isActive ? 'all' : category)}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border transition-all ${
-                          isActive
-                            ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
-                            : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-orange-300 hover:text-orange-600'
-                        }`}
-                      >
-                        {category.charAt(0).toUpperCase() + category.slice(1)}
-                        <span className={`text-xs px-1.5 py-0.5 rounded-full font-semibold ${
-                          isActive
-                            ? 'bg-white/30 text-white'
-                            : 'bg-gray-100 dark:bg-gray-700 text-muted-foreground'
-                        }`}>
-                          {count}
+              {/* ── Category tab menu — auto-updates from live product tags ── */}
+              <Tabs
+                value={selectedCategory}
+                onValueChange={setSelectedCategory}
+                className="w-full"
+              >
+                {/* Scrollable tab list */}
+                <div className="overflow-x-auto pb-px">
+                  <TabsList className="inline-flex h-9 w-max min-w-full rounded-none border-b border-border bg-transparent p-0 gap-0">
+                    {/* All tab */}
+                    <TabsTrigger
+                      value="all"
+                      className="relative h-9 rounded-none border-b-2 border-transparent px-4 text-sm font-medium text-muted-foreground transition-none data-[state=active]:border-orange-500 data-[state=active]:text-orange-600 data-[state=active]:shadow-none bg-transparent hover:text-foreground"
+                    >
+                      All
+                      {allProducts && (
+                        <span className="ml-1.5 text-xs text-muted-foreground">
+                          {allProducts.length}
                         </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+                      )}
+                    </TabsTrigger>
 
-              {/* Products Display */}
-              {productsLoading && (
-                <div className={`grid gap-6 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'}`}>
-                  {Array.from({ length: 6 }).map((_, i) => (
-                    <Card key={i} className="overflow-hidden">
-                      <div className="aspect-square">
-                        <Skeleton className="w-full h-full" />
-                      </div>
-                      <CardHeader>
-                        <Skeleton className="h-6 w-3/4" />
-                        <Skeleton className="h-4 w-1/2" />
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-2">
-                          <Skeleton className="h-4 w-full" />
-                          <Skeleton className="h-4 w-2/3" />
-                          <div className="flex justify-between items-center pt-2">
-                            <Skeleton className="h-6 w-20" />
-                            <Skeleton className="h-8 w-16" />
+                    {/* One tab per live category tag — auto-adds new ones */}
+                    {productsLoading
+                      ? Array.from({ length: 4 }).map((_, i) => (
+                          <div key={i} className="h-9 w-20 mx-1 animate-pulse rounded bg-muted/50" />
+                        ))
+                      : liveCategories.map(cat => {
+                          const count = tagCounts[cat] ?? 0;
+                          if (count === 0) return null;
+                          return (
+                            <TabsTrigger
+                              key={cat}
+                              value={cat}
+                              className="relative h-9 rounded-none border-b-2 border-transparent px-4 text-sm font-medium text-muted-foreground transition-none data-[state=active]:border-orange-500 data-[state=active]:text-orange-600 data-[state=active]:shadow-none bg-transparent hover:text-foreground whitespace-nowrap"
+                            >
+                              {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                              <span className="ml-1.5 text-xs text-muted-foreground">{count}</span>
+                            </TabsTrigger>
+                          );
+                        })
+                    }
+                  </TabsList>
+                </div>
+
+                {/* Single shared content panel — reacts to tab value via `products` memo */}
+                <div className="mt-4">
+                  {productsLoading && (
+                    <div className={`grid gap-6 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'}`}>
+                      {Array.from({ length: 6 }).map((_, i) => (
+                        <Card key={i} className="overflow-hidden">
+                          <div className="aspect-square"><Skeleton className="w-full h-full" /></div>
+                          <CardHeader>
+                            <Skeleton className="h-6 w-3/4" />
+                            <Skeleton className="h-4 w-1/2" />
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-2">
+                              <Skeleton className="h-4 w-full" />
+                              <Skeleton className="h-4 w-2/3" />
+                              <div className="flex justify-between items-center pt-2">
+                                <Skeleton className="h-6 w-20" />
+                                <Skeleton className="h-8 w-16" />
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+
+                  {productsError && (
+                    <Card className="border-dashed border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-900/10">
+                      <CardContent className="py-12 px-8 text-center">
+                        <div className="max-w-sm mx-auto space-y-6">
+                          <ShoppingCart className="h-12 w-12 mx-auto text-red-500" />
+                          <div>
+                            <CardTitle className="text-red-600 dark:text-red-400 mb-2">Failed to Load Products</CardTitle>
+                            <CardDescription>Unable to fetch marketplace products. Try switching to a different relay.</CardDescription>
+                          </div>
+                          <RelaySelector className="w-full" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {!productsLoading && !productsError && products && products.length === 0 && (
+                    <Card className="border-dashed">
+                      <CardContent className="py-12 px-8 text-center">
+                        <div className="max-w-sm mx-auto space-y-6">
+                          <ShoppingCart className="h-12 w-12 mx-auto text-gray-400" />
+                          <div>
+                            <CardTitle className="mb-2">No Products Found</CardTitle>
+                            <CardDescription>
+                              {selectedCategory !== 'all'
+                                ? `No products tagged "${selectedCategory}". Try a different tab or relay.`
+                                : 'No products have been listed yet. Try switching to a different relay or be the first to list a product!'}
+                            </CardDescription>
+                          </div>
+                          <div className="flex flex-col sm:flex-row gap-2">
+                            <RelaySelector className="flex-1" />
+                            {user && isAdmin && (
+                              <Button size="sm" onClick={() => setActiveTab('admin')}>
+                                <Plus className="mr-2 h-4 w-4" />
+                                List Product
+                              </Button>
+                            )}
                           </div>
                         </div>
                       </CardContent>
                     </Card>
-                  ))}
-                </div>
-              )}
+                  )}
 
-              {productsError && (
-                <Card className="border-dashed border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-900/10">
-                  <CardContent className="py-12 px-8 text-center">
-                    <div className="max-w-sm mx-auto space-y-6">
-                      <ShoppingCart className="h-12 w-12 mx-auto text-red-500" />
-                      <div>
-                        <CardTitle className="text-red-600 dark:text-red-400 mb-2">
-                          Failed to Load Products
-                        </CardTitle>
-                        <CardDescription>
-                          Unable to fetch marketplace products. Try switching to a different relay.
-                        </CardDescription>
-                      </div>
-                      <RelaySelector className="w-full" />
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {products && products.length === 0 && !productsLoading && (
-                <Card className="border-dashed">
-                  <CardContent className="py-12 px-8 text-center">
-                    <div className="max-w-sm mx-auto space-y-6">
-                      <ShoppingCart className="h-12 w-12 mx-auto text-gray-400" />
-                      <div>
-                        <CardTitle className="mb-2">No Products Found</CardTitle>
-                        <CardDescription>
-                          {selectedCategory && selectedCategory !== 'all'
-                            ? `No products tagged "${selectedCategory}". Try a different tag or relay.`
-                            : "No products have been listed yet. Try switching to a different relay or be the first to list a product!"
-                          }
-                        </CardDescription>
-                      </div>
-                      <div className="flex flex-col sm:flex-row gap-2">
-                        <RelaySelector className="flex-1" />
-                        {user && isAdmin && (
-                          <Button size="sm" onClick={() => setActiveTab('admin')}>
-                            <Plus className="mr-2 h-4 w-4" />
-                            List Product
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {products && products.length > 0 && (
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <p className="text-sm text-muted-foreground">
-                        {products.length} product{products.length !== 1 ? 's' : ''} found
-                        {selectedCategory && selectedCategory !== 'all' && ` tagged "${selectedCategory}"`}
+                  {!productsLoading && products && products.length > 0 && (
+                    <div className="space-y-3">
+                      <p className="text-xs text-muted-foreground">
+                        {products.length} product{products.length !== 1 ? 's' : ''}
+                        {selectedCategory !== 'all' && ` in "${selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)}"`}
                       </p>
-                  </div>
-
-                  <div className={`grid gap-6 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'}`}>
-                    {products.map((product) => (
-                      <ProductCard
-                        key={product.id}
-                        product={product}
-                        onViewDetails={(product) => {
-                          console.log('Viewing product details:', product);
-                        }}
-                      />
-                    ))}
-                  </div>
+                      <div className={`grid gap-6 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'}`}>
+                        {products.map((product) => (
+                          <ProductCard
+                            key={product.id}
+                            product={product}
+                            onViewDetails={(product) => { console.log('View:', product); }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
+              </Tabs>
             </div>
           </TabsContent>
 
