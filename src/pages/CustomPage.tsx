@@ -94,8 +94,6 @@ export default function CustomPage() {
 
   // Track whether the iframe has fired its onLoad event
   const [iframeLoaded, setIframeLoaded] = useState(false);
-  // Track whether the iframe content was blocked by the browser (X-Frame-Options etc.)
-  const [iframeBlocked, setIframeBlocked] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const iframeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -113,10 +111,9 @@ export default function CustomPage() {
   const [fetchingHtml, setFetchingHtml] = useState(false);
   const fetchingUrlRef = useRef<string | null>(null);
 
-  // Reset iframe loaded/blocked state whenever the page/URL changes
+  // Reset iframe loaded state whenever the page/URL changes
   useEffect(() => {
     setIframeLoaded(false);
-    setIframeBlocked(false);
 
     // Clear any pending timeout
     if (iframeTimeoutRef.current) {
@@ -126,23 +123,10 @@ export default function CustomPage() {
 
     if (!page?.brand_site) return;
 
-    // Safety timeout: if onLoad never fires (e.g. blocked by X-Frame-Options),
+    // Safety timeout: if onLoad never fires for some reason,
     // remove the loading overlay after 6 seconds so users aren't stuck on a grey page.
     iframeTimeoutRef.current = setTimeout(() => {
       setIframeLoaded(true);
-      // Try to detect if the iframe content is actually blocked/empty
-      try {
-        const iframe = iframeRef.current;
-        if (iframe) {
-          const doc = iframe.contentDocument;
-          // If we can access contentDocument but it's empty/null body, it's blocked
-          if (!doc || !doc.body || doc.body.innerHTML === '') {
-            setIframeBlocked(true);
-          }
-        }
-      } catch {
-        // Cross-origin access throws — site loaded fine in a sandboxed context
-      }
     }, 6000);
 
     return () => {
@@ -233,18 +217,6 @@ export default function CustomPage() {
       clearTimeout(iframeTimeoutRef.current);
       iframeTimeoutRef.current = null;
     }
-    // Detect if the iframe was blocked (empty body = browser error/blocked page)
-    try {
-      const iframe = iframeRef.current;
-      if (iframe) {
-        const doc = iframe.contentDocument;
-        if (!doc || !doc.body || doc.body.innerHTML === '') {
-          setIframeBlocked(true);
-        }
-      }
-    } catch {
-      // Cross-origin iframe — content is loaded normally, just not accessible
-    }
     setIframeLoaded(true);
   }, []);
 
@@ -326,41 +298,6 @@ export default function CustomPage() {
   // or src= for plain external URLs. Shows a branded overlay while loading.
   const renderBrandSiteIframe = (wrapperClassName = 'flex-1 w-full relative', iframeClassName = 'w-full h-full border-0') => {
     const showOverlay = !iframeLoaded;
-
-    // If the iframe was blocked (X-Frame-Options / CSP), show a friendly fallback
-    // instead of a grey/error page.
-    if (iframeBlocked) {
-      return (
-        <div className={wrapperClassName} style={{ position: 'relative' }}>
-          <div className="w-full min-h-[600px] flex flex-col items-center justify-center gap-6 bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20 p-8 text-center">
-            <img
-              src="/bitpopart-logo.png"
-              alt="BitPopArt"
-              className="h-14 w-auto opacity-70"
-              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-            />
-            <div className="space-y-3 max-w-sm">
-              <p className="text-base font-medium text-gray-700 dark:text-gray-200">
-                This page can't be displayed in an embedded frame.
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Click the button below to open it directly.
-              </p>
-            </div>
-            {page.brand_site && (
-              <a
-                href={page.brand_site}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-purple-600 hover:bg-purple-500 text-white font-semibold text-sm shadow-md transition-all duration-200 hover:-translate-y-0.5"
-              >
-                <ExternalLink className="h-4 w-4" /> Open Page
-              </a>
-            )}
-          </div>
-        </div>
-      );
-    }
 
     if (htmlSrcDoc) {
       return (
