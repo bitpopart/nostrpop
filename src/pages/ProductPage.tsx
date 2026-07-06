@@ -15,6 +15,8 @@ import { ImageGallery } from '@/components/marketplace/ImageGallery';
 import { PaymentDialog } from '@/components/marketplace/PaymentDialog';
 import { CartDrawer } from '@/components/marketplace/CartDrawer';
 import { ArrowLeft, Package, Truck, Star, Shield, Heart, Share2, ExternalLink, Zap, ShoppingCart, Plus } from 'lucide-react';
+import { PublishToMarketplaces } from '@/components/marketplace/PublishToMarketplaces';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 
 export function ProductPage() {
   const { productId } = useParams<{ productId: string }>();
@@ -23,6 +25,7 @@ export function ProductPage() {
   const { toast } = useToast();
   const { addItem, totalItems } = useCart();
   const [cartOpen, setCartOpen] = useState(false);
+  const isAdmin = useIsAdmin();
 
   // Fetch live price from source URL
   const { data: livePrice } = useLivePrice(
@@ -367,6 +370,11 @@ export function ProductPage() {
                       </Button>
                     )}
                   </div>
+                )}
+
+                {/* Publish to Nostr Marketplaces — Admin Only */}
+                {isAdmin && (
+                  <PublishToMarketplaces product={product} />
                 )}
 
                 {/* Trust Indicators */}

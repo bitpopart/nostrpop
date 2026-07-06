@@ -15,6 +15,7 @@ import { SocialShareButtons } from '@/components/SocialShareButtons';
 import { PaymentDialog } from './PaymentDialog';
 import { ProductDetailsDialog } from './ProductDetailsDialog';
 import { ImageGallery } from './ImageGallery';
+import { PublishToMarketplaces } from './PublishToMarketplaces';
 import {
   ShoppingCart,
   Package,
@@ -260,6 +261,13 @@ export function ProductCard({ product, onViewDetails }: ProductCardProps) {
               contentType="product"
               className="mb-3"
             />
+          )}
+
+          {/* Publish to Nostr Marketplaces — Admin Only */}
+          {isAdmin && (
+            <div className="mb-3">
+              <PublishToMarketplaces product={product} />
+            </div>
           )}
 
           {/* Actions */}

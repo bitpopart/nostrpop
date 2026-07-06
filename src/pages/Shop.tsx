@@ -37,12 +37,16 @@ import {
   ChevronRight,
   Tag,
   X,
+  RefreshCw,
 } from 'lucide-react';
 
 import { useCategories } from '@/hooks/useCategories';
 import { useShopTags } from '@/hooks/useShopTags';
 import { usePrintPosters, useBtcEurRate, eurToLiveSats } from '@/hooks/usePrintPosters';
 import type { PrintPoster, PosterFormat } from '@/hooks/usePrintPosters';
+import { usePublishToMarketplace, NOSTR_MARKETPLACES } from '@/hooks/usePublishToMarketplace';
+import type { MarketplaceProduct } from '@/lib/sampleProducts';
+import { Store, Send, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 
 // ── Shop Image Carousel ────────────────────────────────────
 
@@ -136,6 +140,83 @@ function ShopCarousel({ items, isLoading }: { items: CarouselItem[]; isLoading: 
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+// ── Broadcast All Banner (admin-only) ──────────────────────────────────────────
+
+function BroadcastAllBanner({ products }: { products: MarketplaceProduct[] }) {
+  const { publishProduct, publishStatuses } = usePublishToMarketplace();
+  const [done, setDone] = useState(false);
+
+  const isAnyPublishing = products.some(p => publishStatuses[p.id]?.isPublishing);
+  const publishedCount = products.filter(p => {
+    const results = publishStatuses[p.id]?.results ?? [];
+    return results.some(r => r.success);
+  }).length;
+
+  const handleBroadcastAll = async () => {
+    setDone(false);
+    const allIds = NOSTR_MARKETPLACES.map(m => m.id);
+    for (const product of products) {
+      await publishProduct(product, allIds);
+    }
+    setDone(true);
+  };
+
+  if (products.length === 0) return null;
+
+  return (
+    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 rounded-xl border border-purple-200 dark:border-purple-800 bg-purple-50/60 dark:bg-purple-900/20">
+      <div className="flex items-start gap-3">
+        <Store className="h-5 w-5 text-purple-600 dark:text-purple-400 mt-0.5 flex-shrink-0" />
+        <div>
+          <p className="font-semibold text-sm text-purple-800 dark:text-purple-200">
+            Broadcast to Nostr Marketplaces
+          </p>
+          <p className="text-xs text-purple-600 dark:text-purple-400 mt-0.5">
+            Publish all {products.length} products as <strong>NIP-99</strong> (kind 30402) listings to Shopstr, Plebeian, Conduit &amp; Cypher Space.
+          </p>
+          {done && publishedCount > 0 && (
+            <p className="text-xs text-green-600 dark:text-green-400 mt-1 flex items-center gap-1">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              {publishedCount}/{products.length} products broadcast successfully
+            </p>
+          )}
+        </div>
+      </div>
+      <div className="flex items-center gap-2 flex-shrink-0">
+        {/* Per-marketplace quick links */}
+        <div className="hidden md:flex gap-1.5">
+          {NOSTR_MARKETPLACES.map(m => (
+            <a
+              key={m.id}
+              href={m.shopUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-full border font-medium ${m.colorLight} hover:opacity-80 transition-opacity`}
+              title={`View on ${m.name}`}
+            >
+              {m.logo} {m.name}
+            </a>
+          ))}
+        </div>
+        <Button
+          size="sm"
+          onClick={handleBroadcastAll}
+          disabled={isAnyPublishing || products.length === 0}
+          className="gap-1.5 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 whitespace-nowrap"
+        >
+          {isAnyPublishing ? (
+            <><Loader2 className="h-3.5 w-3.5 animate-spin" />Broadcasting…</>
+          ) : done ? (
+            <><RefreshCw className="h-3.5 w-3.5" />Re-broadcast All</>
+          ) : (
+            <><Send className="h-3.5 w-3.5" />Broadcast All</>
+          )}
+        </Button>
+      </div>
     </div>
   );
 }
@@ -399,6 +480,11 @@ const Shop = () => {
                     </div>
                   </CardContent>
                 </Card>
+              )}
+
+              {/* Broadcast Banner — Admin Only */}
+              {isAdmin && allProducts && allProducts.length > 0 && (
+                <BroadcastAllBanner products={allProducts} />
               )}
 
               {/* Toolbar: Add Product + View toggle + RelaySelector */}
