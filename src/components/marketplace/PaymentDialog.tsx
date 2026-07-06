@@ -228,6 +228,7 @@ export function PaymentDialog({ open, onOpenChange, product }: PaymentDialogProp
         country: buyerInfo.address.country,
       } : undefined,
       paymentMethod: 'Lightning',
+      sourcePage: 'shop',
       items: orderItems,
       // createCheckoutOrder will call sendOrderEmailToShop automatically
     });

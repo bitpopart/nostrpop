@@ -125,6 +125,7 @@ const OrderConfirmation = () => {
           }
         : undefined,
       paymentMethod: paymentMethod ?? 'Lightning',
+      sourcePage: 'product-page',
     });
 
     setOrderPersisted(true);

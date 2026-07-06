@@ -30,6 +30,8 @@ export interface OrderItem {
   image?: string;
 }
 
+export type OrderSourcePage = 'shop' | 'cart' | 'downloads' | 'product-page' | 'other';
+
 export interface Order {
   id: string;
   order_number: string;
@@ -52,6 +54,8 @@ export interface Order {
   payment_proof?: string;
   notes?: string;
   source: 'checkout' | 'nip15' | 'manual';
+  /** Which page on the site the payment originated from */
+  source_page?: OrderSourcePage;
   created_at: string;
   updated_at: string;
   shipped_at?: string;
@@ -369,6 +373,8 @@ export function createCheckoutOrder(params: {
   buyerEmail?: string;
   shippingAddress?: Order['shipping_address'];
   paymentMethod?: string;
+  /** Which page on the site the payment originated from */
+  sourcePage?: OrderSourcePage;
   /** Pass items array for multi-item cart orders */
   items?: Array<{
     product_id: string;
@@ -409,6 +415,7 @@ export function createCheckoutOrder(params: {
     shipping_address: params.shippingAddress,
     payment_method: params.paymentMethod ?? 'Lightning',
     source: 'checkout',
+    source_page: params.sourcePage ?? 'other',
     created_at: now,
     updated_at: now,
   };

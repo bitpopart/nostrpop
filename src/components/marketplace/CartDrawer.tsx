@@ -227,6 +227,7 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
         country: address.country,
       } : undefined,
       paymentMethod: 'Lightning',
+      sourcePage: 'cart',
       items: orderItems,
       // createCheckoutOrder will auto-send the shop email
     });
