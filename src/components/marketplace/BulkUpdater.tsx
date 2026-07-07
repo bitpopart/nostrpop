@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useNostr } from '@nostrify/react';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
@@ -14,7 +14,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Save, RotateCcw, Loader2, CheckCircle2, ExternalLink, Package } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { Save, RotateCcw, Loader2, CheckCircle2, ExternalLink, Package, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/useToast';
 
 // ── helpers ────────────────────────────────────────────────────────────────
@@ -44,8 +55,9 @@ interface Row {
   id: string;           // d-tag
   original: NostrEvent;
   sourceTags: string[][];
-  base: RowData;        // original fetched values
-  data: RowData;        // current edited values
+  thumbnail: string;    // first image tag value
+  base: RowData;
+  data: RowData;
 }
 
 function parseRow(event: NostrEvent): Row {
@@ -57,6 +69,13 @@ function parseRow(event: NostrEvent): Row {
       : getTag(event.tags, 'status') === 'sold'
       ? 'hidden'
       : 'on-sale';
+
+  // Thumbnail: prefer 'image' tag, fall back to 'thumb', then first 'url'
+  const thumbnail =
+    getTag(event.tags, 'image') ??
+    getTag(event.tags, 'thumb') ??
+    getTag(event.tags, 'url') ??
+    '';
 
   const data: RowData = {
     title: getTag(event.tags, 'title') ?? '',
@@ -73,6 +92,7 @@ function parseRow(event: NostrEvent): Row {
     id: getTag(event.tags, 'd') ?? event.id,
     original: event,
     sourceTags: event.tags,
+    thumbnail,
     base: { ...data },
     data: { ...data },
   };
@@ -135,12 +155,34 @@ interface CellProps {
 function EditCell({ value, dirty, placeholder, onChange, className = '', numeric }: CellProps) {
   return (
     <input
-      type={numeric ? 'text' : 'text'}
+      type="text"
       inputMode={numeric ? 'decimal' : undefined}
       value={value}
       placeholder={placeholder}
       onChange={e => onChange(e.target.value)}
       className={`w-full bg-transparent border-0 outline-none focus:ring-1 focus:ring-purple-400 rounded px-1 py-0.5 text-sm min-w-0 ${dirty ? 'text-amber-600 dark:text-amber-400' : ''} ${className}`}
+    />
+  );
+}
+
+// ── thumbnail ──────────────────────────────────────────────────────────────
+
+function Thumbnail({ src, title }: { src: string; title: string }) {
+  if (!src) {
+    return (
+      <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center flex-shrink-0 border">
+        <Package className="h-4 w-4 text-muted-foreground" />
+      </div>
+    );
+  }
+  return (
+    <img
+      src={src}
+      alt={title}
+      className="w-10 h-10 rounded-md object-cover flex-shrink-0 border"
+      onError={e => {
+        (e.currentTarget as HTMLImageElement).style.display = 'none';
+      }}
     />
   );
 }
@@ -152,11 +194,11 @@ export function BulkUpdater() {
   const { user } = useCurrentUser();
   const { mutateAsync: publishEvent } = useNostrPublish();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
 
   const [rows, setRows] = useState<Row[]>([]);
   const [savingIds, setSavingIds] = useState<Set<string>>(new Set());
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
 
   // Fetch all kind 30402 for the logged-in user
   const { isLoading, error, refetch } = useQuery({
@@ -214,7 +256,6 @@ export function BulkUpdater() {
         content: row.original.content,
         tags,
       });
-      // Mark base = data so it no longer shows as dirty
       setRows(prev =>
         prev.map(r => r.id === row.id ? { ...r, base: { ...r.data } } : r)
       );
@@ -225,6 +266,30 @@ export function BulkUpdater() {
       toast({ title: 'Error', description: 'Failed to publish event.', variant: 'destructive' });
     } finally {
       setSavingIds(prev => { const s = new Set(prev); s.delete(row.id); return s; });
+    }
+  }, [publishEvent, toast]);
+
+  const deleteRow = useCallback(async (row: Row) => {
+    setDeletingIds(prev => new Set(prev).add(row.id));
+    try {
+      // Publish a NIP-09 deletion event (kind 5) for the kind 30402 listing
+      await publishEvent({
+        kind: 5,
+        content: `Deleted listing: ${row.data.title}`,
+        tags: [
+          ['e', row.original.id],
+          ['a', `30402:${row.original.pubkey}:${row.id}`],
+          ['k', '30402'],
+        ],
+      });
+      // Remove from local list immediately
+      setRows(prev => prev.filter(r => r.id !== row.id));
+      toast({ title: 'Deleted', description: `"${row.data.title}" removed from Nostr marketplaces.` });
+    } catch (err) {
+      console.error(err);
+      toast({ title: 'Error', description: 'Failed to delete listing.', variant: 'destructive' });
+    } finally {
+      setDeletingIds(prev => { const s = new Set(prev); s.delete(row.id); return s; });
     }
   }, [publishEvent, toast]);
 
@@ -247,7 +312,7 @@ export function BulkUpdater() {
     return (
       <div className="space-y-2">
         {Array.from({ length: 5 }).map((_, i) => (
-          <Skeleton key={i} className="h-10 w-full" />
+          <Skeleton key={i} className="h-12 w-full" />
         ))}
       </div>
     );
@@ -309,10 +374,10 @@ export function BulkUpdater() {
 
       {/* Spreadsheet table */}
       <div className="rounded-lg border overflow-auto">
-        <table className="w-full text-sm border-collapse min-w-[900px]">
+        <table className="w-full text-sm border-collapse min-w-[960px]">
           <thead>
             <tr className="bg-muted/60 border-b text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-              <th className="text-left px-3 py-2 w-8">#</th>
+              <th className="text-left px-3 py-2 w-14"></th>
               <th className="text-left px-3 py-2 min-w-[160px]">Title</th>
               <th className="text-left px-3 py-2 w-24">Price</th>
               <th className="text-left px-3 py-2 w-20">Currency</th>
@@ -320,14 +385,15 @@ export function BulkUpdater() {
               <th className="text-left px-3 py-2 w-28">Status</th>
               <th className="text-left px-3 py-2 min-w-[120px]">Categories</th>
               <th className="text-left px-3 py-2 min-w-[100px]">Location</th>
-              <th className="text-left px-3 py-2 w-24 text-right">Actions</th>
+              <th className="text-left px-3 py-2 w-28 text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {rows.map((row, i) => {
+            {rows.map((row) => {
               const dirty = isDirty(row);
               const saving = savingIds.has(row.id);
               const saved = savedIds.has(row.id);
+              const deleting = deletingIds.has(row.id);
 
               return (
                 <tr
@@ -340,8 +406,10 @@ export function BulkUpdater() {
                       : 'hover:bg-muted/30'
                   }`}
                 >
-                  {/* Row number */}
-                  <td className="px-3 py-1.5 text-muted-foreground text-xs tabular-nums">{i + 1}</td>
+                  {/* Thumbnail */}
+                  <td className="px-2 py-1.5">
+                    <Thumbnail src={row.thumbnail} title={row.data.title} />
+                  </td>
 
                   {/* Title */}
                   <td className="px-2 py-1">
@@ -424,7 +492,7 @@ export function BulkUpdater() {
                   </td>
 
                   {/* Actions */}
-                  <td className="px-2 py-1.5 text-right">
+                  <td className="px-2 py-1.5">
                     <div className="flex items-center justify-end gap-1">
                       {saved && !dirty && (
                         <CheckCircle2 className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
@@ -438,14 +506,16 @@ export function BulkUpdater() {
                           <RotateCcw className="h-3 w-3" />
                         </button>
                       )}
+
+                      {/* Save button */}
                       <button
                         onClick={() => saveRow(row)}
                         disabled={saving || !dirty}
-                        title="Save this row"
+                        title="Save changes"
                         className={`flex items-center gap-0.5 px-2 py-0.5 rounded text-xs font-medium transition-colors ${
                           dirty
                             ? 'bg-purple-600 hover:bg-purple-700 text-white'
-                            : 'text-muted-foreground cursor-default'
+                            : 'text-muted-foreground/40 cursor-default'
                         }`}
                       >
                         {saving ? (
@@ -454,6 +524,42 @@ export function BulkUpdater() {
                           <Save className="h-3 w-3" />
                         )}
                       </button>
+
+                      {/* Delete button */}
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <button
+                            disabled={deleting}
+                            title="Delete from marketplaces"
+                            className="flex items-center gap-0.5 px-2 py-0.5 rounded text-xs font-medium transition-colors bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400"
+                          >
+                            {deleting ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-3 w-3" />
+                            )}
+                          </button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete listing?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This will publish a NIP-09 deletion event for{' '}
+                              <strong>"{row.data.title}"</strong> and remove it from Nostr marketplaces.
+                              Relays that honour deletions will stop serving this listing.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => deleteRow(row)}
+                              className="bg-red-600 hover:bg-red-700 text-white"
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </td>
                 </tr>
