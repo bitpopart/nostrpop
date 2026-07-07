@@ -5,16 +5,18 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 
-// Formspree form ID — sign up free at https://formspree.io, create a form
-// pointed at shop@bitpopart.com, and paste your form ID here.
-// e.g. if your endpoint is https://formspree.io/f/abcd1234 → ID is "abcd1234"
-const FORMSPREE_ID = 'xvgzpqkw';
+// Web3Forms access key — get yours free in 30 seconds:
+// 1. Go to https://web3forms.com
+// 2. Enter shop@bitpopart.com and click "Create Access Key"
+// 3. Check your email, click the confirmation link
+// 4. Copy the access key and paste it below
+const WEB3FORMS_KEY = 'YOUR_ACCESS_KEY_HERE';
 
 /**
  * FloatingChatButton
  *
  * A persistent floating button (bottom-left). First click opens a compact
- * inline chat bubble with a quick email form. Submitting POSTs to Formspree
+ * inline chat bubble with a quick email form. Submitting POSTs to Web3Forms
  * which delivers the message directly to shop@bitpopart.com — no email client
  * opens, no backend needed. A "More → Community" link takes visitors to the
  * full community/FAQ page.
@@ -50,19 +52,23 @@ export function FloatingChatButton() {
 
     setSending(true);
     try {
-      const res = await fetch(`https://formspree.io/f/${FORMSPREE_ID}`, {
+      const res = await fetch('https://api.web3forms.com/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
         body: JSON.stringify({
+          access_key: WEB3FORMS_KEY,
+          subject: `BitPopArt message from ${form.name}`,
+          from_name: form.name,
           name: form.name,
           email: form.email,
           message: form.message,
+          botcheck: '',
         }),
       });
 
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error((data as { error?: string }).error || 'Send failed');
+      const data = await res.json() as { success?: boolean; message?: string };
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Send failed');
       }
 
       setSent(true);
