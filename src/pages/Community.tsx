@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { usePopFans, type ZapperEntry, type ReactorEntry, type LikeEntry } from '@/hooks/usePopFans';
 import { useAuthor } from '@/hooks/useAuthor';
@@ -59,6 +60,12 @@ import {
   BarChart2,
   Flame,
   Network,
+  ChevronDown,
+  ChevronUp,
+  Mail,
+  Send,
+  CheckCircle2,
+  HelpCircle,
 } from 'lucide-react';
 import type { NostrEvent, NostrMetadata } from '@nostrify/nostrify';
 
@@ -1926,3 +1933,4 @@ export default function Community() {
     </div>
   );
 }
+
