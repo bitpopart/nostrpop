@@ -17,6 +17,7 @@ import { LoginArea } from '@/components/auth/LoginArea';
 import { isAllowedCreator } from '@/config/creators';
 import { Loader2, Sparkles, Lock, Share2 } from 'lucide-react';
 import { nip19 } from 'nostr-tools';
+import { ECARD_KIND } from '@/lib/cardTypes';
 
 // Legacy categories for fallback
 const LEGACY_CATEGORIES = [
@@ -136,7 +137,7 @@ export function CreateCardForm() {
     };
 
     createEvent({
-      kind: 30402, // Addressable event for cards
+      kind: ECARD_KIND, // Dedicated ecard kind — NOT kind 30402 (NIP-99 products)
       content: JSON.stringify(cardContent),
       tags
     }, {
@@ -184,7 +185,7 @@ export function CreateCardForm() {
       const naddr = nip19.naddrEncode({
         identifier: cardId,
         pubkey: user.pubkey,
-        kind: 30402,
+        kind: ECARD_KIND,
       });
 
       // Create the card URL
@@ -210,7 +211,7 @@ export function CreateCardForm() {
         ['t', 'ecard'],
         ['t', categoryTag],
         ['e', cardEvent.id, '', 'mention'], // Reference the card event
-        ['a', `30402:${user.pubkey}:${cardId}`, '', 'mention'], // Reference the addressable event
+        ['a', `${ECARD_KIND}:${user.pubkey}:${cardId}`, '', 'mention'], // Reference the addressable event
       ];
 
       // Add image-related tags for maximum compatibility

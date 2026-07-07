@@ -12,8 +12,10 @@ interface CardData {
   event: NostrEvent;
 }
 
-// Card event kind - check what kind is used for cards in this project
-const CARD_KIND = 30402; // Using NIP-99 classified listings for cards
+import { ECARD_KIND } from '@/lib/cardTypes';
+
+// Dedicated kind for ecards — separate from NIP-99 product listings (30402)
+const CARD_KIND = ECARD_KIND;
 
 export function useLatestCards(limit: number = 3, options?: { enabled?: boolean }) {
   const { nostr } = useNostr();

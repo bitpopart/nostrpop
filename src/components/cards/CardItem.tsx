@@ -49,7 +49,7 @@ export function CardItem({ card, showAuthor = false, onRefetch }: CardItemProps)
 
   const isOwner = user && card.event.pubkey === user.pubkey;
 
-  // Generate naddr for addressable events (kind 30402)
+  // Generate naddr for addressable ecard events
   const getCardUrl = (isPreview = false) => {
     const dTag = card.event.tags.find(([name]) => name === 'd')?.[1];
     const basePath = isPreview ? '/share' : '/card';

@@ -7,6 +7,7 @@ import { RelaySelector } from '@/components/RelaySelector';
 import { LoginArea } from '@/components/auth/LoginArea';
 import { CardItem } from './CardItem';
 import { Sparkles } from 'lucide-react';
+import { ECARD_KIND } from '@/lib/cardTypes';
 
 interface CardData {
   title: string;
@@ -32,7 +33,7 @@ export function CardList({ showMyCards = false, selectedCategory }: CardListProp
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(1500)]);
       const events = await nostr.query([
         {
-          kinds: [30402],
+          kinds: [ECARD_KIND],
           '#t': ['ecard'],
           limit: 100
         }

@@ -28,6 +28,7 @@ import { useToast } from '@/hooks/useToast';
 import { useCardCategories } from '@/hooks/useCardCategories';
 import { LoginArea } from '@/components/auth/LoginArea';
 import { nip19 } from 'nostr-tools';
+import { ECARD_KIND } from '@/lib/cardTypes';
 import {
   Type, Trash2, Download, RotateCcw, Copy,
   ImageIcon, ChevronUp, ChevronDown,
@@ -480,7 +481,7 @@ export function CardEditor({ onPublished }: CardEditorProps) {
       const file = new File([blob], 'bitpop-card.jpg', { type: 'image/jpeg' });
       const [[, imageUrl]] = await uploadFile(file);
 
-      // Create the card event (kind 30402)
+      // Create the card event (kind ECARD_KIND — not 30402/NIP-99)
       const cardId = `card-${Date.now()}`;
       const category = publishCategory || 'Others';
       const tags = [
@@ -503,14 +504,14 @@ export function CardEditor({ onPublished }: CardEditorProps) {
       };
 
       createEvent(
-        { kind: 30402, content: JSON.stringify(cardContent), tags },
+        { kind: ECARD_KIND, content: JSON.stringify(cardContent), tags },
         {
           onSuccess: (event) => {
             toast({ title: 'Card published! 🎉', description: 'Your card is now live on Nostr.' });
 
             // Also share as kind 1 note
             try {
-              const naddr = nip19.naddrEncode({ identifier: cardId, pubkey: user.pubkey, kind: 30402 });
+              const naddr = nip19.naddrEncode({ identifier: cardId, pubkey: user.pubkey, kind: ECARD_KIND });
               const cardUrl = `${window.location.origin}/card/${naddr}`;
               createEvent({
                 kind: 1,

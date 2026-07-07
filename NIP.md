@@ -2,7 +2,7 @@
 
 ## Summary
 
-This document describes the Nostr event kinds used by the BitPopArt platform. The marketplace is fully compliant with **NIP-99** (Classified Listings) and the **Gamma Marketplace Spec** — enabling cross-platform interoperability with Shopstr, Plebeian Market, Conduit, and Cypher Space.
+This document describes the Nostr event kinds used by the BitPopArt platform. The marketplace is fully compliant with **NIP-99** (Classified Listings) and the **Gamma Marketplace Spec** — enabling cross-platform interoperability with Shopstr, Plebeian Market, and Conduit Market.
 
 ## Marketplace Protocol
 
@@ -227,7 +227,6 @@ Groups products into collections. Products reference collections via `["a", "304
 | Shopstr  | ✅ | ✅ | ✅ |
 | Plebeian Market | ✅ | ✅ | ✅ |
 | Conduit Market | ✅ | ✅ | - |
-| Cypher Space | ✅ | - | - |
 
 ---
 
@@ -1126,6 +1125,64 @@ Animated group-chat-style conversations shown below the image carousel on the `/
 - Messages animate in sequentially with a typing-dots effect before each bubble appears
 - URLs in message text are rendered as tappable links (internal or external)
 - Deletion uses a standard kind-5 event referencing `38159:<pubkey>:<d-tag>`
+
+## Kind 35007 — BitPop Ecard
+
+Digital greeting cards (ecards) created and shared on BitPopArt. This is a **custom kind** that is intentionally **separate from kind 30402** (NIP-99 product listings) so ecards never appear as purchasable items on Nostr marketplaces like Conduit, Shopstr, or Plebeian Market.
+
+### Why Not Kind 30402?
+
+Ecards are free creative content, not products. Using kind 30402 caused them to appear as shop listings on every NIP-99 marketplace. Kind 35007 keeps ecards completely invisible to marketplace clients while remaining accessible via the BitPopArt `/cards` interface.
+
+### Required Tags
+
+- `d`: Unique ecard identifier (e.g. `card-1782716227372`)
+- `title`: Card title
+- `t`: Always includes `ecard` for filtering
+- `image`: Card image URL
+
+### Optional Tags
+
+- `category`: Card category (e.g. `Love`, `Birthday`, `GM/GN`)
+- `pricing`: Always `"free"`
+- `published_at`: Unix timestamp string
+- `alt`: NIP-31 human-readable description
+
+### Content Field
+
+JSON object with full card metadata:
+```json
+{
+  "title": "<card title>",
+  "description": "<card description>",
+  "category": "<category>",
+  "pricing": "free",
+  "images": ["<image_url>"],
+  "created_at": "<ISO timestamp>"
+}
+```
+
+### Example Event
+
+```json
+{
+  "kind": 35007,
+  "content": "{\"title\":\"EARTH\",\"description\":\"I love the earth\",\"category\":\"Love\",\"pricing\":\"free\",\"images\":[\"https://...\"],\"created_at\":\"2026-06-29T06:57:07.372Z\"}",
+  "tags": [
+    ["d", "card-1782716227372"],
+    ["title", "EARTH"],
+    ["category", "Love"],
+    ["pricing", "free"],
+    ["t", "ecard"],
+    ["t", "love"],
+    ["image", "https://blossom.primal.net/89afc4c8...jpg"],
+    ["published_at", "1782716227"],
+    ["alt", "BitPop Ecard: EARTH — Love"]
+  ]
+}
+```
+
+---
 
 ## References
 

@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/useToast';
 import { isAllowedCreator } from '@/config/creators';
 import { Trash2, Loader2 } from 'lucide-react';
 import type { NostrEvent } from '@nostrify/nostrify';
+import { ECARD_KIND } from '@/lib/cardTypes';
 
 
 
@@ -78,7 +79,7 @@ export function DeleteCardDialog({ cardEvent, cardTitle, onCardDeleted, children
       content: 'Card deleted by user',
       tags: [
         ['e', cardEvent.id], // Reference to the event being deleted
-        ['a', `30402:${cardEvent.pubkey}:${dTag}`] // Reference to addressable event
+        ['a', `${ECARD_KIND}:${cardEvent.pubkey}:${dTag}`] // Reference to addressable event
       ]
     }, {
       onSuccess: () => {

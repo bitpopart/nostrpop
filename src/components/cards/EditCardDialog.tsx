@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/useToast';
 import { Edit, Loader2, Save } from 'lucide-react';
 import { isAllowedCreator } from '@/config/creators';
 import type { NostrEvent } from '@nostrify/nostrify';
+import { ECARD_KIND } from '@/lib/cardTypes';
 
 const CARD_CATEGORIES = [
   'GM/GN',
@@ -174,7 +175,7 @@ export function EditCardDialog({ cardEvent, cardData, onCardUpdated, children, o
     };
 
     createEvent({
-      kind: 30402, // Same addressable event kind
+      kind: ECARD_KIND, // Dedicated ecard kind — not NIP-99 products
       content: JSON.stringify(updatedCardContent),
       tags
     }, {

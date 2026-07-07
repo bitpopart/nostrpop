@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useNostr } from '@nostrify/react';
 import { useSeoMeta } from '@unhead/react';
 import { nip19 } from 'nostr-tools';
+import { ECARD_KIND } from '@/lib/cardTypes';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -103,7 +104,7 @@ const CardView = () => {
             if (events.length === 0) {
               console.log('🔍 Trying broader search for this author...');
               const broaderFilter = {
-                kinds: [30402],
+                kinds: [ECARD_KIND],
                 authors: [naddr.pubkey],
                 '#t': ['ecard'],
                 limit: 50
@@ -128,7 +129,7 @@ const CardView = () => {
             const nevent = decoded.data;
             queryFilter = {
               ids: [nevent.id],
-              kinds: [30402],
+              kinds: [ECARD_KIND],
               limit: 1
             };
             console.log('🔍 Querying with nevent filter:', queryFilter);
@@ -143,7 +144,7 @@ const CardView = () => {
             const noteId = decoded.data;
             queryFilter = {
               ids: [noteId],
-              kinds: [30402],
+              kinds: [ECARD_KIND],
               limit: 1
             };
             console.log('🔍 Querying with note filter:', queryFilter);
@@ -155,7 +156,7 @@ const CardView = () => {
           console.log('🔍 Trying as event ID...');
           queryFilter = {
             ids: [nip19Param],
-            kinds: [30402],
+            kinds: [ECARD_KIND],
             limit: 1
           };
           console.log('🔍 Querying with event ID filter:', queryFilter);
@@ -166,7 +167,7 @@ const CardView = () => {
           if (events.length === 0) {
             console.log('🔍 Trying as d-tag...');
             queryFilter = {
-              kinds: [30402],
+              kinds: [ECARD_KIND],
               '#d': [nip19Param],
               '#t': ['ecard'],
               limit: 1

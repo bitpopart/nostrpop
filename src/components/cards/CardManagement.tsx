@@ -15,6 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import { useCardCategories } from '@/hooks/useCardCategories';
 import { CategoryManagement } from './CategoryManagement';
 import type { NostrEvent } from '@nostrify/nostrify';
+import { ECARD_KIND } from '@/lib/cardTypes';
 import {
   Plus,
   Edit,
@@ -40,7 +41,7 @@ interface CardData {
   event: NostrEvent;
 }
 
-const CARD_KIND = 30402; // NIP-99 classified listings for cards
+const CARD_KIND = ECARD_KIND; // Dedicated ecard kind (35007) — separate from NIP-99 products
 
 
 
