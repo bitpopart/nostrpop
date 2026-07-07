@@ -67,15 +67,15 @@ function BulkPublishPanel({ products }: { products: MarketplaceProduct[] }) {
                 Publish Merch to Nostr Marketplaces
               </h2>
               <p className="text-sm text-purple-600 dark:text-purple-400 mt-1">
-                Click <strong>"Publish to Markets"</strong> on any product below to broadcast it
-                to Shopstr, Plebeian Market, Conduit, and Cypher Space simultaneously.
-                Your listing appears everywhere buyers are shopping — no account on each platform needed.
+                 Click <strong>"Publish to Markets"</strong> on any product below to broadcast it
+                 to Shopstr, Plebeian Market, and Conduit Market simultaneously.
+                 Your listing appears everywhere buyers are shopping — no account on each platform needed.
               </p>
             </div>
           </div>
 
           {/* Marketplace quick-link row */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-4">
             {NOSTR_MARKETPLACES.map((market) => (
               <a
                 key={market.id}

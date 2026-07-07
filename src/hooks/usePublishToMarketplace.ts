@@ -50,7 +50,8 @@ export const NOSTR_MARKETPLACES: NostrMarketplace[] = [
     url: 'https://plebeian.market',
     shopUrl: `https://plebeian.market/profile/${ADMIN_HEX_PUBKEY}`,
     // Plebeian Market migrated to NIP-99 in January 2026 — NIP-15 is no longer used.
-    // Their own relays: relay.damus.io, nos.lol, relay.primal.net, relay.snort.social
+    // Their own relays (sourced from their Nostr profile r-tags):
+    // relay.damus.io, christpill.nostr1.com, relay.snort.social, nos.lol, relay.primal.net
     description: 'Self-sovereign marketplace. 100% NIP-99 (migrated Jan 2026). V4V, P2P, Bitcoin only.',
     logo: '⚡',
     relays: [
@@ -58,6 +59,7 @@ export const NOSTR_MARKETPLACES: NostrMarketplace[] = [
       'wss://nos.lol',
       'wss://relay.primal.net',
       'wss://relay.snort.social',
+      'wss://christpill.nostr1.com',
     ],
     formats: ['nip99'],
     color: 'from-orange-500 to-amber-600',
@@ -67,36 +69,21 @@ export const NOSTR_MARKETPLACES: NostrMarketplace[] = [
     id: 'conduit',
     name: 'Conduit Market',
     url: 'https://conduit.market',
-    shopUrl: `https://shop.conduit.market`,
-    searchUrl: `https://shop.conduit.market`,
+    shopUrl: `https://shop.conduit.market/profile/${ADMIN_NPUB}`,
+    searchUrl: `https://shop.conduit.market/profile/${ADMIN_NPUB}`,
+    // Conduit's own relay is conduitl2.fly.dev — essential for listings to appear on their platform.
     description: 'Decentralized marketplace on Nostr. NIP-99 listings. Zero fees, instant Bitcoin payouts.',
     logo: '🔗',
     relays: [
+      'wss://conduitl2.fly.dev',
+      'wss://relay.nostr.band',
       'wss://relay.primal.net',
-      'wss://nos.lol',
       'wss://relay.damus.io',
-      'wss://relay.ditto.pub',
+      'wss://nos.lol',
     ],
     formats: ['nip99'],
     color: 'from-blue-500 to-cyan-600',
     colorLight: 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800',
-  },
-  {
-    id: 'cypher',
-    name: 'Cypher Space',
-    url: 'https://cypher.space',
-    shopUrl: `https://cypher.space`,
-    description: 'Bitcoin-only storefronts. Works with Shopstr, Plebeian, and Conduit. Publish once, appear everywhere.',
-    logo: '🔐',
-    relays: [
-      'wss://nos.lol',
-      'wss://relay.primal.net',
-      'wss://relay.damus.io',
-      'wss://relay.ditto.pub',
-    ],
-    formats: ['nip99'],
-    color: 'from-green-500 to-teal-600',
-    colorLight: 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800',
   },
 ];
 

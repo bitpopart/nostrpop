@@ -175,7 +175,7 @@ function ListingPreview({ product, pubkey }: { product: MarketplaceProduct; pubk
           </div>
 
           <p className="text-xs text-muted-foreground mt-2">
-            Approximate card appearance on Shopstr, Plebeian Market, and Conduit.
+            Approximate card appearance on Shopstr, Plebeian Market, and Conduit Market.
           </p>
         </TabsContent>
 
@@ -184,7 +184,7 @@ function ListingPreview({ product, pubkey }: { product: MarketplaceProduct; pubk
               <div className="space-y-2">
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <Code2 className="h-3.5 w-3.5" />
-                  <span>kind: 30402 — Published to all marketplaces (Shopstr, Plebeian, Conduit, Cypher)</span>
+                  <span>kind: 30402 — Published to all marketplaces (Shopstr, Plebeian Market, Conduit Market)</span>
                 </div>
             <ScrollArea className="h-56 border rounded-lg">
               <pre className="text-xs p-3 font-mono whitespace-pre-wrap break-all text-foreground/80">
@@ -356,9 +356,9 @@ export function PublishToMarketplaces({ product }: PublishToMarketplacesProps) {
               <div className="space-y-4">
                 {/* Info */}
                 <p className="text-xs text-muted-foreground">
-                  Your product is signed with your Nostr key and broadcast as a <strong>NIP-99</strong> classified
-                  listing to each marketplace's relay set. Plebeian Market migrated fully to NIP-99 in January 2026,
-                  so all four marketplaces now use the same format.
+                 Your product is signed with your Nostr key and broadcast as a <strong>NIP-99</strong> classified
+                   listing to each marketplace's relay set. All three marketplaces use the same NIP-99 format —
+                   publish once and your listing appears on Shopstr, Plebeian Market, and Conduit Market.
                 </p>
 
                 {/* Marketplace selector */}
