@@ -5,7 +5,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { ArrowLeft } from 'lucide-react';
 import { AppFooter } from './AppFooter';
 import { MediaGeneratorFloat } from './mediagenerator/MediaGeneratorFloat';
-import { FloatingChatButton } from './FloatingChatButton';
+import { ChatwootWidget } from './ChatwootWidget';
 import BitPopArtLogo from '@/assets/bitpopart-logo.png';
 
 interface AppLayoutProps {
@@ -116,8 +116,8 @@ export function AppLayout({ children }: AppLayoutProps) {
 
       {/* Media Generator floating action buttons */}
       <MediaGeneratorFloat />
-      {/* Floating chat / community button */}
-      <FloatingChatButton />
+      {/* Chatwoot live chat widget */}
+      <ChatwootWidget />
     </div>
   );
 }
