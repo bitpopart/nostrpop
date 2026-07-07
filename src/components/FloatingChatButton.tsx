@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 // 2. Enter shop@bitpopart.com and click "Create Access Key"
 // 3. Check your email, click the confirmation link
 // 4. Copy the access key and paste it below
-const WEB3FORMS_KEY = 'YOUR_ACCESS_KEY_HERE';
+const WEB3FORMS_KEY = '7769e613-722d-4609-b1f5-cb83bf3d7a5b';
 
 /**
  * FloatingChatButton

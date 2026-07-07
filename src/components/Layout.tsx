@@ -4,7 +4,7 @@ import { Footer } from './Footer';
 import { AuctionBanner } from './art/AuctionBanner';
 import { SiteBannerBar } from './SiteBannerBar';
 import { MediaGeneratorFloat } from './mediagenerator/MediaGeneratorFloat';
-import { ChatwootWidget } from './ChatwootWidget';
+import { FloatingChatButton } from './FloatingChatButton';
 
 interface LayoutProps {
   children: ReactNode;
@@ -24,8 +24,8 @@ export function Layout({ children }: LayoutProps) {
       <Footer />
       {/* Media Generator floating action buttons — shown per page config */}
       <MediaGeneratorFloat />
-      {/* Chatwoot live chat widget */}
-      <ChatwootWidget />
+      {/* Floating chat button */}
+      <FloatingChatButton />
     </div>
   );
 }
