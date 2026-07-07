@@ -51,7 +51,7 @@ import { useCategories } from '@/hooks/useCategories';
 
 /** Bulk publish panel shown in the Marketplaces tab */
 function BulkPublishPanel({ products }: { products: MarketplaceProduct[] }) {
-  const [panelTab, setPanelTab] = useState<'products' | 'shops'>('products');
+  const [panelTab, setPanelTab] = useState<'products' | 'shops' | 'bulk-updater'>('products');
 
   return (
     <div className="space-y-5">
@@ -100,10 +100,11 @@ function BulkPublishPanel({ products }: { products: MarketplaceProduct[] }) {
       </Card>
 
       {/* Sub-tabs */}
-      <div className="flex border-b">
+      <div className="flex border-b flex-wrap">
         {([
           { id: 'products', label: `Products (${products.length})`, icon: Package },
           { id: 'shops', label: 'My Shop Pages', icon: Store },
+          { id: 'bulk-updater', label: 'Bulk Updater', icon: ArrowUpRight },
         ] as const).map(({ id, label, icon: Icon }) => (
           <button
             key={id}
@@ -329,6 +330,48 @@ function BulkPublishPanel({ products }: { products: MarketplaceProduct[] }) {
               </p>
             </CardContent>
           </Card>
+        </div>
+      )}
+
+      {/* Bulk Updater tab */}
+      {panelTab === 'bulk-updater' && (
+        <div className="space-y-4">
+          <Card className="border-purple-200 dark:border-purple-800">
+            <CardContent className="p-5">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="p-2.5 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 text-white flex-shrink-0">
+                  <ArrowUpRight className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-purple-700 dark:text-purple-300 text-base leading-tight">
+                    Gamma Markets Bulk Updater
+                  </h3>
+                  <p className="text-sm text-purple-600 dark:text-purple-400 mt-1">
+                    Bulk update and manage your NIP-99 product listings across all Nostr marketplaces at once.
+                    Use this tool to quickly edit prices, descriptions, and publish status in bulk.
+                  </p>
+                  <a
+                    href="https://nip99-bulk-updater.vercel.app/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs text-purple-500 hover:text-purple-700 mt-1 underline underline-offset-2"
+                  >
+                    Open in new tab <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="rounded-lg border border-purple-200 dark:border-purple-800 overflow-hidden">
+            <iframe
+              src="https://nip99-bulk-updater.vercel.app/"
+              className="w-full"
+              style={{ height: '75vh', minHeight: '500px' }}
+              title="Gamma Markets Bulk Updater"
+              allow="clipboard-write"
+            />
+          </div>
         </div>
       )}
     </div>
