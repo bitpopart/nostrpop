@@ -285,51 +285,70 @@ export function EditProductForm({ product, onSuccess, onCancel }: EditProductFor
           }))
         : undefined;
 
-      // Create updated product content
-      const productContent = {
-        name: data.name,
-        description: data.description,
-        images: images,
-        price: data.price,
-        currency: data.currency,
-        discount: data.discount || undefined,
-        quantity: data.quantity,
-        specs: validSpecs.length > 0 ? validSpecs.map(spec => [spec.key, spec.value]) : undefined,
-        shipping: validShipping && validShipping.length > 0 ? validShipping : undefined,
-        contact_url: data.contactUrl || undefined,
-        stall_id: data.stallId,
-        digital_files: digitalFiles.length > 0 ? digitalFiles : undefined,
-        digital_file_names: digitalFileNames.length > 0 ? digitalFileNames : undefined
-      };
+      // ── Build NIP-99 / Gamma Spec kind 30402 tags (UPDATE) ─────────────────
+      const now = Math.floor(Date.now() / 1000);
 
-      // Create tags (use existing product ID for updates)
-      const tags = [
-        ['d', product.id], // Keep the same identifier for updates
+      const tags: string[][] = [
+        ['d', product.id], // Keep the same d-tag for addressable updates
         ['title', data.name],
-        ['t', data.category.toLowerCase()],
-        ['t', data.type],
-        ['price', data.price.toString()],
-        ['currency', data.currency]
+        ['summary', data.description.slice(0, 500)],
+        ['published_at', now.toString()],
+        // NIP-99 price: ["price", "<amount>", "<ISO-4217>"]
+        ['price', data.price.toString(), data.currency.toUpperCase()],
+        // Gamma Spec type: ["type", "simple", "digital|physical"]
+        ['type', 'simple', data.type],
+        // Gamma Spec visibility
+        ['visibility', 'on-sale'],
+        // Status
+        ['status', data.quantity === 0 ? 'sold' : 'active'],
       ];
 
-      // Add discount tag if specified
+      // Stock (Gamma Spec)
+      if (data.quantity !== undefined) {
+        tags.push(['stock', data.quantity.toString()]);
+      }
+
+      // Images with sort order
+      images.forEach((url, index) => {
+        tags.push(['image', url, '', index.toString()]);
+      });
+
+      // Specs as individual ["spec", key, value] tags (Gamma Spec)
+      validSpecs.forEach(spec => {
+        if (spec.key.trim() && spec.value.trim()) {
+          tags.push(['spec', spec.key.trim(), spec.value.trim()]);
+        }
+      });
+
+      // Discount (extension)
       if (data.discount && data.discount > 0) {
         tags.push(['discount', data.discount.toString()]);
       }
 
-      // Add quantity tag if specified
-      if (data.quantity !== undefined) {
-        tags.push(['quantity', data.quantity.toString()]);
+      // Category and keyword t-tags
+      tags.push(['t', data.category.toLowerCase()]);
+      keywordTags.forEach(tag => tags.push(['t', tag.toLowerCase()]));
+      tags.push(['t', 'bitpopart']);
+
+      // Contact URL
+      if (data.contactUrl) {
+        tags.push(['r', data.contactUrl]);
       }
 
-      // Add keyword tags
-      keywordTags.forEach(tag => tags.push(['t', tag.toLowerCase()]));
+      // NIP-31 alt tag
+      tags.push(['alt', `${data.type === 'digital' ? 'Digital' : 'Physical'} product: ${data.name} — ${data.price} ${data.currency}`]);
 
-      // Publish as updated NIP-15 product event (kind 30018)
+      // Markdown content
+      const specsSection = validSpecs.length > 0
+        ? `\n\n**Specs:**\n${validSpecs.map(s => `- ${s.key}: ${s.value}`).join('\n')}`
+        : '';
+      const markdownContent = `## ${data.name}\n\n${data.description}\n\n**Price:** ${data.price} ${data.currency}${data.discount ? ` (-${data.discount}%)` : ''}\n**Category:** ${data.category}\n**Type:** ${data.type === 'digital' ? 'Digital Download' : 'Physical Product'}${specsSection}\n\n*Listed by BitPopArt*`;
+
+      // Publish as NIP-99 kind 30402 (Gamma Spec compliant, addressable update)
       createEvent({
-        kind: 30018,
-        content: JSON.stringify(productContent),
-        tags
+        kind: 30402,
+        content: markdownContent,
+        tags,
       });
 
       toast({

@@ -2,26 +2,239 @@
 
 ## Summary
 
-This document describes the custom Nostr event kinds used by the BitPopArt platform, including marketplace functionality, project management, and artist page content.
+This document describes the Nostr event kinds used by the BitPopArt platform. The marketplace is fully compliant with **NIP-99** (Classified Listings) and the **Gamma Marketplace Spec** — enabling cross-platform interoperability with Shopstr, Plebeian Market, Conduit, and Cypher Space.
 
-## Motivation
+## Marketplace Protocol
 
-The BitPop Cards platform requires a marketplace system that can handle both physical and digital products with admin-only access control. This implementation extends the standard NIP-15 marketplace specification to include enhanced metadata and file management capabilities.
+The BitPopArt marketplace implements the [Gamma Marketplace Spec](https://github.com/GammaMarkets/market-spec) on top of NIP-99, which provides a full e-commerce framework including:
 
-## Specification
+- Product listings (kind 30402)
+- Shipping options (kind 30406)
+- Product collections (kind 30405)
+- Order communication via NIP-17 encrypted DMs (kind 16)
 
 ### Admin Access Control
 
 The marketplace is restricted to a specific admin NPUB:
 - **Admin NPUB**: `npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz`
 - Only this pubkey can create, update, and manage marketplace products
-- Public users can browse the marketplace (when implemented)
+- Public users can browse the marketplace
 
-### Product Types
+---
 
-The marketplace supports two distinct product types:
+## Kind 30402 — NIP-99 Classified Listing (Gamma Spec)
 
-#### 1. Physical Products (Kind 30018)
+Product listings are addressable events following NIP-99 with Gamma Spec extensions.
+
+### Required Tags
+
+- `d`: Unique product identifier
+- `title`: Product name
+- `price`: `["price", "<amount>", "<ISO-4217>"]` e.g. `["price", "25.00", "USD"]`
+
+### Gamma Spec Tags
+
+- `type`: `["type", "simple|variable|variation", "digital|physical"]`
+- `visibility`: `["visibility", "on-sale|hidden|pre-order"]`
+- `stock`: `["stock", "<integer>"]` — available quantity
+- `summary`: `["summary", "<short description>"]`
+- `spec`: `["spec", "<key>", "<value>"]` — repeated per specification
+- `image`: `["image", "<url>", "<dims>", "<order>"]` — repeated per image, sorted by order
+- `weight`: `["weight", "<value>", "<unit>"]` — ISO 80000-1 units
+- `dim`: `["dim", "<l>x<w>x<h>", "<unit>"]` — dimensions
+- `shipping_option`: `["shipping_option", "30406:<pubkey>:<d>", "<extra-cost>?"]` — references kind 30406
+
+### Standard NIP-99 Tags
+
+- `published_at`: Unix timestamp string
+- `status`: `"active"` or `"sold"`
+- `t`: Category / keyword tags (relay-indexed)
+- `r`: Contact or product URL
+
+### BitPopArt Extension Tags
+
+- `discount`: Discount percentage (e.g. `["discount", "21"]`)
+- `alt`: NIP-31 human-readable description
+
+### Example Event
+
+```json
+{
+  "kind": 30402,
+  "content": "## Bitcoin Pop Art Print\n\nExclusive limited edition print...\n\n**Price:** 49.00 EUR\n**Type:** Physical Product",
+  "tags": [
+    ["d", "bitcoin-pop-art-print-v2"],
+    ["title", "Bitcoin Pop Art Print"],
+    ["summary", "Exclusive limited edition physical print on premium paper"],
+    ["published_at", "1720000000"],
+    ["price", "49.00", "EUR"],
+    ["type", "simple", "physical"],
+    ["visibility", "on-sale"],
+    ["stock", "10"],
+    ["status", "active"],
+    ["image", "https://blossom.primal.net/abc123.jpg", "1024x1024", "0"],
+    ["spec", "Size", "A3 (420 x 297 mm)"],
+    ["spec", "Paper", "250 gsm matte"],
+    ["spec", "Edition", "Limited to 21 copies"],
+    ["weight", "150", "g"],
+    ["dim", "420x297x3", "mm"],
+    ["shipping_option", "30406:43baaf0c...:shipping-nl-standard"],
+    ["shipping_option", "30406:43baaf0c...:shipping-eu-standard", "5.00"],
+    ["t", "art"],
+    ["t", "bitcoin-art"],
+    ["t", "print"],
+    ["t", "bitpopart"],
+    ["discount", "21"],
+    ["r", "https://bitpopart.com/shop"],
+    ["alt", "Physical product: Bitcoin Pop Art Print — 49.00 EUR"]
+  ]
+}
+```
+
+---
+
+## Kind 30406 — Gamma Spec Shipping Option
+
+Addressable events defining shipping methods that products reference.
+
+### Required Tags
+
+- `d`: Unique shipping identifier
+- `title`: Display title for the shipping method
+- `price`: `["price", "<base_cost>", "<currency>"]`
+- `country`: `["country", "<ISO-3166-alpha-2>", ...]` — one or more country codes
+- `service`: `["service", "standard|express|overnight|pickup"]`
+
+### Optional Tags
+
+- `carrier`: Carrier name (PostNL, DHL, FedEx…)
+- `region`: `["region", "<ISO-3166-2>", ...]` — region codes
+- `duration`: `["duration", "<min>", "<max>", "H|D|W"]` — delivery window
+- `location`: Physical address (for pickup)
+- `price-weight`: `["price-weight", "<price>", "<unit>"]` — per-weight pricing
+- `alt`: NIP-31 description
+
+### Example
+
+```json
+{
+  "kind": 30406,
+  "content": "Standard shipping within the Netherlands. 1-3 business days.",
+  "tags": [
+    ["d", "shipping-nl-standard"],
+    ["title", "Standard Shipping NL"],
+    ["price", "5.00", "EUR"],
+    ["service", "standard"],
+    ["country", "NL"],
+    ["carrier", "PostNL"],
+    ["duration", "1", "3", "D"],
+    ["alt", "Shipping option: Standard Shipping NL — 5.00 EUR (standard)"],
+    ["published_at", "1720000000"]
+  ]
+}
+```
+
+---
+
+## Kind 16 — Order Communication (Gamma Spec / NIP-17)
+
+Encrypted order messages using NIP-44 or NIP-04 encryption.
+
+### Message Types
+
+All kind 16 messages include a `["type", "<n>"]` tag:
+
+| Type | Direction | Purpose |
+|------|-----------|---------|
+| `"1"` | Buyer → Merchant | Order Creation |
+| `"2"` | Merchant → Buyer | Payment Request |
+| `"3"` | Either direction | Status Update |
+| `"4"` | Merchant → Buyer | Shipping Update |
+
+### Order Creation (type 1)
+
+```json
+{
+  "kind": 16,
+  "content": "<encrypted>",
+  "tags": [
+    ["p", "<merchant-pubkey>"],
+    ["subject", "Order abc123"],
+    ["type", "1"],
+    ["order", "<order-id>"],
+    ["amount", "<total-sats>"],
+    ["item", "30402:<pubkey>:<d-tag>", "<quantity>"],
+    ["shipping", "30406:<pubkey>:<d-tag>"],
+    ["address", "<shipping address>"],
+    ["email", "<buyer email>"]
+  ]
+}
+```
+
+### Payment Request (type 2)
+
+```json
+{
+  "kind": 16,
+  "content": "<encrypted>",
+  "tags": [
+    ["p", "<buyer-pubkey>"],
+    ["subject", "order-payment"],
+    ["type", "2"],
+    ["order", "<order-id>"],
+    ["amount", "<sats>"],
+    ["payment", "lightning", "<bolt11|lud16>"],
+    ["payment", "bitcoin", "<address>"],
+    ["expiration", "<unix-ts>"]
+  ]
+}
+```
+
+### Status Update (type 3)
+
+Statuses: `pending | confirmed | processing | completed | cancelled`
+
+### Shipping Update (type 4)
+
+Statuses: `processing | shipped | delivered | exception`
+
+---
+
+## Kind 30405 — Product Collection (Gamma Spec)
+
+Groups products into collections. Products reference collections via `["a", "30405:<pubkey>:<d>"]` tags.
+
+```json
+{
+  "kind": 30405,
+  "content": "Bitcoin art collection curated by BitPopArt",
+  "tags": [
+    ["d", "bitcoin-art-2026"],
+    ["title", "Bitcoin Art 2026"],
+    ["image", "https://..."],
+    ["a", "30402:<pubkey>:<product-d>"],
+    ["shipping_option", "30406:<pubkey>:<shipping-d>"]
+  ]
+}
+```
+
+---
+
+## Compatibility
+
+| Platform | NIP-99 (30402) | Shipping (30406) | Collections (30405) |
+|----------|---------------|-----------------|---------------------|
+| Shopstr  | ✅ | ✅ | ✅ |
+| Plebeian Market | ✅ | ✅ | ✅ |
+| Conduit Market | ✅ | ✅ | - |
+| Cypher Space | ✅ | - | - |
+
+---
+
+## Legacy: Physical & Digital Products (Kind 30018)
+
+> **Deprecated for new listings.** Kind 30018 (NIP-15) is still read for backwards compatibility.
+> All new listings are published as kind 30402.
 
 Physical products follow the NIP-15 specification with additional metadata:
 

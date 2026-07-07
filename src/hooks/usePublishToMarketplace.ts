@@ -141,31 +141,114 @@ export function getLastPublished(productId: string, marketplaceId: string): Publ
 
 // ─── Event builders ────────────────────────────────────────────────────────────
 
-/** Build a NIP-99 (kind 30402) classified listing from a product */
+/**
+ * Build a fully Gamma-Spec-compliant NIP-99 (kind 30402) classified listing.
+ *
+ * Tag schema (Gamma Spec):
+ *   ["d", "<unique-id>"]
+ *   ["title", "<name>"]
+ *   ["price", "<amount>", "<ISO-4217>"]
+ *   ["type", "simple|variable|variation", "digital|physical"]
+ *   ["visibility", "on-sale|hidden|pre-order"]
+ *   ["stock", "<integer>"]          — if quantity is known
+ *   ["summary", "<short desc>"]
+ *   ["published_at", "<unix-ts>"]
+ *   ["image", "<url>", "", "<order>"] — repeated per image
+ *   ["spec", "<key>", "<value>"]    — repeated per spec (replaces old content.specs)
+ *   ["weight", "<value>", "<unit>"] — optional physical
+ *   ["dim", "<lxwxh>", "<unit>"]    — optional physical
+ *   ["shipping_option", "30406:<pubkey>:<d>"] — optional refs to kind 30406 events
+ *   ["t", "<category>"]             — repeated
+ *   ["status", "active|sold"]
+ *   ["r", "<url>"]                  — contact / product URL
+ *   ["alt", "<human readable>"]     — NIP-31
+ */
 export function buildNip99Event(product: MarketplaceProduct, userPubkey: string) {
-  const dTag = `bitpopart-${product.id}`;
+  // Use existing event d-tag if it's already a NIP-99 event, otherwise mint a new one
+  const existingDTag = (product as unknown as { sourceKind?: number }).sourceKind === 30402
+    ? (product as unknown as { event?: { tags?: string[][] } }).event?.tags?.find(([t]) => t === 'd')?.[1]
+    : undefined;
+  const dTag = existingDTag || `bitpopart-${product.id}`;
   const now = Math.floor(Date.now() / 1000);
-
-  const imageTags = product.images.map((url) => ['image', url]);
 
   const tags: string[][] = [
     ['d', dTag],
     ['title', product.name],
-    ['summary', product.description.slice(0, 200)],
+    ['summary', product.description.slice(0, 500)],
     ['published_at', now.toString()],
     ['price', product.price.toString(), product.currency.toUpperCase()],
-    ['t', product.category.toLowerCase()],
-    ['t', product.type],
-    ['t', 'bitpopart'],
-    ['t', 'bitcoin-art'],
-    ['status', 'active'],
-    ...imageTags,
+    // Gamma Spec type tag: ["type", "simple|variable|variation", "digital|physical"]
+    ['type', (product as unknown as { productSubtype?: string }).productSubtype || 'simple', product.type],
+    // Gamma Spec visibility
+    ['visibility', (product as unknown as { visibility?: string }).visibility || 'on-sale'],
+    // Status (NIP-99 base)
+    ['status', product.quantity === 0 ? 'sold' : 'active'],
   ];
 
-  if (product.type === 'physical' && product.contact_url) {
+  // Stock quantity (Gamma Spec)
+  if (product.quantity !== undefined && product.quantity !== null) {
+    tags.push(['stock', product.quantity.toString()]);
+  }
+
+  // Images with sort order (Gamma Spec: ["image", url, dims, order])
+  product.images.forEach((url, index) => {
+    tags.push(['image', url, '', index.toString()]);
+  });
+
+  // Specs as individual tags (Gamma Spec: ["spec", key, value])
+  if (product.specs && product.specs.length > 0) {
+    for (const [k, v] of product.specs) {
+      if (k && v) tags.push(['spec', k, v]);
+    }
+  }
+
+  // Physical product properties (Gamma Spec)
+  const weight = (product as unknown as { weight?: { value: string; unit: string } }).weight;
+  if (weight?.value && weight?.unit) {
+    tags.push(['weight', weight.value, weight.unit]);
+  }
+
+  const dimensions = (product as unknown as { dimensions?: { dims: string; unit: string } }).dimensions;
+  if (dimensions?.dims && dimensions?.unit) {
+    tags.push(['dim', dimensions.dims, dimensions.unit]);
+  }
+
+  // Shipping option refs (Gamma Spec: ["shipping_option", "30406:<pubkey>:<d>"])
+  const shippingOptionRefs = (product as unknown as { shippingOptionRefs?: Array<{ address: string; extraCost?: number }> }).shippingOptionRefs;
+  if (shippingOptionRefs && shippingOptionRefs.length > 0) {
+    for (const ref of shippingOptionRefs) {
+      if (ref.extraCost !== undefined) {
+        tags.push(['shipping_option', ref.address, ref.extraCost.toString()]);
+      } else {
+        tags.push(['shipping_option', ref.address]);
+      }
+    }
+  }
+
+  // Category / keyword tags
+  tags.push(['t', product.category.toLowerCase()]);
+  if (product.keyword_tags && product.keyword_tags.length > 0) {
+    for (const tag of product.keyword_tags) {
+      tags.push(['t', tag.toLowerCase()]);
+    }
+  }
+  tags.push(['t', 'bitpopart']);
+  tags.push(['t', 'bitcoin-art']);
+
+  // Discount as extension tag (BitPopArt custom, NIP-99 allows extension)
+  if (product.discount && product.discount > 0) {
+    tags.push(['discount', product.discount.toString()]);
+  }
+
+  // Contact / product URL
+  if (product.contact_url) {
     tags.push(['r', product.contact_url]);
   }
 
+  // NIP-31 alt tag
+  tags.push(['alt', `${product.type === 'digital' ? 'Digital' : 'Physical'} product: ${product.name} — ${product.price} ${product.currency}`]);
+
+  // Markdown content (NIP-99 content field = human-readable description)
   const specsSection =
     product.specs && product.specs.length > 0
       ? `\n\n**Specs:**\n${product.specs.map(([k, v]) => `- ${k}: ${v}`).join('\n')}`
@@ -175,7 +258,7 @@ export function buildNip99Event(product: MarketplaceProduct, userPubkey: string)
 
 ${product.description}
 
-**Price:** ${product.price} ${product.currency}
+**Price:** ${product.price} ${product.currency}${product.discount ? ` ~~(-${product.discount}% off)~~` : ''}
 **Category:** ${product.category}
 **Type:** ${product.type === 'digital' ? 'Digital Download' : 'Physical Product'}${specsSection}
 

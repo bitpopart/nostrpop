@@ -62,6 +62,13 @@ const productSchema = z.object({
 
 type ProductFormData = z.infer<typeof productSchema>;
 
+interface ShippingRegion {
+  id: string;
+  name: string;
+  countries: string;
+  cost: number;
+}
+
 interface CreateProductFormProps {
   onSuccess?: () => void;
   onCancel?: () => void;
@@ -304,34 +311,71 @@ export function CreateProductForm({ onSuccess, onCancel, initialData }: CreatePr
         stall_id: data.stallId
       };
 
-      // Create tags
-      const tags = [
-        ['d', `product-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`], // Unique identifier
+      // ── Build NIP-99 / Gamma Spec kind 30402 tags ──────────────────────────
+      const dTag = `product-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+      const now = Math.floor(Date.now() / 1000);
+
+      const tags: string[][] = [
+        ['d', dTag],
         ['title', data.name],
-        ['t', data.category.toLowerCase()],
-        ['t', data.type],
-        ['price', data.price.toString()],
-        ['currency', data.currency]
+        ['summary', data.description.slice(0, 500)],
+        ['published_at', now.toString()],
+        // NIP-99 price: ["price", "<amount>", "<ISO-4217>"]
+        ['price', data.price.toString(), data.currency.toUpperCase()],
+        // Gamma Spec type: ["type", "simple|variable|variation", "digital|physical"]
+        ['type', 'simple', data.type],
+        // Gamma Spec visibility
+        ['visibility', 'on-sale'],
+        // Status
+        ['status', 'active'],
       ];
 
-      // Add discount tag if specified
+      // Stock / quantity (Gamma Spec: "stock" tag)
+      if (data.quantity !== undefined) {
+        tags.push(['stock', data.quantity.toString()]);
+      }
+
+      // Images with sort order (Gamma Spec: ["image", url, dims, order])
+      images.forEach((url, index) => {
+        tags.push(['image', url, '', index.toString()]);
+      });
+
+      // Specs as individual ["spec", key, value] tags (Gamma Spec)
+      validSpecs.forEach(spec => {
+        if (spec.key.trim() && spec.value.trim()) {
+          tags.push(['spec', spec.key.trim(), spec.value.trim()]);
+        }
+      });
+
+      // Discount (BitPopArt custom extension tag)
       if (data.discount && data.discount > 0) {
         tags.push(['discount', data.discount.toString()]);
       }
 
-      // Add quantity tag if specified
-      if (data.quantity !== undefined) {
-        tags.push(['quantity', data.quantity.toString()]);
+      // Category and keyword t-tags (relay-queryable)
+      tags.push(['t', data.category.toLowerCase()]);
+      keywordTags.forEach(tag => tags.push(['t', tag.toLowerCase()]));
+      tags.push(['t', 'bitpopart']);
+
+      // Contact URL
+      if (data.contactUrl) {
+        tags.push(['r', data.contactUrl]);
       }
 
-      // Add keyword tags
-      keywordTags.forEach(tag => tags.push(['t', tag.toLowerCase()]));
+      // NIP-31 alt tag for accessibility
+      tags.push(['alt', `${data.type === 'digital' ? 'Digital' : 'Physical'} product: ${data.name} — ${data.price} ${data.currency}`]);
 
-      // Publish as NIP-15 product event (kind 30018)
+      // Markdown content (NIP-99 content field)
+      const specsSection = validSpecs.length > 0
+        ? `\n\n**Specs:**\n${validSpecs.map(s => `- ${s.key}: ${s.value}`).join('\n')}`
+        : '';
+      const markdownContent = `## ${data.name}\n\n${data.description}\n\n**Price:** ${data.price} ${data.currency}\n**Category:** ${data.category}\n**Type:** ${data.type === 'digital' ? 'Digital Download' : 'Physical Product'}${specsSection}\n\n*Listed by BitPopArt*`;
+
+      // Publish as NIP-99 kind 30402 (Gamma Spec compliant)
       createEvent({
-        kind: 30018,
-        content: JSON.stringify(productContent),
-        tags
+        kind: 30402,
+        content: markdownContent,
+        tags,
       });
 
       toast({

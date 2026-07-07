@@ -1,10 +1,11 @@
 /**
  * useOrders — Admin order management hook
  *
- * Orders arrive via three channels:
+ * Orders arrive via four channels:
  *   1. The in-app checkout flow (OrderConfirmation page) — stored locally
  *   2. NIP-15 encrypted DM orders (kind 4) — decrypted and listed here
- *   3. Manual orders that can be created by the admin
+ *   3. Gamma Spec encrypted orders (kind 16 type 1) — decrypted and listed here
+ *   4. Manual orders that can be created by the admin
  *
  * Order status lifecycle:
  *   pending → paid → processing → shipped → completed
@@ -105,13 +106,16 @@ export function useOrders() {
       // Start with locally stored orders (checkout + manual)
       const localOrders = getStoredOrders();
 
-      // Try to fetch NIP-15 order DMs (kind 4) sent to the admin
-      // These are encrypted, so we can only read them if we're logged in as admin
+      // Try to fetch order DMs sent to the admin
+      // Supports: NIP-15 (kind 4) + Gamma Spec (kind 16 type 1)
       if (user && adminPubkey) {
         try {
           const signal = AbortSignal.any([c.signal, AbortSignal.timeout(8000)]);
           const dmEvents = await nostr.query(
-            [{ kinds: [4], '#p': [adminPubkey], limit: 200 }],
+            [
+              { kinds: [4], '#p': [adminPubkey], limit: 200 },
+              { kinds: [16], '#p': [adminPubkey], limit: 200 },
+            ],
             { signal }
           );
 
@@ -125,51 +129,90 @@ export function useOrders() {
 
               const msg = JSON.parse(decrypted) as Record<string, unknown>;
 
-              // NIP-15 order message type = 0
-              if (msg.type !== 0) continue;
+              if (event.kind === 16) {
+                // ── Gamma Spec kind 16 order (type 1 = order creation) ──────
+                const msgType = event.tags.find(([t]) => t === 'type')?.[1];
+                if (msgType !== '1') continue;
 
-              const orderId = `nip15-${event.id}`;
+                const orderId = `gamma-${event.id}`;
+                if (localOrders.find((o) => o.id === orderId)) continue;
 
-              // Skip if we already have this order locally
-              if (localOrders.find((o) => o.id === orderId)) continue;
+                const eventOrderId = event.tags.find(([t]) => t === 'order')?.[1] || event.id;
+                const amountSats = Number(event.tags.find(([t]) => t === 'amount')?.[1] || 0);
+                const itemTags = event.tags.filter(([t]) => t === 'item');
+                const addressTag = event.tags.find(([t]) => t === 'address')?.[1];
+                const emailTag = event.tags.find(([t]) => t === 'email')?.[1];
 
-              const items = (msg.items as Array<{ product_id: string; quantity: number }> | undefined) ?? [];
-              const contact = msg.contact as Record<string, string> | undefined;
-
-              const newOrder: Order = {
-                id: orderId,
-                order_number: `NIP15-${event.id.slice(0, 8).toUpperCase()}`,
-                status: 'pending',
-                items: items.map((item) => ({
-                  product_id: item.product_id,
-                  product_name: item.product_id, // enriched later
-                  quantity: item.quantity,
-                  price: 0,
+                const newOrder: Order = {
+                  id: orderId,
+                  order_number: `GAMMA-${eventOrderId.slice(0, 8).toUpperCase()}`,
+                  status: 'pending',
+                  items: itemTags.map(([, productRef, qty]) => ({
+                    product_id: productRef || '',
+                    product_name: productRef || '',
+                    quantity: Number(qty) || 1,
+                    price: 0,
+                    currency: 'SAT',
+                    type: 'physical' as ProductType,
+                  })),
+                  total_price: amountSats,
                   currency: 'SAT',
-                  type: 'physical',
-                })),
-                total_price: 0,
-                currency: 'SAT',
-                buyer_name: msg.name as string | undefined,
-                buyer_email: contact?.email,
-                buyer_npub: contact?.nostr,
-                shipping_address: msg.address
-                  ? {
-                      line1: msg.address as string,
-                      city: '',
-                      postal_code: '',
-                      country: '',
-                    }
-                  : undefined,
-                notes: msg.message as string | undefined,
-                source: 'nip15',
-                payment_method: 'Lightning',
-                created_at: new Date(event.created_at * 1000).toISOString(),
-                updated_at: new Date(event.created_at * 1000).toISOString(),
-              };
+                  buyer_email: emailTag,
+                  buyer_npub: event.pubkey,
+                  shipping_address: addressTag
+                    ? { line1: addressTag, city: '', postal_code: '', country: '' }
+                    : undefined,
+                  notes: typeof msg.notes === 'string' ? msg.notes : undefined,
+                  source: 'nip15', // reuse source type for now
+                  payment_method: 'Lightning (Gamma)',
+                  created_at: new Date(event.created_at * 1000).toISOString(),
+                  updated_at: new Date(event.created_at * 1000).toISOString(),
+                };
 
-              storeOrder(newOrder);
-              localOrders.unshift(newOrder);
+                storeOrder(newOrder);
+                localOrders.unshift(newOrder);
+
+              } else if (event.kind === 4) {
+                // ── NIP-15 kind 4 order (legacy) ────────────────────────────
+                // NIP-15 order message type = 0
+                if (msg.type !== 0) continue;
+
+                const orderId = `nip15-${event.id}`;
+                if (localOrders.find((o) => o.id === orderId)) continue;
+
+                const items = (msg.items as Array<{ product_id: string; quantity: number }> | undefined) ?? [];
+                const contact = msg.contact as Record<string, string> | undefined;
+
+                const newOrder: Order = {
+                  id: orderId,
+                  order_number: `NIP15-${event.id.slice(0, 8).toUpperCase()}`,
+                  status: 'pending',
+                  items: items.map((item) => ({
+                    product_id: item.product_id,
+                    product_name: item.product_id,
+                    quantity: item.quantity,
+                    price: 0,
+                    currency: 'SAT',
+                    type: 'physical' as ProductType,
+                  })),
+                  total_price: 0,
+                  currency: 'SAT',
+                  buyer_name: msg.name as string | undefined,
+                  buyer_email: contact?.email,
+                  buyer_npub: contact?.nostr,
+                  shipping_address: msg.address
+                    ? { line1: msg.address as string, city: '', postal_code: '', country: '' }
+                    : undefined,
+                  notes: msg.message as string | undefined,
+                  source: 'nip15',
+                  payment_method: 'Lightning',
+                  created_at: new Date(event.created_at * 1000).toISOString(),
+                  updated_at: new Date(event.created_at * 1000).toISOString(),
+                };
+
+                storeOrder(newOrder);
+                localOrders.unshift(newOrder);
+              }
             } catch {
               // Failed to decrypt — not for us or wrong key
             }

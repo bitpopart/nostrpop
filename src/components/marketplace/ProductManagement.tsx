@@ -18,6 +18,8 @@ import { CategoryManagement } from './CategoryManagement';
 import { PublishToMarketplaces } from './PublishToMarketplaces';
 import { OrdersManagement } from './OrdersManagement';
 import { ShippingConfigAdmin } from './ShippingConfigAdmin';
+import { ShippingOptionsAdmin } from './ShippingOptionsAdmin';
+import { OrderMessaging } from './OrderMessaging';
 import { StockManagement } from './StockManagement';
 import { formatCurrency } from '@/hooks/usePayment';
 import { useToast } from '@/hooks/useToast';
@@ -42,6 +44,7 @@ import {
   ClipboardList,
   Truck,
   BarChart2,
+  MessageSquare,
 } from 'lucide-react';
 
 import { useCategories } from '@/hooks/useCategories';
@@ -505,10 +508,14 @@ export function ProductManagement() {
 
       {/* Main Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-9 max-w-6xl">
+        <TabsList className="flex flex-wrap gap-1 h-auto p-1.5 max-w-full">
           <TabsTrigger value="orders" className="flex items-center gap-1 text-orange-600 dark:text-orange-400 font-semibold">
             <ClipboardList className="h-3.5 w-3.5" />
             Orders
+          </TabsTrigger>
+          <TabsTrigger value="messages" className="flex items-center gap-1 text-green-600 dark:text-green-400 font-semibold">
+            <MessageSquare className="h-3.5 w-3.5" />
+            Messages
           </TabsTrigger>
           <TabsTrigger value="stock" className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
             <BarChart2 className="h-3.5 w-3.5" />
@@ -528,6 +535,10 @@ export function ProductManagement() {
 
         <TabsContent value="orders" className="space-y-6">
           <OrdersManagement />
+        </TabsContent>
+
+        <TabsContent value="messages" className="space-y-6">
+          <OrderMessaging />
         </TabsContent>
 
         <TabsContent value="stock" className="space-y-6">
@@ -758,7 +769,36 @@ export function ProductManagement() {
         </TabsContent>
 
         <TabsContent value="shipping" className="space-y-6">
-          <ShippingConfigAdmin />
+          {/* Gamma Spec kind 30406 shipping options */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Truck className="h-5 w-5 text-blue-600" />
+                Gamma Spec Shipping Options
+                <Badge variant="outline" className="text-xs font-mono ml-1">kind 30406</Badge>
+              </CardTitle>
+              <CardDescription className="text-sm">
+                Addressable shipping events that products reference via <code className="text-xs">shipping_option</code> tags.
+                These are cross-compatible with Shopstr, Plebeian Market, and Conduit.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ShippingOptionsAdmin />
+            </CardContent>
+          </Card>
+
+          {/* Legacy zone-based shipping config */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Legacy Zone Shipping Config</CardTitle>
+              <CardDescription className="text-xs text-muted-foreground">
+                Used for checkout price calculation. Stored as kind 30078.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ShippingConfigAdmin />
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="publish" className="space-y-6">
