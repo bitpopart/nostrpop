@@ -336,38 +336,44 @@ function BulkPublishPanel({ products }: { products: MarketplaceProduct[] }) {
       {/* Bulk Updater tab */}
       {panelTab === 'bulk-updater' && (
         <div className="space-y-4">
-          <Card className="border-purple-200 dark:border-purple-800">
-            <CardContent className="p-5">
-              <div className="flex items-start gap-3 mb-4">
-                <div className="p-2.5 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 text-white flex-shrink-0">
-                  <ArrowUpRight className="h-5 w-5" />
+          {/* Info banner */}
+          <Card className="border-purple-200 dark:border-purple-800 bg-purple-50/50 dark:bg-purple-900/10">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 text-white flex-shrink-0 mt-0.5">
+                  <ArrowUpRight className="h-4 w-4" />
                 </div>
-                <div>
-                  <h3 className="font-bold text-purple-700 dark:text-purple-300 text-base leading-tight">
-                    Gamma Markets Bulk Updater
-                  </h3>
-                  <p className="text-sm text-purple-600 dark:text-purple-400 mt-1">
-                    Bulk update and manage your NIP-99 product listings across all Nostr marketplaces at once.
-                    Use this tool to quickly edit prices, descriptions, and publish status in bulk.
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <h3 className="font-bold text-purple-700 dark:text-purple-300 text-base leading-tight">
+                      Gamma Markets Bulk Updater
+                    </h3>
+                    <a
+                      href="https://nip99-bulk-updater.vercel.app/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold transition-colors flex-shrink-0"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      Open full screen
+                    </a>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Bulk edit your NIP-99 listings in a spreadsheet view. This is an external tool —
+                    it needs its own one-click login via your <strong>Nostr browser extension</strong> (Alby, nos2x, etc.).
+                    No password needed — just click <strong>"Log in"</strong> inside the tool and your extension signs in instantly.
                   </p>
-                  <a
-                    href="https://nip99-bulk-updater.vercel.app/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-xs text-purple-500 hover:text-purple-700 mt-1 underline underline-offset-2"
-                  >
-                    Open in new tab <ExternalLink className="h-3 w-3" />
-                  </a>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <div className="rounded-lg border border-purple-200 dark:border-purple-800 overflow-hidden">
+          {/* Embedded tool */}
+          <div className="rounded-lg border border-purple-200 dark:border-purple-800 overflow-hidden shadow-sm">
             <iframe
               src="https://nip99-bulk-updater.vercel.app/"
               className="w-full"
-              style={{ height: '75vh', minHeight: '500px' }}
+              style={{ height: '78vh', minHeight: '520px' }}
               title="Gamma Markets Bulk Updater"
               allow="clipboard-write"
             />
