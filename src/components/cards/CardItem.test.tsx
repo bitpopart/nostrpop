@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { TestApp } from '@/test/TestApp';
 import { CardItem } from './CardItem';
+import { ECARD_KIND } from '@/lib/cardTypes';
 import type { NostrEvent } from '@nostrify/nostrify';
 
 // Mock the hooks
@@ -45,7 +46,7 @@ describe('CardItem', () => {
     id: 'a'.repeat(64), // Valid 64-character hex string
     pubkey: 'b'.repeat(64), // Valid 64-character hex string
     created_at: 1234567890,
-    kind: 30402,
+    kind: ECARD_KIND,
     tags: [
       ['d', 'test-card-id']
     ],

@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { TestApp } from '@/test/TestApp';
 import { ShareToNostrDialog } from './ShareToNostrDialog';
+import { ECARD_KIND } from '@/lib/cardTypes';
 import type { NostrEvent } from '@nostrify/nostrify';
 
 // Mock the hooks
@@ -33,7 +34,7 @@ describe('ShareToNostrDialog Integration', () => {
     id: 'a'.repeat(64),
     pubkey: 'b'.repeat(64),
     created_at: 1234567890,
-    kind: 30402,
+    kind: ECARD_KIND,
     tags: [
       ['d', 'test-card-id']
     ],
