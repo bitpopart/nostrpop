@@ -31,9 +31,11 @@ export function CardList({ showMyCards = false, selectedCategory }: CardListProp
     queryKey: ['all-cards', selectedCategory],
     queryFn: async (c) => {
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(1500)]);
+      // Query both the new ECARD_KIND (35007) and the legacy kind 30402.
+      // The '#t': ['ecard'] filter ensures marketplace products (no ecard tag) are excluded.
       const events = await nostr.query([
         {
-          kinds: [ECARD_KIND],
+          kinds: [ECARD_KIND, 30402],
           '#t': ['ecard'],
           limit: 100
         }

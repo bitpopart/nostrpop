@@ -14,8 +14,10 @@ interface CardData {
 
 import { ECARD_KIND } from '@/lib/cardTypes';
 
-// Dedicated kind for ecards — separate from NIP-99 product listings (30402)
-const CARD_KIND = ECARD_KIND;
+// Legacy kind: cards published before the migration to ECARD_KIND (35007).
+// We include kind 30402 only when filtered by the 'ecard' t-tag so that
+// regular marketplace products (no ecard tag) are never picked up.
+const LEGACY_CARD_KIND = 30402;
 
 export function useLatestCards(limit: number = 3, options?: { enabled?: boolean }) {
   const { nostr } = useNostr();
@@ -27,8 +29,8 @@ export function useLatestCards(limit: number = 3, options?: { enabled?: boolean 
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(1500)]);
       const events = await nostr.query([
         {
-          kinds: [CARD_KIND],
-          '#t': ['ecard'], // Filter for ecard-tagged events
+          kinds: [ECARD_KIND, LEGACY_CARD_KIND],
+          '#t': ['ecard'], // ecard tag ensures we only get cards, not marketplace products
           limit: 50 // Get enough events to filter from
         }
       ], { signal });
