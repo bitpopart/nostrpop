@@ -5,13 +5,19 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 
+// Formspree form ID — sign up free at https://formspree.io, create a form
+// pointed at shop@bitpopart.com, and paste your form ID here.
+// e.g. if your endpoint is https://formspree.io/f/abcd1234 → ID is "abcd1234"
+const FORMSPREE_ID = 'xvgzpqkw';
+
 /**
  * FloatingChatButton
  *
  * A persistent floating button (bottom-left). First click opens a compact
- * inline chat bubble with a quick email form. Submitting opens the user's
- * email client pre-filled to shop@bitpopart.com. A "More → Community" link
- * takes visitors to the full community/FAQ page.
+ * inline chat bubble with a quick email form. Submitting POSTs to Formspree
+ * which delivers the message directly to shop@bitpopart.com — no email client
+ * opens, no backend needed. A "More → Community" link takes visitors to the
+ * full community/FAQ page.
  *
  * Hidden on the Community page itself.
  */
@@ -20,6 +26,7 @@ export function FloatingChatButton() {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ name: '', email: '', message: '' });
   const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
 
   // Don't show on the community page itself
@@ -30,7 +37,7 @@ export function FloatingChatButton() {
     setError('');
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim() || !form.email.trim() || !form.message.trim()) {
       setError('Please fill in all fields.');
@@ -40,11 +47,31 @@ export function FloatingChatButton() {
       setError('Please enter a valid email address.');
       return;
     }
-    const subject = encodeURIComponent(`Message from ${form.name}`);
-    const body = encodeURIComponent(`Name: ${form.name}\nEmail: ${form.email}\n\n${form.message}`);
-    window.open(`mailto:shop@bitpopart.com?subject=${subject}&body=${body}`, '_blank');
-    setSent(true);
-    setForm({ name: '', email: '', message: '' });
+
+    setSending(true);
+    try {
+      const res = await fetch(`https://formspree.io/f/${FORMSPREE_ID}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+          name: form.name,
+          email: form.email,
+          message: form.message,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error((data as { error?: string }).error || 'Send failed');
+      }
+
+      setSent(true);
+      setForm({ name: '', email: '', message: '' });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
+    } finally {
+      setSending(false);
+    }
   };
 
   const handleClose = () => {
@@ -82,7 +109,7 @@ export function FloatingChatButton() {
                 <CheckCircle2 className="h-10 w-10 text-green-500 mx-auto" />
                 <p className="font-bold text-sm text-green-700 dark:text-green-400">Message sent!</p>
                 <p className="text-xs text-muted-foreground">
-                  Your email client should have opened. We'll get back to you soon.
+                  Thanks! We'll get back to you as soon as possible.
                 </p>
                 <button
                   className="text-xs text-pink-600 dark:text-pink-400 underline mt-1"
@@ -128,10 +155,17 @@ export function FloatingChatButton() {
                 <Button
                   type="submit"
                   size="sm"
-                  className="w-full bg-gradient-to-r from-pink-500 via-orange-400 to-yellow-400 hover:from-pink-600 hover:via-orange-500 hover:to-yellow-500 text-white border-0 h-8 text-xs font-bold"
+                  disabled={sending}
+                  className="w-full bg-gradient-to-r from-pink-500 via-orange-400 to-yellow-400 hover:from-pink-600 hover:via-orange-500 hover:to-yellow-500 text-white border-0 h-8 text-xs font-bold disabled:opacity-70"
                 >
-                  <Send className="h-3 w-3 mr-1.5" />
-                  Send Message
+                  {sending ? (
+                    <>Sending…</>
+                  ) : (
+                    <>
+                      <Send className="h-3 w-3 mr-1.5" />
+                      Send Message
+                    </>
+                  )}
                 </Button>
 
                 {/* Link to full community page */}
