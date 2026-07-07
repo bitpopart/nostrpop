@@ -317,8 +317,12 @@ export function useMarketplaceProducts(category?: string) {
         },
       ], { signal });
 
-      const nip99Events = allEvents.filter(e => e.kind === 30402);
-      const nip15Events = allEvents.filter(e => e.kind === 30018);
+      // Exclude legacy ecards that were published as kind 30402 before the migration to kind 35007.
+      // Ecards are identified by having a ['t', 'ecard'] tag — they are never shop products.
+      const isEcard = (e: NostrEvent) => e.tags.some(([name, value]) => name === 't' && value === 'ecard');
+
+      const nip99Events = allEvents.filter(e => e.kind === 30402 && !isEcard(e));
+      const nip15Events = allEvents.filter(e => e.kind === 30018 && !isEcard(e));
       const deletionEvents = allEvents.filter(e => e.kind === 5);
 
       console.log(`Found ${nip99Events.length} NIP-99 + ${nip15Events.length} NIP-15 products, ${deletionEvents.length} deletions`);
