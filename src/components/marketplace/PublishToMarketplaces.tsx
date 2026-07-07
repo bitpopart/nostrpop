@@ -359,6 +359,11 @@ export function PublishToMarketplaces({ product }: PublishToMarketplacesProps) {
                  Your product is signed with your Nostr key and broadcast as a <strong>NIP-99</strong> classified
                    listing to each marketplace's relay set. All three marketplaces use the same NIP-99 format —
                    publish once and your listing appears on Shopstr, Plebeian Market, and Conduit Market.
+                   {product.contact_url && (
+                     <span className="block mt-1 text-amber-600 dark:text-amber-400">
+                       ⚠️ This product has an External Shop URL — it will be published with <code className="font-mono text-xs">visibility: pre-order</code> so Nostr marketplaces show it but disable their own checkout. Buyers are directed to the external shop.
+                     </span>
+                   )}
                 </p>
 
                 {/* Marketplace selector */}

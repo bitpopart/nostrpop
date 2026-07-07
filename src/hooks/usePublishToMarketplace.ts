@@ -166,8 +166,11 @@ export function buildNip99Event(product: MarketplaceProduct, userPubkey: string)
     ['price', product.price.toString(), product.currency.toUpperCase()],
     // Gamma Spec type tag: ["type", "simple|variable|variation", "digital|physical"]
     ['type', (product as unknown as { productSubtype?: string }).productSubtype || 'simple', product.type],
-    // Gamma Spec visibility
-    ['visibility', (product as unknown as { visibility?: string }).visibility || 'on-sale'],
+    // Gamma Spec visibility:
+    // External-only products (contact_url set) use "pre-order" to signal to all Gamma Spec
+    // clients (Conduit, Shopstr, Plebeian) that direct checkout is not available here.
+    // "pre-order" is the standard way to suppress the "Add to cart" flow on those platforms.
+    ['visibility', product.contact_url ? 'pre-order' : ((product as unknown as { visibility?: string }).visibility || 'on-sale')],
     // Status (NIP-99 base)
     ['status', product.quantity === 0 ? 'sold' : 'active'],
   ];
@@ -227,13 +230,15 @@ export function buildNip99Event(product: MarketplaceProduct, userPubkey: string)
     tags.push(['discount', product.discount.toString()]);
   }
 
-  // Contact / product URL
+  // External shop URL — published as both "r" (NIP-99 standard) and "url" (Gamma Spec
+  // purchase link hint used by Conduit / Shopstr to show a "Buy externally" button).
   if (product.contact_url) {
     tags.push(['r', product.contact_url]);
+    tags.push(['url', product.contact_url]);
   }
 
   // NIP-31 alt tag
-  tags.push(['alt', `${product.type === 'digital' ? 'Digital' : 'Physical'} product: ${product.name} — ${product.price} ${product.currency}`]);
+  tags.push(['alt', `${product.type === 'digital' ? 'Digital' : 'Physical'} product: ${product.name} — ${product.price} ${product.currency}${product.contact_url ? ` — Buy at: ${product.contact_url}` : ''}`]);
 
   // Markdown content (NIP-99 content field = human-readable description)
   const specsSection =
