@@ -69,8 +69,8 @@ export const NOSTR_MARKETPLACES: NostrMarketplace[] = [
     id: 'conduit',
     name: 'Conduit Market',
     url: 'https://conduit.market',
-    shopUrl: `https://shop.conduit.market/profile/${ADMIN_NPUB}`,
-    searchUrl: `https://shop.conduit.market/profile/${ADMIN_NPUB}`,
+    shopUrl: `https://shop.conduit.market/store/${ADMIN_NPUB}`,
+    searchUrl: `https://shop.conduit.market/store/${ADMIN_NPUB}`,
     // Conduit's own relay is conduitl2.fly.dev — essential for listings to appear on their platform.
     description: 'Decentralized marketplace on Nostr. NIP-99 listings. Zero fees, instant Bitcoin payouts.',
     logo: '🔗',

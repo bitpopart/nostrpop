@@ -285,7 +285,7 @@ export function PublishToMarketplaces({ product }: PublishToMarketplacesProps) {
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="max-w-2xl max-h-[92vh] flex flex-col p-0 gap-0 overflow-hidden">
+      <DialogContent className="w-[96vw] sm:w-[700px] sm:max-w-[700px] flex flex-col p-0 gap-0 overflow-hidden" style={{ height: 'min(92vh, 820px)' }}>
         {/* Header */}
         <DialogHeader className="px-6 pt-5 pb-0 flex-shrink-0">
           <DialogTitle className="flex items-center gap-2 text-base">
