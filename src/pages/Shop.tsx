@@ -176,7 +176,7 @@ function BroadcastAllBanner({ products }: { products: MarketplaceProduct[] }) {
             Broadcast to Nostr Marketplaces
           </p>
           <p className="text-xs text-purple-600 dark:text-purple-400 mt-0.5">
-            Publish all {products.length} products as <strong>NIP-99</strong> (kind 30402) listings to Shopstr, Plebeian, Conduit &amp; Cypher Space.
+            Publish all {products.length} products as <strong>NIP-99</strong> (kind 30402) listings to Shopstr, Plebeian Market &amp; Conduit Market.
           </p>
           {done && publishedCount > 0 && (
             <p className="text-xs text-green-600 dark:text-green-400 mt-1 flex items-center gap-1">

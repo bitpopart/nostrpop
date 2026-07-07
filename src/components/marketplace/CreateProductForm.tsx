@@ -687,17 +687,17 @@ export function CreateProductForm({ onSuccess, onCancel, initialData }: CreatePr
                   Contact Information
                 </h3>
                 <div className="space-y-2">
-                  <Label htmlFor="contactUrl">Contact Seller URL</Label>
+                  <Label htmlFor="contactUrl">External Shop URL</Label>
                   <Input
                     id="contactUrl"
                     {...register('contactUrl')}
-                    placeholder="https://example.com/contact"
+                    placeholder="https://storeofvalue.eu/shop/product-..."
                   />
                   {errors.contactUrl && (
                     <p className="text-sm text-red-500">{errors.contactUrl.message}</p>
                   )}
                   <p className="text-xs text-muted-foreground">
-                    URL where customers can contact you (opens in new window when they click "Contact Seller")
+                    If set, customers are redirected to this external webshop to buy. Cart and Lightning payment are disabled — the product is listed on Nostr marketplaces but sold externally only.
                   </p>
                 </div>
               </div>

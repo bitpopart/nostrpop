@@ -23,7 +23,8 @@ import {
   Eye,
   Truck,
   Zap,
-  Plus
+  Plus,
+  ExternalLink,
 } from 'lucide-react';
 import type { NostrEvent } from '@nostrify/nostrify';
 
@@ -93,13 +94,20 @@ export function ProductCard({ product, onViewDetails }: ProductCardProps) {
 
   const isOutOfStock = product.quantity !== undefined && product.quantity <= 0;
   const hasShipping = product.shipping && product.shipping.length > 0;
+  // External-only: product has a contact_url pointing to an external webshop.
+  // These products can appear on Nostr marketplaces but are NOT sold through this site.
+  const externalBuyUrl = product.contact_url && product.contact_url.trim() !== ''
+    ? product.contact_url.trim()
+    : undefined;
 
   const handleBuyNow = () => {
+    if (externalBuyUrl) {
+      window.open(externalBuyUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
     if (product.type === 'physical') {
-      // For physical products, navigate to the internal product page
       navigate(`/shop/${product.id}`);
     } else if (product.type === 'digital') {
-      // For digital products, open payment dialog
       setPaymentDialogOpen(true);
     }
   };
@@ -112,6 +120,10 @@ export function ProductCard({ product, onViewDetails }: ProductCardProps) {
   };
 
   const handleImageClick = () => {
+    if (externalBuyUrl) {
+      window.open(externalBuyUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
     if (product.type === 'physical') {
       navigate(`/shop/${product.id}`);
     } else if (product.type === 'digital') {
@@ -152,7 +164,7 @@ export function ProductCard({ product, onViewDetails }: ProductCardProps) {
           />
 
           {/* Product type badge */}
-          <div className="absolute top-2 left-2 z-10">
+          <div className="absolute top-2 left-2 z-10 flex flex-col gap-1">
             <Badge variant={product.type === 'digital' ? 'default' : 'secondary'} className="text-xs">
               {product.type === 'digital' ? (
                 <>
@@ -166,6 +178,12 @@ export function ProductCard({ product, onViewDetails }: ProductCardProps) {
                 </>
               )}
             </Badge>
+            {externalBuyUrl && (
+              <Badge className="text-xs bg-blue-500 text-white border-0 w-fit">
+                <ExternalLink className="w-3 h-3 mr-1" />
+                External Shop
+              </Badge>
+            )}
           </div>
 
           {/* Discount badge on image */}
@@ -241,9 +259,9 @@ export function ProductCard({ product, onViewDetails }: ProductCardProps) {
                     <span>{displayPriceInSats.toLocaleString()} sats</span>
                   </div>
                 )}
-                {(product.contact_url || product.product_url) && (
+                {externalBuyUrl && (
                   <p className="text-xs text-muted-foreground italic mt-1">
-                    * Price available at reseller's site
+                    * Price shown at external shop
                   </p>
                 )}
               </>
@@ -272,40 +290,55 @@ export function ProductCard({ product, onViewDetails }: ProductCardProps) {
 
           {/* Actions */}
           <div className="flex flex-col gap-2">
-            <div className="flex gap-2">
-              {product.type === 'digital' && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleViewDetails}
-                  className="flex items-center gap-1 flex-1"
-                >
-                  <Eye className="w-4 h-4" />
-                  <span>View</span>
-                </Button>
-              )}
+            {externalBuyUrl ? (
+              /* External-only product — single button opening the external webshop */
               <Button
                 size="sm"
                 onClick={handleBuyNow}
                 disabled={isOutOfStock}
-                className="text-white border-0 flex-1"
-                style={!isOutOfStock ? getGradientStyle('primary') : undefined}
+                className="w-full text-white border-0 bg-blue-500 hover:bg-blue-600"
               >
-                <ShoppingCart className="w-4 h-4 mr-1" />
-                {isOutOfStock ? 'Sold Out' : (product.type === 'physical' ? 'View Product' : 'Buy Now')}
+                <ExternalLink className="w-4 h-4 mr-1.5" />
+                {isOutOfStock ? 'Sold Out' : 'Buy at Shop'}
               </Button>
-            </div>
-            {/* Add to Cart button */}
-            {!isOutOfStock && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleAddToCart}
-                className="w-full gap-1.5 border-orange-300 text-orange-700 hover:bg-orange-50 dark:border-orange-700 dark:text-orange-400 dark:hover:bg-orange-900/20"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                Add to Cart
-              </Button>
+            ) : (
+              <>
+                <div className="flex gap-2">
+                  {product.type === 'digital' && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleViewDetails}
+                      className="flex items-center gap-1 flex-1"
+                    >
+                      <Eye className="w-4 h-4" />
+                      <span>View</span>
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
+                    onClick={handleBuyNow}
+                    disabled={isOutOfStock}
+                    className="text-white border-0 flex-1"
+                    style={!isOutOfStock ? getGradientStyle('primary') : undefined}
+                  >
+                    <ShoppingCart className="w-4 h-4 mr-1" />
+                    {isOutOfStock ? 'Sold Out' : (product.type === 'physical' ? 'View Product' : 'Buy Now')}
+                  </Button>
+                </div>
+                {/* Add to Cart button — hidden for external products */}
+                {!isOutOfStock && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleAddToCart}
+                    className="w-full gap-1.5 border-orange-300 text-orange-700 hover:bg-orange-50 dark:border-orange-700 dark:text-orange-400 dark:hover:bg-orange-900/20"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Add to Cart
+                  </Button>
+                )}
+              </>
             )}
           </div>
         </CardContent>
