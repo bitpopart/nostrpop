@@ -151,13 +151,17 @@
   <body>
     <div id="root"></div>
     <script>
-      // GitHub Pages SPA routing — restore path after 404 redirect
+      // GitHub Pages SPA routing — restore the path saved by 404.html
+      // This runs BEFORE React loads so the BrowserRouter initialises with the correct URL.
       (function() {
-        var redirect = sessionStorage.getItem('spa-redirect');
-        if (redirect && redirect !== '/') {
-          sessionStorage.removeItem('spa-redirect');
-          window.history.replaceState(null, '', redirect);
-        }
+        try {
+          var redirect = sessionStorage.getItem('spa-redirect');
+          if (redirect && redirect !== '/' && redirect !== window.location.pathname) {
+            sessionStorage.removeItem('spa-redirect');
+            // replaceState swaps the URL without triggering a reload
+            window.history.replaceState(null, '', redirect);
+          }
+        } catch(e) {}
       })();
     </script>
     <script type="module" src="/src/main.tsx"></script>

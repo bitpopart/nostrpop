@@ -1,13 +1,54 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BitPopArt</title>
+  <link rel="icon" type="image/png" href="/bitpopart-logo.png">
+  <style>
+    body {
+      margin: 0;
+      background: #f7f8f9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: system-ui, sans-serif;
+    }
+    .loader {
+      text-align: center;
+      color: #666;
+    }
+    .logo {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.6; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.05); }
+    }
+  </style>
   <script>
-    // GitHub Pages SPA redirect — preserves the path for React Router
-    var path = window.location.pathname;
-    sessionStorage.setItem('spa-redirect', path);
-    window.location.replace('/');
+    // GitHub Pages SPA routing — save the requested path and redirect to index.html
+    // The index.html will then restore the path for React Router.
+    (function() {
+      var loc = window.location;
+      // Store the full path (including query string and hash)
+      var redirect = loc.pathname + loc.search + loc.hash;
+      try {
+        sessionStorage.setItem('spa-redirect', redirect);
+      } catch(e) {}
+      // Redirect to root — index.html will pick up the saved path
+      loc.replace('/');
+    })();
   </script>
 </head>
-<body></body>
+<body>
+  <div class="loader">
+    <img class="logo" src="/bitpopart-logo.png" alt="BitPopArt" onerror="this.style.display='none'">
+    <p>Loading…</p>
+  </div>
+</body>
 </html>
