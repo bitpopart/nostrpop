@@ -57,6 +57,8 @@ import Print from "./pages/Print";
 import NFT from "./pages/NFT";
 import NFTAdmin from "./pages/NFTAdmin";
 import Sitemap from "./pages/Sitemap";
+import CloudPage from "./pages/Cloud";
+import CloudAppViewer from "./pages/CloudAppViewer";
 import NotFound from "./pages/NotFound";
 
 export function AppRouter() {
@@ -124,6 +126,9 @@ export function AppRouter() {
         <Route path="/print" element={<Layout><Print /></Layout>} />
         <Route path="/NFT" element={<Layout><NFT /></Layout>} />
         <Route path="/sitemap" element={<Layout><Sitemap /></Layout>} />
+        {/* Cloud private space — no site Layout wrapper; full-screen experience */}
+        <Route path="/cloud" element={<CloudPage />} />
+        <Route path="/cloud/:appId" element={<CloudAppViewer />} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="/:slug" element={<Layout><CustomPage /></Layout>} />
         <Route path="*" element={<Layout><NotFound /></Layout>} />

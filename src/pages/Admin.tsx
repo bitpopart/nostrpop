@@ -52,6 +52,7 @@ import { PrintPostersAdmin } from '@/components/print/PrintPostersAdmin';
 import { NFTCharacterAdmin } from '@/components/nft/NFTCharacterAdmin';
 import { MediaGeneratorAdmin } from '@/components/mediagenerator/MediaGeneratorAdmin';
 import { EmojiPacksAdmin } from '@/components/emoji/EmojiPacksAdmin';
+import { CloudManagement } from '@/components/cloud/CloudManagement';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import {
@@ -97,6 +98,7 @@ import {
   Hash,
   X,
   Smile,
+  Cloud,
 } from 'lucide-react';
 
 // ── Pinned Hashtags Admin ─────────────────────────────────
@@ -528,6 +530,14 @@ const Admin = () => {
       action: () => setActiveTab('media-generator'),
       badge: '🎛️ New'
     },
+    {
+      title: 'Cloud Workspace',
+      description: 'Private HTML apps space — manage apps & access credentials',
+      icon: Cloud,
+      color: 'from-violet-600 to-purple-600',
+      action: () => setActiveTab('cloud'),
+      badge: '☁️ Cloud'
+    },
   ];
 
   const statsCards = [
@@ -682,6 +692,13 @@ const Admin = () => {
             >
               <LayoutGrid className="h-3.5 w-3.5" />
               🎛️ Media Gen
+            </TabsTrigger>
+            <TabsTrigger
+              value="cloud"
+              className="flex items-center gap-1 bg-gradient-to-r from-violet-600 to-purple-600 text-white data-[state=active]:from-violet-700 data-[state=active]:to-purple-700 data-[state=active]:text-white font-bold rounded-md"
+            >
+              <Cloud className="h-3.5 w-3.5" />
+              ☁️ Cloud
             </TabsTrigger>
           </TabsList>
 
@@ -851,13 +868,21 @@ const Admin = () => {
                     <Library className="h-6 w-6 text-orange-600" />
                     <span className="text-sm font-medium">Pop Art Studio</span>
                   </Button>
-                  <Button
+                   <Button
                     variant="outline"
                     className="h-24 flex flex-col items-center justify-center gap-2 hover:bg-orange-50 dark:hover:bg-orange-900/20 border-orange-200"
                     onClick={() => setActiveTab('print')}
                   >
                     <Printer className="h-6 w-6 text-orange-500" />
                     <span className="text-sm font-medium">Print Shop</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-24 flex flex-col items-center justify-center gap-2 hover:bg-violet-50 dark:hover:bg-violet-900/20 border-violet-200"
+                    onClick={() => setActiveTab('cloud')}
+                  >
+                    <Cloud className="h-6 w-6 text-violet-600" />
+                    <span className="text-sm font-medium">Cloud</span>
                   </Button>
                 </div>
               </div>
@@ -1387,6 +1412,10 @@ const Admin = () => {
 
           <TabsContent value="media-generator">
             <MediaGeneratorAdmin />
+          </TabsContent>
+
+          <TabsContent value="cloud">
+            <CloudManagement />
           </TabsContent>
 
         </Tabs>
