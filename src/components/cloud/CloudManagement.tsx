@@ -1,25 +1,31 @@
 /**
  * CloudManagement — Admin UI for the /admin → Cloud tab.
  *
- * Two sub-sections:
- *  1. Cloud Apps — upload HTML files, add thumbnails, reorder
- *  2. Cloud Users — create/delete credentials for shared access
+ * SECURITY: HTML apps are stored ONLY in localStorage — never uploaded to any
+ * public server. There is no public URL. The file content cannot be accessed
+ * without physical access to this browser's localStorage.
  *
- * All data is stored in localStorage (private, never sent to Nostr).
+ * Two sub-sections:
+ *  1. Cloud Apps — load HTML files from disk, store in localStorage, reorder
+ *  2. Cloud Users — create/delete credentials for shared access
  */
 
 import { useState, useRef, useCallback } from 'react';
-import { useUploadFile } from '@/hooks/useUploadFile';
 import {
   loadCloudApps,
   saveCloudApps,
   makeCloudAppId,
+  saveCloudAppHtml,
+  loadCloudAppHtml,
+  deleteCloudAppHtml,
   loadCloudUsers,
   saveCloudUsers,
   createCloudUser,
+  formatBytes,
   type CloudApp,
   type CloudUser,
 } from '@/lib/cloudTypes';
+import { useUploadFile } from '@/hooks/useUploadFile';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,7 +35,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Plus, X, Upload, Trash2, Loader2, Cloud, Users,
   FileCode, Eye, MoveUp, MoveDown, KeyRound, User,
-  ExternalLink, ImageIcon, Pencil, Check, AlertTriangle,
+  ImageIcon, Pencil, Check, AlertTriangle, Lock, HardDrive,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -46,7 +52,7 @@ function reorder<T>(arr: T[], from: number, to: number): T[] {
 
 interface AppFormProps {
   initial?: CloudApp;
-  onSave: (app: CloudApp) => void;
+  onSave: (app: CloudApp, html: string) => void;
   onCancel: () => void;
   uploadFile: (f: File) => Promise<string[][]>;
 }
@@ -54,34 +60,40 @@ interface AppFormProps {
 function AppForm({ initial, onSave, onCancel, uploadFile }: AppFormProps) {
   const [title, setTitle] = useState(initial?.title ?? '');
   const [description, setDescription] = useState(initial?.description ?? '');
-  const [htmlUrl, setHtmlUrl] = useState(initial?.htmlUrl ?? '');
   const [thumbnailUrl, setThumbnailUrl] = useState(initial?.thumbnailUrl ?? '');
-  const [uploadingHtml, setUploadingHtml] = useState(false);
   const [uploadingThumb, setUploadingThumb] = useState(false);
+
+  // HTML is kept in memory only — never sent to any server
+  const [htmlContent, setHtmlContent] = useState<string>(() => {
+    // When editing, pre-load existing HTML from localStorage
+    if (initial?.id) return loadCloudAppHtml(initial.id) ?? '';
+    return '';
+  });
+  const [htmlFileName, setHtmlFileName] = useState('');
 
   const htmlRef = useRef<HTMLInputElement>(null);
   const thumbRef = useRef<HTMLInputElement>(null);
 
-  const handleHtmlUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleHtmlPick = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setUploadingHtml(true);
-    try {
-      const tags = await uploadFile(file);
-      setHtmlUrl(tags[0][1]);
-      toast.success('HTML file uploaded');
-    } catch { toast.error('Failed to upload HTML file'); }
-    finally {
-      setUploadingHtml(false);
-      if (htmlRef.current) htmlRef.current.value = '';
-    }
-  }, [uploadFile]);
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target?.result as string;
+      setHtmlContent(text);
+      setHtmlFileName(file.name);
+    };
+    reader.readAsText(file);
+    // Reset input so the same file can be re-selected
+    if (htmlRef.current) htmlRef.current.value = '';
+  }, []);
 
   const handleThumbUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploadingThumb(true);
     try {
+      // Thumbnails are just preview images — fine to use Blossom for these
       const tags = await uploadFile(file);
       setThumbnailUrl(tags[0][1]);
       toast.success('Thumbnail uploaded');
@@ -94,22 +106,30 @@ function AppForm({ initial, onSave, onCancel, uploadFile }: AppFormProps) {
 
   const handleSave = () => {
     if (!title.trim()) { toast.error('Please enter a title'); return; }
-    if (!htmlUrl.trim()) { toast.error('Please upload an HTML file'); return; }
+    if (!htmlContent.trim()) { toast.error('Please select an HTML file'); return; }
 
     const app: CloudApp = {
       id: initial?.id ?? makeCloudAppId(title),
       title: title.trim(),
       description: description.trim() || undefined,
-      htmlUrl: htmlUrl.trim(),
       thumbnailUrl: thumbnailUrl.trim() || undefined,
       order: initial?.order,
       createdAt: initial?.createdAt ?? new Date().toISOString(),
+      htmlSize: new Blob([htmlContent]).size,
     };
-    onSave(app);
+    onSave(app, htmlContent);
   };
 
   return (
     <div className="space-y-5">
+      {/* Security note */}
+      <div className="flex items-start gap-2 rounded-lg border border-green-200 bg-green-50 dark:bg-green-900/10 dark:border-green-800 px-4 py-3 text-xs text-green-800 dark:text-green-300">
+        <Lock className="h-3.5 w-3.5 shrink-0 mt-0.5 text-green-600" />
+        <span>
+          <strong>100% private.</strong> The HTML file is read directly from your computer and stored only in your browser's localStorage. It is <em>never</em> uploaded to any server or CDN.
+        </span>
+      </div>
+
       {/* Title */}
       <div className="space-y-1.5">
         <Label>App Title *</Label>
@@ -130,55 +150,56 @@ function AppForm({ initial, onSave, onCancel, uploadFile }: AppFormProps) {
         />
       </div>
 
-      {/* HTML Upload */}
+      {/* HTML file picker — reads locally, no upload */}
       <div className="space-y-2">
         <Label className="flex items-center gap-1.5">
           <FileCode className="h-4 w-4 text-purple-500" />
-          HTML File *
+          HTML File * <span className="text-xs font-normal text-muted-foreground ml-1">(stored locally — not uploaded)</span>
         </Label>
-        <input ref={htmlRef} type="file" accept=".html,.htm" className="hidden" onChange={handleHtmlUpload} />
-        {htmlUrl ? (
+        <input ref={htmlRef} type="file" accept=".html,.htm" className="hidden" onChange={handleHtmlPick} />
+        {htmlContent ? (
           <div className="flex items-center gap-2 p-3 rounded-lg border border-green-200 bg-green-50 dark:bg-green-900/10 dark:border-green-800 text-sm">
             <Check className="h-4 w-4 text-green-600 shrink-0" />
-            <span className="flex-1 truncate text-green-700 dark:text-green-400 font-mono text-xs">{htmlUrl}</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-green-700 dark:text-green-400 font-medium text-xs truncate">
+                {htmlFileName || (initial?.id ? `${initial.id}.html (existing)` : 'HTML loaded')}
+              </p>
+              <p className="text-green-600/70 text-xs">{formatBytes(new Blob([htmlContent]).size)} — stored in browser only</p>
+            </div>
             <button
               type="button"
-              onClick={() => setHtmlUrl('')}
-              className="text-green-500 hover:text-red-500 transition-colors"
+              onClick={() => { setHtmlContent(''); setHtmlFileName(''); }}
+              className="text-green-500 hover:text-red-500 transition-colors shrink-0"
               title="Remove"
             >
               <X className="h-4 w-4" />
             </button>
           </div>
         ) : (
-          <div className="space-y-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => htmlRef.current?.click()}
-              disabled={uploadingHtml}
-              className="w-full border-dashed"
-            >
-              {uploadingHtml
-                ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Uploading…</>
-                : <><Upload className="h-4 w-4 mr-2" />Upload HTML file</>
-              }
+          <div
+            className="border-2 border-dashed rounded-xl p-8 flex flex-col items-center gap-3 text-center cursor-pointer hover:border-purple-400 hover:bg-purple-50/50 dark:hover:bg-purple-900/10 transition-colors"
+            onClick={() => htmlRef.current?.click()}
+          >
+            <div className="h-12 w-12 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+              <Upload className="h-6 w-6 text-purple-500" />
+            </div>
+            <div>
+              <p className="font-semibold text-sm">Click to choose your HTML file</p>
+              <p className="text-xs text-muted-foreground mt-1">The file stays in your browser — never uploaded</p>
+            </div>
+            <Button type="button" variant="outline" size="sm">
+              <FileCode className="h-4 w-4 mr-2" /> Choose .html file
             </Button>
-            <Input
-              type="url"
-              placeholder="Or paste a direct URL to the HTML file"
-              value={htmlUrl}
-              onChange={e => setHtmlUrl(e.target.value)}
-            />
           </div>
         )}
       </div>
 
-      {/* Thumbnail */}
+      {/* Thumbnail — this is just a preview image, fine to upload publicly */}
       <div className="space-y-2">
         <Label className="flex items-center gap-1.5">
           <ImageIcon className="h-4 w-4 text-blue-500" />
           Thumbnail Image (optional)
+          <span className="text-xs font-normal text-muted-foreground ml-1">(preview only — can be public)</span>
         </Label>
         <input ref={thumbRef} type="file" accept="image/*" className="hidden" onChange={handleThumbUpload} />
         {thumbnailUrl ? (
@@ -242,7 +263,14 @@ function CloudAppsSection() {
     setApps(ordered);
   };
 
-  const handleSave = (app: CloudApp) => {
+  const handleSave = (app: CloudApp, html: string) => {
+    // Save HTML to localStorage — no network call
+    const ok = saveCloudAppHtml(app.id, html);
+    if (!ok) {
+      toast.error('Storage quota exceeded. Try removing another app first.');
+      return;
+    }
+
     if (editingApp) {
       persist(apps.map(a => a.id === app.id ? app : a));
       toast.success('App updated');
@@ -256,6 +284,7 @@ function CloudAppsSection() {
 
   const handleDelete = (id: string) => {
     if (!confirm('Delete this app from Cloud? This cannot be undone.')) return;
+    deleteCloudAppHtml(id);
     persist(apps.filter(a => a.id !== id));
     toast.success('App removed');
   };
@@ -264,10 +293,6 @@ function CloudAppsSection() {
     const to = index + dir;
     if (to < 0 || to >= apps.length) return;
     persist(reorder(apps, index, to));
-  };
-
-  const uploadFileFn = async (file: File) => {
-    return await uploadFile(file);
   };
 
   return (
@@ -283,7 +308,7 @@ function CloudAppsSection() {
                 Cloud Apps
               </CardTitle>
               <CardDescription>
-                Upload HTML pages / apps that appear in the private Cloud workspace. Only HTML files.
+                Add HTML apps to the private Cloud workspace. Files are stored <strong>only in this browser</strong> — never on any public server.
               </CardDescription>
             </div>
             {!isCreating && !editingApp && (
@@ -294,6 +319,18 @@ function CloudAppsSection() {
             )}
           </div>
         </CardHeader>
+      </Card>
+
+      {/* Storage info */}
+      <Card className="border-blue-200 bg-blue-50 dark:bg-blue-900/10 dark:border-blue-800">
+        <CardContent className="py-3 flex items-start gap-3">
+          <HardDrive className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
+          <div className="text-xs text-blue-800 dark:text-blue-300">
+            <strong>Stored locally:</strong> HTML files live in your browser's localStorage (~5–10 MB limit). 
+            They are never uploaded to any server. Only users on <em>this browser</em> can access these apps after logging in to the Cloud.
+            If you clear browser data, the apps will be removed.
+          </div>
+        </CardContent>
       </Card>
 
       {/* Add / Edit form */}
@@ -307,7 +344,7 @@ function CloudAppsSection() {
               initial={editingApp ?? undefined}
               onSave={handleSave}
               onCancel={() => { setIsCreating(false); setEditingApp(null); }}
-              uploadFile={uploadFileFn}
+              uploadFile={uploadFile}
             />
           </CardContent>
         </Card>
@@ -348,19 +385,15 @@ function CloudAppsSection() {
                     )}
                     <div className="flex items-center gap-2 mt-1 flex-wrap">
                       <Badge variant="outline" className="text-xs">
-                        <FileCode className="h-2.5 w-2.5 mr-1 text-purple-500" />
-                        HTML
+                        <Lock className="h-2.5 w-2.5 mr-1 text-green-500" />
+                        Local only
                       </Badge>
-                      <a
-                        href={app.htmlUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-blue-500 hover:underline flex items-center gap-1"
-                        onClick={e => e.stopPropagation()}
-                      >
-                        <ExternalLink className="h-2.5 w-2.5" />
-                        Open file
-                      </a>
+                      {app.htmlSize && (
+                        <Badge variant="secondary" className="text-xs">
+                          <HardDrive className="h-2.5 w-2.5 mr-1" />
+                          {formatBytes(app.htmlSize)}
+                        </Badge>
+                      )}
                     </div>
                   </div>
 
@@ -391,7 +424,7 @@ function CloudAppsSection() {
                       size="icon"
                       className="h-8 w-8"
                       onClick={() => { setEditingApp(app); setIsCreating(false); }}
-                      title="Edit"
+                      title="Edit / replace HTML"
                     >
                       <Pencil className="h-3.5 w-3.5" />
                     </Button>
@@ -434,13 +467,12 @@ function CloudUsersSection() {
     if (!newPassword.trim() || newPassword.length < 4) { toast.error('Password must be at least 4 characters'); return; }
 
     const user = createCloudUser(newName.trim(), newPassword);
-    // Check duplicate username
-    if (users.some(u => u.id === user.id || u.name.toLowerCase() === newName.trim().toLowerCase())) {
+    if (users.some(u => u.name.toLowerCase() === newName.trim().toLowerCase())) {
       toast.error('A user with that name already exists');
       return;
     }
     persist([...users, user]);
-    toast.success(`User "${user.name}" created — ID: ${user.id}`);
+    toast.success(`User "${user.name}" created — login ID: ${user.id}`);
     setNewName('');
     setNewPassword('');
     setIsCreating(false);
@@ -489,7 +521,7 @@ function CloudUsersSection() {
           <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
           <div className="text-sm text-amber-800 dark:text-amber-300">
             <p className="font-semibold mb-1">Local-only credentials</p>
-            <p>Credentials are stored in your browser's localStorage and never sent to any server. They protect the Cloud page — not a system account. Share credentials only with trusted people.</p>
+            <p>Credentials are stored in this browser's localStorage and never sent to any server. Share credentials only with trusted people.</p>
           </div>
         </CardContent>
       </Card>
@@ -512,7 +544,7 @@ function CloudUsersSection() {
                 placeholder="e.g. Johannes or Design Team"
               />
               <p className="text-xs text-muted-foreground">
-                The login username will be auto-generated from this name (shown after creation).
+                The login username ID is auto-generated from this name (shown after creation).
               </p>
             </div>
 
@@ -549,7 +581,6 @@ function CloudUsersSection() {
             <div className="py-10 text-center text-muted-foreground">
               <Users className="h-10 w-10 mx-auto mb-3 opacity-30" />
               <p>No Cloud users yet. Add your first user above.</p>
-              <p className="text-xs mt-1">Only you (the admin, via Nostr login) can manage this section.</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -558,12 +589,10 @@ function CloudUsersSection() {
                   key={user.id}
                   className="flex items-center gap-4 p-4 rounded-xl border hover:bg-accent/40 transition-colors"
                 >
-                  {/* Avatar placeholder */}
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shrink-0 text-white font-bold text-sm">
                     {user.name.charAt(0).toUpperCase()}
                   </div>
 
-                  {/* Info */}
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold">{user.name}</p>
                     <div className="flex items-center gap-3 mt-0.5 flex-wrap">
@@ -590,7 +619,6 @@ function CloudUsersSection() {
                     </p>
                   </div>
 
-                  {/* Delete */}
                   <Button
                     variant="outline"
                     size="icon"
