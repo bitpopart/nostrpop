@@ -1,31 +1,25 @@
 /**
  * CloudManagement — Admin UI for the /admin → Cloud tab.
  *
- * SECURITY: HTML is AES-256-GCM encrypted in-browser before upload.
- * The CDN receives only ciphertext — unreadable without the master key
- * that lives exclusively in localStorage.
+ * SECURITY: HTML is AES-256-GCM encrypted in-browser and stored as base64
+ * in localStorage. Nothing is ever uploaded to a public server.
+ * Cross-browser access: export a .bpcloud backup file and import on other browser.
  */
 
 import { useState, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
-  loadCloudApps,
-  saveCloudApps,
-  makeCloudAppId,
-  cacheCloudAppHtml,
-  loadCachedCloudAppHtml,
-  deleteCachedCloudAppHtml,
-  loadCloudUsers,
-  saveCloudUsers,
-  createCloudUser,
+  loadCloudApps, saveCloudApps, makeCloudAppId,
+  saveEncryptedAppData, loadEncryptedAppData, deleteEncryptedAppData,
+  cacheCloudAppHtml, deleteCachedCloudAppHtml,
+  loadCloudUsers, saveCloudUsers, createCloudUser,
   formatBytes,
-  type CloudApp,
-  type CloudUser,
+  type CloudApp, type CloudUser,
 } from '@/lib/cloudTypes';
 import {
-  encryptText,
-  exportMasterKeyB64,
-  importMasterKeyB64,
-  hasMasterKey,
+  encryptToB64, decryptFromB64,
+  exportMasterKeyB64, importMasterKeyB64, hasMasterKey,
+  bytesToBase64, base64ToBytes,
 } from '@/lib/cloudCrypto';
 import { useUploadFile } from '@/hooks/useUploadFile';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -34,12 +28,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useNavigate } from 'react-router-dom';
 import {
   Plus, X, Upload, Trash2, Loader2, Cloud, Users,
   FileCode, Eye, EyeOff, MoveUp, MoveDown, KeyRound, User,
   ImageIcon, Pencil, Check, AlertTriangle, Lock, ShieldCheck,
-  Copy, Download, RefreshCw, ExternalLink,
+  Copy, Download, RefreshCw, ExternalLink, HardDrive, PackageOpen,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -52,7 +45,7 @@ function reorder<T>(arr: T[], from: number, to: number): T[] {
   return next.map((a, i) => ({ ...a, order: i + 1 }));
 }
 
-// ─── Key Manager panel ────────────────────────────────────────────────────────
+// ─── Key Manager ─────────────────────────────────────────────────────────────
 
 function KeyManager() {
   const [exportedKey, setExportedKey] = useState('');
@@ -81,12 +74,10 @@ function KeyManager() {
     setLoading(true);
     try {
       await importMasterKeyB64(importValue.trim());
-      toast.success('Master key imported — apps encrypted with this key are now accessible');
-      setImportValue('');
-      setShowImport(false);
-    } catch (e) {
-      toast.error('Invalid key: ' + String(e));
-    } finally { setLoading(false); }
+      toast.success('Master key imported successfully');
+      setImportValue(''); setShowImport(false);
+    } catch (e) { toast.error('Invalid key: ' + String(e)); }
+    finally { setLoading(false); }
   };
 
   return (
@@ -94,72 +85,51 @@ function KeyManager() {
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
           <ShieldCheck className="h-4 w-4 text-violet-600" />
-          Encryption Key Management
+          Encryption Key
         </CardTitle>
         <CardDescription className="text-xs">
-          Your master key encrypts all Cloud apps. Export it to use Cloud apps from another browser or device.
+          Your master key encrypts all Cloud apps. Export it to use Cloud apps on another browser.
           {!hasMasterKey() && (
             <span className="block mt-1 text-amber-600 font-semibold">
-              ⚠️ No key yet — one will be generated automatically when you add your first app.
+              ⚠️ No key yet — one is generated automatically when you add your first app.
             </span>
           )}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
-        {/* Export */}
-        <div className="space-y-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleExport}
-            disabled={loading}
-            className="border-violet-300 text-violet-700 hover:bg-violet-100 dark:hover:bg-violet-900/30"
-          >
-            {loading ? <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" /> : <Download className="h-3.5 w-3.5 mr-2" />}
-            Export Master Key
-          </Button>
+        <Button variant="outline" size="sm" onClick={handleExport} disabled={loading}
+          className="border-violet-300 text-violet-700 hover:bg-violet-100 dark:hover:bg-violet-900/30">
+          {loading ? <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" /> : <Download className="h-3.5 w-3.5 mr-2" />}
+          Export Master Key
+        </Button>
 
-          {exportedKey && (
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-2">
-                <code className="flex-1 block text-xs bg-slate-100 dark:bg-slate-800 rounded px-2 py-1.5 font-mono break-all truncate">
-                  {showKey ? exportedKey : '••••••••••••••••••••••••••••••••••••••••••••••'}
-                </code>
-                <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => setShowKey(v => !v)}>
-                  {showKey ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                </Button>
-                <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={handleCopy}>
-                  <Copy className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Save this key somewhere safe. Without it, encrypted apps cannot be decrypted.
-              </p>
+        {exportedKey && (
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2">
+              <code className="flex-1 block text-xs bg-slate-100 dark:bg-slate-800 rounded px-2 py-1.5 font-mono break-all truncate">
+                {showKey ? exportedKey : '••••••••••••••••••••••••••••••••••••••••••••••'}
+              </code>
+              <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => setShowKey(v => !v)}>
+                {showKey ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+              </Button>
+              <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={handleCopy}>
+                <Copy className="h-3.5 w-3.5" />
+              </Button>
             </div>
-          )}
-        </div>
+            <p className="text-xs text-muted-foreground">Save this somewhere safe. Without it you cannot decrypt your apps on another browser.</p>
+          </div>
+        )}
 
-        {/* Import */}
         <div className="border-t pt-3">
           {!showImport ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowImport(true)}
-              className="text-violet-600 hover:text-violet-700"
-            >
-              <RefreshCw className="h-3.5 w-3.5 mr-2" />
-              Import key from another browser
+            <Button variant="ghost" size="sm" onClick={() => setShowImport(true)} className="text-violet-600 hover:text-violet-700">
+              <RefreshCw className="h-3.5 w-3.5 mr-2" /> Import key from another browser
             </Button>
           ) : (
             <div className="space-y-2">
               <Label className="text-xs">Paste master key (base64)</Label>
-              <Input
-                value={importValue}
-                onChange={e => setImportValue(e.target.value)}
-                placeholder="Paste your exported key here…"
-                className="font-mono text-xs"
-              />
+              <Input value={importValue} onChange={e => setImportValue(e.target.value)}
+                placeholder="Paste your exported key here…" className="font-mono text-xs" />
               <div className="flex gap-2">
                 <Button size="sm" onClick={handleImport} disabled={loading}>Import</Button>
                 <Button size="sm" variant="ghost" onClick={() => { setShowImport(false); setImportValue(''); }}>Cancel</Button>
@@ -186,25 +156,24 @@ function AppForm({ initial, onSave, onCancel, uploadFile }: AppFormProps) {
   const [description, setDescription] = useState(initial?.description ?? '');
   const [thumbnailUrl, setThumbnailUrl] = useState(initial?.thumbnailUrl ?? '');
   const [uploadingThumb, setUploadingThumb] = useState(false);
-
-  // HTML kept in memory — never sent raw to any server
   const [htmlContent, setHtmlContent] = useState<string>(() => {
-    if (initial?.id) return loadCachedCloudAppHtml(initial.id) ?? '';
+    if (initial?.id) return loadCachedCloudAppHtml_local(initial.id) ?? '';
     return '';
   });
   const [htmlFileName, setHtmlFileName] = useState('');
-
   const htmlRef = useRef<HTMLInputElement>(null);
   const thumbRef = useRef<HTMLInputElement>(null);
+
+  // Load from cache for editing
+  function loadCachedCloudAppHtml_local(id: string): string | null {
+    return localStorage.getItem(`bitpopart:cloud:html:${id}`);
+  }
 
   const handleHtmlPick = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (ev) => {
-      setHtmlContent(ev.target?.result as string);
-      setHtmlFileName(file.name);
-    };
+    reader.onload = ev => { setHtmlContent(ev.target?.result as string); setHtmlFileName(file.name); };
     reader.readAsText(file);
     if (htmlRef.current) htmlRef.current.value = '';
   }, []);
@@ -218,16 +187,12 @@ function AppForm({ initial, onSave, onCancel, uploadFile }: AppFormProps) {
       setThumbnailUrl(tags[0][1]);
       toast.success('Thumbnail uploaded');
     } catch { toast.error('Failed to upload thumbnail'); }
-    finally {
-      setUploadingThumb(false);
-      if (thumbRef.current) thumbRef.current.value = '';
-    }
+    finally { setUploadingThumb(false); if (thumbRef.current) thumbRef.current.value = ''; }
   }, [uploadFile]);
 
   const handleSave = () => {
     if (!title.trim()) { toast.error('Please enter a title'); return; }
     if (!htmlContent.trim()) { toast.error('Please select an HTML file'); return; }
-
     const app: CloudApp = {
       id: initial?.id ?? makeCloudAppId(title),
       title: title.trim(),
@@ -242,33 +207,25 @@ function AppForm({ initial, onSave, onCancel, uploadFile }: AppFormProps) {
 
   return (
     <div className="space-y-5">
-      {/* Security note */}
       <div className="flex items-start gap-2 rounded-lg border border-green-200 bg-green-50 dark:bg-green-900/10 dark:border-green-800 px-4 py-3 text-xs text-green-800 dark:text-green-300">
         <Lock className="h-3.5 w-3.5 shrink-0 mt-0.5 text-green-600" />
-        <span>
-          <strong>AES-256-GCM encrypted.</strong> Your HTML is encrypted in-browser before upload.
-          The CDN stores only ciphertext — unreadable without your private master key.
-        </span>
+        <span><strong>AES-256-GCM encrypted.</strong> Your HTML is encrypted in-browser and stored locally — never uploaded to any public server.</span>
       </div>
 
-      {/* Title */}
       <div className="space-y-1.5">
         <Label>App Title *</Label>
         <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="My Awesome App" />
       </div>
 
-      {/* Description */}
       <div className="space-y-1.5">
         <Label>Short Description (optional)</Label>
         <Input value={description} onChange={e => setDescription(e.target.value)} placeholder="What does this app do?" />
       </div>
 
-      {/* HTML file picker */}
       <div className="space-y-2">
         <Label className="flex items-center gap-1.5">
-          <FileCode className="h-4 w-4 text-purple-500" />
-          HTML File *
-          <span className="text-xs font-normal text-muted-foreground ml-1">(encrypted before upload)</span>
+          <FileCode className="h-4 w-4 text-purple-500" /> HTML File *
+          <span className="text-xs font-normal text-muted-foreground ml-1">(encrypted + stored locally)</span>
         </Label>
         <input ref={htmlRef} type="file" accept=".html,.htm" className="hidden" onChange={handleHtmlPick} />
         {htmlContent ? (
@@ -278,65 +235,43 @@ function AppForm({ initial, onSave, onCancel, uploadFile }: AppFormProps) {
               <p className="text-green-700 dark:text-green-400 font-medium text-xs truncate">
                 {htmlFileName || (initial?.id ? `${initial.id}.html (existing)` : 'HTML loaded')}
               </p>
-              <p className="text-green-600/70 text-xs">{formatBytes(new Blob([htmlContent]).size)} · will be encrypted before upload</p>
+              <p className="text-green-600/70 text-xs">{formatBytes(new Blob([htmlContent]).size)} · AES-256-GCM encrypted</p>
             </div>
-            <button
-              type="button"
-              onClick={() => { setHtmlContent(''); setHtmlFileName(''); }}
-              className="text-green-500 hover:text-red-500 transition-colors shrink-0"
-            >
+            <button type="button" onClick={() => { setHtmlContent(''); setHtmlFileName(''); }} className="text-green-500 hover:text-red-500 transition-colors shrink-0">
               <X className="h-4 w-4" />
             </button>
           </div>
         ) : (
-          <div
-            className="border-2 border-dashed rounded-xl p-8 flex flex-col items-center gap-3 text-center cursor-pointer hover:border-purple-400 hover:bg-purple-50/50 dark:hover:bg-purple-900/10 transition-colors"
-            onClick={() => htmlRef.current?.click()}
-          >
+          <div className="border-2 border-dashed rounded-xl p-8 flex flex-col items-center gap-3 text-center cursor-pointer hover:border-purple-400 hover:bg-purple-50/50 dark:hover:bg-purple-900/10 transition-colors" onClick={() => htmlRef.current?.click()}>
             <div className="h-12 w-12 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
               <Upload className="h-6 w-6 text-purple-500" />
             </div>
             <div>
               <p className="font-semibold text-sm">Click to choose your HTML file</p>
-              <p className="text-xs text-muted-foreground mt-1">Encrypted in-browser · then uploaded to cloud storage</p>
+              <p className="text-xs text-muted-foreground mt-1">Encrypted in-browser · stored locally · no server upload</p>
             </div>
-            <Button type="button" variant="outline" size="sm">
-              <FileCode className="h-4 w-4 mr-2" /> Choose .html file
-            </Button>
+            <Button type="button" variant="outline" size="sm"><FileCode className="h-4 w-4 mr-2" /> Choose .html file</Button>
           </div>
         )}
       </div>
 
-      {/* Thumbnail */}
       <div className="space-y-2">
         <Label className="flex items-center gap-1.5">
-          <ImageIcon className="h-4 w-4 text-blue-500" />
-          Thumbnail Image (optional)
-          <span className="text-xs font-normal text-muted-foreground ml-1">(preview only — public is fine)</span>
+          <ImageIcon className="h-4 w-4 text-blue-500" /> Thumbnail Image (optional)
+          <span className="text-xs font-normal text-muted-foreground ml-1">(preview only — public OK)</span>
         </Label>
         <input ref={thumbRef} type="file" accept="image/*" className="hidden" onChange={handleThumbUpload} />
         {thumbnailUrl ? (
           <div className="relative rounded-lg overflow-hidden aspect-video w-48 border">
             <img src={thumbnailUrl} alt="Thumbnail" className="w-full h-full object-cover" />
-            <button
-              type="button"
-              onClick={() => setThumbnailUrl('')}
-              className="absolute top-1 right-1 bg-black/60 rounded-full p-0.5 text-white hover:bg-red-600/80 transition-colors"
-            >
+            <button type="button" onClick={() => setThumbnailUrl('')} className="absolute top-1 right-1 bg-black/60 rounded-full p-0.5 text-white hover:bg-red-600/80 transition-colors">
               <X className="h-3.5 w-3.5" />
             </button>
           </div>
         ) : (
           <div className="space-y-2">
-            <Button
-              type="button" variant="outline" size="sm"
-              onClick={() => thumbRef.current?.click()}
-              disabled={uploadingThumb}
-            >
-              {uploadingThumb
-                ? <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />Uploading…</>
-                : <><Upload className="h-3.5 w-3.5 mr-1.5" />Upload thumbnail</>
-              }
+            <Button type="button" variant="outline" size="sm" onClick={() => thumbRef.current?.click()} disabled={uploadingThumb}>
+              {uploadingThumb ? <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />Uploading…</> : <><Upload className="h-3.5 w-3.5 mr-1.5" />Upload thumbnail</>}
             </Button>
             <Input type="url" placeholder="Or paste image URL" value={thumbnailUrl} onChange={e => setThumbnailUrl(e.target.value)} />
           </div>
@@ -344,12 +279,108 @@ function AppForm({ initial, onSave, onCancel, uploadFile }: AppFormProps) {
         <p className="text-xs text-muted-foreground">If omitted, a coloured gradient is used.</p>
       </div>
 
-      {/* Actions */}
       <div className="flex gap-2 pt-2 border-t">
         <Button onClick={handleSave}>{initial ? 'Update App' : 'Add App'}</Button>
         <Button variant="ghost" onClick={onCancel}>Cancel</Button>
       </div>
     </div>
+  );
+}
+
+// ─── Backup / Restore ─────────────────────────────────────────────────────────
+
+function BackupRestore({ apps }: { apps: CloudApp[] }) {
+  const importRef = useRef<HTMLInputElement>(null);
+  const [importing, setImporting] = useState(false);
+
+  const handleExport = async () => {
+    if (apps.length === 0) { toast.error('No apps to export'); return; }
+    const tid = toast.loading('Preparing backup…');
+    try {
+      const masterKey = await exportMasterKeyB64();
+      const appData: Record<string, string> = {};
+      for (const app of apps) {
+        const enc = loadEncryptedAppData(app.id);
+        if (enc) appData[app.id] = enc;
+      }
+      const backup = {
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        masterKey,
+        apps,
+        appData,
+      };
+      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `bitpopart-cloud-backup-${Date.now()}.bpcloud`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Backup downloaded', { id: tid });
+    } catch (e) { toast.error('Export failed: ' + String(e), { id: tid }); }
+  };
+
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImporting(true);
+    const tid = toast.loading('Importing backup…');
+    try {
+      const text = await file.text();
+      const backup = JSON.parse(text);
+      if (!backup.version || !backup.masterKey || !backup.apps) throw new Error('Invalid backup file');
+
+      // Import master key
+      await importMasterKeyB64(backup.masterKey);
+
+      // Import app metadata
+      const existing = loadCloudApps();
+      const existingIds = new Set(existing.map((a: CloudApp) => a.id));
+      const newApps = (backup.apps as CloudApp[]).filter(a => !existingIds.has(a.id));
+      saveCloudApps([...existing, ...newApps].map((a, i) => ({ ...a, order: a.order ?? i + 1 })));
+
+      // Import encrypted data
+      let count = 0;
+      for (const [appId, enc] of Object.entries(backup.appData ?? {})) {
+        saveEncryptedAppData(appId, enc as string);
+        count++;
+      }
+
+      toast.success(`Imported ${newApps.length} app(s) with ${count} encrypted file(s)`, { id: tid });
+      // Reload page so the new apps appear
+      setTimeout(() => window.location.reload(), 1000);
+    } catch (e) {
+      toast.error('Import failed: ' + String(e), { id: tid });
+    } finally {
+      setImporting(false);
+      if (importRef.current) importRef.current.value = '';
+    }
+  };
+
+  return (
+    <Card className="border-blue-200 bg-blue-50 dark:bg-blue-900/10 dark:border-blue-800">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base flex items-center gap-2">
+          <HardDrive className="h-4 w-4 text-blue-600" />
+          Backup &amp; Restore
+        </CardTitle>
+        <CardDescription className="text-xs">
+          Export a <code>.bpcloud</code> file to transfer all apps (including encrypted data + master key) to another browser or device.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-wrap gap-2">
+        <Button variant="outline" size="sm" onClick={handleExport}
+          className="border-blue-300 text-blue-700 hover:bg-blue-100 dark:hover:bg-blue-900/30">
+          <Download className="h-3.5 w-3.5 mr-2" /> Export .bpcloud backup
+        </Button>
+        <input ref={importRef} type="file" accept=".bpcloud,.json" className="hidden" onChange={handleImport} />
+        <Button variant="outline" size="sm" onClick={() => importRef.current?.click()} disabled={importing}
+          className="border-blue-300 text-blue-700 hover:bg-blue-100 dark:hover:bg-blue-900/30">
+          {importing ? <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" /> : <PackageOpen className="h-3.5 w-3.5 mr-2" />}
+          Import .bpcloud backup
+        </Button>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -364,48 +395,38 @@ function CloudAppsSection() {
 
   const persist = (next: CloudApp[]) => {
     const ordered = next.map((a, i) => ({ ...a, order: i + 1 }));
-    saveCloudApps(ordered);
-    setApps(ordered);
+    saveCloudApps(ordered); setApps(ordered);
   };
 
   const handleSave = async (app: CloudApp, html: string) => {
     const tid = toast.loading('Encrypting…');
     try {
-      // 1. Encrypt in browser
-      const cipherBytes = await encryptText(html);
-
-      // 2. Upload encrypted blob to Blossom
-      toast.loading('Uploading encrypted file…', { id: tid });
-      const encryptedBlob = new Blob([cipherBytes], { type: 'application/octet-stream' });
-      const encryptedFile = new File([encryptedBlob], `${app.id}.enc`, { type: 'application/octet-stream' });
-      const tags = await uploadFile(encryptedFile);
-      const encryptedUrl = tags[0][1];
-
-      toast.dismiss(tid);
-
-      // 3. Cache plaintext locally for offline use
+      // Encrypt → base64 → localStorage (no server upload)
+      const b64 = await encryptToB64(html);
+      const ok = saveEncryptedAppData(app.id, b64);
+      if (!ok) {
+        toast.error('Storage quota exceeded. Try removing another app first.', { id: tid });
+        return;
+      }
+      // Cache plaintext for instant open
       cacheCloudAppHtml(app.id, html);
 
-      // 4. Persist metadata with the CDN URL
-      const finalApp: CloudApp = { ...app, encryptedUrl };
-
       if (editingApp) {
-        persist(apps.map(a => a.id === finalApp.id ? finalApp : a));
-        toast.success('App updated & re-encrypted');
+        persist(apps.map(a => a.id === app.id ? app : a));
+        toast.success('App updated & re-encrypted', { id: tid });
       } else {
-        persist([...apps, { ...finalApp, order: apps.length + 1 }]);
-        toast.success('App encrypted & uploaded to Cloud ☁️');
+        persist([...apps, { ...app, order: apps.length + 1 }]);
+        toast.success('App encrypted & saved ✓', { id: tid });
       }
-      setIsCreating(false);
-      setEditingApp(null);
+      setIsCreating(false); setEditingApp(null);
     } catch (e) {
-      toast.dismiss(tid);
-      toast.error('Failed: ' + String(e).slice(0, 100));
+      toast.error('Failed: ' + String(e).slice(0, 100), { id: tid });
     }
   };
 
   const handleDelete = (id: string) => {
-    if (!confirm('Delete this app from Cloud? This cannot be undone.')) return;
+    if (!confirm('Delete this app? This cannot be undone.')) return;
+    deleteEncryptedAppData(id);
     deleteCachedCloudAppHtml(id);
     persist(apps.filter(a => a.id !== id));
     toast.success('App removed');
@@ -419,9 +440,8 @@ function CloudAppsSection() {
 
   return (
     <div className="space-y-6">
-
-      {/* Encryption key manager */}
       <KeyManager />
+      <BackupRestore apps={apps} />
 
       {/* Header */}
       <Card>
@@ -429,40 +449,28 @@ function CloudAppsSection() {
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div>
               <CardTitle className="flex items-center gap-2">
-                <Cloud className="h-5 w-5 text-purple-600" />
-                Cloud Apps
+                <Cloud className="h-5 w-5 text-purple-600" /> Cloud Apps
               </CardTitle>
               <CardDescription>
-                HTML apps are <strong>AES-256-GCM encrypted</strong> in your browser before upload.
-                The CDN file is pure ciphertext — unreadable without your master key.
+                HTML apps are <strong>AES-256-GCM encrypted</strong> and stored locally in your browser — no server upload.
               </CardDescription>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              {/* Direct link to the Cloud workspace */}
-              <Button
-                variant="outline"
-                onClick={() => window.open('/cloud', '_blank')}
-                className="border-violet-300 text-violet-700 hover:bg-violet-50 dark:border-violet-700 dark:text-violet-400 dark:hover:bg-violet-900/20"
-              >
-                <ExternalLink className="h-4 w-4 mr-2" />
-                Open Cloud ↗
+              <Button variant="outline" onClick={() => window.open('/cloud', '_blank')}
+                className="border-violet-300 text-violet-700 hover:bg-violet-50 dark:border-violet-700 dark:text-violet-400 dark:hover:bg-violet-900/20">
+                <ExternalLink className="h-4 w-4 mr-2" /> Open Cloud ↗
               </Button>
               {!isCreating && !editingApp && (
-                <Button onClick={() => setIsCreating(true)}>
-                  <Plus className="h-4 w-4 mr-2" /> Add App
-                </Button>
+                <Button onClick={() => setIsCreating(true)}><Plus className="h-4 w-4 mr-2" /> Add App</Button>
               )}
             </div>
           </div>
         </CardHeader>
       </Card>
 
-      {/* Add / Edit form */}
       {(isCreating || editingApp) && (
         <Card>
-          <CardHeader>
-            <CardTitle>{editingApp ? 'Edit App' : 'Add New App'}</CardTitle>
-          </CardHeader>
+          <CardHeader><CardTitle>{editingApp ? 'Edit App' : 'Add New App'}</CardTitle></CardHeader>
           <CardContent>
             <AppForm
               initial={editingApp ?? undefined}
@@ -474,7 +482,6 @@ function CloudAppsSection() {
         </Card>
       )}
 
-      {/* Apps list */}
       <Card>
         <CardHeader><CardTitle>Existing Apps ({apps.length})</CardTitle></CardHeader>
         <CardContent>
@@ -485,52 +492,40 @@ function CloudAppsSection() {
             </div>
           ) : (
             <div className="space-y-3">
-              {apps.map((app, index) => (
-                <div key={app.id} className="flex items-center gap-4 p-4 rounded-xl border hover:bg-accent/40 transition-colors">
-                  {app.thumbnailUrl ? (
-                    <img src={app.thumbnailUrl} alt={app.title} className="w-20 h-14 object-cover rounded-lg shrink-0 border" />
-                  ) : (
-                    <div className="w-20 h-14 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shrink-0">
-                      <FileCode className="h-6 w-6 text-white/70" />
-                    </div>
-                  )}
-
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold truncate">{app.title}</p>
-                    {app.description && <p className="text-xs text-muted-foreground truncate">{app.description}</p>}
-                    <div className="flex items-center gap-2 mt-1 flex-wrap">
-                      <Badge variant="outline" className="text-xs border-green-300 text-green-700 dark:text-green-400">
-                        <Lock className="h-2.5 w-2.5 mr-1" />
-                        AES-256-GCM
-                      </Badge>
-                      {app.encryptedUrl && (
-                        <Badge variant="outline" className="text-xs border-blue-300 text-blue-700 dark:text-blue-400">
-                          <Cloud className="h-2.5 w-2.5 mr-1" />
-                          Uploaded
+              {apps.map((app, index) => {
+                const hasData = !!loadEncryptedAppData(app.id);
+                return (
+                  <div key={app.id} className="flex items-center gap-4 p-4 rounded-xl border hover:bg-accent/40 transition-colors">
+                    {app.thumbnailUrl ? (
+                      <img src={app.thumbnailUrl} alt={app.title} className="w-20 h-14 object-cover rounded-lg shrink-0 border" />
+                    ) : (
+                      <div className="w-20 h-14 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shrink-0">
+                        <FileCode className="h-6 w-6 text-white/70" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold truncate">{app.title}</p>
+                      {app.description && <p className="text-xs text-muted-foreground truncate">{app.description}</p>}
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                        <Badge variant="outline" className="text-xs border-green-300 text-green-700 dark:text-green-400">
+                          <Lock className="h-2.5 w-2.5 mr-1" /> AES-256-GCM
                         </Badge>
-                      )}
-                      {app.htmlSize && (
-                        <Badge variant="secondary" className="text-xs">{formatBytes(app.htmlSize)}</Badge>
-                      )}
+                        {hasData
+                          ? <Badge variant="outline" className="text-xs border-blue-300 text-blue-700 dark:text-blue-400"><HardDrive className="h-2.5 w-2.5 mr-1" />Stored locally</Badge>
+                          : <Badge variant="outline" className="text-xs border-red-300 text-red-600"><AlertTriangle className="h-2.5 w-2.5 mr-1" />Missing data</Badge>
+                        }
+                        {app.htmlSize && <Badge variant="secondary" className="text-xs">{formatBytes(app.htmlSize)}</Badge>}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button variant="ghost" size="icon" className="h-8 w-8" disabled={index === 0} onClick={() => handleMove(index, -1)} title="Move up"><MoveUp className="h-3.5 w-3.5" /></Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" disabled={index === apps.length - 1} onClick={() => handleMove(index, 1)} title="Move down"><MoveDown className="h-3.5 w-3.5" /></Button>
+                      <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => { setEditingApp(app); setIsCreating(false); }} title="Edit"><Pencil className="h-3.5 w-3.5" /></Button>
+                      <Button variant="outline" size="icon" className="h-8 w-8 text-red-500 border-red-200 hover:bg-red-50" onClick={() => handleDelete(app.id)} title="Delete"><Trash2 className="h-3.5 w-3.5" /></Button>
                     </div>
                   </div>
-
-                  <div className="flex items-center gap-1 shrink-0">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" disabled={index === 0} onClick={() => handleMove(index, -1)} title="Move up">
-                      <MoveUp className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" disabled={index === apps.length - 1} onClick={() => handleMove(index, 1)} title="Move down">
-                      <MoveDown className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => { setEditingApp(app); setIsCreating(false); }} title="Edit">
-                      <Pencil className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button variant="outline" size="icon" className="h-8 w-8 text-red-500 border-red-200 hover:bg-red-50" onClick={() => handleDelete(app.id)} title="Delete">
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>
@@ -554,9 +549,7 @@ function CloudUsersSection() {
     if (!newName.trim()) { toast.error('Please enter a name'); return; }
     if (newPassword.length < 4) { toast.error('Password must be at least 4 characters'); return; }
     const user = createCloudUser(newName.trim(), newPassword);
-    if (users.some(u => u.name.toLowerCase() === newName.trim().toLowerCase())) {
-      toast.error('A user with that name already exists'); return;
-    }
+    if (users.some(u => u.name.toLowerCase() === newName.trim().toLowerCase())) { toast.error('A user with that name already exists'); return; }
     persist([...users, user]);
     toast.success(`User "${user.name}" created — login ID: ${user.id}`);
     setNewName(''); setNewPassword(''); setIsCreating(false);
@@ -574,20 +567,10 @@ function CloudUsersSection() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-blue-600" />
-                Cloud Users
-              </CardTitle>
-              <CardDescription>
-                Create login credentials for people you want to grant Cloud access.
-                Share the <strong>Username (ID)</strong> and password with them.
-              </CardDescription>
+              <CardTitle className="flex items-center gap-2"><Users className="h-5 w-5 text-blue-600" /> Cloud Users</CardTitle>
+              <CardDescription>Create login credentials. Share the <strong>Username (ID)</strong> and password.</CardDescription>
             </div>
-            {!isCreating && (
-              <Button onClick={() => setIsCreating(true)}>
-                <Plus className="h-4 w-4 mr-2" /> Add User
-              </Button>
-            )}
+            {!isCreating && <Button onClick={() => setIsCreating(true)}><Plus className="h-4 w-4 mr-2" /> Add User</Button>}
           </div>
         </CardHeader>
       </Card>
@@ -597,7 +580,7 @@ function CloudUsersSection() {
           <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
           <div className="text-sm text-amber-800 dark:text-amber-300">
             <p className="font-semibold mb-1">Local-only credentials</p>
-            <p>Credentials are stored in this browser's localStorage and never sent to any server. Share only with trusted people.</p>
+            <p>Credentials are stored in this browser's localStorage. Share only with trusted people.</p>
           </div>
         </CardContent>
       </Card>
@@ -627,10 +610,7 @@ function CloudUsersSection() {
         <CardHeader><CardTitle>Existing Users ({users.length})</CardTitle></CardHeader>
         <CardContent>
           {users.length === 0 ? (
-            <div className="py-10 text-center text-muted-foreground">
-              <Users className="h-10 w-10 mx-auto mb-3 opacity-30" />
-              <p>No Cloud users yet.</p>
-            </div>
+            <div className="py-10 text-center text-muted-foreground"><Users className="h-10 w-10 mx-auto mb-3 opacity-30" /><p>No Cloud users yet.</p></div>
           ) : (
             <div className="space-y-3">
               {users.map(user => (
@@ -671,12 +651,8 @@ export function CloudManagement() {
   return (
     <Tabs defaultValue="apps">
       <TabsList className="mb-6">
-        <TabsTrigger value="apps" className="flex items-center gap-2">
-          <Cloud className="h-4 w-4" /> Apps
-        </TabsTrigger>
-        <TabsTrigger value="users" className="flex items-center gap-2">
-          <Users className="h-4 w-4" /> Users
-        </TabsTrigger>
+        <TabsTrigger value="apps" className="flex items-center gap-2"><Cloud className="h-4 w-4" /> Apps</TabsTrigger>
+        <TabsTrigger value="users" className="flex items-center gap-2"><Users className="h-4 w-4" /> Users</TabsTrigger>
       </TabsList>
       <TabsContent value="apps"><CloudAppsSection /></TabsContent>
       <TabsContent value="users"><CloudUsersSection /></TabsContent>

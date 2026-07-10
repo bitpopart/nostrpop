@@ -1,49 +1,33 @@
 /**
  * Cloud private space types.
  *
- * SECURITY MODEL (Option 1 — AES-256-GCM + Blossom):
- * ════════════════════════════════════════════════════
+ * SECURITY MODEL — AES-256-GCM, localStorage only:
+ * ══════════════════════════════════════════════════
  * - A random 256-bit AES-GCM master key is generated once and stored in
  *   localStorage. It NEVER leaves the browser.
- * - Before upload, the HTML is encrypted with this key. The resulting
- *   binary blob is what gets stored on Blossom/CDN.
- * - The CDN file is pure ciphertext — completely unreadable without the key.
- * - On load, the ciphertext is fetched, decrypted in memory, and injected
- *   via `srcdoc`. The plaintext HTML is never stored or transmitted publicly.
- * - The master key can be exported (base64) and imported on another browser
- *   to access the same encrypted apps from any device.
- *
- * localStorage is also used as a plaintext cache to make apps available
- * offline / when the CDN is unreachable.
+ * - The HTML is encrypted in-browser and stored as base64 ciphertext in
+ *   localStorage. Nothing is ever uploaded to a public server.
+ * - To use apps on another browser: export a .bpcloud backup file from the
+ *   Admin → Cloud tab and import it on the other browser.
+ * - Sessions expire after 8 hours.
  */
 
 export interface CloudUser {
-  /** Unique ID (used as login username) */
   id: string;
-  /** Display name shown after login */
   name: string;
-  /** Password (stored locally) */
   password: string;
-  /** ISO timestamp */
   createdAt: string;
 }
 
 export interface CloudApp {
-  /** Unique ID (slug) */
   id: string;
-  /** Display title shown on the thumbnail card */
   title: string;
-  /** Optional short description */
   description?: string;
-  /** Blossom URL pointing to the AES-256-GCM encrypted binary blob */
-  encryptedUrl?: string;
-  /** Optional thumbnail image URL (public — just a preview, not sensitive) */
+  /** Optional public thumbnail image URL (just a preview, not sensitive) */
   thumbnailUrl?: string;
-  /** Display order (lower = first) */
   order?: number;
-  /** ISO timestamp */
   createdAt: string;
-  /** Original plaintext size (bytes) for display */
+  /** Original plaintext size in bytes (for display) */
   htmlSize?: number;
 }
 
@@ -53,32 +37,43 @@ const CLOUD_USERS_KEY   = 'bitpopart:cloud:users';
 const CLOUD_APPS_KEY    = 'bitpopart:cloud:apps';
 const CLOUD_SESSION_KEY = 'bitpopart:cloud:session';
 
-/** Plaintext HTML cache — used as offline fallback */
-function htmlCacheKey(appId: string) {
-  return `bitpopart:cloud:html:${appId}`;
+/** Encrypted (AES-256-GCM) ciphertext stored as base64 */
+function encKey(appId: string) { return `bitpopart:cloud:enc:${appId}`; }
+/** Plaintext HTML cache for instant load (derived from enc on first open) */
+function htmlKey(appId: string) { return `bitpopart:cloud:html:${appId}`; }
+
+// ── Encrypted storage ─────────────────────────────────────────────────────────
+
+/** Save base64 ciphertext. Returns false on quota exceeded. */
+export function saveEncryptedAppData(appId: string, b64: string): boolean {
+  try { localStorage.setItem(encKey(appId), b64); return true; }
+  catch { return false; }
 }
 
-// ── Plaintext HTML cache (offline fallback) ───────────────────────────────────
+/** Load base64 ciphertext. Returns null if not found. */
+export function loadEncryptedAppData(appId: string): string | null {
+  return localStorage.getItem(encKey(appId));
+}
 
-/**
- * Cache decrypted HTML locally so the app loads instantly without a CDN fetch.
- * Returns false if quota is exceeded (non-fatal — encrypted URL is the source of truth).
- */
+/** Remove encrypted data (on app delete). */
+export function deleteEncryptedAppData(appId: string): void {
+  localStorage.removeItem(encKey(appId));
+}
+
+// ── Plaintext HTML cache ───────────────────────────────────────────────────────
+
+/** Cache plaintext for instant load. Returns false on quota exceeded (non-fatal). */
 export function cacheCloudAppHtml(appId: string, html: string): boolean {
-  try {
-    localStorage.setItem(htmlCacheKey(appId), html);
-    return true;
-  } catch { return false; }
+  try { localStorage.setItem(htmlKey(appId), html); return true; }
+  catch { return false; }
 }
 
-/** Load cached plaintext HTML. Returns null if not cached. */
 export function loadCachedCloudAppHtml(appId: string): string | null {
-  return localStorage.getItem(htmlCacheKey(appId));
+  return localStorage.getItem(htmlKey(appId));
 }
 
-/** Remove cached HTML (called on app delete). */
 export function deleteCachedCloudAppHtml(appId: string): void {
-  localStorage.removeItem(htmlCacheKey(appId));
+  localStorage.removeItem(htmlKey(appId));
 }
 
 // ── Cloud apps helpers ────────────────────────────────────────────────────────
@@ -131,7 +126,6 @@ export function createCloudUser(name: string, password: string): CloudUser {
 export interface CloudSession {
   userId: string;
   name: string;
-  /** unix ms — session expires after 8 hours */
   expiresAt: number;
 }
 
@@ -151,11 +145,7 @@ export function loadCloudSession(): CloudSession | null {
 }
 
 export function saveCloudSession(userId: string, name: string): CloudSession {
-  const session: CloudSession = {
-    userId,
-    name,
-    expiresAt: Date.now() + SESSION_TTL_MS,
-  };
+  const session: CloudSession = { userId, name, expiresAt: Date.now() + SESSION_TTL_MS };
   localStorage.setItem(CLOUD_SESSION_KEY, JSON.stringify(session));
   return session;
 }
@@ -167,11 +157,7 @@ export function clearCloudSession(): void {
 // ── Utility ───────────────────────────────────────────────────────────────────
 
 function slugify(str: string): string {
-  return str
-    .toLowerCase()
-    .replace(/\s+/g, '-')
-    .replace(/[^a-z0-9-]/g, '')
-    .slice(0, 30);
+  return str.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').slice(0, 30);
 }
 
 export function formatBytes(bytes: number): string {

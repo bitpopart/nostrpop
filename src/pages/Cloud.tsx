@@ -12,17 +12,17 @@ import {
   loadCloudApps,
   loadCachedCloudAppHtml,
   cacheCloudAppHtml,
+  loadEncryptedAppData,
   type CloudApp,
 } from '@/lib/cloudTypes';
-import { decryptBytes } from '@/lib/cloudCrypto';
+import { decryptFromB64 } from '@/lib/cloudCrypto';
 import {
   Cloud, Lock, LogOut, Eye, Grid3X3, KeyRound, User,
   AlertCircle, Sparkles, Shield, Settings, Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-// ── Constants ─────────────────────────────────────────────────────────────────
-const CORS_PROXY = 'https://proxy.shakespeare.diy/?url=';
+
 
 // ── Thumbnail colour palette ──────────────────────────────────────────────────
 const CARD_COLORS = [
@@ -220,37 +220,28 @@ export default function CloudPage() {
    * full WebGL, Three.js, Web Audio, all JS APIs work correctly.
    */
   const openApp = useCallback(async (app: CloudApp) => {
-    if (openingAppId) return; // already opening one
+    if (openingAppId) return;
     setOpeningAppId(app.id);
 
     try {
       let html: string | null = null;
 
-      // 1. Local cache → instant, no network needed
+      // 1. Plaintext cache → instant load
       html = loadCachedCloudAppHtml(app.id);
 
-      // 2. Fetch + decrypt from CDN
+      // 2. Decrypt from localStorage encrypted data
       if (!html) {
-        if (!app.encryptedUrl) {
-          toast.error('No encrypted file found for this app.');
+        const b64 = loadEncryptedAppData(app.id);
+        if (!b64) {
+          toast.error('App data not found. It may have been cleared from browser storage. Re-upload the HTML file in Admin → Cloud.');
           return;
         }
-
-        let res = await fetch(app.encryptedUrl).catch(() => null);
-        if (!res || !res.ok) {
-          res = await fetch(CORS_PROXY + encodeURIComponent(app.encryptedUrl));
-        }
-        if (!res || !res.ok) throw new Error('Failed to fetch encrypted file');
-
-        const buf = await res.arrayBuffer();
-
         try {
-          html = await decryptBytes(new Uint8Array(buf));
+          html = await decryptFromB64(b64);
         } catch {
-          toast.error('Decryption failed. Make sure you have the correct master key imported.');
+          toast.error('Decryption failed. Make sure the correct master key is loaded in Admin → Cloud → Encryption Key.');
           return;
         }
-
         // Cache for next time
         cacheCloudAppHtml(app.id, html);
       }

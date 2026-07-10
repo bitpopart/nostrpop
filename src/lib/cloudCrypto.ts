@@ -6,15 +6,9 @@
  * 1. A random 256-bit master key is generated once and stored in localStorage.
  *    It never leaves the browser.
  * 2. Each app is encrypted with AES-256-GCM using a fresh 12-byte IV.
- *    The IV is prepended to the ciphertext before upload.
- * 3. The encrypted blob is uploaded to Blossom. The file on the CDN is
- *    pure binary ciphertext — unreadable without the master key.
- * 4. On load, we fetch the blob, split off the IV, and decrypt in memory.
- *    The plaintext HTML is injected via `srcdoc` and never stored publicly.
- *
- * Someone with only the Blossom URL sees random bytes — the key is
- * required to decrypt and it exists only in localStorage on the admin's
- * browser (or any browser where it has been manually copied).
+ *    The IV is prepended to the ciphertext (stored as base64 in localStorage).
+ * 3. Nothing is ever uploaded to a public server — all data is local.
+ * 4. Cross-browser: export a .bpcloud backup file and import it elsewhere.
  */
 
 const MASTER_KEY_STORAGE = 'bitpopart:cloud:masterKey';
@@ -127,6 +121,22 @@ export async function decryptBytes(data: Uint8Array): Promise<string> {
     ciphertext,
   );
   return new TextDecoder().decode(plainBuf);
+}
+
+/**
+ * Encrypt plaintext → base64 string (for localStorage storage).
+ */
+export async function encryptToB64(plaintext: string): Promise<string> {
+  const bytes = await encryptText(plaintext);
+  return bytesToBase64(bytes);
+}
+
+/**
+ * Decrypt a base64 string produced by encryptToB64 → plaintext.
+ */
+export async function decryptFromB64(b64: string): Promise<string> {
+  const bytes = base64ToBytes(b64);
+  return decryptBytes(bytes);
 }
 
 // ── Utility ───────────────────────────────────────────────────────────────────
