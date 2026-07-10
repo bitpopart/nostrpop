@@ -1,16 +1,20 @@
 /**
  * Cloud private space types.
  *
- * SECURITY MODEL:
- * - HTML app content is stored ONLY in localStorage — never uploaded to any
- *   public server or CDN.
- * - There is no public URL for any app. Content only exists on the admin's
- *   own browser.
- * - Access is gated by a username + password stored in localStorage.
- * - Sessions expire after 8 hours.
+ * SECURITY MODEL (Option 1 — AES-256-GCM + Blossom):
+ * ════════════════════════════════════════════════════
+ * - A random 256-bit AES-GCM master key is generated once and stored in
+ *   localStorage. It NEVER leaves the browser.
+ * - Before upload, the HTML is encrypted with this key. The resulting
+ *   binary blob is what gets stored on Blossom/CDN.
+ * - The CDN file is pure ciphertext — completely unreadable without the key.
+ * - On load, the ciphertext is fetched, decrypted in memory, and injected
+ *   via `srcdoc`. The plaintext HTML is never stored or transmitted publicly.
+ * - The master key can be exported (base64) and imported on another browser
+ *   to access the same encrypted apps from any device.
  *
- * localStorage size limit is typically 5–10 MB per origin.
- * Large HTML apps (with embedded assets) may hit that limit.
+ * localStorage is also used as a plaintext cache to make apps available
+ * offline / when the CDN is unreachable.
  */
 
 export interface CloudUser {
@@ -18,9 +22,9 @@ export interface CloudUser {
   id: string;
   /** Display name shown after login */
   name: string;
-  /** Password (stored locally — this is a private local-only space) */
+  /** Password (stored locally) */
   password: string;
-  /** ISO timestamp when this account was created */
+  /** ISO timestamp */
   createdAt: string;
 }
 
@@ -31,13 +35,15 @@ export interface CloudApp {
   title: string;
   /** Optional short description */
   description?: string;
-  /** Optional thumbnail image URL (public image is fine — it's just a preview) */
+  /** Blossom URL pointing to the AES-256-GCM encrypted binary blob */
+  encryptedUrl?: string;
+  /** Optional thumbnail image URL (public — just a preview, not sensitive) */
   thumbnailUrl?: string;
   /** Display order (lower = first) */
   order?: number;
   /** ISO timestamp */
   createdAt: string;
-  /** Size hint (bytes) — stored alongside metadata so the list can show it */
+  /** Original plaintext size (bytes) for display */
   htmlSize?: number;
 }
 
@@ -47,34 +53,32 @@ const CLOUD_USERS_KEY   = 'bitpopart:cloud:users';
 const CLOUD_APPS_KEY    = 'bitpopart:cloud:apps';
 const CLOUD_SESSION_KEY = 'bitpopart:cloud:session';
 
-/** Per-app HTML content lives under this key prefix */
-function htmlKey(appId: string) {
+/** Plaintext HTML cache — used as offline fallback */
+function htmlCacheKey(appId: string) {
   return `bitpopart:cloud:html:${appId}`;
 }
 
-// ── Cloud HTML content ────────────────────────────────────────────────────────
+// ── Plaintext HTML cache (offline fallback) ───────────────────────────────────
 
 /**
- * Save the raw HTML for an app to localStorage.
- * Returns false if the quota is exceeded.
+ * Cache decrypted HTML locally so the app loads instantly without a CDN fetch.
+ * Returns false if quota is exceeded (non-fatal — encrypted URL is the source of truth).
  */
-export function saveCloudAppHtml(appId: string, html: string): boolean {
+export function cacheCloudAppHtml(appId: string, html: string): boolean {
   try {
-    localStorage.setItem(htmlKey(appId), html);
+    localStorage.setItem(htmlCacheKey(appId), html);
     return true;
-  } catch {
-    return false; // QuotaExceededError
-  }
+  } catch { return false; }
 }
 
-/** Load the raw HTML for an app from localStorage. Returns null if not found. */
-export function loadCloudAppHtml(appId: string): string | null {
-  return localStorage.getItem(htmlKey(appId));
+/** Load cached plaintext HTML. Returns null if not cached. */
+export function loadCachedCloudAppHtml(appId: string): string | null {
+  return localStorage.getItem(htmlCacheKey(appId));
 }
 
-/** Remove the HTML content for an app (called on delete). */
-export function deleteCloudAppHtml(appId: string): void {
-  localStorage.removeItem(htmlKey(appId));
+/** Remove cached HTML (called on app delete). */
+export function deleteCachedCloudAppHtml(appId: string): void {
+  localStorage.removeItem(htmlCacheKey(appId));
 }
 
 // ── Cloud apps helpers ────────────────────────────────────────────────────────
@@ -131,7 +135,7 @@ export interface CloudSession {
   expiresAt: number;
 }
 
-const SESSION_TTL_MS = 8 * 60 * 60 * 1000; // 8 hours
+const SESSION_TTL_MS = 8 * 60 * 60 * 1000;
 
 export function loadCloudSession(): CloudSession | null {
   try {
@@ -170,7 +174,6 @@ function slugify(str: string): string {
     .slice(0, 30);
 }
 
-/** Human-readable file size */
 export function formatBytes(bytes: number): string {
   if (bytes < 1024) return bytes + ' B';
   if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
