@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,20 +8,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCloudAuth } from '@/hooks/useCloudAuth';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
-import { loadCloudApps, type CloudApp } from '@/lib/cloudTypes';
 import {
-  Cloud,
-  Lock,
-  LogOut,
-  Eye,
-  Grid3X3,
-  KeyRound,
-  User,
-  AlertCircle,
-  Sparkles,
-  Shield,
-  Settings,
+  loadCloudApps,
+  loadCachedCloudAppHtml,
+  cacheCloudAppHtml,
+  type CloudApp,
+} from '@/lib/cloudTypes';
+import { decryptBytes } from '@/lib/cloudCrypto';
+import {
+  Cloud, Lock, LogOut, Eye, Grid3X3, KeyRound, User,
+  AlertCircle, Sparkles, Shield, Settings, Loader2,
 } from 'lucide-react';
+import { toast } from 'sonner';
+
+// ── Constants ─────────────────────────────────────────────────────────────────
+const CORS_PROXY = 'https://proxy.shakespeare.diy/?url=';
 
 // ── Thumbnail colour palette ──────────────────────────────────────────────────
 const CARD_COLORS = [
@@ -34,17 +35,13 @@ const CARD_COLORS = [
   'from-fuchsia-500 to-violet-600',
   'from-sky-500 to-blue-600',
 ];
-
 function cardGradient(app: CloudApp, index: number): string {
   if (app.thumbnailColor) return '';
   return CARD_COLORS[index % CARD_COLORS.length];
 }
 
 // ── Login Form ────────────────────────────────────────────────────────────────
-
-interface LoginFormProps {
-  onLogin: (username: string, password: string) => boolean;
-}
+interface LoginFormProps { onLogin: (u: string, p: string) => boolean; }
 
 function LoginForm({ onLogin }: LoginFormProps) {
   const [username, setUsername] = useState('');
@@ -54,12 +51,10 @@ function LoginForm({ onLogin }: LoginFormProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setLoading(true);
+    setError(''); setLoading(true);
     setTimeout(() => {
-      const ok = onLogin(username.trim(), password);
-      if (!ok) {
-        setError('Invalid username or password. Please try again.');
+      if (!onLogin(username.trim(), password)) {
+        setError('Invalid username or password.');
         setPassword('');
       }
       setLoading(false);
@@ -72,7 +67,6 @@ function LoginForm({ onLogin }: LoginFormProps) {
         <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-purple-600/10 blur-3xl" />
         <div className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full bg-blue-600/10 blur-3xl" />
       </div>
-
       <div className="relative w-full max-w-sm">
         <div className="text-center mb-8 space-y-3">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg shadow-purple-500/30 mb-2">
@@ -81,16 +75,12 @@ function LoginForm({ onLogin }: LoginFormProps) {
           <h1 className="text-3xl font-bold text-white tracking-tight">BitPopArt Cloud</h1>
           <p className="text-slate-400 text-sm">Private workspace — authorised access only</p>
         </div>
-
         <Card className="border-slate-700/50 bg-slate-800/60 backdrop-blur shadow-2xl">
           <CardHeader className="pb-4">
             <CardTitle className="text-white flex items-center gap-2">
-              <Lock className="h-4 w-4 text-purple-400" />
-              Sign in
+              <Lock className="h-4 w-4 text-purple-400" /> Sign in
             </CardTitle>
-            <CardDescription className="text-slate-400">
-              Enter your credentials to access the Cloud.
-            </CardDescription>
+            <CardDescription className="text-slate-400">Enter your credentials to access the Cloud.</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -98,114 +88,87 @@ function LoginForm({ onLogin }: LoginFormProps) {
                 <Label htmlFor="cloud-username" className="text-slate-300 text-sm">Username</Label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
-                  <Input
-                    id="cloud-username"
-                    value={username}
-                    onChange={e => setUsername(e.target.value)}
-                    placeholder="Enter username"
-                    autoComplete="username"
-                    required
-                    className="pl-9 bg-slate-700/60 border-slate-600 text-white placeholder:text-slate-500 focus:border-purple-500"
-                  />
+                  <Input id="cloud-username" value={username} onChange={e => setUsername(e.target.value)}
+                    placeholder="Enter username" autoComplete="username" required
+                    className="pl-9 bg-slate-700/60 border-slate-600 text-white placeholder:text-slate-500 focus:border-purple-500" />
                 </div>
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="cloud-password" className="text-slate-300 text-sm">Password</Label>
                 <div className="relative">
                   <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
-                  <Input
-                    id="cloud-password"
-                    type="password"
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    placeholder="Enter password"
-                    autoComplete="current-password"
-                    required
-                    className="pl-9 bg-slate-700/60 border-slate-600 text-white placeholder:text-slate-500 focus:border-purple-500"
-                  />
+                  <Input id="cloud-password" type="password" value={password} onChange={e => setPassword(e.target.value)}
+                    placeholder="Enter password" autoComplete="current-password" required
+                    className="pl-9 bg-slate-700/60 border-slate-600 text-white placeholder:text-slate-500 focus:border-purple-500" />
                 </div>
               </div>
-
               {error && (
                 <div className="flex items-center gap-2 text-red-400 bg-red-950/40 border border-red-800/50 rounded-lg px-3 py-2 text-sm">
-                  <AlertCircle className="h-4 w-4 shrink-0" />
-                  {error}
+                  <AlertCircle className="h-4 w-4 shrink-0" />{error}
                 </div>
               )}
-
-              <Button
-                type="submit"
-                disabled={loading || !username || !password}
-                className="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white font-semibold shadow-lg shadow-purple-500/20"
-              >
-                {loading ? (
-                  <span className="flex items-center gap-2">
-                    <span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Signing in…
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-2">
-                    <Lock className="h-4 w-4" />
-                    Sign in
-                  </span>
-                )}
+              <Button type="submit" disabled={loading || !username || !password}
+                className="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white font-semibold">
+                {loading
+                  ? <span className="flex items-center gap-2"><span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Signing in…</span>
+                  : <span className="flex items-center gap-2"><Lock className="h-4 w-4" />Sign in</span>}
               </Button>
             </form>
           </CardContent>
         </Card>
-
-        <p className="text-center text-xs text-slate-600 mt-6">
-          Access credentials are managed by the site administrator.
-        </p>
+        <p className="text-center text-xs text-slate-600 mt-6">Credentials managed by the site administrator.</p>
       </div>
     </div>
   );
 }
 
-// ── App Thumbnail Card ────────────────────────────────────────────────────────
-
+// ── App Card ──────────────────────────────────────────────────────────────────
 interface AppCardProps {
   app: CloudApp;
   index: number;
   onClick: () => void;
+  loading: boolean;
 }
 
-function AppCard({ app, index, onClick }: AppCardProps) {
+function AppCard({ app, index, onClick, loading }: AppCardProps) {
   const gradient = cardGradient(app, index);
-
   return (
     <button
       onClick={onClick}
-      className="group relative rounded-2xl overflow-hidden border border-white/10 hover:border-purple-400/50 transition-all duration-200 hover:shadow-xl hover:shadow-purple-500/20 hover:-translate-y-1 text-left w-full focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-slate-900"
+      disabled={loading}
+      className="group relative rounded-2xl overflow-hidden border border-white/10 hover:border-purple-400/50 transition-all duration-200 hover:shadow-xl hover:shadow-purple-500/20 hover:-translate-y-1 text-left w-full focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-slate-900 disabled:opacity-60 disabled:cursor-wait disabled:hover:translate-y-0"
     >
       {/* Thumbnail */}
-      <div
-        className="relative aspect-video w-full overflow-hidden"
-        style={app.thumbnailColor ? { backgroundColor: app.thumbnailColor } : undefined}
-      >
+      <div className="relative aspect-video w-full overflow-hidden"
+        style={app.thumbnailColor ? { backgroundColor: app.thumbnailColor } : undefined}>
         {app.thumbnailUrl ? (
-          <img
-            src={app.thumbnailUrl}
-            alt={app.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            loading="lazy"
-          />
+          <img src={app.thumbnailUrl} alt={app.title}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
         ) : (
           <div className={`w-full h-full bg-gradient-to-br ${gradient} flex items-center justify-center`}>
             <Sparkles className="h-10 w-10 text-white/40" />
           </div>
         )}
 
-        {/* Hover overlay */}
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100">
-          <div className="bg-white/90 rounded-full px-4 py-2 flex items-center gap-2 text-sm font-semibold text-slate-900 shadow-lg">
-            <Eye className="h-4 w-4" />
-            Open App
-          </div>
+        {/* Hover / loading overlay */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          {loading ? (
+            <div className="bg-black/60 absolute inset-0 flex items-center justify-center">
+              <div className="flex flex-col items-center gap-2">
+                <Loader2 className="h-8 w-8 text-purple-400 animate-spin" />
+                <span className="text-white text-xs">Decrypting…</span>
+              </div>
+            </div>
+          ) : (
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100">
+              <div className="bg-white/90 rounded-full px-4 py-2 flex items-center gap-2 text-sm font-semibold text-slate-900 shadow-lg">
+                <Eye className="h-4 w-4" /> Open App
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Encryption badge — top right corner */}
+        {/* Encryption badge */}
         <div className="absolute top-2 right-2">
           <div className="flex items-center gap-1 bg-black/50 backdrop-blur-sm rounded-full px-2 py-0.5">
             <Lock className="h-2.5 w-2.5 text-green-400" />
@@ -217,13 +180,10 @@ function AppCard({ app, index, onClick }: AppCardProps) {
       {/* Info */}
       <div className="p-4 bg-slate-800/80 backdrop-blur">
         <h3 className="font-semibold text-white truncate">{app.title}</h3>
-        {app.description && (
-          <p className="text-xs text-slate-400 mt-1 line-clamp-2">{app.description}</p>
-        )}
+        {app.description && <p className="text-xs text-slate-400 mt-1 line-clamp-2">{app.description}</p>}
         <div className="flex items-center gap-2 mt-2">
           <Badge variant="outline" className="text-xs border-green-500/40 text-green-300 bg-green-950/30">
-            <Lock className="h-2.5 w-2.5 mr-1" />
-            AES-256-GCM
+            <Lock className="h-2.5 w-2.5 mr-1" /> AES-256-GCM
           </Badge>
         </div>
       </div>
@@ -232,22 +192,21 @@ function AppCard({ app, index, onClick }: AppCardProps) {
 }
 
 // ── Main Cloud Page ───────────────────────────────────────────────────────────
-
 export default function CloudPage() {
   const navigate = useNavigate();
-  const { session, isLoggedIn, login, logout, adminAutoLogin } = useCloudAuth();
+  const { session, isLoggedIn, login, adminAutoLogin, logout } = useCloudAuth();
   const isAdmin = useIsAdmin();
   const [apps, setApps] = useState<CloudApp[]>([]);
   const [loadingApps, setLoadingApps] = useState(true);
+  // Track which app is currently being decrypted
+  const [openingAppId, setOpeningAppId] = useState<string | null>(null);
 
-  // Admin (Nostr-logged-in) gets automatic access — no Cloud password needed
+  // Admin auto-bypass
   useEffect(() => {
-    if (isAdmin && !isLoggedIn) {
-      adminAutoLogin();
-    }
+    if (isAdmin && !isLoggedIn) adminAutoLogin();
   }, [isAdmin, isLoggedIn, adminAutoLogin]);
 
-  // Load apps once authenticated
+  // Load app list once authenticated
   useEffect(() => {
     if (isLoggedIn) {
       setApps(loadCloudApps());
@@ -255,10 +214,74 @@ export default function CloudPage() {
     }
   }, [isLoggedIn]);
 
-  // Not logged in → show login wall
-  if (!isLoggedIn) {
-    return <LoginForm onLogin={login} />;
-  }
+  /**
+   * Decrypt the app HTML then open it in a brand-new window as a blob: URL.
+   * The new window gets 100% of the viewport, no iframe, no React shell —
+   * full WebGL, Three.js, Web Audio, all JS APIs work correctly.
+   */
+  const openApp = useCallback(async (app: CloudApp) => {
+    if (openingAppId) return; // already opening one
+    setOpeningAppId(app.id);
+
+    try {
+      let html: string | null = null;
+
+      // 1. Local cache → instant, no network needed
+      html = loadCachedCloudAppHtml(app.id);
+
+      // 2. Fetch + decrypt from CDN
+      if (!html) {
+        if (!app.encryptedUrl) {
+          toast.error('No encrypted file found for this app.');
+          return;
+        }
+
+        let res = await fetch(app.encryptedUrl).catch(() => null);
+        if (!res || !res.ok) {
+          res = await fetch(CORS_PROXY + encodeURIComponent(app.encryptedUrl));
+        }
+        if (!res || !res.ok) throw new Error('Failed to fetch encrypted file');
+
+        const buf = await res.arrayBuffer();
+
+        try {
+          html = await decryptBytes(new Uint8Array(buf));
+        } catch {
+          toast.error('Decryption failed. Make sure you have the correct master key imported.');
+          return;
+        }
+
+        // Cache for next time
+        cacheCloudAppHtml(app.id, html);
+      }
+
+      // 3. Create blob URL and open in a real new window
+      //    A new window with a blob: URL has full capabilities:
+      //    - Full viewport (no toolbar, no iframe constraints)
+      //    - Proper origin for WebGL / Three.js / Web Audio
+      //    - External CDN scripts load correctly
+      //    - Relative paths work
+      const blob = new Blob([html], { type: 'text/html' });
+      const blobUrl = URL.createObjectURL(blob);
+
+      const win = window.open(blobUrl, '_blank');
+
+      // Revoke the blob URL after the window has had time to load it
+      // (the browser keeps the data alive even after revoke as long as
+      //  the window still references it)
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 10_000);
+
+      if (!win) {
+        toast.error('Pop-up blocked! Please allow pop-ups for this site, then try again.');
+      }
+    } catch (e) {
+      toast.error('Could not open app: ' + String(e).slice(0, 80));
+    } finally {
+      setOpeningAppId(null);
+    }
+  }, [openingAppId]);
+
+  if (!isLoggedIn) return <LoginForm onLogin={login} />;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-950 to-slate-900">
@@ -281,36 +304,21 @@ export default function CloudPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Session pill */}
             <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-800/60 border border-slate-700/50">
               {isAdmin
                 ? <Shield className="h-3.5 w-3.5 text-violet-400" />
-                : <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              }
+                : <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />}
               <span className="text-sm text-slate-300">{session?.name ?? 'Admin'}</span>
               {isAdmin && <Badge className="text-[10px] px-1.5 py-0 bg-violet-600/40 text-violet-300 border-0">Admin</Badge>}
             </div>
-
-            {/* Admin shortcut to manage apps */}
             {isAdmin && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate('/admin?tab=cloud')}
-                className="text-slate-400 hover:text-white hover:bg-slate-800/60"
-                title="Manage Cloud apps"
-              >
+              <Button variant="ghost" size="sm" onClick={() => navigate('/admin?tab=cloud')}
+                className="text-slate-400 hover:text-white hover:bg-slate-800/60" title="Manage Cloud apps">
                 <Settings className="h-4 w-4" />
                 <span className="hidden sm:inline ml-1.5">Manage</span>
               </Button>
             )}
-
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={logout}
-              className="text-slate-400 hover:text-white hover:bg-slate-800/60"
-            >
+            <Button variant="ghost" size="sm" onClick={logout} className="text-slate-400 hover:text-white hover:bg-slate-800/60">
               <LogOut className="h-4 w-4 mr-1.5" />
               <span className="hidden sm:inline">Sign out</span>
             </Button>
@@ -322,11 +330,10 @@ export default function CloudPage() {
       <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <div className="mb-8 space-y-1">
           <div className="flex items-center gap-2 text-purple-400 text-sm font-medium">
-            <Grid3X3 className="h-4 w-4" />
-            My Apps
+            <Grid3X3 className="h-4 w-4" /> My Apps
           </div>
           <h2 className="text-2xl sm:text-3xl font-bold text-white">Your private workspace</h2>
-          <p className="text-slate-400 text-sm">Click an app to open it full screen.</p>
+          <p className="text-slate-400 text-sm">Click an app — it decrypts and opens in a new window.</p>
         </div>
 
         {loadingApps ? (
@@ -349,18 +356,13 @@ export default function CloudPage() {
             <div>
               <p className="text-slate-300 font-semibold text-lg">No apps yet</p>
               <p className="text-slate-500 text-sm mt-1">
-                {isAdmin
-                  ? 'Go to Manage to upload your first HTML app.'
-                  : 'The admin hasn\'t added any apps to the Cloud yet.'}
+                {isAdmin ? 'Go to Manage to upload your first HTML app.' : 'The admin hasn\'t added any apps yet.'}
               </p>
             </div>
             {isAdmin && (
-              <Button
-                onClick={() => navigate('/admin?tab=cloud')}
-                className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white"
-              >
-                <Settings className="h-4 w-4 mr-2" />
-                Add First App
+              <Button onClick={() => navigate('/admin?tab=cloud')}
+                className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white">
+                <Settings className="h-4 w-4 mr-2" /> Add First App
               </Button>
             )}
           </div>
@@ -371,7 +373,8 @@ export default function CloudPage() {
                 key={app.id}
                 app={app}
                 index={i}
-                onClick={() => navigate(`/cloud/${app.id}`)}
+                loading={openingAppId === app.id}
+                onClick={() => openApp(app)}
               />
             ))}
           </div>

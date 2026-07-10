@@ -441,11 +441,11 @@ function CloudAppsSection() {
               {/* Direct link to the Cloud workspace */}
               <Button
                 variant="outline"
-                onClick={() => navigate('/cloud')}
+                onClick={() => window.open('/cloud', '_blank')}
                 className="border-violet-300 text-violet-700 hover:bg-violet-50 dark:border-violet-700 dark:text-violet-400 dark:hover:bg-violet-900/20"
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
-                Open Cloud
+                Open Cloud ↗
               </Button>
               {!isCreating && !editingApp && (
                 <Button onClick={() => setIsCreating(true)}>
