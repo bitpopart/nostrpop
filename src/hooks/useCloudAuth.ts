@@ -10,38 +10,40 @@ import {
 /**
  * Manages Cloud private space authentication.
  *
- * - Reads the persisted session from localStorage on mount.
- * - Provides login / logout helpers.
- * - A session expires after 8 hours of inactivity (enforced in cloudTypes.ts).
+ * - Normal users: login with username + password stored in localStorage.
+ * - Admin (Nostr-logged-in): bypass via adminAutoLogin() — gets automatic
+ *   access without needing a Cloud password.
+ * - Sessions expire after 8 hours (enforced in cloudTypes.ts).
  */
 export function useCloudAuth() {
   const [session, setSession] = useState<CloudSession | null>(() => loadCloudSession());
 
-  // Re-read session on focus (in case another tab logged out)
+  // Re-read session when the tab regains focus (e.g. another tab logged out)
   useEffect(() => {
     const onFocus = () => setSession(loadCloudSession());
     window.addEventListener('focus', onFocus);
     return () => window.removeEventListener('focus', onFocus);
   }, []);
 
+  /** Standard username + password login for shared users. */
   const login = useCallback((username: string, password: string): boolean => {
     const users = loadCloudUsers();
-
-    // Special case: admin is always allowed with hard-coded credentials
-    // The admin user uses the Nostr pubkey approach — but we also store
-    // a synthetic "admin" user in the cloud users list with whatever
-    // password they set. If no admin user exists yet, reject.
     const match = users.find(
-      (u) =>
-        u.id.toLowerCase() === username.toLowerCase() &&
-        u.password === password,
+      u => u.id.toLowerCase() === username.toLowerCase() && u.password === password,
     );
-
     if (!match) return false;
-
     const newSession = saveCloudSession(match.id, match.name);
     setSession(newSession);
     return true;
+  }, []);
+
+  /**
+   * Auto-login for the site admin (Nostr-authenticated).
+   * Grants instant Cloud access without requiring a separate Cloud password.
+   */
+  const adminAutoLogin = useCallback(() => {
+    const newSession = saveCloudSession('__admin__', 'Admin');
+    setSession(newSession);
   }, []);
 
   const logout = useCallback(() => {
@@ -53,6 +55,7 @@ export function useCloudAuth() {
     session,
     isLoggedIn: session !== null,
     login,
+    adminAutoLogin,
     logout,
   };
 }

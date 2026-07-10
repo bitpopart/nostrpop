@@ -34,11 +34,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useNavigate } from 'react-router-dom';
 import {
   Plus, X, Upload, Trash2, Loader2, Cloud, Users,
   FileCode, Eye, EyeOff, MoveUp, MoveDown, KeyRound, User,
   ImageIcon, Pencil, Check, AlertTriangle, Lock, ShieldCheck,
-  Copy, Download, RefreshCw,
+  Copy, Download, RefreshCw, ExternalLink,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -356,6 +357,7 @@ function AppForm({ initial, onSave, onCancel, uploadFile }: AppFormProps) {
 
 function CloudAppsSection() {
   const { mutateAsync: uploadFile } = useUploadFile();
+  const navigate = useNavigate();
   const [apps, setApps] = useState<CloudApp[]>(() => loadCloudApps());
   const [isCreating, setIsCreating] = useState(false);
   const [editingApp, setEditingApp] = useState<CloudApp | null>(null);
@@ -424,7 +426,7 @@ function CloudAppsSection() {
       {/* Header */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Cloud className="h-5 w-5 text-purple-600" />
@@ -435,11 +437,22 @@ function CloudAppsSection() {
                 The CDN file is pure ciphertext — unreadable without your master key.
               </CardDescription>
             </div>
-            {!isCreating && !editingApp && (
-              <Button onClick={() => setIsCreating(true)}>
-                <Plus className="h-4 w-4 mr-2" /> Add App
+            <div className="flex items-center gap-2 shrink-0">
+              {/* Direct link to the Cloud workspace */}
+              <Button
+                variant="outline"
+                onClick={() => navigate('/cloud')}
+                className="border-violet-300 text-violet-700 hover:bg-violet-50 dark:border-violet-700 dark:text-violet-400 dark:hover:bg-violet-900/20"
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Open Cloud
               </Button>
-            )}
+              {!isCreating && !editingApp && (
+                <Button onClick={() => setIsCreating(true)}>
+                  <Plus className="h-4 w-4 mr-2" /> Add App
+                </Button>
+              )}
+            </div>
           </div>
         </CardHeader>
       </Card>
