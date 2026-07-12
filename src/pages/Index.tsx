@@ -1,6 +1,6 @@
 import { useSeoMeta } from '@unhead/react';
 import { Link } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -77,7 +77,9 @@ import {
 } from 'lucide-react';
 import type { NostrEvent, NostrMetadata } from '@nostrify/nostrify';
 import type { ArtworkData } from '@/lib/artTypes';
-import type { HomepageButton } from '@/hooks/useHomepageSettings';
+import { ArtProgressToggle } from '@/components/ArtProgressToggle';
+import { ArtProgressGrid } from '@/components/ArtProgressGrid';
+import type { HomepageButton, GridTile, HomepageView } from '@/hooks/useHomepageSettings';
 import { nip19 } from 'nostr-tools';
 
 // Banner: Love PopArt — Open App icon, "Join the community" only
@@ -689,9 +691,22 @@ const Index = () => {
   const author = useAuthor(ADMIN_HEX);
   const metadata: NostrMetadata | undefined = author.data?.metadata;
   
+  // View mode — read once from settings when they first arrive, never re-override
+  const [viewMode, setViewMode] = useState<HomepageView>('gallery');
+  const viewModeSet = useRef(false);
+  useEffect(() => {
+    if (!viewModeSet.current && homepageSettings?.defaultView) {
+      setViewMode(homepageSettings.defaultView);
+      viewModeSet.current = true;
+    } else if (!viewModeSet.current && homepageSettings) {
+      viewModeSet.current = true;
+    }
+  }, [homepageSettings]);
+
   // Extract sections and buttons from the new settings shape
   const sections = homepageSettings?.sections;
   const allButtons = homepageSettings?.buttons || [];
+  const gridTiles = homepageSettings?.gridTiles || [];
 
   // Get ordered section IDs based on settings
   const orderedSections = sections?.filter(s => s.enabled).map(s => s.id) || [];
@@ -716,28 +731,31 @@ const Index = () => {
     return orderedSections.includes(id);
   };
 
-  const { data: adminNotes, isLoading: notesLoading, error: notesError } = useLatestAdminNotes(3, { enabled: settingsReady });
-  const { data: latestCards, isLoading: cardsLoading, error: cardsError } = useLatestCards(3, { enabled: settingsReady });
+  const galleryActive = settingsReady && viewMode === 'gallery';
+  const progressActive = settingsReady && viewMode === 'progress';
+
+  const { data: adminNotes, isLoading: notesLoading, error: notesError } = useLatestAdminNotes(3, { enabled: galleryActive });
+  const { data: latestCards, isLoading: cardsLoading, error: cardsError } = useLatestCards(3, { enabled: galleryActive });
   // Shop products for homepage section (up to 6 featured)
   const { data: allShopProducts, isLoading: shopProductsLoading } = useMarketplaceProducts(undefined);
-  const { data: featuredArtworks, isLoading: artworksLoading, isFetching: artworksFetching, error: artworksError } = useArtworks('all', { enabled: settingsReady });
-  const { data: featuredProjects } = useFeaturedProjects({ enabled: settingsReady });
+  const { data: featuredArtworks, isLoading: artworksLoading, isFetching: artworksFetching, error: artworksError } = useArtworks('all', { enabled: galleryActive });
+  const { data: featuredProjects } = useFeaturedProjects({ enabled: galleryActive });
   // Consider artworks still loading if there's no data yet (first load OR background refetch with empty cache)
   const artworksStillLoading = artworksLoading || (artworksFetching && !featuredArtworks);
   
-  // Get all #bitpopart posts
-  const { data: allArtProgressPosts, isLoading: allArtProgressLoading } = useBitPopArtPosts({ enabled: settingsReady });
+  // Get all #bitpopart posts (used by progress view and gallery)
+  const { data: _allArtProgressPosts, isLoading: allArtProgressLoading } = useBitPopArtPosts({ enabled: galleryActive || progressActive });
   // Get selected posts (manually selected in admin)
-  const { data: selectedArtProgressPosts } = useFeaturedBitPopArtPosts({ enabled: settingsReady });
+  const { data: selectedArtProgressPosts } = useFeaturedBitPopArtPosts({ enabled: galleryActive || progressActive });
   
   // Show only selected posts (those checked in admin panel)
   const artProgressPosts = selectedArtProgressPosts || [];
   const artProgressLoading = allArtProgressLoading;
   
   // Free Downloads — latest wallpaper, gif, animation
-  const { data: wallpapers = [] } = useAppMedia('app-wallpaper', { enabled: settingsReady });
-  const { data: gifs = [] } = useAppMedia('app-gif', { enabled: settingsReady });
-  const { data: animations = [] } = useAnimations({ enabled: settingsReady });
+  const { data: wallpapers = [] } = useAppMedia('app-wallpaper', { enabled: galleryActive });
+  const { data: gifs = [] } = useAppMedia('app-gif', { enabled: galleryActive });
+  const { data: animations = [] } = useAnimations({ enabled: galleryActive });
 
   // Placeholder data for features not yet implemented
   const featuredNostrProjects: never[] = [];
@@ -1646,7 +1664,14 @@ const Index = () => {
                 })
               )}
             </div>
-            
+
+            {/* Art Progress Toggle */}
+            <div className="mt-4 sm:mt-0">
+              <ArtProgressToggle
+                mode={viewMode}
+                onToggle={setViewMode}
+              />
+            </div>
           </div>
         </div>
 
@@ -1699,7 +1724,30 @@ const Index = () => {
           <HomepageSectionsSkeleton />
         )}
 
-        {settingsReady && (
+        {viewMode === 'progress' && settingsReady && (
+          /* Art Progress View */
+          <div className="mb-16">
+            <div className="mb-8">
+              <h2 className="text-3xl font-bold mb-2 text-center">Art in Progress</h2>
+              <p className="text-gray-600 dark:text-gray-300 text-center">
+                Latest creations tagged with #bitpopart
+                {selectedArtProgressPosts && selectedArtProgressPosts.length > 0 &&
+                  ` (${selectedArtProgressPosts.length} selected)`}
+              </p>
+            </div>
+            <ArtProgressGrid
+              posts={artProgressPosts || []}
+              isLoading={artProgressLoading}
+            />
+          </div>
+        )}
+
+        {viewMode === 'grid' && settingsReady && (
+          /* Photo Grid View — pure images, no text */
+          <PhotoGrid tiles={gridTiles} />
+        )}
+
+        {viewMode === 'gallery' && settingsReady && (
           /* Gallery View - Dynamic Sections with inter-section buttons */
           <>
             {orderedSections.map(sectionId => (
