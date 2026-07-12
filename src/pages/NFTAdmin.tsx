@@ -43,6 +43,7 @@ import {
   PenLine,
   Shuffle,
   Images,
+  Blocks,
 } from 'lucide-react';
 
 const ADMIN_PUBKEY = getAdminPubkeyHex();
@@ -186,9 +187,11 @@ interface EditPanelProps {
   character?: NFTCharacter | null;
   onSaved: (id: string) => void;
   onCancel: () => void;
+  /** Pre-fill category when creating a new character */
+  defaultCategory?: string;
 }
 
-function EditPanel({ character, onSaved, onCancel }: EditPanelProps) {
+function EditPanel({ character, onSaved, onCancel, defaultCategory }: EditPanelProps) {
   const { toast } = useToast();
   const { mutateAsync: uploadFile } = useUploadFile();
   const { mutate: publishCharacter, isPending: isSaving } = usePublishNFTCharacter();
@@ -196,7 +199,7 @@ function EditPanel({ character, onSaved, onCancel }: EditPanelProps) {
   const isNew = !character;
 
   const [title, setTitle] = useState(character?.title ?? '');
-  const [category, setCategory] = useState(character?.category ?? '');
+  const [category, setCategory] = useState(character?.category ?? defaultCategory ?? '');
   const [groups, setGroups] = useState<LayerGroupForm[]>(() => {
     if (character && character.layerGroups.length > 0) {
       return character.layerGroups.map(g => ({
@@ -217,7 +220,7 @@ function EditPanel({ character, onSaved, onCancel }: EditPanelProps) {
   // Reset when character changes
   useEffect(() => {
     setTitle(character?.title ?? '');
-    setCategory(character?.category ?? '');
+    setCategory(character?.category ?? defaultCategory ?? '');
     setGroups(
       character && character.layerGroups.length > 0
         ? character.layerGroups.map(g => ({
@@ -418,11 +421,18 @@ function EditPanel({ character, onSaved, onCancel }: EditPanelProps) {
           <Label htmlFor="char-category" className="font-semibold">Category</Label>
           <Input
             id="char-category"
-            placeholder="e.g. travel, crypto, art"
+            placeholder="e.g. travel, crypto, art, block"
             value={category}
             onChange={e => setCategory(e.target.value)}
           />
-          <p className="text-xs text-muted-foreground">Used for filtering on the /NFT page</p>
+          {category === 'block' ? (
+            <p className="text-xs text-orange-600 dark:text-orange-400 flex items-center gap-1">
+              <Blocks className="h-3 w-3" />
+              This character will power the <strong>/Block</strong> page art generator
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground">Used for filtering on the /NFT page. Use <code className="bg-muted px-1 rounded">block</code> to power the /Block page.</p>
+          )}
         </div>
 
         <Separator />
@@ -658,14 +668,167 @@ function CharacterListItem({ character, isSelected, onSelect, onDelete }: Charac
   );
 }
 
+// ─── Reusable character-list workspace ───────────────────────────────────────
+
+interface CharacterWorkspaceProps {
+  /** If set, only show characters with this category; "block" tab uses "block", NFT tab excludes it */
+  filterCategory?: string;
+  /** If set, pre-fill this category when creating new character */
+  defaultCategory?: string;
+  /** Title shown in sidebar header */
+  sidebarTitle: string;
+  /** Label for the New button */
+  newLabel: string;
+  /** Empty-state headline */
+  emptyHeadline: string;
+  /** Empty-state description */
+  emptyDescription: string;
+  characters: ReturnType<typeof useNFTCharacters>['data'];
+  isLoading: boolean;
+  deleteCharacter: (args: { characterId: string; pubkey: string }) => void;
+}
+
+function CharacterWorkspace({
+  filterCategory,
+  defaultCategory,
+  sidebarTitle,
+  newLabel,
+  emptyHeadline,
+  emptyDescription,
+  characters,
+  isLoading,
+  deleteCharacter,
+}: CharacterWorkspaceProps) {
+  type PanelMode = 'none' | 'create' | 'edit';
+  const [panelMode, setPanelMode] = useState<PanelMode>('none');
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  // Filter by category if specified
+  const filtered = characters
+    ? filterCategory
+      ? characters.filter(c => c.category === filterCategory)
+      : characters.filter(c => c.category !== 'block')
+    : [];
+
+  const selectedChar = selectedId ? (filtered.find(c => c.id === selectedId) ?? null) : null;
+
+  const handleSelectCharacter = (id: string) => { setSelectedId(id); setPanelMode('edit'); };
+  const handleNew = () => { setSelectedId(null); setPanelMode('create'); };
+  const handleSaved = (id: string) => { setSelectedId(id); setPanelMode('edit'); };
+  const handleClose = () => { setPanelMode('none'); setSelectedId(null); };
+
+  return (
+    <div className="flex flex-1 overflow-hidden" style={{ height: 'calc(100vh - 6.5rem)' }}>
+      {/* Left: list */}
+      <aside className={`flex flex-col border-r bg-background transition-all duration-200 ${
+        panelMode !== 'none' ? 'w-72 shrink-0' : 'flex-1'
+      }`}>
+        <div className="p-4 border-b shrink-0 flex items-center justify-between">
+          <h2 className="font-bold text-sm text-muted-foreground uppercase tracking-wider">{sidebarTitle}</h2>
+          <Badge variant="secondary" className="text-xs">
+            {isLoading ? '…' : filtered.length}
+          </Badge>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-3 space-y-1">
+          {isLoading ? (
+            [...Array(3)].map((_, i) => (
+              <div key={i} className="flex items-center gap-3 p-3">
+                <Skeleton className="w-14 h-14 rounded-lg shrink-0" />
+                <div className="space-y-2 flex-1">
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-3 w-1/2" />
+                </div>
+              </div>
+            ))
+          ) : filtered.length > 0 ? (
+            filtered.map(char => (
+              <CharacterListItem
+                key={char.id}
+                character={char}
+                isSelected={selectedId === char.id}
+                onSelect={() => handleSelectCharacter(char.id)}
+                onDelete={() => deleteCharacter({ characterId: char.id, pubkey: ADMIN_PUBKEY })}
+              />
+            ))
+          ) : (
+            <div className="flex flex-col items-center justify-center py-16 text-center px-4">
+              <ImageIcon className="h-12 w-12 text-muted-foreground/30 mb-3" />
+              <p className="text-sm text-muted-foreground font-medium">No characters yet</p>
+              <p className="text-xs text-muted-foreground/70 mt-1">Click "{newLabel}" to get started</p>
+            </div>
+          )}
+        </div>
+
+        <div className="p-3 border-t shrink-0">
+          <Button variant="outline" size="sm" className="w-full gap-1.5" onClick={handleNew}>
+            <Plus className="h-3.5 w-3.5" />
+            {newLabel}
+          </Button>
+        </div>
+      </aside>
+
+      {/* Right: edit panel */}
+      {panelMode !== 'none' && (
+        <main className="flex-1 overflow-hidden bg-background">
+          <EditPanel
+            key={panelMode === 'create' ? `create-${defaultCategory}` : selectedId ?? 'edit'}
+            character={panelMode === 'edit' ? selectedChar : null}
+            defaultCategory={panelMode === 'create' ? (defaultCategory ?? '') : undefined}
+            onSaved={handleSaved}
+            onCancel={handleClose}
+          />
+        </main>
+      )}
+
+      {/* Empty state */}
+      {panelMode === 'none' && filtered.length === 0 && !isLoading && (
+        <main className="flex-1 flex items-center justify-center bg-muted/10">
+          <div className="text-center space-y-4 p-8">
+            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-orange-100 to-yellow-100 dark:from-orange-900/30 dark:to-yellow-900/30 flex items-center justify-center mx-auto">
+              <Blocks className="h-10 w-10 text-orange-400" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold mb-1">{emptyHeadline}</h3>
+              <p className="text-muted-foreground text-sm max-w-xs mx-auto">{emptyDescription}</p>
+            </div>
+            <Button
+              onClick={handleNew}
+              className="bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white gap-2"
+              size="lg"
+            >
+              <Plus className="h-4 w-4" />
+              {newLabel}
+            </Button>
+          </div>
+        </main>
+      )}
+
+      {/* Select prompt */}
+      {panelMode === 'none' && filtered.length > 0 && (
+        <main className="flex-1 hidden md:flex items-center justify-center bg-muted/10">
+          <div className="text-center space-y-3 p-8">
+            <PenLine className="h-10 w-10 text-muted-foreground/30 mx-auto" />
+            <p className="text-muted-foreground text-sm">Select a character to edit, or create a new one</p>
+            <Button onClick={handleNew} variant="outline" className="gap-2">
+              <Plus className="h-4 w-4" />
+              {newLabel}
+            </Button>
+          </div>
+        </main>
+      )}
+    </div>
+  );
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 
-type PanelMode = 'none' | 'create' | 'edit';
+type AdminTab = 'block' | 'nft';
 
 export default function NFTAdmin() {
   useSeoMeta({
     title: 'NFT Admin – BitPopArt',
-    description: 'Manage Nostr Fungible Token characters and layers.',
+    description: 'Manage Block Art layers and NFT characters.',
     robots: 'noindex, nofollow',
   });
 
@@ -676,15 +839,7 @@ export default function NFTAdmin() {
   const { data: characters, isLoading, refetch, isFetching } = useNFTCharacters();
   const { mutate: deleteCharacter } = useDeleteNFTCharacter();
 
-  const [panelMode, setPanelMode] = useState<PanelMode>('none');
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-
-  const selectedChar = selectedId ? (characters?.find(c => c.id === selectedId) ?? null) : null;
-
-  const handleSelectCharacter = (id: string) => { setSelectedId(id); setPanelMode('edit'); };
-  const handleNewCharacter = () => { setSelectedId(null); setPanelMode('create'); };
-  const handleSaved = (id: string) => { setSelectedId(id); setPanelMode('edit'); };
-  const handleClosePanel = () => { setPanelMode('none'); setSelectedId(null); };
+  const [activeTab, setActiveTab] = useState<AdminTab>('block');
 
   if (!user) {
     return (
@@ -693,7 +848,7 @@ export default function NFTAdmin() {
           <CardHeader className="text-center">
             <Shield className="h-12 w-12 mx-auto mb-2 text-orange-500" />
             <CardTitle>Login Required</CardTitle>
-            <CardDescription>Sign in with your admin account to manage NFT characters.</CardDescription>
+            <CardDescription>Sign in with your admin account to manage art layers.</CardDescription>
           </CardHeader>
           <CardContent><LoginArea className="w-full" /></CardContent>
         </Card>
@@ -708,7 +863,7 @@ export default function NFTAdmin() {
           <CardHeader className="text-center">
             <Shield className="h-12 w-12 mx-auto mb-2 text-destructive" />
             <CardTitle className="text-destructive">Access Denied</CardTitle>
-            <CardDescription>Only the admin can manage NFT characters.</CardDescription>
+            <CardDescription>Only the admin can manage art layers.</CardDescription>
           </CardHeader>
           <CardContent>
             <Button onClick={() => navigate('/NFT')} variant="outline" className="w-full">
@@ -720,6 +875,9 @@ export default function NFTAdmin() {
     );
   }
 
+  const blockCharCount = characters?.filter(c => c.category === 'block').length ?? 0;
+  const nftCharCount = characters?.filter(c => c.category !== 'block').length ?? 0;
+
   return (
     <div className="min-h-screen bg-muted/20 flex flex-col">
 
@@ -728,15 +886,43 @@ export default function NFTAdmin() {
         <div className="flex items-center gap-4 px-5 h-14">
           <div className="flex items-center gap-2 shrink-0">
             <Sparkles className="h-5 w-5 text-orange-500" />
-            <span className="font-black text-base tracking-tight">NFT Admin</span>
+            <span className="font-black text-base tracking-tight">Art Admin</span>
             <Badge variant="outline" className="text-xs ml-1">Backend</Badge>
           </div>
 
           <Separator orientation="vertical" className="h-6" />
 
-          <span className="text-sm text-muted-foreground hidden sm:block">
-            {isLoading ? '…' : `${characters?.length ?? 0} character${characters?.length !== 1 ? 's' : ''}`}
-          </span>
+          {/* Tab switcher */}
+          <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+            <button
+              onClick={() => setActiveTab('block')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                activeTab === 'block'
+                  ? 'bg-background text-orange-600 dark:text-orange-400 shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Blocks className="h-3.5 w-3.5" />
+              Block Art
+              {blockCharCount > 0 && (
+                <Badge variant="secondary" className="text-xs px-1 py-0 h-4 ml-0.5">{blockCharCount}</Badge>
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab('nft')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                activeTab === 'nft'
+                  ? 'bg-background text-orange-600 dark:text-orange-400 shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              NFT Characters
+              {nftCharCount > 0 && (
+                <Badge variant="secondary" className="text-xs px-1 py-0 h-4 ml-0.5">{nftCharCount}</Badge>
+              )}
+            </button>
+          </div>
 
           <div className="ml-auto flex items-center gap-2">
             <Button
@@ -748,125 +934,56 @@ export default function NFTAdmin() {
             </Button>
             <Button
               variant="outline" size="sm" className="gap-1.5"
-              onClick={() => navigate('/NFT')}
+              onClick={() => navigate(activeTab === 'block' ? '/Block' : '/NFT')}
             >
               <ExternalLink className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">View /NFT</span>
-            </Button>
-            <Button
-              size="sm"
-              className="gap-1.5 bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white"
-              onClick={handleNewCharacter}
-            >
-              <Plus className="h-3.5 w-3.5" />
-              New Character
+              <span className="hidden sm:inline">View {activeTab === 'block' ? '/Block' : '/NFT'}</span>
             </Button>
           </div>
         </div>
+
+        {/* Block Art info bar */}
+        {activeTab === 'block' && (
+          <div className="px-5 py-2 bg-orange-50/60 dark:bg-orange-950/20 border-t border-orange-100 dark:border-orange-900/30 text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
+            <Blocks className="h-3.5 w-3.5 text-orange-500 shrink-0" />
+            <span>
+              The <strong className="text-foreground">Block</strong> character (category = <code className="bg-muted px-1 rounded">block</code>) powers the{' '}
+              <strong className="text-foreground">/Block</strong> page — its layers are randomly composited with the actual Bitcoin block number overlaid on top.
+              Add as many layers &amp; variants as you like; the RNG seed is the block height so every block gets a unique, deterministic image.
+            </span>
+          </div>
+        )}
       </header>
 
-      {/* 2-column layout */}
-      <div className="flex flex-1 overflow-hidden" style={{ height: 'calc(100vh - 3.5rem)' }}>
-
-        {/* Left: character list */}
-        <aside className={`flex flex-col border-r bg-background transition-all duration-200 ${
-          panelMode !== 'none' ? 'w-72 shrink-0' : 'flex-1'
-        }`}>
-          <div className="p-4 border-b shrink-0">
-            <h2 className="font-bold text-sm text-muted-foreground uppercase tracking-wider">Characters</h2>
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-3 space-y-1">
-            {isLoading ? (
-              [...Array(4)].map((_, i) => (
-                <div key={i} className="flex items-center gap-3 p-3">
-                  <Skeleton className="w-14 h-14 rounded-lg shrink-0" />
-                  <div className="space-y-2 flex-1">
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-3 w-1/2" />
-                  </div>
-                </div>
-              ))
-            ) : characters && characters.length > 0 ? (
-              characters.map(char => (
-                <CharacterListItem
-                  key={char.id}
-                  character={char}
-                  isSelected={selectedId === char.id}
-                  onSelect={() => handleSelectCharacter(char.id)}
-                  onDelete={() => deleteCharacter({ characterId: char.id, pubkey: ADMIN_PUBKEY })}
-                />
-              ))
-            ) : (
-              <div className="flex flex-col items-center justify-center py-16 text-center px-4">
-                <ImageIcon className="h-12 w-12 text-muted-foreground/30 mb-3" />
-                <p className="text-sm text-muted-foreground font-medium">No characters yet</p>
-                <p className="text-xs text-muted-foreground/70 mt-1">Click "New Character" to get started</p>
-              </div>
-            )}
-          </div>
-
-          {panelMode !== 'none' && (
-            <div className="p-3 border-t shrink-0">
-              <Button variant="outline" size="sm" className="w-full gap-1.5" onClick={handleNewCharacter}>
-                <Plus className="h-3.5 w-3.5" />
-                New Character
-              </Button>
-            </div>
-          )}
-        </aside>
-
-        {/* Right: edit panel */}
-        {panelMode !== 'none' && (
-          <main className="flex-1 overflow-hidden bg-background">
-            <EditPanel
-              key={panelMode === 'create' ? 'create' : selectedId ?? 'edit'}
-              character={panelMode === 'edit' ? selectedChar : null}
-              onSaved={handleSaved}
-              onCancel={handleClosePanel}
-            />
-          </main>
-        )}
-
-        {/* Empty state */}
-        {panelMode === 'none' && characters && characters.length === 0 && !isLoading && (
-          <main className="flex-1 flex items-center justify-center bg-muted/10">
-            <div className="text-center space-y-4 p-8">
-              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-orange-100 to-pink-100 dark:from-orange-900/30 dark:to-pink-900/30 flex items-center justify-center mx-auto">
-                <Sparkles className="h-10 w-10 text-orange-400" />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold mb-1">Create your first NFT character</h3>
-                <p className="text-muted-foreground text-sm max-w-xs mx-auto">
-                  Add named layers (Background, Body, Hat…) with multiple variant images each — one is picked randomly on generate.
-                </p>
-              </div>
-              <Button
-                onClick={handleNewCharacter}
-                className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white gap-2"
-                size="lg"
-              >
-                <Plus className="h-4 w-4" />
-                Create First Character
-              </Button>
-            </div>
-          </main>
-        )}
-
-        {/* Select prompt */}
-        {panelMode === 'none' && characters && characters.length > 0 && (
-          <main className="flex-1 hidden md:flex items-center justify-center bg-muted/10">
-            <div className="text-center space-y-3 p-8">
-              <PenLine className="h-10 w-10 text-muted-foreground/30 mx-auto" />
-              <p className="text-muted-foreground text-sm">Select a character to edit, or create a new one</p>
-              <Button onClick={handleNewCharacter} variant="outline" className="gap-2">
-                <Plus className="h-4 w-4" />
-                New Character
-              </Button>
-            </div>
-          </main>
-        )}
-      </div>
+      {/* Tab content */}
+      {activeTab === 'block' ? (
+        <CharacterWorkspace
+          key="block-workspace"
+          filterCategory="block"
+          defaultCategory="block"
+          sidebarTitle="Block Character"
+          newLabel="New Block Character"
+          emptyHeadline="Create the Block character"
+          emptyDescription={
+            'Add a character with category "block". Upload background layers, body layers, and any other art layers — each with multiple variants. Every Bitcoin block will get a unique random combination!'
+          }
+          characters={characters}
+          isLoading={isLoading}
+          deleteCharacter={deleteCharacter}
+        />
+      ) : (
+        <CharacterWorkspace
+          key="nft-workspace"
+          defaultCategory=""
+          sidebarTitle="NFT Characters"
+          newLabel="New Character"
+          emptyHeadline="Create your first NFT character"
+          emptyDescription="Add named layers (Background, Body, Hat…) with multiple variant images — one is picked randomly on generate."
+          characters={characters}
+          isLoading={isLoading}
+          deleteCharacter={deleteCharacter}
+        />
+      )}
     </div>
   );
 }

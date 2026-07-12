@@ -1,4 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
+import { useNostr } from '@nostrify/react';
+import { useNFTCharacters, type NFTCharacter, type NFTLayerGroup } from './useNFTCharacters';
+import { getAdminPubkeyHex } from '@/lib/adminUtils';
 
 const MEMPOOL_API = 'https://mempool.space/api';
 const CORS_PROXY = 'https://proxy.shakespeare.diy/?url=';
@@ -37,8 +40,8 @@ export function useRecentBlocks(count = 20) {
       const data: BitcoinBlock[] = await res.json();
       return data.slice(0, count);
     },
-    staleTime: 60_000,          // treat fresh for 1 min
-    refetchInterval: 60_000,    // auto-refresh every minute
+    staleTime: 60_000,
+    refetchInterval: 60_000,
     retry: 2,
   });
 }
@@ -60,11 +63,61 @@ export function useTipHeight() {
   });
 }
 
+// ─── Block Character (admin-uploaded layers) ─────────────────────────────────
+
+/**
+ * Returns the NFT character with category "block" published by the admin.
+ * This is the "Block character" — its layers are used to compose the block art.
+ */
+export function useBlockCharacter(): {
+  character: NFTCharacter | null;
+  isLoading: boolean;
+} {
+  const { data: characters, isLoading } = useNFTCharacters();
+  const character = characters?.find(c => c.category === 'block') ?? null;
+  return { character, isLoading };
+}
+
+// ─── Seeded pseudo-random (deterministic per block height + seed) ─────────────
+
+function seededRand(seed: number): () => number {
+  let s = seed | 0;
+  return function () {
+    s = (Math.imul(1664525, s) + 1013904223) | 0;
+    return ((s >>> 0) / 0xffffffff);
+  };
+}
+
+/**
+ * Pick one variant URL per layer group, using the block height as the RNG seed.
+ * This ensures:
+ *   - The same block always produces the SAME image (deterministic)
+ *   - Different blocks almost always produce DIFFERENT images
+ *
+ * The seed mixes block height + block id hash for extra entropy.
+ */
+export function pickLayersForBlock(
+  groups: NFTLayerGroup[],
+  block: BitcoinBlock,
+): string[] {
+  // Mix block height with first 8 hex chars of the block id for more entropy
+  const idNum = parseInt(block.id.slice(-8), 16) || 0;
+  const seed = (block.height * 2654435761) ^ idNum;
+  const rand = seededRand(seed);
+
+  return groups.map(g => {
+    const valid = g.variants.filter(Boolean);
+    if (valid.length === 0) return '';
+    const idx = Math.floor(rand() * valid.length);
+    return valid[idx];
+  }).filter(Boolean);
+}
+
 // ─── Canvas Block Art Generator ──────────────────────────────────────────────
 
 /** Colour palette inspired by Bitcoin orange + pop-art */
 const PALETTES = [
-  { bg: '#f7931a', accent: '#ffffff', text: '#1a1a1a', border: '#ff6b00' },     // Bitcoin Orange
+  { bg: '#f7931a', accent: '#ffffff', text: '#1a1a1a', border: '#cc6600' },     // Bitcoin Orange
   { bg: '#1a1a2e', accent: '#f7931a', text: '#ffffff', border: '#e94560' },     // Dark Bitcoin
   { bg: '#e94560', accent: '#f7931a', text: '#ffffff', border: '#1a1a2e' },     // Pop Red
   { bg: '#0f3460', accent: '#e94560', text: '#ffffff', border: '#f7931a' },     // Deep Blue
@@ -93,36 +146,215 @@ function drawHalftone(ctx: CanvasRenderingContext2D, color: string, size: number
   }
 }
 
-/** Generate a BitPopArt–style block image on the given canvas */
-export function generateBlockArt(canvas: HTMLCanvasElement, block: BitcoinBlock): string {
-  const S = 1080; // 1:1 square
+/**
+ * Load an image from a URL into an HTMLImageElement.
+ * Handles both http(s) URLs and data: URLs.
+ */
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((res, rej) => {
+    const img = new Image();
+    // Only set crossOrigin for actual http/https URLs to avoid CORS errors on data URLs
+    if (src.startsWith('http')) img.crossOrigin = 'anonymous';
+    img.onload = () => res(img);
+    img.onerror = () => rej(new Error(`Failed to load: ${src.slice(0, 60)}`));
+    img.src = src;
+  });
+}
+
+/**
+ * Overlay the block-info text on a canvas that already has the character layers drawn.
+ * Call AFTER the character layers have been composited.
+ */
+function overlayBlockInfo(
+  ctx: CanvasRenderingContext2D,
+  S: number,
+  block: BitcoinBlock,
+  pal: typeof PALETTES[0],
+) {
+  const bw = 18;
+
+  // ── Halftone overlay (subtle)
+  ctx.globalAlpha = 0.07;
+  drawHalftone(ctx, pal.accent, S);
+  ctx.globalAlpha = 1;
+
+  // ── Outer border
+  ctx.strokeStyle = pal.border;
+  ctx.lineWidth = bw;
+  ctx.strokeRect(bw / 2, bw / 2, S - bw, S - bw);
+
+  // ── Inner accent border
+  ctx.strokeStyle = pal.accent;
+  ctx.lineWidth = 3;
+  ctx.strokeRect(bw + 8, bw + 8, S - (bw + 8) * 2, S - (bw + 8) * 2);
+
+  // ── Top strip — "BITCOIN BLOCK"
+  const stripH = 80;
+  ctx.fillStyle = pal.border;
+  ctx.globalAlpha = 0.88;
+  ctx.fillRect(bw, bw, S - bw * 2, stripH);
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = pal.accent;
+  ctx.font = `bold ${stripH * 0.44}px sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('BITCOIN BLOCK', S / 2, bw + stripH / 2);
+
+  // ── Giant block number (centred, semi-transparent pill background)
+  const numFontSize = Math.min(S * 0.18, 190);
+  const numY = S * 0.56;
+
+  // Pill background for readability
+  const numText = `#${block.height.toLocaleString()}`;
+  ctx.font = `900 ${numFontSize}px sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const numW = ctx.measureText(numText).width;
+  const pillPad = 28;
+  const pillH = numFontSize * 1.15;
+  ctx.fillStyle = pal.bg;
+  ctx.globalAlpha = 0.72;
+  const rx = S / 2 - numW / 2 - pillPad;
+  const ry = numY - pillH / 2;
+  ctx.beginPath();
+  ctx.roundRect(rx, ry, numW + pillPad * 2, pillH, pillH * 0.18);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+
+  // Shadow + number
+  ctx.shadowColor = pal.accent;
+  ctx.shadowBlur = 18;
+  ctx.fillStyle = pal.text;
+  ctx.font = `900 ${numFontSize}px sans-serif`;
+  ctx.fillText(numText, S / 2, numY);
+  ctx.shadowBlur = 0;
+
+  // ── Mini hash
+  const hashShort = `${block.id.slice(0, 10)}…${block.id.slice(-10)}`;
+  ctx.fillStyle = pal.accent;
+  ctx.font = `400 ${S * 0.024}px monospace`;
+  ctx.textBaseline = 'middle';
+  ctx.fillText(hashShort, S / 2, numY + numFontSize * 0.7);
+
+  // ── Bottom strip
+  const botH = 90;
+  const botY = S - bw - botH;
+  ctx.fillStyle = pal.border;
+  ctx.globalAlpha = 0.9;
+  ctx.fillRect(bw, botY, S - bw * 2, botH);
+  ctx.globalAlpha = 1;
+
+  // Stats inside bottom strip
+  const statFont = `600 ${S * 0.028}px sans-serif`;
+  ctx.font = statFont;
+  ctx.fillStyle = pal.accent;
+  ctx.textBaseline = 'middle';
+  const midBot = botY + botH / 2;
+
+  const txLabel = `${block.tx_count.toLocaleString()} txs`;
+  const poolLabel = block.extras?.pool?.name ?? '';
+  const feeLabel = block.extras?.totalFees
+    ? `${(block.extras.totalFees / 100_000_000).toFixed(4)} ₿ fees`
+    : '';
+
+  ctx.textAlign = 'left';
+  ctx.fillText(txLabel, bw + 20, midBot - S * 0.014);
+
+  if (feeLabel) {
+    ctx.textAlign = 'center';
+    ctx.fillText(feeLabel, S / 2, midBot - S * 0.014);
+  }
+
+  if (poolLabel) {
+    ctx.textAlign = 'right';
+    ctx.fillText(poolLabel, S - bw - 20, midBot - S * 0.014);
+  }
+
+  // Timestamp sub-line
+  const dt = new Date(block.timestamp * 1000).toUTCString().slice(0, 25);
+  ctx.font = `400 ${S * 0.022}px monospace`;
+  ctx.fillStyle = pal.accent;
+  ctx.globalAlpha = 0.75;
+  ctx.textAlign = 'center';
+  ctx.fillText(dt, S / 2, midBot + S * 0.018);
+  ctx.globalAlpha = 1;
+
+  // ── "bitpopart.com ⚡ Nostr" micro-brand
+  ctx.font = `bold ${S * 0.018}px sans-serif`;
+  ctx.fillStyle = pal.accent;
+  ctx.globalAlpha = 0.6;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText('bitpopart.com  ⚡  Nostr', S / 2, S - bw - 6);
+  ctx.globalAlpha = 1;
+}
+
+/**
+ * Composite character layers + block-info overlay onto the canvas.
+ *
+ * If layerUrls is provided (admin layers), they are drawn first; then the
+ * block-info text is overlaid on top.
+ *
+ * If no layers are available, falls back to the plain block-info canvas.
+ */
+export async function generateBlockArtWithLayers(
+  canvas: HTMLCanvasElement,
+  block: BitcoinBlock,
+  layerUrls: string[],   // admin layer images (already picked for this block)
+): Promise<string> {
+  const S = 1080;
   canvas.width = S;
   canvas.height = S;
   const ctx = canvas.getContext('2d')!;
 
   const pal = getPalette(block.height);
 
-  // ── Background
+  // ── Background fill
   ctx.fillStyle = pal.bg;
   ctx.fillRect(0, 0, S, S);
 
-  // ── Halftone overlay
-  ctx.globalAlpha = 0.12;
-  drawHalftone(ctx, pal.accent, S);
-  ctx.globalAlpha = 1;
+  if (layerUrls.length > 0) {
+    // ── Draw each character layer, bottom → top
+    for (const url of layerUrls) {
+      try {
+        const img = await loadImage(url);
+        ctx.drawImage(img, 0, 0, S, S);
+      } catch {
+        // skip broken layer
+      }
+    }
+  } else {
+    // ── Fallback: big faint ₿ ghost
+    ctx.globalAlpha = 0.06;
+    ctx.fillStyle = pal.accent;
+    ctx.font = `bold ${S * 0.72}px serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('₿', S / 2, S / 2 + 30);
+    ctx.globalAlpha = 1;
+  }
 
-  // ── Thick border frame (pop-art style)
-  const bw = 18;
-  ctx.strokeStyle = pal.border;
-  ctx.lineWidth = bw;
-  ctx.strokeRect(bw / 2, bw / 2, S - bw, S - bw);
+  // ── Overlay block info on top of everything
+  overlayBlockInfo(ctx, S, block, pal);
 
-  // ── Inner double border
-  ctx.strokeStyle = pal.accent;
-  ctx.lineWidth = 4;
-  ctx.strokeRect(bw + 10, bw + 10, S - (bw + 10) * 2, S - (bw + 10) * 2);
+  return canvas.toDataURL('image/png');
+}
 
-  // ── Big ₿ symbol (stylised, behind everything)
+/**
+ * Synchronous fallback: generates the plain block-info canvas (no image loading).
+ * Used for immediate skeleton rendering before async layers finish.
+ */
+export function generateBlockArt(canvas: HTMLCanvasElement, block: BitcoinBlock): string {
+  const S = 1080;
+  canvas.width = S;
+  canvas.height = S;
+  const ctx = canvas.getContext('2d')!;
+  const pal = getPalette(block.height);
+
+  ctx.fillStyle = pal.bg;
+  ctx.fillRect(0, 0, S, S);
+
+  // Big ghost ₿
   ctx.globalAlpha = 0.06;
   ctx.fillStyle = pal.accent;
   ctx.font = `bold ${S * 0.72}px serif`;
@@ -131,78 +363,6 @@ export function generateBlockArt(canvas: HTMLCanvasElement, block: BitcoinBlock)
   ctx.fillText('₿', S / 2, S / 2 + 30);
   ctx.globalAlpha = 1;
 
-  // ── Top label strip
-  const stripH = 90;
-  ctx.fillStyle = pal.border;
-  ctx.fillRect(bw, bw, S - bw * 2, stripH);
-  ctx.fillStyle = pal.accent;
-  ctx.font = `bold ${stripH * 0.42}px sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('BITCOIN BLOCK', S / 2, bw + stripH / 2);
-
-  // ── Centre: giant block number
-  const numFontSize = Math.min(S * 0.22, 220);
-  ctx.fillStyle = pal.text;
-  ctx.font = `900 ${numFontSize}px sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-
-  // Shadow glow
-  ctx.shadowColor = pal.accent;
-  ctx.shadowBlur = 28;
-  ctx.fillText(`#${block.height.toLocaleString()}`, S / 2, S / 2 - 30);
-  ctx.shadowBlur = 0;
-
-  // ── Mini hash (bottom-centre, truncated)
-  const hashShort = `${block.id.slice(0, 8)}…${block.id.slice(-8)}`;
-  ctx.fillStyle = pal.accent;
-  ctx.font = `400 ${S * 0.028}px monospace`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(hashShort, S / 2, S / 2 + numFontSize * 0.62);
-
-  // ── Stats row
-  const statsY = S * 0.72;
-  const statFontSize = S * 0.034;
-  ctx.font = `600 ${statFontSize}px sans-serif`;
-  ctx.fillStyle = pal.text;
-
-  const txLabel = `${block.tx_count.toLocaleString()} txs`;
-  const feeLabel = block.extras?.totalFees
-    ? `${(block.extras.totalFees / 100_000_000).toFixed(4)} BTC fees`
-    : '';
-  const poolLabel = block.extras?.pool?.name ?? '';
-
-  ctx.textAlign = 'left';
-  ctx.fillText(txLabel, bw + 30, statsY);
-
-  if (feeLabel) {
-    ctx.textAlign = 'center';
-    ctx.fillText(feeLabel, S / 2, statsY);
-  }
-
-  if (poolLabel) {
-    ctx.textAlign = 'right';
-    ctx.fillText(poolLabel, S - bw - 30, statsY);
-  }
-
-  // ── Timestamp
-  const dt = new Date(block.timestamp * 1000).toUTCString().slice(0, 25);
-  ctx.fillStyle = pal.accent;
-  ctx.font = `400 ${S * 0.026}px monospace`;
-  ctx.textAlign = 'center';
-  ctx.fillText(dt, S / 2, statsY + statFontSize + 12);
-
-  // ── Bottom strip with BitPopArt branding
-  const botStripH = 70;
-  ctx.fillStyle = pal.border;
-  ctx.fillRect(bw, S - bw - botStripH, S - bw * 2, botStripH);
-  ctx.fillStyle = pal.accent;
-  ctx.font = `bold ${botStripH * 0.36}px sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('bitpopart.com  ⚡  Nostr', S / 2, S - bw - botStripH / 2);
-
+  overlayBlockInfo(ctx, S, block, pal);
   return canvas.toDataURL('image/png');
 }
