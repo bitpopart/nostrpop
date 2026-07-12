@@ -690,12 +690,19 @@ const Index = () => {
   const author = useAuthor(ADMIN_HEX);
   const metadata: NostrMetadata | undefined = author.data?.metadata;
   
-  // View mode — derived directly so the first render is always correct.
-  // When TanStack Query has cached settings, defaultView is known immediately.
-  // userOverride is only set when the user manually clicks the toggle.
-  const [userOverride, setUserOverride] = useState<HomepageView | null>(null);
-  const viewMode: HomepageView = userOverride ?? homepageSettings?.defaultView ?? 'gallery';
-  const setViewMode = (mode: HomepageView) => setUserOverride(mode);
+  // View mode toggle state — initialise from saved defaultView once settings load
+  const [viewMode, setViewMode] = useState<HomepageView>('gallery');
+  const [viewModeInitialised, setViewModeInitialised] = useState(false);
+
+  // Once settings load, set the default view (only on first load)
+  useEffect(() => {
+    if (!viewModeInitialised && homepageSettings?.defaultView) {
+      setViewMode(homepageSettings.defaultView);
+      setViewModeInitialised(true);
+    } else if (!viewModeInitialised && homepageSettings) {
+      setViewModeInitialised(true);
+    }
+  }, [homepageSettings, viewModeInitialised]);
   
   // Extract sections and buttons from the new settings shape
   const sections = homepageSettings?.sections;
