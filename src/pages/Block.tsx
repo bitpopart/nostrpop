@@ -32,7 +32,6 @@ import {
   Hash,
   Activity,
   Cpu,
-  Layers,
 } from 'lucide-react';
 
 const ADMIN_PUBKEY = getAdminPubkeyHex();
@@ -412,197 +411,157 @@ export default function BlockPage() {
     setPreviewBlock(block);
   }, []);
 
-  const layerCount = blockChar?.layerGroups.length ?? 0;
-  const variantCount = blockChar?.layerGroups.reduce((s, g) => s + g.variants.length, 0) ?? 0;
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-orange-950/10 via-background to-orange-950/5">
 
-      {/* ── Hero header ── */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-8 left-8 w-40 h-40 bg-orange-300/20 dark:bg-orange-800/20 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 right-12 w-56 h-56 bg-yellow-300/15 dark:bg-yellow-700/15 rounded-full blur-3xl" />
-        </div>
+      {/* ── Compact header ── */}
+      <div className="container mx-auto px-4 pt-4 pb-2">
 
-        <div className="container mx-auto px-4 pt-10 pb-6 relative">
-          <div className="max-w-3xl mx-auto text-center space-y-4">
+        {/* Row 1: logo + live badge + refresh */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <img
+            src={`${basePath}block-text-logo.svg`}
+            alt="BLOCK"
+            className="h-10 w-auto flex-shrink-0"
+          />
 
-            <div className="flex items-center justify-center">
-              <Badge className="bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-700 text-sm px-3 py-1 gap-1.5">
-                <Bitcoin className="h-3.5 w-3.5" />
-                Live from mempool.space
-              </Badge>
+          <Badge className="bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-700 text-xs px-2 py-0.5 gap-1 shrink-0">
+            <Bitcoin className="h-3 w-3" />
+            Live · mempool.space
+          </Badge>
+
+          {blocks?.[0] && (
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse shrink-0" />
+              <span>
+                Latest: <span className="font-bold text-foreground">#{blocks[0].height.toLocaleString()}</span>
+                {' '}· {timeAgo(blocks[0].timestamp)}
+                {blocks[0].extras?.pool?.name && ` · ${blocks[0].extras.pool.name}`}
+              </span>
             </div>
+          )}
 
-            {/* SVG text logo */}
-            <div className="flex justify-center">
-              <img
-                src={`${basePath}block-text-logo.svg`}
-                alt="BLOCK"
-                className="w-full max-w-xl h-auto"
-              />
-            </div>
-
-            <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-              Every new Bitcoin block gets its own unique pop-art image — generated live from the blockchain
-              {blockChar ? ` with ${variantCount} layer variants` : ''}.
-              Share on Nostr and send a zap ⚡
-            </p>
-
-            {/* Layer stats badge */}
-            {blockChar && (
-              <div className="flex items-center justify-center gap-2 flex-wrap">
-                <Badge variant="outline" className="gap-1.5 text-xs border-orange-300 text-orange-600 dark:text-orange-400">
-                  <Layers className="h-3 w-3" />
-                  {layerCount} layer{layerCount !== 1 ? 's' : ''} · {variantCount} variants
-                </Badge>
-                <Badge variant="outline" className="gap-1.5 text-xs border-green-400 text-green-600 dark:text-green-400">
-                  ∞ unique combinations
-                </Badge>
-              </div>
-            )}
-
-            <div className="flex items-center justify-center gap-3 flex-wrap">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => refetch()}
-                disabled={isFetching}
-                className="gap-1.5"
-              >
-                <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? 'animate-spin' : ''}`} />
-                {isFetching ? 'Refreshing…' : 'Refresh Blocks'}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => window.open('https://mempool.space', '_blank')}
-                className="gap-1.5"
-              >
-                <ExternalLink className="h-3.5 w-3.5" />
-                Open mempool.space
-              </Button>
-            </div>
+          <div className="ml-auto flex items-center gap-1.5">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => refetch()}
+              disabled={isFetching}
+              className="h-7 px-2.5 text-xs gap-1"
+            >
+              <RefreshCw className={`h-3 w-3 ${isFetching ? 'animate-spin' : ''}`} />
+              {isFetching ? '…' : 'Refresh'}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => window.open('https://mempool.space', '_blank')}
+              className="h-7 px-2 text-xs gap-1 text-muted-foreground"
+            >
+              <ExternalLink className="h-3 w-3" />
+            </Button>
           </div>
         </div>
-      </section>
 
-      {/* ── How it works ── */}
-      <div className="container mx-auto px-4 pb-6">
-        <div className="max-w-3xl mx-auto bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800 rounded-2xl px-5 py-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm text-center">
-            <div className="space-y-1">
-              <Cpu className="h-5 w-5 text-orange-500 mx-auto" />
-              <p className="font-semibold text-foreground">Unique every block</p>
-              <p className="text-xs text-muted-foreground">
+        {/* Row 2: 3-column info strip */}
+        <div className="mt-2 grid grid-cols-3 gap-px rounded-xl overflow-hidden border border-orange-100 dark:border-orange-900/40 text-xs">
+          <div className="bg-orange-50 dark:bg-orange-950/25 px-3 py-2 flex items-start gap-2">
+            <Cpu className="h-3.5 w-3.5 text-orange-500 mt-0.5 shrink-0" />
+            <div>
+              <p className="font-semibold text-foreground leading-tight">Unique every block</p>
+              <p className="text-muted-foreground leading-tight mt-0.5 hidden sm:block">
                 Layers are randomly combined using the block height as seed — the same block always gets the same art, different blocks never match
               </p>
             </div>
-            <div className="space-y-1">
-              <Share2 className="h-5 w-5 text-orange-500 mx-auto" />
-              <p className="font-semibold text-foreground">Share on Nostr</p>
-              <p className="text-xs text-muted-foreground">Post your block image directly to the Nostr network with one click</p>
+          </div>
+          <div className="bg-orange-50/70 dark:bg-orange-950/20 px-3 py-2 flex items-start gap-2 border-x border-orange-100 dark:border-orange-900/40">
+            <Share2 className="h-3.5 w-3.5 text-orange-500 mt-0.5 shrink-0" />
+            <div>
+              <p className="font-semibold text-foreground leading-tight">Share on Nostr</p>
+              <p className="text-muted-foreground leading-tight mt-0.5 hidden sm:block">
+                Post your block image directly to the Nostr network with one click
+              </p>
             </div>
-            <div className="space-y-1">
-              <Zap className="h-5 w-5 text-yellow-500 mx-auto" />
-              <p className="font-semibold text-foreground">Zap the artist</p>
-              <p className="text-xs text-muted-foreground">Support the creator with a Bitcoin Lightning zap if you love the art</p>
+          </div>
+          <div className="bg-orange-50 dark:bg-orange-950/25 px-3 py-2 flex items-start gap-2">
+            <Zap className="h-3.5 w-3.5 text-yellow-500 mt-0.5 shrink-0" />
+            <div>
+              <p className="font-semibold text-foreground leading-tight">Zap the artist</p>
+              <p className="text-muted-foreground leading-tight mt-0.5 hidden sm:block">
+                Support the creator with a Bitcoin Lightning zap if you love the art
+              </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* ── Grid ── */}
-      <div className="container mx-auto px-4 pb-16">
+      {/* ── Block grid — right below header ── */}
+      <div className="container mx-auto px-4 pt-3 pb-16">
 
         {isLoading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
             {[...Array(12)].map((_, i) => (
-              <div key={i} className="space-y-2">
+              <div key={i} className="space-y-1.5">
                 <Skeleton className="aspect-square rounded-xl" />
                 <Skeleton className="h-3 w-3/4" />
-                <Skeleton className="h-3 w-1/2" />
-                <Skeleton className="h-8 rounded-lg" />
+                <Skeleton className="h-7 rounded-lg" />
               </div>
             ))}
           </div>
         ) : isError ? (
-          <div className="max-w-md mx-auto text-center py-16 space-y-4">
-            <Bitcoin className="h-12 w-12 text-muted-foreground/30 mx-auto" />
-            <p className="text-muted-foreground">Could not load blocks from mempool.space.</p>
-            <Button variant="outline" onClick={() => refetch()} className="gap-1.5">
-              <RefreshCw className="h-4 w-4" />
+          <div className="max-w-md mx-auto text-center py-12 space-y-4">
+            <Bitcoin className="h-10 w-10 text-muted-foreground/30 mx-auto" />
+            <p className="text-muted-foreground text-sm">Could not load blocks from mempool.space.</p>
+            <Button variant="outline" size="sm" onClick={() => refetch()} className="gap-1.5">
+              <RefreshCw className="h-3.5 w-3.5" />
               Try again
             </Button>
           </div>
         ) : !blocks || blocks.length === 0 ? (
-          <div className="max-w-md mx-auto text-center py-16 space-y-4">
-            <Bitcoin className="h-12 w-12 text-muted-foreground/30 mx-auto" />
-            <p className="text-muted-foreground">No blocks found yet.</p>
+          <div className="max-w-md mx-auto text-center py-12 space-y-4">
+            <Bitcoin className="h-10 w-10 text-muted-foreground/30 mx-auto" />
+            <p className="text-muted-foreground text-sm">No blocks found yet.</p>
           </div>
         ) : (
-          <>
-            {/* Latest block live indicator */}
-            {blocks[0] && (
-              <div className="mb-6 flex items-center gap-2">
-                <div className="h-2.5 w-2.5 rounded-full bg-green-500 animate-pulse" />
-                <span className="text-sm font-medium text-muted-foreground">
-                  Latest: <span className="text-foreground font-bold">#{blocks[0].height.toLocaleString()}</span>
-                  {' '}· {timeAgo(blocks[0].timestamp)}
-                  {blocks[0].extras?.pool?.name && ` · ${blocks[0].extras.pool.name}`}
-                </span>
-                {blockChar && (
-                  <Badge variant="outline" className="ml-auto text-xs border-orange-300 text-orange-600 dark:text-orange-400 gap-1">
-                    <Layers className="h-2.5 w-2.5" />
-                    {blockChar.title}
-                  </Badge>
-                )}
-              </div>
-            )}
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-              {blocks.map(block => {
-                // Pre-pick layers for this block (deterministic, based on block data)
-                const layerUrls = blockChar
-                  ? pickLayersForBlock(blockChar.layerGroups, block)
-                  : [];
-
-                return (
-                  <BlockArtCard
-                    key={block.id}
-                    block={block}
-                    layerUrls={layerUrls}
-                    onExpand={handleExpand}
-                  />
-                );
-              })}
-            </div>
-          </>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
+            {blocks.map(block => {
+              const layerUrls = blockChar
+                ? pickLayersForBlock(blockChar.layerGroups, block)
+                : [];
+              return (
+                <BlockArtCard
+                  key={block.id}
+                  block={block}
+                  layerUrls={layerUrls}
+                  onExpand={handleExpand}
+                />
+              );
+            })}
+          </div>
         )}
 
         {/* ── Login nudge ── */}
-        <div className="mt-10 max-w-lg mx-auto">
+        <div className="mt-8 max-w-lg mx-auto">
           <Card className="border-orange-200 dark:border-orange-800 bg-orange-50/50 dark:bg-orange-950/20">
-            <CardContent className="p-5 flex flex-col sm:flex-row items-center gap-4">
-              <div className="flex-1 text-sm space-y-1">
+            <CardContent className="p-4 flex flex-col sm:flex-row items-center gap-3">
+              <div className="flex-1 text-sm space-y-0.5">
                 <p className="font-bold text-foreground">Log in to share blocks on Nostr</p>
                 <p className="text-muted-foreground text-xs">
-                  Connect your Nostr account to post block art directly to the decentralised network.
+                  Connect your Nostr account to post block art to the network.
                 </p>
               </div>
-              <LoginArea className="max-w-52 shrink-0" />
+              <LoginArea className="max-w-48 shrink-0" />
             </CardContent>
           </Card>
         </div>
 
         {/* ── Big statement ── */}
-        <div className="mt-16 text-center">
-          <p className="text-3xl md:text-5xl font-black leading-tight tracking-tight">
+        <div className="mt-12 text-center">
+          <p className="text-2xl md:text-4xl font-black leading-tight tracking-tight">
             <span className="text-foreground">Every 10 minutes.</span>
-            <br />
+            {' '}
             <span className="text-foreground">A new block.</span>
-            <br />
+            {' '}
             <span className="bg-gradient-to-r from-orange-500 to-yellow-400 bg-clip-text text-transparent">
               A new piece of art. ₿
             </span>
