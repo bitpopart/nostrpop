@@ -690,17 +690,13 @@ const Index = () => {
   const author = useAuthor(ADMIN_HEX);
   const metadata: NostrMetadata | undefined = author.data?.metadata;
   
-  // View mode — null until settings arrive so we never render the wrong view.
-  // The skeleton shows while null; once settings resolve we lock in defaultView
-  // (or 'gallery' if none saved). User toggles update normally after that.
-  const [viewMode, setViewMode] = useState<HomepageView | null>(null);
-
-  useEffect(() => {
-    if (viewMode !== null) return; // already initialised — user may have toggled
-    if (homepageSettings) {
-      setViewMode(homepageSettings.defaultView ?? 'gallery');
-    }
-  }, [homepageSettings, viewMode]);
+  // View mode — derive directly from settings so the very first render is
+  // always correct. homepageSettings is available synchronously from the
+  // TanStack Query cache on revisits, so useState(() => ...) reads it immediately.
+  // userOverride tracks manual toggles; null means "follow settings".
+  const [userOverride, setUserOverride] = useState<HomepageView | null>(null);
+  const viewMode: HomepageView = userOverride ?? homepageSettings?.defaultView ?? 'gallery';
+  const setViewMode = (mode: HomepageView) => setUserOverride(mode);
   
   // Extract sections and buttons from the new settings shape
   const sections = homepageSettings?.sections;
@@ -735,8 +731,8 @@ const Index = () => {
   // and needs no event queries; gallery loads its section data; progress
   // loads only the #bitpopart posts. We wait for settingsReady so we don't
   // briefly fire gallery queries before defaultView resolves.
-  const galleryActive = settingsReady && viewMode !== null && viewMode === 'gallery';
-  const progressActive = settingsReady && viewMode !== null && viewMode === 'progress';
+  const galleryActive = settingsReady && viewMode === 'gallery';
+  const progressActive = settingsReady && viewMode === 'progress';
 
   const { data: adminNotes, isLoading: notesLoading, error: notesError } = useLatestAdminNotes(3, { enabled: galleryActive });
   const { data: latestCards, isLoading: cardsLoading, error: cardsError } = useLatestCards(3, { enabled: galleryActive });
@@ -1672,8 +1668,8 @@ const Index = () => {
             {/* Art Progress Toggle - desktop: next to buttons, mobile: below */}
             <div className="mt-4 sm:mt-0">
               <ArtProgressToggle 
-                mode={viewMode ?? 'gallery'} 
-                onToggle={(m) => setViewMode(m)}
+                mode={viewMode} 
+                onToggle={setViewMode}
               />
             </div>
           </div>
@@ -1722,8 +1718,7 @@ const Index = () => {
         </Link>
 
         {/* Conditional Content Based on View Mode */}
-        {/* Show skeleton until viewMode is resolved — prevents any wrong-view flash */}
-        {viewMode === null && (
+        {settingsLoading && !homepageSettings && (
           <HomepageSectionsSkeleton />
         )}
 
