@@ -131,35 +131,7 @@ const DEFAULT_SECTIONS: HomepageSection[] = [
   },
 ];
 
-const DEFAULT_BUTTONS: HomepageButton[] = [
-  {
-    id: 'btn-start-painting',
-    label: 'Start Painting',
-    url: '/canvas',
-    variant: 'primary',
-    isHero: true,
-    afterSectionId: null,
-    order: 0,
-  },
-  {
-    id: 'btn-visit-shop',
-    label: 'Visit Shop',
-    url: '/shop',
-    variant: 'outline',
-    isHero: true,
-    afterSectionId: null,
-    order: 1,
-  },
-  {
-    id: 'btn-pop-tour',
-    label: 'Pop Tour',
-    url: '/popup',
-    variant: 'accent',
-    isHero: true,
-    afterSectionId: null,
-    order: 2,
-  },
-];
+const DEFAULT_BUTTONS: HomepageButton[] = [];
 
 export function useHomepageSettings() {
   const { nostr } = useNostr();
@@ -199,7 +171,7 @@ export function useHomepageSettings() {
               const p = parsed as HomepageSettings;
               sections = p.sections || [];
               buttons = p.buttons || DEFAULT_BUTTONS;
-              defaultView = p.defaultView;
+              defaultView = p.defaultView ?? 'grid';
               gridTiles = p.gridTiles;
             } else {
               sections = DEFAULT_SECTIONS;
@@ -248,8 +220,8 @@ export function useHomepageSettings() {
       
       return {
         sections: DEFAULT_SECTIONS.sort((a, b) => a.order - b.order),
-        buttons: DEFAULT_BUTTONS.sort((a, b) => a.order - b.order),
-        defaultView: undefined,
+        buttons: DEFAULT_BUTTONS,
+        defaultView: 'grid',
         gridTiles: [],
       } as HomepageSettings;
     },
