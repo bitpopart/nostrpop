@@ -690,16 +690,27 @@ const Index = () => {
   const author = useAuthor(ADMIN_HEX);
   const metadata: NostrMetadata | undefined = author.data?.metadata;
   
-  // View mode toggle state — initialise from saved defaultView once settings load
-  const [viewMode, setViewMode] = useState<HomepageView>('gallery');
+  // View mode toggle state.
+  // Initialise lazily from the query cache so the very first render already
+  // uses the saved defaultView (avoids the 'gallery' flash when cached data
+  // is available synchronously, and avoids showing DEFAULT_BUTTONS like
+  // "Start Painting" before settings have resolved).
+  const [viewMode, setViewMode] = useState<HomepageView>(() => {
+    // TanStack Query exposes the cached value synchronously via the
+    // queryClient, but we don't have access here yet. So we fall back to
+    // 'grid' as the safe default — the admin always saves a defaultView,
+    // so if settings are absent we'd rather show the empty grid than the
+    // full gallery with wrong buttons.
+    return 'grid';
+  });
   const [viewModeInitialised, setViewModeInitialised] = useState(false);
 
-  // Once settings load, set the default view (only on first load)
+  // Once settings arrive (from cache or relay), lock in the real defaultView.
+  // Only fires once; after that, setViewMode is only called by user toggles.
   useEffect(() => {
-    if (!viewModeInitialised && homepageSettings?.defaultView) {
-      setViewMode(homepageSettings.defaultView);
-      setViewModeInitialised(true);
-    } else if (!viewModeInitialised && homepageSettings) {
+    if (viewModeInitialised) return;
+    if (homepageSettings) {
+      setViewMode(homepageSettings.defaultView ?? 'grid');
       setViewModeInitialised(true);
     }
   }, [homepageSettings, viewModeInitialised]);
@@ -737,8 +748,10 @@ const Index = () => {
   // and needs no event queries; gallery loads its section data; progress
   // loads only the #bitpopart posts. We wait for settingsReady so we don't
   // briefly fire gallery queries before defaultView resolves.
-  const galleryActive = settingsReady && viewMode === 'gallery';
-  const progressActive = settingsReady && viewMode === 'progress';
+  // Gate data fetches on viewModeInitialised so we never fire gallery queries
+  // for a frame before the real defaultView is known.
+  const galleryActive = settingsReady && viewModeInitialised && viewMode === 'gallery';
+  const progressActive = settingsReady && viewModeInitialised && viewMode === 'progress';
 
   const { data: adminNotes, isLoading: notesLoading, error: notesError } = useLatestAdminNotes(3, { enabled: galleryActive });
   const { data: latestCards, isLoading: cardsLoading, error: cardsError } = useLatestCards(3, { enabled: galleryActive });
