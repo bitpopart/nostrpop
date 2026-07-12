@@ -690,19 +690,9 @@ const Index = () => {
   const author = useAuthor(ADMIN_HEX);
   const metadata: NostrMetadata | undefined = author.data?.metadata;
   
-  // View mode toggle state.
-  // Initialise lazily from the query cache so the very first render already
-  // uses the saved defaultView (avoids the 'gallery' flash when cached data
-  // is available synchronously, and avoids showing DEFAULT_BUTTONS like
-  // "Start Painting" before settings have resolved).
-  const [viewMode, setViewMode] = useState<HomepageView>(() => {
-    // TanStack Query exposes the cached value synchronously via the
-    // queryClient, but we don't have access here yet. So we fall back to
-    // 'grid' as the safe default — the admin always saves a defaultView,
-    // so if settings are absent we'd rather show the empty grid than the
-    // full gallery with wrong buttons.
-    return 'grid';
-  });
+  // View mode toggle state — initialise from saved defaultView once settings load.
+  // Start with 'gallery' (the correct default) so content is never blank on load.
+  const [viewMode, setViewMode] = useState<HomepageView>('gallery');
   const [viewModeInitialised, setViewModeInitialised] = useState(false);
 
   // Once settings arrive (from cache or relay), lock in the real defaultView.
@@ -710,14 +700,18 @@ const Index = () => {
   useEffect(() => {
     if (viewModeInitialised) return;
     if (homepageSettings) {
-      setViewMode(homepageSettings.defaultView ?? 'grid');
+      if (homepageSettings.defaultView) {
+        setViewMode(homepageSettings.defaultView);
+      }
       setViewModeInitialised(true);
     }
   }, [homepageSettings, viewModeInitialised]);
-  
+
   // Extract sections and buttons from the new settings shape
   const sections = homepageSettings?.sections;
-  const allButtons = homepageSettings?.buttons || [];
+  // Only use buttons once settings have fully loaded — never show DEFAULT_BUTTONS
+  // (which contains the old "Start Painting" button) before real settings arrive.
+  const allButtons = (homepageSettings && viewModeInitialised) ? (homepageSettings.buttons || []) : [];
   const gridTiles = homepageSettings?.gridTiles || [];
 
   // Get ordered section IDs based on settings
@@ -727,10 +721,10 @@ const Index = () => {
   // (cold start, no cache) we show HomepageSectionsSkeleton instead of a blank
   // page that suddenly pops in.
   const settingsReady = !settingsLoading || !!homepageSettings;
-  
+
   // Hero buttons (top of page) sorted by order
   const heroButtons = allButtons.filter(b => b.isHero).sort((a, b) => a.order - b.order);
-  
+
   // Inter-section buttons (after a specific section)
   const getInterButtons = (sectionId: string) =>
     allButtons.filter(b => !b.isHero && b.afterSectionId === sectionId).sort((a, b) => a.order - b.order);
@@ -742,16 +736,13 @@ const Index = () => {
     // Otherwise only show if in enabled list
     return orderedSections.includes(id);
   };
-  
+
   // Load data — gated by which view is active so we don't fire every query
   // on cold start. The Photo Grid view ('grid') renders purely from settings
   // and needs no event queries; gallery loads its section data; progress
-  // loads only the #bitpopart posts. We wait for settingsReady so we don't
-  // briefly fire gallery queries before defaultView resolves.
-  // Gate data fetches on viewModeInitialised so we never fire gallery queries
-  // for a frame before the real defaultView is known.
-  const galleryActive = settingsReady && viewModeInitialised && viewMode === 'gallery';
-  const progressActive = settingsReady && viewModeInitialised && viewMode === 'progress';
+  // loads only the #bitpopart posts.
+  const galleryActive = settingsReady && viewMode === 'gallery';
+  const progressActive = settingsReady && viewMode === 'progress';
 
   const { data: adminNotes, isLoading: notesLoading, error: notesError } = useLatestAdminNotes(3, { enabled: galleryActive });
   const { data: latestCards, isLoading: cardsLoading, error: cardsError } = useLatestCards(3, { enabled: galleryActive });
