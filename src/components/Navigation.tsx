@@ -7,7 +7,7 @@ import { RelaySelector } from '@/components/RelaySelector';
 import { Search } from '@/components/Search';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useTheme } from '@/hooks/useTheme';
-import { Menu, Moon, Sun, Shield, Search as SearchIcon, Video, Users, Palette, Sparkles } from 'lucide-react';
+import { Menu, Moon, Sun, Shield, Search as SearchIcon, Video, Users, Palette, Sparkles, Blocks } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // Get the base path from import.meta.env or default to '/'
@@ -131,6 +131,16 @@ export function Navigation() {
                 <Sun className="h-4 w-4" />
               )}
             </Button>
+            <Link to="/Block">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 px-3 gap-1.5 rounded-full font-medium text-sm bg-gradient-to-r from-yellow-100 to-orange-100 dark:from-yellow-900/30 dark:to-orange-900/30 hover:from-yellow-200 hover:to-orange-200 dark:hover:from-yellow-900/50 dark:hover:to-orange-900/50 text-orange-600 dark:text-orange-400"
+              >
+                <Blocks className="h-4 w-4" />
+                <span>Block</span>
+              </Button>
+            </Link>
             <Link to="/NFT">
               <Button
                 variant="ghost"
@@ -280,6 +290,20 @@ export function Navigation() {
                     >
                       <Users className="h-6 w-6 flex-shrink-0" style={{ color: '#f7931a' }} />
                       <span>PopFans</span>
+                    </Link>
+                    {/* Block Art */}
+                    <Link
+                      to="/Block"
+                      onClick={() => setIsOpen(false)}
+                      className={cn(
+                        "flex items-center space-x-3 px-4 py-3 rounded-full text-base font-medium transition-colors",
+                        isActive('/Block')
+                          ? "bg-gradient-to-r from-yellow-100 to-orange-100 text-orange-600 dark:from-yellow-900/30 dark:to-orange-900/30 dark:text-orange-400"
+                          : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                      )}
+                    >
+                      <Blocks className="h-6 w-6 flex-shrink-0 text-orange-500" />
+                      <span>Block Art</span>
                     </Link>
                     {/* NFT */}
                     <Link

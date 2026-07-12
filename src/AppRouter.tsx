@@ -56,6 +56,7 @@ import FrlProjectView from "./pages/FrlProjectView";
 import Print from "./pages/Print";
 import NFT from "./pages/NFT";
 import NFTAdmin from "./pages/NFTAdmin";
+import Block from "./pages/Block";
 import Sitemap from "./pages/Sitemap";
 import CloudPage from "./pages/Cloud";
 import CloudAppViewer from "./pages/CloudAppViewer";
@@ -125,6 +126,7 @@ export function AppRouter() {
         <Route path="/frl/:projectId" element={<Layout><FrlProjectView /></Layout>} />
         <Route path="/print" element={<Layout><Print /></Layout>} />
         <Route path="/NFT" element={<Layout><NFT /></Layout>} />
+        <Route path="/Block" element={<Layout><Block /></Layout>} />
         <Route path="/sitemap" element={<Layout><Sitemap /></Layout>} />
         {/* Cloud private space — no site Layout wrapper; full-screen experience */}
         <Route path="/cloud" element={<CloudPage />} />
