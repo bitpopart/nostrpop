@@ -35,7 +35,6 @@ import {
 } from 'lucide-react';
 
 const ADMIN_PUBKEY = getAdminPubkeyHex();
-const basePath = import.meta.env.BASE_URL || '/';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -417,14 +416,8 @@ export default function BlockPage() {
       {/* ── Compact header ── */}
       <div className="container mx-auto px-4 pt-4 pb-2">
 
-        {/* Row 1: logo + live badge + refresh */}
+        {/* Row 1: live badge + refresh */}
         <div className="flex items-center gap-3 flex-wrap">
-          <img
-            src={`${basePath}block-text-logo.svg`}
-            alt="BLOCK"
-            className="h-10 w-auto flex-shrink-0"
-          />
-
           <Badge className="bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-700 text-xs px-2 py-0.5 gap-1 shrink-0">
             <Bitcoin className="h-3 w-3" />
             Live · mempool.space
