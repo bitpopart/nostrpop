@@ -8,9 +8,9 @@ import { Separator } from '@/components/ui/separator';
 import { formatCurrency } from '@/hooks/usePayment';
 import { useMarketplaceProduct } from '@/hooks/useMarketplaceProducts';
 import { useLivePrice } from '@/hooks/useLivePrice';
+import { useFiatToSats } from '@/hooks/useFiatToSats';
 import { useToast } from '@/hooks/useToast';
 import { useCart } from '@/hooks/useCart';
-import { useQuery } from '@tanstack/react-query';
 import { ImageGallery } from '@/components/marketplace/ImageGallery';
 import { PaymentDialog } from '@/components/marketplace/PaymentDialog';
 import { CartDrawer } from '@/components/marketplace/CartDrawer';
@@ -34,80 +34,20 @@ export function ProductPage() {
     product?.currency
   );
 
-  // Always use USD as display currency
+  // Use the real source currency — never force USD
   const displayPrice = livePrice?.price ?? product?.price ?? 0;
-  const sourceCurrency = livePrice?.currency ?? product?.currency ?? 'USD';
-  const displayCurrency = 'USD';
-
-  // Convert to USD if needed
-  const [priceInUSD, setPriceInUSD] = useState<number>(displayPrice);
+  const displayCurrency = (livePrice?.currency ?? product?.currency ?? 'USD').toUpperCase();
 
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
 
   // Discount calculation
   const hasDiscount = product?.discount && product.discount > 0;
-  const discountedPriceUSD = hasDiscount && priceInUSD > 0 ? priceInUSD * (1 - product!.discount! / 100) : null;
-  const finalPriceUSD = discountedPriceUSD ?? priceInUSD;
+  const discountedPrice = hasDiscount && displayPrice > 0 ? displayPrice * (1 - product!.discount! / 100) : null;
+  const finalPriceUSD = discountedPrice ?? displayPrice;   // name kept for JSX compatibility below
+  const priceInUSD = displayPrice;                         // original price before discount (for strikethrough)
 
-  // Fetch BTC price and calculate sats
-  const { data: btcPrice } = useQuery({
-    queryKey: ['btc-price-usd'],
-    queryFn: async ({ signal }) => {
-      try {
-        const response = await fetch(
-          'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd',
-          { signal }
-        );
-        const data = await response.json();
-        return data?.bitcoin?.usd || null;
-      } catch (error) {
-        console.warn('Failed to fetch BTC price:', error);
-        return null;
-      }
-    },
-    staleTime: 300000, // 5 minutes
-    refetchInterval: 300000,
-  });
-
-  // Calculate price in sats (use discounted price if applicable)
-  const displayPriceInSats = btcPrice && finalPriceUSD > 0 
-    ? Math.round((finalPriceUSD / btcPrice) * 100000000)
-    : livePrice?.priceInSats;
-
-  // Convert source currency to USD if needed
-  useEffect(() => {
-    const convertToUSD = async () => {
-      if (sourceCurrency === 'USD') {
-        setPriceInUSD(displayPrice);
-        return;
-      }
-
-      try {
-        const response = await fetch(
-          `https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd,${sourceCurrency.toLowerCase()}`
-        );
-        const data = await response.json();
-        const usdRate = data?.bitcoin?.usd;
-        const sourceRate = data?.bitcoin?.[sourceCurrency.toLowerCase()];
-
-        if (usdRate && sourceRate) {
-          // Convert through BTC as intermediate
-          const priceInBTC = displayPrice / sourceRate;
-          const converted = priceInBTC * usdRate;
-          setPriceInUSD(converted);
-        } else {
-          setPriceInUSD(displayPrice);
-        }
-      } catch (error) {
-        console.warn('Currency conversion failed:', error);
-        setPriceInUSD(displayPrice);
-      }
-    };
-
-    if (displayPrice > 0) {
-      convertToUSD();
-    }
-  }, [displayPrice, sourceCurrency]);
+  // Convert the actual currency to sats — works for USD, EUR, GBP, etc.
+  const { data: displayPriceInSats } = useFiatToSats(finalPriceUSD, displayCurrency);
 
   useEffect(() => {
     if (!isLoading && !product) {

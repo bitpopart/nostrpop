@@ -80,17 +80,17 @@ export function ProductCard({ product, onViewDetails }: ProductCardProps) {
   const displayPrice = livePrice?.price ?? product.price;
   const displayCurrency = livePrice?.currency ?? product.currency;
   
-  // Convert price to USD if needed
-  const priceInUSD = displayCurrency === 'USD' ? displayPrice : displayPrice; // For now, keep original price
+  // Original (pre-discount) price in display currency — used for strikethrough
+  const priceInUSD = displayPrice;
 
   // Calculate discounted price if discount is set
   const hasDiscount = product.discount && product.discount > 0;
   const discountedPriceUSD = hasDiscount ? priceInUSD * (1 - product.discount! / 100) : null;
   const finalDisplayPrice = discountedPriceUSD ?? priceInUSD;
   
-  // Always get sats conversion for USD prices (use discounted price for sats)
-  const { data: satsConversion } = useFiatToSats(finalDisplayPrice, 'USD');
-  const displayPriceInSats = livePrice?.priceInSats ?? satsConversion;
+  // Convert the actual display currency to sats (was hardcoded to 'USD' — now uses real currency)
+  const { data: satsConversion } = useFiatToSats(finalDisplayPrice, displayCurrency);
+  const displayPriceInSats = satsConversion ?? livePrice?.priceInSats;
 
   const isOutOfStock = product.quantity !== undefined && product.quantity <= 0;
   const hasShipping = product.shipping && product.shipping.length > 0;
@@ -243,7 +243,7 @@ export function ProductCard({ product, onViewDetails }: ProductCardProps) {
                 {hasDiscount && (
                   <div className="flex items-center space-x-2 mb-0.5">
                     <span className="line-through text-sm text-muted-foreground">
-                      {formatCurrency(priceInUSD, 'USD')}
+                      {formatCurrency(priceInUSD, displayCurrency)}
                     </span>
                     <span className="text-xs font-bold bg-orange-500 text-white px-1.5 py-0.5 rounded-full">
                       -{product.discount}%
@@ -251,7 +251,7 @@ export function ProductCard({ product, onViewDetails }: ProductCardProps) {
                   </div>
                 )}
                 <div className="text-xl font-bold text-green-600 dark:text-green-400">
-                  {formatCurrency(finalDisplayPrice, 'USD')}
+                  {formatCurrency(finalDisplayPrice, displayCurrency)}
                 </div>
                 {displayPriceInSats && (
                   <div className="flex items-center text-xs text-orange-600 dark:text-orange-400 mt-1">
