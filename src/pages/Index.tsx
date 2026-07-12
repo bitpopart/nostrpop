@@ -691,8 +691,8 @@ const Index = () => {
   const author = useAuthor(ADMIN_HEX);
   const metadata: NostrMetadata | undefined = author.data?.metadata;
   
-  // View mode — read once from settings when they first arrive, never re-override
-  const [viewMode, setViewMode] = useState<HomepageView>('gallery');
+  // View mode — default to 'grid', override once from relay settings on first load
+  const [viewMode, setViewMode] = useState<HomepageView>('grid');
   const viewModeSet = useRef(false);
   useEffect(() => {
     if (!viewModeSet.current && homepageSettings?.defaultView) {
@@ -1641,16 +1641,9 @@ const Index = () => {
         <div className="text-center mb-16 pt-8">
           <div className="flex flex-col gap-4 items-center">
             {/* Dynamic Hero Buttons from settings — show skeletons while loading */}
-            <div className="flex flex-row flex-wrap gap-3 justify-center">
-              {settingsLoading ? (
-                /* Skeletons while relay responds */
-                <>
-                  <Skeleton className="h-12 w-12 rounded-full sm:h-11 sm:w-40" />
-                  <Skeleton className="h-12 w-12 rounded-full sm:h-11 sm:w-32" />
-                  <Skeleton className="h-12 w-12 rounded-full sm:h-11 sm:w-28" />
-                </>
-              ) : (
-                heroButtons.map(btn => {
+            {heroButtons.length > 0 && (
+              <div className="flex flex-row flex-wrap gap-3 justify-center">
+                {heroButtons.map(btn => {
                   const isNostr = btn.label.toLowerCase().includes('nostr');
                   return (
                     <DynamicButton
@@ -1661,12 +1654,12 @@ const Index = () => {
                       mobileShowLabel={isNostr}
                     />
                   );
-                })
-              )}
-            </div>
+                })}
+              </div>
+            )}
 
-            {/* Art Progress Toggle */}
-            <div className="mt-4 sm:mt-0">
+            {/* Art Progress Toggle — always visible immediately */}
+            <div>
               <ArtProgressToggle
                 mode={viewMode}
                 onToggle={setViewMode}
