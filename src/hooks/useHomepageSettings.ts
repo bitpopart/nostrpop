@@ -171,7 +171,7 @@ export function useHomepageSettings() {
               const p = parsed as HomepageSettings;
               sections = p.sections || [];
               buttons = p.buttons || DEFAULT_BUTTONS;
-              defaultView = p.defaultView ?? 'grid';
+              defaultView = p.defaultView ?? 'gallery';
               gridTiles = p.gridTiles;
             } else {
               sections = DEFAULT_SECTIONS;
@@ -221,7 +221,7 @@ export function useHomepageSettings() {
       return {
         sections: DEFAULT_SECTIONS.sort((a, b) => a.order - b.order),
         buttons: DEFAULT_BUTTONS,
-        defaultView: 'grid',
+        defaultView: 'gallery',
         gridTiles: [],
       } as HomepageSettings;
     },
