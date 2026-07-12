@@ -690,10 +690,9 @@ const Index = () => {
   const author = useAuthor(ADMIN_HEX);
   const metadata: NostrMetadata | undefined = author.data?.metadata;
   
-  // View mode — derive directly from settings so the very first render is
-  // always correct. homepageSettings is available synchronously from the
-  // TanStack Query cache on revisits, so useState(() => ...) reads it immediately.
-  // userOverride tracks manual toggles; null means "follow settings".
+  // View mode — derived directly so the first render is always correct.
+  // When TanStack Query has cached settings, defaultView is known immediately.
+  // userOverride is only set when the user manually clicks the toggle.
   const [userOverride, setUserOverride] = useState<HomepageView | null>(null);
   const viewMode: HomepageView = userOverride ?? homepageSettings?.defaultView ?? 'gallery';
   const setViewMode = (mode: HomepageView) => setUserOverride(mode);
@@ -1719,6 +1718,8 @@ const Index = () => {
 
         {/* Conditional Content Based on View Mode */}
         {settingsLoading && !homepageSettings && (
+          /* Settings still loading on cold start — show a skeleton so the
+             page isn't blank until the relay responds and sections appear. */
           <HomepageSectionsSkeleton />
         )}
 
