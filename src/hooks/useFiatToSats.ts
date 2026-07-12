@@ -1,7 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
 
-const CORS_PROXY = 'https://proxy.shakespeare.diy/?url=';
-
 const SUPPORTED_CURRENCIES = ['USD', 'EUR', 'GBP', 'SGD', 'CAD', 'AUD', 'JPY', 'CHF'];
 
 export function useFiatToSats(price: number, currency: string) {
@@ -21,9 +19,9 @@ export function useFiatToSats(price: number, currency: string) {
       }
 
       try {
-        const url = `https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=${normalizedCurrency.toLowerCase()}`;
+        // Fetch directly — CoinGecko is accessible from the browser without a proxy
         const response = await fetch(
-          CORS_PROXY + encodeURIComponent(url),
+          `https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=${normalizedCurrency.toLowerCase()}`,
           { signal }
         );
 
