@@ -1,167 +1,150 @@
-import { useFearGreedIndex, STATE_COLORS, STATE_DEFAULT_EMOJI, STATE_LABELS } from '@/hooks/useFearGreedIndex';
+import { useFearGreedIndex, STATE_DEFAULT_EMOJI, STATE_LABELS } from '@/hooks/useFearGreedIndex';
 import type { FearGreedEntry, FearGreedState } from '@/hooks/useFearGreedIndex';
 import { useFearGreedMeterImages } from '@/hooks/useFearGreedMeter';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
 import { TrendingDown, TrendingUp, Minus, RefreshCw, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-// ─── Semicircular Gauge ────────────────────────────────────────────────────────
+// ─── State config ─────────────────────────────────────────────────────────────
 
-interface GaugeProps {
-  value: number; // 0–100
-  state: FearGreedState;
+const STATE_CONFIG: Record<FearGreedState, { label: string; arcColor: string; textColor: string; badgeBg: string }> = {
+  'extreme-fear': { label: 'Extreme Fear',  arcColor: '#ef4444', textColor: '#ef4444', badgeBg: 'bg-red-500' },
+  'fear':         { label: 'Fear',          arcColor: '#f97316', textColor: '#f97316', badgeBg: 'bg-orange-500' },
+  'neutral':      { label: 'Neutral',       arcColor: '#eab308', textColor: '#eab308', badgeBg: 'bg-yellow-500' },
+  'greed':        { label: 'Greed',         arcColor: '#84cc16', textColor: '#84cc16', badgeBg: 'bg-lime-500' },
+  'extreme-greed':{ label: 'Extreme Greed', arcColor: '#22c55e', textColor: '#22c55e', badgeBg: 'bg-green-500' },
+};
+
+function stateColor(v: number): string {
+  if (v <= 24) return '#ef4444';
+  if (v <= 44) return '#f97316';
+  if (v <= 55) return '#eab308';
+  if (v <= 74) return '#84cc16';
+  return '#22c55e';
 }
 
-function GaugeSvg({ value, state }: GaugeProps) {
-  const colors = STATE_COLORS[state];
+// ─── Semicircular Gauge ────────────────────────────────────────────────────────
 
-  // Arc math — half-circle gauge
-  const R = 90;
-  const CX = 110;
-  const CY = 108;
+function GaugeSvg({ value, state }: { value: number; state: FearGreedState }) {
+  // Geometry
+  const W = 280, H = 160;
+  const CX = W / 2, CY = H - 20;
+  const R = 100;
+  const STROKE = 20;
+  const GAP = 4; // gap between segments in degrees
 
-  // Convert 0–100 → angle on half circle (180° = 0, 0° = 100)
-  const angle = 180 - (value / 100) * 180; // degrees from left
-  const rad = (angle * Math.PI) / 180;
-  const needleX = CX + R * Math.cos(rad);
-  const needleY = CY - R * Math.sin(rad);
-
-  // Zone colours (left to right: red → orange → yellow → lime → green)
-  const zones = [
-    { from: 180, to: 144, color: '#ef4444' },   // 0–20 extreme fear
-    { from: 144, to: 108, color: '#f97316' },   // 20–40 fear
-    { from: 108, to: 72, color: '#eab308' },    // 40–60 neutral
-    { from: 72, to: 36, color: '#84cc16' },     // 60–80 greed
-    { from: 36, to: 0, color: '#22c55e' },      // 80–100 extreme greed
+  // Segments: [startDeg, endDeg, color]  — 0° = right, 180° = left
+  const segs: [number, number, string][] = [
+    [0,   36,  '#22c55e'],
+    [36,  72,  '#84cc16'],
+    [72,  108, '#eab308'],
+    [108, 144, '#f97316'],
+    [144, 180, '#ef4444'],
   ];
 
-  function arcPath(startDeg: number, endDeg: number) {
-    const s = (startDeg * Math.PI) / 180;
-    const e = (endDeg * Math.PI) / 180;
-    const x1 = CX + R * Math.cos(Math.PI - s);
-    const y1 = CY - R * Math.sin(Math.PI - s);
-    const x2 = CX + R * Math.cos(Math.PI - e);
-    const y2 = CY - R * Math.sin(Math.PI - e);
-    return `M ${x1} ${y1} A ${R} ${R} 0 0 1 ${x2} ${y2}`;
+  function polarToXY(deg: number, r: number) {
+    const rad = (deg * Math.PI) / 180;
+    return { x: CX - r * Math.cos(rad), y: CY - r * Math.sin(rad) };
   }
 
-  return (
-    <svg viewBox="0 0 220 125" className="w-full max-w-xs mx-auto">
-      {/* Track background */}
-      <path
-        d={`M ${CX - R} ${CY} A ${R} ${R} 0 0 1 ${CX + R} ${CY}`}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="18"
-        className="text-muted-foreground/10"
-        strokeLinecap="round"
-      />
+  function segPath(fromDeg: number, toDeg: number, r: number, sw: number) {
+    const f = polarToXY(fromDeg + GAP / 2, r);
+    const t = polarToXY(toDeg - GAP / 2, r);
+    const large = toDeg - fromDeg - GAP > 180 ? 1 : 0;
+    const ri = r - sw / 2;
+    const ro = r + sw / 2;
+    const fi = polarToXY(fromDeg + GAP / 2, ri);
+    const ti = polarToXY(toDeg - GAP / 2, ri);
+    const fo = polarToXY(fromDeg + GAP / 2, ro);
+    const to2 = polarToXY(toDeg - GAP / 2, ro);
+    return `M ${fo.x} ${fo.y} A ${ro} ${ro} 0 ${large} 0 ${to2.x} ${to2.y}
+            L ${ti.x} ${ti.y} A ${ri} ${ri} 0 ${large} 1 ${fi.x} ${fi.y} Z`;
+  }
 
-      {/* Coloured zone arcs */}
-      {zones.map((z, i) => (
-        <path
-          key={i}
-          d={arcPath(z.from, z.to)}
-          fill="none"
-          stroke={z.color}
-          strokeWidth="18"
-          strokeLinecap={i === 0 ? 'round' : i === zones.length - 1 ? 'round' : 'butt'}
-          opacity="0.35"
-        />
+  // Needle angle: value 0 → 180° (left/Extreme Fear), value 100 → 0° (right/Extreme Greed)
+  const needleDeg = 180 - (value / 100) * 180;
+  const needleTip = polarToXY(needleDeg, R - 4);
+  const activeColor = stateColor(value);
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full max-w-sm mx-auto" style={{ overflow: 'visible' }}>
+      {/* Background arc segments (dimmed) */}
+      {segs.map(([from, to, col], i) => (
+        <path key={i} d={segPath(from, to, R, STROKE)} fill={col} opacity="0.18" />
       ))}
 
-      {/* Active filled arc from left end (extreme fear) to current value */}
-      {value > 0 && (
-        <path
-          d={arcPath(180, 180 - (value / 100) * 180)}
-          fill="none"
-          stroke={
-            state === 'extreme-fear' ? '#ef4444'
-            : state === 'fear' ? '#f97316'
-            : state === 'neutral' ? '#eab308'
-            : state === 'greed' ? '#84cc16'
-            : '#22c55e'
-          }
-          strokeWidth="18"
-          strokeLinecap="round"
-          opacity="0.9"
-        />
-      )}
+      {/* Active filled arc from 180° (Fear) to needleDeg */}
+      {value > 0 && (() => {
+        const fromDeg = needleDeg;
+        const toDeg = 180;
+        const f = polarToXY(fromDeg, R);
+        const t = polarToXY(toDeg, R);
+        const large = toDeg - fromDeg > 180 ? 1 : 0;
+        return (
+          <path
+            d={`M ${f.x} ${f.y} A ${R} ${R} 0 ${large} 0 ${t.x} ${t.y}`}
+            fill="none"
+            stroke={activeColor}
+            strokeWidth={STROKE}
+            strokeLinecap="round"
+            opacity="0.9"
+          />
+        );
+      })()}
 
-      {/* Zone labels */}
-      <text x="14" y={CY + 18} fontSize="8" fill="#ef4444" fontWeight="600" opacity="0.8">Extreme<tspan x="10" dy="9">Fear</tspan></text>
-      <text x={CX - 8} y="14" fontSize="8" fill="#eab308" fontWeight="600" opacity="0.8" textAnchor="middle">Neutral</text>
-      <text x={CX * 2 - 8} y={CY + 18} fontSize="8" fill="#22c55e" fontWeight="600" opacity="0.8" textAnchor="end">Extreme<tspan x={CX * 2 - 8} dy="9">Greed</tspan></text>
+      {/* Bright segment outlines for current zone */}
+      {segs.map(([from, to, col], i) => {
+        const midVal = ((i) / 5) * 100 + 10;
+        const isActive =
+          (i === 0 && value > 75) ||
+          (i === 1 && value > 55 && value <= 75) ||
+          (i === 2 && value > 44 && value <= 55) ||
+          (i === 3 && value > 24 && value <= 44) ||
+          (i === 4 && value <= 24);
+        if (!isActive) return null;
+        return <path key={`a${i}`} d={segPath(from, to, R, STROKE)} fill={col} opacity="0.9" />;
+      })}
 
+      {/* Zone label ticks */}
+      {['Extreme\nFear', '', 'Neutral', '', 'Extreme\nGreed'].map((lbl, i) => {
+        if (!lbl) return null;
+        const deg = i * 45;
+        const p = polarToXY(deg, R + STROKE + 12);
+        const lines = lbl.split('\n');
+        return (
+          <text key={i} x={p.x} y={p.y} textAnchor="middle" fontSize="9" fontWeight="600" fill={segs[4 - i]?.[2] ?? '#888'} opacity="0.75">
+            {lines.map((l, j) => <tspan key={j} x={p.x} dy={j === 0 ? 0 : 10}>{l}</tspan>)}
+          </text>
+        );
+      })}
+
+      {/* Needle shadow */}
+      <line x1={CX} y1={CY} x2={needleTip.x + 1} y2={needleTip.y + 1} stroke="rgba(0,0,0,0.25)" strokeWidth="4" strokeLinecap="round" />
       {/* Needle */}
-      <line
-        x1={CX}
-        y1={CY}
-        x2={needleX}
-        y2={needleY}
-        stroke="white"
-        strokeWidth="3"
-        strokeLinecap="round"
-        opacity="0.95"
-      />
-      {/* Needle pivot */}
-      <circle cx={CX} cy={CY} r="7" fill="white" opacity="0.95" />
-      <circle cx={CX} cy={CY} r="4" fill={
-        state === 'extreme-fear' ? '#ef4444'
-        : state === 'fear' ? '#f97316'
-        : state === 'neutral' ? '#eab308'
-        : state === 'greed' ? '#84cc16'
-        : '#22c55e'
-      } />
-
-      {/* Value text */}
-      <text
-        x={CX}
-        y={CY - 18}
-        textAnchor="middle"
-        fontSize="26"
-        fontWeight="900"
-        fill="white"
-        opacity="0.95"
-      >
-        {value}
-      </text>
+      <line x1={CX} y1={CY} x2={needleTip.x} y2={needleTip.y} stroke="white" strokeWidth="3.5" strokeLinecap="round" />
+      {/* Pivot */}
+      <circle cx={CX} cy={CY} r="9" fill="white" />
+      <circle cx={CX} cy={CY} r="5.5" fill={activeColor} />
     </svg>
   );
 }
 
-// ─── History mini-bar ──────────────────────────────────────────────────────────
+// ─── History bar ──────────────────────────────────────────────────────────────
 
-interface HistoryBarProps {
-  entry: FearGreedEntry;
-  isToday?: boolean;
-}
-
-function HistoryBar({ entry, isToday }: HistoryBarProps) {
-  const colors = STATE_COLORS[entry.state];
+function HistoryBar({ entry, isToday }: { entry: FearGreedEntry; isToday?: boolean }) {
+  const color = stateColor(entry.value);
   const date = new Date(entry.timestamp * 1000);
   const label = isToday ? 'Today' : date.toLocaleDateString('en-US', { weekday: 'short' });
 
-  const barColor =
-    entry.state === 'extreme-fear' ? 'bg-red-500'
-    : entry.state === 'fear' ? 'bg-orange-500'
-    : entry.state === 'neutral' ? 'bg-yellow-500'
-    : entry.state === 'greed' ? 'bg-lime-500'
-    : 'bg-green-500';
-
   return (
     <div className="flex flex-col items-center gap-1">
-      {/* bar */}
-      <div className="w-7 h-20 rounded-md bg-muted/30 relative overflow-hidden flex items-end">
+      <div className="w-8 h-20 rounded-lg bg-orange-100 dark:bg-orange-950/30 relative overflow-hidden flex items-end">
         <div
-          className={`w-full rounded-md transition-all duration-700 ${barColor}`}
-          style={{ height: `${entry.value}%`, opacity: isToday ? 1 : 0.6 }}
+          className="w-full rounded-lg transition-all duration-700"
+          style={{ height: `${entry.value}%`, backgroundColor: color, opacity: isToday ? 1 : 0.65 }}
         />
       </div>
-      {/* value */}
-      <span className={`text-[10px] font-bold ${colors.text}`}>{entry.value}</span>
-      {/* day */}
+      <span className="text-[11px] font-bold" style={{ color }}>{entry.value}</span>
       <span className={`text-[9px] text-muted-foreground ${isToday ? 'font-bold' : ''}`}>{label}</span>
     </div>
   );
@@ -172,7 +155,7 @@ function HistoryBar({ entry, isToday }: HistoryBarProps) {
 function TrendIcon({ current, previous }: { current: number; previous: number }) {
   const diff = current - previous;
   if (diff > 2) return <TrendingUp className="h-4 w-4 text-green-500" />;
-  if (diff < -2) return <TrendingDown className="h-4 w-4 text-red-500" />;
+  if (diff < -2) return <TrendingDown className="h-4 w-4 text-red-400" />;
   return <Minus className="h-4 w-4 text-muted-foreground" />;
 }
 
@@ -184,11 +167,11 @@ export function FearGreedDashboard() {
 
   if (isLoading) {
     return (
-      <div className="max-w-3xl mx-auto space-y-4">
-        <Skeleton className="h-8 w-64 mx-auto" />
-        <Skeleton className="h-64 w-full rounded-2xl" />
-        <div className="grid grid-cols-7 gap-2">
-          {[...Array(7)].map((_, i) => <Skeleton key={i} className="h-28 rounded-xl" />)}
+      <div className="space-y-4">
+        <Skeleton className="h-8 w-56 mx-auto rounded-xl" />
+        <Skeleton className="h-72 w-full rounded-2xl" />
+        <div className="flex justify-center gap-2">
+          {[...Array(7)].map((_, i) => <Skeleton key={i} className="h-28 w-8 rounded-lg" />)}
         </div>
       </div>
     );
@@ -196,7 +179,7 @@ export function FearGreedDashboard() {
 
   if (isError || !data) {
     return (
-      <div className="max-w-sm mx-auto text-center py-8 space-y-3">
+      <div className="text-center py-8 space-y-3">
         <p className="text-muted-foreground text-sm">Could not load Fear &amp; Greed Index.</p>
         <Button variant="outline" size="sm" onClick={() => refetch()} className="gap-1.5">
           <RefreshCw className="h-3.5 w-3.5" />
@@ -207,30 +190,34 @@ export function FearGreedDashboard() {
   }
 
   const { current, history } = data;
-  const colors = STATE_COLORS[current.state];
+  const cfg = STATE_CONFIG[current.state];
   const yesterdayEntry = history[1];
   const customImage = meterImages[current.state];
   const emoji = STATE_DEFAULT_EMOJI[current.state];
+  const activeColor = stateColor(current.value);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
+
       {/* ── Header ── */}
-      <div className="text-center space-y-1">
+      <div className="text-center">
         <div className="flex items-center justify-center gap-2">
-          <h2 className="text-xl font-black tracking-tight">Bitcoin Fear &amp; Greed Index</h2>
+          <h2 className="text-2xl font-black tracking-tight text-foreground">
+            Bitcoin Fear &amp; Greed Index
+          </h2>
           <Button
             variant="ghost"
             size="icon"
-            className="h-6 w-6"
+            className="h-7 w-7 text-muted-foreground hover:text-orange-500"
             onClick={() => refetch()}
             disabled={isFetching}
             title="Refresh"
           >
-            <RefreshCw className={`h-3 w-3 ${isFetching ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? 'animate-spin' : ''}`} />
           </Button>
         </div>
-        <p className="text-xs text-muted-foreground">
-          Live from{' '}
+        <p className="text-xs text-muted-foreground mt-1">
+          Live · Updated daily ·{' '}
           <a
             href="https://alternative.me/crypto/fear-and-greed-index/"
             target="_blank"
@@ -238,111 +225,119 @@ export function FearGreedDashboard() {
             className="underline decoration-dotted hover:text-orange-400 inline-flex items-center gap-0.5"
           >
             alternative.me
-            <ExternalLink className="h-2.5 w-2.5" />
+            <ExternalLink className="h-2.5 w-2.5 ml-0.5" />
           </a>
-          {' '}· Updated daily
         </p>
       </div>
 
-      {/* ── Main card ── */}
-      <div className={`rounded-2xl border-2 ${colors.border} ${colors.bg} p-6 grid md:grid-cols-2 gap-6 items-center`}>
+      {/* ── Main card — bright orange Bitcoin theme ── */}
+      <div className="rounded-2xl border-2 border-orange-200 dark:border-orange-700 bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/40 dark:to-amber-950/30 overflow-hidden shadow-lg shadow-orange-100 dark:shadow-orange-900/20">
 
-        {/* Left: Gauge + emoji image */}
-        <div className="flex flex-col items-center gap-4">
-          {/* Emoji / custom image */}
-          <div className="relative">
+        <div className="p-6 grid md:grid-cols-2 gap-6 items-center">
+
+          {/* ── Left: gauge + emoji ── */}
+          <div className="flex flex-col items-center gap-2">
+            {/* Emoji / custom image */}
             {customImage ? (
-              <img
-                src={customImage}
-                alt={STATE_LABELS[current.state]}
-                className="w-28 h-28 object-contain drop-shadow-lg"
-              />
+              <img src={customImage} alt={cfg.label} className="w-24 h-24 object-contain drop-shadow-lg" />
             ) : (
-              <span className="text-7xl leading-none drop-shadow-lg select-none">{emoji}</span>
+              <span className="text-6xl leading-none drop-shadow-lg select-none">{emoji}</span>
             )}
-          </div>
 
-          {/* Gauge */}
-          <div className="w-full">
+            {/* Gauge */}
             <GaugeSvg value={current.value} state={current.state} />
           </div>
-        </div>
 
-        {/* Right: Info */}
-        <div className="space-y-4 text-center md:text-left">
-          {/* Big label */}
-          <div>
-            <Badge className={`text-sm font-bold px-4 py-1.5 border-0 bg-gradient-to-r ${colors.gradient} text-white shadow mb-2`}>
-              {STATE_LABELS[current.state]}
-            </Badge>
-            <p className="text-5xl font-black mt-2 tabular-nums" style={{
-              background: current.state === 'extreme-fear' ? 'linear-gradient(135deg,#ef4444,#dc2626)'
-                : current.state === 'fear' ? 'linear-gradient(135deg,#f97316,#ea580c)'
-                : current.state === 'neutral' ? 'linear-gradient(135deg,#eab308,#ca8a04)'
-                : current.state === 'greed' ? 'linear-gradient(135deg,#84cc16,#65a30d)'
-                : 'linear-gradient(135deg,#22c55e,#16a34a)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}>
-              {current.value}
-              <span className="text-2xl font-semibold">/100</span>
-            </p>
-          </div>
+          {/* ── Right: number, label, trend ── */}
+          <div className="space-y-4 text-center md:text-left">
 
-          {/* Yesterday comparison */}
-          {yesterdayEntry && (
-            <div className="flex items-center gap-2 justify-center md:justify-start">
-              <TrendIcon current={current.value} previous={yesterdayEntry.value} />
-              <span className="text-sm text-muted-foreground">
-                Yesterday: <span className="font-semibold text-foreground">{yesterdayEntry.value}</span>
-                {' '}({STATE_LABELS[yesterdayEntry.state]})
-              </span>
+            {/* Big number */}
+            <div>
+              <p
+                className="text-7xl font-black tabular-nums leading-none"
+                style={{ color: activeColor }}
+              >
+                {current.value}
+                <span className="text-3xl font-semibold text-muted-foreground">/100</span>
+              </p>
             </div>
-          )}
 
-          {/* Interpretation */}
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            {current.state === 'extreme-fear' && 'Investors are extremely fearful — historically a potential buying opportunity.'}
-            {current.state === 'fear' && 'Fear dominates the market — sentiment is bearish. Patience may be rewarded.'}
-            {current.state === 'neutral' && 'The market is balanced between fear and greed. Proceed with a clear strategy.'}
-            {current.state === 'greed' && 'Greed is rising — markets may be overheating. Consider taking profits carefully.'}
-            {current.state === 'extreme-greed' && 'Extreme greed! Markets may be due for a correction. Caution is advised.'}
-          </p>
+            {/* State badge */}
+            <span
+              className="inline-block px-4 py-1.5 rounded-full text-base font-black text-white shadow"
+              style={{ backgroundColor: activeColor }}
+            >
+              {cfg.label}
+            </span>
 
-          {/* Scale guide */}
-          <div className="text-xs text-muted-foreground space-y-0.5">
-            <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" />0–24 Extreme Fear</div>
-            <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-orange-500 inline-block" />25–44 Fear</div>
-            <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-yellow-500 inline-block" />45–55 Neutral</div>
-            <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-lime-500 inline-block" />56–74 Greed</div>
-            <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block" />75–100 Extreme Greed</div>
+            {/* Yesterday */}
+            {yesterdayEntry && (
+              <div className="flex items-center gap-2 justify-center md:justify-start">
+                <TrendIcon current={current.value} previous={yesterdayEntry.value} />
+                <span className="text-sm text-muted-foreground">
+                  Yesterday: <span className="font-bold text-foreground">{yesterdayEntry.value}</span>
+                  <span className="text-xs ml-1">({STATE_LABELS[yesterdayEntry.state]})</span>
+                </span>
+              </div>
+            )}
+
+            {/* Interpretation */}
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              {current.state === 'extreme-fear' && 'Bitcoin holders are extremely fearful — historically one of the best times to accumulate.'}
+              {current.state === 'fear' && 'Fear dominates — Bitcoin sentiment is bearish. Those who stay patient are often rewarded.'}
+              {current.state === 'neutral' && 'Bitcoin sentiment is balanced. A calm market often precedes the next big move.'}
+              {current.state === 'greed' && 'Greed is building — Bitcoin may be overheating short-term. Stay focused on the long game.'}
+              {current.state === 'extreme-greed' && 'Extreme greed! Bitcoin latecomers may be piling in. A pullback is possible — zoom out.'}
+            </p>
+
+            {/* Scale legend */}
+            <div className="grid grid-cols-1 gap-0.5 text-xs text-muted-foreground">
+              {([
+                ['#ef4444', '0–24', 'Extreme Fear'],
+                ['#f97316', '25–44', 'Fear'],
+                ['#eab308', '45–55', 'Neutral'],
+                ['#84cc16', '56–74', 'Greed'],
+                ['#22c55e', '75–100', 'Extreme Greed'],
+              ] as [string, string, string][]).map(([col, range, lbl]) => (
+                <div key={lbl} className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: col }} />
+                  <span style={{ color: col === '#eab308' ? undefined : undefined }}>{range} — {lbl}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
+
+        {/* ── 7-day history strip ── */}
+        {history.length > 1 && (
+          <div className="px-6 pb-6">
+            <p className="text-xs font-bold text-orange-700 dark:text-orange-400 uppercase tracking-widest mb-3 text-center">
+              7-Day Snapshot
+            </p>
+            <div className="flex items-end justify-center gap-2.5">
+              {[...history].reverse().map((entry, i) => (
+                <HistoryBar
+                  key={entry.timestamp}
+                  entry={entry}
+                  isToday={i === history.length - 1}
+                />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* ── 7-day history bars ── */}
-      {history.length > 1 && (
-        <div>
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3 text-center">7-Day History</p>
-          <div className="flex items-end justify-center gap-2">
-            {[...history].reverse().map((entry, i) => (
-              <HistoryBar
-                key={entry.timestamp}
-                entry={entry}
-                isToday={i === history.length - 1}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ── What is F&G ── */}
-      <div className="rounded-xl border border-orange-200 dark:border-orange-800 bg-orange-50/50 dark:bg-orange-950/10 p-4 text-sm">
-        <p className="font-bold text-foreground mb-1">What is the Fear &amp; Greed Index?</p>
+      {/* ── What is the Bitcoin F&G Index ── */}
+      <div className="rounded-xl border border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-950/20 p-5 text-sm space-y-2">
+        <p className="font-black text-base text-foreground flex items-center gap-2">
+          <span>₿</span> What is the Bitcoin Fear &amp; Greed Index?
+        </p>
         <p className="text-muted-foreground leading-relaxed">
-          The Crypto Fear &amp; Greed Index measures market sentiment on a scale of 0 (Extreme Fear) to 100 (Extreme Greed).
-          It aggregates volatility, market momentum, social media, surveys, Bitcoin dominance, and search trends.
-          Warren Buffett's famous saying applies: <em>"Be fearful when others are greedy and greedy when others are fearful."</em>
+          The Bitcoin Fear &amp; Greed Index measures market sentiment on a scale of <strong>0 (Extreme Fear)</strong> to <strong>100 (Extreme Greed)</strong>.
+          It combines Bitcoin price volatility, momentum, social media signals, market dominance, and Google search trends to give you a single number that reflects how the Bitcoin market feels right now.
+        </p>
+        <p className="text-muted-foreground leading-relaxed">
+          Warren Buffett's timeless principle applies: <em className="text-foreground font-medium">"Be fearful when others are greedy, and greedy when others are fearful."</em>
         </p>
       </div>
     </div>
