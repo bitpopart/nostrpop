@@ -352,10 +352,7 @@ export function FearGreedDashboard() {
           The Bitcoin Fear &amp; Greed Index measures market sentiment on a scale of <strong>0 (Extreme Fear)</strong> to <strong>100 (Extreme Greed)</strong>.
           It combines Bitcoin price volatility, momentum, social media signals, market dominance, and Google search trends to give you a single number that reflects how the Bitcoin market feels right now.
         </p>
-        <p className="text-muted-foreground leading-relaxed">
-          Warren Buffett's timeless principle applies:{' '}
-          <em className="text-foreground font-medium">"Be fearful when others are greedy, and greedy when others are fearful."</em>
-        </p>
+
       </div>
     </div>
   );
