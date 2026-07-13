@@ -55,13 +55,17 @@ function GaugeSvg({ value }: { value: number }) {
     };
   }
 
-  // Draw an arc path from angleDeg1 → angleDeg2 (going counter-clockwise, i.e. left to right on screen)
+  // Draw an arc from angle a1 → a2.
+  // Our angles go 180° (left) → 0° (right), decreasing.
+  // In SVG: x = CX + R·cos, y = CY - R·sin, so going from 180°→0° means
+  // x increases left→right and y traces the TOP of the circle.
+  // sweep-flag=1 = clockwise in SVG screen space = correct top half-circle.
   function arcPath(a1: number, a2: number, r = R) {
     const p1 = pt(a1, r);
     const p2 = pt(a2, r);
-    // sweep-flag=0 means counter-clockwise in SVG (which is visually left→right for our half-circle)
-    const large = Math.abs(a2 - a1) > 180 ? 1 : 0;
-    return `M ${p1.x} ${p1.y} A ${r} ${r} 0 ${large} 0 ${p2.x} ${p2.y}`;
+    const large = Math.abs(a1 - a2) > 180 ? 1 : 0;
+    // sweep-flag 1 = clockwise = top semicircle when going from left-point to right-point
+    return `M ${p1.x} ${p1.y} A ${r} ${r} 0 ${large} 1 ${p2.x} ${p2.y}`;
   }
 
   // The 5 colour zones, each 36° wide, left→right = Fear→Greed
@@ -85,17 +89,17 @@ function GaugeSvg({ value }: { value: number }) {
       className="w-full max-w-[280px] mx-auto"
       style={{ overflow: 'visible' }}
     >
-      {/* ── Dimmed track background ── */}
+      {/* ── Grey track background — single full half-circle ── */}
       <path
         d={arcPath(180, 0)}
         fill="none"
-        stroke="#e5e7eb"
+        stroke="#d1d5db"
         strokeWidth={SW}
-        strokeLinecap="round"
-        opacity="0.5"
+        strokeLinecap="butt"
+        opacity="0.4"
       />
 
-      {/* ── Coloured zone segments (dim) ── */}
+      {/* ── Coloured zone segments — butt caps so they tile flush ── */}
       {zones.map((z, i) => (
         <path
           key={i}
@@ -103,12 +107,12 @@ function GaugeSvg({ value }: { value: number }) {
           fill="none"
           stroke={z.color}
           strokeWidth={SW}
-          opacity="0.22"
-          strokeLinecap={i === 0 ? 'round' : i === zones.length - 1 ? 'round' : 'butt'}
+          opacity="0.28"
+          strokeLinecap="butt"
         />
       ))}
 
-      {/* ── Active arc: from 180° (left) up to the needle angle ── */}
+      {/* ── Active arc: from 180° (left) up to needle angle — on top of dim zones ── */}
       {value > 0 && (
         <path
           d={arcPath(180, needleDeg)}
@@ -116,7 +120,7 @@ function GaugeSvg({ value }: { value: number }) {
           stroke={color}
           strokeWidth={SW}
           strokeLinecap="round"
-          opacity="0.95"
+          opacity="1"
         />
       )}
 
