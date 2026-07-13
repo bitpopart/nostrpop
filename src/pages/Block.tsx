@@ -112,7 +112,9 @@ function ShareBlockDialog({ block, dataUrl, open, onClose }: ShareBlockDialogPro
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
 
-  const defaultMsg = `Bitcoin Block #${block.height.toLocaleString()} ⛏️\n\n${block.tx_count.toLocaleString()} transactions · mined ${timeAgo(block.timestamp)}${block.extras?.pool?.name ? `\nPool: ${block.extras.pool.name}` : ''}${block.extras?.totalFees != null ? `\nFees: ${(block.extras.totalFees / 100_000_000).toFixed(5)} BTC` : ''}\n\nhttps://mempool.space/block/${block.id}\n\n#Bitcoin #Block${block.height}`;
+  const footer = `\n\nhttps://bitpopart.com/block\n\n#Bitcoin #Block${block.height} #bitpopart #nostr`;
+
+  const defaultMsg = `Bitcoin Block #${block.height.toLocaleString()} ⛏️\n\n${block.tx_count.toLocaleString()} transactions · mined ${timeAgo(block.timestamp)}${block.extras?.pool?.name ? `\nPool: ${block.extras.pool.name}` : ''}${block.extras?.totalFees != null ? `\nFees: ${(block.extras.totalFees / 100_000_000).toFixed(5)} BTC` : ''}\n\nhttps://mempool.space/block/${block.id}`;
 
   const [msg, setMsg] = useState('');
 
@@ -142,12 +144,19 @@ function ShareBlockDialog({ block, dataUrl, open, onClose }: ShareBlockDialogPro
   }, [open, dataUrl, user]);
 
   const handlePublish = () => {
-    const content = (msg.trim() || defaultMsg) + (uploadedImageUrl ? `\n\n${uploadedImageUrl}` : '');
+    // Always: user's custom text (if any) + block info + footer + image
+    const body = msg.trim()
+      ? `${msg.trim()}\n\n${defaultMsg}`
+      : defaultMsg;
+    const content = body + footer + (uploadedImageUrl ? `\n\n${uploadedImageUrl}` : '');
 
     const tags: string[][] = [
       ['r', `https://mempool.space/block/${block.id}`],
+      ['r', 'https://bitpopart.com/block'],
       ['t', 'bitcoin'],
       ['t', 'block'],
+      ['t', 'bitpopart'],
+      ['t', 'nostr'],
     ];
 
     if (uploadedImageUrl) {
@@ -208,13 +217,20 @@ function ShareBlockDialog({ block, dataUrl, open, onClose }: ShareBlockDialogPro
             </div>
           )}
 
-          <Textarea
-            rows={6}
-            placeholder={defaultMsg}
-            value={msg}
-            onChange={e => setMsg(e.target.value)}
-            className="text-sm resize-none"
-          />
+          <div className="space-y-1.5">
+            <Textarea
+              rows={4}
+              placeholder="Add your own message… (optional)"
+              value={msg}
+              onChange={e => setMsg(e.target.value)}
+              className="text-sm resize-none"
+            />
+            {/* Always-appended block info + footer preview */}
+            <div className="rounded-lg bg-muted/50 border border-border px-3 py-2 text-xs text-muted-foreground whitespace-pre-wrap leading-relaxed select-none">
+              {defaultMsg}{footer}
+            </div>
+            <p className="text-[10px] text-muted-foreground pl-1">↑ This is always included in your post</p>
+          </div>
 
           <div className="flex gap-2 justify-end">
             <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
