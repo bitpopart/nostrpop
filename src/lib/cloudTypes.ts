@@ -1,12 +1,13 @@
 /**
  * Cloud private space types.
  *
- * SECURITY MODEL — AES-256-GCM, localStorage only:
- * ══════════════════════════════════════════════════
+ * SECURITY MODEL — AES-256-GCM, IndexedDB + localStorage:
+ * ══════════════════════════════════════════════════════════
  * - A random 256-bit AES-GCM master key is generated once and stored in
  *   localStorage. It NEVER leaves the browser.
  * - The HTML is encrypted in-browser and stored as base64 ciphertext in
- *   localStorage. Nothing is ever uploaded to a public server.
+ *   IndexedDB (hundreds of MB quota vs the old ~5 MB localStorage limit).
+ * - Tiny metadata (app list, users, session) stays in localStorage.
  * - To use apps on another browser: export a .bpcloud backup file from the
  *   Admin → Cloud tab and import it on the other browser.
  * - Sessions expire after 8 hours.
@@ -25,6 +26,8 @@ export interface CloudApp {
   description?: string;
   /** Optional public thumbnail image URL (just a preview, not sensitive) */
   thumbnailUrl?: string;
+  /** Optional solid background colour for the thumbnail area */
+  thumbnailColor?: string;
   order?: number;
   createdAt: string;
   /** Original plaintext size in bytes (for display) */
@@ -37,46 +40,24 @@ const CLOUD_USERS_KEY   = 'bitpopart:cloud:users';
 const CLOUD_APPS_KEY    = 'bitpopart:cloud:apps';
 const CLOUD_SESSION_KEY = 'bitpopart:cloud:session';
 
-/** Encrypted (AES-256-GCM) ciphertext stored as base64 */
-function encKey(appId: string) { return `bitpopart:cloud:enc:${appId}`; }
-/** Plaintext HTML cache for instant load (derived from enc on first open) */
-function htmlKey(appId: string) { return `bitpopart:cloud:html:${appId}`; }
+// ── Large binary blobs → IndexedDB ────────────────────────────────────────────
+// Re-export the async IDB functions under the same names used throughout the app
+// so callers only need to add `await`.
 
-// ── Encrypted storage ─────────────────────────────────────────────────────────
+export {
+  saveEncryptedAppData,
+  loadEncryptedAppData,
+  loadEncryptedAppDataSync,
+  deleteEncryptedAppData,
+  cacheCloudAppHtml,
+  loadCachedCloudAppHtml,
+  deleteCachedCloudAppHtml,
+  clearAllCloudAppCaches,
+  getCloudIDBUsageBytes,
+  migrateCloudDataToIDB,
+} from './cloudIDB';
 
-/** Save base64 ciphertext. Returns false on quota exceeded. */
-export function saveEncryptedAppData(appId: string, b64: string): boolean {
-  try { localStorage.setItem(encKey(appId), b64); return true; }
-  catch { return false; }
-}
-
-/** Load base64 ciphertext. Returns null if not found. */
-export function loadEncryptedAppData(appId: string): string | null {
-  return localStorage.getItem(encKey(appId));
-}
-
-/** Remove encrypted data (on app delete). */
-export function deleteEncryptedAppData(appId: string): void {
-  localStorage.removeItem(encKey(appId));
-}
-
-// ── Plaintext HTML cache ───────────────────────────────────────────────────────
-
-/** Cache plaintext for instant load. Returns false on quota exceeded (non-fatal). */
-export function cacheCloudAppHtml(appId: string, html: string): boolean {
-  try { localStorage.setItem(htmlKey(appId), html); return true; }
-  catch { return false; }
-}
-
-export function loadCachedCloudAppHtml(appId: string): string | null {
-  return localStorage.getItem(htmlKey(appId));
-}
-
-export function deleteCachedCloudAppHtml(appId: string): void {
-  localStorage.removeItem(htmlKey(appId));
-}
-
-// ── Cloud apps helpers ────────────────────────────────────────────────────────
+// ── Cloud apps helpers (localStorage — tiny metadata only) ────────────────────
 
 export function loadCloudApps(): CloudApp[] {
   try {

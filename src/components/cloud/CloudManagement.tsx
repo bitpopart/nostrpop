@@ -2,16 +2,18 @@
  * CloudManagement — Admin UI for the /admin → Cloud tab.
  *
  * SECURITY: HTML is AES-256-GCM encrypted in-browser and stored as base64
- * in localStorage. Nothing is ever uploaded to a public server.
+ * in IndexedDB (large quota). Nothing is ever uploaded to a public server.
  * Cross-browser access: export a .bpcloud backup file and import on other browser.
  */
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   loadCloudApps, saveCloudApps, makeCloudAppId,
-  saveEncryptedAppData, loadEncryptedAppData, deleteEncryptedAppData,
-  cacheCloudAppHtml, deleteCachedCloudAppHtml,
+  saveEncryptedAppData, loadEncryptedAppData, loadEncryptedAppDataSync,
+  deleteEncryptedAppData,
+  cacheCloudAppHtml, deleteCachedCloudAppHtml, clearAllCloudAppCaches,
+  getCloudIDBUsageBytes, migrateCloudDataToIDB,
   loadCloudUsers, saveCloudUsers, createCloudUser,
   formatBytes,
   type CloudApp, type CloudUser,
@@ -33,6 +35,7 @@ import {
   FileCode, Eye, EyeOff, MoveUp, MoveDown, KeyRound, User,
   ImageIcon, Pencil, Check, AlertTriangle, Lock, ShieldCheck,
   Copy, Download, RefreshCw, ExternalLink, HardDrive, PackageOpen,
+  Database,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -142,6 +145,62 @@ function KeyManager() {
   );
 }
 
+// ─── Storage Usage ────────────────────────────────────────────────────────────
+
+function StorageUsageBar({ onClearCaches }: { onClearCaches: () => Promise<void> }) {
+  const [usage, setUsage] = useState<{ enc: number; cache: number } | null>(null);
+  const [clearing, setClearing] = useState(false);
+
+  useEffect(() => {
+    getCloudIDBUsageBytes().then(setUsage).catch(() => null);
+  }, []);
+
+  const handleClear = async () => {
+    setClearing(true);
+    await onClearCaches();
+    const fresh = await getCloudIDBUsageBytes().catch(() => null);
+    setUsage(fresh);
+    setClearing(false);
+  };
+
+  if (!usage) return null;
+
+  const total = usage.enc + usage.cache;
+
+  return (
+    <Card className="border-slate-200 dark:border-slate-700">
+      <CardContent className="py-4 space-y-3">
+        <div className="flex items-center justify-between text-sm">
+          <span className="font-medium flex items-center gap-1.5">
+            <Database className="h-4 w-4 text-slate-500" /> IndexedDB storage (Cloud apps)
+          </span>
+          <span className="font-mono text-xs text-muted-foreground">
+            {formatBytes(total)} used
+          </span>
+        </div>
+        <div className="flex items-center justify-between flex-wrap gap-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-3">
+            <span>🔒 Encrypted apps: <strong>{formatBytes(usage.enc)}</strong></span>
+            {usage.cache > 0 && <span>📄 Plaintext cache: <strong>{formatBytes(usage.cache)}</strong></span>}
+          </div>
+          {usage.cache > 0 && (
+            <Button variant="outline" size="sm" onClick={handleClear} disabled={clearing}
+              className="h-7 text-xs border-amber-300 text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20">
+              {clearing
+                ? <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Clearing…</>
+                : <><Trash2 className="h-3 w-3 mr-1" /> Clear caches ({formatBytes(usage.cache)})</>}
+            </Button>
+          )}
+        </div>
+        <div className="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 dark:bg-emerald-900/10 dark:border-emerald-800 px-3 py-2 text-xs text-emerald-800 dark:text-emerald-300">
+          <Database className="h-3.5 w-3.5 shrink-0 mt-0.5 text-emerald-600" />
+          <span>Stored in IndexedDB — capacity is hundreds of MB (no more 5 MB limit).</span>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 // ─── App Form ─────────────────────────────────────────────────────────────────
 
 interface AppFormProps {
@@ -156,18 +215,20 @@ function AppForm({ initial, onSave, onCancel, uploadFile }: AppFormProps) {
   const [description, setDescription] = useState(initial?.description ?? '');
   const [thumbnailUrl, setThumbnailUrl] = useState(initial?.thumbnailUrl ?? '');
   const [uploadingThumb, setUploadingThumb] = useState(false);
-  const [htmlContent, setHtmlContent] = useState<string>(() => {
-    if (initial?.id) return loadCachedCloudAppHtml_local(initial.id) ?? '';
-    return '';
-  });
+  const [htmlContent, setHtmlContent] = useState('');
+  const [htmlLoading, setHtmlLoading] = useState(!!initial?.id);
   const [htmlFileName, setHtmlFileName] = useState('');
   const htmlRef = useRef<HTMLInputElement>(null);
   const thumbRef = useRef<HTMLInputElement>(null);
 
-  // Load from cache for editing
-  function loadCachedCloudAppHtml_local(id: string): string | null {
-    return localStorage.getItem(`bitpopart:cloud:html:${id}`);
-  }
+  // Load cached HTML for editing
+  useEffect(() => {
+    if (!initial?.id) return;
+    loadCachedCloudAppHtml(initial.id)
+      .then(html => { if (html) setHtmlContent(html); })
+      .catch(() => null)
+      .finally(() => setHtmlLoading(false));
+  }, [initial?.id]);
 
   const handleHtmlPick = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -209,7 +270,7 @@ function AppForm({ initial, onSave, onCancel, uploadFile }: AppFormProps) {
     <div className="space-y-5">
       <div className="flex items-start gap-2 rounded-lg border border-green-200 bg-green-50 dark:bg-green-900/10 dark:border-green-800 px-4 py-3 text-xs text-green-800 dark:text-green-300">
         <Lock className="h-3.5 w-3.5 shrink-0 mt-0.5 text-green-600" />
-        <span><strong>AES-256-GCM encrypted.</strong> Your HTML is encrypted in-browser and stored locally — never uploaded to any public server.</span>
+        <span><strong>AES-256-GCM encrypted.</strong> Your HTML is encrypted in-browser and stored in IndexedDB — never uploaded to any public server.</span>
       </div>
 
       <div className="space-y-1.5">
@@ -225,10 +286,15 @@ function AppForm({ initial, onSave, onCancel, uploadFile }: AppFormProps) {
       <div className="space-y-2">
         <Label className="flex items-center gap-1.5">
           <FileCode className="h-4 w-4 text-purple-500" /> HTML File *
-          <span className="text-xs font-normal text-muted-foreground ml-1">(encrypted + stored locally)</span>
+          <span className="text-xs font-normal text-muted-foreground ml-1">(encrypted + stored in IndexedDB)</span>
         </Label>
         <input ref={htmlRef} type="file" accept=".html,.htm" className="hidden" onChange={handleHtmlPick} />
-        {htmlContent ? (
+        {htmlLoading ? (
+          <div className="flex items-center gap-2 p-3 rounded-lg border border-slate-200 bg-slate-50 dark:bg-slate-800/30">
+            <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
+            <span className="text-xs text-muted-foreground">Loading existing HTML…</span>
+          </div>
+        ) : htmlContent ? (
           <div className="flex items-center gap-2 p-3 rounded-lg border border-green-200 bg-green-50 dark:bg-green-900/10 dark:border-green-800">
             <Check className="h-4 w-4 text-green-600 shrink-0" />
             <div className="flex-1 min-w-0">
@@ -248,7 +314,7 @@ function AppForm({ initial, onSave, onCancel, uploadFile }: AppFormProps) {
             </div>
             <div>
               <p className="font-semibold text-sm">Click to choose your HTML file</p>
-              <p className="text-xs text-muted-foreground mt-1">Encrypted in-browser · stored locally · no server upload</p>
+              <p className="text-xs text-muted-foreground mt-1">Encrypted in-browser · stored in IndexedDB · no server upload</p>
             </div>
             <Button type="button" variant="outline" size="sm"><FileCode className="h-4 w-4 mr-2" /> Choose .html file</Button>
           </div>
@@ -300,7 +366,7 @@ function BackupRestore({ apps }: { apps: CloudApp[] }) {
       const masterKey = await exportMasterKeyB64();
       const appData: Record<string, string> = {};
       for (const app of apps) {
-        const enc = loadEncryptedAppData(app.id);
+        const enc = await loadEncryptedAppData(app.id);
         if (enc) appData[app.id] = enc;
       }
       const backup = {
@@ -339,23 +405,18 @@ function BackupRestore({ apps }: { apps: CloudApp[] }) {
       const newApps = (backup.apps as CloudApp[]).filter(a => !existingIds.has(a.id));
       saveCloudApps([...existing, ...newApps].map((a, i) => ({ ...a, order: a.order ?? i + 1 })));
 
-      // Free up plaintext caches before importing encrypted data
-      for (const a of existing) deleteCachedCloudAppHtml(a.id);
-      for (const a of newApps)  deleteCachedCloudAppHtml(a.id);
-
-      // Import encrypted data
+      // Import encrypted data into IndexedDB
       let count = 0;
-      let skipped = 0;
+      let failed = 0;
       for (const [appId, enc] of Object.entries(backup.appData ?? {})) {
-        const ok = saveEncryptedAppData(appId, enc as string);
-        if (ok) { count++; } else { skipped++; }
+        const ok = await saveEncryptedAppData(appId, enc as string);
+        if (ok) { count++; } else { failed++; }
       }
 
-      const msg = skipped > 0
-        ? `Imported ${newApps.length} app(s) · ${count} files stored · ${skipped} skipped (storage full)`
+      const msg = failed > 0
+        ? `Imported ${newApps.length} app(s) · ${count} files stored · ${failed} failed`
         : `Imported ${newApps.length} app(s) with ${count} encrypted file(s)`;
       toast.success(msg, { id: tid });
-      // Reload page so the new apps appear
       setTimeout(() => window.location.reload(), 1000);
     } catch (e) {
       toast.error('Import failed: ' + String(e), { id: tid });
@@ -392,79 +453,6 @@ function BackupRestore({ apps }: { apps: CloudApp[] }) {
   );
 }
 
-// ─── Storage Usage ────────────────────────────────────────────────────────────
-
-function getLocalStorageUsageBytes(): number {
-  let total = 0;
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i) ?? '';
-    const val = localStorage.getItem(key) ?? '';
-    total += key.length + val.length;
-  }
-  return total * 2; // UTF-16 chars → bytes (approximate)
-}
-
-function getCloudStorageBytes(): { enc: number; cache: number } {
-  let enc = 0;
-  let cache = 0;
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i) ?? '';
-    const val = localStorage.getItem(key) ?? '';
-    const bytes = (key.length + val.length) * 2;
-    if (key.startsWith('bitpopart:cloud:enc:')) enc += bytes;
-    else if (key.startsWith('bitpopart:cloud:html:')) cache += bytes;
-  }
-  return { enc, cache };
-}
-
-function StorageUsageBar({ onClearCaches }: { onClearCaches: () => void }) {
-  const QUOTA = 5 * 1024 * 1024; // 5 MB typical browser quota
-  const total = getLocalStorageUsageBytes();
-  const { enc, cache } = getCloudStorageBytes();
-  const pct = Math.min(100, Math.round((total / QUOTA) * 100));
-  const color = pct > 85 ? 'bg-red-500' : pct > 65 ? 'bg-amber-500' : 'bg-emerald-500';
-
-  return (
-    <Card className="border-slate-200 dark:border-slate-700">
-      <CardContent className="py-4 space-y-3">
-        <div className="flex items-center justify-between text-sm">
-          <span className="font-medium flex items-center gap-1.5">
-            <HardDrive className="h-4 w-4 text-slate-500" /> localStorage usage
-          </span>
-          <span className={`font-mono text-xs ${pct > 85 ? 'text-red-600 font-bold' : 'text-muted-foreground'}`}>
-            ~{formatBytes(total)} / ~5 MB ({pct}%)
-          </span>
-        </div>
-        <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden">
-          <div className={`${color} h-2 rounded-full transition-all`} style={{ width: `${pct}%` }} />
-        </div>
-        <div className="flex items-center justify-between flex-wrap gap-2 text-xs text-muted-foreground">
-          <div className="flex items-center gap-3">
-            <span>🔒 Encrypted apps: <strong>{formatBytes(enc)}</strong></span>
-            {cache > 0 && <span>📄 Plaintext cache: <strong>{formatBytes(cache)}</strong></span>}
-          </div>
-          {cache > 0 && (
-            <Button variant="outline" size="sm" onClick={onClearCaches}
-              className="h-7 text-xs border-amber-300 text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20">
-              <Trash2 className="h-3 w-3 mr-1" /> Clear caches ({formatBytes(cache)})
-            </Button>
-          )}
-        </div>
-        {pct > 75 && (
-          <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-900/10 dark:border-amber-800 px-3 py-2 text-xs text-amber-800 dark:text-amber-300">
-            <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5 text-amber-600" />
-            <span>
-              {pct > 85
-                ? 'Storage is nearly full — adding apps may fail. Clear caches or delete an existing app to free space.'
-                : 'Storage is getting full. Clearing caches frees space without losing any encrypted app data.'}
-            </span>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
 // ─── Apps Section ─────────────────────────────────────────────────────────────
 
 function CloudAppsSection() {
@@ -473,52 +461,43 @@ function CloudAppsSection() {
   const [apps, setApps] = useState<CloudApp[]>(() => loadCloudApps());
   const [isCreating, setIsCreating] = useState(false);
   const [editingApp, setEditingApp] = useState<CloudApp | null>(null);
-  const [storageVersion, setStorageVersion] = useState(0); // bump to re-render usage bar
+  const [storageVersion, setStorageVersion] = useState(0);
+
+  // Run one-time migration from localStorage → IndexedDB
+  useEffect(() => {
+    const ids = loadCloudApps().map(a => a.id);
+    migrateCloudDataToIDB(ids).catch(() => null);
+  }, []);
 
   const persist = (next: CloudApp[]) => {
     const ordered = next.map((a, i) => ({ ...a, order: i + 1 }));
-    saveCloudApps(ordered); setApps(ordered);
+    saveCloudApps(ordered);
+    setApps(ordered);
     setStorageVersion(v => v + 1);
   };
 
-  const handleClearCaches = () => {
-    const currentApps = loadCloudApps();
-    let cleared = 0;
-    for (const a of currentApps) {
-      if (localStorage.getItem(`bitpopart:cloud:html:${a.id}`)) {
-        deleteCachedCloudAppHtml(a.id);
-        cleared++;
-      }
-    }
+  const handleClearCaches = useCallback(async () => {
+    const cleared = await clearAllCloudAppCaches();
     setStorageVersion(v => v + 1);
     toast.success(cleared > 0 ? `Cleared plaintext caches for ${cleared} app(s)` : 'No caches to clear');
-  };
+  }, []);
 
   const handleSave = async (app: CloudApp, html: string) => {
     const tid = toast.loading('Encrypting…');
     try {
-      // Encrypt → base64 → localStorage (no server upload)
       const b64 = await encryptToB64(html);
 
-      // Before saving, free up space by purging ALL plaintext HTML caches.
-      // These are just a load-speed optimisation and are fully re-derivable from
-      // the encrypted data, so it's safe to clear them when storage is tight.
-      const currentApps = loadCloudApps();
-      for (const a of currentApps) {
-        deleteCachedCloudAppHtml(a.id);
-      }
-
-      let ok = saveEncryptedAppData(app.id, b64);
+      const ok = await saveEncryptedAppData(app.id, b64);
       if (!ok) {
-        // Still failing even after clearing caches — storage is genuinely full.
-        toast.error(
-          'Storage quota exceeded even after clearing caches. Delete a large app to free space.',
-          { id: tid },
-        );
+        toast.error('Failed to save — IndexedDB write error. Check browser storage permissions.', { id: tid });
         return;
       }
-      // Try to cache plaintext for instant open (non-fatal if it fails)
-      cacheCloudAppHtml(app.id, html);
+
+      // Set flag so list can show "stored" badge without an extra async lookup
+      localStorage.setItem(`bitpopart:cloud:enc-flag:${app.id}`, '1');
+
+      // Cache plaintext for instant open (non-fatal if it fails)
+      await cacheCloudAppHtml(app.id, html).catch(() => null);
 
       if (editingApp) {
         persist(apps.map(a => a.id === app.id ? app : a));
@@ -527,16 +506,17 @@ function CloudAppsSection() {
         persist([...apps, { ...app, order: apps.length + 1 }]);
         toast.success('App encrypted & saved ✓', { id: tid });
       }
-      setIsCreating(false); setEditingApp(null);
+      setIsCreating(false);
+      setEditingApp(null);
     } catch (e) {
       toast.error('Failed: ' + String(e).slice(0, 100), { id: tid });
     }
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (!confirm('Delete this app? This cannot be undone.')) return;
-    deleteEncryptedAppData(id);
-    deleteCachedCloudAppHtml(id);
+    await deleteEncryptedAppData(id);
+    await deleteCachedCloudAppHtml(id);
     persist(apps.filter(a => a.id !== id));
     toast.success('App removed');
   };
@@ -562,7 +542,7 @@ function CloudAppsSection() {
                 <Cloud className="h-5 w-5 text-purple-600" /> Cloud Apps
               </CardTitle>
               <CardDescription>
-                HTML apps are <strong>AES-256-GCM encrypted</strong> and stored locally in your browser — no server upload.
+                HTML apps are <strong>AES-256-GCM encrypted</strong> and stored in IndexedDB — no server upload, no 5 MB limit.
               </CardDescription>
             </div>
             <div className="flex items-center gap-2 shrink-0">
@@ -603,7 +583,8 @@ function CloudAppsSection() {
           ) : (
             <div className="space-y-3">
               {apps.map((app, index) => {
-                const hasData = !!loadEncryptedAppData(app.id);
+                // Use synchronous flag for UI (avoids async in render)
+                const hasData = loadEncryptedAppDataSync(app.id);
                 return (
                   <div key={app.id} className="flex items-center gap-4 p-4 rounded-xl border hover:bg-accent/40 transition-colors">
                     {app.thumbnailUrl ? (
@@ -621,7 +602,7 @@ function CloudAppsSection() {
                           <Lock className="h-2.5 w-2.5 mr-1" /> AES-256-GCM
                         </Badge>
                         {hasData
-                          ? <Badge variant="outline" className="text-xs border-blue-300 text-blue-700 dark:text-blue-400"><HardDrive className="h-2.5 w-2.5 mr-1" />Stored locally</Badge>
+                          ? <Badge variant="outline" className="text-xs border-blue-300 text-blue-700 dark:text-blue-400"><Database className="h-2.5 w-2.5 mr-1" />IndexedDB</Badge>
                           : <Badge variant="outline" className="text-xs border-red-300 text-red-600"><AlertTriangle className="h-2.5 w-2.5 mr-1" />Missing data</Badge>
                         }
                         {app.htmlSize && <Badge variant="secondary" className="text-xs">{formatBytes(app.htmlSize)}</Badge>}

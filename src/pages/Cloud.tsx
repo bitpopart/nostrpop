@@ -10,7 +10,7 @@ import { useCloudAuth } from '@/hooks/useCloudAuth';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import {
   loadCloudApps, loadCachedCloudAppHtml, cacheCloudAppHtml,
-  loadEncryptedAppData, type CloudApp,
+  loadEncryptedAppData, migrateCloudDataToIDB, type CloudApp,
 } from '@/lib/cloudTypes';
 import { decryptFromB64 } from '@/lib/cloudCrypto';
 import {
@@ -259,12 +259,14 @@ export default function CloudPage() {
     if (isAdmin && !isLoggedIn) adminAutoLogin();
   }, [isAdmin, isLoggedIn, adminAutoLogin]);
 
-  // Load app list once authenticated
+  // Load app list once authenticated + run one-time IDB migration
   useEffect(() => {
-    if (isLoggedIn) {
-      setApps(loadCloudApps());
-      setLoadingApps(false);
-    }
+    if (!isLoggedIn) return;
+    const apps = loadCloudApps();
+    setApps(apps);
+    setLoadingApps(false);
+    // Migrate any old localStorage blobs into IndexedDB silently
+    migrateCloudDataToIDB(apps.map(a => a.id)).catch(() => null);
   }, [isLoggedIn]);
 
   // Revoke old blob URL when switching apps or going back
@@ -282,12 +284,12 @@ export default function CloudPage() {
     try {
       let html: string | null = null;
 
-      // 1. Plaintext cache → instant
-      html = loadCachedCloudAppHtml(app.id);
+      // 1. Plaintext cache → instant (async IDB read)
+      html = await loadCachedCloudAppHtml(app.id);
 
-      // 2. Decrypt from localStorage
+      // 2. Decrypt from IndexedDB
       if (!html) {
-        const b64 = loadEncryptedAppData(app.id);
+        const b64 = await loadEncryptedAppData(app.id);
         if (!b64) {
           toast.error('App data not found. Re-upload the HTML file in Admin → Cloud.');
           return;
@@ -298,7 +300,8 @@ export default function CloudPage() {
           toast.error('Decryption failed. Check the master key in Admin → Cloud → Encryption Key.');
           return;
         }
-        cacheCloudAppHtml(app.id, html);
+        // Cache plaintext for next open (non-fatal)
+        cacheCloudAppHtml(app.id, html).catch(() => null);
       }
 
       // Revoke previous blob
