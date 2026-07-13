@@ -339,14 +339,22 @@ function BackupRestore({ apps }: { apps: CloudApp[] }) {
       const newApps = (backup.apps as CloudApp[]).filter(a => !existingIds.has(a.id));
       saveCloudApps([...existing, ...newApps].map((a, i) => ({ ...a, order: a.order ?? i + 1 })));
 
+      // Free up plaintext caches before importing encrypted data
+      for (const a of existing) deleteCachedCloudAppHtml(a.id);
+      for (const a of newApps)  deleteCachedCloudAppHtml(a.id);
+
       // Import encrypted data
       let count = 0;
+      let skipped = 0;
       for (const [appId, enc] of Object.entries(backup.appData ?? {})) {
-        saveEncryptedAppData(appId, enc as string);
-        count++;
+        const ok = saveEncryptedAppData(appId, enc as string);
+        if (ok) { count++; } else { skipped++; }
       }
 
-      toast.success(`Imported ${newApps.length} app(s) with ${count} encrypted file(s)`, { id: tid });
+      const msg = skipped > 0
+        ? `Imported ${newApps.length} app(s) · ${count} files stored · ${skipped} skipped (storage full)`
+        : `Imported ${newApps.length} app(s) with ${count} encrypted file(s)`;
+      toast.success(msg, { id: tid });
       // Reload page so the new apps appear
       setTimeout(() => window.location.reload(), 1000);
     } catch (e) {
@@ -384,6 +392,79 @@ function BackupRestore({ apps }: { apps: CloudApp[] }) {
   );
 }
 
+// ─── Storage Usage ────────────────────────────────────────────────────────────
+
+function getLocalStorageUsageBytes(): number {
+  let total = 0;
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i) ?? '';
+    const val = localStorage.getItem(key) ?? '';
+    total += key.length + val.length;
+  }
+  return total * 2; // UTF-16 chars → bytes (approximate)
+}
+
+function getCloudStorageBytes(): { enc: number; cache: number } {
+  let enc = 0;
+  let cache = 0;
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i) ?? '';
+    const val = localStorage.getItem(key) ?? '';
+    const bytes = (key.length + val.length) * 2;
+    if (key.startsWith('bitpopart:cloud:enc:')) enc += bytes;
+    else if (key.startsWith('bitpopart:cloud:html:')) cache += bytes;
+  }
+  return { enc, cache };
+}
+
+function StorageUsageBar({ onClearCaches }: { onClearCaches: () => void }) {
+  const QUOTA = 5 * 1024 * 1024; // 5 MB typical browser quota
+  const total = getLocalStorageUsageBytes();
+  const { enc, cache } = getCloudStorageBytes();
+  const pct = Math.min(100, Math.round((total / QUOTA) * 100));
+  const color = pct > 85 ? 'bg-red-500' : pct > 65 ? 'bg-amber-500' : 'bg-emerald-500';
+
+  return (
+    <Card className="border-slate-200 dark:border-slate-700">
+      <CardContent className="py-4 space-y-3">
+        <div className="flex items-center justify-between text-sm">
+          <span className="font-medium flex items-center gap-1.5">
+            <HardDrive className="h-4 w-4 text-slate-500" /> localStorage usage
+          </span>
+          <span className={`font-mono text-xs ${pct > 85 ? 'text-red-600 font-bold' : 'text-muted-foreground'}`}>
+            ~{formatBytes(total)} / ~5 MB ({pct}%)
+          </span>
+        </div>
+        <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden">
+          <div className={`${color} h-2 rounded-full transition-all`} style={{ width: `${pct}%` }} />
+        </div>
+        <div className="flex items-center justify-between flex-wrap gap-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-3">
+            <span>🔒 Encrypted apps: <strong>{formatBytes(enc)}</strong></span>
+            {cache > 0 && <span>📄 Plaintext cache: <strong>{formatBytes(cache)}</strong></span>}
+          </div>
+          {cache > 0 && (
+            <Button variant="outline" size="sm" onClick={onClearCaches}
+              className="h-7 text-xs border-amber-300 text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20">
+              <Trash2 className="h-3 w-3 mr-1" /> Clear caches ({formatBytes(cache)})
+            </Button>
+          )}
+        </div>
+        {pct > 75 && (
+          <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-900/10 dark:border-amber-800 px-3 py-2 text-xs text-amber-800 dark:text-amber-300">
+            <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5 text-amber-600" />
+            <span>
+              {pct > 85
+                ? 'Storage is nearly full — adding apps may fail. Clear caches or delete an existing app to free space.'
+                : 'Storage is getting full. Clearing caches frees space without losing any encrypted app data.'}
+            </span>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 // ─── Apps Section ─────────────────────────────────────────────────────────────
 
 function CloudAppsSection() {
@@ -392,10 +473,25 @@ function CloudAppsSection() {
   const [apps, setApps] = useState<CloudApp[]>(() => loadCloudApps());
   const [isCreating, setIsCreating] = useState(false);
   const [editingApp, setEditingApp] = useState<CloudApp | null>(null);
+  const [storageVersion, setStorageVersion] = useState(0); // bump to re-render usage bar
 
   const persist = (next: CloudApp[]) => {
     const ordered = next.map((a, i) => ({ ...a, order: i + 1 }));
     saveCloudApps(ordered); setApps(ordered);
+    setStorageVersion(v => v + 1);
+  };
+
+  const handleClearCaches = () => {
+    const currentApps = loadCloudApps();
+    let cleared = 0;
+    for (const a of currentApps) {
+      if (localStorage.getItem(`bitpopart:cloud:html:${a.id}`)) {
+        deleteCachedCloudAppHtml(a.id);
+        cleared++;
+      }
+    }
+    setStorageVersion(v => v + 1);
+    toast.success(cleared > 0 ? `Cleared plaintext caches for ${cleared} app(s)` : 'No caches to clear');
   };
 
   const handleSave = async (app: CloudApp, html: string) => {
@@ -403,12 +499,25 @@ function CloudAppsSection() {
     try {
       // Encrypt → base64 → localStorage (no server upload)
       const b64 = await encryptToB64(html);
-      const ok = saveEncryptedAppData(app.id, b64);
+
+      // Before saving, free up space by purging ALL plaintext HTML caches.
+      // These are just a load-speed optimisation and are fully re-derivable from
+      // the encrypted data, so it's safe to clear them when storage is tight.
+      const currentApps = loadCloudApps();
+      for (const a of currentApps) {
+        deleteCachedCloudAppHtml(a.id);
+      }
+
+      let ok = saveEncryptedAppData(app.id, b64);
       if (!ok) {
-        toast.error('Storage quota exceeded. Try removing another app first.', { id: tid });
+        // Still failing even after clearing caches — storage is genuinely full.
+        toast.error(
+          'Storage quota exceeded even after clearing caches. Delete a large app to free space.',
+          { id: tid },
+        );
         return;
       }
-      // Cache plaintext for instant open
+      // Try to cache plaintext for instant open (non-fatal if it fails)
       cacheCloudAppHtml(app.id, html);
 
       if (editingApp) {
@@ -441,6 +550,7 @@ function CloudAppsSection() {
   return (
     <div className="space-y-6">
       <KeyManager />
+      <StorageUsageBar key={storageVersion} onClearCaches={handleClearCaches} />
       <BackupRestore apps={apps} />
 
       {/* Header */}
