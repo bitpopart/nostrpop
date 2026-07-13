@@ -304,18 +304,23 @@ function EditPanel({ character, onSaved, onCancel, defaultCategory }: EditPanelP
     if (files.length === 0) return;
     const fileArray = Array.from(files);
 
+    // Snapshot current existing (non-empty, non-uploading) variant count synchronously
+    const currentGroup = groups[gi];
+    const existingVariants = currentGroup
+      ? currentGroup.variants.filter(v => v.url.trim() || v.uploading)
+      : [];
+    const startIndex = existingVariants.length;
+
     // Append placeholder slots for each file, all marked uploading
     const placeholders: VariantItem[] = fileArray.map(() => ({ url: '', uploading: true }));
-    let startIndex = 0;
     setGroups(prev => prev.map((g, i) => {
       if (i !== gi) return g;
-      // Remove empty trailing slot if present, then append placeholders
       const existing = g.variants.filter(v => v.url.trim() || v.uploading);
-      startIndex = existing.length;
       return { ...g, variants: [...existing, ...placeholders] };
     }));
 
     // Upload all in parallel
+    let successCount = 0;
     await Promise.all(
       fileArray.map(async (file, fi) => {
         const vi = startIndex + fi;
@@ -327,6 +332,7 @@ function EditPanel({ character, onSaved, onCancel, defaultCategory }: EditPanelP
               ? { ...g, variants: g.variants.map((v, j) => j === vi ? { url, uploading: false } : v) }
               : g
           ));
+          successCount++;
         } catch {
           // Mark as failed (empty url, not uploading)
           setGroups(prev => prev.map((g, i) =>
@@ -338,7 +344,12 @@ function EditPanel({ character, onSaved, onCancel, defaultCategory }: EditPanelP
       })
     );
 
-    toast({ title: `${fileArray.length} image${fileArray.length !== 1 ? 's' : ''} uploaded!` });
+    if (successCount > 0) {
+      toast({ title: `${successCount} image${successCount !== 1 ? 's' : ''} uploaded!` });
+    }
+    if (successCount < fileArray.length) {
+      toast({ title: `${fileArray.length - successCount} upload(s) failed`, variant: 'destructive' });
+    }
   };
 
   // ── Submit ──

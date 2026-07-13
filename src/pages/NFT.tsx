@@ -426,17 +426,20 @@ export default function NFTPage() {
 
   const { data: characters, isLoading } = useNFTCharacters();
 
-  // Get unique categories for tabs
-  const categories = characters
-    ? ['all', ...Array.from(new Set(characters.map(c => c.category).filter(Boolean)))]
+  // Exclude 'block' category — those power the /Block page, not the NFT generator
+  const nftCharacters = (characters ?? []).filter(c => c.category !== 'block');
+
+  // Get unique categories for tabs (excluding 'block')
+  const categories = nftCharacters.length > 0
+    ? ['all', ...Array.from(new Set(nftCharacters.map(c => c.category).filter(Boolean)))]
     : ['all'];
 
   const [activeCategory, setActiveCategory] = useState('all');
 
   const filtered =
     activeCategory === 'all'
-      ? (characters ?? [])
-      : (characters ?? []).filter(c => c.category === activeCategory);
+      ? nftCharacters
+      : nftCharacters.filter(c => c.category === activeCategory);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-orange-50 via-white to-pink-50 dark:from-orange-950/20 dark:via-background dark:to-pink-950/20">
@@ -493,7 +496,7 @@ export default function NFTPage() {
                 </div>
               ))}
             </div>
-          ) : !characters || characters.length === 0 ? (
+          ) : nftCharacters.length === 0 ? (
             <div className="max-w-sm mx-auto">
               <Card className="border-dashed">
                 <CardContent className="py-12 px-8 text-center space-y-4">

@@ -18,6 +18,7 @@ import { ZapButton } from '@/components/ZapButton';
 import { getAdminPubkeyHex } from '@/lib/adminUtils';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
+import { useUploadFile } from '@/hooks/useUploadFile';
 import { useToast } from '@/hooks/useToast';
 import { LoginArea } from '@/components/auth/LoginArea';
 import {
@@ -32,6 +33,8 @@ import {
   Hash,
   Activity,
   Cpu,
+  History,
+  Loader2,
 } from 'lucide-react';
 
 const ADMIN_PUBKEY = getAdminPubkeyHex();
@@ -46,6 +49,50 @@ function timeAgo(ts: number): string {
   return `${Math.floor(diff / 86400)}d ago`;
 }
 
+// Convert a data URL to a File blob
+function dataUrlToFile(dataUrl: string, filename: string): File {
+  const [header, base64] = dataUrl.split(',');
+  const mimeMatch = header.match(/:(.*?);/);
+  const mime = mimeMatch ? mimeMatch[1] : 'image/png';
+  const binary = atob(base64);
+  const array = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) array[i] = binary.charCodeAt(i);
+  return new File([array], filename, { type: mime });
+}
+
+// ─── Block History storage ────────────────────────────────────────────────────
+
+interface HistoryEntry {
+  block: BitcoinBlock;
+  dataUrl: string;
+  savedAt: number;
+}
+
+const HISTORY_KEY = 'block-art-history';
+const MAX_HISTORY = 50;
+
+function loadHistory(): HistoryEntry[] {
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    if (!raw) return [];
+    return JSON.parse(raw) as HistoryEntry[];
+  } catch {
+    return [];
+  }
+}
+
+function saveToHistory(entry: HistoryEntry) {
+  try {
+    const existing = loadHistory();
+    // Avoid duplicates by block height
+    const filtered = existing.filter(e => e.block.height !== entry.block.height);
+    const updated = [entry, ...filtered].slice(0, MAX_HISTORY);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
+  } catch {
+    // ignore storage errors
+  }
+}
+
 // ─── Share dialog ─────────────────────────────────────────────────────────────
 
 interface ShareBlockDialogProps {
@@ -58,29 +105,63 @@ interface ShareBlockDialogProps {
 function ShareBlockDialog({ block, dataUrl, open, onClose }: ShareBlockDialogProps) {
   const { user } = useCurrentUser();
   const { toast } = useToast();
-  const { mutate: publish, isPending } = useNostrPublish();
+  const { mutate: publish, isPending: isPublishing } = useNostrPublish();
+  const { mutateAsync: uploadFile } = useUploadFile();
+
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
 
   const defaultMsg = `Bitcoin Block #${block.height.toLocaleString()} ⛏️\n\n${block.tx_count.toLocaleString()} transactions · mined ${timeAgo(block.timestamp)}${block.extras?.pool?.name ? `\nPool: ${block.extras.pool.name}` : ''}${block.extras?.totalFees != null ? `\nFees: ${(block.extras.totalFees / 100_000_000).toFixed(5)} BTC` : ''}\n\nhttps://mempool.space/block/${block.id}\n\n#Bitcoin #Block${block.height}`;
 
   const [msg, setMsg] = useState('');
 
+  // Upload image when dialog opens
+  useEffect(() => {
+    if (!open || !dataUrl || !user) return;
+    let cancelled = false;
+
+    async function uploadArt() {
+      if (!dataUrl) return;
+      setIsUploadingImage(true);
+      setUploadedImageUrl(null);
+      try {
+        const file = dataUrlToFile(dataUrl, `bitcoin-block-${block.height}.png`);
+        const tags = await uploadFile(file);
+        const url = tags[0]?.[1] || '';
+        if (!cancelled && url) setUploadedImageUrl(url);
+      } catch {
+        // silently ignore upload failure — will share without image
+      } finally {
+        if (!cancelled) setIsUploadingImage(false);
+      }
+    }
+
+    uploadArt();
+    return () => { cancelled = true; };
+  }, [open, dataUrl, user]);
+
   const handlePublish = () => {
-    const content = msg.trim() || defaultMsg;
+    const content = (msg.trim() || defaultMsg) + (uploadedImageUrl ? `\n\n${uploadedImageUrl}` : '');
+
+    const tags: string[][] = [
+      ['r', `https://mempool.space/block/${block.id}`],
+      ['t', 'bitcoin'],
+      ['t', 'block'],
+    ];
+
+    if (uploadedImageUrl) {
+      tags.push(['url', uploadedImageUrl]);
+      tags.push(['imeta', `url ${uploadedImageUrl}`, 'm image/png']);
+    }
+
     publish(
-      {
-        kind: 1,
-        content,
-        tags: [
-          ['r', `https://mempool.space/block/${block.id}`],
-          ['t', 'bitcoin'],
-          ['t', 'block'],
-        ],
-      },
+      { kind: 1, content, tags },
       {
         onSuccess: () => {
           toast({ title: 'Shared to Nostr! ⚡', description: `Block #${block.height} posted.` });
           onClose();
           setMsg('');
+          setUploadedImageUrl(null);
         },
         onError: () => toast({ title: 'Failed to share', variant: 'destructive' }),
       }
@@ -88,6 +169,8 @@ function ShareBlockDialog({ block, dataUrl, open, onClose }: ShareBlockDialogPro
   };
 
   if (!user) return null;
+
+  const isPending = isPublishing || isUploadingImage;
 
   return (
     <Dialog open={open} onOpenChange={o => !o && onClose()}>
@@ -106,8 +189,21 @@ function ShareBlockDialog({ block, dataUrl, open, onClose }: ShareBlockDialogPro
           </div>
 
           {dataUrl && (
-            <div className="rounded-xl overflow-hidden border-2 border-orange-200 dark:border-orange-800">
+            <div className="rounded-xl overflow-hidden border-2 border-orange-200 dark:border-orange-800 relative">
               <img src={dataUrl} alt={`Block ${block.height}`} className="w-full" />
+              {isUploadingImage && (
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                  <div className="bg-black/70 text-white text-xs px-3 py-2 rounded-full flex items-center gap-2">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Uploading image…
+                  </div>
+                </div>
+              )}
+              {uploadedImageUrl && !isUploadingImage && (
+                <div className="absolute bottom-2 right-2 bg-green-600/90 text-white text-xs px-2 py-1 rounded-full">
+                  ✓ Image ready
+                </div>
+              )}
             </div>
           )}
 
@@ -127,10 +223,99 @@ function ShareBlockDialog({ block, dataUrl, open, onClose }: ShareBlockDialogPro
               disabled={isPending}
               className="bg-gradient-to-r from-orange-500 to-pink-500 text-white hover:from-orange-600 hover:to-pink-600"
             >
-              {isPending ? 'Publishing…' : 'Publish to Nostr ⚡'}
+              {isPending
+                ? <><Loader2 className="h-3 w-3 mr-1.5 animate-spin" />{isUploadingImage ? 'Uploading…' : 'Publishing…'}</>
+                : 'Publish to Nostr ⚡'
+              }
             </Button>
           </div>
         </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── Block History Dialog ─────────────────────────────────────────────────────
+
+interface BlockHistoryDialogProps {
+  open: boolean;
+  onClose: () => void;
+  onExpand: (dataUrl: string, block: BitcoinBlock) => void;
+}
+
+function BlockHistoryDialog({ open, onClose, onExpand }: BlockHistoryDialogProps) {
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+
+  useEffect(() => {
+    if (open) setHistory(loadHistory());
+  }, [open]);
+
+  const handleDownload = (entry: HistoryEntry) => {
+    const a = document.createElement('a');
+    a.href = entry.dataUrl;
+    a.download = `bitcoin-block-${entry.block.height}.png`;
+    a.click();
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={o => !o && onClose()}>
+      <DialogContent className="max-w-3xl w-full max-h-[85vh] flex flex-col [&>button]:hidden">
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 z-50 bg-black/10 hover:bg-black/20 rounded-full p-1.5 transition-colors"
+        >
+          <X className="h-4 w-4" />
+        </button>
+
+        <div className="flex items-center gap-2 pb-3 border-b shrink-0">
+          <History className="h-5 w-5 text-orange-500" />
+          <h2 className="font-bold text-base">Block History</h2>
+          <Badge variant="secondary" className="text-xs ml-1">{history.length} saved</Badge>
+        </div>
+
+        {history.length === 0 ? (
+          <div className="flex-1 flex items-center justify-center py-12 text-center">
+            <div className="space-y-2">
+              <Bitcoin className="h-10 w-10 text-muted-foreground/30 mx-auto" />
+              <p className="text-muted-foreground text-sm">No block history yet.</p>
+              <p className="text-xs text-muted-foreground/70">Block art images you view will be saved here automatically.</p>
+            </div>
+          </div>
+        ) : (
+          <div className="flex-1 overflow-y-auto">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 p-1">
+              {history.map((entry) => (
+                <div
+                  key={entry.block.height}
+                  className="group relative rounded-xl overflow-hidden border-2 border-transparent hover:border-orange-300 dark:hover:border-orange-700 transition-colors cursor-pointer bg-card"
+                  onClick={() => { onExpand(entry.dataUrl, entry.block); onClose(); }}
+                >
+                  <img
+                    src={entry.dataUrl}
+                    alt={`Block #${entry.block.height}`}
+                    className="w-full aspect-square object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors" />
+                  <Badge className="absolute top-1.5 left-1.5 bg-orange-500 text-white text-xs font-mono font-bold shadow-md">
+                    #{entry.block.height.toLocaleString()}
+                  </Badge>
+                  <button
+                    className="absolute bottom-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity bg-black/70 text-white rounded-full p-1"
+                    onClick={(e) => { e.stopPropagation(); handleDownload(entry); }}
+                    title="Download"
+                  >
+                    <Download className="h-3 w-3" />
+                  </button>
+                  <div className="absolute bottom-1.5 left-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <span className="text-white text-xs bg-black/70 px-1.5 py-0.5 rounded">
+                      {timeAgo(entry.block.timestamp)}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
@@ -163,12 +348,19 @@ function BlockArtCard({ block, layerUrls, onExpand }: BlockArtCardProps) {
       if (!canvas) return;
       try {
         const url = await generateBlockArtWithLayers(canvas, block, layerUrls);
-        if (!cancelled) setDataUrl(url);
+        if (!cancelled) {
+          setDataUrl(url);
+          // Save to history
+          saveToHistory({ block, dataUrl: url, savedAt: Date.now() });
+        }
       } catch {
         // fallback to plain canvas
         try {
           const url = generateBlockArt(canvas, block);
-          if (!cancelled) setDataUrl(url);
+          if (!cancelled) {
+            setDataUrl(url);
+            saveToHistory({ block, dataUrl: url, savedAt: Date.now() });
+          }
         } catch {/* ignore */}
       } finally {
         if (!cancelled) setGenerating(false);
@@ -246,7 +438,7 @@ function BlockArtCard({ block, layerUrls, onExpand }: BlockArtCardProps) {
         </div>
 
         {/* Stats */}
-        <CardContent className="p-3 space-y-2">
+        <CardContent className="p-2 space-y-1.5">
           <div className="grid grid-cols-2 gap-1 text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
               <Activity className="h-3 w-3 text-orange-500 shrink-0" />
@@ -268,8 +460,8 @@ function BlockArtCard({ block, layerUrls, onExpand }: BlockArtCardProps) {
             )}
           </div>
 
-          {/* Actions */}
-          <div className="flex gap-1.5 pt-1">
+          {/* Actions — icon-only row so everything fits */}
+          <div className="flex gap-1 pt-0.5">
             <Button
               size="sm"
               variant="outline"
@@ -282,9 +474,9 @@ function BlockArtCard({ block, layerUrls, onExpand }: BlockArtCardProps) {
             </Button>
 
             <Button
-              size="sm"
+              size="icon"
               variant="outline"
-              className="h-8 px-2"
+              className="h-8 w-8 shrink-0"
               onClick={handleShare}
               title="Share to Nostr"
             >
@@ -296,9 +488,10 @@ function BlockArtCard({ block, layerUrls, onExpand }: BlockArtCardProps) {
               lightningAddress="bitpopart@rizful.com"
               eventTitle={`Bitcoin Block #${block.height}`}
               variant="outline"
-              size="sm"
+              size="icon"
+              showLabel={false}
               alwaysShow
-              className="h-8"
+              className="h-8 w-8 shrink-0"
             />
           </div>
         </CardContent>
@@ -402,6 +595,7 @@ export default function BlockPage() {
   const { character: blockChar, isLoading: charLoading } = useBlockCharacter();
   const [previewBlock, setPreviewBlock] = useState<BitcoinBlock | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   const isLoading = blocksLoading || charLoading;
 
@@ -533,6 +727,21 @@ export default function BlockPage() {
           </div>
         )}
 
+        {/* ── Block History button ── */}
+        {!isLoading && !isError && (
+          <div className="mt-4 flex justify-center">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 border-orange-200 dark:border-orange-800 text-orange-700 dark:text-orange-300 hover:bg-orange-50 dark:hover:bg-orange-950/30"
+              onClick={() => setHistoryOpen(true)}
+            >
+              <History className="h-4 w-4" />
+              Block History
+            </Button>
+          </div>
+        )}
+
         {/* ── Login nudge ── */}
         <div className="mt-8 max-w-lg mx-auto">
           <Card className="border-orange-200 dark:border-orange-800 bg-orange-50/50 dark:bg-orange-950/20">
@@ -647,6 +856,13 @@ export default function BlockPage() {
         block={previewBlock}
         dataUrl={previewUrl}
         onClose={() => { setPreviewBlock(null); setPreviewUrl(null); }}
+      />
+
+      {/* ── Block History dialog ── */}
+      <BlockHistoryDialog
+        open={historyOpen}
+        onClose={() => setHistoryOpen(false)}
+        onExpand={handleExpand}
       />
     </div>
   );
