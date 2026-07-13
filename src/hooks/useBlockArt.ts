@@ -179,16 +179,22 @@ function overlayBlockInfo(
   ctx.lineWidth = 3;
   ctx.strokeRect(bw + 8, bw + 8, S - (bw + 8) * 2, S - (bw + 8) * 2);
 
-  // ── Top strip — "BITCOIN BLOCK"
-  const stripH = 80;
+  // ── Top strip — "BITCOIN BLOCK" + block number
+  const stripH = 100;
   ctx.fillStyle = '#f7931a';
   ctx.globalAlpha = 1;
   ctx.fillRect(bw, bw, S - bw * 2, stripH);
   ctx.fillStyle = '#ffffff';
-  ctx.font = `bold ${stripH * 0.44}px sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText('BITCOIN BLOCK', S / 2, bw + stripH / 2);
+  // Line 1: label
+  ctx.font = `bold ${stripH * 0.32}px sans-serif`;
+  ctx.globalAlpha = 0.85;
+  ctx.fillText('BITCOIN BLOCK', S / 2, bw + stripH * 0.32);
+  ctx.globalAlpha = 1;
+  // Line 2: block number
+  ctx.font = `900 ${stripH * 0.48}px sans-serif`;
+  ctx.fillText(`#${block.height.toLocaleString()}`, S / 2, bw + stripH * 0.72);
 
   // ── Bottom strip — taller to fit 3 lines comfortably
   // Line 1: txs | fees | pool
