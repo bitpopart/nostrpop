@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
+import { FearGreedDashboard } from '@/components/FearGreedDashboard';
 import {
   useRecentBlocks,
   useBlockCharacter,
@@ -848,6 +849,30 @@ export default function BlockPage() {
               </div>
             </CardContent>
           </Card>
+        </div>
+
+        {/* ── Fear & Greed Dashboard ── */}
+        <div className="mt-16 max-w-3xl mx-auto">
+          {/* Section divider */}
+          <div className="flex items-center gap-4 mb-8">
+            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-orange-300 dark:via-orange-700 to-transparent" />
+            <span className="text-orange-500 font-black text-xl">₿</span>
+            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-orange-300 dark:via-orange-700 to-transparent" />
+          </div>
+
+          <FearGreedDashboard />
+
+          {/* ── Motivational text ── */}
+          <div className="mt-10 text-center">
+            <p className="text-xl md:text-3xl font-black leading-snug tracking-tight">
+              <span className="bg-gradient-to-r from-orange-500 via-yellow-400 to-orange-500 bg-clip-text text-transparent">
+                It's never too late to study Bitcoin.
+              </span>
+            </p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Knowledge compounds faster than fear. Every sat of understanding pays dividends. ₿
+            </p>
+          </div>
         </div>
       </div>
 

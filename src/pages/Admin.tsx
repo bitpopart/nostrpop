@@ -53,6 +53,7 @@ import { NFTCharacterAdmin } from '@/components/nft/NFTCharacterAdmin';
 import { MediaGeneratorAdmin } from '@/components/mediagenerator/MediaGeneratorAdmin';
 import { EmojiPacksAdmin } from '@/components/emoji/EmojiPacksAdmin';
 import { CloudManagement } from '@/components/cloud/CloudManagement';
+import { FearGreedMeterAdmin } from '@/components/FearGreedMeterAdmin';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import {
@@ -538,6 +539,14 @@ const Admin = () => {
       action: () => setActiveTab('cloud'),
       badge: '☁️ Cloud'
     },
+    {
+      title: 'Fear & Greed Meter',
+      description: 'Upload custom emoji images for each Bitcoin Fear & Greed state shown on /block',
+      icon: TrendingUp,
+      color: 'from-orange-500 to-yellow-500',
+      action: () => setActiveTab('fear-greed-meter'),
+      badge: '📊 F&G'
+    },
   ];
 
   const statsCards = [
@@ -699,6 +708,12 @@ const Admin = () => {
             >
               <Cloud className="h-3.5 w-3.5" />
               ☁️ Cloud
+            </TabsTrigger>
+            <TabsTrigger
+              value="fear-greed-meter"
+              className="flex items-center gap-1 text-orange-600 dark:text-orange-400 font-semibold"
+            >
+              📊 Fear &amp; Greed
             </TabsTrigger>
           </TabsList>
 
@@ -1416,6 +1431,10 @@ const Admin = () => {
 
           <TabsContent value="cloud">
             <CloudManagement />
+          </TabsContent>
+
+          <TabsContent value="fear-greed-meter">
+            <FearGreedMeterAdmin />
           </TabsContent>
 
         </Tabs>

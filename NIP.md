@@ -1184,6 +1184,51 @@ JSON object with full card metadata:
 
 ---
 
+## Kind 38190 — Bitcoin Fear & Greed Meter Images
+
+Singleton addressable event storing custom emoji/illustration image URLs for each of the 5 Bitcoin Fear & Greed Index states. Published by the admin; displayed publicly on the `/block` page.
+
+### Event Structure
+
+```json
+{
+  "kind": 38190,
+  "content": "",
+  "tags": [
+    ["d", "fear-greed-meter"],
+    ["t", "fear-greed-meter"],
+    ["state", "extreme-fear:<image-url>"],
+    ["state", "fear:<image-url>"],
+    ["state", "neutral:<image-url>"],
+    ["state", "greed:<image-url>"],
+    ["state", "extreme-greed:<image-url>"],
+    ["alt", "Bitcoin Fear & Greed Meter images (BitPopArt)"]
+  ]
+}
+```
+
+### Fields
+
+- **d tag**: Always `"fear-greed-meter"` (singleton — one event replaces the previous)
+- **t tag**: Always `"fear-greed-meter"` for filtering
+- **state tags**: One per Fear & Greed state. Format: `<state-slug>:<image-url>`
+  - `extreme-fear` — value 0–24
+  - `fear` — value 25–44
+  - `neutral` — value 45–55
+  - `greed` — value 56–74
+  - `extreme-greed` — value 75–100
+- **alt**: NIP-31 human-readable description
+
+### Usage
+
+- Admin uploads custom emoji/illustration images for each state in Admin → 📊 Fear & Greed
+- Images are displayed on the `/block` page in the Bitcoin Fear & Greed dashboard
+- The image matching the **current live index state** is displayed prominently in the gauge card
+- If no custom image is uploaded for a state, the default emoji is shown
+- Images are hosted on Blossom servers and referenced by URL
+
+---
+
 ## References
 
 - [NIP-15: Nostr Marketplace](https://github.com/nostr-protocol/nips/blob/master/15.md)
