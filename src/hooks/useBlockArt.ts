@@ -200,41 +200,13 @@ function overlayBlockInfo(
   ctx.textBaseline = 'middle';
   ctx.fillText('BITCOIN BLOCK', S / 2, bw + stripH / 2);
 
-  // ── Giant block number (centred, semi-transparent pill background)
-  const numFontSize = Math.min(S * 0.18, 190);
-  const numY = S * 0.56;
-
-  // Pill background for readability
-  const numText = `#${block.height.toLocaleString()}`;
-  ctx.font = `900 ${numFontSize}px sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  const numW = ctx.measureText(numText).width;
-  const pillPad = 28;
-  const pillH = numFontSize * 1.15;
-  ctx.fillStyle = pal.bg;
-  ctx.globalAlpha = 0.72;
-  const rx = S / 2 - numW / 2 - pillPad;
-  const ry = numY - pillH / 2;
-  ctx.beginPath();
-  ctx.roundRect(rx, ry, numW + pillPad * 2, pillH, pillH * 0.18);
-  ctx.fill();
-  ctx.globalAlpha = 1;
-
-  // Shadow + number
-  ctx.shadowColor = pal.accent;
-  ctx.shadowBlur = 18;
-  ctx.fillStyle = pal.text;
-  ctx.font = `900 ${numFontSize}px sans-serif`;
-  ctx.fillText(numText, S / 2, numY);
-  ctx.shadowBlur = 0;
-
-  // ── Mini hash
+  // ── Mini hash (centered)
   const hashShort = `${block.id.slice(0, 10)}…${block.id.slice(-10)}`;
   ctx.fillStyle = pal.accent;
   ctx.font = `400 ${S * 0.024}px monospace`;
   ctx.textBaseline = 'middle';
-  ctx.fillText(hashShort, S / 2, numY + numFontSize * 0.7);
+  ctx.textAlign = 'center';
+  ctx.fillText(hashShort, S / 2, S * 0.55);
 
   // ── Bottom strip
   const botH = 90;

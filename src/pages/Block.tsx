@@ -233,7 +233,7 @@ function BlockArtCard({ block, layerUrls, onExpand }: BlockArtCardProps) {
           )}
 
           {/* Block height badge */}
-          <Badge className="absolute top-2 left-2 bg-black/70 text-orange-400 border-orange-500/50 text-xs font-mono font-bold">
+          <Badge className="absolute top-2 left-2 bg-orange-500 text-white border-orange-600 text-xs font-mono font-bold shadow-md">
             #{block.height.toLocaleString()}
           </Badge>
 
@@ -559,6 +559,86 @@ export default function BlockPage() {
               A new piece of art. ₿
             </span>
           </p>
+        </div>
+
+        {/* ── BTClock BitPopArt Edition ── */}
+        <div className="mt-12 max-w-3xl mx-auto">
+          <Card className="overflow-hidden border-2 border-orange-300 dark:border-orange-700 bg-gradient-to-br from-orange-50 to-yellow-50 dark:from-orange-950/30 dark:to-yellow-950/20">
+            <CardContent className="p-0">
+              <div className="grid md:grid-cols-2 gap-0">
+                {/* Image side */}
+                <div className="relative overflow-hidden bg-orange-100 dark:bg-orange-900/30">
+                  <img
+                    src="https://btclock.store/storage/2025/11/BTClock-BitPopArt-withframe.jpeg"
+                    alt="BTClock BitPopArt Edition"
+                    className="w-full h-full object-cover min-h-[220px]"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent to-orange-50/40 dark:to-orange-950/40 md:block hidden" />
+                </div>
+
+                {/* Text side */}
+                <div className="p-6 flex flex-col justify-center gap-4">
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Badge className="bg-orange-500 text-white border-orange-600 text-xs font-bold">
+                        Special Edition
+                      </Badge>
+                      <Badge className="bg-yellow-400 text-yellow-900 border-yellow-500 text-xs font-bold">
+                        Physical Art
+                      </Badge>
+                    </div>
+                    <h2 className="text-xl md:text-2xl font-black text-foreground leading-tight">
+                      BTClock <span className="text-orange-500">BitPopArt</span> Edition
+                    </h2>
+                    <p className="text-sm text-muted-foreground mt-1">€200 – €250</p>
+                  </div>
+
+                  <p className="text-sm text-foreground leading-relaxed">
+                    The same pop-art designs generated for every Bitcoin block are printed on the front panel of this physical BTClock. A fully built &amp; tested clock with multiple eInk displays, flashed and ready to use — now in a special edition collaboration with BitPopArt.
+                  </p>
+
+                  <ul className="text-xs text-muted-foreground space-y-1">
+                    <li className="flex items-center gap-1.5">
+                      <span className="text-orange-500 font-bold">●</span>
+                      7 eInk displays showing live Bitcoin data
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <span className="text-orange-500 font-bold">●</span>
+                      BitPopArt art panel — with or without outline
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <span className="text-orange-500 font-bold">●</span>
+                      Optional frontlight · fully open-source firmware
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <span className="text-orange-500 font-bold">●</span>
+                      Built &amp; tested · ships worldwide
+                    </li>
+                  </ul>
+
+                  <div className="flex gap-2 flex-wrap">
+                    <Button
+                      className="bg-orange-500 hover:bg-orange-600 text-white font-bold gap-1.5"
+                      size="sm"
+                      onClick={() => window.open('https://btclock.store/product/btclock-bitpopart/', '_blank')}
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                      Order on BTClock.store
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5 border-orange-300 dark:border-orange-700"
+                      onClick={() => window.open('https://btclock.store', '_blank')}
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                      btclock.store
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
 
