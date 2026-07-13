@@ -115,21 +115,12 @@ export function pickLayersForBlock(
 
 // ─── Canvas Block Art Generator ──────────────────────────────────────────────
 
-/** Colour palette inspired by Bitcoin orange + pop-art */
-const PALETTES = [
-  { bg: '#f7931a', accent: '#ffffff', text: '#1a1a1a', border: '#cc6600' },     // Bitcoin Orange
-  { bg: '#1a1a2e', accent: '#f7931a', text: '#ffffff', border: '#e94560' },     // Dark Bitcoin
-  { bg: '#e94560', accent: '#f7931a', text: '#ffffff', border: '#1a1a2e' },     // Pop Red
-  { bg: '#0f3460', accent: '#e94560', text: '#ffffff', border: '#f7931a' },     // Deep Blue
-  { bg: '#f5f0e8', accent: '#f7931a', text: '#1a1a1a', border: '#d4a017' },     // Cream Bitcoin
-  { bg: '#2d1b69', accent: '#ff6b6b', text: '#ffffff', border: '#f7931a' },     // Purple Night
-  { bg: '#1a3a1a', accent: '#00ff41', text: '#00ff41', border: '#f7931a' },     // Matrix Green
-  { bg: '#ff1493', accent: '#ffffff', text: '#1a1a1a', border: '#f7931a' },     // Pop Pink
-];
+/** Fixed orange palette — all blocks use the Bitcoin orange frame */
+const ORANGE_PALETTE = { bg: '#f7931a', accent: '#ffffff', text: '#ffffff', border: '#f7931a' };
 
-/** Get a deterministic palette index based on block height */
-function getPalette(height: number) {
-  return PALETTES[height % PALETTES.length];
+/** Always returns the orange Bitcoin palette */
+function getPalette(_height: number) {
+  return ORANGE_PALETTE;
 }
 
 /** Helper: draw a halftone dot pattern */
@@ -169,7 +160,7 @@ function overlayBlockInfo(
   ctx: CanvasRenderingContext2D,
   S: number,
   block: BitcoinBlock,
-  pal: typeof PALETTES[0],
+  pal: ReturnType<typeof getPalette>,
 ) {
   const bw = 18;
 
@@ -178,50 +169,43 @@ function overlayBlockInfo(
   drawHalftone(ctx, pal.accent, S);
   ctx.globalAlpha = 1;
 
-  // ── Outer border
-  ctx.strokeStyle = pal.border;
+  // ── Outer orange border
+  ctx.strokeStyle = '#f7931a';
   ctx.lineWidth = bw;
   ctx.strokeRect(bw / 2, bw / 2, S - bw, S - bw);
 
-  // ── Inner accent border
-  ctx.strokeStyle = pal.accent;
+  // ── Inner white accent border
+  ctx.strokeStyle = '#ffffff';
   ctx.lineWidth = 3;
   ctx.strokeRect(bw + 8, bw + 8, S - (bw + 8) * 2, S - (bw + 8) * 2);
 
   // ── Top strip — "BITCOIN BLOCK"
   const stripH = 80;
-  ctx.fillStyle = pal.border;
-  ctx.globalAlpha = 0.88;
-  ctx.fillRect(bw, bw, S - bw * 2, stripH);
+  ctx.fillStyle = '#f7931a';
   ctx.globalAlpha = 1;
-  ctx.fillStyle = pal.accent;
+  ctx.fillRect(bw, bw, S - bw * 2, stripH);
+  ctx.fillStyle = '#ffffff';
   ctx.font = `bold ${stripH * 0.44}px sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText('BITCOIN BLOCK', S / 2, bw + stripH / 2);
 
-  // ── Mini hash (centered)
-  const hashShort = `${block.id.slice(0, 10)}…${block.id.slice(-10)}`;
-  ctx.fillStyle = pal.accent;
-  ctx.font = `400 ${S * 0.024}px monospace`;
-  ctx.textBaseline = 'middle';
-  ctx.textAlign = 'center';
-  ctx.fillText(hashShort, S / 2, S * 0.55);
-
-  // ── Bottom strip
-  const botH = 90;
+  // ── Bottom strip — taller to fit 3 lines comfortably
+  // Line 1: txs | fees | pool
+  // Line 2: timestamp
+  // Line 3: bitpopart.com ⚡ Nostr
+  const botH = 120;
   const botY = S - bw - botH;
-  ctx.fillStyle = pal.border;
-  ctx.globalAlpha = 0.9;
-  ctx.fillRect(bw, botY, S - bw * 2, botH);
+  ctx.fillStyle = '#f7931a';
   ctx.globalAlpha = 1;
+  ctx.fillRect(bw, botY, S - bw * 2, botH);
 
-  // Stats inside bottom strip
+  // Line 1 — stats (txs / fees / pool) — top third of strip
+  const line1Y = botY + botH * 0.22;
   const statFont = `600 ${S * 0.028}px sans-serif`;
   ctx.font = statFont;
-  ctx.fillStyle = pal.accent;
+  ctx.fillStyle = '#ffffff';
   ctx.textBaseline = 'middle';
-  const midBot = botY + botH / 2;
 
   const txLabel = `${block.tx_count.toLocaleString()} txs`;
   const poolLabel = block.extras?.pool?.name ?? '';
@@ -230,34 +214,36 @@ function overlayBlockInfo(
     : '';
 
   ctx.textAlign = 'left';
-  ctx.fillText(txLabel, bw + 20, midBot - S * 0.014);
+  ctx.fillText(txLabel, bw + 20, line1Y);
 
   if (feeLabel) {
     ctx.textAlign = 'center';
-    ctx.fillText(feeLabel, S / 2, midBot - S * 0.014);
+    ctx.fillText(feeLabel, S / 2, line1Y);
   }
 
   if (poolLabel) {
     ctx.textAlign = 'right';
-    ctx.fillText(poolLabel, S - bw - 20, midBot - S * 0.014);
+    ctx.fillText(poolLabel, S - bw - 20, line1Y);
   }
 
-  // Timestamp sub-line
+  // Line 2 — timestamp — middle of strip
+  const line2Y = botY + botH * 0.55;
   const dt = new Date(block.timestamp * 1000).toUTCString().slice(0, 25);
   ctx.font = `400 ${S * 0.022}px monospace`;
-  ctx.fillStyle = pal.accent;
-  ctx.globalAlpha = 0.75;
+  ctx.fillStyle = '#ffffff';
+  ctx.globalAlpha = 0.85;
   ctx.textAlign = 'center';
-  ctx.fillText(dt, S / 2, midBot + S * 0.018);
+  ctx.fillText(dt, S / 2, line2Y);
   ctx.globalAlpha = 1;
 
-  // ── "bitpopart.com ⚡ Nostr" micro-brand
+  // Line 3 — "bitpopart.com ⚡ Nostr" — bottom of strip
+  const line3Y = botY + botH * 0.84;
   ctx.font = `bold ${S * 0.018}px sans-serif`;
-  ctx.fillStyle = pal.accent;
-  ctx.globalAlpha = 0.6;
+  ctx.fillStyle = '#ffffff';
+  ctx.globalAlpha = 0.7;
   ctx.textAlign = 'center';
-  ctx.textBaseline = 'bottom';
-  ctx.fillText('bitpopart.com  ⚡  Nostr', S / 2, S - bw - 6);
+  ctx.textBaseline = 'middle';
+  ctx.fillText('bitpopart.com  ⚡  Nostr', S / 2, line3Y);
   ctx.globalAlpha = 1;
 }
 
