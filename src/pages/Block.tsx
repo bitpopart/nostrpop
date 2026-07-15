@@ -184,7 +184,7 @@ function ShareBlockDialog({ block, dataUrl, open, onClose }: ShareBlockDialogPro
 
   return (
     <Dialog open={open} onOpenChange={o => !o && onClose()}>
-      <DialogContent className="sm:max-w-md [&>button]:hidden">
+      <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col [&>button]:hidden">
         <button
           onClick={onClose}
           className="absolute top-3 right-3 z-50 bg-black/10 hover:bg-black/20 rounded-full p-1.5 transition-colors"
@@ -192,12 +192,14 @@ function ShareBlockDialog({ block, dataUrl, open, onClose }: ShareBlockDialogPro
           <X className="h-4 w-4" />
         </button>
 
-        <div className="space-y-4 pt-2">
-          <div className="flex items-center gap-2">
-            <Bitcoin className="h-5 w-5 text-orange-500" />
-            <h2 className="font-bold text-base">Share Block #{block.height.toLocaleString()} to Nostr</h2>
-          </div>
+        {/* Header — fixed, never scrolls away */}
+        <div className="flex items-center gap-2 shrink-0 pt-2 pr-8">
+          <Bitcoin className="h-5 w-5 text-orange-500" />
+          <h2 className="font-bold text-base">Share Block #{block.height.toLocaleString()} to Nostr</h2>
+        </div>
 
+        {/* Scrollable body */}
+        <div className="flex-1 overflow-y-auto space-y-4 pr-1">
           {dataUrl && (
             <div className="rounded-xl overflow-hidden border-2 border-orange-200 dark:border-orange-800 relative">
               <img src={dataUrl} alt={`Block ${block.height}`} className="w-full" />
@@ -231,21 +233,22 @@ function ShareBlockDialog({ block, dataUrl, open, onClose }: ShareBlockDialogPro
             </div>
             <p className="text-[10px] text-muted-foreground pl-1">↑ This is always included in your post</p>
           </div>
+        </div>
 
-          <div className="flex gap-2 justify-end">
-            <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
-            <Button
-              size="sm"
-              onClick={handlePublish}
-              disabled={isPending}
-              className="bg-gradient-to-r from-orange-500 to-pink-500 text-white hover:from-orange-600 hover:to-pink-600"
-            >
-              {isPending
-                ? <><Loader2 className="h-3 w-3 mr-1.5 animate-spin" />{isUploadingImage ? 'Uploading…' : 'Publishing…'}</>
-                : 'Publish to Nostr ⚡'
-              }
-            </Button>
-          </div>
+        {/* Footer buttons — fixed at the bottom, always visible */}
+        <div className="flex gap-2 justify-end shrink-0 pt-2 border-t border-border">
+          <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
+          <Button
+            size="sm"
+            onClick={handlePublish}
+            disabled={isPending}
+            className="bg-gradient-to-r from-orange-500 to-pink-500 text-white hover:from-orange-600 hover:to-pink-600"
+          >
+            {isPending
+              ? <><Loader2 className="h-3 w-3 mr-1.5 animate-spin" />{isUploadingImage ? 'Uploading…' : 'Publishing…'}</>
+              : 'Publish to Nostr ⚡'
+            }
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
