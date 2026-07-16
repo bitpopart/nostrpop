@@ -3,6 +3,10 @@ import { createRoot } from 'react-dom/client';
 // Import polyfills first
 import './lib/polyfills.ts';
 
+// Run one-time data migrations before anything else mounts
+import { migrateDesigns } from './lib/clientPortal.ts';
+migrateDesigns();
+
 import App from './App.tsx';
 import './index.css';
 

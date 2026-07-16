@@ -1,8 +1,11 @@
 /**
  * DesignSection — shown inside a ClientPortalPage.
  *
- * Admin view  : upload designs, edit title/description/version, delete, see all comments.
- * Client view : browse designs in a gallery, open full-size lightbox, leave comments.
+ * Admin view  : upload designs to Blossom, edit title/description/version, delete.
+ * Client view : browse gallery, open lightbox, leave comments.
+ *
+ * Images are uploaded to Blossom (not stored in localStorage as base64)
+ * so we only store the URL — well within the localStorage quota.
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
@@ -16,7 +19,7 @@ import {
 import {
   Upload, Pencil, Trash2, X, Send, Loader2,
   MessageSquare, ChevronLeft, ChevronRight, ZoomIn,
-  ImagePlus, Check, AlertCircle,
+  ImagePlus, Check, AlertCircle, CloudUpload,
 } from 'lucide-react';
 import {
   getDesigns, saveDesign, deleteDesign, createDesign,
@@ -25,24 +28,17 @@ import {
 } from '@/lib/clientPortal';
 import { useToast } from '@/hooks/useToast';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
+import { useUploadFile } from '@/hooks/useUploadFile';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
 function timeAgo(ms: number): string {
   const s = Math.floor((Date.now() - ms) / 1000);
-  if (s < 60)  return 'just now';
-  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+  if (s < 60)   return 'just now';
+  if (s < 3600)  return `${Math.floor(s / 60)}m ago`;
   if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
   return new Date(ms).toLocaleDateString();
-}
-
-function readFileAsDataUrl(file: File): Promise<string> {
-  return new Promise((res, rej) => {
-    const reader = new FileReader();
-    reader.onload  = () => res(reader.result as string);
-    reader.onerror = rej;
-    reader.readAsDataURL(file);
-  });
 }
 
 // ─── Comment thread ────────────────────────────────────────────────────────────
@@ -72,11 +68,11 @@ function CommentThread({
     setSending(true);
     try {
       addComment({
-        designId: design.id,
-        pageId:   design.pageId,
+        designId:    design.id,
+        pageId:      design.pageId,
         author:      isAdmin ? 'admin' : 'client',
         authorLabel: isAdmin ? 'BitPopArt' : clientLabel,
-        text: trimmed,
+        text:        trimmed,
       });
       setText('');
       refresh();
@@ -85,7 +81,7 @@ function CommentThread({
     }
   };
 
-  const handleDelete = (id: string) => {
+  const handleDeleteComment = (id: string) => {
     if (!isAdmin) return;
     deleteComment(id);
     refresh();
@@ -106,12 +102,11 @@ function CommentThread({
           const isMine = isAdmin ? c.author === 'admin' : c.author === 'client';
           return (
             <div key={c.id} className={`flex gap-2 ${isMine ? 'flex-row-reverse' : 'flex-row'}`}>
-              {/* Avatar bubble */}
               <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5
                 ${c.author === 'admin' ? 'bg-orange-500 text-white' : 'bg-blue-500 text-white'}`}>
                 {c.authorLabel.slice(0, 2).toUpperCase()}
               </div>
-              <div className={`max-w-[75%] group relative ${isMine ? 'items-end' : 'items-start'} flex flex-col`}>
+              <div className={`max-w-[75%] group relative flex flex-col ${isMine ? 'items-end' : 'items-start'}`}>
                 <div className={`rounded-2xl px-3 py-2 text-sm leading-relaxed break-words
                   ${isMine
                     ? 'bg-orange-500 text-white rounded-tr-sm'
@@ -124,7 +119,7 @@ function CommentThread({
                   {isAdmin && (
                     <button
                       className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
-                      onClick={() => handleDelete(c.id)}
+                      onClick={() => handleDeleteComment(c.id)}
                     >
                       <X className="h-3 w-3" />
                     </button>
@@ -201,19 +196,15 @@ function DesignLightbox({
                 {design.version}
               </Badge>
             )}
-            <span className="text-xs text-muted-foreground shrink-0">
-              {idx + 1} / {designs.length}
-            </span>
+            <span className="text-xs text-muted-foreground shrink-0">{idx + 1} / {designs.length}</span>
           </div>
           <Button size="icon" variant="ghost" onClick={onClose} className="h-7 w-7 shrink-0">
             <X className="h-4 w-4" />
           </Button>
         </div>
 
-        {/* Body: image + comments side by side */}
+        {/* Body: image + comments */}
         <div className="flex flex-1 min-h-0 overflow-hidden">
-
-          {/* Image area */}
           <div className="flex-1 min-w-0 flex flex-col bg-black/5 dark:bg-black/30 relative">
             <div className="flex-1 flex items-center justify-center p-4 overflow-auto">
               <img
@@ -222,26 +213,18 @@ function DesignLightbox({
                 className="max-w-full max-h-full object-contain rounded-lg shadow-lg"
               />
             </div>
-
-            {/* Nav arrows */}
             {idx > 0 && (
-              <button
-                onClick={() => setIdx(i => i - 1)}
-                className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition-colors"
-              >
+              <button onClick={() => setIdx(i => i - 1)}
+                className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition-colors">
                 <ChevronLeft className="h-5 w-5" />
               </button>
             )}
             {idx < designs.length - 1 && (
-              <button
-                onClick={() => setIdx(i => i + 1)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition-colors"
-              >
+              <button onClick={() => setIdx(i => i + 1)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition-colors">
                 <ChevronRight className="h-5 w-5" />
               </button>
             )}
-
-            {/* Description */}
             {design.description && (
               <div className="px-4 pb-3 shrink-0">
                 <p className="text-xs text-muted-foreground">{design.description}</p>
@@ -267,6 +250,7 @@ function DesignLightbox({
 }
 
 // ─── Upload / Edit dialog (admin only) ────────────────────────────────────────
+// This must be a proper React component (not a plain function) so hooks work.
 
 function DesignFormDialog({
   pageId,
@@ -280,28 +264,58 @@ function DesignFormDialog({
   onSaved: () => void;
 }) {
   const { toast } = useToast();
+  const { mutateAsync: uploadFile } = useUploadFile();
   const fileRef = useRef<HTMLInputElement>(null);
+
   const [form, setForm] = useState({
     title:       existing?.title       ?? '',
     description: existing?.description ?? '',
     version:     existing?.version     ?? 'v1',
   });
-  const [preview, setPreview]   = useState<string>(existing?.imageUrl ?? '');
-  const [mimeType, setMimeType] = useState<string>(existing?.imageType ?? '');
-  const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState('');
+
+  // imageUrl holds the Blossom URL after upload (or existing URL when editing)
+  const [imageUrl, setImageUrl]   = useState<string>(existing?.imageUrl ?? '');
+  const [imageType, setImageType] = useState<string>(existing?.imageType ?? '');
+  // localPreview is a temporary blob URL just for the preview image — never stored
+  const [localPreview, setLocalPreview] = useState<string>(existing?.imageUrl ?? '');
+  const [uploading, setUploading]   = useState(false);
+  const [uploadDone, setUploadDone] = useState(!!existing?.imageUrl);
+  const [error, setError]           = useState('');
+
+  // Clean up blob URL on unmount
+  useEffect(() => {
+    return () => {
+      if (localPreview && localPreview.startsWith('blob:')) {
+        URL.revokeObjectURL(localPreview);
+      }
+    };
+  }, [localPreview]);
 
   const handleFile = async (file: File) => {
     if (!file.type.startsWith('image/')) { setError('Only image files are supported.'); return; }
-    if (file.size > 10 * 1024 * 1024) { setError('File must be under 10 MB.'); return; }
+    if (file.size > 20 * 1024 * 1024)   { setError('File must be under 20 MB.'); return; }
     setError('');
     setUploading(true);
+    setUploadDone(false);
+
+    // Show a local preview immediately while uploading
+    const blobUrl = URL.createObjectURL(file);
+    setLocalPreview(blobUrl);
+
     try {
-      const dataUrl = await readFileAsDataUrl(file);
-      setPreview(dataUrl);
-      setMimeType(file.type);
-    } catch {
-      setError('Failed to read file.');
+      // Upload to Blossom — returns NIP-94 tags, first tag is [_, url]
+      const tags = await uploadFile(file);
+      const url  = tags[0]?.[1];
+      if (!url) throw new Error('No URL returned from upload');
+      setImageUrl(url);
+      setImageType(file.type);
+      setUploadDone(true);
+      toast({ title: 'Image uploaded ✓' });
+    } catch (err) {
+      console.error('Upload failed', err);
+      setError('Upload failed. Make sure you are logged in with Nostr and try again.');
+      setLocalPreview(existing?.imageUrl ?? '');
+      setUploadDone(false);
     } finally {
       setUploading(false);
     }
@@ -315,18 +329,21 @@ function DesignFormDialog({
 
   const handleSave = () => {
     if (!form.title.trim()) { setError('Title is required.'); return; }
-    if (!preview)            { setError('Please upload an image.'); return; }
+    if (!imageUrl)           { setError('Please upload an image first.'); return; }
+    if (uploading)           { setError('Please wait for the upload to finish.'); return; }
 
     if (existing) {
-      saveDesign({ ...existing, ...form, imageUrl: preview, imageType: mimeType, updatedAt: Date.now() });
+      saveDesign({ ...existing, ...form, imageUrl, imageType, updatedAt: Date.now() });
       toast({ title: 'Design updated' });
     } else {
-      createDesign({ pageId, ...form, imageUrl: preview, imageType: mimeType });
+      createDesign({ pageId, ...form, imageUrl, imageType });
       toast({ title: 'Design uploaded!' });
     }
     onSaved();
     onClose();
   };
+
+  const displaySrc = localPreview || imageUrl;
 
   return (
     <Dialog open onOpenChange={open => !open && onClose()}>
@@ -339,30 +356,44 @@ function DesignFormDialog({
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto space-y-4 pr-1">
+
           {/* Drop zone */}
           <div
             className={`border-2 border-dashed rounded-xl transition-colors cursor-pointer
-              ${preview ? 'border-orange-300 dark:border-orange-700' : 'border-border hover:border-orange-400'}
+              ${displaySrc ? 'border-orange-300 dark:border-orange-700' : 'border-border hover:border-orange-400'}
               bg-muted/30 hover:bg-muted/50`}
-            onClick={() => fileRef.current?.click()}
+            onClick={() => !uploading && fileRef.current?.click()}
             onDragOver={e => e.preventDefault()}
             onDrop={handleDrop}
           >
-            {preview ? (
+            {displaySrc ? (
               <div className="relative">
-                <img src={preview} alt="Preview" className="w-full max-h-64 object-contain rounded-xl" />
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black/40 rounded-xl">
-                  <p className="text-white text-sm font-semibold">Click to replace</p>
-                </div>
+                <img src={displaySrc} alt="Preview" className="w-full max-h-64 object-contain rounded-xl" />
+                {/* Upload progress overlay */}
+                {uploading && (
+                  <div className="absolute inset-0 bg-black/50 rounded-xl flex flex-col items-center justify-center gap-2">
+                    <Loader2 className="h-8 w-8 animate-spin text-white" />
+                    <p className="text-white text-sm font-semibold">Uploading to Blossom…</p>
+                  </div>
+                )}
+                {/* Success overlay (flashes briefly) */}
+                {uploadDone && !uploading && (
+                  <div className="absolute top-2 right-2 bg-green-600/90 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                    <Check className="h-3 w-3" /> Uploaded
+                  </div>
+                )}
+                {!uploading && (
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black/40 rounded-xl">
+                    <p className="text-white text-sm font-semibold">Click to replace</p>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-12 gap-2 text-muted-foreground">
-                {uploading
-                  ? <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
-                  : <Upload className="h-8 w-8 opacity-40" />
-                }
-                <p className="text-sm font-medium">{uploading ? 'Reading…' : 'Click or drag to upload'}</p>
-                <p className="text-xs">PNG, JPG, GIF, WebP, SVG — max 10 MB</p>
+                <CloudUpload className="h-10 w-10 opacity-40" />
+                <p className="text-sm font-medium">Click or drag to upload</p>
+                <p className="text-xs">PNG, JPG, GIF, WebP, SVG — max 20 MB</p>
+                <p className="text-xs text-orange-500 font-medium mt-1">Stored on Blossom · Nostr login required</p>
               </div>
             )}
           </div>
@@ -374,6 +405,7 @@ function DesignFormDialog({
             onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ''; }}
           />
 
+          {/* Title + Version */}
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2 space-y-1.5">
               <label className="text-sm font-medium">Title <span className="text-destructive">*</span></label>
@@ -393,10 +425,13 @@ function DesignFormDialog({
             </div>
           </div>
 
+          {/* Description */}
           <div className="space-y-1.5">
-            <label className="text-sm font-medium">Description <span className="text-muted-foreground font-normal">(optional)</span></label>
+            <label className="text-sm font-medium">
+              Description <span className="text-muted-foreground font-normal">(optional — notes for client)</span>
+            </label>
             <Textarea
-              placeholder="Notes for the client…"
+              placeholder="e.g. First concept for homepage banner…"
               value={form.description}
               onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
               rows={2}
@@ -404,23 +439,26 @@ function DesignFormDialog({
             />
           </div>
 
+          {/* Error */}
           {error && (
-            <div className="flex items-center gap-2 text-destructive text-sm">
+            <div className="flex items-center gap-2 text-destructive text-sm bg-destructive/10 rounded-lg p-3">
               <AlertCircle className="h-4 w-4 shrink-0" />
               {error}
             </div>
           )}
         </div>
 
-        <DialogFooter className="shrink-0 pt-2 border-t border-border">
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
+        <DialogFooter className="shrink-0 pt-3 border-t border-border">
+          <Button variant="outline" onClick={onClose} disabled={uploading}>Cancel</Button>
           <Button
             className="bg-orange-500 hover:bg-orange-600 text-white gap-1.5"
             onClick={handleSave}
-            disabled={uploading}
+            disabled={uploading || !imageUrl || !form.title.trim()}
           >
-            <Check className="h-4 w-4" />
-            {existing ? 'Save Changes' : 'Upload Design'}
+            {uploading
+              ? <><Loader2 className="h-4 w-4 animate-spin" />Uploading…</>
+              : <><Check className="h-4 w-4" />{existing ? 'Save Changes' : 'Save Design'}</>
+            }
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -448,26 +486,20 @@ function DesignCard({
   return (
     <div className="group relative rounded-xl border border-border bg-card overflow-hidden hover:shadow-lg hover:border-orange-300 dark:hover:border-orange-700 transition-all duration-200">
       {/* Image */}
-      <div
-        className="relative aspect-[4/3] overflow-hidden bg-muted cursor-pointer"
-        onClick={onClick}
-      >
+      <div className="relative aspect-[4/3] overflow-hidden bg-muted cursor-pointer" onClick={onClick}>
         <img
           src={design.imageUrl}
           alt={design.title}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
-        {/* Hover overlay */}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-colors flex items-center justify-center">
           <ZoomIn className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg" />
         </div>
-        {/* Version badge */}
         {design.version && (
           <Badge className="absolute top-2 left-2 bg-orange-500 text-white text-[10px] shadow-md">
             {design.version}
           </Badge>
         )}
-        {/* Comment count badge */}
         {commentCount > 0 && (
           <div className="absolute bottom-2 right-2 bg-black/70 text-white text-[10px] rounded-full px-2 py-0.5 flex items-center gap-1">
             <MessageSquare className="h-2.5 w-2.5" />
@@ -476,7 +508,7 @@ function DesignCard({
         )}
       </div>
 
-      {/* Card footer */}
+      {/* Footer */}
       <div className="p-3">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
@@ -486,23 +518,15 @@ function DesignCard({
             )}
             <p className="text-[10px] text-muted-foreground mt-1">{timeAgo(design.updatedAt)}</p>
           </div>
-          {/* Admin controls */}
+          {/* Admin controls — always visible on mobile, hover on desktop */}
           {isAdmin && (
-            <div className="flex gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-              <Button
-                size="icon" variant="ghost"
-                className="h-7 w-7 hover:text-orange-500"
-                onClick={e => { e.stopPropagation(); onEdit(design); }}
-                title="Edit"
-              >
+            <div className="flex gap-1 shrink-0 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+              <Button size="icon" variant="ghost" className="h-7 w-7 hover:text-orange-500"
+                onClick={e => { e.stopPropagation(); onEdit(design); }} title="Edit">
                 <Pencil className="h-3.5 w-3.5" />
               </Button>
-              <Button
-                size="icon" variant="ghost"
-                className="h-7 w-7 hover:text-destructive"
-                onClick={e => { e.stopPropagation(); onDelete(design); }}
-                title="Delete"
-              >
+              <Button size="icon" variant="ghost" className="h-7 w-7 hover:text-destructive"
+                onClick={e => { e.stopPropagation(); onDelete(design); }} title="Delete">
                 <Trash2 className="h-3.5 w-3.5" />
               </Button>
             </div>
@@ -517,21 +541,19 @@ function DesignCard({
 
 interface DesignSectionProps {
   pageId: string;
-  clientLabel?: string; // name shown in comments when client posts
+  clientLabel?: string;
 }
 
 export function DesignSection({ pageId, clientLabel = 'Client' }: DesignSectionProps) {
   const isAdmin = useIsAdmin();
+  const { user } = useCurrentUser();
   const { toast } = useToast();
-  const [designs, setDesigns] = useState<DesignItem[]>([]);
+
+  const [designs, setDesigns]           = useState<DesignItem[]>([]);
   const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
-
-  // lightbox
-  const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
-
-  // admin form
-  const [formOpen, setFormOpen] = useState(false);
-  const [editTarget, setEditTarget] = useState<DesignItem | null>(null);
+  const [lightboxIdx, setLightboxIdx]   = useState<number | null>(null);
+  const [formOpen, setFormOpen]         = useState(false);
+  const [editTarget, setEditTarget]     = useState<DesignItem | null>(null);
 
   const refresh = useCallback(() => {
     const d = getDesigns(pageId).sort((a, b) => b.createdAt - a.createdAt);
@@ -544,19 +566,19 @@ export function DesignSection({ pageId, clientLabel = 'Client' }: DesignSectionP
   useEffect(() => { refresh(); }, [refresh]);
 
   const handleDelete = (design: DesignItem) => {
-    if (!confirm(`Delete "${design.title}"? This also removes all its comments.`)) return;
+    if (!confirm(`Delete "${design.title}"? This also removes all comments.`)) return;
     deleteDesign(design.id);
     refresh();
     toast({ title: 'Design deleted' });
   };
 
-  const openNew = () => { setEditTarget(null); setFormOpen(true); };
+  const openNew  = () => { setEditTarget(null); setFormOpen(true); };
   const openEdit = (d: DesignItem) => { setEditTarget(d); setFormOpen(true); };
 
   return (
     <div className="space-y-4">
 
-      {/* Section header */}
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="font-black text-lg flex items-center gap-2">
@@ -574,11 +596,21 @@ export function DesignSection({ pageId, clientLabel = 'Client' }: DesignSectionP
             size="sm"
             className="gap-1.5 bg-orange-500 hover:bg-orange-600 text-white shrink-0"
             onClick={openNew}
+            disabled={!user}
+            title={!user ? 'Log in with Nostr to upload' : undefined}
           >
             <Upload className="h-3.5 w-3.5" /> Upload Design
           </Button>
         )}
       </div>
+
+      {/* Nostr login nudge for admin */}
+      {isAdmin && !user && (
+        <div className="flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          You need to be logged in with Nostr to upload designs to Blossom.
+        </div>
+      )}
 
       {/* Gallery */}
       {designs.length === 0 ? (
@@ -589,7 +621,7 @@ export function DesignSection({ pageId, clientLabel = 'Client' }: DesignSectionP
               {isAdmin ? 'No designs uploaded yet.' : 'No designs shared yet.'}
             </p>
             {isAdmin && (
-              <Button size="sm" variant="outline" className="mt-4 gap-1.5" onClick={openNew}>
+              <Button size="sm" variant="outline" className="mt-4 gap-1.5" onClick={openNew} disabled={!user}>
                 <Upload className="h-3.5 w-3.5" /> Upload first design
               </Button>
             )}

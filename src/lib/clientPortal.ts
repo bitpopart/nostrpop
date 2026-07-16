@@ -54,7 +54,7 @@ export interface DesignItem {
   pageId: string;        // which ClientPage it belongs to
   title: string;
   description: string;
-  imageUrl: string;      // data-URL (base64) or remote URL
+  imageUrl: string;      // Blossom CDN URL (never base64)
   imageType: string;     // MIME type, e.g. 'image/png'
   version: string;       // e.g. "v1", "v2" — free text
   createdAt: number;
@@ -244,6 +244,20 @@ export function sessionCanAccessPage(pageId: string): boolean {
 }
 
 // ─── Designs ──────────────────────────────────────────────────────────────────
+
+/**
+ * One-time migration: drop any legacy designs whose imageUrl is a data-URL
+ * (base64). Those were stored before the Blossom upload rewrite and will blow
+ * the localStorage quota. Run this on app start — it's a no-op after the first
+ * clean run.
+ */
+export function migrateDesigns(): void {
+  const all = load<DesignItem>(DESIGNS_KEY);
+  const clean = all.filter(d => !d.imageUrl.startsWith('data:'));
+  if (clean.length !== all.length) {
+    save(DESIGNS_KEY, clean);
+  }
+}
 
 export function getDesigns(pageId?: string): DesignItem[] {
   const all = load<DesignItem>(DESIGNS_KEY);
