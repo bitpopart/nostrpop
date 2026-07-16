@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { ScrollToTop } from "./components/ScrollToTop";
 import { Layout } from "./components/Layout";
 import { AppLayout } from "./components/AppLayout";
@@ -57,7 +57,7 @@ import Print from "./pages/Print";
 import NFT from "./pages/NFT";
 import NFTAdmin from "./pages/NFTAdmin";
 import Block from "./pages/Block";
-import BrandGuide from "./pages/BrandGuide";
+import BrandPortalPage from "./pages/BrandPortalPage";
 import ClientLogin from "./pages/ClientLogin";
 import ClientPortalPage from "./pages/ClientPortalPage";
 import Sitemap from "./pages/Sitemap";
@@ -130,7 +130,10 @@ export function AppRouter() {
         <Route path="/print" element={<Layout><Print /></Layout>} />
         <Route path="/NFT" element={<Layout><NFT /></Layout>} />
         <Route path="/Block" element={<Layout><Block /></Layout>} />
-        <Route path="/brand-guide" element={<Layout><BrandGuide /></Layout>} />
+        {/* Brand guide — gated behind Client Portal session, no site Layout */}
+        <Route path="/brand" element={<BrandPortalPage />} />
+        {/* Legacy URL: redirect old /brand-guide to the new /brand */}
+        <Route path="/brand-guide" element={<Navigate to="/brand" replace />} />
         {/* Client portal — no site Layout; has own sticky header */}
         <Route path="/login" element={<ClientLogin />} />
         <Route path="/client" element={<ClientPortalPage />} />
