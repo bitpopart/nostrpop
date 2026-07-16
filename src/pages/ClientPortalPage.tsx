@@ -182,7 +182,8 @@ function PortalHeader({ onLogout, pageTitle }: { onLogout: () => void; pageTitle
 function SectionRenderer({ sectionId }: { sectionId: string }) {
   switch (sectionId) {
     case 'brand-guide':
-      return <BrandGuideContent />;
+      // In the client portal, clients with a valid session can also download the ZIP
+      return <BrandGuideContent allowZip={true} />;
     default:
       return (
         <Card className="border-dashed">
