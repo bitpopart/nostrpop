@@ -49,12 +49,36 @@ export type PortalSession =
   | { type: 'code'; codeId: string; pageIds: string[] }
   | { type: 'npub'; npub: string; pageIds: string[] };
 
+export interface DesignItem {
+  id: string;
+  pageId: string;        // which ClientPage it belongs to
+  title: string;
+  description: string;
+  imageUrl: string;      // data-URL (base64) or remote URL
+  imageType: string;     // MIME type, e.g. 'image/png'
+  version: string;       // e.g. "v1", "v2" — free text
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface DesignComment {
+  id: string;
+  designId: string;
+  pageId: string;
+  author: 'admin' | 'client';
+  authorLabel: string;   // display name
+  text: string;
+  createdAt: number;
+}
+
 // ─── Storage keys ─────────────────────────────────────────────────────────────
 
-const PAGES_KEY   = 'cp_pages';
-const CODES_KEY   = 'cp_codes';
-const NPUBS_KEY   = 'cp_npubs';
-const SESSION_KEY = 'cp_session';
+const PAGES_KEY    = 'cp_pages';
+const CODES_KEY    = 'cp_codes';
+const NPUBS_KEY    = 'cp_npubs';
+const SESSION_KEY  = 'cp_session';
+const DESIGNS_KEY  = 'cp_designs';
+const COMMENTS_KEY = 'cp_comments';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -217,4 +241,54 @@ export function getSessionPageIds(): string[] {
  */
 export function sessionCanAccessPage(pageId: string): boolean {
   return getSessionPageIds().includes(pageId);
+}
+
+// ─── Designs ──────────────────────────────────────────────────────────────────
+
+export function getDesigns(pageId?: string): DesignItem[] {
+  const all = load<DesignItem>(DESIGNS_KEY);
+  return pageId ? all.filter(d => d.pageId === pageId) : all;
+}
+
+export function saveDesign(design: DesignItem): void {
+  const all = load<DesignItem>(DESIGNS_KEY).filter(d => d.id !== design.id);
+  save(DESIGNS_KEY, [...all, design]);
+}
+
+export function deleteDesign(id: string): void {
+  save(DESIGNS_KEY, load<DesignItem>(DESIGNS_KEY).filter(d => d.id !== id));
+  // also wipe its comments
+  save(COMMENTS_KEY, load<DesignComment>(COMMENTS_KEY).filter(c => c.designId !== id));
+}
+
+export function createDesign(data: Omit<DesignItem, 'id' | 'createdAt' | 'updatedAt'>): DesignItem {
+  const now = Date.now();
+  const design: DesignItem = { ...data, id: uuid(), createdAt: now, updatedAt: now };
+  saveDesign(design);
+  return design;
+}
+
+// ─── Comments ─────────────────────────────────────────────────────────────────
+
+export function getComments(designId: string): DesignComment[] {
+  return load<DesignComment>(COMMENTS_KEY)
+    .filter(c => c.designId === designId)
+    .sort((a, b) => a.createdAt - b.createdAt);
+}
+
+export function addComment(data: Omit<DesignComment, 'id' | 'createdAt'>): DesignComment {
+  const comment: DesignComment = { ...data, id: uuid(), createdAt: Date.now() };
+  const all = load<DesignComment>(COMMENTS_KEY);
+  save(COMMENTS_KEY, [...all, comment]);
+  return comment;
+}
+
+export function deleteComment(id: string): void {
+  save(COMMENTS_KEY, load<DesignComment>(COMMENTS_KEY).filter(c => c.id !== id));
+}
+
+export function getUnreadCommentCount(pageId: string, since: number): number {
+  return load<DesignComment>(COMMENTS_KEY)
+    .filter(c => c.pageId === pageId && c.author === 'client' && c.createdAt > since)
+    .length;
 }

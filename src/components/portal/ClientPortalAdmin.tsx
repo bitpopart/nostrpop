@@ -18,13 +18,15 @@ import {
 import {
   Plus, Trash2, Copy, Check, RefreshCw, Key, Users,
   FileText, Link2, ToggleLeft, ToggleRight, ExternalLink,
-  Eye, EyeOff,
+  Eye, EyeOff, ImagePlus,
 } from 'lucide-react';
 import { useToast } from '@/hooks/useToast';
+import { DesignSection } from '@/components/portal/DesignSection';
 
 // ─── Available content sections you can assign to a portal page ───────────────
 const AVAILABLE_SECTIONS = [
   { id: 'brand-guide', label: 'Brand Guide', desc: 'SVG logos, color palette, typography, UI components' },
+  { id: 'designs', label: 'Designs', desc: 'Upload design images for client review with comment chat' },
 ];
 
 // ─── Small helpers ────────────────────────────────────────────────────────────
@@ -57,6 +59,7 @@ function PagesTab() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<ClientPage | null>(null);
   const [form, setForm] = useState({ title: '', slug: '', description: '', sections: [] as string[], active: true });
+  const [expandedDesigns, setExpandedDesigns] = useState<string | null>(null);
 
   const refresh = useCallback(() => setPages(getPages().sort((a, b) => b.createdAt - a.createdAt)), []);
   useEffect(() => { refresh(); }, [refresh]);
@@ -138,6 +141,16 @@ function PagesTab() {
                     </div>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
+                    {p.sections.includes('designs') && (
+                      <Button
+                        size="sm" variant="outline"
+                        className="h-7 text-xs gap-1 border-orange-200 dark:border-orange-800 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950/30"
+                        onClick={() => setExpandedDesigns(expandedDesigns === p.id ? null : p.id)}
+                      >
+                        <ImagePlus className="h-3 w-3" />
+                        Designs
+                      </Button>
+                    )}
                     <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => toggleActive(p)} title={p.active ? 'Deactivate' : 'Activate'}>
                       {p.active ? <ToggleRight className="h-4 w-4 text-green-500" /> : <ToggleLeft className="h-4 w-4 text-muted-foreground" />}
                     </Button>
@@ -150,6 +163,12 @@ function PagesTab() {
                   </div>
                 </div>
               </CardContent>
+              {/* Inline Designs panel */}
+              {expandedDesigns === p.id && (
+                <div className="border-t border-orange-100 dark:border-orange-900/40 bg-orange-50/30 dark:bg-orange-950/10 px-4 pb-4 pt-3">
+                  <DesignSection pageId={p.id} clientLabel={p.title} />
+                </div>
+              )}
             </Card>
           ))}
         </div>

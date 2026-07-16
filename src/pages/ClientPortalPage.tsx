@@ -9,6 +9,7 @@ import {
   type ClientPage,
 } from '@/lib/clientPortal';
 import BrandGuideContent from './BrandGuideContent';
+import { DesignSection } from '@/components/portal/DesignSection';
 
 // ─── Portal shell ─────────────────────────────────────────────────────────────
 
@@ -127,7 +128,12 @@ export default function ClientPortalPage() {
         </div>
 
         {activePage.sections.map(section => (
-          <SectionRenderer key={section} sectionId={section} />
+          <SectionRenderer
+            key={section}
+            sectionId={section}
+            pageId={activePage.id}
+            clientLabel={activePage.title}
+          />
         ))}
 
         {activePage.sections.length === 0 && (
@@ -179,11 +185,20 @@ function PortalHeader({ onLogout, pageTitle }: { onLogout: () => void; pageTitle
 
 // ─── Section router ───────────────────────────────────────────────────────────
 
-function SectionRenderer({ sectionId }: { sectionId: string }) {
+function SectionRenderer({
+  sectionId,
+  pageId,
+  clientLabel,
+}: {
+  sectionId: string;
+  pageId: string;
+  clientLabel?: string;
+}) {
   switch (sectionId) {
     case 'brand-guide':
-      // In the client portal, clients with a valid session can also download the ZIP
       return <BrandGuideContent allowZip={true} />;
+    case 'designs':
+      return <DesignSection pageId={pageId} clientLabel={clientLabel} />;
     default:
       return (
         <Card className="border-dashed">
