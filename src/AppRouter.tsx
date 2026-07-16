@@ -58,6 +58,8 @@ import NFT from "./pages/NFT";
 import NFTAdmin from "./pages/NFTAdmin";
 import Block from "./pages/Block";
 import BrandGuide from "./pages/BrandGuide";
+import ClientLogin from "./pages/ClientLogin";
+import ClientPortalPage from "./pages/ClientPortalPage";
 import Sitemap from "./pages/Sitemap";
 import CloudPage from "./pages/Cloud";
 import CloudAppViewer from "./pages/CloudAppViewer";
@@ -129,6 +131,10 @@ export function AppRouter() {
         <Route path="/NFT" element={<Layout><NFT /></Layout>} />
         <Route path="/Block" element={<Layout><Block /></Layout>} />
         <Route path="/brand-guide" element={<Layout><BrandGuide /></Layout>} />
+        {/* Client portal — no site Layout; has own sticky header */}
+        <Route path="/login" element={<ClientLogin />} />
+        <Route path="/client" element={<ClientPortalPage />} />
+        <Route path="/client/:slug" element={<ClientPortalPage />} />
         <Route path="/sitemap" element={<Layout><Sitemap /></Layout>} />
         {/* Cloud private space — no site Layout wrapper; full-screen experience */}
         <Route path="/cloud" element={<CloudPage />} />

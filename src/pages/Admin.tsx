@@ -54,6 +54,7 @@ import { MediaGeneratorAdmin } from '@/components/mediagenerator/MediaGeneratorA
 import { EmojiPacksAdmin } from '@/components/emoji/EmojiPacksAdmin';
 import { CloudManagement } from '@/components/cloud/CloudManagement';
 import { FearGreedMeterAdmin } from '@/components/FearGreedMeterAdmin';
+import { ClientPortalAdmin } from '@/components/portal/ClientPortalAdmin';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import {
@@ -100,6 +101,7 @@ import {
   X,
   Smile,
   Cloud,
+  Users,
 } from 'lucide-react';
 
 // ── Pinned Hashtags Admin ─────────────────────────────────
@@ -714,6 +716,13 @@ const Admin = () => {
               className="flex items-center gap-1 text-orange-600 dark:text-orange-400 font-semibold"
             >
               📊 Fear &amp; Greed
+            </TabsTrigger>
+            <TabsTrigger
+              value="client-portal"
+              className="flex items-center gap-1 bg-gradient-to-r from-orange-500 to-yellow-400 text-white data-[state=active]:from-orange-600 data-[state=active]:to-yellow-500 data-[state=active]:text-white font-bold rounded-md"
+            >
+              <Users className="h-3.5 w-3.5" />
+              👤 Client Portal
             </TabsTrigger>
           </TabsList>
 
@@ -1435,6 +1444,10 @@ const Admin = () => {
 
           <TabsContent value="fear-greed-meter">
             <FearGreedMeterAdmin />
+          </TabsContent>
+
+          <TabsContent value="client-portal">
+            <ClientPortalAdmin />
           </TabsContent>
 
         </Tabs>
