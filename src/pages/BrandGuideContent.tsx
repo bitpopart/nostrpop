@@ -25,10 +25,9 @@ interface BrandFile {
 }
 
 // BASE_URL is injected by Vite — '/' in production, may differ in preview
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, ''); // strip trailing slash
-
 function assetUrl(rel: string): string {
-  return `${BASE}/${rel}`;
+  const base = (import.meta.env.BASE_URL ?? '/').replace(/\/$/, '');
+  return `${base}/${rel}`;
 }
 
 const RAW_FILES: Omit<BrandFile, 'relPath'>[] = [
