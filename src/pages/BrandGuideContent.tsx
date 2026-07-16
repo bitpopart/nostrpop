@@ -17,65 +17,81 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 // ─── File manifest ─────────────────────────────────────────────────────────────
 
 interface BrandFile {
-  path: string;
+  relPath: string;   // relative to BASE_URL, e.g. "brand-guide/logos/foo.svg"
   zipPath: string;
   label: string;
   category: string;
   ext: string;
 }
 
-export const BRAND_FILES: BrandFile[] = [
+// BASE_URL is injected by Vite — '/' in production, may differ in preview
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, ''); // strip trailing slash
+
+function assetUrl(rel: string): string {
+  return `${BASE}/${rel}`;
+}
+
+const RAW_FILES: Omit<BrandFile, 'relPath'>[] = [
   // README
-  { path: '/brand-guide/README.txt', zipPath: 'BitPopArt-Brand-Guide/README.txt', label: 'README.txt', category: 'readme', ext: 'TXT' },
+  { zipPath: 'BitPopArt-Brand-Guide/README.txt', label: 'README.txt', category: 'readme', ext: 'TXT' },
   // Logos
-  { path: '/brand-guide/logos/bitpopart-logo.svg', zipPath: 'BitPopArt-Brand-Guide/logos/bitpopart-logo.svg', label: 'bitpopart-logo', category: 'logos', ext: 'SVG' },
-  { path: '/brand-guide/logos/bitpopart-logo.png', zipPath: 'BitPopArt-Brand-Guide/logos/bitpopart-logo.png', label: 'bitpopart-logo', category: 'logos', ext: 'PNG' },
-  { path: '/brand-guide/logos/bitpopart-text-logo.svg', zipPath: 'BitPopArt-Brand-Guide/logos/bitpopart-text-logo.svg', label: 'bitpopart-text-logo', category: 'logos', ext: 'SVG' },
-  { path: '/brand-guide/logos/block-text-logo.svg', zipPath: 'BitPopArt-Brand-Guide/logos/block-text-logo.svg', label: 'block-text-logo', category: 'logos', ext: 'SVG' },
-  { path: '/brand-guide/logos/app-icon.svg', zipPath: 'BitPopArt-Brand-Guide/logos/app-icon.svg', label: 'app-icon', category: 'logos', ext: 'SVG' },
+  { zipPath: 'BitPopArt-Brand-Guide/logos/bitpopart-logo.svg', label: 'bitpopart-logo', category: 'logos', ext: 'SVG' },
+  { zipPath: 'BitPopArt-Brand-Guide/logos/bitpopart-logo.png', label: 'bitpopart-logo', category: 'logos', ext: 'PNG' },
+  { zipPath: 'BitPopArt-Brand-Guide/logos/bitpopart-text-logo.svg', label: 'bitpopart-text-logo', category: 'logos', ext: 'SVG' },
+  { zipPath: 'BitPopArt-Brand-Guide/logos/block-text-logo.svg', label: 'block-text-logo', category: 'logos', ext: 'SVG' },
+  { zipPath: 'BitPopArt-Brand-Guide/logos/app-icon.svg', label: 'app-icon', category: 'logos', ext: 'SVG' },
   // Icons
-  { path: '/brand-guide/icons/B-Funny_avatar_orange.svg', zipPath: 'BitPopArt-Brand-Guide/icons/B-Funny_avatar_orange.svg', label: 'B-Funny Avatar', category: 'icons', ext: 'SVG' },
-  { path: '/brand-guide/icons/App_icon.svg', zipPath: 'BitPopArt-Brand-Guide/icons/App_icon.svg', label: 'App Icon (heart)', category: 'icons', ext: 'SVG' },
-  { path: '/brand-guide/icons/spray_paint_icon.svg', zipPath: 'BitPopArt-Brand-Guide/icons/spray_paint_icon.svg', label: 'Spray Paint Icon', category: 'icons', ext: 'SVG' },
-  { path: '/brand-guide/icons/fan-app-icon.png', zipPath: 'BitPopArt-Brand-Guide/icons/fan-app-icon.png', label: 'Fan App Icon', category: 'icons', ext: 'PNG' },
+  { zipPath: 'BitPopArt-Brand-Guide/icons/B-Funny_avatar_orange.svg', label: 'B-Funny Avatar', category: 'icons', ext: 'SVG' },
+  { zipPath: 'BitPopArt-Brand-Guide/icons/App_icon.svg', label: 'App Icon (heart)', category: 'icons', ext: 'SVG' },
+  { zipPath: 'BitPopArt-Brand-Guide/icons/spray_paint_icon.svg', label: 'Spray Paint Icon', category: 'icons', ext: 'SVG' },
+  { zipPath: 'BitPopArt-Brand-Guide/icons/fan-app-icon.png', label: 'Fan App Icon', category: 'icons', ext: 'PNG' },
   // Buttons
-  { path: '/brand-guide/buttons/Art_button.svg', zipPath: 'BitPopArt-Brand-Guide/buttons/Art_button.svg', label: 'Art Button', category: 'buttons', ext: 'SVG' },
-  { path: '/brand-guide/buttons/News_button.svg', zipPath: 'BitPopArt-Brand-Guide/buttons/News_button.svg', label: 'News Button', category: 'buttons', ext: 'SVG' },
-  { path: '/brand-guide/buttons/PopUP_button.svg', zipPath: 'BitPopArt-Brand-Guide/buttons/PopUP_button.svg', label: 'PopUP Button', category: 'buttons', ext: 'SVG' },
-  { path: '/brand-guide/buttons/Shop_button.svg', zipPath: 'BitPopArt-Brand-Guide/buttons/Shop_button.svg', label: 'Shop Button', category: 'buttons', ext: 'SVG' },
-  { path: '/brand-guide/buttons/artist_button.svg', zipPath: 'BitPopArt-Brand-Guide/buttons/artist_button.svg', label: 'Artist Button', category: 'buttons', ext: 'SVG' },
-  { path: '/brand-guide/buttons/fundraising_button.svg', zipPath: 'BitPopArt-Brand-Guide/buttons/fundraising_button.svg', label: 'Fundraising Button', category: 'buttons', ext: 'SVG' },
-  { path: '/brand-guide/buttons/projects_button.svg', zipPath: 'BitPopArt-Brand-Guide/buttons/projects_button.svg', label: 'Projects Button', category: 'buttons', ext: 'SVG' },
+  { zipPath: 'BitPopArt-Brand-Guide/buttons/Art_button.svg', label: 'Art Button', category: 'buttons', ext: 'SVG' },
+  { zipPath: 'BitPopArt-Brand-Guide/buttons/News_button.svg', label: 'News Button', category: 'buttons', ext: 'SVG' },
+  { zipPath: 'BitPopArt-Brand-Guide/buttons/PopUP_button.svg', label: 'PopUP Button', category: 'buttons', ext: 'SVG' },
+  { zipPath: 'BitPopArt-Brand-Guide/buttons/Shop_button.svg', label: 'Shop Button', category: 'buttons', ext: 'SVG' },
+  { zipPath: 'BitPopArt-Brand-Guide/buttons/artist_button.svg', label: 'Artist Button', category: 'buttons', ext: 'SVG' },
+  { zipPath: 'BitPopArt-Brand-Guide/buttons/fundraising_button.svg', label: 'Fundraising Button', category: 'buttons', ext: 'SVG' },
+  { zipPath: 'BitPopArt-Brand-Guide/buttons/projects_button.svg', label: 'Projects Button', category: 'buttons', ext: 'SVG' },
   // Gradients
-  { path: '/brand-guide/gradients/gradient-bitcoin-orange.svg', zipPath: 'BitPopArt-Brand-Guide/gradients/gradient-bitcoin-orange.svg', label: 'Bitcoin Orange Gradient', category: 'gradients', ext: 'SVG' },
-  { path: '/brand-guide/gradients/gradient-orange-to-pink.svg', zipPath: 'BitPopArt-Brand-Guide/gradients/gradient-orange-to-pink.svg', label: 'Orange → Pink (Nostr CTA)', category: 'gradients', ext: 'SVG' },
-  { path: '/brand-guide/gradients/gradient-orange-to-yellow.svg', zipPath: 'BitPopArt-Brand-Guide/gradients/gradient-orange-to-yellow.svg', label: 'Orange → Yellow (Hero)', category: 'gradients', ext: 'SVG' },
-  { path: '/brand-guide/gradients/gradient-page-background-light.svg', zipPath: 'BitPopArt-Brand-Guide/gradients/gradient-page-background-light.svg', label: 'Page Background Light', category: 'gradients', ext: 'SVG' },
-  { path: '/brand-guide/gradients/gradient-dark-bitcoin.svg', zipPath: 'BitPopArt-Brand-Guide/gradients/gradient-dark-bitcoin.svg', label: 'Dark Bitcoin Canvas', category: 'gradients', ext: 'SVG' },
+  { zipPath: 'BitPopArt-Brand-Guide/gradients/gradient-bitcoin-orange.svg', label: 'Bitcoin Orange Gradient', category: 'gradients', ext: 'SVG' },
+  { zipPath: 'BitPopArt-Brand-Guide/gradients/gradient-orange-to-pink.svg', label: 'Orange → Pink (Nostr CTA)', category: 'gradients', ext: 'SVG' },
+  { zipPath: 'BitPopArt-Brand-Guide/gradients/gradient-orange-to-yellow.svg', label: 'Orange → Yellow (Hero)', category: 'gradients', ext: 'SVG' },
+  { zipPath: 'BitPopArt-Brand-Guide/gradients/gradient-page-background-light.svg', label: 'Page Background Light', category: 'gradients', ext: 'SVG' },
+  { zipPath: 'BitPopArt-Brand-Guide/gradients/gradient-dark-bitcoin.svg', label: 'Dark Bitcoin Canvas', category: 'gradients', ext: 'SVG' },
   // Colors
-  { path: '/brand-guide/colors/color-palette.svg', zipPath: 'BitPopArt-Brand-Guide/colors/color-palette.svg', label: 'Color Palette Sheet', category: 'colors', ext: 'SVG' },
-  { path: '/brand-guide/colors/colors.txt', zipPath: 'BitPopArt-Brand-Guide/colors/colors.txt', label: 'Color Codes Reference', category: 'colors', ext: 'TXT' },
+  { zipPath: 'BitPopArt-Brand-Guide/colors/color-palette.svg', label: 'Color Palette Sheet', category: 'colors', ext: 'SVG' },
+  { zipPath: 'BitPopArt-Brand-Guide/colors/colors.txt', label: 'Color Codes Reference', category: 'colors', ext: 'TXT' },
   // Typography
-  { path: '/brand-guide/fonts/typography-specimen.svg', zipPath: 'BitPopArt-Brand-Guide/fonts/typography-specimen.svg', label: 'Typography Specimen', category: 'fonts', ext: 'SVG' },
+  { zipPath: 'BitPopArt-Brand-Guide/fonts/typography-specimen.svg', label: 'Typography Specimen', category: 'fonts', ext: 'SVG' },
   // UI components
-  { path: '/brand-guide/ui-components/ui-buttons.svg', zipPath: 'BitPopArt-Brand-Guide/ui-components/ui-buttons.svg', label: 'UI Buttons & Badges', category: 'ui', ext: 'SVG' },
-  { path: '/brand-guide/ui-components/border-radius-spacing.svg', zipPath: 'BitPopArt-Brand-Guide/ui-components/border-radius-spacing.svg', label: 'Border Radius & Spacing', category: 'ui', ext: 'SVG' },
+  { zipPath: 'BitPopArt-Brand-Guide/ui-components/ui-buttons.svg', label: 'UI Buttons & Badges', category: 'ui', ext: 'SVG' },
+  { zipPath: 'BitPopArt-Brand-Guide/ui-components/border-radius-spacing.svg', label: 'Border Radius & Spacing', category: 'ui', ext: 'SVG' },
   // HTML guide
-  { path: '/brand-guide/index.html', zipPath: 'BitPopArt-Brand-Guide/index.html', label: 'Interactive HTML Guide', category: 'html', ext: 'HTML' },
+  { zipPath: 'BitPopArt-Brand-Guide/index.html', label: 'Interactive HTML Guide', category: 'html', ext: 'HTML' },
 ];
+
+// Build full file list with resolved URLs at runtime (respects BASE_URL)
+export const BRAND_FILES: BrandFile[] = RAW_FILES.map(f => ({
+  ...f,
+  // zipPath is  "BitPopArt-Brand-Guide/logos/foo.svg"
+  // relPath strips the first segment to get "brand-guide/logos/foo.svg"
+  relPath: f.zipPath.replace('BitPopArt-Brand-Guide/', 'brand-guide/'),
+}));
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 async function downloadSingleFile(file: BrandFile) {
-  const res = await fetch(file.path);
-  if (!res.ok) throw new Error('Fetch failed');
+  const url = assetUrl(file.relPath);
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Fetch failed: ${url}`);
   const blob = await res.blob();
-  const url = URL.createObjectURL(blob);
+  const objectUrl = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url;
+  a.href = objectUrl;
   a.download = file.zipPath.split('/').pop() ?? file.label;
   a.click();
-  URL.revokeObjectURL(url);
+  URL.revokeObjectURL(objectUrl);
 }
 
 const EXT_COLOR: Record<string, string> = {
@@ -102,7 +118,7 @@ function FileRow({ file }: { file: BrandFile }) {
       {(file.ext === 'SVG' || file.ext === 'PNG') ? (
         <div className="w-11 h-11 rounded-lg border border-border bg-white dark:bg-white/5 flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
           <img
-            src={file.path}
+            src={assetUrl(file.relPath)}
             alt={file.label}
             className="w-9 h-9 object-contain"
             onError={(e) => { (e.target as HTMLImageElement).style.opacity = '0.2'; }}
@@ -218,9 +234,9 @@ export default function BrandGuideContent({ allowZip = false }: BrandGuideConten
       const zip   = new JSZip();
       const total = BRAND_FILES.length;
       for (let i = 0; i < total; i++) {
-        const { path, zipPath } = BRAND_FILES[i];
+        const { relPath, zipPath } = BRAND_FILES[i];
         try {
-          const res = await fetch(path);
+          const res = await fetch(assetUrl(relPath));
           if (res.ok) zip.file(zipPath, await res.blob());
         } catch { /* skip */ }
         setProgress(Math.round(((i + 1) / total) * 100));
