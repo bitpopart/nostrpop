@@ -528,16 +528,58 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                       <Truck className="w-3 h-3" /> + shipping at next step
                     </p>
                   )}
+
+                  {/* Payment method selector — shown here so it's visible immediately */}
+                  {showStripeOption && (
+                    <div className="space-y-1.5">
+                      <p className="text-xs text-muted-foreground font-medium">Pay with:</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setPaymentMethod('lightning')}
+                          className={`flex items-center justify-center gap-2 p-2.5 rounded-xl border-2 transition-all text-xs font-medium ${
+                            paymentMethod === 'lightning'
+                              ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300'
+                              : 'border-muted hover:border-yellow-300 text-muted-foreground'
+                          }`}
+                        >
+                          <Zap className={`w-4 h-4 ${paymentMethod === 'lightning' ? 'text-yellow-500' : ''}`} />
+                          ⚡ Lightning
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPaymentMethod('stripe')}
+                          className={`flex items-center justify-center gap-2 p-2.5 rounded-xl border-2 transition-all text-xs font-medium ${
+                            paymentMethod === 'stripe'
+                              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                              : 'border-muted hover:border-blue-300 text-muted-foreground'
+                          }`}
+                        >
+                          <CreditCard className={`w-4 h-4 ${paymentMethod === 'stripe' ? 'text-blue-500' : ''}`} />
+                          💳 Card
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" className="flex-1" onClick={() => onOpenChange(false)}>
                       Keep Shopping
                     </Button>
                     <Button
                       size="sm"
-                      className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0"
+                      className={`flex-1 text-white border-0 ${
+                        paymentMethod === 'stripe' && showStripeOption
+                          ? 'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700'
+                          : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600'
+                      }`}
                       onClick={() => setStep('address')}
                     >
-                      Checkout →
+                      {paymentMethod === 'stripe' && showStripeOption ? (
+                        <><CreditCard className="w-3.5 h-3.5 mr-1.5" />Pay by Card →</>
+                      ) : (
+                        'Checkout →'
+                      )}
                     </Button>
                   </div>
                 </div>
