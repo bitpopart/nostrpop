@@ -29,6 +29,8 @@ import {
   ExternalLink,
   Info,
   Save,
+  ListChecks,
+  Lightbulb,
 } from 'lucide-react';
 import { useToast } from '@/hooks/useToast';
 
@@ -131,18 +133,73 @@ export function StripeSettingsAdmin() {
         </CardContent>
       </Card>
 
+      {/* Tip: How to handle the "product" question in Stripe */}
+      <Card className="border-amber-200 dark:border-amber-800 bg-amber-50/60 dark:bg-amber-900/10">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2 text-amber-700 dark:text-amber-300">
+            <Lightbulb className="h-4 w-4 text-amber-500" />
+            Stripe asks for a product — what to enter?
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm">
+          <p className="text-amber-800 dark:text-amber-200">
+            Your products live on <strong>this site</strong>, not in Stripe. You don't need to add each one.
+            Instead, create <strong>one generic payment product</strong> in Stripe that covers your whole cart.
+          </p>
+
+          {/* Recommended approach */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-amber-200 dark:border-amber-700 p-4 space-y-2">
+            <p className="font-bold text-sm text-amber-700 dark:text-amber-300 flex items-center gap-1.5">
+              ✅ Recommended: "Customer chooses price" Payment Link
+            </p>
+            <ol className="text-xs text-muted-foreground space-y-2 list-decimal list-inside">
+              <li>
+                Open{' '}
+                <a href="https://dashboard.stripe.com/payment-links/create" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-medium">
+                  Stripe → Payment Links → Create
+                </a>
+              </li>
+              <li>
+                Under <strong>"Select type"</strong> → change from <em>"Products or subscriptions"</em>{' '}
+                to <strong className="text-amber-700 dark:text-amber-300">"Customers choose what to pay"</strong>
+                <br />
+                <span className="text-muted-foreground">(this removes the product picker entirely!)</span>
+              </li>
+              <li>Set a minimum amount (e.g. €1) and optionally a label like <em>"BitPopArt Order"</em></li>
+              <li>Click <strong>Create link</strong> — copy the <code className="text-xs bg-muted px-1 py-0.5 rounded">https://buy.stripe.com/...</code> URL</li>
+              <li>Paste it in the <strong>Payment Link URL</strong> field below</li>
+            </ol>
+            <p className="text-xs text-muted-foreground italic">
+              The buyer will type in (or you'll pre-fill) the cart total on the Stripe page.
+            </p>
+          </div>
+
+          {/* Alternative */}
+          <details className="text-xs">
+            <summary className="cursor-pointer text-muted-foreground hover:text-foreground font-medium py-1">
+              Alternative: fixed-price product (for single-price shops)
+            </summary>
+            <div className="mt-2 space-y-1.5 text-muted-foreground pl-3 border-l-2 border-muted">
+              <p>If you sell items at one price (e.g. prints always €25), create a Stripe product for that price.</p>
+              <p>In Payment Links → Add new product → name it <em>"BitPopArt Order"</em> → set your standard price → enable <strong>"Adjustable quantity"</strong> so customers set how many items.</p>
+              <p>Limitation: doesn't work well for mixed-price carts.</p>
+            </div>
+          </details>
+        </CardContent>
+      </Card>
+
       {/* Setup steps */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
-            <ExternalLink className="h-4 w-4 text-blue-500" />
-            How to get your Stripe keys
+            <ListChecks className="h-4 w-4 text-blue-500" />
+            Setup checklist
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
             <li>
-              Go to{' '}
+              Get your <strong>Publishable key</strong> from{' '}
               <a
                 href="https://dashboard.stripe.com/apikeys"
                 target="_blank"
@@ -150,18 +207,12 @@ export function StripeSettingsAdmin() {
                 className="text-blue-600 hover:underline font-medium"
               >
                 dashboard.stripe.com/apikeys
-              </a>
+              </a>{' '}
+              <span className="text-xs">(starts with <code className="bg-muted px-1 py-0.5 rounded">pk_live_</code> or <code className="bg-muted px-1 py-0.5 rounded">pk_test_</code>)</span>
             </li>
-            <li>Copy your <strong>Publishable key</strong> (starts with <code className="text-xs bg-muted px-1 py-0.5 rounded">pk_live_</code> or <code className="text-xs bg-muted px-1 py-0.5 rounded">pk_test_</code>)</li>
-            <li>Paste it below and click <strong>Save</strong></li>
-            <li>Enable the toggle to activate card payments at checkout</li>
+            <li>Create a <strong>"Customers choose what to pay"</strong> Payment Link (see tip above) and copy its URL</li>
+            <li>Paste both values below, toggle the switch <strong>on</strong>, and click <strong>Save</strong></li>
           </ol>
-          <div className="text-xs text-muted-foreground flex items-start gap-1.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2">
-            <Info className="h-3.5 w-3.5 text-amber-500 flex-shrink-0 mt-0.5" />
-            <span>
-              <strong>Note:</strong> For full card processing you need a deployed backend (Cloudflare Workers, Netlify Functions, etc.) with your Stripe Secret Key. The Publishable Key alone enables Stripe.js to render the payment form. Contact your developer or deploy with Shakespeare to add the backend.
-            </span>
-          </div>
         </CardContent>
       </Card>
 
@@ -229,7 +280,9 @@ export function StripeSettingsAdmin() {
 
           {/* Payment Link URL */}
           <div className="space-y-2">
-            <Label className="text-sm font-semibold">Stripe Payment Link URL</Label>
+            <Label className="text-sm font-semibold">
+              Stripe Payment Link URL <span className="text-red-500">*</span>
+            </Label>
             <Input
               type="url"
               value={paymentLinkUrl}
@@ -238,17 +291,23 @@ export function StripeSettingsAdmin() {
               className="text-sm"
             />
             <p className="text-xs text-muted-foreground">
-              Create a Payment Link in your{' '}
+              Your <strong>"Customers choose what to pay"</strong> Payment Link URL from{' '}
               <a
-                href="https://dashboard.stripe.com/payment-links"
+                href="https://dashboard.stripe.com/payment-links/create"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-600 hover:underline"
               >
-                Stripe Dashboard → Payment Links
+                Stripe Dashboard → Payment Links → Create
               </a>
-              . Customers will be redirected to this URL at checkout. You can adjust prices and products directly in Stripe.
+              . When a buyer clicks "Pay by Card", they are sent to this page where they enter the cart total shown at checkout.
             </p>
+            {paymentLinkUrl && paymentLinkUrl.startsWith('https://buy.stripe.com/') && (
+              <p className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                Valid Stripe Payment Link detected
+              </p>
+            )}
           </div>
 
           {/* Currency */}
