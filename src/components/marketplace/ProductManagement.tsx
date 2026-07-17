@@ -22,6 +22,8 @@ import { ShippingConfigAdmin } from './ShippingConfigAdmin';
 import { ShippingOptionsAdmin } from './ShippingOptionsAdmin';
 import { OrderMessaging } from './OrderMessaging';
 import { StockManagement } from './StockManagement';
+import { FeaturedProductsAdmin } from './FeaturedProductsAdmin';
+import { StripeSettingsAdmin } from './StripeSettingsAdmin';
 import { formatCurrency } from '@/hooks/usePayment';
 import { useToast } from '@/hooks/useToast';
 import type { MarketplaceProduct } from '@/lib/sampleProducts';
@@ -46,6 +48,8 @@ import {
   Truck,
   BarChart2,
   MessageSquare,
+  Star,
+  CreditCard,
 } from 'lucide-react';
 
 import { useCategories } from '@/hooks/useCategories';
@@ -538,6 +542,14 @@ export function ProductManagement() {
             Shipping
           </TabsTrigger>
           <TabsTrigger value="publish" className="text-purple-600 dark:text-purple-400 font-semibold">Marketplaces</TabsTrigger>
+          <TabsTrigger value="featured" className="flex items-center gap-1 text-orange-600 dark:text-orange-400 font-semibold">
+            <Star className="h-3.5 w-3.5" />
+            Featured
+          </TabsTrigger>
+          <TabsTrigger value="stripe" className="flex items-center gap-1 text-blue-600 dark:text-blue-400 font-semibold">
+            <CreditCard className="h-3.5 w-3.5" />
+            Stripe
+          </TabsTrigger>
           <TabsTrigger value="categories">Categories</TabsTrigger>
           <TabsTrigger value="debug">Debug</TabsTrigger>
         </TabsList>
@@ -812,6 +824,14 @@ export function ProductManagement() {
 
         <TabsContent value="publish" className="space-y-6">
           <BulkPublishPanel products={filteredProducts} />
+        </TabsContent>
+
+        <TabsContent value="featured" className="space-y-4">
+          <FeaturedProductsAdmin />
+        </TabsContent>
+
+        <TabsContent value="stripe" className="space-y-4">
+          <StripeSettingsAdmin />
         </TabsContent>
 
         <TabsContent value="categories">

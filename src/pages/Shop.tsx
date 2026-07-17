@@ -38,10 +38,12 @@ import {
   Tag,
   X,
   RefreshCw,
+  Star,
 } from 'lucide-react';
 
 import { useCategories } from '@/hooks/useCategories';
 import { useShopTags } from '@/hooks/useShopTags';
+import { useFeaturedProducts } from '@/hooks/useFeaturedProducts';
 import { usePrintPosters, useBtcEurRate, eurToLiveSats } from '@/hooks/usePrintPosters';
 import type { PrintPoster, PosterFormat } from '@/hooks/usePrintPosters';
 import { usePublishToMarketplace, NOSTR_MARKETPLACES } from '@/hooks/usePublishToMarketplace';
@@ -239,6 +241,8 @@ const Shop = () => {
   const { categoryNames } = useCategories();
   // Admin-curated tag library — only show visible tags in the cloud
   const { visibleTags: visibleShopTags } = useShopTags();
+  // Featured/pinned products (admin-chosen order shown first)
+  const { featuredIds } = useFeaturedProducts();
 
   // Get initial tab from URL params
   const getInitialTab = () => {
@@ -322,7 +326,7 @@ const Shop = () => {
       .map(([tag, count]) => ({ tag, count }));
   }, [allProducts, visibleShopTags]);
 
-  // Filter products by selected category AND selected tag
+  // Filter products by selected category AND selected tag, then apply featured ordering
   const products = useMemo(() => {
     if (!allProducts) return allProducts;
     let filtered = allProducts;
@@ -337,8 +341,17 @@ const Shop = () => {
         return kwTags.some(t => t.toLowerCase() === needle);
       });
     }
+    // Apply featured pinning: featured products first (in admin-chosen order), then the rest
+    if (featuredIds.length > 0) {
+      const featuredSet = new Set(featuredIds);
+      const pinned = featuredIds
+        .map(id => filtered.find(p => p.id === id))
+        .filter((p): p is NonNullable<typeof p> => p !== undefined);
+      const rest = filtered.filter(p => !featuredSet.has(p.id));
+      return [...pinned, ...rest];
+    }
     return filtered;
-  }, [allProducts, selectedCategory, selectedTag]);
+  }, [allProducts, selectedCategory, selectedTag, featuredIds]);
 
   // Fetch fundraisers
   const { data: fundraisers = [], isLoading: fundraisersLoading } = useFundraisers();
@@ -675,14 +688,24 @@ const Shop = () => {
                         )}
                       </p>
                       <div className={`grid gap-6 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'}`}>
-                        {products.map((product) => (
-                          <ProductCard
-                            key={product.id}
-                            product={product}
-                            onViewDetails={(product) => { console.log('View:', product); }}
-                          />
-                        ))}
+                        {products.map((product) => {
+                          const isFeatured = featuredIds.includes(product.id);
+                          return (
+                            <div key={product.id} className={`relative ${isFeatured ? 'ring-2 ring-orange-400 ring-offset-2 rounded-2xl' : ''}`}>
+                              {isFeatured && (
+                                <div className="absolute -top-2 -left-2 z-10 w-7 h-7 rounded-full bg-orange-500 text-white flex items-center justify-center shadow-md" title="Featured product">
+                                  <Star className="h-3.5 w-3.5 fill-white" />
+                                </div>
+                              )}
+                              <ProductCard
+                                product={product}
+                                onViewDetails={(p) => { console.log('View:', p); }}
+                              />
+                            </div>
+                          );
+                        })}
                       </div>
+
                     </div>
                   )}
                 </div>

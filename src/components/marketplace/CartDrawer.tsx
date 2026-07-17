@@ -18,6 +18,7 @@ import {
 import { useCart } from '@/hooks/useCart';
 import { useShippingConfig, getShippingFee, DEFAULT_SHIPPING_CONFIG } from '@/hooks/useShippingConfig';
 import { useLightningPayment, formatCurrency, convertCurrency } from '@/hooks/usePayment';
+import { useStripeSettings } from '@/hooks/useStripeSettings';
 import { useToast } from '@/hooks/useToast';
 import { useEnhancedPaymentDetection } from '@/hooks/usePaymentDetection';
 import { createCheckoutOrder } from '@/hooks/useOrders';
@@ -37,6 +38,7 @@ import {
   Loader2,
   Package,
   Globe,
+  CreditCard,
 } from 'lucide-react';
 
 interface CartDrawerProps {
@@ -44,7 +46,8 @@ interface CartDrawerProps {
   onOpenChange: (open: boolean) => void;
 }
 
-type Step = 'cart' | 'address' | 'payment' | 'done';
+type Step = 'cart' | 'address' | 'payment' | 'stripe-pending' | 'done';
+type PaymentMethod = 'lightning' | 'stripe';
 
 export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
   const navigate = useNavigate();
@@ -54,7 +57,12 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
   } = useCart();
 
   const [step, setStep] = useState<Step>('cart');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('lightning');
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState('');
+  const [stripeLoading, setStripeLoading] = useState(false);
+
+  const { settings: stripeSettings, isConfigured: stripeConfigured } = useStripeSettings();
+  const showStripeOption = stripeConfigured && stripeSettings.enabled;
 
   const { createInvoice, invoice, isLoading: lightningLoading, clearInvoice, lightningAddress } = useLightningPayment();
   const { isDetecting, startDetection, stopDetection, payWithWebLN, openLightningWallet } = useEnhancedPaymentDetection();
@@ -125,9 +133,11 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
   useEffect(() => {
     if (!open) {
       setStep('cart');
+      setPaymentMethod('lightning');
       clearInvoice();
       stopDetection();
       setQrCodeDataUrl('');
+      setStripeLoading(false);
     }
   }, [open, clearInvoice, stopDetection]);
 
@@ -156,6 +166,12 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
 
   const handleProceedToPayment = async () => {
     if (!validateAddress()) return;
+
+    if (paymentMethod === 'stripe') {
+      await handleStripeCheckout();
+      return;
+    }
+
     setStep('payment');
     try {
       await createInvoice({
@@ -179,6 +195,106 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
     } catch (e) {
       console.error('Invoice creation failed', e);
       setStep('address');
+    }
+  };
+
+  const handleStripeCheckout = async () => {
+    if (!stripeSettings.publishableKey) {
+      toast({ title: 'Stripe not configured', description: 'Please set up Stripe in the shop admin.', variant: 'destructive' });
+      return;
+    }
+
+    setStripeLoading(true);
+    try {
+      const { loadStripe } = await import('@stripe/stripe-js');
+      const stripe = await loadStripe(stripeSettings.publishableKey);
+      if (!stripe) {
+        toast({ title: 'Stripe failed to load', variant: 'destructive' });
+        setStripeLoading(false);
+        return;
+      }
+
+      // Build line items description for Stripe (used in payment link metadata)
+      const orderDescription = items.map(i => `${i.name} ×${i.quantity}`).join(', ');
+      const stripeCurrency = stripeSettings.currency || 'eur';
+
+      // Convert total to the smallest unit (cents for EUR/USD/GBP, yen for JPY etc.)
+      const zeroDecimalCurrencies = ['jpy', 'krw', 'vnd', 'bif', 'clp', 'gnf', 'mga', 'pyg', 'rwf', 'ugx', 'xaf', 'xof'];
+      const isZeroDecimal = zeroDecimalCurrencies.includes(stripeCurrency);
+
+      // Convert total from product currency to Stripe currency (use raw EUR/USD value)
+      // If currency matches, use directly; otherwise use the product price as-is
+      let stripeAmount = total;
+      if (currency.toLowerCase() === 'sat' || currency.toLowerCase() === 'sats') {
+        // Convert sats to EUR/USD at a rough rate (Stripe doesn't accept SATs)
+        // Fall back to the EUR equivalent using the currency from Stripe settings
+        stripeAmount = total / 100000; // rough: treat as eurocents fallback
+      }
+      const stripeAmountCents = isZeroDecimal
+        ? Math.round(stripeAmount)
+        : Math.round(stripeAmount * 100);
+
+      // Save the order locally so we can track it
+      createCheckoutOrder({
+        productId: 'cart',
+        productName: `Cart Order — ${orderDescription}`,
+        productType: hasPhysical ? 'physical' : 'digital',
+        productImage: items[0]?.images?.[0],
+        price: total,
+        currency,
+        buyerName: address.name || undefined,
+        buyerEmail: address.email || undefined,
+        shippingAddress: hasPhysical && address.line1 ? {
+          line1: address.line1,
+          line2: address.line2 || undefined,
+          city: address.city,
+          state: address.state || undefined,
+          postal_code: address.postal_code,
+          country: address.country,
+        } : undefined,
+        paymentMethod: 'Stripe',
+        sourcePage: 'cart',
+        items: items.map(i => ({
+          product_id: i.id,
+          product_name: i.name,
+          quantity: i.quantity,
+          price: (i.discount && i.discount > 0 ? i.price * (1 - i.discount / 100) : i.price) * i.quantity,
+          currency: i.currency,
+          type: i.type,
+          image: i.images?.[0],
+        })),
+      });
+
+      // Use Stripe Payment Links approach: redirect to stripe.com/pay with pre-filled data
+      // Since we can't create a server-side PaymentIntent without a backend, we use
+      // Stripe's hosted payment page via a manual redirect with customer email prefill
+      // The admin needs to create a Payment Link in their Stripe dashboard and provide it,
+      // or we open the Stripe dashboard for them to complete the setup.
+
+      // For a fully client-side approach, open Stripe's hosted payment page
+      // by redirecting to a Stripe Payment Link. If no payment link is configured,
+      // show instructions.
+      const paymentLinkUrl = stripeSettings.paymentLinkUrl;
+      if (paymentLinkUrl) {
+        // Redirect to the pre-configured Stripe Payment Link
+        const url = new URL(paymentLinkUrl);
+        if (address.email) url.searchParams.set('prefilled_email', address.email);
+        url.searchParams.set('client_reference_id', `bitpopart-cart-${Date.now()}`);
+        window.open(url.toString(), '_blank');
+        setStep('stripe-pending');
+      } else {
+        // No payment link — show Stripe setup instructions
+        toast({
+          title: 'Stripe Payment Link Required',
+          description: 'Go to Shop Admin → Stripe and add your Stripe Payment Link URL to enable card checkout.',
+          variant: 'destructive',
+        });
+      }
+    } catch (err) {
+      console.error('Stripe checkout failed', err);
+      toast({ title: 'Stripe checkout failed', description: 'Please try again or use Lightning.', variant: 'destructive' });
+    } finally {
+      setStripeLoading(false);
     }
   };
 
@@ -288,10 +404,13 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
       <SheetContent side="right" className="w-full sm:max-w-md flex flex-col p-0 gap-0">
         <SheetHeader className="px-4 pt-4 pb-3 border-b">
           <SheetTitle className="flex items-center gap-2">
-            {step !== 'cart' && (
+            {step !== 'cart' && step !== 'done' && (
               <button
                 type="button"
-                onClick={() => setStep(step === 'payment' ? 'address' : 'cart')}
+                onClick={() => {
+                  if (step === 'payment' || step === 'stripe-pending') setStep('address');
+                  else setStep('cart');
+                }}
                 className="mr-1 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                 aria-label="Back"
               >
@@ -302,6 +421,7 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
             {step === 'cart' && `Cart ${totalItems > 0 ? `(${totalItems})` : ''}`}
             {step === 'address' && 'Shipping & Contact'}
             {step === 'payment' && 'Pay with Lightning ⚡'}
+            {step === 'stripe-pending' && 'Stripe Checkout 💳'}
           </SheetTitle>
         </SheetHeader>
 
@@ -627,26 +747,76 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
             </div>
 
             {/* Footer */}
-            <div className="border-t px-4 py-3 bg-white dark:bg-gray-950 flex-shrink-0 space-y-2">
+            <div className="border-t px-4 py-3 bg-white dark:bg-gray-950 flex-shrink-0 space-y-3">
               {hasPhysical && countrySelected && shippingCost > 0 && (
                 <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1">
                   <Truck className="w-3 h-3" />
                   Includes {formatCurrency(shippingCost, currency)} shipping to {address.country}
                 </p>
               )}
-              <Button
-                className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white border-0 disabled:opacity-50"
-                onClick={handleProceedToPayment}
-                disabled={lightningLoading || (hasPhysical && !countrySelected)}
-              >
-                {lightningLoading ? (
-                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Creating invoice…</>
-                ) : (
-                  <><Zap className="w-4 h-4 mr-2" />
-                    Pay {(!hasPhysical || countrySelected) ? formatCurrency(total, currency) : '…'} with Lightning
-                  </>
-                )}
-              </Button>
+
+              {/* Payment method selector */}
+              {showStripeOption && (
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('lightning')}
+                    className={`flex flex-col items-center gap-1 p-2.5 rounded-xl border-2 transition-all text-xs font-medium ${
+                      paymentMethod === 'lightning'
+                        ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300'
+                        : 'border-muted hover:border-yellow-300 text-muted-foreground'
+                    }`}
+                  >
+                    <Zap className={`w-5 h-5 ${paymentMethod === 'lightning' ? 'text-yellow-500' : ''}`} />
+                    Lightning ⚡
+                    <span className="text-[10px] opacity-70">Bitcoin</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('stripe')}
+                    className={`flex flex-col items-center gap-1 p-2.5 rounded-xl border-2 transition-all text-xs font-medium ${
+                      paymentMethod === 'stripe'
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                        : 'border-muted hover:border-blue-300 text-muted-foreground'
+                    }`}
+                  >
+                    <CreditCard className={`w-5 h-5 ${paymentMethod === 'stripe' ? 'text-blue-500' : ''}`} />
+                    Card 💳
+                    <span className="text-[10px] opacity-70">via Stripe</span>
+                  </button>
+                </div>
+              )}
+
+              {/* Pay button */}
+              {paymentMethod === 'lightning' || !showStripeOption ? (
+                <Button
+                  className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white border-0 disabled:opacity-50"
+                  onClick={handleProceedToPayment}
+                  disabled={lightningLoading || (hasPhysical && !countrySelected)}
+                >
+                  {lightningLoading ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Creating invoice…</>
+                  ) : (
+                    <><Zap className="w-4 h-4 mr-2" />
+                      Pay {(!hasPhysical || countrySelected) ? formatCurrency(total, currency) : '…'} with Lightning
+                    </>
+                  )}
+                </Button>
+              ) : (
+                <Button
+                  className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white border-0 disabled:opacity-50"
+                  onClick={handleProceedToPayment}
+                  disabled={stripeLoading || (hasPhysical && !countrySelected)}
+                >
+                  {stripeLoading ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Opening Stripe…</>
+                  ) : (
+                    <><CreditCard className="w-4 h-4 mr-2" />
+                      Pay {(!hasPhysical || countrySelected) ? formatCurrency(total, currency) : '…'} by Card
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
           </div>
         )}
@@ -748,6 +918,70 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                   )}
                 </>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* ── STRIPE PENDING STEP ── */}
+        {step === 'stripe-pending' && (
+          <div className="flex flex-col flex-1 overflow-hidden">
+            <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
+              <div className="text-center space-y-4">
+                <div className="w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mx-auto">
+                  <CreditCard className="w-8 h-8 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg">Complete Payment in Stripe</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    A new tab has opened with the Stripe payment page. Complete your payment there, then come back here to confirm.
+                  </p>
+                </div>
+
+                {/* Order summary */}
+                <div className="bg-muted/40 rounded-xl p-4 text-left space-y-2">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Your order</p>
+                  {items.map(item => {
+                    const ep = item.discount && item.discount > 0 ? item.price * (1 - item.discount / 100) : item.price;
+                    return (
+                      <div key={item.id} className="flex justify-between text-sm">
+                        <span className="text-muted-foreground truncate flex-1 mr-2">{item.name} ×{item.quantity}</span>
+                        <span className="font-medium flex-shrink-0">{formatCurrency(ep * item.quantity, item.currency)}</span>
+                      </div>
+                    );
+                  })}
+                  <Separator />
+                  <div className="flex justify-between text-sm font-bold">
+                    <span>Total</span>
+                    <span className="text-blue-600">{formatCurrency(total, currency)}</span>
+                  </div>
+                </div>
+
+                <div className="text-xs text-muted-foreground bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2 text-left">
+                  <strong>Didn't see the Stripe page open?</strong>{' '}
+                  {stripeSettings.paymentLinkUrl && (
+                    <a
+                      href={stripeSettings.paymentLinkUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline font-medium"
+                    >
+                      Click here to open it again.
+                    </a>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="border-t px-4 py-3 bg-white dark:bg-gray-950 flex-shrink-0 space-y-2">
+              <Button
+                className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white border-0"
+                onClick={confirmPayment}
+              >
+                <CheckCircle className="w-4 h-4 mr-2" />
+                I've completed the Stripe payment
+              </Button>
+              <Button variant="ghost" size="sm" className="w-full text-xs text-muted-foreground" onClick={() => setStep('address')}>
+                Go back to checkout
+              </Button>
             </div>
           </div>
         )}
