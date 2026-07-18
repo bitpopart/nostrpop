@@ -789,7 +789,7 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
             </div>
 
             {/* Footer */}
-            <div className="border-t px-4 py-3 bg-white dark:bg-gray-950 flex-shrink-0 space-y-3">
+            <div className="border-t px-4 py-3 bg-white dark:bg-gray-950 flex-shrink-0 space-y-2">
               {hasPhysical && countrySelected && shippingCost > 0 && (
                 <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1">
                   <Truck className="w-3 h-3" />
@@ -797,54 +797,26 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                 </p>
               )}
 
-              {/* Payment method selector */}
+              {/* Show which payment method was chosen, allow switching */}
               {showStripeOption && (
-                <div className="grid grid-cols-2 gap-2">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span>Paying with:</span>
                   <button
                     type="button"
-                    onClick={() => setPaymentMethod('lightning')}
-                    className={`flex flex-col items-center gap-1 p-2.5 rounded-xl border-2 transition-all text-xs font-medium ${
-                      paymentMethod === 'lightning'
-                        ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300'
-                        : 'border-muted hover:border-yellow-300 text-muted-foreground'
-                    }`}
+                    onClick={() => setPaymentMethod(paymentMethod === 'lightning' ? 'stripe' : 'lightning')}
+                    className="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-muted hover:border-orange-300 transition-colors font-medium text-foreground"
                   >
-                    <Zap className={`w-5 h-5 ${paymentMethod === 'lightning' ? 'text-yellow-500' : ''}`} />
-                    Lightning ⚡
-                    <span className="text-[10px] opacity-70">Bitcoin</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('stripe')}
-                    className={`flex flex-col items-center gap-1 p-2.5 rounded-xl border-2 transition-all text-xs font-medium ${
-                      paymentMethod === 'stripe'
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
-                        : 'border-muted hover:border-blue-300 text-muted-foreground'
-                    }`}
-                  >
-                    <CreditCard className={`w-5 h-5 ${paymentMethod === 'stripe' ? 'text-blue-500' : ''}`} />
-                    Card 💳
-                    <span className="text-[10px] opacity-70">via Stripe</span>
+                    {paymentMethod === 'stripe'
+                      ? <><CreditCard className="w-3.5 h-3.5 text-blue-500" />Card (Stripe)</>
+                      : <><Zap className="w-3.5 h-3.5 text-yellow-500" />Lightning ⚡</>
+                    }
+                    <span className="text-[10px] text-muted-foreground ml-0.5">tap to switch</span>
                   </button>
                 </div>
               )}
 
-              {/* Pay button */}
-              {paymentMethod === 'lightning' || !showStripeOption ? (
-                <Button
-                  className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white border-0 disabled:opacity-50"
-                  onClick={handleProceedToPayment}
-                  disabled={lightningLoading || (hasPhysical && !countrySelected)}
-                >
-                  {lightningLoading ? (
-                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Creating invoice…</>
-                  ) : (
-                    <><Zap className="w-4 h-4 mr-2" />
-                      Pay {(!hasPhysical || countrySelected) ? formatCurrency(total, currency) : '…'} with Lightning
-                    </>
-                  )}
-                </Button>
-              ) : (
+              {/* Single pay button — driven by paymentMethod state */}
+              {paymentMethod === 'stripe' && showStripeOption ? (
                 <Button
                   className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white border-0 disabled:opacity-50"
                   onClick={handleProceedToPayment}
@@ -855,6 +827,20 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                   ) : (
                     <><CreditCard className="w-4 h-4 mr-2" />
                       Pay {(!hasPhysical || countrySelected) ? formatCurrency(total, currency) : '…'} by Card
+                    </>
+                  )}
+                </Button>
+              ) : (
+                <Button
+                  className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white border-0 disabled:opacity-50"
+                  onClick={handleProceedToPayment}
+                  disabled={lightningLoading || (hasPhysical && !countrySelected)}
+                >
+                  {lightningLoading ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Creating invoice…</>
+                  ) : (
+                    <><Zap className="w-4 h-4 mr-2" />
+                      Pay {(!hasPhysical || countrySelected) ? formatCurrency(total, currency) : '…'} with Lightning
                     </>
                   )}
                 </Button>
