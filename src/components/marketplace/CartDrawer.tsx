@@ -18,7 +18,6 @@ import {
 import { useCart } from '@/hooks/useCart';
 import { useShippingConfig, getShippingFee, DEFAULT_SHIPPING_CONFIG } from '@/hooks/useShippingConfig';
 import { useLightningPayment, formatCurrency, convertCurrency } from '@/hooks/usePayment';
-import { useStripeSettings } from '@/hooks/useStripeSettings';
 import { useToast } from '@/hooks/useToast';
 import { useEnhancedPaymentDetection } from '@/hooks/usePaymentDetection';
 import { createCheckoutOrder } from '@/hooks/useOrders';
@@ -61,9 +60,17 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState('');
   const [stripeLoading, setStripeLoading] = useState(false);
 
-  const { settings: stripeSettings } = useStripeSettings();
-  // Show Stripe whenever a payment link URL is saved — regardless of other toggles
-  const stripePaymentLink = stripeSettings.paymentLinkUrl?.trim() || '';
+  // Re-read stripe settings directly from localStorage every render — no stale state
+  const stripePaymentLink = (() => {
+    try {
+      const raw = localStorage.getItem('nostrpop_stripe_settings');
+      if (!raw) return '';
+      const parsed = JSON.parse(raw);
+      return (parsed.paymentLinkUrl || '').trim();
+    } catch {
+      return '';
+    }
+  })();
   const showStripeOption = stripePaymentLink.length > 0;
 
   const { createInvoice, invoice, isLoading: lightningLoading, clearInvoice, lightningAddress } = useLightningPayment();
@@ -202,42 +209,19 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
   };
 
   const handleStripeCheckout = async () => {
-    if (!stripeSettings.publishableKey) {
-      toast({ title: 'Stripe not configured', description: 'Please set up Stripe in the shop admin.', variant: 'destructive' });
+    if (!stripePaymentLink) {
+      toast({
+        title: 'Stripe Payment Link Required',
+        description: 'Go to Shop Admin → Products → Stripe and add your Payment Link URL.',
+        variant: 'destructive',
+      });
       return;
     }
 
     setStripeLoading(true);
     try {
-      const { loadStripe } = await import('@stripe/stripe-js');
-      const stripe = await loadStripe(stripeSettings.publishableKey);
-      if (!stripe) {
-        toast({ title: 'Stripe failed to load', variant: 'destructive' });
-        setStripeLoading(false);
-        return;
-      }
-
-      // Build line items description for Stripe (used in payment link metadata)
-      const orderDescription = items.map(i => `${i.name} ×${i.quantity}`).join(', ');
-      const stripeCurrency = stripeSettings.currency || 'eur';
-
-      // Convert total to the smallest unit (cents for EUR/USD/GBP, yen for JPY etc.)
-      const zeroDecimalCurrencies = ['jpy', 'krw', 'vnd', 'bif', 'clp', 'gnf', 'mga', 'pyg', 'rwf', 'ugx', 'xaf', 'xof'];
-      const isZeroDecimal = zeroDecimalCurrencies.includes(stripeCurrency);
-
-      // Convert total from product currency to Stripe currency (use raw EUR/USD value)
-      // If currency matches, use directly; otherwise use the product price as-is
-      let stripeAmount = total;
-      if (currency.toLowerCase() === 'sat' || currency.toLowerCase() === 'sats') {
-        // Convert sats to EUR/USD at a rough rate (Stripe doesn't accept SATs)
-        // Fall back to the EUR equivalent using the currency from Stripe settings
-        stripeAmount = total / 100000; // rough: treat as eurocents fallback
-      }
-      const stripeAmountCents = isZeroDecimal
-        ? Math.round(stripeAmount)
-        : Math.round(stripeAmount * 100);
-
       // Save the order locally so we can track it
+      const orderDescription = items.map(i => `${i.name} ×${i.quantity}`).join(', ');
       createCheckoutOrder({
         productId: 'cart',
         productName: `Cart Order — ${orderDescription}`,
@@ -268,31 +252,16 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
         })),
       });
 
-      // Use Stripe Payment Links approach: redirect to stripe.com/pay with pre-filled data
-      // Since we can't create a server-side PaymentIntent without a backend, we use
-      // Stripe's hosted payment page via a manual redirect with customer email prefill
-      // The admin needs to create a Payment Link in their Stripe dashboard and provide it,
-      // or we open the Stripe dashboard for them to complete the setup.
-
-      // For a fully client-side approach, open Stripe's hosted payment page
-      // by redirecting to a Stripe Payment Link. If no payment link is configured,
-      // show instructions.
-      const paymentLinkUrl = stripeSettings.paymentLinkUrl;
-      if (paymentLinkUrl) {
-        // Redirect to the pre-configured Stripe Payment Link
-        const url = new URL(paymentLinkUrl);
+      // Open the Stripe Payment Link in a new tab
+      try {
+        const url = new URL(stripePaymentLink);
         if (address.email) url.searchParams.set('prefilled_email', address.email);
         url.searchParams.set('client_reference_id', `bitpopart-cart-${Date.now()}`);
         window.open(url.toString(), '_blank');
-        setStep('stripe-pending');
-      } else {
-        // No payment link — show Stripe setup instructions
-        toast({
-          title: 'Stripe Payment Link Required',
-          description: 'Go to Shop Admin → Stripe and add your Stripe Payment Link URL to enable card checkout.',
-          variant: 'destructive',
-        });
+      } catch {
+        window.open(stripePaymentLink, '_blank');
       }
+      setStep('stripe-pending');
     } catch (err) {
       console.error('Stripe checkout failed', err);
       toast({ title: 'Stripe checkout failed', description: 'Please try again or use Lightning.', variant: 'destructive' });
@@ -969,9 +938,9 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
 
                 <div className="text-xs text-muted-foreground bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2 text-left">
                   <strong>Didn't see the Stripe page open?</strong>{' '}
-                  {stripeSettings.paymentLinkUrl && (
+                  {stripePaymentLink && (
                     <a
-                      href={stripeSettings.paymentLinkUrl}
+                      href={stripePaymentLink}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-blue-600 hover:underline font-medium"
