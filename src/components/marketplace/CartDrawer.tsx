@@ -61,8 +61,10 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState('');
   const [stripeLoading, setStripeLoading] = useState(false);
 
-  const { settings: stripeSettings, isConfigured: stripeConfigured } = useStripeSettings();
-  const showStripeOption = stripeConfigured && stripeSettings.enabled;
+  const { settings: stripeSettings } = useStripeSettings();
+  // Show Stripe whenever a payment link URL is saved — regardless of other toggles
+  const stripePaymentLink = stripeSettings.paymentLinkUrl?.trim() || '';
+  const showStripeOption = stripePaymentLink.length > 0;
 
   const { createInvoice, invoice, isLoading: lightningLoading, clearInvoice, lightningAddress } = useLightningPayment();
   const { isDetecting, startDetection, stopDetection, payWithWebLN, openLightningWallet } = useEnhancedPaymentDetection();
@@ -164,10 +166,11 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
     return true;
   };
 
-  const handleProceedToPayment = async () => {
+  const handleProceedToPayment = async (methodOverride?: PaymentMethod) => {
     if (!validateAddress()) return;
 
-    if (paymentMethod === 'stripe') {
+    const method = methodOverride ?? paymentMethod;
+    if (method === 'stripe') {
       await handleStripeCheckout();
       return;
     }
@@ -529,59 +532,31 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                     </p>
                   )}
 
-                  {/* Payment method selector — shown here so it's visible immediately */}
-                  {showStripeOption && (
-                    <div className="space-y-1.5">
-                      <p className="text-xs text-muted-foreground font-medium">Pay with:</p>
-                      <div className="grid grid-cols-2 gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setPaymentMethod('lightning')}
-                          className={`flex items-center justify-center gap-2 p-2.5 rounded-xl border-2 transition-all text-xs font-medium ${
-                            paymentMethod === 'lightning'
-                              ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300'
-                              : 'border-muted hover:border-yellow-300 text-muted-foreground'
-                          }`}
-                        >
-                          <Zap className={`w-4 h-4 ${paymentMethod === 'lightning' ? 'text-yellow-500' : ''}`} />
-                          ⚡ Lightning
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setPaymentMethod('stripe')}
-                          className={`flex items-center justify-center gap-2 p-2.5 rounded-xl border-2 transition-all text-xs font-medium ${
-                            paymentMethod === 'stripe'
-                              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
-                              : 'border-muted hover:border-blue-300 text-muted-foreground'
-                          }`}
-                        >
-                          <CreditCard className={`w-4 h-4 ${paymentMethod === 'stripe' ? 'text-blue-500' : ''}`} />
-                          💳 Card
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" className="flex-1" onClick={() => onOpenChange(false)}>
                       Keep Shopping
                     </Button>
                     <Button
                       size="sm"
-                      className={`flex-1 text-white border-0 ${
-                        paymentMethod === 'stripe' && showStripeOption
-                          ? 'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700'
-                          : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600'
-                      }`}
+                      className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0"
                       onClick={() => setStep('address')}
                     >
-                      {paymentMethod === 'stripe' && showStripeOption ? (
-                        <><CreditCard className="w-3.5 h-3.5 mr-1.5" />Pay by Card →</>
-                      ) : (
-                        'Checkout →'
-                      )}
+                      Checkout →
                     </Button>
                   </div>
+
+                  {/* Card payment option — shown directly when Stripe is configured */}
+                  {showStripeOption && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full gap-2 border-blue-300 text-blue-700 hover:bg-blue-50 dark:border-blue-700 dark:text-blue-300 dark:hover:bg-blue-900/20"
+                      onClick={() => { setPaymentMethod('stripe'); setStep('address'); }}
+                    >
+                      <CreditCard className="w-4 h-4" />
+                      Pay with Card (Stripe) →
+                    </Button>
+                  )}
                 </div>
               </>
             )}
@@ -797,50 +772,34 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                 </p>
               )}
 
-              {/* Show which payment method was chosen, allow switching */}
-              {showStripeOption && (
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <span>Paying with:</span>
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod(paymentMethod === 'lightning' ? 'stripe' : 'lightning')}
-                    className="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-muted hover:border-orange-300 transition-colors font-medium text-foreground"
-                  >
-                    {paymentMethod === 'stripe'
-                      ? <><CreditCard className="w-3.5 h-3.5 text-blue-500" />Card (Stripe)</>
-                      : <><Zap className="w-3.5 h-3.5 text-yellow-500" />Lightning ⚡</>
-                    }
-                    <span className="text-[10px] text-muted-foreground ml-0.5">tap to switch</span>
-                  </button>
-                </div>
-              )}
+              {/* Lightning pay button — always present */}
+              <Button
+                className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white border-0 disabled:opacity-50"
+                onClick={() => handleProceedToPayment('lightning')}
+                disabled={lightningLoading || (hasPhysical && !countrySelected)}
+              >
+                {lightningLoading ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Creating invoice…</>
+                ) : (
+                  <><Zap className="w-4 h-4 mr-2" />
+                    Pay {(!hasPhysical || countrySelected) ? formatCurrency(total, currency) : '…'} with Lightning ⚡
+                  </>
+                )}
+              </Button>
 
-              {/* Single pay button — driven by paymentMethod state */}
-              {paymentMethod === 'stripe' && showStripeOption ? (
+              {/* Card pay button — always visible when Stripe payment link is set */}
+              {showStripeOption && (
                 <Button
-                  className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white border-0 disabled:opacity-50"
-                  onClick={handleProceedToPayment}
+                  variant="outline"
+                  className="w-full gap-2 border-blue-400 text-blue-700 hover:bg-blue-50 dark:border-blue-600 dark:text-blue-300 dark:hover:bg-blue-900/20 disabled:opacity-50"
+                  onClick={() => handleProceedToPayment('stripe')}
                   disabled={stripeLoading || (hasPhysical && !countrySelected)}
                 >
                   {stripeLoading ? (
-                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Opening Stripe…</>
+                    <><Loader2 className="w-4 h-4 animate-spin" />Opening Stripe…</>
                   ) : (
-                    <><CreditCard className="w-4 h-4 mr-2" />
-                      Pay {(!hasPhysical || countrySelected) ? formatCurrency(total, currency) : '…'} by Card
-                    </>
-                  )}
-                </Button>
-              ) : (
-                <Button
-                  className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white border-0 disabled:opacity-50"
-                  onClick={handleProceedToPayment}
-                  disabled={lightningLoading || (hasPhysical && !countrySelected)}
-                >
-                  {lightningLoading ? (
-                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Creating invoice…</>
-                  ) : (
-                    <><Zap className="w-4 h-4 mr-2" />
-                      Pay {(!hasPhysical || countrySelected) ? formatCurrency(total, currency) : '…'} with Lightning
+                    <><CreditCard className="w-4 h-4" />
+                      Pay {(!hasPhysical || countrySelected) ? formatCurrency(total, currency) : '…'} with Card 💳
                     </>
                   )}
                 </Button>
@@ -900,6 +859,30 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                   <p className="text-xs text-center text-muted-foreground">
                     Scan with your Lightning wallet, or copy the invoice below
                   </p>
+
+                  {/* Stripe alternative on Lightning step */}
+                  {showStripeOption && (
+                    <div className="border-t pt-3 space-y-2">
+                      <p className="text-xs text-center text-muted-foreground">— or —</p>
+                      <Button
+                        variant="outline"
+                        className="w-full gap-2 border-blue-300 text-blue-700 hover:bg-blue-50 dark:border-blue-700 dark:text-blue-300 dark:hover:bg-blue-900/20"
+                        onClick={() => {
+                          try {
+                            const url = new URL(stripePaymentLink);
+                            if (address.email) url.searchParams.set('prefilled_email', address.email);
+                            window.open(url.toString(), '_blank');
+                          } catch {
+                            window.open(stripePaymentLink, '_blank');
+                          }
+                          setStep('stripe-pending');
+                        }}
+                      >
+                        <CreditCard className="w-4 h-4" />
+                        Pay with Card (Stripe) instead
+                      </Button>
+                    </div>
+                  )}
 
                   <div className="flex gap-2">
                     <Input value={invoice.payment_request} readOnly className="font-mono text-xs" />
