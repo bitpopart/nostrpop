@@ -1,81 +1,82 @@
 /**
  * useFeaturedProducts
  *
- * Persists a list of featured product IDs (pinned to the top of /shop) in localStorage.
- * The admin picks which product thumbnails appear first when the /shop page opens.
+ * Stores featured product IDs in Nostr (kind 30078, d-tag "featured-products")
+ * so they are visible everywhere — no localStorage, no iframe isolation issues.
  */
 
-import { useState, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNostr } from '@nostrify/react';
+import { useCurrentUser } from './useCurrentUser';
+import { useToast } from './useToast';
+import { getAdminPubkeyHex } from '@/lib/adminUtils';
 
-const FEATURED_KEY = 'nostrpop_featured_products';
-
-function loadFeatured(): string[] {
-  try {
-    const raw = localStorage.getItem(FEATURED_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveFeatured(ids: string[]) {
-  localStorage.setItem(FEATURED_KEY, JSON.stringify(ids));
-}
+const D_TAG = 'featured-products';
 
 export function useFeaturedProducts() {
-  const [featuredIds, setFeaturedIds] = useState<string[]>(loadFeatured);
+  const { nostr } = useNostr();
+  const adminPubkey = getAdminPubkeyHex();
 
-  /** Toggle a product's featured status */
-  const toggleFeatured = useCallback((id: string) => {
-    setFeaturedIds(prev => {
-      const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id];
-      saveFeatured(next);
-      return next;
-    });
-  }, []);
+  const query = useQuery({
+    queryKey: ['featured-products', adminPubkey],
+    queryFn: async (c) => {
+      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(6000)]);
+      try {
+        const events = await nostr.query([{
+          kinds: [30078],
+          authors: [adminPubkey],
+          '#d': [D_TAG],
+          limit: 1,
+        }], { signal });
 
-  /** Move a product up in the featured list */
-  const moveUp = useCallback((id: string) => {
-    setFeaturedIds(prev => {
-      const idx = prev.indexOf(id);
-      if (idx <= 0) return prev;
-      const next = [...prev];
-      [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
-      saveFeatured(next);
-      return next;
-    });
-  }, []);
-
-  /** Move a product down in the featured list */
-  const moveDown = useCallback((id: string) => {
-    setFeaturedIds(prev => {
-      const idx = prev.indexOf(id);
-      if (idx < 0 || idx >= prev.length - 1) return prev;
-      const next = [...prev];
-      [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
-      saveFeatured(next);
-      return next;
-    });
-  }, []);
-
-  /** Replace the full featured list (e.g. from drag-reorder) */
-  const setFeatured = useCallback((ids: string[]) => {
-    saveFeatured(ids);
-    setFeaturedIds(ids);
-  }, []);
-
-  /** Remove all featured products */
-  const clearFeatured = useCallback(() => {
-    saveFeatured([]);
-    setFeaturedIds([]);
-  }, []);
+        if (events.length > 0 && events[0].content) {
+          const parsed = JSON.parse(events[0].content);
+          return Array.isArray(parsed) ? (parsed as string[]) : [];
+        }
+      } catch { /* fall through */ }
+      return [] as string[];
+    },
+    enabled: !!adminPubkey,
+    staleTime: 2 * 60_000,
+    gcTime: 10 * 60_000,
+  });
 
   return {
-    featuredIds,
-    toggleFeatured,
-    moveUp,
-    moveDown,
-    setFeatured,
-    clearFeatured,
+    featuredIds: query.data ?? [],
+    isLoading: query.isLoading,
   };
+}
+
+export function useUpdateFeaturedProducts() {
+  const { nostr } = useNostr();
+  const { user } = useCurrentUser();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      if (!user) throw new Error('Must be logged in');
+
+      const event = {
+        kind: 30078,
+        content: JSON.stringify(ids),
+        tags: [
+          ['d', D_TAG],
+          ['alt', 'BitPopArt featured products list'],
+        ],
+        created_at: Math.floor(Date.now() / 1000),
+      };
+
+      const signed = await user.signer.signEvent(event);
+      await nostr.event(signed, { signal: AbortSignal.timeout(10000) });
+      return ids;
+    },
+    onSuccess: (ids) => {
+      queryClient.setQueryData(['featured-products', getAdminPubkeyHex()], ids);
+      toast({ title: `${ids.length} featured product${ids.length !== 1 ? 's' : ''} saved` });
+    },
+    onError: () => {
+      toast({ title: 'Failed to save featured products', variant: 'destructive' });
+    },
+  });
 }
