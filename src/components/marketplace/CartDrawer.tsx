@@ -60,18 +60,25 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState('');
   const [stripeLoading, setStripeLoading] = useState(false);
 
-  // Re-read stripe settings directly from localStorage every render — no stale state
-  const stripePaymentLink = (() => {
+  // Read Stripe payment link from localStorage
+  const [stripePaymentLink, setStripePaymentLink] = useState(() => {
     try {
       const raw = localStorage.getItem('nostrpop_stripe_settings');
-      if (!raw) return '';
-      const parsed = JSON.parse(raw);
-      return (parsed.paymentLinkUrl || '').trim();
-    } catch {
-      return '';
+      return raw ? (JSON.parse(raw).paymentLinkUrl || '').trim() : '';
+    } catch { return ''; }
+  });
+
+  // Re-sync whenever the drawer opens
+  useEffect(() => {
+    if (open) {
+      try {
+        const raw = localStorage.getItem('nostrpop_stripe_settings');
+        setStripePaymentLink(raw ? (JSON.parse(raw).paymentLinkUrl || '').trim() : '');
+      } catch { setStripePaymentLink(''); }
     }
-  })();
-  const showStripeOption = stripePaymentLink.length > 0;
+  }, [open]);
+
+
 
   const { createInvoice, invoice, isLoading: lightningLoading, clearInvoice, lightningAddress } = useLightningPayment();
   const { isDetecting, startDetection, stopDetection, payWithWebLN, openLightningWallet } = useEnhancedPaymentDetection();
@@ -211,8 +218,8 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
   const handleStripeCheckout = async () => {
     if (!stripePaymentLink) {
       toast({
-        title: 'Stripe Payment Link Required',
-        description: 'Go to Shop Admin → Products → Stripe and add your Payment Link URL.',
+        title: 'Payment Link not set up yet',
+        description: 'Go to Shop → Admin → Products → Stripe tab and paste your Stripe Payment Link URL.',
         variant: 'destructive',
       });
       return;
@@ -514,18 +521,16 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                     </Button>
                   </div>
 
-                  {/* Card payment option — shown directly when Stripe is configured */}
-                  {showStripeOption && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full gap-2 border-blue-300 text-blue-700 hover:bg-blue-50 dark:border-blue-700 dark:text-blue-300 dark:hover:bg-blue-900/20"
-                      onClick={() => { setPaymentMethod('stripe'); setStep('address'); }}
-                    >
-                      <CreditCard className="w-4 h-4" />
-                      Pay with Card (Stripe) →
-                    </Button>
-                  )}
+                  {/* Card payment option — always shown */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full gap-2 border-blue-300 text-blue-700 hover:bg-blue-50 dark:border-blue-700 dark:text-blue-300 dark:hover:bg-blue-900/20"
+                    onClick={() => { setPaymentMethod('stripe'); setStep('address'); }}
+                  >
+                    <CreditCard className="w-4 h-4" />
+                    Pay with Card (Stripe) →
+                  </Button>
                 </div>
               </>
             )}
@@ -756,23 +761,21 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                 )}
               </Button>
 
-              {/* Card pay button — always visible when Stripe payment link is set */}
-              {showStripeOption && (
-                <Button
-                  variant="outline"
-                  className="w-full gap-2 border-blue-400 text-blue-700 hover:bg-blue-50 dark:border-blue-600 dark:text-blue-300 dark:hover:bg-blue-900/20 disabled:opacity-50"
-                  onClick={() => handleProceedToPayment('stripe')}
-                  disabled={stripeLoading || (hasPhysical && !countrySelected)}
-                >
-                  {stripeLoading ? (
-                    <><Loader2 className="w-4 h-4 animate-spin" />Opening Stripe…</>
-                  ) : (
-                    <><CreditCard className="w-4 h-4" />
-                      Pay {(!hasPhysical || countrySelected) ? formatCurrency(total, currency) : '…'} with Card 💳
-                    </>
-                  )}
-                </Button>
-              )}
+              {/* Card pay button — always shown */}
+              <Button
+                variant="outline"
+                className="w-full gap-2 border-blue-400 text-blue-700 hover:bg-blue-50 dark:border-blue-600 dark:text-blue-300 dark:hover:bg-blue-900/20 disabled:opacity-50"
+                onClick={() => handleProceedToPayment('stripe')}
+                disabled={stripeLoading || (hasPhysical && !countrySelected)}
+              >
+                {stripeLoading ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" />Opening Stripe…</>
+                ) : (
+                  <><CreditCard className="w-4 h-4" />
+                    Pay {(!hasPhysical || countrySelected) ? formatCurrency(total, currency) : '…'} with Card 💳
+                  </>
+                )}
+              </Button>
             </div>
           </div>
         )}
@@ -829,29 +832,31 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                     Scan with your Lightning wallet, or copy the invoice below
                   </p>
 
-                  {/* Stripe alternative on Lightning step */}
-                  {showStripeOption && (
-                    <div className="border-t pt-3 space-y-2">
-                      <p className="text-xs text-center text-muted-foreground">— or —</p>
-                      <Button
-                        variant="outline"
-                        className="w-full gap-2 border-blue-300 text-blue-700 hover:bg-blue-50 dark:border-blue-700 dark:text-blue-300 dark:hover:bg-blue-900/20"
-                        onClick={() => {
-                          try {
-                            const url = new URL(stripePaymentLink);
-                            if (address.email) url.searchParams.set('prefilled_email', address.email);
-                            window.open(url.toString(), '_blank');
-                          } catch {
-                            window.open(stripePaymentLink, '_blank');
-                          }
-                          setStep('stripe-pending');
-                        }}
-                      >
-                        <CreditCard className="w-4 h-4" />
-                        Pay with Card (Stripe) instead
-                      </Button>
-                    </div>
-                  )}
+                  {/* Stripe alternative on Lightning step — always shown */}
+                  <div className="border-t pt-3 space-y-2">
+                    <p className="text-xs text-center text-muted-foreground">— or —</p>
+                    <Button
+                      variant="outline"
+                      className="w-full gap-2 border-blue-300 text-blue-700 hover:bg-blue-50 dark:border-blue-700 dark:text-blue-300 dark:hover:bg-blue-900/20"
+                      onClick={() => {
+                        if (!stripePaymentLink) {
+                          toast({ title: 'No Stripe Payment Link set', description: 'Go to Shop Admin → Products → Stripe tab to add your Payment Link.', variant: 'destructive' });
+                          return;
+                        }
+                        try {
+                          const url = new URL(stripePaymentLink);
+                          if (address.email) url.searchParams.set('prefilled_email', address.email);
+                          window.open(url.toString(), '_blank');
+                        } catch {
+                          window.open(stripePaymentLink, '_blank');
+                        }
+                        setStep('stripe-pending');
+                      }}
+                    >
+                      <CreditCard className="w-4 h-4" />
+                      Pay with Card (Stripe) instead
+                    </Button>
+                  </div>
 
                   <div className="flex gap-2">
                     <Input value={invoice.payment_request} readOnly className="font-mono text-xs" />
