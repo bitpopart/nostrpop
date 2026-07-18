@@ -1,12 +1,12 @@
 /**
  * StripeSettingsAdmin
  *
- * Admin panel to connect Stripe. The admin enters their Stripe Publishable Key
- * so that buyers can check out with a credit / debit card via Stripe.
+ * Admin panel to connect Stripe. Settings are saved to Nostr (kind 30078)
+ * so they are available everywhere — no localStorage, no iframe issues.
  */
 
-import { useState } from 'react';
-import { useStripeSettings } from '@/hooks/useStripeSettings';
+import { useState, useEffect } from 'react';
+import { useStripeConfig, useSaveStripeConfig } from '@/hooks/useStripeConfig';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,8 +31,8 @@ import {
   Save,
   ListChecks,
   Lightbulb,
+  Loader2,
 } from 'lucide-react';
-import { useToast } from '@/hooks/useToast';
 
 const SUPPORTED_CURRENCIES = [
   { code: 'eur', label: 'EUR — Euro' },
@@ -48,51 +48,36 @@ const SUPPORTED_CURRENCIES = [
 ];
 
 export function StripeSettingsAdmin() {
-  const { settings, updateSettings, isConfigured } = useStripeSettings();
-  const { toast } = useToast();
+  const { data: config, isLoading } = useStripeConfig();
+  const { mutate: saveConfig, isPending: isSaving } = useSaveStripeConfig();
 
-  const [publishableKey, setPublishableKey] = useState(settings.publishableKey);
+  const [publishableKey, setPublishableKey] = useState('');
   const [showPk, setShowPk] = useState(false);
-  const [currency, setCurrency] = useState(settings.currency || 'eur');
-  const [enabled, setEnabled] = useState(settings.enabled);
-  const [paymentLinkUrl, setPaymentLinkUrl] = useState(settings.paymentLinkUrl || '');
+  const [currency, setCurrency] = useState('eur');
+  const [enabled, setEnabled] = useState(false);
+  const [paymentLinkUrl, setPaymentLinkUrl] = useState('');
 
-  const isDirty =
-    publishableKey !== settings.publishableKey ||
-    currency !== settings.currency ||
-    enabled !== settings.enabled ||
-    paymentLinkUrl !== (settings.paymentLinkUrl || '');
+  // Populate form once config loads from Nostr
+  useEffect(() => {
+    if (config) {
+      setPublishableKey(config.publishableKey || '');
+      setCurrency(config.currency || 'eur');
+      setEnabled(config.enabled || false);
+      setPaymentLinkUrl(config.paymentLinkUrl || '');
+    }
+  }, [config]);
 
   const handleSave = () => {
-    if (publishableKey && !publishableKey.startsWith('pk_')) {
-      toast({
-        title: 'Invalid key',
-        description: 'Stripe Publishable Keys start with "pk_live_" or "pk_test_".',
-        variant: 'destructive',
-      });
-      return;
-    }
+    if (publishableKey && !publishableKey.startsWith('pk_')) return;
+    if (paymentLinkUrl && !paymentLinkUrl.startsWith('https://')) return;
 
-    if (paymentLinkUrl && !paymentLinkUrl.startsWith('https://')) {
-      toast({
-        title: 'Invalid Payment Link',
-        description: 'Payment Link URL must start with "https://".',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    updateSettings({ publishableKey, currency, enabled, paymentLinkUrl });
-    toast({
-      title: 'Stripe settings saved',
-      description: publishableKey
-        ? `Stripe is ${enabled ? 'enabled' : 'disabled'} — buyers can pay by card.`
-        : 'Stripe key cleared.',
-    });
+    saveConfig({ publishableKey, currency, enabled, paymentLinkUrl });
   };
 
   const isTestMode = publishableKey.startsWith('pk_test_');
   const isLiveMode = publishableKey.startsWith('pk_live_');
+  const isConfigured = publishableKey.startsWith('pk_');
+  const hasPaymentLink = paymentLinkUrl.startsWith('https://buy.stripe.com/');
 
   return (
     <div className="space-y-6">
@@ -108,32 +93,27 @@ export function StripeSettingsAdmin() {
                 <h2 className="font-bold text-blue-700 dark:text-blue-300 text-lg leading-tight">
                   Stripe — Card Payments
                 </h2>
-                {isConfigured && settings.enabled ? (
+                {isConfigured && enabled ? (
                   <Badge className="bg-green-500 text-white border-0 text-xs">
-                    <CheckCircle2 className="h-3 w-3 mr-1" />
-                    Active
+                    <CheckCircle2 className="h-3 w-3 mr-1" />Active
                   </Badge>
                 ) : isConfigured ? (
                   <Badge variant="secondary" className="text-xs">Configured — disabled</Badge>
                 ) : (
                   <Badge variant="outline" className="text-xs text-muted-foreground">Not configured</Badge>
                 )}
-                {isTestMode && (
-                  <Badge className="bg-yellow-500 text-white border-0 text-xs">Test Mode</Badge>
-                )}
-                {isLiveMode && (
-                  <Badge className="bg-emerald-600 text-white border-0 text-xs">Live Mode</Badge>
-                )}
+                {isTestMode && <Badge className="bg-yellow-500 text-white border-0 text-xs">Test Mode</Badge>}
+                {isLiveMode && <Badge className="bg-emerald-600 text-white border-0 text-xs">Live Mode</Badge>}
               </div>
               <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
-                Accept credit and debit card payments at checkout. Buyers will be redirected to a secure Stripe payment page.
+                Settings are saved to Nostr so they work everywhere — no browser storage issues.
               </p>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Tip: How to handle the "product" question in Stripe */}
+      {/* Tip */}
       <Card className="border-amber-200 dark:border-amber-800 bg-amber-50/60 dark:bg-amber-900/10">
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2 text-amber-700 dark:text-amber-300">
@@ -143,52 +123,32 @@ export function StripeSettingsAdmin() {
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
           <p className="text-amber-800 dark:text-amber-200">
-            Your products live on <strong>this site</strong>, not in Stripe. You don't need to add each one.
-            Instead, create <strong>one generic payment product</strong> in Stripe that covers your whole cart.
+            Your products live on <strong>this site</strong>, not in Stripe. Create <strong>one generic payment product</strong> that covers your whole cart.
           </p>
-
-          {/* Recommended approach */}
           <div className="bg-white dark:bg-gray-800 rounded-xl border border-amber-200 dark:border-amber-700 p-4 space-y-2">
             <p className="font-bold text-sm text-amber-700 dark:text-amber-300 flex items-center gap-1.5">
               ✅ Recommended: "Customer chooses price" Payment Link
             </p>
             <ol className="text-xs text-muted-foreground space-y-2 list-decimal list-inside">
-              <li>
-                Open{' '}
-                <a href="https://dashboard.stripe.com/payment-links/create" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-medium">
-                  Stripe → Payment Links → Create
-                </a>
-              </li>
-              <li>
-                Under <strong>"Select type"</strong> → change from <em>"Products or subscriptions"</em>{' '}
-                to <strong className="text-amber-700 dark:text-amber-300">"Customers choose what to pay"</strong>
-                <br />
-                <span className="text-muted-foreground">(this removes the product picker entirely!)</span>
-              </li>
-              <li>Set a minimum amount (e.g. €1) and optionally a label like <em>"BitPopArt Order"</em></li>
-              <li>Click <strong>Create link</strong> — copy the <code className="text-xs bg-muted px-1 py-0.5 rounded">https://buy.stripe.com/...</code> URL</li>
-              <li>Paste it in the <strong>Payment Link URL</strong> field below</li>
+              <li>Open <a href="https://dashboard.stripe.com/payment-links/create" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-medium">Stripe → Payment Links → Create</a></li>
+              <li>Under <strong>"Select type"</strong> → change to <strong className="text-amber-700 dark:text-amber-300">"Customers choose what to pay"</strong></li>
+              <li>Set a minimum amount (e.g. €1) and label like <em>"BitPopArt Order"</em></li>
+              <li>Click <strong>Create link</strong> → copy the <code className="text-xs bg-muted px-1 py-0.5 rounded">https://buy.stripe.com/...</code> URL</li>
+              <li>Paste it in the <strong>Payment Link URL</strong> field below and click Save</li>
             </ol>
-            <p className="text-xs text-muted-foreground italic">
-              The buyer will type in (or you'll pre-fill) the cart total on the Stripe page.
-            </p>
           </div>
-
-          {/* Alternative */}
           <details className="text-xs">
             <summary className="cursor-pointer text-muted-foreground hover:text-foreground font-medium py-1">
-              Alternative: fixed-price product (for single-price shops)
+              Alternative: fixed-price product
             </summary>
             <div className="mt-2 space-y-1.5 text-muted-foreground pl-3 border-l-2 border-muted">
-              <p>If you sell items at one price (e.g. prints always €25), create a Stripe product for that price.</p>
-              <p>In Payment Links → Add new product → name it <em>"BitPopArt Order"</em> → set your standard price → enable <strong>"Adjustable quantity"</strong> so customers set how many items.</p>
-              <p>Limitation: doesn't work well for mixed-price carts.</p>
+              <p>Create a Stripe product → set your standard price → enable <strong>"Adjustable quantity"</strong>. Works best for single-price shops.</p>
             </div>
           </details>
         </CardContent>
       </Card>
 
-      {/* Setup steps */}
+      {/* Setup checklist */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
@@ -198,20 +158,9 @@ export function StripeSettingsAdmin() {
         </CardHeader>
         <CardContent className="space-y-3">
           <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
-            <li>
-              Get your <strong>Publishable key</strong> from{' '}
-              <a
-                href="https://dashboard.stripe.com/apikeys"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 hover:underline font-medium"
-              >
-                dashboard.stripe.com/apikeys
-              </a>{' '}
-              <span className="text-xs">(starts with <code className="bg-muted px-1 py-0.5 rounded">pk_live_</code> or <code className="bg-muted px-1 py-0.5 rounded">pk_test_</code>)</span>
-            </li>
-            <li>Create a <strong>"Customers choose what to pay"</strong> Payment Link (see tip above) and copy its URL</li>
-            <li>Paste both values below, toggle the switch <strong>on</strong>, and click <strong>Save</strong></li>
+            <li>Get your <strong>Publishable key</strong> from <a href="https://dashboard.stripe.com/apikeys" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-medium">dashboard.stripe.com/apikeys</a></li>
+            <li>Create a <strong>"Customers choose what to pay"</strong> Payment Link and copy its URL</li>
+            <li>Paste both below, enable the toggle, click <strong>Save to Nostr</strong></li>
           </ol>
         </CardContent>
       </Card>
@@ -221,141 +170,126 @@ export function StripeSettingsAdmin() {
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Connection Settings</CardTitle>
           <CardDescription>
-            Enter your Stripe API credentials to enable card payments.
+            {isLoading ? 'Loading saved settings from Nostr…' : 'Saved to Nostr — available everywhere instantly.'}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
-          {/* Enable toggle */}
-          <div className="flex items-center justify-between gap-4 p-3 rounded-lg border bg-muted/30">
-            <div>
-              <p className="text-sm font-semibold">Enable Stripe at Checkout</p>
-              <p className="text-xs text-muted-foreground">Show the "Pay by Card" option to customers</p>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8 gap-2 text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span className="text-sm">Loading from Nostr…</span>
             </div>
-            <Switch
-              checked={enabled}
-              onCheckedChange={setEnabled}
-            />
-          </div>
+          ) : (
+            <>
+              {/* Enable toggle */}
+              <div className="flex items-center justify-between gap-4 p-3 rounded-lg border bg-muted/30">
+                <div>
+                  <p className="text-sm font-semibold">Enable "Pay with Card" at Checkout</p>
+                  <p className="text-xs text-muted-foreground">Requires a valid Payment Link URL below</p>
+                </div>
+                <Switch checked={enabled} onCheckedChange={setEnabled} />
+              </div>
 
-          {/* Publishable Key */}
-          <div className="space-y-2">
-            <Label className="text-sm font-semibold">
-              Publishable Key <span className="text-red-500">*</span>
-            </Label>
-            <div className="relative">
-              <Input
-                type={showPk ? 'text' : 'password'}
-                value={publishableKey}
-                onChange={e => setPublishableKey(e.target.value)}
-                placeholder="pk_live_... or pk_test_..."
-                className="pr-10 font-mono text-sm"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPk(v => !v)}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              {/* Publishable Key */}
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">Publishable Key</Label>
+                <div className="relative">
+                  <Input
+                    type={showPk ? 'text' : 'password'}
+                    value={publishableKey}
+                    onChange={e => setPublishableKey(e.target.value)}
+                    placeholder="pk_live_... or pk_test_..."
+                    className="pr-10 font-mono text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPk(v => !v)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPk ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                {publishableKey && !publishableKey.startsWith('pk_') && (
+                  <p className="text-xs text-destructive flex items-center gap-1">
+                    <AlertCircle className="h-3.5 w-3.5" />Must start with "pk_"
+                  </p>
+                )}
+                {isTestMode && <p className="text-xs text-yellow-600 flex items-center gap-1"><Info className="h-3.5 w-3.5" />Test mode — use card 4242 4242 4242 4242</p>}
+                {isLiveMode && <p className="text-xs text-green-600 flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5" />Live mode active</p>}
+              </div>
+
+              {/* Payment Link URL */}
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">
+                  Stripe Payment Link URL <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  type="url"
+                  value={paymentLinkUrl}
+                  onChange={e => setPaymentLinkUrl(e.target.value)}
+                  placeholder="https://buy.stripe.com/..."
+                  className="text-sm"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Your <strong>"Customers choose what to pay"</strong> Payment Link from{' '}
+                  <a href="https://dashboard.stripe.com/payment-links/create" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                    Stripe Dashboard → Payment Links → Create
+                  </a>
+                </p>
+                {hasPaymentLink && (
+                  <p className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+                    <CheckCircle2 className="h-3.5 w-3.5" />Valid Stripe Payment Link detected
+                  </p>
+                )}
+                {paymentLinkUrl && !paymentLinkUrl.startsWith('https://') && (
+                  <p className="text-xs text-destructive flex items-center gap-1">
+                    <AlertCircle className="h-3.5 w-3.5" />URL must start with "https://"
+                  </p>
+                )}
+              </div>
+
+              {/* Currency */}
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">Default Currency</Label>
+                <Select value={currency} onValueChange={setCurrency}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {SUPPORTED_CURRENCIES.map(c => (
+                      <SelectItem key={c.code} value={c.code}>{c.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Save */}
+              <Button
+                onClick={handleSave}
+                disabled={isSaving || (!!publishableKey && !publishableKey.startsWith('pk_')) || (!!paymentLinkUrl && !paymentLinkUrl.startsWith('https://'))}
+                className="w-full gap-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white border-0"
               >
-                {showPk ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
-            {publishableKey && !publishableKey.startsWith('pk_') && (
-              <p className="text-xs text-destructive flex items-center gap-1">
-                <AlertCircle className="h-3.5 w-3.5" />
-                Publishable keys must start with "pk_"
-              </p>
-            )}
-            {isTestMode && (
-              <p className="text-xs text-yellow-600 dark:text-yellow-400 flex items-center gap-1">
-                <Info className="h-3.5 w-3.5" />
-                Test mode — use <code>4242 4242 4242 4242</code> to test payments
-              </p>
-            )}
-            {isLiveMode && (
-              <p className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
-                <CheckCircle2 className="h-3.5 w-3.5" />
-                Live mode — real card payments will be charged
-              </p>
-            )}
-          </div>
-
-          {/* Payment Link URL */}
-          <div className="space-y-2">
-            <Label className="text-sm font-semibold">
-              Stripe Payment Link URL <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              type="url"
-              value={paymentLinkUrl}
-              onChange={e => setPaymentLinkUrl(e.target.value)}
-              placeholder="https://buy.stripe.com/..."
-              className="text-sm"
-            />
-            <p className="text-xs text-muted-foreground">
-              Your <strong>"Customers choose what to pay"</strong> Payment Link URL from{' '}
-              <a
-                href="https://dashboard.stripe.com/payment-links/create"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 hover:underline"
-              >
-                Stripe Dashboard → Payment Links → Create
-              </a>
-              . When a buyer clicks "Pay by Card", they are sent to this page where they enter the cart total shown at checkout.
-            </p>
-            {paymentLinkUrl && paymentLinkUrl.startsWith('https://buy.stripe.com/') && (
-              <p className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
-                <CheckCircle2 className="h-3.5 w-3.5" />
-                Valid Stripe Payment Link detected
-              </p>
-            )}
-          </div>
-
-          {/* Currency */}
-          <div className="space-y-2">
-            <Label className="text-sm font-semibold">Default Currency</Label>
-            <Select value={currency} onValueChange={setCurrency}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {SUPPORTED_CURRENCIES.map(c => (
-                  <SelectItem key={c.code} value={c.code}>
-                    {c.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">
-              Currency used for Stripe checkout. Must match your Stripe account's supported currencies.
-            </p>
-          </div>
-
-          {/* Save */}
-          <Button
-            onClick={handleSave}
-            disabled={!isDirty}
-            className="w-full gap-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white border-0"
-          >
-            <Save className="h-4 w-4" />
-            {isDirty ? 'Save Stripe Settings' : 'Settings Saved'}
-          </Button>
+                {isSaving ? (
+                  <><Loader2 className="h-4 w-4 animate-spin" />Saving to Nostr…</>
+                ) : (
+                  <><Save className="h-4 w-4" />Save to Nostr</>
+                )}
+              </Button>
+            </>
+          )}
         </CardContent>
       </Card>
 
-      {/* Test checklist */}
-      {isConfigured && (
+      {/* Status */}
+      {hasPaymentLink && (
         <Card className="border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-900/10">
           <CardContent className="p-4">
             <p className="text-sm font-semibold text-green-700 dark:text-green-300 mb-2 flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4" />
-              Stripe is configured! Checkout options:
+              Stripe is ready! Buyers will see:
             </p>
             <ul className="text-xs text-green-600 dark:text-green-400 space-y-1 list-disc list-inside">
-              <li>Buyers will see a <strong>"Pay by Card"</strong> button alongside the Lightning option</li>
-              <li>Clicking "Pay by Card" opens a Stripe Checkout page</li>
-              {isTestMode && (
-                <li>Test card: <code className="bg-green-100 dark:bg-green-900/30 px-1 py-0.5 rounded">4242 4242 4242 4242</code>, any future expiry &amp; CVC</li>
-              )}
+              <li>A <strong>"Pay with Card 💳"</strong> button in cart and at checkout</li>
+              <li>Clicking it opens your Stripe Payment Link in a new tab</li>
+              {isTestMode && <li>Test card: <code className="bg-green-100 dark:bg-green-900/30 px-1 rounded">4242 4242 4242 4242</code></li>}
             </ul>
           </CardContent>
         </Card>

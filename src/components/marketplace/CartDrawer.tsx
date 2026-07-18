@@ -19,6 +19,7 @@ import { useCart } from '@/hooks/useCart';
 import { useShippingConfig, getShippingFee, DEFAULT_SHIPPING_CONFIG } from '@/hooks/useShippingConfig';
 import { useLightningPayment, formatCurrency, convertCurrency } from '@/hooks/usePayment';
 import { useToast } from '@/hooks/useToast';
+import { useStripeConfig } from '@/hooks/useStripeConfig';
 import { useEnhancedPaymentDetection } from '@/hooks/usePaymentDetection';
 import { createCheckoutOrder } from '@/hooks/useOrders';
 import QRCode from 'qrcode';
@@ -60,23 +61,9 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState('');
   const [stripeLoading, setStripeLoading] = useState(false);
 
-  // Read Stripe payment link from localStorage
-  const [stripePaymentLink, setStripePaymentLink] = useState(() => {
-    try {
-      const raw = localStorage.getItem('nostrpop_stripe_settings');
-      return raw ? (JSON.parse(raw).paymentLinkUrl || '').trim() : '';
-    } catch { return ''; }
-  });
-
-  // Re-sync whenever the drawer opens
-  useEffect(() => {
-    if (open) {
-      try {
-        const raw = localStorage.getItem('nostrpop_stripe_settings');
-        setStripePaymentLink(raw ? (JSON.parse(raw).paymentLinkUrl || '').trim() : '');
-      } catch { setStripePaymentLink(''); }
-    }
-  }, [open]);
+  // Read Stripe config from Nostr — works everywhere, no localStorage issues
+  const { data: stripeConfig } = useStripeConfig();
+  const stripePaymentLink = (stripeConfig?.paymentLinkUrl || '').trim();
 
 
 
