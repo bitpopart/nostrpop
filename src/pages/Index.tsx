@@ -1668,126 +1668,108 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Love PopArt Banner — category icon nav */}
-        <div className="mb-12">
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 p-[2px] shadow-lg">
-            <div className="relative rounded-2xl bg-gradient-to-r from-pink-50 via-rose-50 to-orange-50 dark:from-pink-950/80 dark:via-rose-950/80 dark:to-orange-950/80 px-5 py-4 overflow-hidden">
-              {/* Decorative background hearts */}
+        {/* Love PopArt Banner — compact inline category icon nav */}
+        <div className="mb-10">
+          <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 p-[2px] shadow-md">
+            <div className="relative rounded-xl bg-gradient-to-r from-pink-50 via-rose-50 to-orange-50 dark:from-pink-950/80 dark:via-rose-950/80 dark:to-orange-950/80 px-4 py-3 overflow-hidden">
+              {/* Decorative background */}
               <div className="absolute inset-0 pointer-events-none select-none overflow-hidden opacity-10">
-                <span className="absolute top-1 left-8 text-5xl">❤️</span>
-                <span className="absolute bottom-1 right-16 text-4xl">🎨</span>
-                <span className="absolute top-2 right-40 text-3xl">✨</span>
+                <span className="absolute top-0 right-10 text-4xl">❤️</span>
+                <span className="absolute bottom-0 right-32 text-3xl">🎨</span>
               </div>
 
-              {/* Title row */}
-              <div className="relative z-10 flex items-center gap-2 mb-4">
-                <Heart className="h-5 w-5 text-pink-500 fill-pink-500" />
-                <span className="text-lg font-extrabold bg-gradient-to-r from-pink-600 via-rose-600 to-orange-600 bg-clip-text text-transparent">
-                  Love PopArt
-                </span>
-              </div>
+              {/* Single compact row: title + icons */}
+              <div className="relative z-10 flex flex-wrap items-center gap-x-3 gap-y-2">
+                {/* Title */}
+                <div className="flex items-center gap-1.5 mr-1">
+                  <Heart className="h-4 w-4 text-pink-500 fill-pink-500 flex-shrink-0" />
+                  <span className="text-sm font-extrabold bg-gradient-to-r from-pink-600 via-rose-600 to-orange-600 bg-clip-text text-transparent whitespace-nowrap">
+                    Love PopArt
+                  </span>
+                </div>
 
-              {/* Category icon links */}
-              <div className="relative z-10 flex flex-wrap gap-2">
+                {/* Divider */}
+                <div className="h-6 w-px bg-rose-300/60 dark:bg-rose-600/40 flex-shrink-0" />
+
                 {/* Images */}
-                <Link
-                  to="/app"
-                  className="flex flex-col items-center justify-center w-14 h-14 rounded-xl bg-white/70 dark:bg-white/10 hover:bg-white dark:hover:bg-white/20 shadow-sm hover:shadow-md transition-all duration-200 group"
-                  title="Images"
-                >
-                  <ImageIcon className="h-6 w-6 text-pink-500 group-hover:scale-110 transition-transform duration-200" />
-                  <span className="text-[10px] font-semibold text-gray-600 dark:text-gray-300 mt-0.5">Images</span>
+                <Link to="/app" title="Images" className="flex flex-col items-center gap-0.5 group">
+                  <div className="w-9 h-9 rounded-lg bg-white/70 dark:bg-white/10 hover:bg-white dark:hover:bg-white/20 shadow-sm flex items-center justify-center group-hover:scale-110 transition-all duration-200">
+                    <ImageIcon className="h-4 w-4 text-pink-500" />
+                  </div>
+                  <span className="text-[9px] font-semibold text-gray-500 dark:text-gray-400 leading-tight">Images</span>
                 </Link>
 
                 {/* Wallpapers */}
-                <Link
-                  to="/wallpapers"
-                  className="flex flex-col items-center justify-center w-14 h-14 rounded-xl bg-white/70 dark:bg-white/10 hover:bg-white dark:hover:bg-white/20 shadow-sm hover:shadow-md transition-all duration-200 group"
-                  title="Wallpapers"
-                >
-                  <LayoutGrid className="h-6 w-6 text-violet-500 group-hover:scale-110 transition-transform duration-200" />
-                  <span className="text-[10px] font-semibold text-gray-600 dark:text-gray-300 mt-0.5">Wallpapers</span>
+                <Link to="/wallpapers" title="Wallpapers" className="flex flex-col items-center gap-0.5 group">
+                  <div className="w-9 h-9 rounded-lg bg-white/70 dark:bg-white/10 hover:bg-white dark:hover:bg-white/20 shadow-sm flex items-center justify-center group-hover:scale-110 transition-all duration-200">
+                    <LayoutGrid className="h-4 w-4 text-violet-500" />
+                  </div>
+                  <span className="text-[9px] font-semibold text-gray-500 dark:text-gray-400 leading-tight">Wallpapers</span>
                 </Link>
 
                 {/* Memes */}
-                <Link
-                  to="/memes"
-                  className="flex flex-col items-center justify-center w-14 h-14 rounded-xl bg-white/70 dark:bg-white/10 hover:bg-white dark:hover:bg-white/20 shadow-sm hover:shadow-md transition-all duration-200 group"
-                  title="Memes"
-                >
-                  <Wand2 className="h-6 w-6 text-yellow-500 group-hover:scale-110 transition-transform duration-200" />
-                  <span className="text-[10px] font-semibold text-gray-600 dark:text-gray-300 mt-0.5">Memes</span>
+                <Link to="/memes" title="Memes" className="flex flex-col items-center gap-0.5 group">
+                  <div className="w-9 h-9 rounded-lg bg-white/70 dark:bg-white/10 hover:bg-white dark:hover:bg-white/20 shadow-sm flex items-center justify-center group-hover:scale-110 transition-all duration-200">
+                    <Wand2 className="h-4 w-4 text-yellow-500" />
+                  </div>
+                  <span className="text-[9px] font-semibold text-gray-500 dark:text-gray-400 leading-tight">Memes</span>
                 </Link>
 
                 {/* Avatars */}
-                <Link
-                  to="/avatars"
-                  className="flex flex-col items-center justify-center w-14 h-14 rounded-xl bg-white/70 dark:bg-white/10 hover:bg-white dark:hover:bg-white/20 shadow-sm hover:shadow-md transition-all duration-200 group"
-                  title="Avatars"
-                >
-                  <Users className="h-6 w-6 text-blue-500 group-hover:scale-110 transition-transform duration-200" />
-                  <span className="text-[10px] font-semibold text-gray-600 dark:text-gray-300 mt-0.5">Avatars</span>
+                <Link to="/avatars" title="Avatars" className="flex flex-col items-center gap-0.5 group">
+                  <div className="w-9 h-9 rounded-lg bg-white/70 dark:bg-white/10 hover:bg-white dark:hover:bg-white/20 shadow-sm flex items-center justify-center group-hover:scale-110 transition-all duration-200">
+                    <Users className="h-4 w-4 text-blue-500" />
+                  </div>
+                  <span className="text-[9px] font-semibold text-gray-500 dark:text-gray-400 leading-tight">Avatars</span>
                 </Link>
 
                 {/* GIFs */}
-                <Link
-                  to="/gifs"
-                  className="flex flex-col items-center justify-center w-14 h-14 rounded-xl bg-white/70 dark:bg-white/10 hover:bg-white dark:hover:bg-white/20 shadow-sm hover:shadow-md transition-all duration-200 group"
-                  title="GIFs"
-                >
-                  <Play className="h-6 w-6 text-green-500 group-hover:scale-110 transition-transform duration-200" />
-                  <span className="text-[10px] font-semibold text-gray-600 dark:text-gray-300 mt-0.5">GIFs</span>
+                <Link to="/gifs" title="GIFs" className="flex flex-col items-center gap-0.5 group">
+                  <div className="w-9 h-9 rounded-lg bg-white/70 dark:bg-white/10 hover:bg-white dark:hover:bg-white/20 shadow-sm flex items-center justify-center group-hover:scale-110 transition-all duration-200">
+                    <Play className="h-4 w-4 text-green-500" />
+                  </div>
+                  <span className="text-[9px] font-semibold text-gray-500 dark:text-gray-400 leading-tight">GIFs</span>
                 </Link>
 
                 {/* Animations */}
-                <Link
-                  to="/animations"
-                  className="flex flex-col items-center justify-center w-14 h-14 rounded-xl bg-white/70 dark:bg-white/10 hover:bg-white dark:hover:bg-white/20 shadow-sm hover:shadow-md transition-all duration-200 group"
-                  title="Animations"
-                >
-                  <Clapperboard className="h-6 w-6 text-orange-500 group-hover:scale-110 transition-transform duration-200" />
-                  <span className="text-[10px] font-semibold text-gray-600 dark:text-gray-300 mt-0.5">Animations</span>
+                <Link to="/animations" title="Animations" className="flex flex-col items-center gap-0.5 group">
+                  <div className="w-9 h-9 rounded-lg bg-white/70 dark:bg-white/10 hover:bg-white dark:hover:bg-white/20 shadow-sm flex items-center justify-center group-hover:scale-110 transition-all duration-200">
+                    <Clapperboard className="h-4 w-4 text-orange-500" />
+                  </div>
+                  <span className="text-[9px] font-semibold text-gray-500 dark:text-gray-400 leading-tight">Animations</span>
                 </Link>
 
                 {/* Banners */}
-                <Link
-                  to="/banners"
-                  className="flex flex-col items-center justify-center w-14 h-14 rounded-xl bg-white/70 dark:bg-white/10 hover:bg-white dark:hover:bg-white/20 shadow-sm hover:shadow-md transition-all duration-200 group"
-                  title="Banners"
-                >
-                  <Frame className="h-6 w-6 text-sky-500 group-hover:scale-110 transition-transform duration-200" />
-                  <span className="text-[10px] font-semibold text-gray-600 dark:text-gray-300 mt-0.5">Banners</span>
+                <Link to="/banners" title="Banners" className="flex flex-col items-center gap-0.5 group">
+                  <div className="w-9 h-9 rounded-lg bg-white/70 dark:bg-white/10 hover:bg-white dark:hover:bg-white/20 shadow-sm flex items-center justify-center group-hover:scale-110 transition-all duration-200">
+                    <Frame className="h-4 w-4 text-sky-500" />
+                  </div>
+                  <span className="text-[9px] font-semibold text-gray-500 dark:text-gray-400 leading-tight">Banners</span>
                 </Link>
 
                 {/* Coloring */}
-                <Link
-                  to="/coloring-pages"
-                  className="flex flex-col items-center justify-center w-14 h-14 rounded-xl bg-white/70 dark:bg-white/10 hover:bg-white dark:hover:bg-white/20 shadow-sm hover:shadow-md transition-all duration-200 group"
-                  title="Coloring"
-                >
-                  <Paintbrush className="h-6 w-6 text-teal-500 group-hover:scale-110 transition-transform duration-200" />
-                  <span className="text-[10px] font-semibold text-gray-600 dark:text-gray-300 mt-0.5">Coloring</span>
+                <Link to="/coloring-pages" title="Coloring" className="flex flex-col items-center gap-0.5 group">
+                  <div className="w-9 h-9 rounded-lg bg-white/70 dark:bg-white/10 hover:bg-white dark:hover:bg-white/20 shadow-sm flex items-center justify-center group-hover:scale-110 transition-all duration-200">
+                    <Paintbrush className="h-4 w-4 text-teal-500" />
+                  </div>
+                  <span className="text-[9px] font-semibold text-gray-500 dark:text-gray-400 leading-tight">Coloring</span>
                 </Link>
 
                 {/* Cards */}
-                <Link
-                  to="/cards"
-                  className="flex flex-col items-center justify-center w-14 h-14 rounded-xl bg-white/70 dark:bg-white/10 hover:bg-white dark:hover:bg-white/20 shadow-sm hover:shadow-md transition-all duration-200 group"
-                  title="Cards"
-                >
-                  <CreditCard className="h-6 w-6 text-indigo-500 group-hover:scale-110 transition-transform duration-200" />
-                  <span className="text-[10px] font-semibold text-gray-600 dark:text-gray-300 mt-0.5">Cards</span>
+                <Link to="/cards" title="Cards" className="flex flex-col items-center gap-0.5 group">
+                  <div className="w-9 h-9 rounded-lg bg-white/70 dark:bg-white/10 hover:bg-white dark:hover:bg-white/20 shadow-sm flex items-center justify-center group-hover:scale-110 transition-all duration-200">
+                    <CreditCard className="h-4 w-4 text-indigo-500" />
+                  </div>
+                  <span className="text-[9px] font-semibold text-gray-500 dark:text-gray-400 leading-tight">Cards</span>
                 </Link>
 
                 {/* Magazine — highlighted */}
-                <Link
-                  to="/blog"
-                  className="flex flex-col items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-br from-rose-500 to-orange-500 shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200 group"
-                  title="Magazine"
-                >
-                  <Newspaper className="h-6 w-6 text-white group-hover:scale-110 transition-transform duration-200" />
-                  <span className="text-[10px] font-bold text-white mt-0.5">Magazine</span>
-                </Link>
+                <a href="https://www.bitpopart.com/magazine" target="_blank" rel="noopener noreferrer" title="Magazine" className="flex flex-col items-center gap-0.5 group">
+                  <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-rose-500 to-orange-500 shadow-md flex items-center justify-center group-hover:scale-110 group-hover:shadow-lg transition-all duration-200">
+                    <Newspaper className="h-4 w-4 text-white" />
+                  </div>
+                  <span className="text-[9px] font-bold text-rose-600 dark:text-rose-400 leading-tight">Magazine</span>
+                </a>
               </div>
             </div>
           </div>
