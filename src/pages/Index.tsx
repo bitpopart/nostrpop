@@ -1679,7 +1679,7 @@ const Index = () => {
               </div>
 
               {/* Single compact row: title + icons */}
-              <div className="relative z-10 flex flex-wrap items-center gap-x-3 gap-y-2">
+              <div className="relative z-10 flex flex-wrap items-center justify-center gap-x-3 gap-y-2">
                 {/* Title */}
                 <div className="flex items-center gap-1.5 mr-1">
                   <Heart className="h-4 w-4 text-pink-500 fill-pink-500 flex-shrink-0" />
