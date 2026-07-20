@@ -256,7 +256,9 @@ const Shop = () => {
   const [activeTab, setActiveTab] = useState(getInitialTab());
 
   // Get initial category from URL params
-  const initialCategory = searchParams.get('category') || 'all';
+  // Default to 'featured' so featured products show first for everyone;
+  // falls back to 'all' only when explicitly set via URL
+  const initialCategory = searchParams.get('category') || 'featured';
   const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory);
 
   // Update tab when URL params change
@@ -281,7 +283,9 @@ const Shop = () => {
     if (categoryParam) {
       setSelectedCategory(categoryParam);
     } else {
-      setSelectedCategory('all');
+      // No category param → keep 'featured' as default so featured products
+      // are shown first for everyone on a clean page load
+      setSelectedCategory('featured');
     }
   }, [searchParams]);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -330,10 +334,22 @@ const Shop = () => {
   const products = useMemo(() => {
     if (!allProducts) return allProducts;
     let filtered = allProducts;
-    if (selectedCategory !== 'all') {
+
+    if (selectedCategory === 'featured') {
+      // Show only featured products (in admin-chosen order)
+      if (featuredIds.length > 0) {
+        filtered = featuredIds
+          .map(id => allProducts.find(p => p.id === id))
+          .filter((p): p is NonNullable<typeof p> => p !== undefined);
+      } else {
+        // No featured products defined yet — fall through to show all
+        filtered = allProducts;
+      }
+    } else if (selectedCategory !== 'all') {
       const needle = selectedCategory.toLowerCase();
       filtered = filtered.filter(p => p.category.toLowerCase() === needle);
     }
+
     if (selectedTag) {
       const needle = selectedTag.toLowerCase();
       filtered = filtered.filter(p => {
@@ -341,8 +357,9 @@ const Shop = () => {
         return kwTags.some(t => t.toLowerCase() === needle);
       });
     }
-    // Apply featured pinning: featured products first (in admin-chosen order), then the rest
-    if (featuredIds.length > 0) {
+
+    // For non-featured views: apply featured pinning so featured products appear first
+    if (selectedCategory !== 'featured' && featuredIds.length > 0) {
       const featuredSet = new Set(featuredIds);
       const pinned = featuredIds
         .map(id => filtered.find(p => p.id === id))
@@ -350,6 +367,7 @@ const Shop = () => {
       const rest = filtered.filter(p => !featuredSet.has(p.id));
       return [...pinned, ...rest];
     }
+
     return filtered;
   }, [allProducts, selectedCategory, selectedTag, featuredIds]);
 
@@ -564,8 +582,24 @@ const Shop = () => {
               <div className="w-full">
                 <div className="overflow-x-auto pb-px">
                   <div className="inline-flex h-9 w-max min-w-full border-b border-border gap-0">
+                    {/* Featured tab — shown whenever featured IDs exist */}
+                    {featuredIds.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => { setSelectedCategory('featured'); setSelectedTag(null); }}
+                        className={`relative h-9 border-b-2 px-4 text-sm font-medium transition-colors whitespace-nowrap flex items-center gap-1.5
+                          ${selectedCategory === 'featured'
+                            ? 'border-orange-500 text-orange-600'
+                            : 'border-transparent text-muted-foreground hover:text-foreground'}`}
+                      >
+                        <Star className="h-3.5 w-3.5 fill-current" />
+                        Featured
+                        <span className="ml-0.5 text-xs text-muted-foreground">{featuredIds.length}</span>
+                      </button>
+                    )}
+
                     {/* All tab */}
-                     <button
+                    <button
                       type="button"
                       onClick={() => { setSelectedCategory('all'); setSelectedTag(null); }}
                       className={`relative h-9 border-b-2 px-4 text-sm font-medium transition-colors whitespace-nowrap
@@ -653,7 +687,9 @@ const Shop = () => {
                             <CardTitle className="mb-2">No Products Found</CardTitle>
                             <CardDescription>
                               {selectedTag
-                                ? `No products tagged #${selectedTag}${selectedCategory !== 'all' ? ` in "${selectedCategory}"` : ''}. Try clearing the tag filter.`
+                                ? `No products tagged #${selectedTag}${selectedCategory !== 'all' && selectedCategory !== 'featured' ? ` in "${selectedCategory}"` : ''}. Try clearing the tag filter.`
+                                : selectedCategory === 'featured'
+                                ? 'No featured products have been set yet. Browse all products below.'
                                 : selectedCategory !== 'all'
                                 ? `No products tagged "${selectedCategory}". Try a different tab or relay.`
                                 : 'No products have been listed yet. Try switching to a different relay or be the first to list a product!'}
@@ -677,7 +713,8 @@ const Shop = () => {
                     <div className="space-y-3">
                       <p className="text-xs text-muted-foreground flex items-center gap-1.5 flex-wrap">
                         <span>{products.length} product{products.length !== 1 ? 's' : ''}</span>
-                        {selectedCategory !== 'all' && <span>in "{selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)}"</span>}
+                        {selectedCategory === 'featured' && <span className="inline-flex items-center gap-1"><Star className="h-3 w-3 fill-current text-orange-400" />featured</span>}
+                        {selectedCategory !== 'all' && selectedCategory !== 'featured' && <span>in "{selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)}"</span>}
                         {selectedTag && (
                           <span className="inline-flex items-center gap-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 px-2 py-0.5 rounded-full border border-orange-200 dark:border-orange-800">
                             <Tag className="h-3 w-3" />#{selectedTag}
