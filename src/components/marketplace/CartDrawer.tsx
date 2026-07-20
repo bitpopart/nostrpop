@@ -203,21 +203,16 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
   };
 
   /**
-   * Build the Stripe Payment Link URL with the correct cart total pre-filled.
-   *
-   * Stripe Payment Links support `?amount=` (in smallest currency unit, e.g. cents)
-   * when the link was created with a variable/custom-amount product.
-   * We always append this so the correct total is shown on the Stripe page.
+   * Build the Stripe Payment Link URL.
+   * We only pass prefilled_email for a smoother checkout experience.
+   * Amount cannot be injected via URL on fixed-price Stripe Payment Links —
+   * the stripe-pending screen shows the correct total so the buyer can
+   * enter it manually via Stripe's "Change amount" field.
    */
   const buildStripeUrl = (baseUrl: string): string => {
     try {
       const url = new URL(baseUrl);
-      // Amount in smallest currency unit (cents for EUR/USD, etc.)
-      // Stripe uses integers — multiply by 100 and round
-      const amountCents = Math.round(total * 100);
-      url.searchParams.set('amount', String(amountCents));
       if (address.email) url.searchParams.set('prefilled_email', address.email);
-      if (address.name) url.searchParams.set('prefilled_name', address.name);
       url.searchParams.set('client_reference_id', `bitpopart-cart-${Date.now()}`);
       return url.toString();
     } catch {
@@ -237,7 +232,8 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
 
     setStripeLoading(true);
     try {
-      // Save the order locally so we can track it
+      // Save the order locally for tracking — skip email here because
+      // payment hasn't been confirmed yet (Stripe page hasn't been submitted)
       const orderDescription = items.map(i => `${i.name} ×${i.quantity}`).join(', ');
       createCheckoutOrder({
         productId: 'cart',
@@ -258,6 +254,7 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
         } : undefined,
         paymentMethod: 'Stripe',
         sourcePage: 'cart',
+        skipEmail: true, // no mailto popup before payment is confirmed
         items: items.map(i => ({
           product_id: i.id,
           product_name: i.name,
@@ -269,7 +266,7 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
         })),
       });
 
-      // Open the Stripe Payment Link with the correct cart total in a new tab
+      // Open the Stripe Payment Link in a new tab
       window.open(buildStripeUrl(stripePaymentLink), '_blank');
       setStep('stripe-pending');
     } catch (err) {
@@ -907,7 +904,7 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
         {/* ── STRIPE PENDING STEP ── */}
         {step === 'stripe-pending' && (
           <div className="flex flex-col flex-1 overflow-hidden">
-            <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
+            <div className="flex-1 overflow-y-auto px-4 py-6 space-y-5">
               <div className="text-center space-y-4">
                 <div className="w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mx-auto">
                   <CreditCard className="w-8 h-8 text-blue-600" />
@@ -915,42 +912,58 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                 <div>
                   <h3 className="font-bold text-lg">Complete Payment in Stripe</h3>
                   <p className="text-sm text-muted-foreground mt-1">
-                    A new tab has opened with the Stripe payment page. Complete your payment there, then come back here to confirm.
+                    A Stripe payment page opened in a new tab. Enter the amount below and complete your payment there.
                   </p>
                 </div>
+              </div>
 
-                {/* Order summary */}
-                <div className="bg-muted/40 rounded-xl p-4 text-left space-y-2">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Your order</p>
-                  {items.map(item => {
-                    const ep = item.discount && item.discount > 0 ? item.price * (1 - item.discount / 100) : item.price;
-                    return (
-                      <div key={item.id} className="flex justify-between text-sm">
-                        <span className="text-muted-foreground truncate flex-1 mr-2">{item.name} ×{item.quantity}</span>
-                        <span className="font-medium flex-shrink-0">{formatCurrency(ep * item.quantity, item.currency)}</span>
-                      </div>
-                    );
-                  })}
-                  <Separator />
-                  <div className="flex justify-between text-sm font-bold">
-                    <span>Total</span>
-                    <span className="text-blue-600">{formatCurrency(total, currency)}</span>
+              {/* ── Amount to enter ── */}
+              <div className="rounded-xl border-2 border-blue-400 dark:border-blue-500 bg-blue-50 dark:bg-blue-900/20 p-4 space-y-2">
+                <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 uppercase tracking-wide text-center">
+                  Enter this amount in Stripe 👇
+                </p>
+                <p className="text-4xl font-extrabold text-blue-700 dark:text-blue-200 text-center tracking-tight">
+                  {formatCurrency(total, currency)}
+                </p>
+                {shippingCost > 0 && (
+                  <div className="text-xs text-blue-600 dark:text-blue-400 text-center space-y-0.5 pt-1 border-t border-blue-200 dark:border-blue-700">
+                    <div className="flex justify-between"><span>Products</span><span>{formatCurrency(subtotal, currency)}</span></div>
+                    <div className="flex justify-between"><span className="flex items-center gap-1"><Truck className="w-3 h-3" />Shipping</span><span>{formatCurrency(shippingCost, currency)}</span></div>
                   </div>
-                </div>
+                )}
+              </div>
 
-                <div className="text-xs text-muted-foreground bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2 text-left">
-                  <strong>Didn't see the Stripe page open?</strong>{' '}
-                  {stripePaymentLink && (
-                    <button
-                      type="button"
-                      onClick={() => window.open(buildStripeUrl(stripePaymentLink), '_blank')}
-                      className="text-blue-600 hover:underline font-medium"
-                    >
-                      Click here to open it again.
-                    </button>
-                  )}
+              {/* Order summary */}
+              <div className="bg-muted/40 rounded-xl p-4 space-y-2">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Your order</p>
+                {items.map(item => {
+                  const ep = item.discount && item.discount > 0 ? item.price * (1 - item.discount / 100) : item.price;
+                  return (
+                    <div key={item.id} className="flex justify-between text-sm">
+                      <span className="text-muted-foreground truncate flex-1 mr-2">{item.name} ×{item.quantity}</span>
+                      <span className="font-medium flex-shrink-0">{formatCurrency(ep * item.quantity, item.currency)}</span>
+                    </div>
+                  );
+                })}
+                <Separator />
+                <div className="flex justify-between text-sm font-bold">
+                  <span>Total</span>
+                  <span className="text-blue-600">{formatCurrency(total, currency)}</span>
                 </div>
               </div>
+
+              {stripePaymentLink && (
+                <div className="text-xs text-muted-foreground bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2">
+                  <strong>Stripe page didn't open?</strong>{' '}
+                  <button
+                    type="button"
+                    onClick={() => window.open(buildStripeUrl(stripePaymentLink), '_blank')}
+                    className="text-blue-600 hover:underline font-medium"
+                  >
+                    Click here to open it again.
+                  </button>
+                </div>
+              )}
             </div>
             <div className="border-t px-4 py-3 bg-white dark:bg-gray-950 flex-shrink-0 space-y-2">
               <Button
