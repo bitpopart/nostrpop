@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -32,6 +32,8 @@ import {
   Image as ImageIcon,
   Save,
   Percent,
+  GripVertical,
+  Star,
 } from 'lucide-react';
 
 // Categories are now loaded dynamically from useCategories hook
@@ -95,6 +97,8 @@ export function EditProductForm({ product, onSuccess, onCancel }: EditProductFor
   const [digitalFileNames, setDigitalFileNames] = useState<string[]>(product.digital_file_names || []);
   const [isUploading, setIsUploading] = useState(false);
   const [isUploadingFiles, setIsUploadingFiles] = useState(false);
+  const dragImageIndex = useRef<number | null>(null);
+  const dragOverImageIndex = useRef<number | null>(null);
   const [specs, setSpecs] = useState<Array<{ key: string; value: string }>>(
     product.specs?.map(([key, value]) => ({ key, value })) || []
   );
@@ -203,6 +207,29 @@ export function EditProductForm({ product, onSuccess, onCancel }: EditProductFor
 
   const removeImage = (index: number) => {
     setImages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleImageDragStart = (index: number) => {
+    dragImageIndex.current = index;
+  };
+
+  const handleImageDragEnter = (index: number) => {
+    dragOverImageIndex.current = index;
+  };
+
+  const handleImageDragEnd = () => {
+    if (dragImageIndex.current === null || dragOverImageIndex.current === null) return;
+    if (dragImageIndex.current === dragOverImageIndex.current) return;
+
+    setImages(prev => {
+      const updated = [...prev];
+      const dragged = updated.splice(dragImageIndex.current!, 1)[0];
+      updated.splice(dragOverImageIndex.current!, 0, dragged);
+      return updated;
+    });
+
+    dragImageIndex.current = null;
+    dragOverImageIndex.current = null;
   };
 
   const handleDigitalFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -780,23 +807,58 @@ export function EditProductForm({ product, onSuccess, onCancel }: EditProductFor
               </div>
 
               {images.length > 0 && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {images.map((image, index) => (
-                    <div key={index} className="relative group">
-                      <img
-                        src={image}
-                        alt={`Product image ${index + 1}`}
-                        className="w-full h-24 object-cover rounded-lg border"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeImage(index)}
-                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <GripVertical className="w-3 h-3" />
+                    Drag images to reorder — the <span className="font-semibold text-orange-600 mx-1">first image</span> is shown as the main product photo in the shop.
+                  </p>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {images.map((image, index) => (
+                      <div
+                        key={image}
+                        draggable
+                        onDragStart={() => handleImageDragStart(index)}
+                        onDragEnter={() => handleImageDragEnter(index)}
+                        onDragEnd={handleImageDragEnd}
+                        onDragOver={(e) => e.preventDefault()}
+                        className={`relative group cursor-grab active:cursor-grabbing rounded-lg border-2 transition-all ${
+                          index === 0
+                            ? 'border-orange-400 shadow-md shadow-orange-100 dark:shadow-orange-900/20'
+                            : 'border-transparent hover:border-gray-300'
+                        }`}
                       >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
-                  ))}
+                        <img
+                          src={image}
+                          alt={`Product image ${index + 1}`}
+                          className="w-full h-24 object-cover rounded-lg"
+                          draggable={false}
+                        />
+                        {/* Main photo badge on first image */}
+                        {index === 0 && (
+                          <div className="absolute top-1 left-1 flex items-center gap-0.5 bg-orange-500 text-white text-[10px] font-semibold px-1.5 py-0.5 rounded-full shadow-sm">
+                            <Star className="w-2.5 h-2.5 fill-current" />
+                            Main
+                          </div>
+                        )}
+                        {/* Drag handle indicator */}
+                        <div className="absolute top-1 right-6 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <GripVertical className="w-4 h-4 text-white drop-shadow" />
+                        </div>
+                        {/* Remove button */}
+                        <button
+                          type="button"
+                          onClick={() => removeImage(index)}
+                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                        {/* Image number */}
+                        <div className="absolute bottom-1 right-1 bg-black/50 text-white text-[10px] font-mono px-1 rounded">
+                          {index + 1}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
