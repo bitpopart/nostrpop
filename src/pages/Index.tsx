@@ -551,7 +551,7 @@ function DynamicButton({
 function InterSectionButtons({ buttons }: { buttons: HomepageButton[] }) {
   if (!buttons || buttons.length === 0) return null;
   return (
-    <div className="flex flex-wrap justify-center gap-3 mb-12 -mt-8">
+    <div className="flex flex-wrap justify-center gap-3 mb-6 -mt-4">
       {buttons.map(btn => (
         <DynamicButton key={btn.id} btn={btn} size="default" />
       ))}
@@ -1638,7 +1638,7 @@ const Index = () => {
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20">
       <div className="container mx-auto px-4 py-8">
         {/* Hero Section */}
-        <div className="text-center mb-16 pt-8">
+        <div className="text-center mb-6 pt-4">
           <div className="flex flex-col gap-4 items-center">
             {/* Dynamic Hero Buttons from settings — show skeletons while loading */}
             {heroButtons.length > 0 && (
@@ -1669,7 +1669,7 @@ const Index = () => {
         </div>
 
         {/* Love PopArt Banner — compact inline category icon nav */}
-        <div className="mb-10">
+        <div className="mb-5">
           <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 p-[2px] shadow-md">
             <div className="relative rounded-xl bg-gradient-to-r from-pink-50 via-rose-50 to-orange-50 dark:from-pink-950/80 dark:via-rose-950/80 dark:to-orange-950/80 px-4 py-3 overflow-hidden">
               {/* Decorative background */}
