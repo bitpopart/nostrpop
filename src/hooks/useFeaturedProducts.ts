@@ -20,7 +20,7 @@ export function useFeaturedProducts() {
   const query = useQuery({
     queryKey: ['featured-products', adminPubkey],
     queryFn: async (c) => {
-      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(6000)]);
+        const signal = AbortSignal.any([c.signal, AbortSignal.timeout(4000)]);
       try {
         const events = await nostr.query([{
           kinds: [30078],

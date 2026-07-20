@@ -301,7 +301,7 @@ export function useMarketplaceProducts(category?: string) {
   const query = useQuery({
     queryKey: ['marketplace-products'],
     queryFn: async (c) => {
-      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(15000)]);
+      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(8000)]);
 
       // Fetch NIP-99 (30402), NIP-15 (30018), and deletion events (5) in one request
       const allEvents = await nostr.query([
@@ -378,9 +378,9 @@ export function useMarketplaceProducts(category?: string) {
       return products.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     },
     enabled: !!adminPubkey,
-    staleTime: 30000,
-    refetchInterval: 60000,
-    retry: 2,
+    staleTime: 120000,   // 2 min — products rarely change, avoid unnecessary re-fetches
+    refetchInterval: 120000,
+    retry: 1,            // Only retry once to surface errors faster
   });
 
   // Apply category filter client-side
@@ -402,7 +402,7 @@ export function useMarketplaceProduct(productId: string) {
   return useQuery({
     queryKey: ['marketplace-product', productId],
     queryFn: async (c) => {
-      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(15000)]);
+      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(8000)]);
 
       // Fetch NIP-99 first, then NIP-15 as fallback, plus deletion events
       const allEvents = await nostr.query([
