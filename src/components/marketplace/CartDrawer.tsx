@@ -202,6 +202,29 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
     }
   };
 
+  /**
+   * Build the Stripe Payment Link URL with the correct cart total pre-filled.
+   *
+   * Stripe Payment Links support `?amount=` (in smallest currency unit, e.g. cents)
+   * when the link was created with a variable/custom-amount product.
+   * We always append this so the correct total is shown on the Stripe page.
+   */
+  const buildStripeUrl = (baseUrl: string): string => {
+    try {
+      const url = new URL(baseUrl);
+      // Amount in smallest currency unit (cents for EUR/USD, etc.)
+      // Stripe uses integers — multiply by 100 and round
+      const amountCents = Math.round(total * 100);
+      url.searchParams.set('amount', String(amountCents));
+      if (address.email) url.searchParams.set('prefilled_email', address.email);
+      if (address.name) url.searchParams.set('prefilled_name', address.name);
+      url.searchParams.set('client_reference_id', `bitpopart-cart-${Date.now()}`);
+      return url.toString();
+    } catch {
+      return baseUrl;
+    }
+  };
+
   const handleStripeCheckout = async () => {
     if (!stripePaymentLink) {
       toast({
@@ -246,15 +269,8 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
         })),
       });
 
-      // Open the Stripe Payment Link in a new tab
-      try {
-        const url = new URL(stripePaymentLink);
-        if (address.email) url.searchParams.set('prefilled_email', address.email);
-        url.searchParams.set('client_reference_id', `bitpopart-cart-${Date.now()}`);
-        window.open(url.toString(), '_blank');
-      } catch {
-        window.open(stripePaymentLink, '_blank');
-      }
+      // Open the Stripe Payment Link with the correct cart total in a new tab
+      window.open(buildStripeUrl(stripePaymentLink), '_blank');
       setStep('stripe-pending');
     } catch (err) {
       console.error('Stripe checkout failed', err);
@@ -830,13 +846,7 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                           toast({ title: 'No Stripe Payment Link set', description: 'Go to Shop Admin → Products → Stripe tab to add your Payment Link.', variant: 'destructive' });
                           return;
                         }
-                        try {
-                          const url = new URL(stripePaymentLink);
-                          if (address.email) url.searchParams.set('prefilled_email', address.email);
-                          window.open(url.toString(), '_blank');
-                        } catch {
-                          window.open(stripePaymentLink, '_blank');
-                        }
+                        window.open(buildStripeUrl(stripePaymentLink), '_blank');
                         setStep('stripe-pending');
                       }}
                     >
@@ -931,14 +941,13 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                 <div className="text-xs text-muted-foreground bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2 text-left">
                   <strong>Didn't see the Stripe page open?</strong>{' '}
                   {stripePaymentLink && (
-                    <a
-                      href={stripePaymentLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <button
+                      type="button"
+                      onClick={() => window.open(buildStripeUrl(stripePaymentLink), '_blank')}
                       className="text-blue-600 hover:underline font-medium"
                     >
                       Click here to open it again.
-                    </a>
+                    </button>
                   )}
                 </div>
               </div>
