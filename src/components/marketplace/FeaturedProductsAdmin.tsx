@@ -3,9 +3,10 @@
  *
  * Admin panel to pick and reorder which product thumbnails appear first
  * on the /shop page. Saved to Nostr so it works on every device.
+ * Pinned products can be reordered by dragging.
  */
 
-import { useMemo } from 'react';
+import { useMemo, useRef, useState, useCallback } from 'react';
 import { useMarketplaceProducts } from '@/hooks/useMarketplaceProducts';
 import { useFeaturedProducts, useUpdateFeaturedProducts } from '@/hooks/useFeaturedProducts';
 import { Card, CardContent } from '@/components/ui/card';
@@ -15,8 +16,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import {
   Star,
   StarOff,
-  ChevronUp,
-  ChevronDown,
+  GripVertical,
   Package,
   Download,
   Trash2,
@@ -34,6 +34,10 @@ export function FeaturedProductsAdmin() {
 
   const isLoading = productsLoading || featuredLoading;
 
+  // Local drag state — track which id is being dragged and which slot is hovered
+  const dragSrcId = useRef<string | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
+
   const toggle = (id: string) => {
     const next = featuredIds.includes(id)
       ? featuredIds.filter(x => x !== id)
@@ -41,21 +45,51 @@ export function FeaturedProductsAdmin() {
     updateFeatured(next);
   };
 
-  const moveUp = (id: string) => {
-    const idx = featuredIds.indexOf(id);
-    if (idx <= 0) return;
-    const next = [...featuredIds];
-    [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
-    updateFeatured(next);
-  };
+  // ── Drag handlers ────────────────────────────────────────────────────────────
 
-  const moveDown = (id: string) => {
-    const idx = featuredIds.indexOf(id);
-    if (idx < 0 || idx >= featuredIds.length - 1) return;
-    const next = [...featuredIds];
-    [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
-    updateFeatured(next);
-  };
+  const handleDragStart = useCallback((id: string, e: React.DragEvent) => {
+    dragSrcId.current = id;
+    e.dataTransfer.effectAllowed = 'move';
+    // Ghost image: use the element itself (default behaviour is fine)
+  }, []);
+
+  const handleDragEnter = useCallback((id: string) => {
+    if (dragSrcId.current && dragSrcId.current !== id) {
+      setDragOverId(id);
+    }
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault(); // allow drop
+    e.dataTransfer.dropEffect = 'move';
+  }, []);
+
+  const handleDrop = useCallback(
+    (targetId: string) => {
+      const srcId = dragSrcId.current;
+      if (!srcId || srcId === targetId) return;
+
+      const next = [...featuredIds];
+      const fromIdx = next.indexOf(srcId);
+      const toIdx = next.indexOf(targetId);
+      if (fromIdx === -1 || toIdx === -1) return;
+
+      next.splice(fromIdx, 1);
+      next.splice(toIdx, 0, srcId);
+      updateFeatured(next);
+
+      dragSrcId.current = null;
+      setDragOverId(null);
+    },
+    [featuredIds, updateFeatured],
+  );
+
+  const handleDragEnd = useCallback(() => {
+    dragSrcId.current = null;
+    setDragOverId(null);
+  }, []);
+
+  // ── Derived lists ─────────────────────────────────────────────────────────────
 
   const featuredProducts = useMemo(() => {
     if (!allProducts) return [];
@@ -136,7 +170,7 @@ export function FeaturedProductsAdmin() {
               <h3 className="font-semibold text-sm">
                 Pinned — shown first on /shop
                 {featuredProducts.length > 0 && (
-                  <span className="ml-2 text-xs text-muted-foreground font-normal">(left→right, top→bottom)</span>
+                  <span className="ml-2 text-xs text-muted-foreground font-normal">(drag to reorder)</span>
                 )}
               </h3>
             </div>
@@ -154,14 +188,17 @@ export function FeaturedProductsAdmin() {
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                 {featuredProducts.map((product, idx) => (
-                  <Tile
+                  <DraggableTile
                     key={product.id}
                     product={product}
                     position={idx + 1}
-                    isFeatured
+                    isDragOver={dragOverId === product.id}
                     onToggle={() => toggle(product.id)}
-                    onMoveUp={idx > 0 ? () => moveUp(product.id) : undefined}
-                    onMoveDown={idx < featuredProducts.length - 1 ? () => moveDown(product.id) : undefined}
+                    onDragStart={(e) => handleDragStart(product.id, e)}
+                    onDragEnter={() => handleDragEnter(product.id)}
+                    onDragOver={handleDragOver}
+                    onDrop={() => handleDrop(product.id)}
+                    onDragEnd={handleDragEnd}
                     disabled={isSaving}
                   />
                 ))}
@@ -193,11 +230,9 @@ export function FeaturedProductsAdmin() {
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                 {unfeaturedProducts.map(product => (
-                  <Tile
+                  <StaticTile
                     key={product.id}
                     product={product}
-                    position={null}
-                    isFeatured={false}
                     onToggle={() => toggle(product.id)}
                     disabled={isSaving}
                   />
@@ -212,7 +247,8 @@ export function FeaturedProductsAdmin() {
         <CardContent className="p-4 flex items-start gap-2.5">
           <Info className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
           <p className="text-xs text-muted-foreground">
-            Changes are saved to Nostr instantly and visible to all visitors on every device. Use ↑↓ arrows to reorder.
+            Changes are saved to Nostr instantly and visible to all visitors on every device.
+            Drag pinned products to reorder them.
           </p>
         </CardContent>
       </Card>
@@ -220,21 +256,99 @@ export function FeaturedProductsAdmin() {
   );
 }
 
-// ── Tile ────────────────────────────────────────────────────────────────────
+// ── DraggableTile (pinned products) ──────────────────────────────────────────
 
-interface TileProps {
+interface DraggableTileProps {
   product: MarketplaceProduct;
-  position: number | null;
-  isFeatured: boolean;
+  position: number;
+  isDragOver: boolean;
   onToggle: () => void;
-  onMoveUp?: () => void;
-  onMoveDown?: () => void;
+  onDragStart: (e: React.DragEvent) => void;
+  onDragEnter: () => void;
+  onDragOver: (e: React.DragEvent) => void;
+  onDrop: () => void;
+  onDragEnd: () => void;
   disabled?: boolean;
 }
 
-function Tile({ product, position, isFeatured, onToggle, onMoveUp, onMoveDown, disabled }: TileProps) {
+function DraggableTile({
+  product,
+  position,
+  isDragOver,
+  onToggle,
+  onDragStart,
+  onDragEnter,
+  onDragOver,
+  onDrop,
+  onDragEnd,
+  disabled,
+}: DraggableTileProps) {
   return (
-    <div className={`group relative rounded-xl border overflow-hidden bg-white dark:bg-gray-800 shadow-sm transition-shadow hover:shadow-md ${isFeatured ? 'ring-2 ring-orange-400 ring-offset-1' : ''}`}>
+    <div
+      draggable
+      onDragStart={onDragStart}
+      onDragEnter={onDragEnter}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+      onDragEnd={onDragEnd}
+      className={`group relative rounded-xl border overflow-hidden bg-white dark:bg-gray-800 shadow-sm transition-all
+        ring-2 ring-orange-400 ring-offset-1 cursor-grab active:cursor-grabbing select-none
+        ${isDragOver ? 'scale-105 ring-orange-600 shadow-lg opacity-80' : 'hover:shadow-md'}
+        ${disabled ? 'opacity-60 pointer-events-none' : ''}
+      `}
+    >
+      <div className="aspect-square bg-gray-100 dark:bg-gray-700 overflow-hidden relative">
+        {product.images[0] ? (
+          <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover pointer-events-none" loading="lazy" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            {product.type === 'digital' ? <Download className="h-8 w-8 text-gray-300" /> : <Package className="h-8 w-8 text-gray-300" />}
+          </div>
+        )}
+
+        {/* Position badge */}
+        <div className="absolute top-1.5 left-1.5 w-6 h-6 rounded-full bg-orange-500 text-white text-xs font-bold flex items-center justify-center shadow">
+          {position}
+        </div>
+
+        {/* Drag handle — visible on hover */}
+        <div className="absolute bottom-1.5 left-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="bg-black/50 rounded p-0.5 text-white">
+            <GripVertical className="h-4 w-4" />
+          </div>
+        </div>
+
+        {/* Star toggle (unpin) */}
+        <button
+          type="button"
+          onClick={onToggle}
+          disabled={disabled}
+          title="Unpin"
+          className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full flex items-center justify-center transition-all shadow bg-orange-500 text-white hover:bg-red-500"
+        >
+          <Star className="h-3.5 w-3.5 fill-white" />
+        </button>
+      </div>
+
+      <div className="p-2">
+        <p className="text-xs font-semibold leading-tight line-clamp-2">{product.name}</p>
+        <p className="text-xs text-green-600 font-medium mt-0.5">{formatCurrency(product.price, product.currency)}</p>
+      </div>
+    </div>
+  );
+}
+
+// ── StaticTile (unpinned products) ───────────────────────────────────────────
+
+interface StaticTileProps {
+  product: MarketplaceProduct;
+  onToggle: () => void;
+  disabled?: boolean;
+}
+
+function StaticTile({ product, onToggle, disabled }: StaticTileProps) {
+  return (
+    <div className={`group relative rounded-xl border overflow-hidden bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow ${disabled ? 'opacity-60 pointer-events-none' : ''}`}>
       <div className="aspect-square bg-gray-100 dark:bg-gray-700 overflow-hidden relative">
         {product.images[0] ? (
           <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" loading="lazy" />
@@ -244,44 +358,15 @@ function Tile({ product, position, isFeatured, onToggle, onMoveUp, onMoveDown, d
           </div>
         )}
 
-        {/* Position badge */}
-        {isFeatured && position !== null && (
-          <div className="absolute top-1.5 left-1.5 w-6 h-6 rounded-full bg-orange-500 text-white text-xs font-bold flex items-center justify-center shadow">
-            {position}
-          </div>
-        )}
-
-        {/* Reorder arrows */}
-        {isFeatured && (onMoveUp || onMoveDown) && (
-          <div className="absolute bottom-1 right-1 flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-            {onMoveUp && (
-              <button type="button" onClick={onMoveUp} disabled={disabled}
-                className="w-6 h-6 bg-black/50 hover:bg-black/70 text-white rounded flex items-center justify-center">
-                <ChevronUp className="h-3.5 w-3.5" />
-              </button>
-            )}
-            {onMoveDown && (
-              <button type="button" onClick={onMoveDown} disabled={disabled}
-                className="w-6 h-6 bg-black/50 hover:bg-black/70 text-white rounded flex items-center justify-center">
-                <ChevronDown className="h-3.5 w-3.5" />
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Star toggle */}
+        {/* Star toggle (pin) */}
         <button
           type="button"
           onClick={onToggle}
           disabled={disabled}
-          title={isFeatured ? 'Unpin' : 'Pin to top'}
-          className={`absolute top-1.5 right-1.5 w-7 h-7 rounded-full flex items-center justify-center transition-all shadow
-            ${isFeatured
-              ? 'bg-orange-500 text-white hover:bg-red-500'
-              : 'bg-white/70 text-gray-500 hover:bg-orange-50 hover:text-orange-500 opacity-0 group-hover:opacity-100'
-            }`}
+          title="Pin to top"
+          className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full flex items-center justify-center transition-all shadow bg-white/70 text-gray-500 hover:bg-orange-50 hover:text-orange-500 opacity-0 group-hover:opacity-100"
         >
-          <Star className={`h-3.5 w-3.5 ${isFeatured ? 'fill-white' : ''}`} />
+          <Star className="h-3.5 w-3.5" />
         </button>
       </div>
 
