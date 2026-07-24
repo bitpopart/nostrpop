@@ -97,6 +97,26 @@ function ProposalEditor({
 
   const publicUrl = `${window.location.origin}/proposal/${slug}`;
 
+  // ── Inject a tiny postMessage height reporter into the HTML ──────────────
+  // This lets the parent page resize the iframe to the full content height
+  // even after the file is hosted cross-origin on Blossom CDN.
+  const injectHeightReporter = (html: string): string => {
+    const script = `<script>
+(function(){
+  function report(){
+    var h=Math.max(document.documentElement.scrollHeight,document.body?document.body.scrollHeight:0);
+    window.parent.postMessage({type:'__proposal_height__',height:h},'*');
+  }
+  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',report);}else{report();}
+  window.addEventListener('load',report);
+  new MutationObserver(report).observe(document.documentElement,{subtree:true,childList:true,attributes:true});
+})();
+<\/script>`;
+    if (/<\/body>/i.test(html)) return html.replace(/<\/body>/i, script + '</body>');
+    if (/<\/html>/i.test(html)) return html.replace(/<\/html>/i, script + '</html>');
+    return html + script;
+  };
+
   // ── HTML file upload (reads file locally, no Blossom upload needed for preview)
   const handleHtmlFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -132,7 +152,10 @@ function ProposalEditor({
       if (tab === 'html') {
         const uploadingId = sonnerToast.loading('Uploading HTML to Blossom…');
         try {
-          const htmlBlob = new Blob([finalContent], { type: 'text/html' });
+          // Inject height reporter so the viewer can resize the iframe to full
+          // content height (no inner scrollbar) even from a cross-origin Blossom URL.
+          const injected = injectHeightReporter(finalContent);
+          const htmlBlob = new Blob([injected], { type: 'text/html' });
           const htmlFile = new File([htmlBlob], `proposal-${slug}.html`, { type: 'text/html' });
           const tags = await uploadFile(htmlFile);
           finalContent = tags[0][1]; // Blossom CDN URL
@@ -335,11 +358,15 @@ function ProposalEditor({
 
 // ─── Auto-resizing iframe (no inner scrollbar) ───────────────────────────────
 //
-// For same-origin / srcdoc iframes we can read the content height directly and
-// resize the iframe to match — so only the page scrollbar is ever visible.
-// For cross-origin embeds (PDF, Google Slides, etc.) we can't access the
-// content, so we set the iframe to 100vh minus the sticky header and let the
-// page scroll handle the rest.
+// Strategy:
+//  • srcdoc (local HTML fallback): same-origin, read scrollHeight directly via
+//    ResizeObserver → expand iframe to full content, page scroll only.
+//  • Blossom-hosted HTML (cross-origin iframe-url): the HTML has a tiny
+//    postMessage height reporter injected at upload time. Listen for that
+//    message and resize accordingly.
+//  • PDF / Google Slides / other cross-origin with no reporter: use a very
+//    tall fixed height (10 000 px) so the iframe never clips content.
+//    The page scroll handles everything; the iframe's own scroll is hidden.
 
 function AutoIframe({
   src,
@@ -347,60 +374,59 @@ function AutoIframe({
   title,
   sandbox,
   allow,
-  crossOrigin = false,
 }: {
   src?: string;
   srcDoc?: string;
   title: string;
   sandbox?: string;
   allow?: string;
-  crossOrigin?: boolean;
 }) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const [height, setHeight] = useState<number>(crossOrigin ? window.innerHeight - 64 : 600);
+  // Start with a large-enough placeholder; will be updated by measurement.
+  const [height, setHeight] = useState<number>(800);
 
-  // For same-origin iframes: expand to full content height on load and on
-  // any subsequent resize (e.g. images loading, dynamic content).
+  // ── postMessage listener: Blossom-hosted HTML reports its own height ──
+  useEffect(() => {
+    if (!src) return; // srcdoc handled separately below
+    const handler = (e: MessageEvent) => {
+      if (
+        e.data &&
+        typeof e.data === 'object' &&
+        e.data.type === '__proposal_height__' &&
+        typeof e.data.height === 'number' &&
+        e.data.height > 0
+      ) {
+        setHeight(e.data.height);
+      }
+    };
+    window.addEventListener('message', handler);
+    return () => window.removeEventListener('message', handler);
+  }, [src]);
+
+  // ── onLoad: measure same-origin srcdoc content directly ──
   const handleLoad = useCallback(() => {
-    if (crossOrigin) return;
     const iframe = iframeRef.current;
     if (!iframe) return;
-
     const measure = () => {
       try {
         const doc = iframe.contentDocument ?? iframe.contentWindow?.document;
         if (!doc) return;
-        // scrollHeight gives the full rendered height including overflow
         const h = Math.max(
           doc.documentElement.scrollHeight,
           doc.body?.scrollHeight ?? 0,
         );
         if (h > 0) setHeight(h);
-      } catch {
-        // cross-origin guard — shouldn't happen for srcdoc/same-origin
-      }
+      } catch { /* cross-origin — postMessage handler takes over */ }
     };
-
     measure();
-
-    // Also watch for content changes after initial load
     try {
       const doc = iframe.contentDocument ?? iframe.contentWindow?.document;
       if (!doc) return;
       const ro = new ResizeObserver(measure);
       ro.observe(doc.documentElement);
-      // Disconnect when the iframe unmounts (handled by cleanup in useEffect)
-      iframeRef.current?.addEventListener('unload', () => ro.disconnect(), { once: true });
+      iframe.addEventListener('unload', () => ro.disconnect(), { once: true });
     } catch { /* cross-origin */ }
-  }, [crossOrigin]);
-
-  // Keep cross-origin iframe filling the viewport on window resize
-  useEffect(() => {
-    if (!crossOrigin) return;
-    const onResize = () => setHeight(window.innerHeight - 64);
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, [crossOrigin]);
+  }, []);
 
   return (
     <iframe
@@ -412,11 +438,7 @@ function AutoIframe({
       allow={allow}
       onLoad={handleLoad}
       className="w-full border-0 block"
-      style={{
-        height,
-        // Never let the iframe itself scroll — all scrolling via the page
-        overflow: 'hidden',
-      }}
+      style={{ height, overflow: 'hidden' }}
       scrolling="no"
     />
   );
@@ -426,7 +448,8 @@ function AutoIframe({
 
 export function ProposalViewer({ proposal }: { proposal: ProposalContent }) {
   if (proposal.type === 'html') {
-    // Legacy: raw HTML stored locally (fallback when Blossom upload fails)
+    // Legacy: raw HTML stored locally (fallback when Blossom upload fails).
+    // Same-origin srcdoc — AutoIframe measures height via ResizeObserver.
     return (
       <AutoIframe
         srcDoc={proposal.content}
@@ -437,26 +460,26 @@ export function ProposalViewer({ proposal }: { proposal: ProposalContent }) {
   }
 
   if (proposal.type === 'pdf-url') {
-    // PDF viewers are inherently fixed-size; make it tall enough to be useful
-    // and let the page scroll handle it — no inner scrollbar.
+    // PDFs can't report their height; use a very tall iframe so nothing is
+    // clipped and the page scrollbar handles all scrolling.
     return (
-      <AutoIframe
+      <iframe
         src={`${proposal.content}#view=FitH&toolbar=1`}
         title={proposal.title}
-        crossOrigin
+        className="w-full border-0 block"
+        style={{ height: '10000px', overflow: 'hidden' }}
+        scrolling="no"
       />
     );
   }
 
-  // iframe-url (also used for Blossom-hosted HTML CDN links)
-  // Blossom URLs are same-origin? No — they're on a different domain.
-  // Use crossOrigin=true for safety; the page scroll will handle it.
+  // iframe-url — Blossom-hosted HTML (injected with postMessage height reporter)
+  // or any other URL. AutoIframe listens for the height message and resizes.
   return (
     <AutoIframe
       src={proposal.content}
       title={proposal.title}
       allow="fullscreen"
-      crossOrigin
     />
   );
 }
