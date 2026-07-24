@@ -1641,16 +1641,21 @@ const Index = () => {
 
         {/* Love PopArt Banner — compact inline category icon nav */}
         <div className="mb-5">
-          <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 p-[2px] shadow-md">
-            <div className="relative rounded-xl bg-gradient-to-r from-pink-50 via-rose-50 to-orange-50 dark:from-pink-950/80 dark:via-rose-950/80 dark:to-orange-950/80 px-4 py-3 overflow-x-auto overflow-y-hidden">
+          <div className="relative rounded-xl bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 p-[2px] shadow-md">
+            <div className="relative rounded-xl bg-gradient-to-r from-pink-50 via-rose-50 to-orange-50 dark:from-pink-950/80 dark:via-rose-950/80 dark:to-orange-950/80 px-4 py-3">
               {/* Decorative background */}
-              <div className="absolute inset-0 pointer-events-none select-none overflow-hidden opacity-10">
+              <div className="absolute inset-0 pointer-events-none select-none overflow-hidden opacity-10 rounded-xl">
                 <span className="absolute top-0 right-10 text-4xl">❤️</span>
                 <span className="absolute bottom-0 right-32 text-3xl">🎨</span>
               </div>
 
-              {/* Single compact row: view switcher + icons */}
-              <div className="relative z-10 flex flex-nowrap items-center justify-start gap-x-3 gap-y-2 sm:flex-wrap sm:justify-center">
+              {/* Scroll container with right-fade hint on mobile */}
+              <div className="relative">
+                {/* Fade-out on right edge — only visible on mobile when content overflows */}
+                <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-pink-50 dark:from-pink-950 to-transparent z-20 sm:hidden" />
+
+                {/* Single compact row: view switcher + icons */}
+                <div className="relative z-10 flex flex-nowrap items-center gap-x-3 overflow-x-auto pb-1 sm:flex-wrap sm:justify-center sm:overflow-visible sm:pb-0 scrollbar-none" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                 {/* View mode switcher: Gallery / Photo Grid / Art Progress */}
                 <div className="flex items-center gap-1">
                   <button
@@ -1800,7 +1805,8 @@ const Index = () => {
                   <span className="text-[9px] font-bold text-gray-600 dark:text-gray-400 leading-tight">Print</span>
                 </Link>
 
-              </div>
+                </div>{/* end icon row */}
+              </div>{/* end scroll container */}
             </div>
           </div>
         </div>
