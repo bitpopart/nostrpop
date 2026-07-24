@@ -1710,14 +1710,6 @@ const Index = () => {
                 {/* Divider */}
                 <div className="h-6 w-px bg-rose-300/60 dark:bg-rose-600/40 flex-shrink-0" />
 
-                {/* Shop — highlighted */}
-                <Link to="/shop" title="Shop" className="flex flex-col items-center gap-0.5 group">
-                  <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-pink-500 to-rose-500 shadow-md flex items-center justify-center group-hover:scale-110 group-hover:shadow-lg transition-all duration-200">
-                    <ShoppingCart className="h-4 w-4 text-white" />
-                  </div>
-                  <span className="text-[9px] font-bold text-rose-600 dark:text-rose-400 leading-tight">Shop</span>
-                </Link>
-
                 {/* Images */}
                 <Link to="/app" title="Images" className="flex flex-col items-center gap-0.5 group">
                   <div className="w-9 h-9 rounded-lg bg-white/70 dark:bg-white/10 hover:bg-white dark:hover:bg-white/20 shadow-sm flex items-center justify-center group-hover:scale-110 transition-all duration-200">
@@ -1790,37 +1782,6 @@ const Index = () => {
                   <span className="text-[9px] font-semibold text-gray-500 dark:text-gray-400 leading-tight">Cards</span>
                 </Link>
 
-                {/* Magazine — highlighted */}
-                <a href="https://www.bitpopart.com/magazine" target="_blank" rel="noopener noreferrer" title="Magazine" className="flex flex-col items-center gap-0.5 group">
-                  <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-rose-500 to-orange-500 shadow-md flex items-center justify-center group-hover:scale-110 group-hover:shadow-lg transition-all duration-200">
-                    <Newspaper className="h-4 w-4 text-white" />
-                  </div>
-                  <span className="text-[9px] font-bold text-rose-600 dark:text-rose-400 leading-tight">Magazine</span>
-                </a>
-
-                {/* Nostr */}
-                <Link to="/feed" title="Nostr" className="flex flex-col items-center gap-0.5 group">
-                  <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 shadow-md flex items-center justify-center group-hover:scale-110 group-hover:shadow-lg transition-all duration-200">
-                    <Rss className="h-4 w-4 text-white" />
-                  </div>
-                  <span className="text-[9px] font-bold text-violet-600 dark:text-violet-400 leading-tight">Nostr</span>
-                </Link>
-
-                {/* Studio */}
-                <Link to="/studio" title="Studio" className="flex flex-col items-center gap-0.5 group">
-                  <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 shadow-md flex items-center justify-center group-hover:scale-110 group-hover:shadow-lg transition-all duration-200">
-                    <Wand2 className="h-4 w-4 text-white" />
-                  </div>
-                  <span className="text-[9px] font-bold text-purple-600 dark:text-purple-400 leading-tight">Studio</span>
-                </Link>
-
-                {/* Print */}
-                <Link to="/print" title="Print" className="flex flex-col items-center gap-0.5 group">
-                  <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-gray-600 to-gray-800 shadow-md flex items-center justify-center group-hover:scale-110 group-hover:shadow-lg transition-all duration-200">
-                    <Printer className="h-4 w-4 text-white" />
-                  </div>
-                  <span className="text-[9px] font-bold text-gray-600 dark:text-gray-400 leading-tight">Print</span>
-                </Link>
               </div>
             </div>
           </div>
