@@ -74,6 +74,7 @@ import {
   Share,
   Smartphone,
   Package,
+  X,
 } from 'lucide-react';
 import type { NostrEvent, NostrMetadata } from '@nostrify/nostrify';
 import type { ArtworkData } from '@/lib/artTypes';
@@ -691,6 +692,9 @@ const Index = () => {
   const author = useAuthor(ADMIN_HEX);
   const metadata: NostrMetadata | undefined = author.data?.metadata;
   
+  // Dismissable note about the view toggle
+  const [showViewToggleNote, setShowViewToggleNote] = useState(true);
+
   // View mode — default to 'grid', override once from relay settings on first load
   const [viewMode, setViewMode] = useState<HomepageView>('grid');
   const viewModeSet = useRef(false);
@@ -1658,15 +1662,22 @@ const Index = () => {
               </div>
             )}
 
-            {/* Art Progress Toggle — always visible immediately */}
-            <div>
-              <ArtProgressToggle
-                mode={viewMode}
-                onToggle={setViewMode}
-              />
-            </div>
           </div>
         </div>
+
+        {/* Dismissable note about view switcher */}
+        {showViewToggleNote && (
+          <div className="mb-3 flex items-center gap-2 rounded-lg border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 px-4 py-2 text-xs text-rose-700 dark:text-rose-300">
+            <span className="flex-1">Gallery, Photo Grid and Art Progress are not needed anymore — you can switch between views using the icons in the banner below.</span>
+            <button
+              onClick={() => setShowViewToggleNote(false)}
+              className="flex-shrink-0 rounded-full p-1 hover:bg-rose-100 dark:hover:bg-rose-900/50 transition-colors"
+              title="Dismiss"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
 
         {/* Love PopArt Banner — compact inline category icon nav */}
         <div className="mb-5">
@@ -1678,14 +1689,40 @@ const Index = () => {
                 <span className="absolute bottom-0 right-32 text-3xl">🎨</span>
               </div>
 
-              {/* Single compact row: title + icons */}
+              {/* Single compact row: view switcher + icons */}
               <div className="relative z-10 flex flex-wrap items-center justify-center gap-x-3 gap-y-2">
-                {/* Title */}
-                <div className="flex items-center gap-1.5 mr-1">
-                  <Heart className="h-4 w-4 text-pink-500 fill-pink-500 flex-shrink-0" />
-                  <span className="text-sm font-extrabold bg-gradient-to-r from-pink-600 via-rose-600 to-orange-600 bg-clip-text text-transparent whitespace-nowrap">
-                    Love PopArt
-                  </span>
+                {/* View mode switcher: Gallery / Photo Grid / Art Progress */}
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setViewMode('gallery')}
+                    title="Gallery"
+                    className={`flex flex-col items-center gap-0.5 group transition-all duration-200 ${viewMode === 'gallery' ? 'opacity-100' : 'opacity-60 hover:opacity-90'}`}
+                  >
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 group-hover:scale-110 ${viewMode === 'gallery' ? 'bg-gradient-to-br from-orange-500 to-pink-500 shadow-md' : 'bg-white/70 dark:bg-white/10 hover:bg-white dark:hover:bg-white/20 shadow-sm'}`}>
+                      <Palette className={`h-4 w-4 ${viewMode === 'gallery' ? 'text-white' : 'text-orange-500'}`} />
+                    </div>
+                    <span className={`text-[9px] font-bold leading-tight ${viewMode === 'gallery' ? 'text-orange-600 dark:text-orange-400' : 'text-gray-500 dark:text-gray-400'}`}>Gallery</span>
+                  </button>
+                  <button
+                    onClick={() => setViewMode('grid')}
+                    title="Photo Grid"
+                    className={`flex flex-col items-center gap-0.5 group transition-all duration-200 ${viewMode === 'grid' ? 'opacity-100' : 'opacity-60 hover:opacity-90'}`}
+                  >
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 group-hover:scale-110 ${viewMode === 'grid' ? 'bg-gradient-to-br from-purple-500 to-pink-500 shadow-md' : 'bg-white/70 dark:bg-white/10 hover:bg-white dark:hover:bg-white/20 shadow-sm'}`}>
+                      <LayoutGrid className={`h-4 w-4 ${viewMode === 'grid' ? 'text-white' : 'text-purple-500'}`} />
+                    </div>
+                    <span className={`text-[9px] font-bold leading-tight ${viewMode === 'grid' ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 dark:text-gray-400'}`}>Photo Grid</span>
+                  </button>
+                  <button
+                    onClick={() => setViewMode('progress')}
+                    title="Art Progress"
+                    className={`flex flex-col items-center gap-0.5 group transition-all duration-200 ${viewMode === 'progress' ? 'opacity-100' : 'opacity-60 hover:opacity-90'}`}
+                  >
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 group-hover:scale-110 ${viewMode === 'progress' ? 'bg-gradient-to-br from-indigo-500 to-purple-500 shadow-md' : 'bg-white/70 dark:bg-white/10 hover:bg-white dark:hover:bg-white/20 shadow-sm'}`}>
+                      <Pencil className={`h-4 w-4 ${viewMode === 'progress' ? 'text-white' : 'text-indigo-500'}`} />
+                    </div>
+                    <span className={`text-[9px] font-bold leading-tight ${viewMode === 'progress' ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 dark:text-gray-400'}`}>Art Progress</span>
+                  </button>
                 </div>
 
                 {/* Divider */}
