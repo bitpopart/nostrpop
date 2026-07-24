@@ -1809,6 +1809,10 @@ const Index = () => {
               </div>{/* end scroll container */}
             </div>
           </div>
+          {/* Mobile scroll hint */}
+          <p className="sm:hidden text-center text-[10px] text-rose-400 dark:text-rose-500 mt-1.5">
+            ← scroll for more options
+          </p>
         </div>
 
         {/* Conditional Content Based on View Mode */}
