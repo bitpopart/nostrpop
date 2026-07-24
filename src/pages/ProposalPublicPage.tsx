@@ -96,14 +96,6 @@ export default function ProposalPublicPage() {
 
       {/* Proposal content — no wrapping box so iframe can grow to full content height */}
       <ProposalViewer proposal={proposal} />
-
-      {/* Footer */}
-      <p className="text-center text-xs text-muted-foreground opacity-50 pb-4">
-        Powered by{' '}
-        <a href="https://shakespeare.diy" target="_blank" rel="noopener noreferrer" className="hover:underline">
-          Shakespeare
-        </a>
-      </p>
     </div>
   );
 }
