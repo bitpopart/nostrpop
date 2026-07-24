@@ -1798,12 +1798,28 @@ const Index = () => {
                   <span className="text-[9px] font-bold text-rose-600 dark:text-rose-400 leading-tight">Magazine</span>
                 </a>
 
-                {/* Nostr Studio */}
-                <Link to="/studio" title="Nostr Studio" className="flex flex-col items-center gap-0.5 group">
-                  <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-purple-500 to-violet-500 shadow-md flex items-center justify-center group-hover:scale-110 group-hover:shadow-lg transition-all duration-200">
+                {/* Nostr */}
+                <Link to="/feed" title="Nostr" className="flex flex-col items-center gap-0.5 group">
+                  <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 shadow-md flex items-center justify-center group-hover:scale-110 group-hover:shadow-lg transition-all duration-200">
+                    <Rss className="h-4 w-4 text-white" />
+                  </div>
+                  <span className="text-[9px] font-bold text-violet-600 dark:text-violet-400 leading-tight">Nostr</span>
+                </Link>
+
+                {/* Studio */}
+                <Link to="/studio" title="Studio" className="flex flex-col items-center gap-0.5 group">
+                  <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 shadow-md flex items-center justify-center group-hover:scale-110 group-hover:shadow-lg transition-all duration-200">
                     <Wand2 className="h-4 w-4 text-white" />
                   </div>
                   <span className="text-[9px] font-bold text-purple-600 dark:text-purple-400 leading-tight">Studio</span>
+                </Link>
+
+                {/* Print */}
+                <Link to="/print" title="Print" className="flex flex-col items-center gap-0.5 group">
+                  <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-gray-600 to-gray-800 shadow-md flex items-center justify-center group-hover:scale-110 group-hover:shadow-lg transition-all duration-200">
+                    <Printer className="h-4 w-4 text-white" />
+                  </div>
+                  <span className="text-[9px] font-bold text-gray-600 dark:text-gray-400 leading-tight">Print</span>
                 </Link>
               </div>
             </div>
