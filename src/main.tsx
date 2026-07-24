@@ -7,6 +7,9 @@ import './lib/polyfills.ts';
 import { migrateDesigns } from './lib/clientPortal.ts';
 migrateDesigns();
 
+import { runPageMigrations } from './lib/pageMigrations.ts';
+runPageMigrations();
+
 import App from './App.tsx';
 import './index.css';
 
