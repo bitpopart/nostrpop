@@ -139,8 +139,8 @@ export function AppRouter() {
         <Route path="/login" element={<ClientLogin />} />
         <Route path="/client" element={<ClientPortalPage />} />
         <Route path="/client/:slug" element={<ClientPortalPage />} />
-        {/* Public proposal page — no login needed */}
-        <Route path="/proposal/:slug" element={<ProposalPublicPage />} />
+        {/* Public proposal page — no login needed; uses main site Layout */}
+        <Route path="/proposal/:slug" element={<Layout><ProposalPublicPage /></Layout>} />
         <Route path="/sitemap" element={<Layout><Sitemap /></Layout>} />
         {/* Cloud private space — no site Layout wrapper; full-screen experience */}
         <Route path="/cloud" element={<CloudPage />} />
