@@ -60,6 +60,7 @@ import Block from "./pages/Block";
 import BrandPortalPage from "./pages/BrandPortalPage";
 import ClientLogin from "./pages/ClientLogin";
 import ClientPortalPage from "./pages/ClientPortalPage";
+import ProposalPublicPage from "./pages/ProposalPublicPage";
 import Sitemap from "./pages/Sitemap";
 import CloudPage from "./pages/Cloud";
 import CloudAppViewer from "./pages/CloudAppViewer";
@@ -138,6 +139,8 @@ export function AppRouter() {
         <Route path="/login" element={<ClientLogin />} />
         <Route path="/client" element={<ClientPortalPage />} />
         <Route path="/client/:slug" element={<ClientPortalPage />} />
+        {/* Public proposal page — no login needed */}
+        <Route path="/proposal/:slug" element={<ProposalPublicPage />} />
         <Route path="/sitemap" element={<Layout><Sitemap /></Layout>} />
         {/* Cloud private space — no site Layout wrapper; full-screen experience */}
         <Route path="/cloud" element={<CloudPage />} />

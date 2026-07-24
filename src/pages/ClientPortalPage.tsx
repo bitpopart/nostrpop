@@ -10,6 +10,7 @@ import {
 } from '@/lib/clientPortal';
 import BrandGuideContent from './BrandGuideContent';
 import { DesignSection } from '@/components/portal/DesignSection';
+import { ProposalSection } from '@/components/portal/ProposalSection';
 
 // ─── Portal shell ─────────────────────────────────────────────────────────────
 
@@ -133,6 +134,7 @@ export default function ClientPortalPage() {
             sectionId={section}
             pageId={activePage.id}
             clientLabel={activePage.title}
+            slug={activePage.slug}
           />
         ))}
 
@@ -189,16 +191,20 @@ function SectionRenderer({
   sectionId,
   pageId,
   clientLabel,
+  slug,
 }: {
   sectionId: string;
   pageId: string;
   clientLabel?: string;
+  slug: string;
 }) {
   switch (sectionId) {
     case 'brand-guide':
       return <BrandGuideContent allowZip={true} />;
     case 'designs':
       return <DesignSection pageId={pageId} clientLabel={clientLabel} />;
+    case 'pr-proposal':
+      return <ProposalSection pageId={pageId} slug={slug} pageTitle={clientLabel ?? ''} />;
     default:
       return (
         <Card className="border-dashed">

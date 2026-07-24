@@ -306,3 +306,64 @@ export function getUnreadCommentCount(pageId: string, since: number): number {
     .filter(c => c.pageId === pageId && c.author === 'client' && c.createdAt > since)
     .length;
 }
+
+// ─── PR Proposals ─────────────────────────────────────────────────────────────
+
+/**
+ * A PR Proposal is tied to a ClientPage (same slug).
+ * The content is stored as raw HTML or a public PDF URL.
+ * The public-facing URL is /proposal/:slug — no login required.
+ */
+export interface ProposalContent {
+  id: string;
+  pageId: string;    // matches a ClientPage.id
+  slug: string;      // mirrors ClientPage.slug for the public URL
+  title: string;     // proposal title shown on the public page
+  type: 'html' | 'pdf-url' | 'iframe-url';
+  content: string;   // raw HTML string, PDF URL, or iframe src URL
+  updatedAt: number;
+}
+
+const PROPOSALS_KEY = 'cp_proposals';
+
+export function getProposals(): ProposalContent[] {
+  return load<ProposalContent>(PROPOSALS_KEY);
+}
+
+export function getProposalByPageId(pageId: string): ProposalContent | undefined {
+  return getProposals().find(p => p.pageId === pageId);
+}
+
+export function getProposalBySlug(slug: string): ProposalContent | undefined {
+  return getProposals().find(p => p.slug === slug);
+}
+
+export function saveProposal(proposal: ProposalContent): void {
+  const all = getProposals().filter(p => p.id !== proposal.id);
+  save(PROPOSALS_KEY, [...all, proposal]);
+}
+
+export function deleteProposal(id: string): void {
+  save(PROPOSALS_KEY, getProposals().filter(p => p.id !== id));
+}
+
+export function upsertProposal(
+  pageId: string,
+  slug: string,
+  title: string,
+  type: ProposalContent['type'],
+  content: string,
+): ProposalContent {
+  const existing = getProposalByPageId(pageId);
+  const proposal: ProposalContent = {
+    id: existing?.id ?? uuid(),
+    pageId,
+    slug,
+    title,
+    type,
+    content,
+    updatedAt: Date.now(),
+  };
+  saveProposal(proposal);
+  return proposal;
+}
