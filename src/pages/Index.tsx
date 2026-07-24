@@ -74,7 +74,6 @@ import {
   Share,
   Smartphone,
   Package,
-  X,
 } from 'lucide-react';
 import type { NostrEvent, NostrMetadata } from '@nostrify/nostrify';
 import type { ArtworkData } from '@/lib/artTypes';
@@ -692,9 +691,6 @@ const Index = () => {
   const author = useAuthor(ADMIN_HEX);
   const metadata: NostrMetadata | undefined = author.data?.metadata;
   
-  // Dismissable note about the view toggle
-  const [showViewToggleNote, setShowViewToggleNote] = useState(true);
-
   // View mode — default to 'grid', override once from relay settings on first load
   const [viewMode, setViewMode] = useState<HomepageView>('grid');
   const viewModeSet = useRef(false);
@@ -1665,20 +1661,6 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Dismissable note about view switcher */}
-        {showViewToggleNote && (
-          <div className="mb-3 flex items-center gap-2 rounded-lg border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 px-4 py-2 text-xs text-rose-700 dark:text-rose-300">
-            <span className="flex-1">Gallery, Photo Grid and Art Progress are not needed anymore — you can switch between views using the icons in the banner below.</span>
-            <button
-              onClick={() => setShowViewToggleNote(false)}
-              className="flex-shrink-0 rounded-full p-1 hover:bg-rose-100 dark:hover:bg-rose-900/50 transition-colors"
-              title="Dismiss"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          </div>
-        )}
-
         {/* Love PopArt Banner — compact inline category icon nav */}
         <div className="mb-5">
           <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 p-[2px] shadow-md">
@@ -1815,6 +1797,14 @@ const Index = () => {
                   </div>
                   <span className="text-[9px] font-bold text-rose-600 dark:text-rose-400 leading-tight">Magazine</span>
                 </a>
+
+                {/* Nostr Studio */}
+                <Link to="/studio" title="Nostr Studio" className="flex flex-col items-center gap-0.5 group">
+                  <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-purple-500 to-violet-500 shadow-md flex items-center justify-center group-hover:scale-110 group-hover:shadow-lg transition-all duration-200">
+                    <Wand2 className="h-4 w-4 text-white" />
+                  </div>
+                  <span className="text-[9px] font-bold text-purple-600 dark:text-purple-400 leading-tight">Studio</span>
+                </Link>
               </div>
             </div>
           </div>
