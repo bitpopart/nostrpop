@@ -94,10 +94,8 @@ export default function ProposalPublicPage() {
         </div>
       </div>
 
-      {/* Proposal content */}
-      <div className="rounded-xl overflow-hidden border border-border shadow-sm">
-        <ProposalViewer proposal={proposal} />
-      </div>
+      {/* Proposal content — no wrapping box so iframe can grow to full content height */}
+      <ProposalViewer proposal={proposal} />
 
       {/* Footer */}
       <p className="text-center text-xs text-muted-foreground opacity-50 pb-4">

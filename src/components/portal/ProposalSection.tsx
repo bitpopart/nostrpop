@@ -333,46 +333,130 @@ function ProposalEditor({
   );
 }
 
+// ─── Auto-resizing iframe (no inner scrollbar) ───────────────────────────────
+//
+// For same-origin / srcdoc iframes we can read the content height directly and
+// resize the iframe to match — so only the page scrollbar is ever visible.
+// For cross-origin embeds (PDF, Google Slides, etc.) we can't access the
+// content, so we set the iframe to 100vh minus the sticky header and let the
+// page scroll handle the rest.
+
+function AutoIframe({
+  src,
+  srcDoc,
+  title,
+  sandbox,
+  allow,
+  crossOrigin = false,
+}: {
+  src?: string;
+  srcDoc?: string;
+  title: string;
+  sandbox?: string;
+  allow?: string;
+  crossOrigin?: boolean;
+}) {
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [height, setHeight] = useState<number>(crossOrigin ? window.innerHeight - 64 : 600);
+
+  // For same-origin iframes: expand to full content height on load and on
+  // any subsequent resize (e.g. images loading, dynamic content).
+  const handleLoad = useCallback(() => {
+    if (crossOrigin) return;
+    const iframe = iframeRef.current;
+    if (!iframe) return;
+
+    const measure = () => {
+      try {
+        const doc = iframe.contentDocument ?? iframe.contentWindow?.document;
+        if (!doc) return;
+        // scrollHeight gives the full rendered height including overflow
+        const h = Math.max(
+          doc.documentElement.scrollHeight,
+          doc.body?.scrollHeight ?? 0,
+        );
+        if (h > 0) setHeight(h);
+      } catch {
+        // cross-origin guard — shouldn't happen for srcdoc/same-origin
+      }
+    };
+
+    measure();
+
+    // Also watch for content changes after initial load
+    try {
+      const doc = iframe.contentDocument ?? iframe.contentWindow?.document;
+      if (!doc) return;
+      const ro = new ResizeObserver(measure);
+      ro.observe(doc.documentElement);
+      // Disconnect when the iframe unmounts (handled by cleanup in useEffect)
+      iframeRef.current?.addEventListener('unload', () => ro.disconnect(), { once: true });
+    } catch { /* cross-origin */ }
+  }, [crossOrigin]);
+
+  // Keep cross-origin iframe filling the viewport on window resize
+  useEffect(() => {
+    if (!crossOrigin) return;
+    const onResize = () => setHeight(window.innerHeight - 64);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [crossOrigin]);
+
+  return (
+    <iframe
+      ref={iframeRef}
+      src={src}
+      srcDoc={srcDoc}
+      title={title}
+      sandbox={sandbox}
+      allow={allow}
+      onLoad={handleLoad}
+      className="w-full border-0 block"
+      style={{
+        height,
+        // Never let the iframe itself scroll — all scrolling via the page
+        overflow: 'hidden',
+      }}
+      scrolling="no"
+    />
+  );
+}
+
 // ─── Proposal viewer (client-facing, also used on public page) ────────────────
 
 export function ProposalViewer({ proposal }: { proposal: ProposalContent }) {
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-
   if (proposal.type === 'html') {
     // Legacy: raw HTML stored locally (fallback when Blossom upload fails)
     return (
-      <iframe
-        ref={iframeRef}
+      <AutoIframe
         srcDoc={proposal.content}
         title={proposal.title}
-        className="w-full border-0 rounded-lg"
-        style={{ minHeight: '70vh' }}
         sandbox="allow-same-origin allow-scripts allow-popups"
       />
     );
   }
 
   if (proposal.type === 'pdf-url') {
+    // PDF viewers are inherently fixed-size; make it tall enough to be useful
+    // and let the page scroll handle it — no inner scrollbar.
     return (
-      <div className="w-full" style={{ minHeight: '80vh' }}>
-        <iframe
-          src={`${proposal.content}#view=FitH`}
-          title={proposal.title}
-          className="w-full h-full border-0 rounded-lg"
-          style={{ minHeight: '80vh' }}
-        />
-      </div>
+      <AutoIframe
+        src={`${proposal.content}#view=FitH&toolbar=1`}
+        title={proposal.title}
+        crossOrigin
+      />
     );
   }
 
-  // iframe-url (also used for Blossom-hosted HTML)
+  // iframe-url (also used for Blossom-hosted HTML CDN links)
+  // Blossom URLs are same-origin? No — they're on a different domain.
+  // Use crossOrigin=true for safety; the page scroll will handle it.
   return (
-    <iframe
+    <AutoIframe
       src={proposal.content}
       title={proposal.title}
-      className="w-full border-0 rounded-lg"
-      style={{ minHeight: '80vh' }}
       allow="fullscreen"
+      crossOrigin
     />
   );
 }
