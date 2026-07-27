@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { ScrollToTop } from "./components/ScrollToTop";
 import { Layout } from "./components/Layout";
+import { LayoutIframe } from "./components/LayoutIframe";
 import { AppLayout } from "./components/AppLayout";
 
 import Index from "./pages/Index";
@@ -127,7 +128,7 @@ export function AppRouter() {
         <Route path="/community" element={<Layout><Community /></Layout>} />
         <Route path="/studio" element={<Layout><Studio /></Layout>} />
         <Route path="/frl" element={<Layout><Frl /></Layout>} />
-        <Route path="/frl/:projectId" element={<Layout><FrlProjectView /></Layout>} />
+        <Route path="/frl/:projectId" element={<LayoutIframe><FrlProjectView /></LayoutIframe>} />
         <Route path="/print" element={<Layout><Print /></Layout>} />
         <Route path="/NFT" element={<Layout><NFT /></Layout>} />
         <Route path="/Block" element={<Layout><Block /></Layout>} />

@@ -142,7 +142,7 @@ export default function FrlProjectView() {
 
   if (isLoading || (fetchingHtml && !fetchedHtml)) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20">
+      <div className="flex-1 overflow-auto bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20">
         <div className="container mx-auto px-4 py-12">
           <Skeleton className="h-8 w-32 mb-6" />
           <Skeleton className="h-[60vh] w-full rounded-xl" />
@@ -153,7 +153,7 @@ export default function FrlProjectView() {
 
   if (!project || !brandSiteUrl) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20 flex items-center justify-center">
+      <div className="flex-1 overflow-auto bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20 flex items-center justify-center">
         <div className="text-center space-y-4">
           <p className="text-muted-foreground">Project not found.</p>
           <Button variant="outline" onClick={() => navigate('/frl')}>
@@ -165,7 +165,7 @@ export default function FrlProjectView() {
   }
 
   return (
-    <div style={{ height: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column' }}>
+    <div className="flex-1 flex flex-col w-full" style={{ minHeight: 0 }}>
       {fetchedHtml ? (
         <iframe
           srcDoc={injectLinkBridge(fetchedHtml)}
