@@ -141,44 +141,33 @@ export function useGameScores(game: string) {
 
 // Hook: publish a score to Nostr (kind 3767)
 export function usePublishGameScore() {
-  const { mutate: createEvent, isPending } = useNostrPublish();
+  const { mutateAsync, isPending } = useNostrPublish();
   const queryClient = useQueryClient();
 
-  const publishScore = (
+  const publishScore = async (
     game: string,
     name: string,
     score: number,
     satsDeposited: number,
     npub?: string,
-    onSuccess?: () => void,
-    onError?: (msg: string) => void
   ) => {
-    createEvent(
-      {
-        kind: 3767,
-        content: '',
-        tags: [
-          ['g', game],
-          ['name', name.toUpperCase().slice(0, 12)],
-          ['score', String(score)],
-          ['sats', String(satsDeposited)],
-          ['t', 'bitpopart-game'],
-          ['t', game],
-          ...(npub ? [['npub', npub]] : []),
-          ['alt', `BitPopArt game score: ${score} points in ${game} by ${name}`],
-        ],
-      },
-      {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ['game-scores', game] });
-          if (onSuccess) onSuccess();
-        },
-        onError: (err) => {
-          const msg = err instanceof Error ? err.message : 'Failed to publish score';
-          if (onError) onError(msg);
-        },
-      }
-    );
+    const event = await mutateAsync({
+      kind: 3767,
+      content: '',
+      tags: [
+        ['g', game],
+        ['name', name.toUpperCase().slice(0, 12)],
+        ['score', String(score)],
+        ['sats', String(satsDeposited)],
+        ['t', 'bitpopart-game'],
+        ['t', game],
+        ...(npub ? [['npub', npub]] : []),
+        ['alt', `BitPopArt game score: ${score} points in ${game} by ${name}`],
+      ],
+    });
+    queryClient.invalidateQueries({ queryKey: ['game-scores', game] });
+    queryClient.invalidateQueries({ queryKey: ['game-leaderboard', game] });
+    return event;
   };
 
   return { publishScore, isPending };

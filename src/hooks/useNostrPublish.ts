@@ -25,7 +25,7 @@ function isReplaceableKind(kind: number): boolean {
   return (kind >= 10000 && kind < 20000) || (kind >= 30000 && kind < 40000);
 }
 
-export function useNostrPublish(): UseMutationResult<NostrEvent> {
+export function useNostrPublish(): UseMutationResult<NostrEvent, Error, EventTemplate> {
   const { nostr } = useNostr();
   const { user } = useCurrentUser();
 

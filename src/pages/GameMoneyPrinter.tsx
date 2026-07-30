@@ -374,22 +374,18 @@ function GameOverPanel({ score, paidMode, playerName, playerNpub, satsPaid, onAg
   const [publishError, setPublishError] = useState('');
   const [showBoard, setShowBoard] = useState(false);
 
-  const handlePublish = () => {
+  const handlePublish = async () => {
     if (!user || published || isPending) return;
     setPublishError('');
     const npub = playerNpub || nip19.npubEncode(user.pubkey);
-    publishScore(
-      GAME_ID,
-      playerName,
-      score,
-      satsPaid,
-      npub,
-      () => {
-        setPublished(true);
-        updateRoundHighScore(GAME_ID, user.pubkey, npub, playerName, score);
-      },
-      (err: string) => setPublishError(err),
-    );
+    try {
+      await publishScore(GAME_ID, playerName, score, satsPaid, npub);
+      setPublished(true);
+      updateRoundHighScore(GAME_ID, user.pubkey, npub, playerName, score);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to publish score';
+      setPublishError(msg);
+    }
   };
 
   return (
