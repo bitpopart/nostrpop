@@ -68,6 +68,18 @@ function ProjectThumbnailImage({ src, alt, className }: { src: string; alt: stri
   );
 }
 
+/** A hardcoded game/project card that always appears regardless of Nostr data */
+export interface BuiltinProjectCard {
+  id: string;
+  name: string;
+  description: string;
+  thumbnail?: string; // URL or undefined for gradient placeholder
+  thumbnailGradient?: string; // Tailwind gradient classes e.g. "from-violet-500 to-pink-500"
+  thumbnailEmoji?: string;
+  url: string; // internal path
+  order?: number; // display order (lower = first)
+}
+
 interface CategoryProjectsPageProps {
   category: ProjectCategory;
   title: string;
@@ -77,6 +89,8 @@ interface CategoryProjectsPageProps {
   gradient: string; // Background gradient classes
   emptyIcon: React.ReactNode;
   emptyText: string;
+  /** Hardcoded cards that always appear at the top, before Nostr-fetched projects */
+  builtinProjects?: BuiltinProjectCard[];
 }
 
 export function CategoryProjectsPage({
@@ -87,6 +101,7 @@ export function CategoryProjectsPage({
   gradient,
   emptyIcon,
   emptyText,
+  builtinProjects = [],
 }: CategoryProjectsPageProps) {
   const { nostr } = useNostr();
   const navigate = useNavigate();
@@ -201,7 +216,7 @@ export function CategoryProjectsPage({
         </div>
 
         {/* Projects Grid */}
-        {isLoading ? (
+        {isLoading && builtinProjects.length === 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
             {[...Array(6)].map((_, i) => (
               <Card key={i} className="overflow-hidden">
@@ -214,7 +229,7 @@ export function CategoryProjectsPage({
               </Card>
             ))}
           </div>
-        ) : projects.length === 0 ? (
+        ) : projects.length === 0 && builtinProjects.length === 0 ? (
           <div className="max-w-lg mx-auto">
             <Card className="overflow-hidden border-0 shadow-xl">
               <div className="h-2" style={getGradientStyle('primary')} />
@@ -230,6 +245,51 @@ export function CategoryProjectsPage({
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+            {/* Hardcoded builtin cards — always shown first */}
+            {builtinProjects
+              .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+              .map((builtin) => (
+                <Card
+                  key={`builtin-${builtin.id}`}
+                  className="group overflow-hidden transition-all duration-300 bg-white dark:bg-gray-800 cursor-pointer hover:shadow-2xl"
+                  onClick={() => navigate(builtin.url)}
+                >
+                  <div className="relative h-56 overflow-hidden">
+                    {builtin.thumbnail ? (
+                      <ProjectThumbnailImage
+                        src={builtin.thumbnail}
+                        alt={builtin.name}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      />
+                    ) : (
+                      <div
+                        className={`w-full h-full bg-gradient-to-br ${builtin.thumbnailGradient || 'from-violet-500 via-fuchsia-500 to-pink-500'} flex items-center justify-center`}
+                      >
+                        <span className="text-7xl opacity-90 group-hover:scale-125 transition-transform duration-500">
+                          {builtin.thumbnailEmoji || '🎮'}
+                        </span>
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <Button variant="secondary" size="lg" className="gap-2" onClick={(e) => { e.stopPropagation(); navigate(builtin.url); }}>
+                        Play Now
+                        <ArrowRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  <CardHeader>
+                    <CardTitle className="text-2xl group-hover:text-orange-600 transition-colors">
+                      {builtin.name}
+                    </CardTitle>
+                    <CardDescription className="line-clamp-3 text-base">
+                      {builtin.description}
+                    </CardDescription>
+                  </CardHeader>
+                </Card>
+              ))}
+
+            {/* Nostr-fetched projects */}
             {projects.map((project, index) => {
               const isComingSoon = project.coming_soon;
 

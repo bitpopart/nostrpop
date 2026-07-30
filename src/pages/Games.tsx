@@ -1,6 +1,20 @@
 import { useSeoMeta } from '@unhead/react';
 import { CategoryProjectsPage } from '@/components/projects/CategoryProjectsPage';
+import type { BuiltinProjectCard } from '@/components/projects/CategoryProjectsPage';
 import { Gamepad2, Sparkles } from 'lucide-react';
+
+// Built-in games — always shown regardless of Nostr relay data
+const BUILTIN_GAMES: BuiltinProjectCard[] = [
+  {
+    id: 'moneyprinter',
+    name: 'Money Printer Mayhem',
+    description: 'CLOWNWORLD EDITION. The printer goes BRRR — catch fiat & shitcoins, dodge Bitcoin. Play free or deposit sats to win the Lightning jackpot!',
+    thumbnailGradient: 'from-violet-600 via-fuchsia-500 to-pink-500',
+    thumbnailEmoji: '💵',
+    url: '/games/moneyprinter',
+    order: 1,
+  },
+];
 
 export default function Games() {
   useSeoMeta({
@@ -34,7 +48,8 @@ export default function Games() {
           <Sparkles className="h-6 w-6 text-yellow-500 absolute -top-1 -right-1 animate-pulse" />
         </div>
       }
-      emptyText="Games are coming soon! Stay tuned."
+      emptyText="More games are coming soon! Stay tuned."
+      builtinProjects={BUILTIN_GAMES}
     />
   );
 }

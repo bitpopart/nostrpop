@@ -115,7 +115,7 @@ export function AppRouter() {
         <Route path="/free" element={<Layout><FreeGallery /></Layout>} />
         <Route path="/free/images" element={<Layout><FreeDownloads /></Layout>} />
         <Route path="/games" element={<Layout><Games /></Layout>} />
-        <Route path="/game/moneyprinter" element={<Layout><GameMoneyPrinter /></Layout>} />
+        <Route path="/games/moneyprinter" element={<LayoutIframe><GameMoneyPrinter /></LayoutIframe>} />
         <Route path="/animations" element={<Layout><Animations /></Layout>} />
         <Route path="/wallpapers" element={<Layout><Wallpapers /></Layout>} />
         <Route path="/gifs" element={<Layout><Gifs /></Layout>} />
