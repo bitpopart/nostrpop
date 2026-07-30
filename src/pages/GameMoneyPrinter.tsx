@@ -94,60 +94,154 @@ function JackpotStrip({ game }: { game: string }) {
 
 // ── Scoreboard overlay ────────────────────────────────────────────────────────
 
+// Medal colours for top 3
+const MEDALS = ['🥇', '🥈', '🥉'];
+const ROW_COLORS = ['bg-[#FCE000]/30', 'bg-[#C0C0C0]/20', 'bg-[#CD7F32]/20'];
+
 function Scoreboard({ game, myScore, onClose }: { game: string; myScore?: number; onClose: () => void }) {
   const { data: scores = [], isLoading } = useGameLeaderboard(game);
+  const [visible, setVisible] = useState(false);
+
+  // Trigger entrance animation after mount
+  useEffect(() => {
+    const t = setTimeout(() => setVisible(true), 30);
+    return () => clearTimeout(t);
+  }, []);
 
   return (
-    <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/90 backdrop-blur-sm p-4 overflow-y-auto">
-      <Card className="w-full max-w-sm border-4 border-black shadow-[6px_6px_0_#6200EA]">
-        <CardHeader className="pb-2 flex-row items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-[#FF0080]"
-            style={{ fontFamily: "'Bangers', Impact, sans-serif", letterSpacing: '2px', textShadow: '2px 2px 0 #FCE000', fontSize: '22px' }}>
-            <Trophy className="h-5 w-5 text-[#FCE000]" />
+    // Fixed full-viewport overlay — not clipped by parent overflow-hidden
+    <div
+      className="fixed inset-0 z-50 flex flex-col"
+      style={{ background: 'linear-gradient(160deg, #1A0040 0%, #3D0070 50%, #1A0040 100%)' }}
+    >
+      {/* Header */}
+      <div className="shrink-0 flex items-center justify-between px-5 pt-5 pb-3">
+        <div
+          className="flex items-center gap-3"
+          style={{ fontFamily: "'Bangers', Impact, sans-serif" }}
+        >
+          <Trophy className="h-8 w-8 text-[#FCE000] drop-shadow-lg" />
+          <h1
+            className="text-[clamp(28px,7vw,48px)] text-[#FF0080] leading-none"
+            style={{ letterSpacing: '3px', textShadow: '3px 3px 0 #FCE000, 5px 5px 0 #000' }}
+          >
             HALL OF CLOWNS
-          </CardTitle>
-          <button onClick={onClose} className="text-gray-400 hover:text-black transition-colors">
-            <X className="h-5 w-5" />
-          </button>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="space-y-2">
-              {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}
-            </div>
-          ) : scores.length === 0 ? (
-            <p className="text-center text-[#1A0040AA] py-4 font-bold"
-              style={{ fontFamily: "'Bangers', Impact, sans-serif", letterSpacing: '1px' }}>
-              NO CLOWNS YET — BE FIRST! 🤡
+          </h1>
+        </div>
+        <button
+          onClick={onClose}
+          className="text-white/60 hover:text-white transition-colors bg-white/10 hover:bg-white/20 rounded-full p-2"
+        >
+          <X className="h-6 w-6" />
+        </button>
+      </div>
+
+      {/* Subtitle */}
+      <p
+        className="shrink-0 text-center text-[#00CFFF] text-sm px-4 pb-4"
+        style={{ fontFamily: "'Bangers', Impact, sans-serif", letterSpacing: '2px' }}
+      >
+        ALL-TIME HIGH SCORES · VERIFIED ON NOSTR ⚡
+      </p>
+
+      {/* Scores list — scrollable */}
+      <div className="flex-1 overflow-y-auto px-4 pb-6">
+        {isLoading ? (
+          <div className="space-y-3 max-w-lg mx-auto">
+            {[...Array(5)].map((_, i) => (
+              <Skeleton key={i} className="h-14 w-full rounded-2xl bg-white/10" />
+            ))}
+          </div>
+        ) : scores.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
+            <span className="text-6xl animate-bounce">🤡</span>
+            <p
+              className="text-[#FCE000] text-2xl"
+              style={{ fontFamily: "'Bangers', Impact, sans-serif", letterSpacing: '2px' }}
+            >
+              NO CLOWNS YET<br />BE FIRST!
             </p>
-          ) : (
-            <table className="w-full border-collapse text-[#1A0040]"
-              style={{ fontFamily: "'Bangers', Impact, sans-serif", fontSize: '17px', letterSpacing: '1px' }}>
-              <tbody>
-                {scores.map((entry, i) => (
-                  <tr
-                    key={entry.event_id ?? entry.pubkey}
-                    className={myScore !== undefined && entry.score === myScore ? 'bg-[#FCE000]' : ''}
+          </div>
+        ) : (
+          <div className="max-w-lg mx-auto space-y-2">
+            {scores.map((entry, i) => {
+              const isMe = myScore !== undefined && entry.score === myScore;
+              const isTop3 = i < 3;
+              return (
+                <div
+                  key={entry.event_id ?? entry.pubkey}
+                  className="flex items-center gap-3 rounded-2xl px-4 py-3 transition-all duration-300"
+                  style={{
+                    background: isMe
+                      ? 'linear-gradient(90deg, #FCE000 0%, #F7931A 100%)'
+                      : isTop3
+                      ? `rgba(255,255,255,${0.12 - i * 0.03})`
+                      : 'rgba(255,255,255,0.06)',
+                    border: isMe ? '2px solid #F7931A' : '2px solid rgba(255,255,255,0.1)',
+                    transform: visible ? 'translateX(0)' : 'translateX(-60px)',
+                    opacity: visible ? 1 : 0,
+                    transitionDelay: `${i * 80}ms`,
+                  }}
+                >
+                  {/* Rank */}
+                  <div
+                    className="shrink-0 w-8 text-center text-xl"
+                    style={{ fontFamily: "'Bangers', Impact, sans-serif" }}
                   >
-                    <td className="py-1 px-2 border-b-2 border-dashed border-[#FF008033]">
-                      {i + 1}. {entry.name}
-                      {entry.sats_deposited > 0 && (
-                        <Badge variant="outline" className="ml-1.5 text-xs text-[#F7931A] border-[#F7931A] py-0">
-                          ⚡{entry.sats_deposited}
-                        </Badge>
-                      )}
-                    </td>
-                    <td className="py-1 px-2 border-b-2 border-dashed border-[#FF008033] text-right text-[#6200EA]">
-                      {entry.score.toLocaleString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-          <p className="text-xs text-center text-muted-foreground mt-3">Scores on Nostr · All-time highs</p>
-        </CardContent>
-      </Card>
+                    {isTop3 ? MEDALS[i] : <span className="text-white/50 text-base">{i + 1}</span>}
+                  </div>
+
+                  {/* Name + sats */}
+                  <div className="flex-1 min-w-0">
+                    <p
+                      className="truncate font-bold"
+                      style={{
+                        fontFamily: "'Bangers', Impact, sans-serif",
+                        letterSpacing: '1.5px',
+                        fontSize: 'clamp(16px,4vw,20px)',
+                        color: isMe ? '#1A0040' : '#FFFFFF',
+                      }}
+                    >
+                      {entry.name}
+                      {isMe && <span className="ml-2 text-sm">← YOU</span>}
+                    </p>
+                    {entry.sats_deposited > 0 && (
+                      <p className="text-xs" style={{ color: isMe ? '#6200EA' : '#F7931A' }}>
+                        ⚡ {entry.sats_deposited.toLocaleString()} sats
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Score */}
+                  <div
+                    className="shrink-0 text-right"
+                    style={{
+                      fontFamily: "'Bangers', Impact, sans-serif",
+                      letterSpacing: '1px',
+                      fontSize: 'clamp(18px,4.5vw,24px)',
+                      color: isMe ? '#1A0040' : (isTop3 ? '#FCE000' : '#00CFFF'),
+                      textShadow: isMe ? 'none' : '0 0 8px currentColor',
+                    }}
+                  >
+                    {entry.score.toLocaleString()}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="shrink-0 flex justify-center pb-6 pt-2">
+        <button
+          className="px-10 py-3 rounded-2xl border-4 border-[#FCE000] text-[#FCE000] font-bold text-xl shadow-[4px_4px_0_#FF0080] active:translate-y-1 active:shadow-none transition-all"
+          style={{ fontFamily: "'Bangers', Impact, sans-serif", letterSpacing: '2px', background: 'rgba(255,255,255,0.05)' }}
+          onClick={onClose}
+        >
+          CLOSE
+        </button>
+      </div>
     </div>
   );
 }
