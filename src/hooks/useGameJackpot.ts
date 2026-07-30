@@ -150,7 +150,8 @@ export function usePublishGameScore() {
     score: number,
     satsDeposited: number,
     npub?: string,
-    onSuccess?: () => void
+    onSuccess?: () => void,
+    onError?: (msg: string) => void
   ) => {
     createEvent(
       {
@@ -171,6 +172,10 @@ export function usePublishGameScore() {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: ['game-scores', game] });
           if (onSuccess) onSuccess();
+        },
+        onError: (err) => {
+          const msg = err instanceof Error ? err.message : 'Failed to publish score';
+          if (onError) onError(msg);
         },
       }
     );

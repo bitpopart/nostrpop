@@ -371,15 +371,25 @@ function GameOverPanel({ score, paidMode, playerName, playerNpub, satsPaid, onAg
   const { publishScore, isPending } = usePublishGameScore();
   const { user } = useCurrentUser();
   const [published, setPublished] = useState(false);
+  const [publishError, setPublishError] = useState('');
   const [showBoard, setShowBoard] = useState(false);
 
   const handlePublish = () => {
     if (!user || published || isPending) return;
+    setPublishError('');
     const npub = playerNpub || nip19.npubEncode(user.pubkey);
-    publishScore(GAME_ID, playerName, score, satsPaid, npub, () => {
-      setPublished(true);
-      updateRoundHighScore(GAME_ID, user.pubkey, npub, playerName, score);
-    });
+    publishScore(
+      GAME_ID,
+      playerName,
+      score,
+      satsPaid,
+      npub,
+      () => {
+        setPublished(true);
+        updateRoundHighScore(GAME_ID, user.pubkey, npub, playerName, score);
+      },
+      (err: string) => setPublishError(err),
+    );
   };
 
   return (
@@ -400,15 +410,25 @@ function GameOverPanel({ score, paidMode, playerName, playerNpub, satsPaid, onAg
           <div className="bg-green-50 border-2 border-green-400 rounded-xl p-2 text-sm" style={{ fontFamily: 'sans-serif' }}>
             {published ? (
               <p className="text-green-700 font-bold">✓ Score on Nostr scoreboard!</p>
+            ) : !user ? (
+              <div className="space-y-2">
+                <p className="text-green-700 font-bold text-xs">Log in to post your score to Nostr:</p>
+                <LoginArea className="w-full" />
+              </div>
             ) : (
-              <button
-                className="w-full py-2 rounded-xl font-bold transition-all active:scale-95 text-base"
-                style={{ fontFamily: "'Bangers', Impact, sans-serif", letterSpacing: '1px', border: '2px solid #16a34a', background: '#22c55e', color: '#fff' }}
-                onClick={handlePublish}
-                disabled={isPending || !user}
-              >
-                {isPending ? 'POSTING…' : '📋 POST SCORE TO NOSTR'}
-              </button>
+              <div className="space-y-1">
+                <button
+                  className="w-full py-2 rounded-xl font-bold transition-all active:scale-95 text-base"
+                  style={{ fontFamily: "'Bangers', Impact, sans-serif", letterSpacing: '1px', border: '2px solid #16a34a', background: '#22c55e', color: '#fff' }}
+                  onClick={handlePublish}
+                  disabled={isPending}
+                >
+                  {isPending ? 'POSTING…' : '📋 POST SCORE TO NOSTR'}
+                </button>
+                {publishError && (
+                  <p className="text-red-600 text-xs">{publishError}</p>
+                )}
+              </div>
             )}
           </div>
         )}

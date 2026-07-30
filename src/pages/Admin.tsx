@@ -1007,20 +1007,65 @@ const Admin = () => {
                 </TabsContent>
 
                 <TabsContent value="games">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center">
-                        <Gamepad2 className="h-5 w-5 mr-2" />
-                        Games Projects
-                      </CardTitle>
-                      <CardDescription>
-                        Add and manage game projects that appear on the <a href="/games" className="underline text-orange-600">/games</a> page
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <ProjectManagement filterCategory="games" />
-                    </CardContent>
-                  </Card>
+                   <div className="space-y-4">
+                    {/* Built-in games — always present, not managed via Nostr */}
+                    <Card className="border-violet-200 dark:border-violet-800">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Gamepad2 className="h-5 w-5 text-violet-600" />
+                          Built-in Games
+                        </CardTitle>
+                        <CardDescription>
+                          These games are hardcoded and always appear on <a href="/games" className="underline text-orange-600">/games</a>. They live in the codebase, not on Nostr.
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex items-center justify-between gap-4 rounded-xl border-2 border-violet-200 dark:border-violet-700 bg-violet-50 dark:bg-violet-900/20 px-4 py-3">
+                          <div className="flex items-center gap-3">
+                            <span className="text-3xl">💵</span>
+                            <div>
+                              <p className="font-bold text-violet-900 dark:text-violet-100">Money Printer Mayhem</p>
+                              <p className="text-xs text-muted-foreground">ClownWorld Edition · Lightning jackpot · Nostr scoreboard</p>
+                            </div>
+                          </div>
+                          <div className="flex gap-2 shrink-0">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-violet-400 text-violet-700 hover:bg-violet-100 dark:border-violet-600 dark:text-violet-300"
+                              onClick={() => navigate('/games/moneyprinter')}
+                            >
+                              Play
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-violet-400 text-violet-700 hover:bg-violet-100 dark:border-violet-600 dark:text-violet-300"
+                              onClick={() => navigate('/games')}
+                            >
+                              /games
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Nostr-managed games */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center">
+                          <Gamepad2 className="h-5 w-5 mr-2" />
+                          Games Projects
+                        </CardTitle>
+                        <CardDescription>
+                          Add and manage additional game projects (Nostr-published) that appear on the <a href="/games" className="underline text-orange-600">/games</a> page
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <ProjectManagement filterCategory="games" />
+                      </CardContent>
+                    </Card>
+                  </div>
                 </TabsContent>
 
                 <TabsContent value="animations-projects">
