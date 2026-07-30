@@ -215,6 +215,7 @@ export function useGameLeaderboard(game: string) {
       });
 
       return Array.from(byPubkey.values())
+        .filter(s => s.sats_deposited > 0)   // paid entries only
         .sort((a, b) => b.score - a.score)
         .slice(0, 10);
     },

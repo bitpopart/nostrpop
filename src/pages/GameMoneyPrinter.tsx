@@ -285,7 +285,7 @@ function PayPanel({ playerName, playerNpub, sats, onSetName, onSetNpub, onSetSat
       const inv = await getZapInvoice(sats);
       if (!inv) return;
       setInvoice(inv);
-      const qr = await QRCode.toDataURL(inv.toUpperCase(), { width: 200, margin: 2, color: { dark: '#1a1a1a', light: '#ffffff' } });
+      const qr = await QRCode.toDataURL(inv, { width: 200, margin: 2, color: { dark: '#1a1a1a', light: '#ffffff' } });
       setQrUrl(qr);
     } catch (e) { console.error(e); }
     finally { setIsGenerating(false); }
@@ -496,7 +496,7 @@ function GameOverPanel({ score, paidMode, playerName, playerNpub, satsPaid, onAg
           {score.toLocaleString()} BUCKS
         </div>
 
-        {paidMode && (
+        {paidMode && satsPaid > 0 && (
           <div className="bg-green-50 border-2 border-green-400 rounded-xl p-2 text-sm" style={{ fontFamily: 'sans-serif' }}>
             {published ? (
               <p className="text-green-700 font-bold">✓ Score on Nostr scoreboard!</p>
@@ -523,7 +523,7 @@ function GameOverPanel({ score, paidMode, playerName, playerNpub, satsPaid, onAg
           </div>
         )}
 
-        {!paidMode && (
+        {(!paidMode || satsPaid === 0) && (
           <div className="bg-orange-50 border-2 border-orange-400 rounded-xl p-2 text-sm" style={{ fontFamily: 'sans-serif' }}>
             <p className="text-orange-700 font-bold">Deposit sats to enter the jackpot &amp; scoreboard!</p>
           </div>
