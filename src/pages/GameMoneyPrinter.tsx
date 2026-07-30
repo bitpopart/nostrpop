@@ -285,7 +285,7 @@ function PayPanel({ playerName, playerNpub, sats, onSetName, onSetNpub, onSetSat
       const inv = await getZapInvoice(sats);
       if (!inv) return;
       setInvoice(inv);
-      const qr = await QRCode.toDataURL(inv, { width: 200, margin: 2, color: { dark: '#1a1a1a', light: '#ffffff' } });
+      const qr = await QRCode.toDataURL(`lightning:${inv}`, { width: 200, margin: 2, color: { dark: '#1a1a1a', light: '#ffffff' } });
       setQrUrl(qr);
     } catch (e) { console.error(e); }
     finally { setIsGenerating(false); }
