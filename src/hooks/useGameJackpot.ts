@@ -1,11 +1,14 @@
 import { useNostr } from '@nostrify/react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { nip19 } from 'nostr-tools';
 
-// Kind 3767 — BitPopArt Game Score / Jackpot Record
-// Stored permanently on relay; queryable per game
+// Kind 30762 — Gamestr standard game score event (addressable)
+// See: https://gamestr.io/developers
+// d-tag format: <game-id>:<player-pubkey>
+// Published to both the app relay and wss://main.relay.gamestr.io
+
+export const GAMESTR_RELAY = 'wss://main.relay.gamestr.io';
 
 const ADMIN_NPUB = 'npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz';
 const ADMIN_PUBKEY = nip19.decode(ADMIN_NPUB).data as string;
@@ -48,11 +51,9 @@ export function setLocalJackpot(game: string, j: JackpotState): void {
 }
 
 export function resolveJackpot(j: JackpotState): JackpotState {
-  // Start countdown when goal reached
   if (j.total >= JACKPOT_GOAL && !j.countdown_start) {
     j = { ...j, countdown_start: Date.now(), round_high: null };
   }
-  // Round ended: mark winner, reset
   if (j.countdown_start && Date.now() > j.countdown_start + ROUND_MS) {
     const last_winner = j.round_high
       ? { npub: j.round_high.npub, name: j.round_high.name, sats: j.total, when: Date.now() }
@@ -91,55 +92,35 @@ export function formatCountdown(ms: number): string {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
-// Hook: fetch scores for a given game from Nostr (kind 3767)
-export function useGameScores(game: string) {
-  const { nostr } = useNostr();
+// Parse a kind 30762 event into a GameScore
+function parseGameScore(event: { id: string; pubkey: string; kind: number; tags: string[][]; created_at: number }): GameScore | null {
+  try {
+    const gameTag = event.tags.find(t => t[0] === 'game')?.[1];
+    const scoreTag = event.tags.find(t => t[0] === 'score')?.[1];
+    const nameTag = event.tags.find(t => t[0] === 'name')?.[1] ?? '???';
+    const npubTag = event.tags.find(t => t[0] === 'npub')?.[1];
+    const satsTag = event.tags.find(t => t[0] === 'sats')?.[1];
+    // p tag holds player pubkey (Gamestr standard)
+    const pTag = event.tags.find(t => t[0] === 'p')?.[1];
 
-  return useQuery({
-    queryKey: ['game-scores', game],
-    queryFn: async (c) => {
-      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(3000)]);
-      const events = await nostr.query(
-        [{ kinds: [3767], '#g': [game], limit: 100 }],
-        { signal }
-      );
+    if (!gameTag || !scoreTag) return null;
 
-      const scores: GameScore[] = events
-        .map((event): GameScore | null => {
-          try {
-            const nameTag = event.tags.find(t => t[0] === 'name')?.[1] ?? '???';
-            const scoreTag = event.tags.find(t => t[0] === 'score')?.[1];
-            const npubTag = event.tags.find(t => t[0] === 'npub')?.[1];
-            const satsTag = event.tags.find(t => t[0] === 'sats')?.[1];
-            const gameTag = event.tags.find(t => t[0] === 'g')?.[1];
-
-            if (!scoreTag || !gameTag) return null;
-
-            return {
-              pubkey: event.pubkey,
-              npub: npubTag ?? nip19.npubEncode(event.pubkey),
-              name: nameTag,
-              score: parseInt(scoreTag),
-              game: gameTag,
-              sats_deposited: satsTag ? parseInt(satsTag) : 0,
-              created_at: event.created_at,
-              event_id: event.id,
-            };
-          } catch {
-            return null;
-          }
-        })
-        .filter((s): s is GameScore => s !== null)
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 10);
-
-      return scores;
-    },
-    staleTime: 60 * 1000,
-  });
+    return {
+      pubkey: pTag ?? event.pubkey,
+      npub: npubTag ?? nip19.npubEncode(pTag ?? event.pubkey),
+      name: nameTag,
+      score: parseInt(scoreTag),
+      game: gameTag,
+      sats_deposited: satsTag ? parseInt(satsTag) : 0,
+      created_at: event.created_at,
+      event_id: event.id,
+    };
+  } catch {
+    return null;
+  }
 }
 
-// Hook: publish a score to Nostr (kind 3767)
+// Hook: publish a score to Nostr (kind 30762 — Gamestr standard)
 export function usePublishGameScore() {
   const { mutateAsync, isPending } = useNostrPublish();
   const queryClient = useQueryClient();
@@ -149,23 +130,36 @@ export function usePublishGameScore() {
     name: string,
     score: number,
     satsDeposited: number,
-    npub?: string,
+    playerNpub?: string,
   ) => {
+    // Decode npub to hex pubkey for the p tag
+    let playerPubkey = '';
+    if (playerNpub) {
+      try {
+        playerPubkey = nip19.decode(playerNpub).data as string;
+      } catch { /* ignore */ }
+    }
+
     const event = await mutateAsync({
-      kind: 3767,
-      content: '',
+      kind: 30762,
+      content: `${name} scored ${score.toLocaleString()} in ${game}! ⚡`,
       tags: [
-        ['g', game],
-        ['name', name.toUpperCase().slice(0, 12)],
+        // Gamestr standard tags
+        ['d', `${game}:${playerPubkey || 'unknown'}`],
+        ['game', game],
         ['score', String(score)],
+        ...(playerPubkey ? [['p', playerPubkey]] : []),
+        ['state', 'active'],
+        ['t', 'bitcoin'],
+        ['t', 'clownworld'],
+        ['t', 'bitpopart'],
+        // BitPopArt extensions
+        ['name', name.toUpperCase().slice(0, 12)],
         ['sats', String(satsDeposited)],
-        ['t', 'bitpopart-game'],
-        ['t', game],
-        ...(npub ? [['npub', npub]] : []),
-        ['alt', `BitPopArt game score: ${score} points in ${game} by ${name}`],
+        ...(playerNpub ? [['npub', playerNpub]] : []),
       ],
     });
-    queryClient.invalidateQueries({ queryKey: ['game-scores', game] });
+
     queryClient.invalidateQueries({ queryKey: ['game-leaderboard', game] });
     return event;
   };
@@ -173,49 +167,32 @@ export function usePublishGameScore() {
   return { publishScore, isPending };
 }
 
-// Hook: fetch all-time leaderboard for a game (from Nostr, any pubkey)
+// Hook: fetch all-time leaderboard for a game (kind 30762)
 export function useGameLeaderboard(game: string) {
   const { nostr } = useNostr();
 
   return useQuery({
     queryKey: ['game-leaderboard', game],
     queryFn: async (c) => {
-      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(4000)]);
+      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(5000)]);
       const events = await nostr.query(
-        [{ kinds: [3767], '#g': [game], limit: 200 }],
+        [{ kinds: [30762], '#game': [game], limit: 200 }],
         { signal }
       );
 
-      // Keep only highest score per pubkey
+      // Keep only highest score per pubkey, paid entries only
       const byPubkey = new Map<string, GameScore>();
       events.forEach((event) => {
-        try {
-          const nameTag = event.tags.find(t => t[0] === 'name')?.[1] ?? '???';
-          const scoreTag = event.tags.find(t => t[0] === 'score')?.[1];
-          const npubTag = event.tags.find(t => t[0] === 'npub')?.[1];
-          const satsTag = event.tags.find(t => t[0] === 'sats')?.[1];
-          const gameTag = event.tags.find(t => t[0] === 'g')?.[1];
-          if (!scoreTag || !gameTag) return;
+        const parsed = parseGameScore(event);
+        if (!parsed || parsed.sats_deposited === 0) return;
 
-          const score = parseInt(scoreTag);
-          const existing = byPubkey.get(event.pubkey);
-          if (!existing || score > existing.score) {
-            byPubkey.set(event.pubkey, {
-              pubkey: event.pubkey,
-              npub: npubTag ?? nip19.npubEncode(event.pubkey),
-              name: nameTag,
-              score,
-              game: gameTag,
-              sats_deposited: satsTag ? parseInt(satsTag) : 0,
-              created_at: event.created_at,
-              event_id: event.id,
-            });
-          }
-        } catch { /* ignore */ }
+        const existing = byPubkey.get(parsed.pubkey);
+        if (!existing || parsed.score > existing.score) {
+          byPubkey.set(parsed.pubkey, parsed);
+        }
       });
 
       return Array.from(byPubkey.values())
-        .filter(s => s.sats_deposited > 0)   // paid entries only
         .sort((a, b) => b.score - a.score)
         .slice(0, 10);
     },
@@ -223,8 +200,7 @@ export function useGameLeaderboard(game: string) {
   });
 }
 
-// Hook: fetch jackpot state (admin posts kind 3767 with d=jackpot-<game>)
-// For now, jackpot is local-first (localStorage) and synced via admin publishing
+// Hook: fetch jackpot state (admin posts kind 30762 with special jackpot game tag)
 export function useJackpotState(game: string) {
   const { nostr } = useNostr();
 
@@ -233,22 +209,17 @@ export function useJackpotState(game: string) {
     queryFn: async (c) => {
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(3000)]);
 
-      // Try to fetch admin-published jackpot state (addressable kind 33767 is unavailable,
-      // so admin posts regular kind 3767 with special jackpot tag)
       const events = await nostr.query(
-        [{ kinds: [3767], authors: [ADMIN_PUBKEY], '#g': [`jackpot-${game}`], limit: 1 }],
+        [{ kinds: [30762], authors: [ADMIN_PUBKEY], '#game': [`jackpot-${game}`], limit: 1 }],
         { signal }
       );
 
-      // If admin published a jackpot state, use it as the authoritative base
       if (events.length > 0) {
         const event = events[0];
         try {
           const content = JSON.parse(event.content);
           if (typeof content.total === 'number') {
-            // Merge with local and resolve
             const local = getLocalJackpot(game);
-            // Use whichever has higher total (to not go backwards if admin just reset)
             const base: JackpotState = {
               total: Math.max(content.total, local.total),
               countdown_start: content.countdown_start ?? local.countdown_start,
@@ -262,7 +233,6 @@ export function useJackpotState(game: string) {
         } catch { /* ignore */ }
       }
 
-      // Fallback: local only
       const local = resolveJackpot(getLocalJackpot(game));
       setLocalJackpot(game, local);
       return local;

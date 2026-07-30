@@ -46,6 +46,8 @@ const presetRelays = [
   // write-only: published to for wide distribution, but NOT queried for reads
   // so a slow relay can't gate every query. (Ditto uses this same pattern.)
   { url: 'wss://relay.primal.net', name: 'Primal', read: false, write: true },
+  // Gamestr gaming relay — write game scores (kind 30762) here for discovery on gamestr.io
+  { url: 'wss://main.relay.gamestr.io', name: 'Gamestr', read: false, write: true },
 ];
 
 export function App() {

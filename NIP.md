@@ -1229,49 +1229,67 @@ Singleton addressable event storing custom emoji/illustration image URLs for eac
 
 ---
 
-## Kind 3767 — BitPopArt Game Score
+## Kind 30762 — Gamestr Game Score
 
-Published by any player after completing a game to record their score publicly on Nostr. Used for the global Hall of Clowns leaderboard across all BitPopArt games.
+BitPopArt games use **kind 30762** — the [Gamestr](https://gamestr.io/developers) standard for decentralized game scores on Nostr. Scores are published to both the app relay and `wss://main.relay.gamestr.io` so they are discoverable on gamestr.io.
+
+### Gamestr Standard
+
+- **Kind**: `30762` (addressable — NIP-01 replaceable per `d` tag)
+- **Relay**: `wss://main.relay.gamestr.io` (Gamestr network relay)
+- **Spec**: https://gamestr.io/developers
 
 ### Event Structure
 
 ```json
 {
-  "kind": 3767,
-  "content": "",
+  "kind": 30762,
+  "content": "<player> scored <score> in <game>! ⚡",
   "tags": [
-    ["g", "<game-id>"],
-    ["name", "<player name up to 12 chars>"],
+    ["d", "<game-id>:<player-pubkey-hex>"],
+    ["game", "<game-id>"],
     ["score", "<integer score>"],
-    ["sats", "<sats deposited (0 for free play)>"],
-    ["npub", "<player npub (optional, for jackpot rewards)>"],
-    ["t", "bitpopart-game"],
-    ["t", "<game-id>"],
-    ["alt", "BitPopArt game score: <score> points in <game-id> by <name>"]
+    ["p", "<player-pubkey-hex>"],
+    ["state", "active"],
+    ["t", "bitcoin"],
+    ["t", "clownworld"],
+    ["t", "bitpopart"],
+    ["name", "<player name up to 12 chars>"],
+    ["sats", "<sats deposited>"],
+    ["npub", "<player npub>"]
   ]
 }
 ```
 
-### Fields
+### Gamestr Standard Tags
 
-- **g tag**: Game identifier (e.g. `clownworld-moneyprinter`). Relays index this single-letter tag for efficient queries.
-- **name tag**: Player display name (max 12 chars, uppercase)
-- **score tag**: Integer score
-- **sats tag**: Sats deposited for this game session (0 = free play)
-- **npub tag**: Player's Nostr npub — used to zap jackpot rewards to the winner
-- **t tags**: `bitpopart-game` for all games + the specific game id for per-game filtering
-- **alt tag**: NIP-31 human-readable description
+| Tag | Description |
+|-----|-------------|
+| `d` | Unique key: `<game-id>:<player-pubkey>` (addressable — one record per player per game) |
+| `game` | Game identifier string, relay-indexed as `#game` |
+| `score` | Integer score as string |
+| `p` | Player's hex pubkey (Gamestr standard) |
+| `state` | Always `"active"` for live scores |
+| `t` | Genre/category tags (relay-indexed) |
+
+### BitPopArt Extension Tags
+
+| Tag | Description |
+|-----|-------------|
+| `name` | Player display name (max 12 chars, uppercase) |
+| `sats` | Sats deposited for this session — `0` entries are filtered from the leaderboard |
+| `npub` | Player's bech32 npub — used to zap jackpot rewards via NIP-57 |
 
 ### Jackpot Logic
 
-- **21%** of every deposit fills the jackpot (tracked client-side in localStorage, synced across sessions)
+- **21%** of every deposit fills the jackpot (tracked client-side in localStorage)
 - When the jackpot reaches **2100 sats**, a **21-hour countdown** starts
 - The player with the **highest score** during the countdown wins the entire jackpot
 - Rewards are **zapped to the winner's npub** via NIP-57
 
-### Special: Admin Jackpot State (also Kind 3767)
+### Admin Jackpot Sync (also Kind 30762)
 
-Admin publishes a kind 3767 event with `["g", "jackpot-<game-id>"]` to sync the authoritative jackpot state. The content field is a JSON object:
+Admin publishes a kind 30762 event with `["game", "jackpot-<game-id>"]` to sync the authoritative jackpot state. The content field is a JSON object:
 
 ```json
 {
@@ -1284,11 +1302,11 @@ Admin publishes a kind 3767 event with `["g", "jackpot-<game-id>"]` to sync the 
 ### Querying
 
 ```typescript
-// All scores for a specific game (relay-indexed via 'g' tag)
-nostr.query([{ kinds: [3767], '#g': ['clownworld-moneyprinter'], limit: 100 }])
+// All scores for a specific game (relay-indexed via 'game' tag)
+nostr.query([{ kinds: [30762], '#game': ['clownworld-moneyprinter'], limit: 200 }])
 
 // Admin jackpot state
-nostr.query([{ kinds: [3767], authors: [ADMIN_PUBKEY], '#g': ['jackpot-clownworld-moneyprinter'], limit: 1 }])
+nostr.query([{ kinds: [30762], authors: [ADMIN_PUBKEY], '#game': ['jackpot-clownworld-moneyprinter'], limit: 1 }])
 ```
 
 ### Currently Supported Games
@@ -1308,3 +1326,4 @@ nostr.query([{ kinds: [3767], authors: [ADMIN_PUBKEY], '#g': ['jackpot-clownworl
 - [NIP-99: Classified Listings](https://github.com/nostr-protocol/nips/blob/master/99.md)
 - [NIP-B7: Blossom](https://github.com/hzrd149/blossom)
 - [NIP proposal #2275 — kind 10008 for Profile Badges](https://github.com/nostr-protocol/nips/issues/2275)
+- [Gamestr — Decentralized Gaming on Nostr (kind 30762)](https://gamestr.io/developers)
