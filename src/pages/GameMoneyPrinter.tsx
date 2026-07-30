@@ -191,7 +191,7 @@ function PayPanel({ playerName, playerNpub, sats, onSetName, onSetNpub, onSetSat
       const inv = await getZapInvoice(sats);
       if (!inv) return;
       setInvoice(inv);
-      const qr = await QRCode.toDataURL(`lightning:${inv}`, { width: 200, margin: 2, color: { dark: '#1a1a1a', light: '#ffffff' } });
+      const qr = await QRCode.toDataURL(inv.toUpperCase(), { width: 200, margin: 2, color: { dark: '#1a1a1a', light: '#ffffff' } });
       setQrUrl(qr);
     } catch (e) { console.error(e); }
     finally { setIsGenerating(false); }
@@ -373,15 +373,14 @@ function GameOverPanel({ score, paidMode, playerName, playerNpub, satsPaid, onAg
   const [published, setPublished] = useState(false);
   const [showBoard, setShowBoard] = useState(false);
 
-  useEffect(() => {
-    if (paidMode && playerName && user && !published) {
-      const npub = playerNpub || nip19.npubEncode(user.pubkey);
-      publishScore(GAME_ID, playerName, score, satsPaid, npub, () => {
-        setPublished(true);
-        updateRoundHighScore(GAME_ID, user.pubkey, npub, playerName, score);
-      });
-    }
-  }, [paidMode, playerName, user, score, satsPaid, playerNpub, published, publishScore]);
+  const handlePublish = () => {
+    if (!user || published || isPending) return;
+    const npub = playerNpub || nip19.npubEncode(user.pubkey);
+    publishScore(GAME_ID, playerName, score, satsPaid, npub, () => {
+      setPublished(true);
+      updateRoundHighScore(GAME_ID, user.pubkey, npub, playerName, score);
+    });
+  };
 
   return (
     <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/95 backdrop-blur-sm p-4 overflow-y-auto">
@@ -399,11 +398,18 @@ function GameOverPanel({ score, paidMode, playerName, playerNpub, satsPaid, onAg
 
         {paidMode && (
           <div className="bg-green-50 border-2 border-green-400 rounded-xl p-2 text-sm" style={{ fontFamily: 'sans-serif' }}>
-            {published
-              ? <p className="text-green-700 font-bold">✓ Score on Nostr scoreboard!</p>
-              : isPending
-              ? <p className="text-green-600">Publishing to Nostr…</p>
-              : <p className="text-green-600">Score will be published.</p>}
+            {published ? (
+              <p className="text-green-700 font-bold">✓ Score on Nostr scoreboard!</p>
+            ) : (
+              <button
+                className="w-full py-2 rounded-xl font-bold transition-all active:scale-95 text-base"
+                style={{ fontFamily: "'Bangers', Impact, sans-serif", letterSpacing: '1px', border: '2px solid #16a34a', background: '#22c55e', color: '#fff' }}
+                onClick={handlePublish}
+                disabled={isPending || !user}
+              >
+                {isPending ? 'POSTING…' : '📋 POST SCORE TO NOSTR'}
+              </button>
+            )}
           </div>
         )}
 
