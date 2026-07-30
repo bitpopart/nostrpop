@@ -39,6 +39,7 @@ import ShopDebugPage from "./pages/ShopDebug";
 import FreeDownloads from "./pages/FreeDownloads";
 import FreeGallery from "./pages/FreeGallery";
 import Games from "./pages/Games";
+import GameMoneyPrinter from "./pages/GameMoneyPrinter";
 import Animations from "./pages/Animations";
 import Wallpapers from "./pages/Wallpapers";
 import Gifs from "./pages/Gifs";
@@ -114,6 +115,7 @@ export function AppRouter() {
         <Route path="/free" element={<Layout><FreeGallery /></Layout>} />
         <Route path="/free/images" element={<Layout><FreeDownloads /></Layout>} />
         <Route path="/games" element={<Layout><Games /></Layout>} />
+        <Route path="/game/moneyprinter" element={<Layout><GameMoneyPrinter /></Layout>} />
         <Route path="/animations" element={<Layout><Animations /></Layout>} />
         <Route path="/wallpapers" element={<Layout><Wallpapers /></Layout>} />
         <Route path="/gifs" element={<Layout><Gifs /></Layout>} />

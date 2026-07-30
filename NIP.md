@@ -1229,6 +1229,76 @@ Singleton addressable event storing custom emoji/illustration image URLs for eac
 
 ---
 
+## Kind 3767 — BitPopArt Game Score
+
+Published by any player after completing a game to record their score publicly on Nostr. Used for the global Hall of Clowns leaderboard across all BitPopArt games.
+
+### Event Structure
+
+```json
+{
+  "kind": 3767,
+  "content": "",
+  "tags": [
+    ["g", "<game-id>"],
+    ["name", "<player name up to 12 chars>"],
+    ["score", "<integer score>"],
+    ["sats", "<sats deposited (0 for free play)>"],
+    ["npub", "<player npub (optional, for jackpot rewards)>"],
+    ["t", "bitpopart-game"],
+    ["t", "<game-id>"],
+    ["alt", "BitPopArt game score: <score> points in <game-id> by <name>"]
+  ]
+}
+```
+
+### Fields
+
+- **g tag**: Game identifier (e.g. `clownworld-moneyprinter`). Relays index this single-letter tag for efficient queries.
+- **name tag**: Player display name (max 12 chars, uppercase)
+- **score tag**: Integer score
+- **sats tag**: Sats deposited for this game session (0 = free play)
+- **npub tag**: Player's Nostr npub — used to zap jackpot rewards to the winner
+- **t tags**: `bitpopart-game` for all games + the specific game id for per-game filtering
+- **alt tag**: NIP-31 human-readable description
+
+### Jackpot Logic
+
+- **21%** of every deposit fills the jackpot (tracked client-side in localStorage, synced across sessions)
+- When the jackpot reaches **2100 sats**, a **21-hour countdown** starts
+- The player with the **highest score** during the countdown wins the entire jackpot
+- Rewards are **zapped to the winner's npub** via NIP-57
+
+### Special: Admin Jackpot State (also Kind 3767)
+
+Admin publishes a kind 3767 event with `["g", "jackpot-<game-id>"]` to sync the authoritative jackpot state. The content field is a JSON object:
+
+```json
+{
+  "total": 840,
+  "countdown_start": null,
+  "last_winner": { "npub": "npub1...", "name": "SATOSHI", "sats": 2100, "when": 1720000000000 }
+}
+```
+
+### Querying
+
+```typescript
+// All scores for a specific game (relay-indexed via 'g' tag)
+nostr.query([{ kinds: [3767], '#g': ['clownworld-moneyprinter'], limit: 100 }])
+
+// Admin jackpot state
+nostr.query([{ kinds: [3767], authors: [ADMIN_PUBKEY], '#g': ['jackpot-clownworld-moneyprinter'], limit: 1 }])
+```
+
+### Currently Supported Games
+
+| Game ID | Description |
+|---------|-------------|
+| `clownworld-moneyprinter` | Money Printer Mayhem — catch fiat, dodge Bitcoin |
+
+---
+
 ## References
 
 - [NIP-15: Nostr Marketplace](https://github.com/nostr-protocol/nips/blob/master/15.md)
