@@ -255,7 +255,7 @@ interface PayPanelProps {
   onSetName: (v: string) => void;
   onSetNpub: (v: string) => void;
   onSetSats: (v: number) => void;
-  onPaid: () => void;
+  onPaid: (paidSats: number) => void;
   onBack: () => void;
 }
 
@@ -301,7 +301,7 @@ function PayPanel({ playerName, playerNpub, sats, onSetName, onSetNpub, onSetSat
   const handlePaid = () => {
     if (!playerName.trim() || !playerNpub.startsWith('npub1')) return;
     addDepositToJackpot(GAME_ID, sats);
-    onPaid();
+    onPaid(sats);
   };
 
   return (
@@ -573,7 +573,8 @@ export default function GameMoneyPrinter() {
   const [paidMode, setPaidMode] = useState(false);
   const [playerName, setPlayerName] = useState('');
   const [playerNpub, setPlayerNpub] = useState('');
-  const [satsPaid, setSatsPaid] = useState(MIN_SATS);
+  const [satsChosen, setSatsChosen] = useState(MIN_SATS); // amount picker in PayPanel
+  const [satsPaid, setSatsPaid] = useState(0);            // 0 until payment confirmed
   const [finalScore, setFinalScore] = useState(0);
   const [iframeReady, setIframeReady] = useState(false);
 
@@ -607,19 +608,21 @@ export default function GameMoneyPrinter() {
 
   const startFreeGame = useCallback(() => {
     setPaidMode(false);
+    setSatsPaid(0);
     setScreen('game');
     setTimeout(() => sendToGame({ type: 'start_game', paidMode: false }), 300);
   }, [sendToGame]);
 
-  const startPaidGame = useCallback(() => {
+  const startPaidGame = useCallback((paidSats: number) => {
     setPaidMode(true);
+    setSatsPaid(paidSats);
     setScreen('game');
     setTimeout(() => sendToGame({ type: 'start_game', paidMode: true, name: playerName }), 300);
   }, [sendToGame, playerName]);
 
   const handleAgain = useCallback(() => {
-    if (paidMode) startPaidGame(); else startFreeGame();
-  }, [paidMode, startFreeGame, startPaidGame]);
+    if (paidMode) startPaidGame(satsPaid); else startFreeGame();
+  }, [paidMode, satsPaid, startFreeGame, startPaidGame]);
 
   // The iframe is always mounted so it stays loaded; overlays sit on top
   return (
@@ -705,11 +708,11 @@ export default function GameMoneyPrinter() {
           <PayPanel
             playerName={playerName}
             playerNpub={playerNpub}
-            sats={satsPaid}
+            sats={satsChosen}
             onSetName={setPlayerName}
             onSetNpub={setPlayerNpub}
-            onSetSats={setSatsPaid}
-            onPaid={() => startPaidGame()}
+            onSetSats={setSatsChosen}
+            onPaid={(paidSats) => startPaidGame(paidSats)}
             onBack={() => setScreen('menu')}
           />
         )}
