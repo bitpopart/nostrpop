@@ -285,7 +285,8 @@ function PayPanel({ playerName, playerNpub, sats, onSetName, onSetNpub, onSetSat
       const inv = await getZapInvoice(sats);
       if (!inv) return;
       setInvoice(inv);
-      const qr = await QRCode.toDataURL(`lightning:${inv}`, { width: 200, margin: 2, color: { dark: '#1a1a1a', light: '#ffffff' } });
+      // Uppercase + no URI prefix = alphanumeric QR mode → smaller, denser QR reads reliably in all wallets
+      const qr = await QRCode.toDataURL(inv.toUpperCase(), { width: 256, margin: 2, errorCorrectionLevel: 'M', color: { dark: '#000000', light: '#ffffff' } });
       setQrUrl(qr);
     } catch (e) { console.error(e); }
     finally { setIsGenerating(false); }
@@ -299,7 +300,8 @@ function PayPanel({ playerName, playerNpub, sats, onSetName, onSetNpub, onSetSat
   };
 
   const handlePaid = () => {
-    if (!playerName.trim() || !playerNpub.startsWith('npub1')) return;
+    // Invoice must exist — prevents bypassing payment by clicking without generating
+    if (!invoice || !playerName.trim() || !playerNpub.startsWith('npub1')) return;
     addDepositToJackpot(GAME_ID, sats);
     onPaid(sats);
   };
