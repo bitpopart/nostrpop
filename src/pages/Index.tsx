@@ -74,6 +74,7 @@ import {
   Share,
   Smartphone,
   Package,
+  Gamepad2,
 } from 'lucide-react';
 import type { NostrEvent, NostrMetadata } from '@nostrify/nostrify';
 import type { ArtworkData } from '@/lib/artTypes';
@@ -1771,6 +1772,14 @@ const Index = () => {
                     <CreditCard className="h-4 w-4 text-indigo-500" />
                   </div>
                   <span className="text-[9px] font-semibold text-gray-500 dark:text-gray-400 leading-tight">Cards</span>
+                </Link>
+
+                {/* Games */}
+                <Link to="/games" title="Games" className="flex flex-col items-center gap-0.5 group">
+                  <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-violet-600 via-fuchsia-500 to-pink-500 shadow-md flex items-center justify-center group-hover:scale-110 group-hover:shadow-lg transition-all duration-200">
+                    <Gamepad2 className="h-4 w-4 text-white" />
+                  </div>
+                  <span className="text-[9px] font-bold text-violet-600 dark:text-violet-400 leading-tight">Games</span>
                 </Link>
 
                 {/* Magazine — highlighted */}
