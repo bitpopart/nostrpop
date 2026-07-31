@@ -14,6 +14,15 @@ const BUILTIN_GAMES: BuiltinProjectCard[] = [
     url: '/games/moneyprinter',
     order: 1,
   },
+  {
+    id: 'quiz21',
+    name: '21 Quiz',
+    description: '21 questions. Bitcoin & Nostr. No googling, no excuses 🤘 Play free or deposit sats — highest score wins the Lightning jackpot!',
+    thumbnailGradient: 'from-orange-500 via-amber-400 to-yellow-400',
+    thumbnailEmoji: '⚡',
+    url: '/games/quiz21',
+    order: 2,
+  },
 ];
 
 export default function Games() {

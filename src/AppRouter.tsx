@@ -40,6 +40,7 @@ import FreeDownloads from "./pages/FreeDownloads";
 import FreeGallery from "./pages/FreeGallery";
 import Games from "./pages/Games";
 import GameMoneyPrinter from "./pages/GameMoneyPrinter";
+import GameQuiz21 from "./pages/GameQuiz21";
 import Animations from "./pages/Animations";
 import Wallpapers from "./pages/Wallpapers";
 import Gifs from "./pages/Gifs";
@@ -116,6 +117,7 @@ export function AppRouter() {
         <Route path="/free/images" element={<Layout><FreeDownloads /></Layout>} />
         <Route path="/games" element={<Layout><Games /></Layout>} />
         <Route path="/games/moneyprinter" element={<LayoutIframe><GameMoneyPrinter /></LayoutIframe>} />
+        <Route path="/games/quiz21" element={<LayoutIframe><GameQuiz21 /></LayoutIframe>} />
         <Route path="/animations" element={<Layout><Animations /></Layout>} />
         <Route path="/wallpapers" element={<Layout><Wallpapers /></Layout>} />
         <Route path="/gifs" element={<Layout><Gifs /></Layout>} />
