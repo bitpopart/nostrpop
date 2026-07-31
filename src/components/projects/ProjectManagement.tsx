@@ -599,16 +599,20 @@ export function ProjectManagement({ filterCategory }: ProjectManagementProps = {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="url">Project URL (optional)</Label>
+                    <Label htmlFor="url">
+                      {formData.category === 'games' ? 'Game Path *' : 'Project URL (optional)'}
+                    </Label>
                     <Input
                       id="url"
-                      type="url"
-                      placeholder="https://example.com or /internal-page"
+                      type="text"
+                      placeholder={formData.category === 'games' ? '/games/moneyprinter' : 'https://example.com or /internal-page'}
                       value={formData.url}
                       onChange={(e) => handleInputChange('url', e.target.value)}
                     />
                     <p className="text-xs text-muted-foreground">
-                      External URLs will open in a new tab. Internal paths (e.g., /cards) will navigate within the app.
+                      {formData.category === 'games'
+                        ? 'Internal path to the game page, e.g. /games/moneyprinter or /games/quiz21'
+                        : 'External URLs open in a new tab. Internal paths (e.g. /cards) navigate within the app.'}
                     </p>
                   </div>
 
