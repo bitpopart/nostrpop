@@ -178,6 +178,16 @@ img{display:block}
 .copybtn:hover{border-color:var(--orange)}
 .donebtn{display:block;width:100%;text-align:center;font:700 15px/1 'Inter',sans-serif;color:#fff;background:linear-gradient(90deg,#f97316,#ea580c);border-radius:8px;padding:14px;cursor:pointer;user-select:none;box-shadow:0 4px 24px rgba(249,115,22,.25)}
 .donebtn:hover{filter:brightness(1.06)}
+/* SUCCESS SCREEN */
+#paySuccess{display:none;text-align:center;padding:10px 0}
+#paySuccess .tick{font-size:64px;line-height:1;margin-bottom:12px;animation:popIn .4s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes popIn{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+#paySuccess h2{font:400 32px/1 'Bangers',cursive;letter-spacing:2px;color:#16a34a;margin-bottom:6px}
+#paySuccess .subn{font:800 22px/1.3 'Inter',sans-serif;color:var(--orange);margin-bottom:6px}
+#paySuccess .subm{font-size:14px;color:#3a3a3a;margin-bottom:22px}
+/* Canvas flash animation */
+@keyframes flashPulse{0%,100%{box-shadow:0 0 0 0 rgba(249,115,22,0)}50%{box-shadow:0 0 0 12px rgba(249,115,22,.5)}}
+#cv.flash{animation:flashPulse .6s ease 3}
 .payx{position:absolute;top:10px;right:14px;font:700 20px/1 'Inter',sans-serif;color:#64748b;cursor:pointer;padding:6px}
 .paybox p.hint{font-size:12px;color:#64748b;margin-bottom:14px}
 
@@ -380,14 +390,25 @@ img{display:block}
 <div id="payWrap">
  <div class="paybox">
   <div class="payx" id="payX">✕</div>
-  <h3>⚡ ZAP TO PUBLISH</h3>
-  <div class="amt" id="payAmt">0 sats</div>
-  <p class="hint" id="payHint">Generating invoice…</p>
-  <div id="payQrWrap" style="width:200px;height:200px;margin:0 auto 14px;border:1px solid #e2e5e8;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#fafafa;overflow:hidden"></div>
-  <div class="addr" id="payInvoice" style="font-size:11px;word-break:break-all;cursor:pointer;user-select:all" title="Click to select all">—</div>
+  <!-- payment form -->
+  <div id="payForm">
+   <h3>⚡ ZAP TO PUBLISH</h3>
+   <div class="amt" id="payAmt">0 sats</div>
+   <p class="hint" id="payHint">Generating invoice…</p>
+   <div id="payQrWrap" style="width:200px;height:200px;margin:0 auto 14px;border:1px solid #e2e5e8;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#fafafa;overflow:hidden"></div>
+   <div class="addr" id="payInvoice" style="font-size:11px;word-break:break-all;cursor:pointer;user-select:all" title="Click to select all">—</div>
    <div class="copybtn" id="payCopy">Copy invoice</div>
    <p class="hint" style="margin-top:10px;color:#94a3b8" id="payStatus">Fetching Lightning invoice from rizful.com…</p>
   </div>
+  <!-- success screen — shown after zap is confirmed -->
+  <div id="paySuccess">
+   <div class="tick">⚡</div>
+   <h2>ZAP CONFIRMED!</h2>
+   <div class="subn" id="successCount"></div>
+   <div class="subm">Your pixels are now permanently on the canvas.<br>Sacred pixels — nobody can ever paint over them.</div>
+   <div class="donebtn" id="successClose">🎨 See my pixels on the canvas</div>
+  </div>
+ </div>
 </div>
 <div id="payWrap2Placeholder" style="display:none"></div>
 <div id="shareWrap" class="paywrap-clone">
@@ -915,13 +936,19 @@ function publishPixels(){
  if(game.competing){ game.score+=n; gSave(); gRender(); renderBoard(); publishScore(false); }
  else { gSave(); }
  save(); draw(); updStats();
- payWrap.classList.remove('show');
- toast('⚡ '+n+' sats zapped · '+n+' pixels published!');
+ // Show success screen inside the modal
+ document.getElementById('payForm').style.display='none';
+ document.getElementById('payX').style.display='none';
+ document.getElementById('successCount').textContent=n+' pixel'+(n===1?'':'s')+' painted · '+n+' sat'+(n===1?'':'s')+' zapped';
+ document.getElementById('paySuccess').style.display='block';
 }
 
 function openPayModal(n){
  stopZapPoll();
  currentInvoicePR='';
+ document.getElementById('payForm').style.display='';
+ document.getElementById('payX').style.display='';
+ document.getElementById('paySuccess').style.display='none';
  document.getElementById('payAmt').textContent=n+' sat'+(n===1?'':'s');
  document.getElementById('payQrWrap').innerHTML='<div style="font-size:28px;color:#e2e5e8;padding-top:60px">⚡</div><div style="font-size:11px;color:#94a3b8;margin-top:8px">Loading…</div>';
  document.getElementById('payInvoice').textContent='—';
@@ -995,15 +1022,34 @@ function openPayModal(n){
   });
 }
 
+function closePayModal(){
+ stopZapPoll();
+ payWrap.classList.remove('show');
+ // Reset for next use
+ document.getElementById('payForm').style.display='';
+ document.getElementById('payX').style.display='';
+ document.getElementById('paySuccess').style.display='none';
+}
+
+document.getElementById('successClose').addEventListener('click',function(){
+ closePayModal();
+ // Scroll canvas into view and flash it orange to show the new pixels
+ var cvEl=document.getElementById('cv');
+ cvEl.scrollIntoView({behavior:'smooth',block:'center'});
+ cvEl.classList.add('flash');
+ setTimeout(function(){ cvEl.classList.remove('flash'); },2000);
+ toast('🎨 Your pixels are on the canvas — sacred forever!');
+});
+
 document.getElementById('zapBtn').addEventListener('click',function(){
  var n=Object.keys(pend).length; if(!n) return;
  openPayModal(n);
 });
 document.getElementById('payX').addEventListener('click',function(){
- stopZapPoll(); payWrap.classList.remove('show');
+ closePayModal();
 });
 payWrap.addEventListener('click',function(e){
- if(e.target===payWrap){ stopZapPoll(); payWrap.classList.remove('show'); }
+ if(e.target===payWrap){ closePayModal(); }
 });
 document.getElementById('payCopy').addEventListener('click',function(){
  var t=currentInvoicePR||'bitpopart@rizful.com';
