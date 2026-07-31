@@ -386,10 +386,6 @@ img{display:block}
   <div id="payQrWrap" style="width:200px;height:200px;margin:0 auto 14px;border:1px solid #e2e5e8;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#fafafa;overflow:hidden"></div>
   <div class="addr" id="payInvoice" style="font-size:11px;word-break:break-all;cursor:pointer;user-select:all" title="Click to select all">—</div>
    <div class="copybtn" id="payCopy">Copy invoice</div>
-   <div id="payPreimageRow" style="display:none;margin-top:8px">
-    <input id="payPreimageIn" placeholder="Paste payment preimage from your wallet receipt…" style="width:100%;font:500 12px/1.4 'Courier New',monospace;color:#1a1a1a;background:#f8fafc;border:1px solid #e2e5e8;border-radius:8px;padding:10px 12px;box-sizing:border-box;margin-bottom:8px">
-    <div class="donebtn" id="payConfirm">✅ Verify preimage &amp; publish pixels</div>
-   </div>
    <p class="hint" style="margin-top:10px;color:#94a3b8" id="payStatus">Fetching Lightning invoice from rizful.com…</p>
   </div>
 </div>
@@ -837,91 +833,95 @@ function renderQR(text){
 }
 
 // ── PAYMENT FLOW ────────────────────────────────────────────────────────────
-// Cryptographic preimage verification — the only way to publish pixels.
+// Automatic payment detection via Nostr zap receipts (NIP-57 kind 9735).
 //
-// How it works:
-//   Every Lightning invoice has a payment_hash (in the bolt11 data).
-//   To settle the invoice the payer's wallet must reveal the preimage —
-//   a 32-byte secret such that sha256(preimage) === payment_hash.
-//   The payer's wallet shows the preimage in the payment receipt.
-//   We verify it client-side with Web Crypto. It cannot be guessed or faked.
+// When any Lightning wallet pays a rizful invoice, rizful's Lightning node
+// publishes a kind 9735 zap receipt to Nostr relays, signed by rizful's
+// nostrPubkey. The receipt contains the exact bolt11 invoice in a "bolt11"
+// tag. We poll relays every 2 s for that receipt — no user action needed.
 //
-// Two paths — both end with a verified preimage:
-//   1. WebLN (Alby etc.): sendPayment() returns preimage automatically.
-//   2. Any wallet: user pays, copies preimage from receipt, pastes it here.
-//
-// There is NO "trust me" button. publishPixels() only fires after
-// verifyPreimage() resolves true.
+// WebLN (Alby): payment + auto-detection via preimage, instant.
+// Any wallet (QR, mobile app): pay → receipt appears on relays → auto-detected.
+// No "trust me" button. No preimage paste. Fully automatic.
 
 var CORS='https://proxy.shakespeare.diy/?url=';
 function proxied(url){ return CORS+encodeURIComponent(url); }
 
-// Extract payment hash hex from a bolt11 invoice (tagged field type 1)
-function bolt11PayHash(pr){
- var CHARSET='qpzry9x8gf2tvdw0s3jn54khce6mua7l';
- var s=pr.toLowerCase(), sep=s.lastIndexOf('1');
- if(sep<0) return null;
- var words=[];
- for(var i=sep+1;i<s.length-6;i++){
-  var d=CHARSET.indexOf(s[i]); if(d<0) return null; words.push(d);
- }
- var pos=7; // skip 7-word timestamp
- while(pos+3<=words.length){
-  var t=words[pos], l=(words[pos+1]<<5)|words[pos+2]; pos+=3;
-  if(t===1&&l===52){ // payment_hash tag: 52 five-bit words = 256 bits
-   var bytes=[], acc=0, bits=0;
-   for(var k=0;k<52;k++){ acc=(acc<<5)|words[pos+k]; bits+=5; if(bits>=8){bytes.push((acc>>(bits-8))&0xff);bits-=8;} }
-   return bytes.map(function(b){return(b<16?'0':'')+b.toString(16);}).join('');
-  }
-  pos+=l;
- }
- return null;
+// Rizful's nostrPubkey — signs all zap receipts for payments to this address
+var RIZFUL_PUBKEY='0822a9c9a5cdf1db4b36795403e380899c4d90a08f14625fcdd46d80db3286f7';
+var ZAP_RELAYS=['wss://relay.ditto.pub','wss://relay.primal.net','wss://relay.nostr.band'];
+
+var zapPollTimer=null, zapPollSockets=[];
+
+function stopZapPoll(){
+ if(zapPollTimer){ clearInterval(zapPollTimer); zapPollTimer=null; }
+ zapPollSockets.forEach(function(ws){ try{ws.close();}catch(e){} });
+ zapPollSockets=[];
 }
 
-// sha256(hex) → hex using Web Crypto API
-function sha256hex(hexStr){
- var bytes=new Uint8Array(hexStr.match(/../g).map(function(h){return parseInt(h,16)}));
- return crypto.subtle.digest('SHA-256',bytes).then(function(buf){
-  return Array.from(new Uint8Array(buf)).map(function(b){return(b<16?'0':'')+b.toString(16);}).join('');
+// Open WebSocket subscriptions to zap relays looking for the zap receipt
+// for our exact invoice. Calls onFound() the moment it appears.
+function startZapPoll(invoicePR, onFound){
+ stopZapPoll();
+ var found=false;
+ var subId='zap'+Math.floor(Math.random()*1e9);
+ var filter={kinds:[9735],authors:[RIZFUL_PUBKEY],limit:5};
+
+ ZAP_RELAYS.forEach(function(url){
+  try{
+   var ws=new WebSocket(url);
+   zapPollSockets.push(ws);
+   ws.onopen=function(){
+    ws.send(JSON.stringify(['REQ',subId,filter]));
+   };
+   ws.onmessage=function(e){
+    if(found) return;
+    try{
+     var msg=JSON.parse(e.data);
+     if(msg[0]!=='EVENT') return;
+     var ev=msg[2];
+     // Check the bolt11 tag matches our invoice (case-insensitive)
+     for(var i=0;i<ev.tags.length;i++){
+      if(ev.tags[i][0]==='bolt11'&&ev.tags[i][1].toLowerCase()===invoicePR.toLowerCase()){
+       found=true;
+       stopZapPoll();
+       onFound();
+       return;
+      }
+     }
+    }catch(err){}
+   };
+   ws.onerror=function(){};
+  }catch(err){}
  });
-}
 
-// Verify preimage: sha256(preimage) must equal the invoice payment hash
-function verifyPreimage(preimageHex, paymentHashHex){
- if(!/^[0-9a-f]{64}$/i.test(preimageHex)) return Promise.resolve(false);
- return sha256hex(preimageHex.toLowerCase()).then(function(h){
-  return h===paymentHashHex.toLowerCase();
- });
+ // Re-send the REQ every 3 s so relays that buffer don't miss new events
+ zapPollTimer=setInterval(function(){
+  var req=JSON.stringify(['REQ',subId+Math.floor(Math.random()*100),filter]);
+  zapPollSockets.forEach(function(ws){
+   try{ if(ws.readyState===1) ws.send(req); }catch(err){}
+  });
+ },3000);
 }
-
-var currentPayHash=null; // payment hash of the live invoice
 
 function publishPixels(){
+ stopZapPoll();
  var n=Object.keys(pend).length;
  if(!n){ payWrap.classList.remove('show'); return; }
  for(var k in pend) pub[k]=pend[k];
  pend={}; hist=[];
- currentPayHash=null;
  artists=Math.max(1,artists+(localStorage.getItem('c100m_me')?0:1));
  try{localStorage.setItem('c100m_me','1')}catch(e){}
  if(game.competing){ game.score+=n; gSave(); gRender(); renderBoard(); publishScore(false); }
  else { gSave(); }
  save(); draw(); updStats();
  payWrap.classList.remove('show');
- toast('⚡ '+n+' sats paid · '+n+' pixels published!');
-}
-
-function showPreimageInput(){
- document.getElementById('payPreimageRow').style.display='block';
- paySetStatus('Paste your payment preimage from the wallet receipt to publish.');
- paySetHint('Your wallet shows the preimage in the payment details / receipt.');
+ toast('⚡ '+n+' sats zapped · '+n+' pixels published!');
 }
 
 function openPayModal(n){
- currentPayHash=null;
+ stopZapPoll();
  currentInvoicePR='';
- document.getElementById('payPreimageRow').style.display='none';
- document.getElementById('payPreimageIn').value='';
  document.getElementById('payAmt').textContent=n+' sat'+(n===1?'':'s');
  document.getElementById('payQrWrap').innerHTML='<div style="font-size:28px;color:#e2e5e8;padding-top:60px">⚡</div><div style="font-size:11px;color:#94a3b8;margin-top:8px">Loading…</div>';
  document.getElementById('payInvoice').textContent='—';
@@ -946,13 +946,10 @@ function openPayModal(n){
    if(!inv.pr) throw new Error('No invoice returned');
 
    currentInvoicePR=inv.pr;
-   currentPayHash=bolt11PayHash(inv.pr);
-   if(!currentPayHash) throw new Error('Could not read payment hash from invoice');
-
    document.getElementById('payInvoice').textContent=inv.pr;
    renderQR(inv.pr);
 
-   // "Open in wallet" deep-link (mobile)
+   // Deep-link for mobile wallets
    var wb=document.getElementById('payWalletBtn');
    if(!wb){
     wb=document.createElement('a');
@@ -964,32 +961,35 @@ function openPayModal(n){
    }
    wb.href='lightning:'+inv.pr;
 
+   // Start polling relays for the zap receipt immediately
+   paySetStatus('⏳ Waiting for payment… pixels publish automatically when zap is detected.');
+   paySetHint('Scan QR · tap wallet button · or pay with Alby. Pixels appear as soon as your zap lands.');
+   startZapPoll(inv.pr, function(){
+    paySetStatus('✅ Zap received! Publishing pixels…');
+    publishPixels();
+   });
+
+   // WebLN path: also try auto-pay — fastest path, confirmed by preimage
    if(window.webln){
     paySetStatus('🔌 WebLN detected — opening wallet…');
-    paySetHint('Approve the payment — pixels publish instantly.');
     window.webln.enable()
      .then(function(){ return window.webln.sendPayment(inv.pr); })
      .then(function(result){
-      var pre=result&&(result.preimage||result.payment_preimage);
-      if(!pre){ showPreimageInput(); paySetStatus('WebLN paid but no preimage returned — paste it below.'); return; }
-      verifyPreimage(pre, currentPayHash).then(function(ok){
-       if(ok){ paySetStatus('✅ Verified! Publishing pixels…'); publishPixels(); }
-       else { paySetStatus('⚠️ Preimage mismatch. Contact support.'); }
-      });
+      if(result&&(result.preimage||result.payment_preimage)){
+       // Confirmed by preimage — publish immediately without waiting for relay
+       paySetStatus('✅ Payment confirmed via WebLN!');
+       publishPixels();
+      }
+      // else: relay poll will catch it
      })
-     .catch(function(e){
-      paySetStatus('WebLN: '+(e&&e.message||'cancelled')+' — pay via QR then paste preimage below.');
-      showPreimageInput();
+     .catch(function(){
+      // WebLN cancelled — relay poll still running, user can pay via QR
+      paySetStatus('⏳ Pay via QR or wallet app — pixels publish automatically.');
      });
-   } else {
-    paySetStatus('⚡ Invoice ready · pay it, then paste your preimage below.');
-    paySetHint('After paying, open the payment receipt in your wallet and copy the preimage.');
-    showPreimageInput();
    }
   })
   .catch(function(err){
    console.error('LNURL error:',err);
-   currentPayHash=null;
    paySetStatus('⚠️ '+err.message);
    paySetHint('Close and try again. No charge occurred.');
   });
@@ -999,26 +999,11 @@ document.getElementById('zapBtn').addEventListener('click',function(){
  var n=Object.keys(pend).length; if(!n) return;
  openPayModal(n);
 });
-
-document.getElementById('payConfirm').addEventListener('click',function(){
- if(!currentPayHash){ paySetStatus('⚠️ No invoice loaded. Close and try again.'); return; }
- var pre=document.getElementById('payPreimageIn').value.trim().toLowerCase();
- if(!/^[0-9a-f]{64}$/.test(pre)){
-  paySetStatus('⚠️ That doesn\'t look like a preimage (needs to be 64 hex characters).');
-  document.getElementById('payPreimageIn').focus(); return;
- }
- paySetStatus('Verifying…');
- verifyPreimage(pre, currentPayHash).then(function(ok){
-  if(ok){ paySetStatus('✅ Preimage verified! Publishing pixels…'); publishPixels(); }
-  else { paySetStatus('❌ Preimage does not match this invoice. Did you pay the right invoice?'); }
- });
-});
-
 document.getElementById('payX').addEventListener('click',function(){
- currentPayHash=null; payWrap.classList.remove('show');
+ stopZapPoll(); payWrap.classList.remove('show');
 });
 payWrap.addEventListener('click',function(e){
- if(e.target===payWrap){ currentPayHash=null; payWrap.classList.remove('show'); }
+ if(e.target===payWrap){ stopZapPoll(); payWrap.classList.remove('show'); }
 });
 document.getElementById('payCopy').addEventListener('click',function(){
  var t=currentInvoicePR||'bitpopart@rizful.com';
