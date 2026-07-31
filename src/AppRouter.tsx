@@ -16,6 +16,7 @@ import Shop from "./pages/Shop";
 import Admin from "./pages/Admin";
 import Feed from "./pages/Feed";
 import Canvas100M from "./pages/Canvas100M";
+import GameCanvas100M from "./pages/GameCanvas100M";
 import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
 import PopUp from "./pages/PopUp";
@@ -91,7 +92,7 @@ export function AppRouter() {
         <Route path="/art" element={<Layout><Art /></Layout>} />
         <Route path="/art/:naddr" element={<Layout><ArtworkView /></Layout>} />
         <Route path="/21k-art" element={<Layout><Art21K /></Layout>} />
-        <Route path="/canvas" element={<Layout><Canvas100M /></Layout>} />
+        <Route path="/canvas" element={<LayoutIframe><GameCanvas100M /></LayoutIframe>} />
         <Route path="/shop" element={<Layout><Shop /></Layout>} />
         <Route path="/admin" element={<Layout><Admin /></Layout>} />
         <Route path="/feed" element={<Layout><Feed /></Layout>} />
