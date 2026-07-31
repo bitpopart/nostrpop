@@ -55,7 +55,6 @@ import { EmojiPacksAdmin } from '@/components/emoji/EmojiPacksAdmin';
 import { CloudManagement } from '@/components/cloud/CloudManagement';
 import { FearGreedMeterAdmin } from '@/components/FearGreedMeterAdmin';
 import { ClientPortalAdmin } from '@/components/portal/ClientPortalAdmin';
-import { BuiltinGamesManagement } from '@/components/games/BuiltinGamesManagement';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import {
@@ -1007,39 +1006,20 @@ const Admin = () => {
                 </TabsContent>
 
                 <TabsContent value="games">
-                   <div className="space-y-4">
-                    {/* Built-in games — Nostr-managed, always shown on /games, route to internal pages */}
-                    <Card className="border-violet-200 dark:border-violet-800">
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <Gamepad2 className="h-5 w-5 text-violet-600" />
-                          Built-in Games
-                        </CardTitle>
-                        <CardDescription>
-                          Games that ship with the site and route to internal pages (e.g. <code className="text-xs bg-muted px-1 rounded">/games/moneyprinter</code>). Add, edit, and delete them here — changes publish to Nostr and appear on <a href="/games" className="underline text-orange-600">/games</a>.
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <BuiltinGamesManagement />
-                      </CardContent>
-                    </Card>
-
-                    {/* Nostr-managed external / FRL games */}
-                    <Card>
+                   <Card>
                       <CardHeader>
                         <CardTitle className="flex items-center">
                           <Gamepad2 className="h-5 w-5 mr-2" />
                           Games Projects
                         </CardTitle>
                         <CardDescription>
-                          Add external or FRL-hosted game projects (Nostr-published) that also appear on <a href="/games" className="underline text-orange-600">/games</a>
+                          Add and manage game projects that appear on <a href="/games" className="underline text-orange-600">/games</a>. Use the internal path (e.g. <code className="text-xs bg-muted px-1 rounded">/games/moneyprinter</code>) in the URL field — games never open via /frl.
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
                         <ProjectManagement filterCategory="games" />
                       </CardContent>
                     </Card>
-                  </div>
                 </TabsContent>
 
                 <TabsContent value="animations-projects">

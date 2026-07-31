@@ -169,6 +169,18 @@ export function CategoryProjectsPage({
   const handleProjectClick = (project: ProjectData) => {
     if (project.coming_soon) return;
 
+    // Games always navigate directly — never via /frl
+    if (category === 'games') {
+      if (project.url) {
+        if (project.url.startsWith('http')) {
+          window.open(project.url, '_blank');
+        } else {
+          navigate(project.url);
+        }
+      }
+      return;
+    }
+
     // HTML upload project: brand-site-inline=true means the brand_site is a
     // Blossom-hosted HTML file. On the frl category, open it inline at /frl/:id.
     // frl_inline=true (explicit) OR brand_site_inline=true both trigger inline.
@@ -395,8 +407,8 @@ export function CategoryProjectsPage({
                     <CardDescription className="line-clamp-3 text-base">
                       {project.description}
                     </CardDescription>
-                    {/* Project Website / Open Button */}
-                     {!isComingSoon && project.brand_site && (
+                    {/* Project Website / Open Button — never shown for games */}
+                     {!isComingSoon && project.brand_site && category !== 'games' && (
                        <div className="pt-2" onClick={(e) => e.stopPropagation()}>
                          {(project.frl_inline || project.brand_site_inline) ? (
                            <Button
