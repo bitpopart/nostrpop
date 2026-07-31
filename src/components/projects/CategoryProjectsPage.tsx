@@ -171,11 +171,13 @@ export function CategoryProjectsPage({
 
     // Games always navigate directly — never via /frl
     if (category === 'games') {
-      if (project.url) {
-        if (project.url.startsWith('http')) {
-          window.open(project.url, '_blank');
+      // Prefer the r-tag URL; fall back to brand_site for HTML-upload games
+      const gameUrl = project.url || project.brand_site;
+      if (gameUrl) {
+        if (gameUrl.startsWith('http')) {
+          window.open(gameUrl, '_blank');
         } else {
-          navigate(project.url);
+          navigate(gameUrl);
         }
       }
       return;
@@ -366,7 +368,7 @@ export function CategoryProjectsPage({
                             handleProjectClick(project);
                           }}
                         >
-                          Explore Project
+                          {category === 'games' ? 'Play Game' : 'Explore Project'}
                           <ArrowRight className="h-4 w-4" />
                         </Button>
                       </div>
@@ -434,8 +436,8 @@ export function CategoryProjectsPage({
                        </div>
                      )}
 
-                    {/* Share Button */}
-                     {!isComingSoon && (
+                    {/* Share Button — not shown for games */}
+                     {!isComingSoon && category !== 'games' && (
                        <div className="pt-3" onClick={(e) => e.stopPropagation()}>
                          <ShareDialog
                           title={project.name}
