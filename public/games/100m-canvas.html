@@ -854,75 +854,51 @@ function renderQR(text){
 }
 
 // ── PAYMENT FLOW ────────────────────────────────────────────────────────────
-// Automatic payment detection via Nostr zap receipts (NIP-57 kind 9735).
-//
-// When any Lightning wallet pays a rizful invoice, rizful's Lightning node
-// publishes a kind 9735 zap receipt to Nostr relays, signed by rizful's
-// nostrPubkey. The receipt contains the exact bolt11 invoice in a "bolt11"
-// tag. We poll relays every 2 s for that receipt — no user action needed.
-//
-// WebLN (Alby): payment + auto-detection via preimage, instant.
-// Any wallet (QR, mobile app): pay → receipt appears on relays → auto-detected.
-// No "trust me" button. No preimage paste. Fully automatic.
+// Uses cors.sh as a reliable CORS proxy for LNURL fetches.
+// When window.nostr (NIP-07) is available, sends a proper NIP-57 zap request
+// so rizful generates a real zap receipt on Nostr — same as zapping a post.
+// Polls relays for the kind 9735 receipt to auto-confirm payment.
+// WebLN (Alby): instant confirmation via preimage, no relay wait needed.
 
-var CORS='https://proxy.shakespeare.diy/?url=';
-function proxied(url){ return CORS+encodeURIComponent(url); }
+function proxied(url){ return 'https://proxy.cors.sh/'+url; }
 
-// Rizful's nostrPubkey — signs all zap receipts for payments to this address
 var RIZFUL_PUBKEY='0822a9c9a5cdf1db4b36795403e380899c4d90a08f14625fcdd46d80db3286f7';
+var BITPOPART_PUBKEY='43baaf0c28e6cfb195b17ee083e19eb3a4afdfac54d9b6baf170270ed193e34c';
 var ZAP_RELAYS=['wss://relay.ditto.pub','wss://relay.primal.net','wss://relay.nostr.band'];
 
-var zapPollTimer=null, zapPollSockets=[];
-
+var zapPollSockets=[];
 function stopZapPoll(){
- if(zapPollTimer){ clearInterval(zapPollTimer); zapPollTimer=null; }
  zapPollSockets.forEach(function(ws){ try{ws.close();}catch(e){} });
  zapPollSockets=[];
 }
 
-// Open WebSocket subscriptions to zap relays looking for the zap receipt
-// for our exact invoice. Calls onFound() the moment it appears.
+// Subscribe to relays for the exact zap receipt for this invoice
 function startZapPoll(invoicePR, onFound){
  stopZapPoll();
  var found=false;
- var subId='zap'+Math.floor(Math.random()*1e9);
- var filter={kinds:[9735],authors:[RIZFUL_PUBKEY],limit:5};
-
+ var subId='c'+Math.floor(Math.random()*1e9);
  ZAP_RELAYS.forEach(function(url){
   try{
    var ws=new WebSocket(url);
    zapPollSockets.push(ws);
    ws.onopen=function(){
-    ws.send(JSON.stringify(['REQ',subId,filter]));
+    ws.send(JSON.stringify(['REQ',subId,{kinds:[9735],authors:[RIZFUL_PUBKEY],limit:10}]));
    };
    ws.onmessage=function(e){
     if(found) return;
     try{
-     var msg=JSON.parse(e.data);
-     if(msg[0]!=='EVENT') return;
-     var ev=msg[2];
-     // Check the bolt11 tag matches our invoice (case-insensitive)
-     for(var i=0;i<ev.tags.length;i++){
-      if(ev.tags[i][0]==='bolt11'&&ev.tags[i][1].toLowerCase()===invoicePR.toLowerCase()){
-       found=true;
-       stopZapPoll();
-       onFound();
-       return;
+     var d=JSON.parse(e.data);
+     if(d[0]!=='EVENT') return;
+     var tags=d[2].tags||[];
+     for(var i=0;i<tags.length;i++){
+      if(tags[i][0]==='bolt11'&&tags[i][1].toLowerCase()===invoicePR.toLowerCase()){
+       found=true; stopZapPoll(); onFound(); return;
       }
      }
     }catch(err){}
    };
-   ws.onerror=function(){};
   }catch(err){}
  });
-
- // Re-send the REQ every 3 s so relays that buffer don't miss new events
- zapPollTimer=setInterval(function(){
-  var req=JSON.stringify(['REQ',subId+Math.floor(Math.random()*100),filter]);
-  zapPollSockets.forEach(function(ws){
-   try{ if(ws.readyState===1) ws.send(req); }catch(err){}
-  });
- },3000);
 }
 
 function publishPixels(){
@@ -936,11 +912,30 @@ function publishPixels(){
  if(game.competing){ game.score+=n; gSave(); gRender(); renderBoard(); publishScore(false); }
  else { gSave(); }
  save(); draw(); updStats();
- // Show success screen inside the modal
  document.getElementById('payForm').style.display='none';
  document.getElementById('payX').style.display='none';
  document.getElementById('successCount').textContent=n+' pixel'+(n===1?'':'s')+' painted · '+n+' sat'+(n===1?'':'s')+' zapped';
  document.getElementById('paySuccess').style.display='block';
+}
+
+// Build a NIP-57 zap request event, sign it with NIP-07, return JSON string
+// Returns null if no signer available
+function buildZapRequest(amountMsats, lnurlData){
+ if(!window.nostr||!window.nostr.signEvent) return Promise.resolve(null);
+ var event={
+  kind:9734,
+  content:'100M Canvas pixel zap ⚡',
+  created_at:Math.floor(Date.now()/1000),
+  tags:[
+   ['relays'].concat(ZAP_RELAYS),
+   ['amount',String(amountMsats)],
+   ['p',BITPOPART_PUBKEY],
+   ['lnurl',lnurlData.callback]
+  ]
+ };
+ return window.nostr.signEvent(event)
+  .then(function(signed){ return JSON.stringify(signed); })
+  .catch(function(){ return null; });
 }
 
 function openPayModal(n){
@@ -957,14 +952,25 @@ function openPayModal(n){
  payWrap.classList.add('show');
 
  var amountMsats=n*1000;
+ var lnurlMeta=null;
+
  fetch(proxied('https://rizful.com/.well-known/lnurlp/bitpopart'))
   .then(function(r){ if(!r.ok) throw new Error('LNURL fetch failed ('+r.status+')'); return r.json(); })
   .then(function(data){
    if(data.tag!=='payRequest') throw new Error('Not a payRequest');
    if(amountMsats<data.minSendable||amountMsats>data.maxSendable)
     throw new Error('Amount out of range (min '+Math.ceil(data.minSendable/1000)+' sats)');
-   var cb=new URL(data.callback);
+   lnurlMeta=data;
+   // Try to build a proper NIP-57 zap request if signer available
+   return buildZapRequest(amountMsats, data);
+  })
+  .then(function(zapReqJSON){
+   var cb=new URL(lnurlMeta.callback);
    cb.searchParams.set('amount',String(amountMsats));
+   if(zapReqJSON){
+    cb.searchParams.set('nostr',zapReqJSON);
+    paySetStatus('✍️ Zap request signed — fetching invoice…');
+   }
    return fetch(proxied(cb.toString()));
   })
   .then(function(r){ if(!r.ok) throw new Error('Invoice request failed ('+r.status+')'); return r.json(); })
@@ -976,7 +982,7 @@ function openPayModal(n){
    document.getElementById('payInvoice').textContent=inv.pr;
    renderQR(inv.pr);
 
-   // Deep-link for mobile wallets
+   // Deep-link button (mobile wallets)
    var wb=document.getElementById('payWalletBtn');
    if(!wb){
     wb=document.createElement('a');
@@ -988,35 +994,33 @@ function openPayModal(n){
    }
    wb.href='lightning:'+inv.pr;
 
-   // Start polling relays for the zap receipt immediately
-   paySetStatus('⏳ Waiting for payment… pixels publish automatically when zap is detected.');
-   paySetHint('Scan QR · tap wallet button · or pay with Alby. Pixels appear as soon as your zap lands.');
+   // Start listening for zap receipt on relays — fires publishPixels() automatically
+   paySetStatus('⏳ Waiting for zap… pixels appear automatically once payment lands.');
+   paySetHint('Scan QR · open in wallet · or use Alby. No button needed after paying.');
    startZapPoll(inv.pr, function(){
-    paySetStatus('✅ Zap received! Publishing pixels…');
+    paySetStatus('✅ Zap confirmed on Nostr! Publishing pixels…');
     publishPixels();
    });
 
-   // WebLN path: also try auto-pay — fastest path, confirmed by preimage
+   // WebLN: fastest path — preimage confirmed instantly
    if(window.webln){
-    paySetStatus('🔌 WebLN detected — opening wallet…');
+    paySetStatus('🔌 Alby detected — opening wallet…');
     window.webln.enable()
      .then(function(){ return window.webln.sendPayment(inv.pr); })
      .then(function(result){
       if(result&&(result.preimage||result.payment_preimage)){
-       // Confirmed by preimage — publish immediately without waiting for relay
-       paySetStatus('✅ Payment confirmed via WebLN!');
+       paySetStatus('✅ Paid via Alby! Publishing pixels…');
        publishPixels();
       }
-      // else: relay poll will catch it
+      // else relay poll will catch it
      })
      .catch(function(){
-      // WebLN cancelled — relay poll still running, user can pay via QR
-      paySetStatus('⏳ Pay via QR or wallet app — pixels publish automatically.');
+      paySetStatus('⏳ Pay via QR or wallet — pixels appear automatically.');
      });
    }
   })
   .catch(function(err){
-   console.error('LNURL error:',err);
+   console.error('Payment error:',err);
    paySetStatus('⚠️ '+err.message);
    paySetHint('Close and try again. No charge occurred.');
   });
