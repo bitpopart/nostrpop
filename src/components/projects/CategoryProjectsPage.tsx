@@ -169,16 +169,17 @@ export function CategoryProjectsPage({
   const handleProjectClick = (project: ProjectData) => {
     if (project.coming_soon) return;
 
-    // Games always navigate directly — never via /frl
+    // Games always open under the menu header in LayoutIframe — never via /frl or new tab
     if (category === 'games') {
-      // Prefer the r-tag URL; fall back to brand_site for HTML-upload games
-      const gameUrl = project.url || project.brand_site;
-      if (gameUrl) {
-        if (gameUrl.startsWith('http')) {
-          window.open(gameUrl, '_blank');
-        } else {
-          navigate(gameUrl);
-        }
+      if (project.url && !project.url.startsWith('http')) {
+        // Internal path (e.g. /games/moneyprinter) — navigate directly
+        navigate(project.url);
+      } else if (project.brand_site) {
+        // HTML-upload game — open inline via /games/:id
+        navigate(`/games/${project.id}`);
+      } else if (project.url) {
+        // External URL fallback
+        window.open(project.url, '_blank');
       }
       return;
     }
