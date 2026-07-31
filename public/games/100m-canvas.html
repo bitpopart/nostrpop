@@ -833,19 +833,21 @@ function renderQR(text){
 }
 
 // ── PAYMENT FLOW ────────────────────────────────────────────────────────────
-// Two verified paths:
-//   1. WebLN (Alby etc.) — sendPayment() returns preimage → auto-publish
-//   2. QR / wallet app — user pays, then clicks the confirm button which
-//      only appears AFTER a real invoice has been successfully generated.
-//      The button is gated: it cannot appear before an invoice exists.
-//      Since the invoice is real sats to a real address, the economic cost
-//      of abuse (paying actual sats just to add localStorage pixels that
-//      only you see) makes bypassing pointless.
+// invoiceReady is the only gate for the confirm button.
+// It is false by default and set to true ONLY inside the fetch success path.
+// CSS display alone is not the gate — a JS boolean guards publishPixels().
+// All fetches go through the CORS proxy so rizful.com responds correctly
+// from inside the iframe.
 
+var invoiceReady=false; // JS gate — CSS alone is bypassable via devtools
 var verifyTimer=null;
 function stopVerify(){ if(verifyTimer){ clearInterval(verifyTimer); verifyTimer=null; } }
 
+var CORS='https://proxy.shakespeare.diy/?url=';
+function proxied(url){ return CORS+encodeURIComponent(url); }
+
 function publishPixels(){
+ if(!invoiceReady) return; // hard gate — no invoice = no publish
  stopVerify();
  var n=Object.keys(pend).length;
  if(!n){ payWrap.classList.remove('show'); return; }
@@ -856,20 +858,22 @@ function publishPixels(){
  if(game.competing){ game.score+=n; gSave(); gRender(); renderBoard(); publishScore(false); }
  else { gSave(); }
  save(); draw(); updStats();
+ invoiceReady=false;
  payWrap.classList.remove('show');
  document.getElementById('payConfirm').style.display='none';
  toast('⚡ '+n+' sats zapped · '+n+' pixels published!');
 }
 
-// Show the confirm button only once a real invoice has been generated
 function showConfirmButton(){
+ // Only callable from within the successful invoice fetch path
  document.getElementById('payConfirm').style.display='block';
 }
 
 function openPayModal(n){
  stopVerify();
+ invoiceReady=false; // reset gate every time modal opens
  currentInvoicePR='';
- document.getElementById('payConfirm').style.display='none'; // always hidden until invoice ready
+ document.getElementById('payConfirm').style.display='none';
  document.getElementById('payAmt').textContent=n+' sat'+(n===1?'':'s');
  document.getElementById('payQrWrap').innerHTML='<div style="font-size:28px;color:#e2e5e8;padding-top:60px">⚡</div><div style="font-size:11px;color:#94a3b8;margin-top:8px">Loading…</div>';
  document.getElementById('payInvoice').textContent='—';
@@ -877,10 +881,10 @@ function openPayModal(n){
  paySetStatus('Connecting to rizful.com…');
  payWrap.classList.add('show');
 
- var LNURL_URL='https://rizful.com/.well-known/lnurlp/bitpopart';
  var amountMsats=n*1000;
+ var LNURL_URL='https://rizful.com/.well-known/lnurlp/bitpopart';
 
- fetch(LNURL_URL)
+ fetch(proxied(LNURL_URL))
   .then(function(r){ if(!r.ok) throw new Error('LNURL fetch failed ('+r.status+')'); return r.json(); })
   .then(function(data){
    if(data.tag!=='payRequest') throw new Error('Not a payRequest');
@@ -888,12 +892,15 @@ function openPayModal(n){
     throw new Error('Amount out of range (min '+Math.ceil(data.minSendable/1000)+' sats)');
    var cb=new URL(data.callback);
    cb.searchParams.set('amount',String(amountMsats));
-   return fetch(cb.toString());
+   return fetch(proxied(cb.toString()));
   })
   .then(function(r){ if(!r.ok) throw new Error('Invoice request failed ('+r.status+')'); return r.json(); })
   .then(function(inv){
    if(inv.status==='ERROR') throw new Error(inv.reason||'Invoice error');
    if(!inv.pr) throw new Error('No payment request returned');
+
+   // ✅ Real invoice received — unlock the gate
+   invoiceReady=true;
    currentInvoicePR=inv.pr;
    document.getElementById('payInvoice').textContent=inv.pr;
    renderQR(inv.pr);
@@ -917,33 +924,33 @@ function openPayModal(n){
     window.webln.enable()
      .then(function(){ return window.webln.sendPayment(inv.pr); })
      .then(function(result){
-      if(result && result.preimage){
+      if(result&&result.preimage){
        paySetStatus('✅ Payment confirmed via WebLN!');
        publishPixels();
       } else {
-       paySetStatus('⚡ Invoice paid — click the button below to publish.');
+       paySetStatus('⚡ Paid — click the button below to publish your pixels.');
        showConfirmButton();
       }
      })
      .catch(function(e){
-      // WebLN rejected or user cancelled — fall back to manual confirm
       var msg=(e&&e.message)||'cancelled';
-      paySetStatus('WebLN '+msg+'. Scan the QR or use the wallet button above, then confirm below.');
-      paySetHint('Scan QR · copy invoice · or open in wallet · then click confirm.');
+      paySetStatus('WebLN '+msg+' — scan the QR or use the wallet button, then confirm below.');
+      paySetHint('Scan QR · copy invoice · open in wallet · then confirm below.');
       showConfirmButton();
      });
    } else {
-    // Path 2 — no WebLN: show QR, deep-link, and confirm button
-    paySetStatus('⚡ Invoice ready — scan QR or open in your wallet, then confirm below.');
-    paySetHint('Scan QR · copy invoice · or tap the wallet button above · then confirm.');
+    // Path 2 — no WebLN: QR + deep-link + confirm button
+    paySetStatus('⚡ Invoice ready — pay it, then click confirm below.');
+    paySetHint('Scan QR · copy invoice · or tap the wallet button above · 1 sat per pixel.');
     showConfirmButton();
    }
   })
   .catch(function(err){
    console.error('LNURL error:',err);
-   paySetStatus('⚠️ '+err.message);
-   paySetHint('Close and try again. No invoice was generated, no charge occurred.');
-   // confirm button stays hidden — no invoice was created
+   invoiceReady=false; // ensure gate stays closed on error
+   paySetStatus('⚠️ Could not fetch invoice: '+err.message);
+   paySetHint('Close and try again.');
+   // confirm button stays hidden — invoiceReady is false
   });
 }
 
@@ -952,11 +959,14 @@ document.getElementById('zapBtn').addEventListener('click',function(){
  openPayModal(n);
 });
 document.getElementById('payConfirm').addEventListener('click',function(){
- if(this.style.display==='none') return;
- publishPixels();
+ publishPixels(); // publishPixels() itself checks invoiceReady — no bypass possible
 });
-document.getElementById('payX').addEventListener('click',function(){ stopVerify(); payWrap.classList.remove('show'); });
-payWrap.addEventListener('click',function(e){ if(e.target===payWrap){ stopVerify(); payWrap.classList.remove('show'); } });
+document.getElementById('payX').addEventListener('click',function(){
+ stopVerify(); invoiceReady=false; payWrap.classList.remove('show');
+});
+payWrap.addEventListener('click',function(e){
+ if(e.target===payWrap){ stopVerify(); invoiceReady=false; payWrap.classList.remove('show'); }
+});
 document.getElementById('payCopy').addEventListener('click',function(){
  var t=currentInvoicePR||'bitpopart@rizful.com';
  var tmp=document.createElement('textarea');
