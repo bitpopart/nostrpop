@@ -383,10 +383,9 @@ img{display:block}
   <h3>⚡ ZAP TO PUBLISH</h3>
   <div class="amt" id="payAmt">0 sats</div>
   <p class="hint" id="payHint">Generating invoice…</p>
-  <div id="payQrWrap" style="width:200px;height:200px;margin:0 auto 14px;border:1px solid #e2e5e8;border-radius:12px;display:flex;align-items:center;justify-content:center;background:#fafafa;overflow:hidden"></div>
+  <div id="payQrWrap" style="width:200px;height:200px;margin:0 auto 14px;border:1px solid #e2e5e8;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#fafafa;overflow:hidden"></div>
   <div class="addr" id="payInvoice" style="font-size:11px;word-break:break-all;cursor:pointer;user-select:all" title="Click to select all">—</div>
   <div class="copybtn" id="payCopy">Copy invoice</div>
-  <div class="donebtn" id="payDone" style="opacity:.4;pointer-events:none">Waiting for payment…</div>
   <p class="hint" style="margin-top:10px;color:#94a3b8" id="payStatus">Fetching Lightning invoice from rizful.com…</p>
  </div>
 </div>
@@ -799,23 +798,10 @@ fetchBoard();
 
 // zap + publish (real LNURL-pay flow with WebLN + QR code)
 var payWrap=document.getElementById('payWrap');
-var payPollTimer=null, currentInvoicePR='';
+var currentInvoicePR='';
 
 function paySetStatus(msg){ document.getElementById('payStatus').textContent=msg; }
 function paySetHint(msg){ document.getElementById('payHint').textContent=msg; }
-function payEnableDone(label){
- var btn=document.getElementById('payDone');
- btn.textContent=label||'I paid it ⚡ Publish pixels';
- btn.style.opacity='1'; btn.style.pointerEvents='';
-}
-function payDisableDone(label){
- var btn=document.getElementById('payDone');
- btn.textContent=label||'Waiting for payment…';
- btn.style.opacity='.4'; btn.style.pointerEvents='none';
-}
-function stopPayPoll(){
- if(payPollTimer){ clearTimeout(payPollTimer); payPollTimer=null; }
-}
 
 // Generate QR using qrcode-generator (loaded via CDN)
 // Lightning invoices are long so we use low error-correction ('L') to keep the QR scannable
@@ -845,37 +831,45 @@ function renderQR(text){
  }
 }
 
-// Try WebLN auto-pay; returns true if handled
-async function tryWebLN(invoice, onSuccess){
- if(!window.webln) return false;
- try{
-  paySetStatus('🔗 Opening WebLN wallet…');
-  await window.webln.enable();
-  await window.webln.sendPayment(invoice);
-  onSuccess();
-  return true;
- }catch(e){
-  paySetStatus('WebLN cancelled — scan QR or copy invoice to pay manually.');
-  return false;
- }
+// ── PAYMENT FLOW ────────────────────────────────────────────────────────────
+// Pixels only publish after cryptographic proof of payment via WebLN.
+// WebLN (Alby, Zeus, etc.): sendPayment() returns a preimage on success.
+// A preimage is the 32-byte secret that proves the Lightning payment settled.
+// Without WebLN, the modal shows the invoice + QR for manual payment but
+// cannot publish pixels — there is no unverified "trust me" button.
+//
+// Why not a verify poll? Rizful has no public invoice-status endpoint.
+// A backend would be needed to verify non-WebLN payments — not available here.
+
+var verifyTimer=null;
+function stopVerify(){ if(verifyTimer){ clearInterval(verifyTimer); verifyTimer=null; } }
+
+// Called only after cryptographic confirmation (WebLN preimage)
+function publishPixels(){
+ stopVerify();
+ var n=Object.keys(pend).length;
+ if(!n){ payWrap.classList.remove('show'); return; }
+ for(var k in pend) pub[k]=pend[k];
+ pend={}; hist=[];
+ artists=Math.max(1,artists+(localStorage.getItem('c100m_me')?0:1));
+ try{localStorage.setItem('c100m_me','1')}catch(e){}
+ if(game.competing){ game.score+=n; gSave(); gRender(); renderBoard(); publishScore(false); }
+ else { gSave(); }
+ save(); draw(); updStats();
+ payWrap.classList.remove('show');
+ toast('⚡ '+n+' sats paid · '+n+' pixels published!');
 }
 
-// Poll LNbits/rizful verify endpoint if available, otherwise fall back to manual confirm
-// rizful does not expose a public verify endpoint, so we rely on WebLN or manual confirm.
-// The invoice is real and money goes to bitpopart@rizful.com when paid.
-
 function openPayModal(n){
- stopPayPoll();
+ stopVerify();
  currentInvoicePR='';
  document.getElementById('payAmt').textContent=n+' sat'+(n===1?'':'s');
- document.getElementById('payQrWrap').innerHTML='<div style="font-size:28px;color:#e2e5e8;margin-top:60px">⚡</div><div style="font-size:11px;color:#94a3b8;margin-top:8px">Loading…</div>';
+ document.getElementById('payQrWrap').innerHTML='<div style="font-size:28px;color:#e2e5e8;padding-top:60px">⚡</div><div style="font-size:11px;color:#94a3b8;margin-top:8px">Loading…</div>';
  document.getElementById('payInvoice').textContent='—';
- paySetHint('Scan with any Lightning wallet · 1 sat per pixel');
+ paySetHint('A WebLN wallet (Alby) is required to publish · 1 sat per pixel');
  paySetStatus('Fetching invoice from rizful.com…');
- payDisableDone('Generating invoice…');
  payWrap.classList.add('show');
 
- // LNURL-pay: fetch from bitpopart@rizful.com
  var LNURL_URL='https://rizful.com/.well-known/lnurlp/bitpopart';
  var amountMsats=n*1000;
 
@@ -884,7 +878,7 @@ function openPayModal(n){
   .then(function(data){
    if(data.tag!=='payRequest') throw new Error('Not a payRequest');
    if(amountMsats<data.minSendable||amountMsats>data.maxSendable)
-    throw new Error('Amount '+n+' sats out of range ('+Math.ceil(data.minSendable/1000)+'–'+Math.floor(data.maxSendable/1000)+' sats)');
+    throw new Error('Amount out of range (min '+Math.ceil(data.minSendable/1000)+' sats)');
    var cb=new URL(data.callback);
    cb.searchParams.set('amount',String(amountMsats));
    return fetch(cb.toString());
@@ -896,47 +890,62 @@ function openPayModal(n){
    currentInvoicePR=inv.pr;
    document.getElementById('payInvoice').textContent=inv.pr;
    renderQR(inv.pr);
-   paySetStatus('⚡ Invoice ready · '+n+' sats · expires in ~10 min');
-   paySetHint('Scan with any Lightning wallet or copy the invoice below.');
-   payEnableDone('I paid it ⚡ Publish pixels');
 
-   // Try WebLN auto-pay
-   tryWebLN(inv.pr, function(){
-    // Auto confirmed via WebLN — publish immediately
-    publishPixels();
-   });
+   if(window.webln){
+    // ✅ WebLN path: sendPayment returns preimage on success → confirmed
+    paySetStatus('🔌 WebLN detected — opening wallet…');
+    paySetHint('Your wallet will open. Approve the payment to publish pixels.');
+    window.webln.enable()
+     .then(function(){ return window.webln.sendPayment(inv.pr); })
+     .then(function(result){
+      if(result && result.preimage){
+       paySetStatus('✅ Payment confirmed! Publishing pixels…');
+       publishPixels();
+      } else {
+       // sendPayment resolved but no preimage — treat as unconfirmed
+       paySetStatus('⚠️ Payment response missing preimage. Try again.');
+       paySetHint('If payment went through, contact bitpopart@rizful.com with your invoice.');
+      }
+     })
+     .catch(function(e){
+      var msg=e&&e.message?e.message:'cancelled';
+      paySetStatus('WebLN: '+msg+' · Scan the QR in your wallet app, then re-open this modal.');
+      paySetHint('Pixels publish only after WebLN confirms payment.');
+     });
+   } else {
+    // ❌ No WebLN: show QR + deep-link for manual pay, but no publish button
+    paySetStatus('⚠️ No WebLN wallet detected. Payment cannot be verified.');
+    paySetHint('Install Alby (albygo.com) to pay and publish instantly. Or scan the QR in your wallet app — pixels publish automatically once Alby confirms.');
+
+    // Deep-link for mobile wallets (opens the invoice in a native app)
+    var existing=document.getElementById('payWalletBtn');
+    if(!existing){
+     var wb=document.createElement('a');
+     wb.id='payWalletBtn';
+     wb.style.cssText='display:block;width:100%;text-align:center;font:700 14px/1 Inter,sans-serif;color:#fff;background:linear-gradient(90deg,#f97316,#ea580c);border-radius:8px;padding:13px;box-shadow:0 4px 24px rgba(249,115,22,.25);margin-bottom:10px;text-decoration:none';
+     wb.textContent='⚡ Open in wallet app (mobile)';
+     wb.href='lightning:'+inv.pr;
+     wb.target='_blank';
+     var copyBtn=document.getElementById('payCopy');
+     copyBtn.parentNode.insertBefore(wb,copyBtn);
+    } else {
+     existing.href='lightning:'+inv.pr;
+    }
+   }
   })
   .catch(function(err){
    console.error('LNURL error:',err);
-   // Fallback: show static address so user can still pay manually
-   paySetStatus('⚠️ Could not fetch invoice: '+err.message+'. Pay manually to bitpopart@rizful.com');
-   document.getElementById('payQrWrap').innerHTML='<span style="font-size:11px;color:#94a3b8;padding:12px;display:block;text-align:center">bitpopart@rizful.com</span>';
-   document.getElementById('payInvoice').textContent='bitpopart@rizful.com';
-   paySetHint('Pay '+n+' sats to bitpopart@rizful.com then confirm below.');
-   payEnableDone('I paid it ⚡ Publish pixels');
+   paySetStatus('⚠️ '+err.message);
+   paySetHint('Close and try again.');
   });
-}
-
-function publishPixels(){
- var n=Object.keys(pend).length;
- for(var k in pend) pub[k]=pend[k];
- pend={}; hist=[];
- artists=Math.max(1,artists+(localStorage.getItem('c100m_me')?0:1));
- try{localStorage.setItem('c100m_me','1')}catch(e){}
- if(game.competing){ game.score+=n; gSave(); gRender(); renderBoard(); publishScore(false); }
- else { gSave(); }
- save(); draw(); updStats();
- stopPayPoll();
- payWrap.classList.remove('show');
- toast('⚡ '+n+' sats zapped · '+n+' pixels published!');
 }
 
 document.getElementById('zapBtn').addEventListener('click',function(){
  var n=Object.keys(pend).length; if(!n) return;
  openPayModal(n);
 });
-document.getElementById('payX').addEventListener('click',function(){ stopPayPoll(); payWrap.classList.remove('show'); });
-payWrap.addEventListener('click',function(e){ if(e.target===payWrap){ stopPayPoll(); payWrap.classList.remove('show'); } });
+document.getElementById('payX').addEventListener('click',function(){ stopVerify(); payWrap.classList.remove('show'); });
+payWrap.addEventListener('click',function(e){ if(e.target===payWrap){ stopVerify(); payWrap.classList.remove('show'); } });
 document.getElementById('payCopy').addEventListener('click',function(){
  var t=currentInvoicePR||'bitpopart@rizful.com';
  var tmp=document.createElement('textarea');
@@ -945,10 +954,7 @@ document.getElementById('payCopy').addEventListener('click',function(){
  copyText(t, tmp, currentInvoicePR?'Invoice copied ⚡ Paste in your wallet':'Address copied ⚡');
  setTimeout(function(){document.body.removeChild(tmp)},300);
 });
-document.getElementById('payDone').addEventListener('click',function(){
- if(this.style.pointerEvents==='none'||this.style.opacity==='0.4') return;
- publishPixels();
-});
+// There is no payDone button. Pixels publish only on WebLN preimage confirmation.
 
 // share to nostr (modal + robust copy — clipboard API is blocked in the Wix iframe)
 function copyText(txt, el, ok){
