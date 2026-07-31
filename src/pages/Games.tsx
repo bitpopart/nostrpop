@@ -1,10 +1,16 @@
 import { useSeoMeta } from '@unhead/react';
+import { useNostr } from '@nostrify/react';
+import { useQuery } from '@tanstack/react-query';
 import { CategoryProjectsPage } from '@/components/projects/CategoryProjectsPage';
 import type { BuiltinProjectCard } from '@/components/projects/CategoryProjectsPage';
 import { Gamepad2, Sparkles } from 'lucide-react';
+import { nip19 } from 'nostr-tools';
 
-// Built-in games — always shown regardless of Nostr relay data
-const BUILTIN_GAMES: BuiltinProjectCard[] = [
+const ADMIN_NPUB = 'npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz';
+const ADMIN_PUBKEY = nip19.decode(ADMIN_NPUB).data as string;
+
+// Static fallback — shown immediately while Nostr loads, or if no events found yet
+const STATIC_BUILTIN_GAMES: BuiltinProjectCard[] = [
   {
     id: 'moneyprinter',
     name: 'Money Printer Mayhem',
@@ -25,6 +31,72 @@ const BUILTIN_GAMES: BuiltinProjectCard[] = [
   },
 ];
 
+/** Hook: fetch built-in games from Nostr (published by admin, tagged builtin-game) */
+function useBuiltinGames() {
+  const { nostr } = useNostr();
+
+  return useQuery({
+    queryKey: ['builtin-games'],
+    queryFn: async (c) => {
+      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(4000)]);
+
+      const [events, deletions] = await Promise.all([
+        nostr.query(
+          [{ kinds: [36171], authors: [ADMIN_PUBKEY], '#t': ['builtin-game'], limit: 50 }],
+          { signal }
+        ),
+        nostr.query(
+          [{ kinds: [5], authors: [ADMIN_PUBKEY], limit: 200 }],
+          { signal }
+        ),
+      ]);
+
+      const deletedSet = new Set<string>();
+      deletions.forEach(e => {
+        e.tags.forEach(t => {
+          if (t[0] === 'a') deletedSet.add(t[1]);
+          if (t[0] === 'e') deletedSet.add(t[1]);
+        });
+      });
+
+      const live = events.filter(e => {
+        const d = e.tags.find(t => t[0] === 'd')?.[1];
+        return !deletedSet.has(`36171:${e.pubkey}:${d}`) && !deletedSet.has(e.id);
+      });
+
+      if (live.length === 0) return null; // signal: use static fallback
+
+      return live
+        .map((event): BuiltinProjectCard => {
+          let content: Record<string, string> = {};
+          try { content = JSON.parse(event.content); } catch { /* ignore */ }
+
+          const id = event.tags.find(t => t[0] === 'd')?.[1] || event.id;
+          const name = event.tags.find(t => t[0] === 'name')?.[1] || content.name || 'Game';
+          const description = content.description || '';
+          const thumbnail = event.tags.find(t => t[0] === 'image')?.[1] || content.thumbnail || '';
+          const emoji = event.tags.find(t => t[0] === 'emoji')?.[1] || '🎮';
+          const gradient = event.tags.find(t => t[0] === 'gradient')?.[1] || 'from-violet-600 via-fuchsia-500 to-pink-500';
+          const path = event.tags.find(t => t[0] === 'r')?.[1] || '/games';
+          const order = event.tags.find(t => t[0] === 'order')?.[1];
+
+          return {
+            id,
+            name,
+            description,
+            thumbnail: thumbnail || undefined,
+            thumbnailEmoji: emoji,
+            thumbnailGradient: gradient,
+            url: path,
+            order: order ? parseInt(order) : undefined,
+          };
+        })
+        .sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
 export default function Games() {
   useSeoMeta({
     title: 'Games - BitPopArt | Bitcoin Pop Art Games',
@@ -44,6 +116,10 @@ export default function Games() {
     robots: 'index, follow',
   });
 
+  // Use Nostr-managed list if available, otherwise fall back to static list
+  const { data: nostrGames } = useBuiltinGames();
+  const builtinGames = nostrGames ?? STATIC_BUILTIN_GAMES;
+
   return (
     <CategoryProjectsPage
       category="games"
@@ -58,7 +134,7 @@ export default function Games() {
         </div>
       }
       emptyText="More games are coming soon! Stay tuned."
-      builtinProjects={BUILTIN_GAMES}
+      builtinProjects={builtinGames}
     />
   );
 }

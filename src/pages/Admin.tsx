@@ -55,9 +55,9 @@ import { EmojiPacksAdmin } from '@/components/emoji/EmojiPacksAdmin';
 import { CloudManagement } from '@/components/cloud/CloudManagement';
 import { FearGreedMeterAdmin } from '@/components/FearGreedMeterAdmin';
 import { ClientPortalAdmin } from '@/components/portal/ClientPortalAdmin';
+import { BuiltinGamesManagement } from '@/components/games/BuiltinGamesManagement';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
-import { useUploadFile } from '@/hooks/useUploadFile';
 import {
   Plus,
   BarChart3,
@@ -102,134 +102,7 @@ import {
   X,
   Smile,
   Cloud,
-  Users,
-  Edit2,
-  ExternalLink,
-  Loader2,
 } from 'lucide-react';
-
-// ── Builtin Game Admin Card ────────────────────────────────
-
-interface BuiltinGameAdminCardProps {
-  id: string;
-  name: string;
-  description: string;
-  playUrl: string;
-  defaultEmoji: string;
-  defaultGradient: string;
-}
-
-function BuiltinGameAdminCard({ id, name, description, playUrl, defaultEmoji, defaultGradient }: BuiltinGameAdminCardProps) {
-  const navigate = useNavigate();
-  const [thumbnailUrl, setThumbnailUrl] = useLocalStorage<string>(`bpa:game-thumb-${id}`, '');
-  const [isEditing, setIsEditing] = useState(false);
-  const [inputUrl, setInputUrl] = useState('');
-  const { mutateAsync: uploadFile, isPending: isUploading } = useUploadFile();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      const [[, url]] = await uploadFile(file);
-      setThumbnailUrl(url);
-      setIsEditing(false);
-    } catch (err) {
-      console.error('Upload failed', err);
-    }
-  };
-
-  const handleSaveUrl = () => {
-    if (inputUrl.trim()) {
-      setThumbnailUrl(inputUrl.trim());
-    }
-    setIsEditing(false);
-    setInputUrl('');
-  };
-
-  return (
-    <div className="rounded-xl border-2 border-violet-200 dark:border-violet-700 overflow-hidden">
-      {/* Thumbnail */}
-      <div className={`relative h-40 bg-gradient-to-br ${defaultGradient} flex items-center justify-center overflow-hidden`}>
-        {thumbnailUrl ? (
-          <img src={thumbnailUrl} alt={name} className="w-full h-full object-cover" />
-        ) : (
-          <span className="text-7xl">{defaultEmoji}</span>
-        )}
-        {/* Overlay edit button */}
-        <button
-          className="absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-white rounded-lg px-2 py-1 text-xs flex items-center gap-1 transition-colors"
-          onClick={() => { setIsEditing(e => !e); setInputUrl(thumbnailUrl); }}
-        >
-          <Edit2 className="h-3 w-3" />
-          {thumbnailUrl ? 'Change' : 'Add thumbnail'}
-        </button>
-      </div>
-
-      {/* Edit thumbnail panel */}
-      {isEditing && (
-        <div className="bg-violet-50 dark:bg-violet-900/20 border-t-2 border-violet-200 dark:border-violet-700 p-3 space-y-2">
-          <p className="text-xs font-semibold text-violet-800 dark:text-violet-200">Set thumbnail</p>
-          <div className="flex gap-2">
-            <Input
-              placeholder="Paste image URL…"
-              value={inputUrl}
-              onChange={e => setInputUrl(e.target.value)}
-              className="flex-1 text-xs h-8"
-              onKeyDown={e => { if (e.key === 'Enter') handleSaveUrl(); }}
-            />
-            <Button size="sm" variant="outline" className="h-8 text-xs" onClick={handleSaveUrl}>Save</Button>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-8 text-xs border-violet-400 text-violet-700"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isUploading}
-            >
-              {isUploading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Upload className="h-3 w-3 mr-1" />}
-              Upload image
-            </Button>
-            {thumbnailUrl && (
-              <Button size="sm" variant="ghost" className="h-8 text-xs text-red-500 hover:text-red-700" onClick={() => { setThumbnailUrl(''); setIsEditing(false); }}>
-                Remove
-              </Button>
-            )}
-          </div>
-          <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
-        </div>
-      )}
-
-      {/* Info + actions */}
-      <div className="flex items-center justify-between gap-3 bg-violet-50 dark:bg-violet-900/20 px-4 py-3">
-        <div>
-          <p className="font-bold text-violet-900 dark:text-violet-100 text-sm">{name}</p>
-          <p className="text-xs text-muted-foreground">{description}</p>
-        </div>
-        <div className="flex gap-2 shrink-0">
-          <Button
-            size="sm"
-            variant="outline"
-            className="border-violet-400 text-violet-700 hover:bg-violet-100 dark:border-violet-600 dark:text-violet-300 h-8 text-xs gap-1"
-            onClick={() => navigate(playUrl)}
-          >
-            <ExternalLink className="h-3 w-3" />
-            Play
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            className="border-violet-400 text-violet-700 hover:bg-violet-100 dark:border-violet-600 dark:text-violet-300 h-8 text-xs gap-1"
-            onClick={() => navigate('/games')}
-          >
-            /games
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // ── Pinned Hashtags Admin ─────────────────────────────────
 
@@ -1135,7 +1008,7 @@ const Admin = () => {
 
                 <TabsContent value="games">
                    <div className="space-y-4">
-                    {/* Built-in games — always present, not managed via Nostr */}
+                    {/* Built-in games — Nostr-managed, always shown on /games, route to internal pages */}
                     <Card className="border-violet-200 dark:border-violet-800">
                       <CardHeader>
                         <CardTitle className="flex items-center gap-2">
@@ -1143,22 +1016,15 @@ const Admin = () => {
                           Built-in Games
                         </CardTitle>
                         <CardDescription>
-                          These games are hardcoded and always appear on <a href="/games" className="underline text-orange-600">/games</a>. Thumbnail is stored locally in your browser.
+                          Games that ship with the site and route to internal pages (e.g. <code className="text-xs bg-muted px-1 rounded">/games/moneyprinter</code>). Add, edit, and delete them here — changes publish to Nostr and appear on <a href="/games" className="underline text-orange-600">/games</a>.
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
-                        <BuiltinGameAdminCard
-                          id="moneyprinter"
-                          name="Money Printer Mayhem"
-                          description="ClownWorld Edition · Lightning jackpot · Nostr scoreboard"
-                          playUrl="/games/moneyprinter"
-                          defaultEmoji="💵"
-                          defaultGradient="from-violet-600 via-fuchsia-500 to-pink-500"
-                        />
+                        <BuiltinGamesManagement />
                       </CardContent>
                     </Card>
 
-                    {/* Nostr-managed games */}
+                    {/* Nostr-managed external / FRL games */}
                     <Card>
                       <CardHeader>
                         <CardTitle className="flex items-center">
@@ -1166,7 +1032,7 @@ const Admin = () => {
                           Games Projects
                         </CardTitle>
                         <CardDescription>
-                          Add and manage additional game projects (Nostr-published) that appear on the <a href="/games" className="underline text-orange-600">/games</a> page
+                          Add external or FRL-hosted game projects (Nostr-published) that also appear on <a href="/games" className="underline text-orange-600">/games</a>
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
