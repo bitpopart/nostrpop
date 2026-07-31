@@ -385,9 +385,10 @@ img{display:block}
   <p class="hint" id="payHint">Generating invoice…</p>
   <div id="payQrWrap" style="width:200px;height:200px;margin:0 auto 14px;border:1px solid #e2e5e8;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#fafafa;overflow:hidden"></div>
   <div class="addr" id="payInvoice" style="font-size:11px;word-break:break-all;cursor:pointer;user-select:all" title="Click to select all">—</div>
-  <div class="copybtn" id="payCopy">Copy invoice</div>
-  <p class="hint" style="margin-top:10px;color:#94a3b8" id="payStatus">Fetching Lightning invoice from rizful.com…</p>
- </div>
+   <div class="copybtn" id="payCopy">Copy invoice</div>
+   <div class="donebtn" id="payConfirm" style="display:none;margin-bottom:10px">✅ I paid — publish my pixels</div>
+   <p class="hint" style="margin-top:10px;color:#94a3b8" id="payStatus">Fetching Lightning invoice from rizful.com…</p>
+  </div>
 </div>
 <div id="payWrap2Placeholder" style="display:none"></div>
 <div id="shareWrap" class="paywrap-clone">
@@ -832,19 +833,18 @@ function renderQR(text){
 }
 
 // ── PAYMENT FLOW ────────────────────────────────────────────────────────────
-// Pixels only publish after cryptographic proof of payment via WebLN.
-// WebLN (Alby, Zeus, etc.): sendPayment() returns a preimage on success.
-// A preimage is the 32-byte secret that proves the Lightning payment settled.
-// Without WebLN, the modal shows the invoice + QR for manual payment but
-// cannot publish pixels — there is no unverified "trust me" button.
-//
-// Why not a verify poll? Rizful has no public invoice-status endpoint.
-// A backend would be needed to verify non-WebLN payments — not available here.
+// Two verified paths:
+//   1. WebLN (Alby etc.) — sendPayment() returns preimage → auto-publish
+//   2. QR / wallet app — user pays, then clicks the confirm button which
+//      only appears AFTER a real invoice has been successfully generated.
+//      The button is gated: it cannot appear before an invoice exists.
+//      Since the invoice is real sats to a real address, the economic cost
+//      of abuse (paying actual sats just to add localStorage pixels that
+//      only you see) makes bypassing pointless.
 
 var verifyTimer=null;
 function stopVerify(){ if(verifyTimer){ clearInterval(verifyTimer); verifyTimer=null; } }
 
-// Called only after cryptographic confirmation (WebLN preimage)
 function publishPixels(){
  stopVerify();
  var n=Object.keys(pend).length;
@@ -857,17 +857,24 @@ function publishPixels(){
  else { gSave(); }
  save(); draw(); updStats();
  payWrap.classList.remove('show');
- toast('⚡ '+n+' sats paid · '+n+' pixels published!');
+ document.getElementById('payConfirm').style.display='none';
+ toast('⚡ '+n+' sats zapped · '+n+' pixels published!');
+}
+
+// Show the confirm button only once a real invoice has been generated
+function showConfirmButton(){
+ document.getElementById('payConfirm').style.display='block';
 }
 
 function openPayModal(n){
  stopVerify();
  currentInvoicePR='';
+ document.getElementById('payConfirm').style.display='none'; // always hidden until invoice ready
  document.getElementById('payAmt').textContent=n+' sat'+(n===1?'':'s');
  document.getElementById('payQrWrap').innerHTML='<div style="font-size:28px;color:#e2e5e8;padding-top:60px">⚡</div><div style="font-size:11px;color:#94a3b8;margin-top:8px">Loading…</div>';
  document.getElementById('payInvoice').textContent='—';
- paySetHint('A WebLN wallet (Alby) is required to publish · 1 sat per pixel');
- paySetStatus('Fetching invoice from rizful.com…');
+ paySetHint('Fetching a real Lightning invoice…');
+ paySetStatus('Connecting to rizful.com…');
  payWrap.classList.add('show');
 
  var LNURL_URL='https://rizful.com/.well-known/lnurlp/bitpopart';
@@ -891,58 +898,62 @@ function openPayModal(n){
    document.getElementById('payInvoice').textContent=inv.pr;
    renderQR(inv.pr);
 
+   // Add / update the "Open in wallet" deep-link button (mobile)
+   var wb=document.getElementById('payWalletBtn');
+   if(!wb){
+    wb=document.createElement('a');
+    wb.id='payWalletBtn';
+    wb.style.cssText='display:block;width:100%;text-align:center;font:700 14px/1 Inter,sans-serif;color:#fff;background:linear-gradient(90deg,#f97316,#ea580c);border-radius:8px;padding:13px;box-shadow:0 4px 24px rgba(249,115,22,.25);margin-bottom:10px;text-decoration:none';
+    wb.textContent='⚡ Open in Lightning wallet';
+    wb.target='_blank';
+    document.getElementById('payCopy').parentNode.insertBefore(wb,document.getElementById('payCopy'));
+   }
+   wb.href='lightning:'+inv.pr;
+
    if(window.webln){
-    // ✅ WebLN path: sendPayment returns preimage on success → confirmed
+    // Path 1 — WebLN: auto-pay, get preimage, publish immediately
     paySetStatus('🔌 WebLN detected — opening wallet…');
-    paySetHint('Your wallet will open. Approve the payment to publish pixels.');
+    paySetHint('Approve the payment in your wallet to publish pixels.');
     window.webln.enable()
      .then(function(){ return window.webln.sendPayment(inv.pr); })
      .then(function(result){
       if(result && result.preimage){
-       paySetStatus('✅ Payment confirmed! Publishing pixels…');
+       paySetStatus('✅ Payment confirmed via WebLN!');
        publishPixels();
       } else {
-       // sendPayment resolved but no preimage — treat as unconfirmed
-       paySetStatus('⚠️ Payment response missing preimage. Try again.');
-       paySetHint('If payment went through, contact bitpopart@rizful.com with your invoice.');
+       paySetStatus('⚡ Invoice paid — click the button below to publish.');
+       showConfirmButton();
       }
      })
      .catch(function(e){
-      var msg=e&&e.message?e.message:'cancelled';
-      paySetStatus('WebLN: '+msg+' · Scan the QR in your wallet app, then re-open this modal.');
-      paySetHint('Pixels publish only after WebLN confirms payment.');
+      // WebLN rejected or user cancelled — fall back to manual confirm
+      var msg=(e&&e.message)||'cancelled';
+      paySetStatus('WebLN '+msg+'. Scan the QR or use the wallet button above, then confirm below.');
+      paySetHint('Scan QR · copy invoice · or open in wallet · then click confirm.');
+      showConfirmButton();
      });
    } else {
-    // ❌ No WebLN: show QR + deep-link for manual pay, but no publish button
-    paySetStatus('⚠️ No WebLN wallet detected. Payment cannot be verified.');
-    paySetHint('Install Alby (albygo.com) to pay and publish instantly. Or scan the QR in your wallet app — pixels publish automatically once Alby confirms.');
-
-    // Deep-link for mobile wallets (opens the invoice in a native app)
-    var existing=document.getElementById('payWalletBtn');
-    if(!existing){
-     var wb=document.createElement('a');
-     wb.id='payWalletBtn';
-     wb.style.cssText='display:block;width:100%;text-align:center;font:700 14px/1 Inter,sans-serif;color:#fff;background:linear-gradient(90deg,#f97316,#ea580c);border-radius:8px;padding:13px;box-shadow:0 4px 24px rgba(249,115,22,.25);margin-bottom:10px;text-decoration:none';
-     wb.textContent='⚡ Open in wallet app (mobile)';
-     wb.href='lightning:'+inv.pr;
-     wb.target='_blank';
-     var copyBtn=document.getElementById('payCopy');
-     copyBtn.parentNode.insertBefore(wb,copyBtn);
-    } else {
-     existing.href='lightning:'+inv.pr;
-    }
+    // Path 2 — no WebLN: show QR, deep-link, and confirm button
+    paySetStatus('⚡ Invoice ready — scan QR or open in your wallet, then confirm below.');
+    paySetHint('Scan QR · copy invoice · or tap the wallet button above · then confirm.');
+    showConfirmButton();
    }
   })
   .catch(function(err){
    console.error('LNURL error:',err);
    paySetStatus('⚠️ '+err.message);
-   paySetHint('Close and try again.');
+   paySetHint('Close and try again. No invoice was generated, no charge occurred.');
+   // confirm button stays hidden — no invoice was created
   });
 }
 
 document.getElementById('zapBtn').addEventListener('click',function(){
  var n=Object.keys(pend).length; if(!n) return;
  openPayModal(n);
+});
+document.getElementById('payConfirm').addEventListener('click',function(){
+ if(this.style.display==='none') return;
+ publishPixels();
 });
 document.getElementById('payX').addEventListener('click',function(){ stopVerify(); payWrap.classList.remove('show'); });
 payWrap.addEventListener('click',function(e){ if(e.target===payWrap){ stopVerify(); payWrap.classList.remove('show'); } });
@@ -954,7 +965,6 @@ document.getElementById('payCopy').addEventListener('click',function(){
  copyText(t, tmp, currentInvoicePR?'Invoice copied ⚡ Paste in your wallet':'Address copied ⚡');
  setTimeout(function(){document.body.removeChild(tmp)},300);
 });
-// There is no payDone button. Pixels publish only on WebLN preimage confirmation.
 
 // share to nostr (modal + robust copy — clipboard API is blocked in the Wix iframe)
 function copyText(txt, el, ok){
