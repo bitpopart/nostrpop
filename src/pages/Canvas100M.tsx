@@ -88,6 +88,8 @@ function Canvas100M() {
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [payingWithAlby, setPayingWithAlby] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'lightning' | 'ecash'>('lightning');
+  const [checkingPayment, setCheckingPayment] = useState(false);
+  const [paymentConfirmed, setPaymentConfirmed] = useState(false);
   
   // Check if current user is admin
   const isAdmin = user?.pubkey === ADMIN_HEX;
@@ -158,6 +160,13 @@ function Canvas100M() {
       );
     }
   }, [invoice]);
+
+  // Reset confirmed state when dialog opens fresh
+  useEffect(() => {
+    if (showPaymentDialog) {
+      setPaymentConfirmed(false);
+    }
+  }, [showPaymentDialog]);
 
   // Start payment detection polling when the payment dialog opens with an invoice
   useEffect(() => {
@@ -1032,6 +1041,54 @@ function Canvas100M() {
     }
   };
 
+  // Check payment status — polls the verify URL or confirms via WebLN preimage
+  const handleCheckPayment = async () => {
+    if (!invoice) return;
+    setCheckingPayment(true);
+
+    try {
+      let paid = false;
+
+      // 1. Try LNURL-verify URL if available
+      if (invoice.verify_url) {
+        try {
+          const res = await fetch(invoice.verify_url);
+          if (res.ok) {
+            const data = await res.json();
+            paid = data.status === 'OK' && data.settled === true;
+          }
+        } catch (e) {
+          console.warn('verify_url check failed:', e);
+        }
+      }
+
+      if (paid) {
+        setPaymentConfirmed(true);
+        stopDetection();
+        toast({
+          title: '⚡ Payment Confirmed!',
+          description: 'Publishing your pixels now…',
+        });
+        await publishPixelsToNostr();
+      } else {
+        toast({
+          title: 'Payment Not Found Yet',
+          description: 'Payment not confirmed yet. Please wait a moment and try again.',
+          variant: 'destructive',
+        });
+      }
+    } catch (err) {
+      console.error('Check payment error:', err);
+      toast({
+        title: 'Check Failed',
+        description: 'Could not verify payment. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setCheckingPayment(false);
+    }
+  };
+
   // Print canvas at 300 DPI
   const handlePrint = () => {
     if (!canvasRef.current) return;
@@ -1749,94 +1806,95 @@ function Canvas100M() {
           {paymentMethod === 'lightning' ? (
             invoice ? (
               <div className="space-y-4">
-                <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border-2 border-gray-200 dark:border-gray-700">
-                  <div className="text-center mb-4">
-                    <div className="text-3xl font-bold text-orange-600">
-                      {invoice.amount_sats.toLocaleString()} sats
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {pendingPixels.length} pixel{pendingPixels.length > 1 ? 's' : ''} × {SAT_PER_PIXEL} sat
-                    </div>
-                  </div>
 
-                  {/* QR Code */}
-                  <div className="bg-white rounded-lg flex items-center justify-center mb-4 p-4">
-                    <canvas
-                      ref={qrCanvasRef}
-                      className="max-w-full h-auto"
-                    />
+                {/* Amount */}
+                <div className="text-center py-3 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-xl border border-yellow-200 dark:border-yellow-800">
+                  <div className="text-3xl font-bold text-orange-600">
+                    ⚡ {invoice.amount_sats.toLocaleString()} sats
                   </div>
-
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => {
-                      navigator.clipboard.writeText(invoice.payment_request);
-                      toast({
-                        title: "Invoice Copied!",
-                        description: "Paste it into your Lightning wallet to pay.",
-                      });
-                    }}
-                  >
-                    Copy Invoice
-                  </Button>
+                  <div className="text-sm text-muted-foreground mt-1">
+                    {pendingPixels.length} pixel{pendingPixels.length > 1 ? 's' : ''} × {SAT_PER_PIXEL} sat each
+                  </div>
                 </div>
 
-                {/* Payment Detection Status */}
-                <div className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg border ${
-                  invoice.verify_url
-                    ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
-                    : 'bg-gray-50 dark:bg-gray-800/40 border-gray-200 dark:border-gray-700'
-                }`}>
-                  {invoice.verify_url ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-500 flex-shrink-0"></div>
-                      <span className="text-sm text-yellow-700 dark:text-yellow-300 font-medium">
-                        ⚡ Auto-detecting payment — will close automatically when paid
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <div className="animate-pulse w-2 h-2 rounded-full bg-orange-400 flex-shrink-0"></div>
-                      <span className="text-sm text-gray-600 dark:text-gray-400">
-                        Waiting for payment — pay then click "I've Paid" below
-                      </span>
-                    </>
-                  )}
+                {/* QR Code + copy */}
+                <div className="bg-white dark:bg-gray-900 rounded-xl border-2 border-gray-200 dark:border-gray-700 p-4">
+                  <div className="flex justify-center mb-3">
+                    <canvas ref={qrCanvasRef} className="max-w-full h-auto rounded" />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      className="flex-1 text-xs"
+                      onClick={() => {
+                        navigator.clipboard.writeText(invoice.payment_request);
+                        toast({ title: 'Invoice Copied!', description: 'Paste into your Lightning wallet.' });
+                      }}
+                    >
+                      Copy Invoice
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="flex-1 text-xs"
+                      onClick={() => window.open(`lightning:${invoice.payment_request}`, '_blank')}
+                    >
+                      <Zap className="h-3 w-3 mr-1 text-yellow-500" />
+                      Open Wallet
+                    </Button>
+                  </div>
                 </div>
 
-                {/* Alby Payment Button */}
+                {/* WebLN / Alby */}
                 <Button
                   className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white font-semibold"
                   onClick={handlePayWithAlby}
-                  disabled={payingWithAlby}
+                  disabled={payingWithAlby || paymentConfirmed}
                 >
                   {payingWithAlby ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Processing...
-                    </>
+                    <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />Processing…</>
                   ) : (
-                    <>
-                      <Zap className="h-4 w-4 mr-2" />
-                      Pay with Alby / WebLN
-                    </>
+                    <><Zap className="h-4 w-4 mr-2" />Pay with Alby / WebLN</>
                   )}
                 </Button>
 
                 <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
-                  </div>
+                  <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
                   <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">Or pay manually</span>
+                    <span className="bg-background px-2 text-muted-foreground">After paying with QR / copy</span>
                   </div>
                 </div>
 
-                <div className="flex space-x-2">
+                {/* ── CHECK PAYMENT button ── */}
+                {paymentConfirmed ? (
+                  <div className="flex items-center justify-center gap-2 py-3 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-300 dark:border-green-700">
+                    <Check className="h-5 w-5 text-green-600" />
+                    <span className="font-semibold text-green-700 dark:text-green-300">Payment Received! Publishing pixels…</span>
+                  </div>
+                ) : (
                   <Button
-                    variant="outline"
-                    className="flex-1"
+                    className="w-full h-12 text-base font-bold bg-green-600 hover:bg-green-700 text-white shadow-lg"
+                    onClick={handleCheckPayment}
+                    disabled={checkingPayment}
+                  >
+                    {checkingPayment ? (
+                      <><div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2" />Checking Payment…</>
+                    ) : (
+                      <><Check className="h-5 w-5 mr-2" />Check Payment</>
+                    )}
+                  </Button>
+                )}
+
+                {/* auto-detect note or cancel */}
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground">
+                    {invoice.verify_url
+                      ? '⚡ Also auto-detecting in background'
+                      : 'Tap "Check Payment" after you\'ve paid'}
+                  </p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-xs text-muted-foreground"
                     onClick={() => {
                       stopDetection();
                       setShowPaymentDialog(false);
@@ -1845,25 +1903,12 @@ function Canvas100M() {
                   >
                     Cancel
                   </Button>
-                  <Button
-                    className="flex-1 bg-green-600 hover:bg-green-700"
-                    onClick={publishPixelsToNostr}
-                  >
-                    <Check className="h-4 w-4 mr-2" />
-                    I've Paid
-                  </Button>
                 </div>
-
-                <p className="text-xs text-center text-muted-foreground">
-                  {invoice.verify_url
-                    ? '⚡ Auto-detecting — no manual confirmation needed!'
-                    : 'Scan QR code or click "I\'ve Paid" after sending payment'}
-                </p>
               </div>
             ) : (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-                <p className="text-sm text-muted-foreground">Creating invoice...</p>
+                <p className="text-sm text-muted-foreground">Creating invoice…</p>
               </div>
             )
           ) : (
