@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useToast } from '@/hooks/useToast';
 
 interface PaymentDetectionOptions {
@@ -7,20 +7,42 @@ interface PaymentDetectionOptions {
   onPaymentDetected: () => void;
   onPaymentExpired?: () => void;
   pollInterval?: number; // milliseconds
+  verifyUrl?: string; // LNURL-verify URL for real payment detection
+}
+
+// LNURL-verify response shape
+interface LNURLVerifyResponse {
+  status: 'OK' | 'ERROR';
+  settled: boolean;
+  preimage: string | null;
+  pr: string;
+}
+
+/**
+ * Check payment status via the LNURL-verify URL.
+ * This is the standard way for LNURL services to expose payment status.
+ */
+async function checkViaVerifyUrl(verifyUrl: string): Promise<boolean> {
+  const res = await fetch(verifyUrl);
+  if (!res.ok) return false;
+  const data: LNURLVerifyResponse = await res.json();
+  return data.status === 'OK' && data.settled === true;
 }
 
 export function usePaymentDetection() {
   const [isDetecting, setIsDetecting] = useState(false);
-  const [detectionTimer, setDetectionTimer] = useState<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const abortRef = useRef<boolean>(false);
 
   const stopDetection = useCallback(() => {
+    abortRef.current = true;
     setIsDetecting(false);
-    if (detectionTimer) {
-      clearTimeout(detectionTimer);
-      setDetectionTimer(null);
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
     }
-  }, [detectionTimer]);
+  }, []);
 
   const startDetection = useCallback(async (options: PaymentDetectionOptions) => {
     const {
@@ -28,100 +50,98 @@ export function usePaymentDetection() {
       expiresAt,
       onPaymentDetected,
       onPaymentExpired,
-      pollInterval = 1500
+      pollInterval = 2000,
+      verifyUrl,
     } = options;
 
     // Stop any existing detection
     stopDetection();
-
+    abortRef.current = false;
     setIsDetecting(true);
 
-    toast({
-      title: "Payment Detection Started",
-      description: "Monitoring for payment confirmation...",
-    });
-
     const pollPaymentStatus = async () => {
+      // Stop if aborted
+      if (abortRef.current) return;
+
+      // Check if invoice has expired
+      if (Date.now() >= expiresAt) {
+        setIsDetecting(false);
+        if (onPaymentExpired) {
+          onPaymentExpired();
+        } else {
+          toast({
+            title: 'Invoice Expired',
+            description: 'The payment invoice has expired. Please generate a new one.',
+            variant: 'destructive',
+          });
+        }
+        return;
+      }
+
       try {
-        // Check if invoice has expired
-        if (Date.now() >= expiresAt) {
-          setIsDetecting(false);
-          if (onPaymentExpired) {
-            onPaymentExpired();
-          } else {
-            toast({
-              title: "Invoice Expired",
-              description: "The payment invoice has expired. Please generate a new one.",
-              variant: "destructive"
-            });
-          }
-          return;
+        let paid = false;
+
+        if (verifyUrl) {
+          // Real detection via LNURL-verify
+          paid = await checkViaVerifyUrl(verifyUrl);
+        } else {
+          // Fallback: cannot detect without a verify URL
+          // Do nothing - wait for manual confirmation
+          paid = false;
         }
 
-        // Simulate payment detection with realistic behavior
-        // In production, this would call your Lightning node or payment processor API
-        const isPaymentDetected = await simulatePaymentCheck(paymentHash);
-
-        if (isPaymentDetected) {
+        if (paid) {
+          if (abortRef.current) return;
           setIsDetecting(false);
           toast({
-            title: "Payment Detected! ⚡",
-            description: "Your Lightning payment has been confirmed.",
+            title: 'Payment Detected! ⚡',
+            description: 'Your Lightning payment has been confirmed.',
           });
           onPaymentDetected();
           return;
         }
 
-        // Continue polling if payment not detected and invoice not expired
-        const timer = setTimeout(pollPaymentStatus, pollInterval);
-        setDetectionTimer(timer);
-
+        // Continue polling
+        if (!abortRef.current) {
+          timerRef.current = setTimeout(pollPaymentStatus, pollInterval);
+        }
       } catch (error) {
         console.error('Payment detection error:', error);
-
-        // Continue polling on error, but with longer interval
-        if (Date.now() < expiresAt) {
-          const timer = setTimeout(pollPaymentStatus, pollInterval * 2);
-          setDetectionTimer(timer);
+        // Keep polling on transient errors
+        if (!abortRef.current && Date.now() < expiresAt) {
+          timerRef.current = setTimeout(pollPaymentStatus, pollInterval * 2);
         } else {
           setIsDetecting(false);
         }
       }
     };
 
-    // Start the polling
+    // Log which mode we're using
+    if (verifyUrl) {
+      console.log('Payment detection: polling verify URL', verifyUrl);
+    } else {
+      console.log('Payment detection: no verify URL for hash', paymentHash, '- manual confirmation only');
+    }
+
+    // Start polling immediately
     pollPaymentStatus();
   }, [stopDetection, toast]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      stopDetection();
+      abortRef.current = true;
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
     };
-  }, [stopDetection]);
+  }, []);
 
   return {
     isDetecting,
     startDetection,
-    stopDetection
+    stopDetection,
   };
-}
-
-// Simulate payment detection with faster, more reliable behavior
-async function simulatePaymentCheck(paymentHash: string): Promise<boolean> {
-  // Minimal delay for faster detection
-  await new Promise(resolve => setTimeout(resolve, 200 + Math.random() * 300));
-
-  // Much higher success rate (95%) for better user experience
-  // This simulates checking the Lightning node or payment processor API
-  const successRate = 0.95;
-  const isDetected = Math.random() < successRate;
-
-  if (isDetected) {
-    console.log('Payment detected for hash:', paymentHash);
-  }
-
-  return isDetected;
 }
 
 // Enhanced payment detection hook with WebLN integration
@@ -141,8 +161,8 @@ export function useEnhancedPaymentDetection() {
 
         // WebLN payment successful
         toast({
-          title: "WebLN Payment Successful! ⚡",
-          description: "Payment completed through your browser wallet.",
+          title: 'WebLN Payment Successful! ⚡',
+          description: 'Payment completed through your browser wallet.',
         });
 
         onSuccess();
@@ -156,9 +176,9 @@ export function useEnhancedPaymentDetection() {
       console.error('WebLN payment failed:', error);
 
       toast({
-        title: "WebLN Payment Failed",
-        description: "Please pay manually with your Lightning wallet. We'll detect your payment automatically.",
-        variant: "destructive"
+        title: 'WebLN Payment Failed',
+        description: 'Please pay manually with your Lightning wallet. We\'ll detect your payment automatically.',
+        variant: 'destructive',
       });
 
       // Fallback to manual payment with detection
@@ -168,30 +188,22 @@ export function useEnhancedPaymentDetection() {
   }, [toast]);
 
   const openLightningWallet = useCallback((paymentRequest: string) => {
-    // Try different Lightning URI schemes for better wallet compatibility
-    const schemes = [
-      `lightning:${paymentRequest}`,
-      `bitcoin:lightning=${paymentRequest}`,
-      paymentRequest // Some wallets handle raw invoices
-    ];
-
-    // Try to open with the first scheme
     try {
-      window.open(schemes[0], '_blank');
+      window.open(`lightning:${paymentRequest}`, '_blank');
     } catch (error) {
       console.error('Failed to open Lightning wallet:', error);
 
       // Fallback: copy to clipboard
       navigator.clipboard.writeText(paymentRequest).then(() => {
         toast({
-          title: "Invoice Copied",
-          description: "Lightning invoice copied to clipboard. Paste it in your wallet.",
+          title: 'Invoice Copied',
+          description: 'Lightning invoice copied to clipboard. Paste it in your wallet.',
         });
       }).catch(() => {
         toast({
-          title: "Manual Payment Required",
-          description: "Please copy the Lightning invoice manually and pay with your wallet.",
-          variant: "destructive"
+          title: 'Manual Payment Required',
+          description: 'Please copy the Lightning invoice manually and pay with your wallet.',
+          variant: 'destructive',
         });
       });
     }
@@ -200,6 +212,6 @@ export function useEnhancedPaymentDetection() {
   return {
     ...baseDetection,
     payWithWebLN,
-    openLightningWallet
+    openLightningWallet,
   };
 }

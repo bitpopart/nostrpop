@@ -16,6 +16,7 @@ import { useToast } from '@/hooks/useToast';
 import { RelaySelector } from '@/components/RelaySelector';
 import { useLightningPayment } from '@/hooks/usePayment';
 import { useEcash } from '@/hooks/useEcash';
+import { usePaymentDetection } from '@/hooks/usePaymentDetection';
 import { SocialShareButtons } from '@/components/SocialShareButtons';
 import {
   Paintbrush,
@@ -75,6 +76,7 @@ function Canvas100M() {
   const { toast } = useToast();
   const { createInvoice, invoice, isLoading: _paymentLoading, clearInvoice } = useLightningPayment();
   const { openEcashWallet } = useEcash();
+  const { startDetection, stopDetection } = usePaymentDetection();
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const qrCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -156,6 +158,33 @@ function Canvas100M() {
       );
     }
   }, [invoice]);
+
+  // Start payment detection polling when the payment dialog opens with an invoice
+  useEffect(() => {
+    if (showPaymentDialog && invoice && invoice.verify_url) {
+      startDetection({
+        paymentHash: invoice.payment_hash,
+        expiresAt: invoice.expires_at,
+        verifyUrl: invoice.verify_url,
+        pollInterval: 2000,
+        onPaymentDetected: () => {
+          publishPixelsToNostr();
+        },
+        onPaymentExpired: () => {
+          toast({
+            title: 'Invoice Expired',
+            description: 'The invoice expired. Please try again.',
+            variant: 'destructive',
+          });
+          setShowPaymentDialog(false);
+          clearInvoice();
+        },
+      });
+    } else if (!showPaymentDialog) {
+      stopDetection();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showPaymentDialog, invoice?.payment_hash, publishPixelsToNostr]);
 
   // Fetch all painted pixels from Nostr
   const { data: pixels, isLoading: pixelsLoading, refetch: refetchPixels } = useQuery({
@@ -912,45 +941,8 @@ function Canvas100M() {
     }
   };
 
-  // Pay with Alby extension
-  const handlePayWithAlby = async () => {
-    if (!invoice) return;
-
-    setPayingWithAlby(true);
-    try {
-      // Check if WebLN is available (Alby extension)
-      if (typeof window.webln !== 'undefined') {
-        await window.webln.enable();
-        const result = await window.webln.sendPayment(invoice.payment_request);
-        
-        if (result.preimage) {
-          toast({
-            title: "Payment Successful! ⚡",
-            description: "Publishing your pixels to Nostr...",
-          });
-          await publishPixelsToNostr();
-        }
-      } else {
-        toast({
-          title: "Alby Not Found",
-          description: "Please install the Alby browser extension to use this feature.",
-          variant: "destructive"
-        });
-      }
-    } catch (error) {
-      console.error('Alby payment error:', error);
-      toast({
-        title: "Payment Failed",
-        description: error instanceof Error ? error.message : "Failed to process payment with Alby.",
-        variant: "destructive"
-      });
-    } finally {
-      setPayingWithAlby(false);
-    }
-  };
-
   // Actually publish pixels after payment
-  const publishPixelsToNostr = async () => {
+  const publishPixelsToNostr = useCallback(async () => {
     if (!user || pendingPixels.length === 0) return;
 
     try {
@@ -999,6 +991,44 @@ function Canvas100M() {
         description: "Failed to publish your pixels. Please try again.",
         variant: "destructive"
       });
+    }
+  }, [user, pendingPixels, nostr, toast, clearInvoice, refetchPixels]);
+
+  // Pay with Alby / WebLN extension
+  const handlePayWithAlby = async () => {
+    if (!invoice) return;
+
+    setPayingWithAlby(true);
+    try {
+      // Check if WebLN is available (Alby extension)
+      if (typeof window.webln !== 'undefined') {
+        await window.webln.enable();
+        const result = await window.webln.sendPayment(invoice.payment_request);
+        
+        if (result.preimage) {
+          toast({
+            title: "Payment Successful! ⚡",
+            description: "Publishing your pixels to Nostr...",
+          });
+          stopDetection(); // Stop polling - WebLN already confirmed
+          await publishPixelsToNostr();
+        }
+      } else {
+        toast({
+          title: "WebLN Wallet Not Found",
+          description: "Please install Alby or another WebLN-compatible extension.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Alby payment error:', error);
+      toast({
+        title: "Payment Failed",
+        description: error instanceof Error ? error.message : "Failed to process payment with Alby.",
+        variant: "destructive"
+      });
+    } finally {
+      setPayingWithAlby(false);
     }
   };
 
@@ -1752,6 +1782,29 @@ function Canvas100M() {
                   </Button>
                 </div>
 
+                {/* Payment Detection Status */}
+                <div className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg border ${
+                  invoice.verify_url
+                    ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
+                    : 'bg-gray-50 dark:bg-gray-800/40 border-gray-200 dark:border-gray-700'
+                }`}>
+                  {invoice.verify_url ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-500 flex-shrink-0"></div>
+                      <span className="text-sm text-yellow-700 dark:text-yellow-300 font-medium">
+                        ⚡ Auto-detecting payment — will close automatically when paid
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <div className="animate-pulse w-2 h-2 rounded-full bg-orange-400 flex-shrink-0"></div>
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                        Waiting for payment — pay then click "I've Paid" below
+                      </span>
+                    </>
+                  )}
+                </div>
+
                 {/* Alby Payment Button */}
                 <Button
                   className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white font-semibold"
@@ -1766,7 +1819,7 @@ function Canvas100M() {
                   ) : (
                     <>
                       <Zap className="h-4 w-4 mr-2" />
-                      Pay with Alby
+                      Pay with Alby / WebLN
                     </>
                   )}
                 </Button>
@@ -1776,7 +1829,7 @@ function Canvas100M() {
                     <span className="w-full border-t" />
                   </div>
                   <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">Or</span>
+                    <span className="bg-background px-2 text-muted-foreground">Or pay manually</span>
                   </div>
                 </div>
 
@@ -1785,6 +1838,7 @@ function Canvas100M() {
                     variant="outline"
                     className="flex-1"
                     onClick={() => {
+                      stopDetection();
                       setShowPaymentDialog(false);
                       clearInvoice();
                     }}
@@ -1801,7 +1855,9 @@ function Canvas100M() {
                 </div>
 
                 <p className="text-xs text-center text-muted-foreground">
-                  Scan QR code or click "I've Paid" after sending payment
+                  {invoice.verify_url
+                    ? '⚡ Auto-detecting — no manual confirmation needed!'
+                    : 'Scan QR code or click "I\'ve Paid" after sending payment'}
                 </p>
               </div>
             ) : (
@@ -1863,6 +1919,7 @@ function Canvas100M() {
                   variant="outline"
                   className="flex-1"
                   onClick={() => {
+                    stopDetection();
                     setShowPaymentDialog(false);
                     clearInvoice();
                   }}

@@ -27,6 +27,7 @@ interface LightningInvoice {
   amount_sats: number;
   expires_at: number;
   description: string;
+  verify_url?: string; // URL to poll for payment status
 }
 
 interface StripeSession {
@@ -73,18 +74,19 @@ export function useLightningPayment() {
       const description = `BitPop Marketplace: ${request.description}`;
 
       // Get real Lightning invoice from LNURL
-      const paymentRequest = await getZapInvoice(amountSats);
+      const invoiceResult = await getZapInvoice(amountSats);
 
-      if (!paymentRequest) {
+      if (!invoiceResult) {
         throw new Error('Failed to generate Lightning invoice');
       }
 
       const lightningInvoice: LightningInvoice = {
-        payment_request: paymentRequest,
-        payment_hash: extractPaymentHash(paymentRequest),
+        payment_request: invoiceResult.pr,
+        payment_hash: extractPaymentHash(invoiceResult.pr),
         amount_sats: amountSats,
         expires_at: Date.now() + (15 * 60 * 1000), // 15 minutes from now
-        description: description
+        description: description,
+        verify_url: invoiceResult.verify,
       };
 
       setInvoice(lightningInvoice);

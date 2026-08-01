@@ -14,6 +14,7 @@ interface LNURLPayResponse {
 
 interface LNURLInvoiceResponse {
   pr: string; // Lightning invoice
+  verify?: string; // URL to check payment status (NIP-57 / LNURL-verify)
   successAction?: {
     tag: string;
     message?: string;
@@ -152,7 +153,7 @@ export function useLNURL(lightningAddress?: string) {
   const getZapInvoice = async (
     amount: number, // in sats
     zapRequest?: string
-  ): Promise<string | null> => {
+  ): Promise<{ pr: string; verify?: string } | null> => {
     if (!lnurlData) {
       toast({
         title: "LNURL Not Available",
@@ -191,7 +192,7 @@ export function useLNURL(lightningAddress?: string) {
         });
       }
 
-      return invoiceResponse.pr;
+      return { pr: invoiceResponse.pr, verify: invoiceResponse.verify };
     } catch (error) {
       console.error('Failed to get invoice:', error);
       toast({
