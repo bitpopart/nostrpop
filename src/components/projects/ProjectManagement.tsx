@@ -814,6 +814,46 @@ export function ProjectManagement({ filterCategory }: ProjectManagementProps = {
                     <span><strong>HTML Upload</strong> — the project page <em>is</em> the HTML file. Upload your own fully custom design, landing page, or mini-site. It will be hosted via Blossom and linked to this project on POPArt.frl.</span>
                   </div>
 
+                  {/* Game Mechanism info — only shown when category = games */}
+                  {formData.category === 'games' && (
+                    <div className="rounded-xl border-2 border-[#F7931A] bg-[#1A0040] px-4 py-4 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Gamepad2 className="h-5 w-5 text-[#FCE000]" />
+                        <span className="font-bold text-[#FCE000] text-sm" style={{ letterSpacing: '1.5px' }}>
+                          GAMESTR MECHANISM — AUTO-CONNECTED ⚡
+                        </span>
+                      </div>
+                      <div className="text-[#FCE000]/90 text-xs space-y-1" style={{ fontFamily: 'sans-serif' }}>
+                        <p>Every HTML game uploaded here gets the <strong className="text-[#F7931A]">BitPopArt game mechanism</strong> automatically:</p>
+                        <ul className="list-disc list-inside space-y-0.5 mt-1 text-[#FCE000]/80">
+                          <li>Play for <strong>FREE</strong> (anonymous, no leaderboard)</li>
+                          <li>Deposit <strong>min 21 sats</strong> → name added to Nostr leaderboard</li>
+                          <li><strong>21%</strong> of every deposit fills the jackpot</li>
+                          <li>At <strong>2100 sats</strong> → 21h countdown starts</li>
+                          <li>Highest score of the 21h window <strong>wins the jackpot</strong> (zapped to npub!)</li>
+                        </ul>
+                      </div>
+                      <div className="bg-[#FCE000]/10 rounded-lg px-3 py-2 text-[#00CFFF] text-xs space-y-1">
+                        <p className="font-bold text-[#FCE000] mb-1">Gamestr Relays used:</p>
+                        {[
+                          'wss://relay.ditto.pub',
+                          'wss://relay.dreamith.to',
+                          'wss://relay.primal.net',
+                          'wss://main.relay.gamestr.io',
+                        ].map(r => (
+                          <p key={r} className="font-mono text-[10px]">{r}</p>
+                        ))}
+                      </div>
+                      <div className="bg-[#FCE000]/10 rounded-lg px-3 py-2 text-xs text-[#FCE000]/80">
+                        <p className="font-bold text-[#F7931A] mb-1">Bridge API for your game HTML:</p>
+                        <code className="text-[#00CFFF] text-[10px] block">window.gamestr.scoreUpdate(score)  // live score</code>
+                        <code className="text-[#00CFFF] text-[10px] block">window.gamestr.gameOver(finalScore) // game ended</code>
+                        <code className="text-[#00CFFF] text-[10px] block">window.gamestr.gameStart()          // optional</code>
+                        <p className="mt-1.5 text-[#FCE000]/60 text-[10px]">Call these from your game JS. The overlay handles everything else.</p>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Thumbnail for the project card */}
                   <div className="space-y-2">
                     <Label htmlFor="thumbnail-html">Project Thumbnail (shown on the project card)</Label>
@@ -1113,6 +1153,11 @@ export function ProjectManagement({ filterCategory }: ProjectManagementProps = {
                               {isHtmlProject && (
                                 <Badge variant="outline" className="text-xs text-purple-600 border-purple-300">
                                   <FileCode className="h-3 w-3 mr-1" />HTML Upload
+                                </Badge>
+                              )}
+                              {isHtmlProject && category === 'games' && (
+                                <Badge className="text-xs bg-[#F7931A] text-white border-0">
+                                  ⚡ Game Mechanism Connected
                                 </Badge>
                               )}
                               {order && (

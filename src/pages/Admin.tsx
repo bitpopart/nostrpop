@@ -1006,6 +1006,42 @@ const Admin = () => {
                 </TabsContent>
 
                 <TabsContent value="games">
+                  {/* Gamestr / Game Mechanism info panel */}
+                  <div className="rounded-xl border-2 border-[#F7931A] bg-[#1A0040] px-5 py-4 mb-6 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Gamepad2 className="h-5 w-5 text-[#FCE000]" />
+                      <span className="font-bold text-[#FCE000] text-sm tracking-widest">GAMESTR GAME MECHANISM — ALWAYS ON ⚡</span>
+                    </div>
+                    <p className="text-[#FCE000]/80 text-xs" style={{ fontFamily: 'sans-serif' }}>
+                      Every HTML-upload game on <strong className="text-[#F7931A]">/games/:id</strong> automatically gets the full BitPopArt game mechanism:
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs" style={{ fontFamily: 'sans-serif' }}>
+                      <div className="bg-white/5 rounded-lg p-3 text-[#FCE000]/90 space-y-1">
+                        <p className="font-bold text-[#F7931A]">🎮 How it works</p>
+                        <p>• Play FREE — no leaderboard entry</p>
+                        <p>• Deposit min <strong>21 sats</strong> → name on Nostr leaderboard</p>
+                        <p>• <strong>21%</strong> of every deposit goes to jackpot</p>
+                        <p>• At <strong>2100 sats</strong> → 21h countdown</p>
+                        <p>• Highest score wins the jackpot ⚡</p>
+                      </div>
+                      <div className="bg-white/5 rounded-lg p-3 text-[#00CFFF] space-y-1">
+                        <p className="font-bold text-[#FCE000]">🔗 Gamestr Relays</p>
+                        {['wss://relay.ditto.pub','wss://relay.dreamith.to','wss://relay.primal.net','wss://main.relay.gamestr.io'].map(r => (
+                          <p key={r} className="font-mono text-[10px]">{r}</p>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="bg-white/5 rounded-lg p-3 text-xs" style={{ fontFamily: 'monospace' }}>
+                      <p className="text-[#FCE000] font-bold mb-1" style={{ fontFamily: 'sans-serif' }}>Bridge API (call from your game HTML):</p>
+                      <p className="text-[#00CFFF]">window.gamestr.scoreUpdate(score)  <span className="text-[#FCE000]/50">// live score</span></p>
+                      <p className="text-[#00CFFF]">window.gamestr.gameOver(finalScore) <span className="text-[#FCE000]/50">// game ended</span></p>
+                      <p className="text-[#00CFFF]">window.gamestr.gameStart()          <span className="text-[#FCE000]/50">// optional</span></p>
+                    </div>
+                    <div className="text-[#FCE000]/50 text-[10px]" style={{ fontFamily: 'sans-serif' }}>
+                      Scores published as kind 30762 (Gamestr standard) on Nostr · Rewards via Lightning (bitpopart@rizful.com)
+                    </div>
+                  </div>
+
                    <Card>
                       <CardHeader>
                         <CardTitle className="flex items-center">
@@ -1013,7 +1049,7 @@ const Admin = () => {
                           Games Projects
                         </CardTitle>
                         <CardDescription>
-                          Add and manage game projects that appear on <a href="/games" className="underline text-orange-600">/games</a>. Use the internal path (e.g. <code className="text-xs bg-muted px-1 rounded">/games/moneyprinter</code>) in the URL field — games never open via /frl.
+                          Add and manage game projects. Use <strong>HTML Upload</strong> tab for custom games — they get the game mechanism automatically. Use internal path (e.g. <code className="text-xs bg-muted px-1 rounded">/games/moneyprinter</code>) for built-in games.
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
