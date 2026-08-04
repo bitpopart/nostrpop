@@ -284,9 +284,9 @@ function PayPanel({ playerName, playerNpub, sats, onSetName, onSetNpub, onSetSat
     try {
       const inv = await getZapInvoice(sats);
       if (!inv) return;
-      setInvoice(inv);
+      setInvoice(inv.pr);
       // Uppercase + no URI prefix = alphanumeric QR mode → smaller, denser QR reads reliably in all wallets
-      const qr = await QRCode.toDataURL(inv.toUpperCase(), { width: 256, margin: 2, errorCorrectionLevel: 'M', color: { dark: '#000000', light: '#ffffff' } });
+      const qr = await QRCode.toDataURL(inv.pr.toUpperCase(), { width: 256, margin: 2, errorCorrectionLevel: 'M', color: { dark: '#000000', light: '#ffffff' } });
       setQrUrl(qr);
     } catch (e) { console.error(e); }
     finally { setIsGenerating(false); }

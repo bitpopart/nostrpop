@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/useToast';
 
+const CORS_PROXY = 'https://proxy.shakespeare.diy/?url=';
+
 interface LNURLPayResponse {
   callback: string;
   maxSendable: number;
@@ -14,7 +16,7 @@ interface LNURLPayResponse {
 
 interface LNURLInvoiceResponse {
   pr: string; // Lightning invoice
-  verify?: string; // URL to check payment status (NIP-57 / LNURL-verify)
+  verify?: string; // URL to check payment status (LNURL-verify)
   successAction?: {
     tag: string;
     message?: string;
@@ -22,115 +24,98 @@ interface LNURLInvoiceResponse {
   };
 }
 
-// Convert lightning address to LNURL
-function lightningAddressToLNURL(address: string): string {
+// Convert lightning address to LNURL endpoint URL
+function lightningAddressToURL(address: string): string {
   const [username, domain] = address.split('@');
-  if (!username || !domain) {
-    throw new Error('Invalid lightning address format');
-  }
-
-  const url = `https://${domain}/.well-known/lnurlp/${username}`;
-  return url;
+  if (!username || !domain) throw new Error('Invalid lightning address format');
+  return `https://${domain}/.well-known/lnurlp/${username}`;
 }
 
-// Fetch LNURL pay data
-async function fetchLNURLPay(lnurlOrAddress: string): Promise<LNURLPayResponse> {
-  let url: string;
-
-  if (lnurlOrAddress.includes('@')) {
-    // Lightning address
-    url = lightningAddressToLNURL(lnurlOrAddress);
-    console.log('Resolved Lightning address to LNURL:', url);
-  } else if (lnurlOrAddress.startsWith('lnurl')) {
-    // LNURL (would need to decode bech32, but for simplicity we'll handle addresses)
-    throw new Error('LNURL bech32 format not implemented. Please use lightning address.');
-  } else {
-    // Assume it's already a URL
-    url = lnurlOrAddress;
-  }
-
-  console.log('Fetching LNURL data from:', url);
-
-  const response = await fetch(url);
-  console.log('LNURL response status:', response.status, response.statusText);
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('LNURL fetch failed:', response.status, response.statusText, errorText);
-    throw new Error(`Failed to fetch LNURL data: ${response.status} ${response.statusText}`);
-  }
-
-  const responseText = await response.text();
-  console.log('LNURL response text:', responseText);
-
-  let data;
+/**
+ * Fetch a URL, automatically retrying through the CORS proxy on failure.
+ * Returns the parsed JSON.
+ */
+async function fetchWithCORSFallback(url: string): Promise<unknown> {
+  // Try direct first
   try {
-    data = JSON.parse(responseText);
-  } catch (parseError) {
-    console.error('Failed to parse LNURL response as JSON:', parseError);
-    throw new Error(`Invalid JSON response from LNURL endpoint: ${responseText}`);
+    const r = await fetch(url, { signal: AbortSignal.timeout(5000) });
+    if (r.ok) {
+      const text = await r.text();
+      return JSON.parse(text);
+    }
+    // If status error, fall through to proxy
+  } catch {
+    // Network error (likely CORS) — fall through to proxy
   }
 
-  console.log('Parsed LNURL data:', data);
+  // Retry via CORS proxy
+  const proxied = `${CORS_PROXY}${encodeURIComponent(url)}`;
+  const r2 = await fetch(proxied, { signal: AbortSignal.timeout(8000) });
+  if (!r2.ok) {
+    const text = await r2.text();
+    throw new Error(`LNURL request failed (${r2.status}): ${text.slice(0, 120)}`);
+  }
+  const text2 = await r2.text();
+  try {
+    return JSON.parse(text2);
+  } catch {
+    throw new Error(`Invalid JSON from LNURL endpoint: ${text2.slice(0, 120)}`);
+  }
+}
 
-  if (data.tag !== 'payRequest') {
-    throw new Error(`Invalid LNURL response: expected tag 'payRequest', got '${data.tag}'`);
+// Fetch LNURL pay data (with CORS fallback)
+async function fetchLNURLPay(lnurlOrAddress: string): Promise<LNURLPayResponse> {
+  const url = lnurlOrAddress.includes('@')
+    ? lightningAddressToURL(lnurlOrAddress)
+    : lnurlOrAddress;
+
+  const data = await fetchWithCORSFallback(url) as LNURLPayResponse;
+
+  if (!data || (data.tag && data.tag !== 'payRequest')) {
+    throw new Error(`Invalid LNURL response: tag='${data?.tag}'`);
   }
 
   return data;
 }
 
-// Request invoice from LNURL callback
+// Request Lightning invoice from LNURL callback (with CORS fallback)
 async function requestInvoice(
   callback: string,
-  amount: number, // in millisats
-  nostrEvent?: string,
-  lnurl?: string
+  amountMsats: number,
+  zapRequest?: string,
 ): Promise<LNURLInvoiceResponse> {
   const url = new URL(callback);
-  url.searchParams.set('amount', amount.toString());
+  url.searchParams.set('amount', amountMsats.toString());
+  if (zapRequest) url.searchParams.set('nostr', zapRequest);
 
-  if (nostrEvent) {
-    url.searchParams.set('nostr', encodeURIComponent(nostrEvent));
-  }
-
-  if (lnurl) {
-    url.searchParams.set('lnurl', lnurl);
-  }
-
-  console.log('Requesting invoice from callback:', url.toString());
-
-  const response = await fetch(url.toString());
-  console.log('Invoice response status:', response.status, response.statusText);
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('Invoice request failed:', response.status, response.statusText, errorText);
-    throw new Error(`Failed to request invoice: ${response.status} ${response.statusText}`);
-  }
-
-  const responseText = await response.text();
-  console.log('Invoice response text:', responseText);
-
-  let data;
-  try {
-    data = JSON.parse(responseText);
-  } catch (parseError) {
-    console.error('Failed to parse invoice response as JSON:', parseError);
-    throw new Error(`Invalid JSON response from invoice callback: ${responseText}`);
-  }
-
-  console.log('Parsed invoice data:', data);
+  const data = await fetchWithCORSFallback(url.toString()) as LNURLInvoiceResponse & { status?: string; reason?: string };
 
   if (data.status === 'ERROR') {
-    throw new Error(data.reason || 'Unknown error from LNURL service');
+    throw new Error(data.reason || 'LNURL service returned an error');
   }
-
   if (!data.pr) {
-    throw new Error('No payment request (pr) field in invoice response');
+    throw new Error('No payment request (pr) in invoice response');
   }
 
   return data;
+}
+
+/**
+ * Poll a LNURL-verify URL until payment is confirmed or timeout.
+ * Returns true if confirmed, false if timed out.
+ */
+export async function pollVerifyPayment(verifyUrl: string, timeoutMs = 180_000): Promise<boolean> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    try {
+      const data = await fetchWithCORSFallback(verifyUrl) as { settled?: boolean; status?: string };
+      if (data.settled === true || data.status === 'OK') return true;
+    } catch {
+      // ignore — keep polling
+    }
+    await new Promise(r => setTimeout(r, 2000));
+  }
+  return false;
 }
 
 export function useLNURL(lightningAddress?: string) {
@@ -138,67 +123,75 @@ export function useLNURL(lightningAddress?: string) {
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Fetch LNURL pay data
-  const { data: lnurlData, isLoading, error } = useQuery({
+  const {
+    data: lnurlData,
+    isLoading,
+    error,
+    refetch: refetchLnurl,
+  } = useQuery({
     queryKey: ['lnurl', lightningAddress],
     queryFn: () => lightningAddress ? fetchLNURLPay(lightningAddress) : null,
     enabled: !!lightningAddress,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    retry: 2,
+    staleTime: 5 * 60 * 1000,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
   });
 
-  // Check if zaps are supported
   const supportsZaps = lnurlData?.allowsNostr === true && !!lnurlData.nostrPubkey;
 
-  // Get zap invoice
+  /**
+   * Get a Lightning invoice for the given amount in sats.
+   * Returns { pr, verify? } on success, null on failure.
+   */
   const getZapInvoice = async (
-    amount: number, // in sats
-    zapRequest?: string
+    amount: number, // sats
+    zapRequest?: string,
   ): Promise<{ pr: string; verify?: string } | null> => {
     if (!lnurlData) {
-      toast({
-        title: "LNURL Not Available",
-        description: "Lightning address data not loaded.",
-        variant: "destructive"
-      });
-      return null;
+      // Try refreshing before giving up
+      const result = await refetchLnurl();
+      if (!result.data) {
+        toast({
+          title: 'Lightning Not Available',
+          description: 'Could not reach the payment server. Check your connection and try again.',
+          variant: 'destructive',
+        });
+        return null;
+      }
     }
+
+    const data = lnurlData ?? (await refetchLnurl()).data;
+    if (!data) return null;
 
     const amountMsats = amount * 1000;
 
-    // Check amount limits
-    if (amountMsats < lnurlData.minSendable || amountMsats > lnurlData.maxSendable) {
+    if (amountMsats < data.minSendable) {
       toast({
-        title: "Invalid Amount",
-        description: `Amount must be between ${Math.ceil(lnurlData.minSendable / 1000)} and ${Math.floor(lnurlData.maxSendable / 1000)} sats.`,
-        variant: "destructive"
+        title: 'Amount Too Low',
+        description: `Minimum is ${Math.ceil(data.minSendable / 1000)} sats.`,
+        variant: 'destructive',
+      });
+      return null;
+    }
+    if (amountMsats > data.maxSendable) {
+      toast({
+        title: 'Amount Too High',
+        description: `Maximum is ${Math.floor(data.maxSendable / 1000)} sats.`,
+        variant: 'destructive',
       });
       return null;
     }
 
     setIsProcessing(true);
-
     try {
-      const invoiceResponse = await requestInvoice(
-        lnurlData.callback,
-        amountMsats,
-        zapRequest,
-        lightningAddress
-      );
-
-      if (invoiceResponse.successAction?.message) {
-        toast({
-          title: "Invoice Generated",
-          description: invoiceResponse.successAction.message,
-        });
-      }
-
-      return { pr: invoiceResponse.pr, verify: invoiceResponse.verify };
-    } catch (error) {
-      console.error('Failed to get invoice:', error);
+      const inv = await requestInvoice(data.callback, amountMsats, zapRequest);
+      return { pr: inv.pr, verify: inv.verify };
+    } catch (err) {
+      console.error('[useLNURL] Invoice failed:', err);
       toast({
-        title: "Invoice Failed",
-        description: error instanceof Error ? error.message : "Failed to generate invoice.",
-        variant: "destructive"
+        title: 'Invoice Failed',
+        description: err instanceof Error ? err.message : 'Failed to generate invoice. Try again.',
+        variant: 'destructive',
       });
       return null;
     } finally {
@@ -206,40 +199,27 @@ export function useLNURL(lightningAddress?: string) {
     }
   };
 
-  // Pay invoice (opens in wallet)
+  // Pay invoice via WebLN or lightning: URI
   const payInvoice = async (invoice: string) => {
     try {
-      // Try WebLN first
       if (window.webln) {
         await window.webln.enable();
         const result = await window.webln.sendPayment(invoice);
-
-        toast({
-          title: "Payment Sent! ⚡",
-          description: "Zap sent successfully via WebLN.",
-        });
-
+        toast({ title: 'Payment Sent! ⚡', description: 'Zap sent via WebLN.' });
         return result;
       } else {
-        // Fallback to lightning: URI
-        const lightningUri = `lightning:${invoice}`;
-        window.open(lightningUri, '_blank');
-
-        toast({
-          title: "Wallet Opened",
-          description: "Please complete the payment in your lightning wallet.",
-        });
-
+        window.open(`lightning:${invoice}`, '_blank');
+        toast({ title: 'Wallet Opened', description: 'Complete the payment in your lightning wallet.' });
         return null;
       }
-    } catch (error) {
-      console.error('Payment failed:', error);
+    } catch (err) {
+      console.error('[useLNURL] Payment failed:', err);
       toast({
-        title: "Payment Failed",
-        description: error instanceof Error ? error.message : "Failed to send payment.",
-        variant: "destructive"
+        title: 'Payment Failed',
+        description: err instanceof Error ? err.message : 'Failed to send payment.',
+        variant: 'destructive',
       });
-      throw error;
+      throw err;
     }
   };
 
@@ -251,8 +231,9 @@ export function useLNURL(lightningAddress?: string) {
     isProcessing,
     getZapInvoice,
     payInvoice,
+    refetch: refetchLnurl,
     minSendable: lnurlData ? Math.ceil(lnurlData.minSendable / 1000) : 1,
-    maxSendable: lnurlData ? Math.floor(lnurlData.maxSendable / 1000) : 1000000,
+    maxSendable: lnurlData ? Math.floor(lnurlData.maxSendable / 1000) : 1_000_000,
   };
 }
 
