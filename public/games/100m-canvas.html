@@ -718,7 +718,7 @@ function stampAt(px){
  toast(skipped?n+' pixels stamped · '+skipped+' skipped (🔒 sacred)':n+' pixels stamped ⚡ zap to publish');
 }
 
-// ---- GAMESTR (NIP-133, kind 33334) ----
+// ---- GAMESTR (NIP-762, kind 30762) ----
 var RELAYS=['wss://relay.ditto.pub','wss://relay.dreamith.to','wss://relay.primal.net','wss://main.relay.gamestr.io'];
 var GAME_ID='bitpopart-100m-canvas';
 var game={score:0,name:'',npub:'',competing:false};
@@ -747,10 +747,25 @@ document.getElementById('boardRefresh').addEventListener('click',function(){fetc
 
 function publishScore(manual){
  if(!game.competing){ if(manual) toast('Add your name to the board first 🏆'); return; }
- var evt={kind:33334,created_at:Math.floor(Date.now()/1000),
-  tags:[['d',GAME_ID],['name',game.name||'anon']],content:String(game.score)};
  if(window.nostr&&window.nostr.signEvent){
-  window.nostr.signEvent(evt).then(function(signed){
+  window.nostr.getPublicKey().then(function(pub){
+   var ts=Math.floor(Date.now()/1000);
+   var dTag=GAME_ID+':'+pub+':default';
+   // NIP-762 kind 30762 — official Gamestr score event
+   var evt={kind:30762,created_at:ts,
+    tags:[
+     ['d',dTag],
+     ['game',GAME_ID],
+     ['score',String(game.score)],
+     ['p',pub],
+     ['state','active'],
+     ['t','art'],
+     ['t','bitcoin'],
+     ['t','canvas'],
+     ['alt','Game score: '+game.score+' pixels painted on BitPopArt 100M Canvas']
+    ],content:String(game.score)};
+   return window.nostr.signEvent(evt);
+  }).then(function(signed){
    var n=0;
    RELAYS.forEach(function(u){
     try{
@@ -759,7 +774,7 @@ function publishScore(manual){
     }catch(e){}
    });
    gsStatus('score '+game.score+' published via '+RELAYS.length+' relays',true);
-   if(manual) toast('📡 Score published to Nostr');
+   if(manual) toast('📡 Score published to Gamestr ⚡');
    setTimeout(fetchBoard,2500);
   }).catch(function(){ gsStatus('signing rejected',false); });
  } else {
@@ -798,13 +813,17 @@ function fetchBoard(){
   try{
    var ws=new WebSocket(u);
    var t=setTimeout(function(){try{ws.close()}catch(e){}},5000);
-   ws.onopen=function(){ ws.send(JSON.stringify(['REQ',subId,{kinds:[33334],'#d':[GAME_ID],limit:100}])); };
+    ws.onopen=function(){ ws.send(JSON.stringify(['REQ',subId,{kinds:[30762],'#game':[GAME_ID],limit:100}])); };
    ws.onmessage=function(m){
     try{
      var d=JSON.parse(m.data);
-     if(d[0]==='EVENT'&&d[2]&&d[2].kind===33334){
-      var ev=d[2], sc=parseInt(ev.content)||0, nm2='anon';
-      for(var i=0;i<ev.tags.length;i++) if(ev.tags[i][0]==='name') nm2=ev.tags[i][1];
+     if(d[0]==='EVENT'&&d[2]&&d[2].kind===30762){
+      var ev=d[2], sc=0, nm2='anon';
+      for(var i=0;i<ev.tags.length;i++){
+       if(ev.tags[i][0]==='score') sc=parseInt(ev.tags[i][1])||0;
+       if(ev.tags[i][0]==='name') nm2=ev.tags[i][1];
+      }
+      if(!sc) sc=parseInt(ev.content)||0;
       var cur=best[ev.pubkey];
       if(!cur||ev.created_at>cur.at) best[ev.pubkey]={name:nm2,score:sc,pk:ev.pubkey,at:ev.created_at};
      }

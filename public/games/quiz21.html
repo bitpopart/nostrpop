@@ -532,7 +532,7 @@ function copyTxt(t){
   }
 }
 
-/* ---------- gamestr (NIP-133, kind 33334) ---------- */
+/* ---------- gamestr (NIP-762, kind 30762) ---------- */
 var B32="qpzry9x8gf2tvdw0s3jn54khce6mua7l";
 function npubEnc(hex){
   try{
@@ -566,10 +566,26 @@ function gsPublish(sc, ms, silent){
   }
   var btn=$("btnGsPublish");
   btn.disabled=true; btn.textContent="PUBLISHING TO GAMESTR...";
-  var ev={ kind:33334, created_at:Math.floor(Date.now()/1000),
-    tags:[["d",GAME_ID],["time_ms",String(ms)],["client","BitPopArt 21 Quiz"],["t","gamestr"]],
-    content:String(sc) };
-  window.nostr.signEvent(ev).then(function(signed){
+  window.nostr.getPublicKey().then(function(pub){
+    var ts=Math.floor(Date.now()/1000);
+    var dTag=GAME_ID+":"+pub+":default";
+    // NIP-762 kind 30762 — official Gamestr score event
+    var ev762={ kind:30762, created_at:ts,
+      tags:[
+        ["d",dTag],
+        ["game",GAME_ID],
+        ["score",String(sc)],
+        ["p",pub],
+        ["state","active"],
+        ["duration",String(Math.round(ms/1000))],
+        ["t","quiz"],
+        ["t","bitcoin"],
+        ["t","arcade"],
+        ["alt","Game score: "+sc+"/21 in "+Math.round(ms/1000)+"s in BitPopArt 21 Quiz"]
+      ],
+      content:String(sc) };
+    return window.nostr.signEvent(ev762);
+  }).then(function(signed){
     var ok=0,done=0;
     GRELAYS.forEach(function(url){
       try{
@@ -613,14 +629,14 @@ function gsLoad(){
       var phase=1;
       var to=setTimeout(function(){ try{ws.close();}catch(e){} finish(); },6000);
       ws.onopen=function(){
-        ws.send(JSON.stringify(["REQ",subId,{kinds:[33334],"#d":[GAME_ID],limit:200}]));
+        ws.send(JSON.stringify(["REQ",subId,{kinds:[30762],"#game":[GAME_ID],limit:200}]));
       };
       ws.onmessage=function(m){
         try{
           var d=JSON.parse(m.data);
           if(d[0]==="EVENT" && d[2]){
             var e=d[2];
-            if(e.kind===33334){
+            if(e.kind===30762){
               var cur=scores[e.pubkey];
               if(!cur || e.created_at>cur.created_at) scores[e.pubkey]=e;
             }
@@ -650,9 +666,14 @@ function gsLoad(){
 
 function gsRender(scores, profiles){
   var arr=Object.keys(scores).map(function(pk){
-    var e=scores[pk], ms=null;
-    (e.tags||[]).forEach(function(t){ if(t[0]==="time_ms") ms=parseInt(t[1],10); });
-    return { pk:pk, s:parseInt(e.content,10)||0, ms:ms, name:profiles[pk]||"" };
+    var e=scores[pk], ms=null, sc=null;
+    (e.tags||[]).forEach(function(t){
+      if(t[0]==="time_ms") ms=parseInt(t[1],10);
+      if(t[0]==="duration") ms=parseInt(t[1],10)*1000;
+      if(t[0]==="score") sc=parseInt(t[1],10);
+    });
+    if(sc===null) sc=parseInt(e.content,10)||0;
+    return { pk:pk, s:sc, ms:ms, name:profiles[pk]||"" };
   });
   if(!arr.length){
     $("gsStatus").textContent="No global scores yet — publish yours and claim the top spot 🤘";
