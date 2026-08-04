@@ -1,18 +1,18 @@
 /**
  * GamesProjectView
  *
- * Renders a Nostr-stored HTML-upload game inside an iframe, wrapped with the
- * GameMechanismOverlay (jackpot strip, scoreboard, pay-to-play, free-play).
+ * Renders a Nostr-stored HTML-upload game inside an iframe.
+ * Above the iframe sits the jackpot strip.
+ * After game_over, a Nostr score-publishing overlay appears.
  *
- * Communication bridge:
- *  A tiny JS snippet is injected into the srcDoc that lets the game HTML post
- *  score events back to the parent via window.parent.postMessage():
+ * The game HTML is its own entry point (splash + payment).
+ * We do NOT show a second payment screen on top of it.
  *
- *    window.gamestr.scoreUpdate(score)  // continuous score updates
- *    window.gamestr.gameOver(score)     // final score when game ends
- *    window.gamestr.gameStart()         // optional: game has started
- *
- *  The parent listens and feeds the state into GameMechanismOverlay.
+ * Bridge API (injected into every game srcDoc):
+ *   window.gamestr.scoreUpdate(score)            // continuous score
+ *   window.gamestr.gameOver(score)               // final score → show overlay
+ *   window.gamestr.gameOver(score, name, npub, sats) // with paid-play metadata
+ *   window.gamestr.gameStart()                   // optional
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -20,12 +20,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useNostr } from '@nostrify/react';
 import { useQuery } from '@tanstack/react-query';
 import { useSeoMeta } from '@unhead/react';
-import { Skeleton } from '@/components/ui/skeleton';
 import { nip19 } from 'nostr-tools';
 import {
   GameMechanismOverlay,
   JackpotStrip,
-  type GameState,
 } from '@/components/games/GameMechanismOverlay';
 
 const ADMIN_NPUB = 'npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz';
@@ -35,12 +33,11 @@ const htmlCache = new Map<string, string>();
 
 /**
  * Injects the Gamestr bridge script into the game HTML.
- * The bridge exposes `window.gamestr` to the game so it can post score events
- * back to the parent react app without knowing about React at all.
+ * The bridge exposes `window.gamestr` so the game can communicate back
+ * to the React parent without knowing about React at all.
  */
 function injectGamestrBridge(html: string): string {
-  const bridgeScript = `
-<script>
+  const bridgeScript = `<script>
 (function(){
   var _score = 0;
   window.gamestr = {
@@ -48,9 +45,22 @@ function injectGamestrBridge(html: string): string {
       _score = s;
       window.parent.postMessage({ type: 'score_update', score: s }, '*');
     },
-    gameOver: function(s) {
+    /**
+     * Call when the game ends.
+     * @param {number} score  - final score
+     * @param {string} [name] - player name (from game's own UI)
+     * @param {string} [npub] - player npub (from game's own UI)
+     * @param {number} [sats] - sats paid (0 = free play)
+     */
+    gameOver: function(s, name, npub, sats) {
       _score = (s !== undefined ? s : _score);
-      window.parent.postMessage({ type: 'game_over', score: _score }, '*');
+      window.parent.postMessage({
+        type: 'game_over',
+        score: _score,
+        playerName: name || '',
+        playerNpub: npub || '',
+        satsPaid: sats || 0
+      }, '*');
     },
     gameStart: function() {
       window.parent.postMessage({ type: 'game_start' }, '*');
@@ -59,25 +69,23 @@ function injectGamestrBridge(html: string): string {
       window.parent.postMessage({ type: 'ready' }, '*');
     }
   };
-  // Also listen for commands from parent (e.g. start/reset)
+  // Listen for commands from parent
   window.addEventListener('message', function(e) {
     if (e.data && e.data.type === 'gamestr_command') {
       var cmd = e.data.command;
-      if (cmd === 'start' && typeof window.gamestrOnStart === 'function') window.gamestrOnStart();
       if (cmd === 'reset' && typeof window.gamestrOnReset === 'function') window.gamestrOnReset();
+      if (cmd === 'start' && typeof window.gamestrOnStart === 'function') window.gamestrOnStart();
     }
   });
 })();
-</script>`;
+<\/script>`;
 
-  // Inject right after <head> or at very start of <body>
   if (/<head[^>]*>/i.test(html)) {
     return html.replace(/<head([^>]*)>/i, `<head$1>${bridgeScript}`);
   }
   if (/<body[^>]*>/i.test(html)) {
     return html.replace(/<body([^>]*)>/i, `<body$1>${bridgeScript}`);
   }
-  // Fallback: prepend
   return bridgeScript + html;
 }
 
@@ -87,11 +95,14 @@ export default function GamesProjectView() {
   const { nostr } = useNostr();
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  // ── Score state (updated via postMessage from the iframe) ─────────────────
+  // ── Score / game-over state ───────────────────────────────────────────────
   const [score, setScore] = useState(0);
   const [isGameOver, setIsGameOver] = useState(false);
-  // Track whether the overlay is in "playing" state so we can reset it
-  const [gameStateKey, setGameStateKey] = useState(0); // increment = full remount of overlay
+  const [playerName, setPlayerName] = useState('');
+  const [playerNpub, setPlayerNpub] = useState('');
+  const [satsPaid, setSatsPaid] = useState(0);
+  // Incrementing this key reloads the iframe (Play Again)
+  const [iframeKey, setIframeKey] = useState(0);
 
   // ── Nostr: fetch game project ─────────────────────────────────────────────
   const { data: project, isLoading } = useQuery({
@@ -137,7 +148,6 @@ export default function GamesProjectView() {
       .catch(() => setFetchingHtml(false));
   }, [brandSiteUrl]);
 
-  // ── Inject bridge into the HTML ───────────────────────────────────────────
   const srcDocHtml = fetchedHtml ? injectGamestrBridge(fetchedHtml) : null;
 
   // ── Listen to postMessage from game iframe ────────────────────────────────
@@ -145,11 +155,15 @@ export default function GamesProjectView() {
     const handler = (e: MessageEvent) => {
       const msg = e.data;
       if (!msg || typeof msg !== 'object') return;
+
       if (msg.type === 'score_update' && typeof msg.score === 'number') {
         setScore(msg.score);
       }
       if (msg.type === 'game_over' && typeof msg.score === 'number') {
         setScore(msg.score);
+        setPlayerName(typeof msg.playerName === 'string' ? msg.playerName : '');
+        setPlayerNpub(typeof msg.playerNpub === 'string' ? msg.playerNpub : '');
+        setSatsPaid(typeof msg.satsPaid === 'number' ? msg.satsPaid : 0);
         setIsGameOver(true);
       }
     };
@@ -157,30 +171,22 @@ export default function GamesProjectView() {
     return () => window.removeEventListener('message', handler);
   }, []);
 
-  // ── Send commands to the iframe ───────────────────────────────────────────
-  const sendCommand = useCallback((command: 'start' | 'reset') => {
-    iframeRef.current?.contentWindow?.postMessage({ type: 'gamestr_command', command }, '*');
+  // ── Play Again: reload the iframe, clear overlay ──────────────────────────
+  const handlePlayAgain = useCallback(() => {
+    setScore(0);
+    setIsGameOver(false);
+    setPlayerName('');
+    setPlayerNpub('');
+    setSatsPaid(0);
+    setIframeKey(k => k + 1);
   }, []);
-
-  const handleStartGame = useCallback(() => {
-    setScore(0);
-    setIsGameOver(false);
-    sendCommand('start');
-  }, [sendCommand]);
-
-  const handleResetGame = useCallback(() => {
-    setScore(0);
-    setIsGameOver(false);
-    setGameStateKey(k => k + 1); // remount overlay → back to menu
-    sendCommand('reset');
-  }, [sendCommand]);
 
   // ── SEO ───────────────────────────────────────────────────────────────────
   useSeoMeta({
     title: project ? `${gameName} — BitPopArt Games` : 'BitPopArt Games',
   });
 
-  // ── Loading state ─────────────────────────────────────────────────────────
+  // ── Loading ───────────────────────────────────────────────────────────────
   if (isLoading || (fetchingHtml && !fetchedHtml)) {
     return (
       <div className="flex-1 flex items-center justify-center bg-white">
@@ -210,16 +216,16 @@ export default function GamesProjectView() {
 
   return (
     <div className="flex-1 flex flex-col w-full" style={{ minHeight: 0 }}>
-      {/* Jackpot strip — always visible while playing */}
+      {/* Jackpot strip — always visible */}
       <JackpotStrip game={gameId} />
 
       {/* Game area: iframe + overlay stack */}
       <div className="relative flex-1 flex flex-col" style={{ minHeight: 0 }}>
-        {/* The game iframe — rendered behind the overlay */}
+        {/* The game iframe — always rendered; has its own splash/payment UI */}
         {srcDocHtml ? (
           <iframe
             ref={iframeRef}
-            key={`srcdoc-${gameStateKey}`}
+            key={`srcdoc-${iframeKey}`}
             srcDoc={srcDocHtml}
             title={gameName}
             className="w-full flex-1 border-0"
@@ -228,7 +234,7 @@ export default function GamesProjectView() {
         ) : (
           <iframe
             ref={iframeRef}
-            key={`src-${gameStateKey}`}
+            key={`src-${iframeKey}`}
             src={brandSiteUrl}
             title={gameName}
             className="w-full flex-1 border-0"
@@ -236,15 +242,16 @@ export default function GamesProjectView() {
           />
         )}
 
-        {/* Game mechanism overlay — sits on top of the iframe */}
+        {/* Overlay — only visible after game_over; otherwise transparent */}
         <GameMechanismOverlay
-          key={`overlay-${gameStateKey}`}
           gameId={gameId}
           gameName={gameName}
-          onStartGame={handleStartGame}
-          onResetGame={handleResetGame}
+          onPlayAgain={handlePlayAgain}
           score={score}
           isGameOver={isGameOver}
+          playerName={playerName}
+          playerNpub={playerNpub}
+          satsPaid={satsPaid}
         />
       </div>
     </div>
