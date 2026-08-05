@@ -19,7 +19,7 @@ import {
 import {
   Upload, Pencil, Trash2, X, Send, Loader2,
   MessageSquare, ChevronLeft, ChevronRight, ZoomIn,
-  ImagePlus, Check, AlertCircle, CloudUpload,
+  ImagePlus, Check, AlertCircle, CloudUpload, Download,
 } from 'lucide-react';
 import {
   getDesigns, saveDesign, deleteDesign, createDesign,
@@ -39,6 +39,51 @@ function timeAgo(ms: number): string {
   if (s < 3600)  return `${Math.floor(s / 60)}m ago`;
   if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
   return new Date(ms).toLocaleDateString();
+}
+
+/** Derive a filename from a URL + MIME type. */
+function getFilename(imageUrl: string, imageType: string, title: string): string {
+  // Try to extract filename from the URL path
+  try {
+    const urlPath = new URL(imageUrl).pathname;
+    const urlFilename = urlPath.split('/').pop();
+    if (urlFilename && urlFilename.includes('.')) return urlFilename;
+  } catch { /* ignore */ }
+
+  // Fall back to sanitised title + extension from MIME type
+  const ext = imageType === 'image/svg+xml' ? 'svg'
+    : imageType === 'image/png'  ? 'png'
+    : imageType === 'image/webp' ? 'webp'
+    : imageType === 'image/gif'  ? 'gif'
+    : 'jpg';
+  const safe = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  return `${safe || 'design'}.${ext}`;
+}
+
+/** Download a design file. For same-origin / CORS-friendly URLs we fetch first
+ *  so the browser saves as a file rather than navigating. For opaque resources
+ *  we fall back to a plain anchor click. */
+async function downloadDesign(design: DesignItem): Promise<void> {
+  const filename = getFilename(design.imageUrl, design.imageType, design.title);
+  try {
+    const resp = await fetch(design.imageUrl);
+    if (!resp.ok) throw new Error('fetch failed');
+    const blob = await resp.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = filename;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 10_000);
+  } catch {
+    // Fallback: direct anchor — browser may navigate instead of saving for SVGs
+    const a = document.createElement('a');
+    a.href = design.imageUrl;
+    a.download = filename;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.click();
+  }
 }
 
 // ─── Comment thread ────────────────────────────────────────────────────────────
@@ -198,9 +243,21 @@ function DesignLightbox({
             )}
             <span className="text-xs text-muted-foreground shrink-0">{idx + 1} / {designs.length}</span>
           </div>
-          <Button size="icon" variant="ghost" onClick={onClose} className="h-7 w-7 shrink-0">
-            <X className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-1 shrink-0">
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 gap-1.5 text-xs"
+              onClick={() => downloadDesign(design)}
+              title="Download file"
+            >
+              <Download className="h-3.5 w-3.5" />
+              Download
+            </Button>
+            <Button size="icon" variant="ghost" onClick={onClose} className="h-7 w-7">
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         {/* Body: image + comments */}
@@ -518,19 +575,25 @@ function DesignCard({
             )}
             <p className="text-[10px] text-muted-foreground mt-1">{timeAgo(design.updatedAt)}</p>
           </div>
-          {/* Admin controls — always visible on mobile, hover on desktop */}
-          {isAdmin && (
-            <div className="flex gap-1 shrink-0 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-              <Button size="icon" variant="ghost" className="h-7 w-7 hover:text-orange-500"
-                onClick={e => { e.stopPropagation(); onEdit(design); }} title="Edit">
-                <Pencil className="h-3.5 w-3.5" />
-              </Button>
-              <Button size="icon" variant="ghost" className="h-7 w-7 hover:text-destructive"
-                onClick={e => { e.stopPropagation(); onDelete(design); }} title="Delete">
-                <Trash2 className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-          )}
+          {/* Action buttons */}
+          <div className="flex gap-1 shrink-0 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+            <Button size="icon" variant="ghost" className="h-7 w-7 hover:text-orange-500"
+              onClick={e => { e.stopPropagation(); downloadDesign(design); }} title="Download">
+              <Download className="h-3.5 w-3.5" />
+            </Button>
+            {isAdmin && (
+              <>
+                <Button size="icon" variant="ghost" className="h-7 w-7 hover:text-orange-500"
+                  onClick={e => { e.stopPropagation(); onEdit(design); }} title="Edit">
+                  <Pencil className="h-3.5 w-3.5" />
+                </Button>
+                <Button size="icon" variant="ghost" className="h-7 w-7 hover:text-destructive"
+                  onClick={e => { e.stopPropagation(); onDelete(design); }} title="Delete">
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>
