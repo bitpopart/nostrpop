@@ -18,12 +18,14 @@ import {
 import {
   Plus, Trash2, Copy, Check, RefreshCw, Key, Users,
   FileText, Link2, ToggleLeft, ToggleRight, ExternalLink,
-  Eye, EyeOff, ImagePlus, Globe,
+  Eye, EyeOff, ImagePlus, Globe, Upload, CheckCircle2, AlertCircle,
 } from 'lucide-react';
 import { useToast } from '@/hooks/useToast';
 import { DesignSection } from '@/components/portal/DesignSection';
 import { ProposalSection } from '@/components/portal/ProposalSection';
 import { getProposalByPageId } from '@/lib/clientPortal';
+import { useSyncPortalToNostr, ADMIN_PUBKEY } from '@/hooks/usePortalSync';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 
 // ─── Available content sections you can assign to a portal page ───────────────
 const AVAILABLE_SECTIONS = [
@@ -630,6 +632,84 @@ function NpubTab() {
   );
 }
 
+// ─── Nostr Sync banner ────────────────────────────────────────────────────────
+
+function NostrSyncBanner() {
+  const { user } = useCurrentUser();
+  const { mutate: sync, isPending, isSuccess, isError, error } = useSyncPortalToNostr();
+  const { toast } = useToast();
+
+  const isAdmin = user?.pubkey === ADMIN_PUBKEY;
+
+  const handleSync = () => {
+    sync(undefined, {
+      onSuccess: () => {
+        toast({ title: 'Portal config synced to Nostr ✓', description: 'Clients can now use codes and npubs on any device.' });
+      },
+      onError: (err) => {
+        toast({ title: 'Sync failed', description: String(err.message), variant: 'destructive' });
+      },
+    });
+  };
+
+  return (
+    <div className={`flex items-start gap-3 rounded-xl border px-4 py-3 text-sm ${
+      isAdmin
+        ? 'border-orange-200 dark:border-orange-800/60 bg-orange-50/50 dark:bg-orange-950/10'
+        : 'border-yellow-200 dark:border-yellow-800/60 bg-yellow-50/50 dark:bg-yellow-950/10'
+    }`}>
+      <div className="flex-1 min-w-0">
+        {isAdmin ? (
+          <>
+            <p className="font-semibold text-orange-700 dark:text-orange-300 flex items-center gap-1.5">
+              <Upload className="h-4 w-4 shrink-0" />
+              Sync portal config to Nostr
+            </p>
+            <p className="text-muted-foreground mt-0.5 text-xs">
+              After creating pages, codes, or npubs — click <strong>Sync Now</strong> so clients on other devices can use them.
+              Your config is published as a Nostr event that the login page fetches automatically.
+            </p>
+            {isSuccess && (
+              <p className="mt-1 text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+                <CheckCircle2 className="h-3.5 w-3.5" /> Synced successfully
+              </p>
+            )}
+            {isError && (
+              <p className="mt-1 text-xs text-destructive flex items-center gap-1">
+                <AlertCircle className="h-3.5 w-3.5" /> {(error as Error).message}
+              </p>
+            )}
+          </>
+        ) : (
+          <>
+            <p className="font-semibold text-yellow-700 dark:text-yellow-300 flex items-center gap-1.5">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              Admin login required to sync
+            </p>
+            <p className="text-muted-foreground mt-0.5 text-xs">
+              Log in with the BitPopArt Nostr account to publish the portal config so clients can access it on any device.
+            </p>
+          </>
+        )}
+      </div>
+      {isAdmin && (
+        <Button
+          size="sm"
+          onClick={handleSync}
+          disabled={isPending}
+          className="shrink-0 bg-orange-500 hover:bg-orange-600 text-white gap-1.5"
+        >
+          {isPending ? (
+            <><RefreshCw className="h-3.5 w-3.5 animate-spin" /> Syncing…</>
+          ) : (
+            <><Upload className="h-3.5 w-3.5" /> Sync Now</>
+          )}
+        </Button>
+      )}
+    </div>
+  );
+}
+
 // ─── Main export ─────────────────────────────────────────────────────────────
 
 export function ClientPortalAdmin() {
@@ -646,7 +726,8 @@ export function ClientPortalAdmin() {
             Clients access their pages at <span className="font-mono text-orange-500">/client/:slug</span> after logging in at <span className="font-mono text-orange-500">/login</span>.
           </p>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          <NostrSyncBanner />
           <Tabs defaultValue="pages">
             <TabsList className="mb-4">
               <TabsTrigger value="pages" className="gap-1.5"><FileText className="h-3.5 w-3.5" />Pages</TabsTrigger>

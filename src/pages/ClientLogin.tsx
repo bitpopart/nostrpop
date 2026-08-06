@@ -13,19 +13,25 @@ import {
   getSession,
   getPages,
 } from '@/lib/clientPortal';
+import { usePortalConfigQuery } from '@/hooks/usePortalSync';
 import { nip19 } from 'nostr-tools';
-import { KeyRound, Zap, ArrowRight, Lock, CheckCircle2, AlertCircle } from 'lucide-react';
+import { KeyRound, Zap, ArrowRight, Lock, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
 
 export default function ClientLoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get('redirect') ?? '';
+  // Pre-fill code from share link (?code=XXXX-YYYY)
+  const codeParam = searchParams.get('code') ?? '';
 
   const { user } = useCurrentUser();
-  const [codeInput, setCodeInput] = useState('');
+  const [codeInput, setCodeInput] = useState(codeParam.toUpperCase());
   const [codeError, setCodeError] = useState('');
   const [codeSuccess, setCodeSuccess] = useState(false);
   const [checkingNpub, setCheckingNpub] = useState(false);
+
+  // Fetch portal config from Nostr so codes/npubs work on any device
+  const { isLoading: configLoading, isSuccess: configLoaded } = usePortalConfigQuery();
 
   // If there's already a valid session, bounce straight to destination
   useEffect(() => {
@@ -36,9 +42,28 @@ export default function ClientLoginPage() {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Auto-submit when code param is present and config has loaded
+  useEffect(() => {
+    if (codeParam && configLoaded && !codeSuccess) {
+      const code = redeemCode(codeParam);
+      if (code) {
+        setCodeSuccess(true);
+        setSession({ type: 'code', codeId: code.id, pageIds: code.pageIds });
+        setTimeout(() => {
+          const dest = resolveRedirect(code.pageIds, redirectTo);
+          navigate(dest, { replace: true });
+        }, 800);
+      } else {
+        setCodeError('Invalid or expired access code. Please check and try again.');
+      }
+    }
+  }, [configLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // When user logs in via Nostr, check whitelist
   useEffect(() => {
     if (!user) return;
+    // Wait until config is loaded before checking
+    if (configLoading) return;
     setCheckingNpub(true);
     try {
       const npubStr = nip19.npubEncode(user.pubkey);
@@ -51,7 +76,7 @@ export default function ClientLoginPage() {
     } finally {
       setCheckingNpub(false);
     }
-  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user, configLoading, configLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function resolveRedirect(pageIds: string[], redirectHint: string): string {
     if (redirectHint) return redirectHint;
@@ -97,6 +122,14 @@ export default function ClientLoginPage() {
           </div>
         </div>
 
+        {/* Loading config indicator */}
+        {configLoading && (
+          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground py-1">
+            <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+            Loading access config…
+          </div>
+        )}
+
         {/* Access Code card */}
         <Card className="border-orange-200 dark:border-orange-800">
           <CardContent className="p-6 space-y-4">
@@ -121,7 +154,7 @@ export default function ClientLoginPage() {
                   onChange={e => { setCodeInput(e.target.value.toUpperCase()); setCodeError(''); }}
                   className="font-mono text-lg tracking-widest text-center uppercase"
                   maxLength={9}
-                  autoFocus
+                  autoFocus={!codeParam}
                 />
                 {codeError && (
                   <div className="flex items-center gap-1.5 text-destructive text-sm">
@@ -132,9 +165,13 @@ export default function ClientLoginPage() {
                 <Button
                   type="submit"
                   className="w-full bg-gradient-to-r from-orange-500 to-yellow-400 text-white font-bold hover:from-orange-600 hover:to-yellow-500 gap-2"
-                  disabled={codeInput.length < 8}
+                  disabled={codeInput.length < 8 || configLoading}
                 >
-                  Access Portal <ArrowRight className="h-4 w-4" />
+                  {configLoading ? (
+                    <><RefreshCw className="h-4 w-4 animate-spin" /> Loading…</>
+                  ) : (
+                    <>Access Portal <ArrowRight className="h-4 w-4" /></>
+                  )}
                 </Button>
               </form>
             )}
@@ -153,7 +190,7 @@ export default function ClientLoginPage() {
               If your Nostr public key has been whitelisted, log in with your Nostr identity.
             </p>
 
-            {checkingNpub && user ? (
+            {(checkingNpub || (user && configLoading)) ? (
               <div className="text-sm text-muted-foreground flex items-center gap-2">
                 <div className="h-3 w-3 rounded-full bg-orange-500 animate-pulse" />
                 Checking access…

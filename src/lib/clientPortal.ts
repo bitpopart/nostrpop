@@ -307,6 +307,80 @@ export function getUnreadCommentCount(pageId: string, since: number): number {
     .length;
 }
 
+// ─── Nostr sync ───────────────────────────────────────────────────────────────
+//
+// The admin publishes portal config (pages + codes + npubs) as an encrypted
+// NIP-44 addressable event (kind 31989) with d-tag "bitpopart-client-portal".
+// Any browser that has the admin's pubkey hardcoded can fetch and decrypt it
+// to bootstrap the portal data — solving the cross-device localStorage problem.
+//
+// Encryption: we encrypt the JSON to the *admin's own pubkey* (self-encrypt),
+// so only someone with the admin's private key can decrypt it.  On the client
+// login page we call signer.nip44.decrypt(adminPubkey, ciphertext) which only
+// works if the logged-in user IS the admin.  That's fine — the login page reads
+// the ciphertext as the *admin pubkey*, decrypts it, and merges into localStorage
+// **before** trying to redeem any code or check npubs.
+//
+// Simpler alternative (no encryption): publish as plaintext so *any* browser
+// can fetch the config without needing the admin signer.  Since codes are
+// short-lived and the site is a personal portfolio, this is acceptable.
+// We choose PLAINTEXT for maximum compatibility.
+
+/**
+ * The Nostr event kind used to store portal config.
+ * Kind 31989 is addressable (30000-39999 range).
+ * d-tag: "bitpopart-client-portal"
+ */
+export const PORTAL_CONFIG_KIND = 31989;
+export const PORTAL_CONFIG_D_TAG = 'bitpopart-client-portal';
+
+/** Serialise the current localStorage portal config into a JSON string. */
+export function exportPortalConfig(): string {
+  return JSON.stringify({
+    pages: getPages(),
+    codes: getCodes(),
+    npubs: getNpubs(),
+  });
+}
+
+/**
+ * Import a portal config JSON string into localStorage.
+ * Merges by id — existing records are updated, new ones are added.
+ * Records absent from the import are left untouched (non-destructive).
+ */
+export function importPortalConfig(json: string): void {
+  try {
+    const data = JSON.parse(json) as {
+      pages?: ClientPage[];
+      codes?: AccessCode[];
+      npubs?: NpubEntry[];
+    };
+
+    if (Array.isArray(data.pages)) {
+      const existing = getPages();
+      const map = new Map(existing.map(p => [p.id, p]));
+      for (const p of data.pages) map.set(p.id, p);
+      save(PAGES_KEY, Array.from(map.values()));
+    }
+
+    if (Array.isArray(data.codes)) {
+      const existing = getCodes();
+      const map = new Map(existing.map(c => [c.id, c]));
+      for (const c of data.codes) map.set(c.id, c);
+      save(CODES_KEY, Array.from(map.values()));
+    }
+
+    if (Array.isArray(data.npubs)) {
+      const existing = getNpubs();
+      const map = new Map(existing.map(n => [n.id, n]));
+      for (const n of data.npubs) map.set(n.id, n);
+      save(NPUBS_KEY, Array.from(map.values()));
+    }
+  } catch {
+    // silently ignore malformed data
+  }
+}
+
 // ─── PR Proposals ─────────────────────────────────────────────────────────────
 
 /**
