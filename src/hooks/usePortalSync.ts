@@ -1,19 +1,20 @@
 /**
  * usePortalSync — sync the Client Portal config to/from Nostr.
  *
- * Admin usage  : call `syncToNostr()` to publish a plaintext addressable event
- *                containing the full portal config (pages, codes, npubs).
+ * The portal config (pages, codes, npubs) is stored as a plaintext
+ * addressable Nostr event (kind 31989) published by the admin.
  *
- * Client usage : call `fetchFromNostr()` to pull the latest config from the relay
- *                and merge it into localStorage before the login page tries to
- *                redeem a code or look up an npub.
+ * Admin: auto-called after every create/update/delete in the portal admin.
+ * Client: fetched directly from the relay on the login page before any
+ *         code or npub check — so codes work from any device/browser.
  *
- * We use a well-known d-tag so the event is always replaced, never duplicated.
- * The admin's pubkey is hardcoded so any browser can fetch it without auth.
+ * Direct fetch strategy: we query the relay directly via WebSocket rather
+ * than through the NPool, so we get an independent timeout and don't
+ * depend on pool state or eoseTimeout settings.
  */
 
 import { useNostr } from '@nostrify/react';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { useCurrentUser } from './useCurrentUser';
 import {
   exportPortalConfig,
@@ -21,15 +22,18 @@ import {
   PORTAL_CONFIG_KIND,
   PORTAL_CONFIG_D_TAG,
 } from '@/lib/clientPortal';
-import type { NostrEvent } from '@nostrify/nostrify';
 
-/**
- * The admin's Nostr hex pubkey.
- * The portal config event is always published by this key.
- */
+/** The admin's Nostr hex pubkey — hardcoded so clients can fetch without auth. */
 export const ADMIN_PUBKEY = '43baaf0c28e6cfb195b17ee083e19eb3a4afdfac54d9b6baf170270ed193e34c';
 
-// ─── Admin: publish config ─────────────────────────────────────────────────────
+/** Relays to query for portal config (must be publicly readable). */
+const SYNC_RELAYS = [
+  'wss://relay.ditto.pub',
+  'wss://relay.dreamith.to',
+  'wss://relay.nostr.band',
+];
+
+// ─── Admin: publish config to Nostr ───────────────────────────────────────────
 
 export function useSyncPortalToNostr() {
   const { nostr } = useNostr();
@@ -53,39 +57,112 @@ export function useSyncPortalToNostr() {
         created_at,
       });
 
-      await nostr.event(event, { signal: AbortSignal.timeout(8000) });
+      await nostr.event(event, { signal: AbortSignal.timeout(10000) });
       return event;
     },
   });
 }
 
-// ─── Client: fetch config ──────────────────────────────────────────────────────
+// ─── Client: fetch config directly from relay ─────────────────────────────────
 
-export function usePortalConfigQuery() {
-  const { nostr } = useNostr();
+/**
+ * Fetch the portal config event directly from a relay via WebSocket.
+ * Returns the event content string or null if not found.
+ * Tries each relay in SYNC_RELAYS until one succeeds.
+ */
+export async function fetchPortalConfigFromRelay(timeoutMs = 8000): Promise<string | null> {
+  for (const relayUrl of SYNC_RELAYS) {
+    try {
+      const result = await fetchFromRelay(relayUrl, timeoutMs);
+      if (result !== null) {
+        return result;
+      }
+    } catch {
+      // try next relay
+    }
+  }
+  return null;
+}
 
-  return useQuery({
-    queryKey: ['portal-config', ADMIN_PUBKEY],
-    queryFn: async (c) => {
-      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(5000)]);
-      const events = await nostr.query(
-        [{
+function fetchFromRelay(relayUrl: string, timeoutMs: number): Promise<string | null> {
+  return new Promise((resolve) => {
+    let done = false;
+    const subId = 'portal-cfg-' + Math.random().toString(36).slice(2, 8);
+
+    const timer = setTimeout(() => {
+      if (!done) {
+        done = true;
+        try { ws.close(); } catch { /* ignore */ }
+        resolve(null);
+      }
+    }, timeoutMs);
+
+    const ws = new WebSocket(relayUrl);
+
+    ws.onopen = () => {
+      ws.send(JSON.stringify([
+        'REQ',
+        subId,
+        {
           kinds: [PORTAL_CONFIG_KIND],
           authors: [ADMIN_PUBKEY],
           '#d': [PORTAL_CONFIG_D_TAG],
           limit: 1,
-        }],
-        { signal },
-      );
+        },
+      ]));
+    };
 
-      const event: NostrEvent | undefined = events[0];
-      if (!event) return null;
+    ws.onmessage = (e) => {
+      if (done) return;
+      try {
+        const msg = JSON.parse(e.data as string) as unknown[];
+        const [type, sid] = msg as [string, string];
 
-      // Merge into localStorage so the portal functions work immediately
-      importPortalConfig(event.content);
-      return event;
-    },
-    staleTime: 60_000, // re-fetch at most once per minute
-    retry: 2,
+        if (type === 'EVENT' && sid === subId) {
+          const event = msg[2] as { content?: string };
+          if (event?.content) {
+            done = true;
+            clearTimeout(timer);
+            try { ws.close(); } catch { /* ignore */ }
+            resolve(event.content);
+          }
+        } else if (type === 'EOSE' && sid === subId) {
+          // End of stored events — nothing found on this relay
+          done = true;
+          clearTimeout(timer);
+          try { ws.close(); } catch { /* ignore */ }
+          resolve(null);
+        }
+      } catch {
+        // ignore parse errors
+      }
+    };
+
+    ws.onerror = () => {
+      if (!done) {
+        done = true;
+        clearTimeout(timer);
+        resolve(null);
+      }
+    };
+
+    ws.onclose = () => {
+      if (!done) {
+        done = true;
+        clearTimeout(timer);
+        resolve(null);
+      }
+    };
   });
+}
+
+/**
+ * Load portal config from relay and merge into localStorage.
+ * Returns true if config was found and loaded, false otherwise.
+ */
+export async function loadPortalConfig(): Promise<boolean> {
+  const content = await fetchPortalConfigFromRelay();
+  if (!content) return false;
+  importPortalConfig(content);
+  return true;
 }

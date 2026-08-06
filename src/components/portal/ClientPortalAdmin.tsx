@@ -26,6 +26,25 @@ import { ProposalSection } from '@/components/portal/ProposalSection';
 import { getProposalByPageId } from '@/lib/clientPortal';
 import { useSyncPortalToNostr, ADMIN_PUBKEY } from '@/hooks/usePortalSync';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useCallback } from 'react';
+
+// ─── Auto-sync hook — called after every admin mutation ───────────────────────
+//
+// After any create/update/delete we silently re-publish the full config to
+// Nostr so clients on other devices always see the latest codes and npubs.
+// Failures are logged to console but never shown to the admin as errors.
+
+function useAutoSync() {
+  const { mutate: sync } = useSyncPortalToNostr();
+  const { user } = useCurrentUser();
+
+  return useCallback(() => {
+    if (user?.pubkey !== ADMIN_PUBKEY) return;
+    sync(undefined, {
+      onError: (err) => console.warn('[portal-sync] background sync failed:', err.message),
+    });
+  }, [sync, user]);
+}
 
 // ─── Available content sections you can assign to a portal page ───────────────
 const AVAILABLE_SECTIONS = [
@@ -60,6 +79,7 @@ function CopyButton({ text }: { text: string }) {
 
 function PagesTab() {
   const { toast } = useToast();
+  const autoSync = useAutoSync();
   const [pages, setPages] = useState<ClientPage[]>([]);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<ClientPage | null>(null);
@@ -92,11 +112,13 @@ function PagesTab() {
     refresh();
     setOpen(false);
     toast({ title: editing ? 'Page updated' : 'Page created' });
+    autoSync();
   };
 
   const toggleActive = (p: ClientPage) => {
     savePage({ ...p, active: !p.active });
     refresh();
+    autoSync();
   };
 
   const handleDelete = (p: ClientPage) => {
@@ -104,6 +126,7 @@ function PagesTab() {
     deletePage(p.id);
     refresh();
     toast({ title: 'Page deleted' });
+    autoSync();
   };
 
   return (
@@ -304,6 +327,7 @@ function PagesTab() {
 
 function CodesTab() {
   const { toast } = useToast();
+  const autoSync = useAutoSync();
   const [codes, setCodes] = useState<AccessCode[]>([]);
   const [pages, setPages] = useState<ClientPage[]>([]);
   const [open, setOpen] = useState(false);
@@ -322,18 +346,21 @@ function CodesTab() {
     refresh();
     setOpen(false);
     toast({ title: `Code created: ${code.code}` });
+    autoSync();
   };
 
   const handleRevoke = (c: AccessCode) => {
     saveCode({ ...c, active: false });
     refresh();
     toast({ title: 'Code revoked' });
+    autoSync();
   };
 
   const handleDelete = (c: AccessCode) => {
     if (!confirm('Delete this code?')) return;
     deleteCode(c.id);
     refresh();
+    autoSync();
   };
 
   const regenerate = (c: AccessCode) => {
@@ -341,6 +368,7 @@ function CodesTab() {
     createCode(c.label + ' (new)', c.pageIds, c.maxUses);
     refresh();
     toast({ title: 'New code generated' });
+    autoSync();
   };
 
   const shareUrl = (c: AccessCode): string => {
@@ -495,6 +523,7 @@ function CodesTab() {
 
 function NpubTab() {
   const { toast } = useToast();
+  const autoSync = useAutoSync();
   const [npubs, setNpubs] = useState<NpubEntry[]>([]);
   const [pages, setPages] = useState<ClientPage[]>([]);
   const [open, setOpen] = useState(false);
@@ -516,17 +545,20 @@ function NpubTab() {
     refresh();
     setOpen(false);
     toast({ title: 'Npub whitelisted' });
+    autoSync();
   };
 
   const toggleActive = (n: NpubEntry) => {
     saveNpub({ ...n, active: !n.active });
     refresh();
+    autoSync();
   };
 
   const handleDelete = (n: NpubEntry) => {
     if (!confirm('Remove this npub from the whitelist?')) return;
     deleteNpub(n.id);
     refresh();
+    autoSync();
   };
 
   return (
@@ -644,7 +676,7 @@ function NostrSyncBanner() {
   const handleSync = () => {
     sync(undefined, {
       onSuccess: () => {
-        toast({ title: 'Portal config synced to Nostr ✓', description: 'Clients can now use codes and npubs on any device.' });
+        toast({ title: 'Portal config synced ✓', description: 'Clients can now use all codes and npubs from any device.' });
       },
       onError: (err) => {
         toast({ title: 'Sync failed', description: String(err.message), variant: 'destructive' });
@@ -653,43 +685,24 @@ function NostrSyncBanner() {
   };
 
   return (
-    <div className={`flex items-start gap-3 rounded-xl border px-4 py-3 text-sm ${
+    <div className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-sm ${
       isAdmin
         ? 'border-orange-200 dark:border-orange-800/60 bg-orange-50/50 dark:bg-orange-950/10'
         : 'border-yellow-200 dark:border-yellow-800/60 bg-yellow-50/50 dark:bg-yellow-950/10'
     }`}>
       <div className="flex-1 min-w-0">
         {isAdmin ? (
-          <>
-            <p className="font-semibold text-orange-700 dark:text-orange-300 flex items-center gap-1.5">
-              <Upload className="h-4 w-4 shrink-0" />
-              Sync portal config to Nostr
-            </p>
-            <p className="text-muted-foreground mt-0.5 text-xs">
-              After creating pages, codes, or npubs — click <strong>Sync Now</strong> so clients on other devices can use them.
-              Your config is published as a Nostr event that the login page fetches automatically.
-            </p>
-            {isSuccess && (
-              <p className="mt-1 text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
-                <CheckCircle2 className="h-3.5 w-3.5" /> Synced successfully
-              </p>
-            )}
-            {isError && (
-              <p className="mt-1 text-xs text-destructive flex items-center gap-1">
-                <AlertCircle className="h-3.5 w-3.5" /> {(error as Error).message}
-              </p>
-            )}
-          </>
+          <p className="text-muted-foreground text-xs">
+            Changes auto-sync to Nostr after each action.{' '}
+            {isSuccess && <span className="text-green-600 dark:text-green-400 font-medium">Last sync: ✓ success</span>}
+            {isError && <span className="text-destructive font-medium">Last sync failed — use Sync Now below.</span>}
+            {!isSuccess && !isError && <span>Use <strong>Sync Now</strong> to push your current config to clients for the first time.</span>}
+          </p>
         ) : (
-          <>
-            <p className="font-semibold text-yellow-700 dark:text-yellow-300 flex items-center gap-1.5">
-              <AlertCircle className="h-4 w-4 shrink-0" />
-              Admin login required to sync
-            </p>
-            <p className="text-muted-foreground mt-0.5 text-xs">
-              Log in with the BitPopArt Nostr account to publish the portal config so clients can access it on any device.
-            </p>
-          </>
+          <p className="font-semibold text-yellow-700 dark:text-yellow-300 flex items-center gap-1.5 text-xs">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            Log in as BitPopArt to sync portal config so clients can use codes/npubs from any device.
+          </p>
         )}
       </div>
       {isAdmin && (
@@ -697,7 +710,8 @@ function NostrSyncBanner() {
           size="sm"
           onClick={handleSync}
           disabled={isPending}
-          className="shrink-0 bg-orange-500 hover:bg-orange-600 text-white gap-1.5"
+          variant={isError ? 'destructive' : 'outline'}
+          className="shrink-0 gap-1.5 border-orange-300 dark:border-orange-700 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950/30"
         >
           {isPending ? (
             <><RefreshCw className="h-3.5 w-3.5 animate-spin" /> Syncing…</>

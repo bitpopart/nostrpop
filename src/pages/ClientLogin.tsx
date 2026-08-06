@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,74 +13,75 @@ import {
   getSession,
   getPages,
 } from '@/lib/clientPortal';
-import { usePortalConfigQuery } from '@/hooks/usePortalSync';
+import { loadPortalConfig } from '@/hooks/usePortalSync';
 import { nip19 } from 'nostr-tools';
-import { KeyRound, Zap, ArrowRight, Lock, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
+import { KeyRound, Zap, ArrowRight, Lock, CheckCircle2, AlertCircle, RefreshCw, WifiOff } from 'lucide-react';
+
+type ConfigStatus = 'loading' | 'loaded' | 'offline';
 
 export default function ClientLoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get('redirect') ?? '';
-  // Pre-fill code from share link (?code=XXXX-YYYY)
   const codeParam = searchParams.get('code') ?? '';
 
   const { user } = useCurrentUser();
+
   const [codeInput, setCodeInput] = useState(codeParam.toUpperCase());
   const [codeError, setCodeError] = useState('');
   const [codeSuccess, setCodeSuccess] = useState(false);
-  const [checkingNpub, setCheckingNpub] = useState(false);
+  const [configStatus, setConfigStatus] = useState<ConfigStatus>('loading');
+  const fetchedRef = useRef(false);
 
-  // Fetch portal config from Nostr so codes/npubs work on any device
-  const { isLoading: configLoading, isSuccess: configLoaded } = usePortalConfigQuery();
-
-  // If there's already a valid session, bounce straight to destination
+  // ── Step 1: Always fetch portal config from relay first ──────────────────
   useEffect(() => {
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
+
+    // If there's already a session, skip fetching and redirect immediately
     const session = getSession();
     if (session) {
       const dest = resolveRedirect(session.pageIds, redirectTo);
       navigate(dest, { replace: true });
+      return;
     }
+
+    // Fetch config from Nostr relay, then check if code/npub auto-matches
+    loadPortalConfig().then((found) => {
+      setConfigStatus(found ? 'loaded' : 'offline');
+    });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-submit when code param is present and config has loaded
+  // ── Step 2: After config loads, auto-try the code from URL param ─────────
   useEffect(() => {
-    if (codeParam && configLoaded && !codeSuccess) {
-      const code = redeemCode(codeParam);
-      if (code) {
-        setCodeSuccess(true);
-        setSession({ type: 'code', codeId: code.id, pageIds: code.pageIds });
-        setTimeout(() => {
-          const dest = resolveRedirect(code.pageIds, redirectTo);
-          navigate(dest, { replace: true });
-        }, 800);
-      } else {
-        setCodeError('Invalid or expired access code. Please check and try again.');
-      }
-    }
-  }, [configLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (configStatus === 'loading') return;
+    if (!codeParam || codeSuccess) return;
 
-  // When user logs in via Nostr, check whitelist
-  useEffect(() => {
-    if (!user) return;
-    // Wait until config is loaded before checking
-    if (configLoading) return;
-    setCheckingNpub(true);
-    try {
-      const npubStr = nip19.npubEncode(user.pubkey);
-      const entry = lookupNpub(npubStr);
-      if (entry && entry.active) {
-        setSession({ type: 'npub', npub: npubStr, pageIds: entry.pageIds });
-        const dest = resolveRedirect(entry.pageIds, redirectTo);
-        navigate(dest, { replace: true });
-      }
-    } finally {
-      setCheckingNpub(false);
+    const code = redeemCode(codeParam);
+    if (code) {
+      setCodeSuccess(true);
+      setSession({ type: 'code', codeId: code.id, pageIds: code.pageIds });
+      setTimeout(() => {
+        navigate(resolveRedirect(code.pageIds, redirectTo), { replace: true });
+      }, 600);
+    } else {
+      setCodeError('Invalid or expired access code. Please check and try again.');
     }
-  }, [user, configLoading, configLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [configStatus]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Step 3: After config loads, auto-check logged-in Nostr user ──────────
+  useEffect(() => {
+    if (!user || configStatus === 'loading') return;
+    const npubStr = nip19.npubEncode(user.pubkey);
+    const entry = lookupNpub(npubStr);
+    if (entry && entry.active) {
+      setSession({ type: 'npub', npub: npubStr, pageIds: entry.pageIds });
+      navigate(resolveRedirect(entry.pageIds, redirectTo), { replace: true });
+    }
+  }, [user, configStatus]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function resolveRedirect(pageIds: string[], redirectHint: string): string {
     if (redirectHint) return redirectHint;
-    // If there's only one page, go straight to it
     const pages = getPages().filter(p => pageIds.includes(p.id) && p.active);
     if (pages.length === 1) return `/client/${pages[0].slug}`;
     return '/client';
@@ -88,6 +89,7 @@ export default function ClientLoginPage() {
 
   const handleCodeSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (configStatus === 'loading') return;
     setCodeError('');
     const code = redeemCode(codeInput);
     if (!code) {
@@ -97,10 +99,12 @@ export default function ClientLoginPage() {
     setCodeSuccess(true);
     setSession({ type: 'code', codeId: code.id, pageIds: code.pageIds });
     setTimeout(() => {
-      const dest = resolveRedirect(code.pageIds, redirectTo);
-      navigate(dest, { replace: true });
-    }, 800);
+      navigate(resolveRedirect(code.pageIds, redirectTo), { replace: true });
+    }, 600);
   };
+
+  const isLoading = configStatus === 'loading';
+  const isOffline = configStatus === 'offline';
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-orange-950/10 via-background to-orange-950/5 px-4">
@@ -122,11 +126,17 @@ export default function ClientLoginPage() {
           </div>
         </div>
 
-        {/* Loading config indicator */}
-        {configLoading && (
+        {/* Status banner */}
+        {isLoading && (
           <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground py-1">
-            <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-            Loading access config…
+            <RefreshCw className="h-3.5 w-3.5 animate-spin text-orange-500" />
+            <span>Connecting to access server…</span>
+          </div>
+        )}
+        {isOffline && (
+          <div className="flex items-center gap-2 text-sm text-yellow-700 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-xl px-4 py-2.5">
+            <WifiOff className="h-4 w-4 shrink-0" />
+            <span>Could not reach access server. Your code may still work if you've used this device before.</span>
           </div>
         )}
 
@@ -165,10 +175,10 @@ export default function ClientLoginPage() {
                 <Button
                   type="submit"
                   className="w-full bg-gradient-to-r from-orange-500 to-yellow-400 text-white font-bold hover:from-orange-600 hover:to-yellow-500 gap-2"
-                  disabled={codeInput.length < 8 || configLoading}
+                  disabled={codeInput.replace('-', '').length < 8 || isLoading}
                 >
-                  {configLoading ? (
-                    <><RefreshCw className="h-4 w-4 animate-spin" /> Loading…</>
+                  {isLoading ? (
+                    <><RefreshCw className="h-4 w-4 animate-spin" /> Connecting…</>
                   ) : (
                     <>Access Portal <ArrowRight className="h-4 w-4" /></>
                   )}
@@ -190,7 +200,7 @@ export default function ClientLoginPage() {
               If your Nostr public key has been whitelisted, log in with your Nostr identity.
             </p>
 
-            {(checkingNpub || (user && configLoading)) ? (
+            {user && isLoading ? (
               <div className="text-sm text-muted-foreground flex items-center gap-2">
                 <div className="h-3 w-3 rounded-full bg-orange-500 animate-pulse" />
                 Checking access…
