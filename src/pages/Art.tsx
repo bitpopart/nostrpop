@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSeoMeta } from '@unhead/react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useArtworks, useDeleteArtwork } from '@/hooks/useArtworks';
 import { useAuctionBannerSettings, usePublishAuctionBannerSettings } from '@/hooks/useAuctionBannerSettings';
@@ -252,14 +252,14 @@ const Art = () => {
 
         {/* Virtual Gallery Banner */}
         <div className="max-w-6xl mx-auto mb-8">
-          <a
-            href="/gallery"
+          <Link
+            to="/gallery"
             className="block group relative overflow-hidden rounded-2xl shadow-2xl cursor-pointer"
             style={{
               background: 'linear-gradient(135deg, #1a0040 0%, #f97316 40%, #ec4899 70%, #0f172a 100%)',
             }}
           >
-            {/* Animated shimmer overlay */}
+            {/* Stripe overlay */}
             <div
               className="absolute inset-0 opacity-20"
               style={{
@@ -299,7 +299,7 @@ const Art = () => {
                 </span>
               </div>
             </div>
-          </a>
+          </Link>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full max-w-6xl mx-auto">

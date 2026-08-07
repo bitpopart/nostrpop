@@ -4,8 +4,8 @@ import { useSeoMeta } from '@unhead/react';
  * Gallery — POP WORLD Virtual Gallery
  *
  * A full-screen Three.js walkable art gallery served from /gallery/index.html
- * (public/gallery/index.html). The iframe fills the entire viewport below the
- * navigation bar.
+ * (public/gallery/index.html). The iframe fills the entire space below the
+ * navigation bar supplied by LayoutIframe.
  */
 export default function Gallery() {
   useSeoMeta({
@@ -22,14 +22,11 @@ export default function Gallery() {
   });
 
   return (
-    <div className="flex-1 flex flex-col w-full" style={{ minHeight: 0 }}>
-      <iframe
-        src="/gallery/index.html"
-        title="POP WORLD Virtual Gallery"
-        className="w-full flex-1 border-0"
-        allow="fullscreen"
-        style={{ display: 'block' }}
-      />
-    </div>
+    <iframe
+      src="/gallery/index.html"
+      title="POP WORLD Virtual Gallery"
+      style={{ flex: 1, width: '100%', height: '100%', border: 'none', display: 'block' }}
+      allow="fullscreen"
+    />
   );
 }
