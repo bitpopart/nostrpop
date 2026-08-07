@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BitPopArt — Brand Guide</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --orange-50:  #fff7ed;
+      --orange-100: #ffedd5;
+      --orange-200: #fed7aa;
+      --orange-300: #fdba74;
+      --orange-400: #fb923c;
+      --orange-500: #f97316;
+      --orange-600: #ea580c;
+      --orange-700: #c2410c;
+      --orange-800: #9a3412;
+      --orange-900: #7c2d12;
+      --orange-950: #431407;
+      --pink-500:   #ec4899;
+      --yellow-400: #facc15;
+      --teal:       #4cc1bb;
+      --pop-yellow: #fce000;
+      --btc-orange: #f7931a;
+      --pop-red:    #ff042c;
+      --text-logo:  #231f20;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #0d0d0d;
+      color: #e5e7eb;
+      line-height: 1.6;
+    }
+
+    /* ── Sidebar nav ── */
+    .sidebar {
+      position: fixed; top: 0; left: 0; width: 220px; height: 100vh;
+      background: #111; border-right: 1px solid #1f1f1f;
+      overflow-y: auto; padding: 24px 0;
+      z-index: 100;
+    }
+    .sidebar-logo {
+      padding: 0 20px 24px;
+      border-bottom: 1px solid #1f1f1f;
+    }
+    .sidebar-logo img { width: 100%; max-width: 160px; }
+    .sidebar-logo .brand-name {
+      font-size: 13px; font-weight: 700; color: var(--orange-500);
+      margin-top: 10px; letter-spacing: 0.05em;
+    }
+    .sidebar-logo .brand-sub { font-size: 11px; color: #555; }
+    .nav-section { padding: 16px 20px 4px; font-size: 10px; font-weight: 700;
+      color: #444; letter-spacing: 0.12em; text-transform: uppercase; }
+    .nav-link { display: block; padding: 7px 20px; font-size: 13px; color: #888;
+      text-decoration: none; transition: color 0.15s, background 0.15s; }
+    .nav-link:hover { color: var(--orange-400); background: rgba(249,115,22,0.06); }
+
+    /* ── Main ── */
+    .main { margin-left: 220px; max-width: 1100px; padding: 48px 48px 120px; }
+
+    h1 { font-size: 36px; font-weight: 900; color: white; letter-spacing: -0.02em; margin-bottom: 8px; }
+    h2 { font-size: 22px; font-weight: 800; color: white; margin: 48px 0 4px; }
+    h3 { font-size: 14px; font-weight: 700; color: #6b7280; letter-spacing: 0.1em;
+      text-transform: uppercase; margin: 32px 0 12px; }
+    p  { color: #9ca3af; font-size: 14px; margin-bottom: 16px; }
+    hr { border: none; border-top: 1px solid #1f1f1f; margin: 40px 0; }
+    code { font-family: 'Courier New', monospace; background: #1a1a1a;
+      padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--orange-400); }
+
+    /* ── Section wrappers ── */
+    .section { scroll-margin-top: 32px; }
+
+    /* ── Logos grid ── */
+    .logo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px,1fr)); gap: 16px; }
+    .logo-card {
+      background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px;
+      padding: 28px 24px 16px; display: flex; flex-direction: column; align-items: center; gap: 16px;
+    }
+    .logo-card.dark-bg { background: #060606; }
+    .logo-card.light-bg { background: #f7f8f9; }
+    .logo-card.orange-bg { background: linear-gradient(135deg, var(--orange-950), var(--orange-900)); }
+    .logo-card img, .logo-card object { max-width: 100%; max-height: 80px; width: auto; height: auto; }
+    .logo-card-label { font-size: 11px; color: #555; text-align: center; }
+    .logo-card-filename { font-family: monospace; font-size: 11px; color: var(--orange-600); }
+
+    /* ── Color palette ── */
+    .swatch-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+    .swatch {
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+    }
+    .swatch-box {
+      width: 72px; height: 48px; border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .swatch-hex { font-family: monospace; font-size: 11px; color: #9ca3af; }
+    .swatch-name { font-size: 10px; color: #555; }
+    .swatch.primary .swatch-box { border: 2px solid white; transform: scale(1.08); }
+    .swatch.primary .swatch-hex { color: var(--orange-400); font-weight: 700; }
+
+    /* ── Gradient swatches ── */
+    .grad-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .grad-card {
+      border-radius: 12px; overflow: hidden; border: 1px solid #2a2a2a;
+    }
+    .grad-preview { height: 80px; }
+    .grad-info { background: #1a1a1a; padding: 12px 16px; }
+    .grad-title { font-size: 13px; font-weight: 700; color: white; margin-bottom: 4px; }
+    .grad-desc  { font-size: 11px; color: #6b7280; margin-bottom: 6px; }
+    .grad-code  { font-family: monospace; font-size: 11px; color: var(--orange-500); }
+
+    /* ── Typography specimen ── */
+    .typo-row { border-bottom: 1px solid #1a1a1a; padding: 16px 0; }
+    .typo-meta { font-size: 11px; color: #444; margin-top: 6px; font-family: monospace; }
+
+    /* ── Buttons ── */
+    .comp-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 16px; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 9px 18px; border-radius: 8px; font-size: 14px; font-weight: 700;
+      border: none; cursor: default; letter-spacing: 0.01em;
+    }
+    .btn-cta { background: linear-gradient(to right, var(--orange-500), var(--pink-500)); color: white; }
+    .btn-orange { background: var(--orange-500); color: white; }
+    .btn-outline { background: transparent; border: 1.5px solid var(--orange-500); color: var(--orange-500); }
+    .btn-ghost { background: rgba(249,115,22,0.1); color: var(--orange-500); }
+    .btn-disabled { background: #374151; color: #9ca3af; opacity: 0.6; }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+    /* ── Badges ── */
+    .badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 700;
+    }
+    .badge-orange   { background: var(--orange-500); color: white; }
+    .badge-light    { background: var(--orange-50); border: 1px solid var(--orange-200); color: var(--orange-700); }
+    .badge-dark     { background: rgba(0,0,0,0.7); color: white; }
+    .badge-yellow   { background: var(--yellow-400); color: #713f12; }
+    .badge-green    { background: #16a34a; color: white; }
+    .badge-special  { background: var(--orange-500); color: white; }
+
+    /* ── Cards ── */
+    .card-row { display: flex; flex-wrap: wrap; gap: 16px; }
+    .card-demo {
+      background: #1a1a1a; border: 1.5px solid #374151; border-radius: 10px;
+      padding: 16px; width: 180px;
+    }
+    .card-demo.hovered { border-color: var(--orange-300); box-shadow: 0 4px 24px rgba(249,115,22,0.15); }
+    .card-demo.feature { background: rgba(249,115,22,0.06); border-color: var(--orange-300); }
+    .card-demo.dashed  { border-style: dashed; border-color: #374151; }
+    .card-demo-label { font-size: 12px; color: #9ca3af; }
+    .card-demo-sub   { font-size: 10px; color: #555; margin-top: 4px; }
+
+    /* ── Buttons reference table ── */
+    table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 12px; }
+    th { text-align: left; padding: 8px 12px; background: #1a1a1a; color: #6b7280;
+      font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; border-bottom: 1px solid #2a2a2a; }
+    td { padding: 8px 12px; border-bottom: 1px solid #1a1a1a; color: #9ca3af; vertical-align: top; }
+    td code { white-space: nowrap; }
+    tr:last-child td { border-bottom: none; }
+
+    /* ── Asset list ── */
+    .asset-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px,1fr)); gap: 12px; }
+    .asset-item {
+      background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 8px;
+      padding: 20px 12px 12px; text-align: center;
+    }
+    .asset-item img { max-width: 64px; max-height: 64px; margin: 0 auto 8px; display: block; }
+    .asset-item .asset-name { font-size: 10px; color: #555; font-family: monospace; word-break: break-all; }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <img src="logos/bitpopart-logo.svg" alt="BitPopArt Logo" onerror="this.style.display='none'"/>
+    <div class="brand-name">BitPopArt</div>
+    <div class="brand-sub">Brand Guide 2026</div>
+  </div>
+  <div class="nav-section">Brand</div>
+  <a class="nav-link" href="#identity">Identity</a>
+  <a class="nav-link" href="#logos">Logos &amp; Icons</a>
+  <a class="nav-link" href="#buttons-svg">Button SVGs</a>
+  <div class="nav-section">Visual</div>
+  <a class="nav-link" href="#colors">Color Palette</a>
+  <a class="nav-link" href="#gradients">Gradients</a>
+  <a class="nav-link" href="#typography">Typography</a>
+  <div class="nav-section">UI</div>
+  <a class="nav-link" href="#components">Components</a>
+  <a class="nav-link" href="#spacing">Spacing &amp; Radius</a>
+  <a class="nav-link" href="#reference">CSS Reference</a>
+</nav>
+
+<!-- Main content -->
+<main class="main">
+
+  <!-- Identity -->
+  <section class="section" id="identity">
+    <h1>BitPopArt — Brand Guide</h1>
+    <p style="color:#6b7280; font-size:15px;">Bitcoin Pop Art by Johannes Oppewal · bitpopart.com · @bitpopart</p>
+    <p>This guide documents the complete visual identity, color system, typography, and UI design language of BitPopArt — the Bitcoin Pop Art platform built on Nostr.</p>
+
+    <div style="background:linear-gradient(135deg,#431407,#7c2d12); border-radius:16px; padding:32px; margin:32px 0; display:flex; align-items:center; gap:32px; flex-wrap:wrap;">
+      <img src="logos/bitpopart-logo.svg" alt="Logo" style="height:80px;" onerror="this.style.display='none'"/>
+      <div>
+        <div style="font-size:28px; font-weight:900; color:white; margin-bottom:6px;">BitPopArt</div>
+        <div style="font-size:14px; color:#fdba74; margin-bottom:4px;">Bitcoin Pop Art · Nostr · Lightning</div>
+        <div style="font-size:13px; color:#9a3412;">Every block. A unique piece of art. ₿</div>
+      </div>
+    </div>
+
+    <h3>Brand Personality</h3>
+    <p>Bold. Colorful. Pop. Bitcoin-native. Art is generated deterministically from block data — the same block always gets the same art. Every 10 minutes, a new piece. Shared on Nostr. Zapped with Lightning.</p>
+  </section>
+
+  <hr/>
+
+  <!-- Logos & Icons -->
+  <section class="section" id="logos">
+    <h2>Logos &amp; Icons</h2>
+    <p>All logos are SVG. Use on both light and dark backgrounds. The logo mark (Bitcoin ₿ character) always uses <code>#f7931a</code> orange.</p>
+
+    <h3>Logo Variants</h3>
+    <div class="logo-grid">
+      <div class="logo-card dark-bg">
+        <img src="logos/bitpopart-logo.svg" alt="BitPopArt Logo"/>
+        <div>
+          <div class="logo-card-filename">bitpopart-logo.svg</div>
+          <div class="logo-card-label">Main mark · dark bg</div>
+        </div>
+      </div>
+      <div class="logo-card light-bg">
+        <img src="logos/bitpopart-logo.svg" alt="BitPopArt Logo"/>
+        <div>
+          <div class="logo-card-filename">bitpopart-logo.svg</div>
+          <div class="logo-card-label">Main mark · light bg</div>
+        </div>
+      </div>
+      <div class="logo-card dark-bg">
+        <img src="logos/bitpopart-text-logo.svg" alt="BitPopArt Text Logo"/>
+        <div>
+          <div class="logo-card-filename">bitpopart-text-logo.svg</div>
+          <div class="logo-card-label">Full wordmark</div>
+        </div>
+      </div>
+      <div class="logo-card light-bg">
+        <img src="logos/bitpopart-text-logo.svg" alt="BitPopArt Text Logo"/>
+        <div>
+          <div class="logo-card-filename">bitpopart-text-logo.svg</div>
+          <div class="logo-card-label">Wordmark · light bg</div>
+        </div>
+      </div>
+      <div class="logo-card orange-bg">
+        <img src="logos/block-text-logo.svg" alt="Block Text Logo"/>
+        <div>
+          <div class="logo-card-filename">block-text-logo.svg</div>
+          <div class="logo-card-label">BLOCK sub-brand · orange bg</div>
+        </div>
+      </div>
+      <div class="logo-card dark-bg">
+        <img src="logos/app-icon.svg" alt="App Icon" style="max-height:64px;"/>
+        <div>
+          <div class="logo-card-filename">app-icon.svg</div>
+          <div class="logo-card-label">App / favicon icon</div>
+        </div>
+      </div>
+    </div>
+
+    <h3>Icons</h3>
+    <div class="logo-grid">
+      <div class="logo-card dark-bg">
+        <img src="icons/B-Funny_avatar_orange.svg" alt="B-Funny Avatar"/>
+        <div>
+          <div class="logo-card-filename">B-Funny_avatar_orange.svg</div>
+          <div class="logo-card-label">Bitcoin character · orange</div>
+        </div>
+      </div>
+      <div class="logo-card" style="background:#e82435;">
+        <img src="icons/App_icon.svg" alt="App Icon"/>
+        <div>
+          <div class="logo-card-filename">App_icon.svg</div>
+          <div class="logo-card-label">Heart app icon · red bg</div>
+        </div>
+      </div>
+      <div class="logo-card dark-bg">
+        <img src="icons/spray_paint_icon.svg" alt="Spray Paint Icon"/>
+        <div>
+          <div class="logo-card-filename">spray_paint_icon.svg</div>
+          <div class="logo-card-label">Spray paint / art tool</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr/>
+
+  <!-- Button SVGs -->
+  <section class="section" id="buttons-svg">
+    <h2>Button SVG Tiles</h2>
+    <p>Navigation button tiles used in the main menu. Each is a self-contained SVG with pop-art layered illustration. These are layered artworks — <strong>do not recolor</strong>, the fills are intentional.</p>
+
+    <div class="asset-grid">
+      <div class="asset-item">
+        <img src="buttons/Art_button.svg" alt="Art"/>
+        <div class="asset-name">Art_button.svg</div>
+      </div>
+      <div class="asset-item">
+        <img src="buttons/News_button.svg" alt="News"/>
+        <div class="asset-name">News_button.svg</div>
+      </div>
+      <div class="asset-item">
+        <img src="buttons/PopUP_button.svg" alt="PopUP"/>
+        <div class="asset-name">PopUP_button.svg</div>
+      </div>
+      <div class="asset-item">
+        <img src="buttons/Shop_button.svg" alt="Shop"/>
+        <div class="asset-name">Shop_button.svg</div>
+      </div>
+      <div class="asset-item">
+        <img src="buttons/artist_button.svg" alt="Artist"/>
+        <div class="asset-name">artist_button.svg</div>
+      </div>
+      <div class="asset-item">
+        <img src="buttons/fundraising_button.svg" alt="Fundraising"/>
+        <div class="asset-name">fundraising_button.svg</div>
+      </div>
+      <div class="asset-item">
+        <img src="buttons/projects_button.svg" alt="Projects"/>
+        <div class="asset-name">projects_button.svg</div>
+      </div>
+    </div>
+  </section>
+
+  <hr/>
+
+  <!-- Color Palette -->
+  <section class="section" id="colors">
+    <h2>Color Palette</h2>
+    <p>All colors use Tailwind CSS naming where applicable. The theme accent <code>#e99840</code> (CSS variable) maps to a warmer variant of orange-500. See <code>colors/colors.txt</code> for full reference.</p>
+
+    <h3>Bitcoin Orange Scale — Primary Brand Color</h3>
+    <div class="swatch-row">
+      <div class="swatch"><div class="swatch-box" style="background:#fff7ed;"></div><div class="swatch-hex">#fff7ed</div><div class="swatch-name">50</div></div>
+      <div class="swatch"><div class="swatch-box" style="background:#ffedd5;"></div><div class="swatch-hex">#ffedd5</div><div class="swatch-name">100</div></div>
+      <div class="swatch"><div class="swatch-box" style="background:#fed7aa;"></div><div class="swatch-hex">#fed7aa</div><div class="swatch-name">200</div></div>
+      <div class="swatch"><div class="swatch-box" style="background:#fdba74;"></div><div class="swatch-hex">#fdba74</div><div class="swatch-name">300</div></div>
+      <div class="swatch"><div class="swatch-box" style="background:#fb923c;"></div><div class="swatch-hex">#fb923c</div><div class="swatch-name">400</div></div>
+      <div class="swatch primary"><div class="swatch-box" style="background:#f97316;"></div><div class="swatch-hex">#f97316</div><div class="swatch-name">★ 500</div></div>
+      <div class="swatch"><div class="swatch-box" style="background:#ea580c;"></div><div class="swatch-hex">#ea580c</div><div class="swatch-name">600</div></div>
+      <div class="swatch"><div class="swatch-box" style="background:#c2410c;"></div><div class="swatch-hex">#c2410c</div><div class="swatch-name">700</div></div>
+      <div class="swatch"><div class="swatch-box" style="background:#9a3412;"></div><div class="swatch-hex">#9a3412</div><div class="swatch-name">800</div></div>
+      <div class="swatch"><div class="swatch-box" style="background:#7c2d12;"></div><div class="swatch-hex">#7c2d12</div><div class="swatch-name">900</div></div>
+      <div class="swatch"><div class="swatch-box" style="background:#431407;"></div><div class="swatch-hex">#431407</div><div class="swatch-name">950</div></div>
+    </div>
+
+    <h3>Theme Accent + Bitcoin Brand</h3>
+    <div class="swatch-row">
+      <div class="swatch primary"><div class="swatch-box" style="background:#e99840;"></div><div class="swatch-hex">#e99840</div><div class="swatch-name">Theme Accent</div></div>
+      <div class="swatch"><div class="swatch-box" style="background:#f7931a;"></div><div class="swatch-hex">#f7931a</div><div class="swatch-name">₿ BTC Official</div></div>
+      <div class="swatch"><div class="swatch-box" style="background:#ff042c;"></div><div class="swatch-hex">#ff042c</div><div class="swatch-name">Pop Red</div></div>
+      <div class="swatch"><div class="swatch-box" style="background:#ec4899;"></div><div class="swatch-hex">#ec4899</div><div class="swatch-name">Nostr Pink</div></div>
+      <div class="swatch"><div class="swatch-box" style="background:#4cc1bb;"></div><div class="swatch-hex">#4cc1bb</div><div class="swatch-name">Pop Teal</div></div>
+      <div class="swatch"><div class="swatch-box" style="background:#fce000; border:1px solid #e5c700;"></div><div class="swatch-hex">#fce000</div><div class="swatch-name">Pop Yellow</div></div>
+      <div class="swatch"><div class="swatch-box" style="background:#facc15; border:1px solid #e5b800;"></div><div class="swatch-hex">#facc15</div><div class="swatch-name">yellow-400</div></div>
+    </div>
+
+    <h3>Neutrals &amp; Text</h3>
+    <div class="swatch-row">
+      <div class="swatch"><div class="swatch-box" style="background:#1a1a1a;"></div><div class="swatch-hex">#1a1a1a</div><div class="swatch-name">body text</div></div>
+      <div class="swatch"><div class="swatch-box" style="background:#231f20;"></div><div class="swatch-hex">#231f20</div><div class="swatch-name">logo fill</div></div>
+      <div class="swatch"><div class="swatch-box" style="background:#374151;"></div><div class="swatch-hex">#374151</div><div class="swatch-name">gray-700</div></div>
+      <div class="swatch"><div class="swatch-box" style="background:#6b7280;"></div><div class="swatch-hex">#6b7280</div><div class="swatch-name">muted</div></div>
+      <div class="swatch"><div class="swatch-box" style="background:#e5e7eb; border:1px solid #d1d5db;"></div><div class="swatch-hex">#e5e7eb</div><div class="swatch-name">border</div></div>
+      <div class="swatch"><div class="swatch-box" style="background:#f7f8f9; border:1px solid #e2e5e8;"></div><div class="swatch-hex">#f7f8f9</div><div class="swatch-name">page bg</div></div>
+      <div class="swatch"><div class="swatch-box" style="background:#ffffff; border:1px solid #e2e5e8;"></div><div class="swatch-hex">#ffffff</div><div class="swatch-name">card bg</div></div>
+    </div>
+  </section>
+
+  <hr/>
+
+  <!-- Gradients -->
+  <section class="section" id="gradients">
+    <h2>Gradients</h2>
+    <p>All gradients use Tailwind CSS classes. SVG versions are in the <code>gradients/</code> folder.</p>
+
+    <div class="grad-grid">
+      <div class="grad-card">
+        <div class="grad-preview" style="background:linear-gradient(to right,#f97316,#ea580c);"></div>
+        <div class="grad-info">
+          <div class="grad-title">Bitcoin Orange</div>
+          <div class="grad-desc">Primary brand gradient — buttons, active states</div>
+          <div class="grad-code">from-orange-500 to-orange-600</div>
+        </div>
+      </div>
+      <div class="grad-card">
+        <div class="grad-preview" style="background:linear-gradient(to right,#f97316,#ec4899);"></div>
+        <div class="grad-info">
+          <div class="grad-title">Nostr Publish</div>
+          <div class="grad-desc">CTA / Share button — orange to pink</div>
+          <div class="grad-code">from-orange-500 to-pink-500</div>
+        </div>
+      </div>
+      <div class="grad-card">
+        <div class="grad-preview" style="background:linear-gradient(to right,#f97316,#facc15,#f97316);"></div>
+        <div class="grad-info">
+          <div class="grad-title">Hero Text</div>
+          <div class="grad-desc">Headline gradient text — bg-clip-text</div>
+          <div class="grad-code">from-orange-500 via-yellow-400 to-orange-500</div>
+        </div>
+      </div>
+      <div class="grad-card">
+        <div class="grad-preview" style="background:linear-gradient(to bottom,rgba(67,20,7,0.1),#f7f8f9,rgba(67,20,7,0.05));"></div>
+        <div class="grad-info">
+          <div class="grad-title">Page Background (Light)</div>
+          <div class="grad-desc">Full page body background</div>
+          <div class="grad-code">from-orange-950/10 via-background to-orange-950/5</div>
+        </div>
+      </div>
+      <div class="grad-card">
+        <div class="grad-preview" style="background:linear-gradient(to bottom right,#431407,#7c2d12);"></div>
+        <div class="grad-info">
+          <div class="grad-title">Block Art Canvas</div>
+          <div class="grad-desc">Art card image placeholder background</div>
+          <div class="grad-code">from-orange-950 to-orange-900</div>
+        </div>
+      </div>
+      <div class="grad-card">
+        <div class="grad-preview" style="background:linear-gradient(to right,transparent,#fdba74,transparent);"></div>
+        <div class="grad-info">
+          <div class="grad-title">Section Divider</div>
+          <div class="grad-desc">Subtle decorative horizontal line</div>
+          <div class="grad-code">from-transparent via-orange-300 to-transparent</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr/>
+
+  <!-- Typography -->
+  <section class="section" id="typography">
+    <h2>Typography</h2>
+    <p>Primary: <strong>Inter Variable</strong> — install via <code>@fontsource-variable/inter</code>. Fallback: <code>system-ui, sans-serif</code>.</p>
+
+    <div class="typo-row">
+      <div style="font-size:44px; font-weight:900; color:white; letter-spacing:-0.02em; line-height:1.1;">Every 10 minutes.</div>
+      <div class="typo-meta">Display Hero · 44px / weight-900 / tracking-tight · color: white (foreground)</div>
+    </div>
+    <div class="typo-row">
+      <div style="font-size:32px; font-weight:900; background:linear-gradient(to right,#f97316,#facc15,#f97316); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">A new piece of art. ₿</div>
+      <div class="typo-meta">H1 Gradient · 32px / weight-900 · from-orange-500 via-yellow-400 · bg-clip-text</div>
+    </div>
+    <div class="typo-row">
+      <div style="font-size:24px; font-weight:800; color:white;">BTClock BitPopArt Edition</div>
+      <div class="typo-meta">H2 · 24px / weight-800 · color: foreground</div>
+    </div>
+    <div class="typo-row">
+      <div style="font-size:18px; font-weight:700; color:white;">Share Block #857,482 to Nostr</div>
+      <div class="typo-meta">H3 Modal / Dialog · 18px / weight-700</div>
+    </div>
+    <div class="typo-row">
+      <div style="font-size:15px; color:#d1d5db;">Pop-art layered image for every Bitcoin block. Share on Nostr, download, or zap the artist.</div>
+      <div class="typo-meta">Body · 15px / weight-400 · color: foreground/80</div>
+    </div>
+    <div class="typo-row">
+      <div style="font-size:13px; color:#9ca3af;">2,847 txs · 3m ago · Foundry USA Pool</div>
+      <div class="typo-meta">Metadata / caption · 13px / color: muted-foreground</div>
+    </div>
+    <div class="typo-row">
+      <div style="font-family:'Courier New',monospace; font-size:14px; color:#f97316;">Block #857,482 · 0x0000000000000000000421a9e…</div>
+      <div class="typo-meta">Monospace / block data · 14px · 'Courier New' · color: orange-500</div>
+    </div>
+    <div class="typo-row">
+      <div style="font-size:11px; font-weight:700; color:#f97316; letter-spacing:0.1em; text-transform:uppercase;">Live · mempool.space · Special Edition</div>
+      <div class="typo-meta">Badge / micro label · 11px / weight-700 / letter-spacing: 0.1em</div>
+    </div>
+  </section>
+
+  <hr/>
+
+  <!-- UI Components -->
+  <section class="section" id="components">
+    <h2>UI Components</h2>
+
+    <h3>Buttons</h3>
+    <div class="comp-row">
+      <div class="btn btn-cta">Publish to Nostr ⚡</div>
+      <div class="btn btn-orange">Order Now</div>
+      <div class="btn btn-outline">Download</div>
+      <div class="btn btn-ghost">View History</div>
+      <div class="btn btn-disabled btn-sm">Uploading…</div>
+      <div class="btn btn-orange btn-sm">Refresh</div>
+    </div>
+
+    <table>
+      <thead><tr><th>Variant</th><th>CSS classes</th><th>Use case</th></tr></thead>
+      <tbody>
+        <tr><td>Primary CTA</td><td><code>bg-gradient-to-r from-orange-500 to-pink-500 text-white</code></td><td>Publish, Share to Nostr</td></tr>
+        <tr><td>Orange Solid</td><td><code>bg-orange-500 text-white hover:bg-orange-600</code></td><td>Order, main action</td></tr>
+        <tr><td>Outline</td><td><code>border border-orange-300 text-orange-700 hover:bg-orange-50</code></td><td>Download, secondary</td></tr>
+        <tr><td>Ghost</td><td><code>bg-orange-50/50 text-orange-700</code> (dark: <code>bg-orange-950/30</code>)</td><td>History, tertiary</td></tr>
+        <tr><td>Disabled</td><td><code>opacity-60 cursor-not-allowed</code></td><td>Loading / pending states</td></tr>
+        <tr><td>Icon-only</td><td><code>h-8 w-8 shrink-0</code> (size="icon")</td><td>Share ↗, Zap ⚡, Download ↓</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Badges</h3>
+    <div class="comp-row" style="margin-top:8px;">
+      <div class="badge badge-orange">₿ Live · mempool.space</div>
+      <div class="badge badge-light">#857,482</div>
+      <div class="badge badge-dark">Foundry USA</div>
+      <div class="badge badge-yellow">Physical Art</div>
+      <div class="badge badge-green">✓ Image ready</div>
+      <div class="badge badge-special">Special Edition</div>
+    </div>
+
+    <h3>Cards</h3>
+    <div class="card-row" style="margin-top:8px;">
+      <div class="card-demo">
+        <div class="card-demo-label">Default card</div>
+        <div class="card-demo-sub">border-gray-700</div>
+      </div>
+      <div class="card-demo hovered">
+        <div class="card-demo-label">Hovered card</div>
+        <div class="card-demo-sub">border-orange-300 + shadow</div>
+      </div>
+      <div class="card-demo feature">
+        <div class="card-demo-label">Feature card</div>
+        <div class="card-demo-sub">orange tint bg</div>
+      </div>
+      <div class="card-demo dashed">
+        <div class="card-demo-label">Empty state</div>
+        <div class="card-demo-sub">border-dashed</div>
+      </div>
+    </div>
+  </section>
+
+  <hr/>
+
+  <!-- Spacing & Radius -->
+  <section class="section" id="spacing">
+    <h2>Spacing &amp; Border Radius</h2>
+
+    <h3>Border Radius</h3>
+    <div class="comp-row" style="align-items:flex-end; gap:20px; flex-wrap:wrap;">
+      <div style="text-align:center;">
+        <div style="width:64px;height:64px;background:#1f2937;border:1.5px solid #f97316;border-radius:0;display:inline-block;"></div>
+        <div style="font-size:11px;color:#666;margin-top:6px;">0 · sharp</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="width:64px;height:64px;background:#1f2937;border:1.5px solid #f97316;border-radius:4px;display:inline-block;"></div>
+        <div style="font-size:11px;color:#666;margin-top:6px;">4px · sm</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="width:64px;height:64px;background:#1f2937;border:2px solid #f97316;border-radius:8px;display:inline-block;"></div>
+        <div style="font-size:11px;color:#f97316;font-weight:700;margin-top:6px;">8px ★ DEFAULT</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="width:64px;height:64px;background:#1f2937;border:1.5px solid #f97316;border-radius:12px;display:inline-block;"></div>
+        <div style="font-size:11px;color:#666;margin-top:6px;">12px · xl</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="width:64px;height:64px;background:#1f2937;border:1.5px solid #f97316;border-radius:16px;display:inline-block;"></div>
+        <div style="font-size:11px;color:#666;margin-top:6px;">16px · 2xl</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="width:64px;height:64px;background:#1f2937;border:1.5px solid #f97316;border-radius:32px;display:inline-block;"></div>
+        <div style="font-size:11px;color:#666;margin-top:6px;">32px · 3xl</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="width:64px;height:32px;background:#1f2937;border:1.5px solid #f97316;border-radius:999px;display:inline-block;"></div>
+        <div style="font-size:11px;color:#666;margin-top:6px;">9999px · pill</div>
+      </div>
+    </div>
+
+    <h3>Container &amp; Layout</h3>
+    <table>
+      <thead><tr><th>Token</th><th>Value</th><th>Usage</th></tr></thead>
+      <tbody>
+        <tr><td>Container max-width</td><td><code>1400px</code></td><td>2xl breakpoint, all main sections</td></tr>
+        <tr><td>Container padding</td><td><code>2rem (32px)</code></td><td>Horizontal gutters</td></tr>
+        <tr><td>Grid gap</td><td><code>gap-3 (12px)</code></td><td>Block art card grid</td></tr>
+        <tr><td>Section gap</td><td><code>gap-4 (16px)</code></td><td>Standard section separation</td></tr>
+        <tr><td>Block grid cols</td><td><code>2 / 3 / 4 / 6</code></td><td>sm / md / lg / xl breakpoints</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <hr/>
+
+  <!-- CSS Reference -->
+  <section class="section" id="reference">
+    <h2>CSS Variable Reference</h2>
+    <p>Defined in <code>src/index.css</code> under <code>:root</code>. Override these to retheme the entire site.</p>
+
+    <table>
+      <thead><tr><th>Variable</th><th>Light Value</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td><code>--accent-color</code></td><td>#e99840</td><td>Icon tint, links, hover</td></tr>
+        <tr><td><code>--primary-gradient-from</code></td><td>#e99840</td><td>Button gradient start</td></tr>
+        <tr><td><code>--primary-gradient-to</code></td><td>#e99840</td><td>Button gradient end</td></tr>
+        <tr><td><code>--link-color</code></td><td>#e99840</td><td>Anchor text color</td></tr>
+        <tr><td><code>--link-hover-color</code></td><td>#c87a30</td><td>Anchor hover color</td></tr>
+        <tr><td><code>--page-background</code></td><td>#f7f8f9</td><td>Full-page body bg</td></tr>
+        <tr><td><code>--body-text-color</code></td><td>#1a1a1a</td><td>Default text</td></tr>
+        <tr><td><code>--heading-text-color</code></td><td>#1a1a1a</td><td>h1–h6</td></tr>
+        <tr><td><code>--button-text-color</code></td><td>#ffffff</td><td>Text on filled buttons</td></tr>
+        <tr><td><code>--radius</code></td><td>0.5rem</td><td>shadcn-ui base border-radius</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Key Tailwind Classes Used Throughout</h3>
+    <table>
+      <thead><tr><th>Pattern</th><th>Class</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Orange badge</td><td><code>bg-orange-500 text-white border-orange-600</code></td><td>Block height label</td></tr>
+        <tr><td>Card hover</td><td><code>hover:border-orange-300 dark:hover:border-orange-700 hover:shadow-lg hover:shadow-orange-100</code></td><td>Art cards</td></tr>
+        <tr><td>Gradient text</td><td><code>bg-gradient-to-r from-orange-500 via-yellow-400 to-orange-500 bg-clip-text text-transparent</code></td><td>Hero headline</td></tr>
+        <tr><td>Feature panel</td><td><code>bg-orange-50/50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-800</code></td><td>Login nudge, info cards</td></tr>
+        <tr><td>Muted tint</td><td><code>bg-muted/50 border-border</code></td><td>Preview text boxes</td></tr>
+        <tr><td>Body bg</td><td><code>min-h-screen bg-gradient-to-b from-orange-950/10 via-background to-orange-950/5</code></td><td>Page wrapper</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <hr/>
+
+  <footer style="color:#333; font-size:12px; margin-top:48px;">
+    <p>BitPopArt Brand Guide · Generated 2026-07-16 · <a href="https://bitpopart.com" style="color:#e99840;">bitpopart.com</a></p>
+    <p style="margin-top:4px;">Built with Shakespeare · <a href="https://shakespeare.diy" style="color:#555;">shakespeare.diy</a></p>
+  </footer>
+
+</main>
+</body>
+</html>
