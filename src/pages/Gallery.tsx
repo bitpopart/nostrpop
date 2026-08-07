@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSeoMeta } from '@unhead/react';
 import { Box } from 'lucide-react';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 
 /**
  * Gallery — POP WORLD Virtual Gallery
@@ -8,6 +9,9 @@ import { Box } from 'lucide-react';
  * Fetches the gallery HTML then renders it via iframe srcdoc so it always
  * stays embedded under the site navigation bar. Using srcdoc avoids any
  * GitHub Pages MIME-type / SPA-redirect issues with the static file URL.
+ *
+ * The ADMIN button is hidden from the public HTML and only injected
+ * back in when the logged-in user is the BitPopArt admin.
  */
 
 const BASE = import.meta.env.BASE_URL ?? '/';
@@ -17,6 +21,7 @@ const GALLERY_SRC = `${base}/gallery/index.html`;
 export default function Gallery() {
   const [html, setHtml] = useState<string | null>(null);
   const [error, setError] = useState(false);
+  const isAdmin = useIsAdmin();
 
   useSeoMeta({
     title: 'POP WORLD Virtual Gallery — BitPopArt',
@@ -38,8 +43,27 @@ export default function Gallery() {
       .catch(() => setError(true));
   }, []);
 
+  /**
+   * When the admin is logged in, show the ADMIN button inside the gallery
+   * by injecting a small inline script that un-hides #adminBtn.
+   */
+  const galleryHtml = html
+    ? isAdmin
+      ? html.replace(
+          '</body>',
+          `<script>
+(function(){
+  var btn = document.getElementById('adminBtn');
+  if(btn) btn.style.display = '';
+})();
+</script>
+</body>`
+        )
+      : html
+    : null;
+
   // Loading splash
-  if (!html && !error) {
+  if (!galleryHtml && !error) {
     return (
       <div style={{
         flex: 1, display: 'flex', flexDirection: 'column',
@@ -89,7 +113,7 @@ export default function Gallery() {
 
   return (
     <iframe
-      srcDoc={html!}
+      srcDoc={galleryHtml!}
       title="POP WORLD Virtual Gallery"
       style={{ flex: 1, width: '100%', height: '100%', border: 'none', display: 'block', minHeight: 0 }}
       sandbox="allow-scripts allow-same-origin allow-pointer-lock allow-fullscreen"

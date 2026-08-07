@@ -324,17 +324,17 @@ const Art = () => {
                 />
               )}
 
-              {/* Login Prompt for Non-Logged-In Users */}
+              {/* Login Prompt for Non-Logged-In Users (optional — for buying/bidding only) */}
               {!user && (
-                <Card className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-purple-200 dark:border-purple-800">
+                <Card className="bg-gradient-to-r from-orange-50 to-pink-50 dark:from-orange-900/20 dark:to-pink-900/20 border-orange-200 dark:border-orange-800">
                   <CardContent className="pt-6">
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                       <div className="text-center sm:text-left">
-                        <h3 className="font-semibold text-purple-700 dark:text-purple-300 mb-1">
-                          Ready to Collect Art?
+                        <h3 className="font-semibold text-orange-700 dark:text-orange-300 mb-1">
+                          Want to Buy or Bid?
                         </h3>
-                        <p className="text-sm text-purple-600 dark:text-purple-400">
-                          Log in with your Nostr account to purchase artwork and participate in auctions
+                        <p className="text-sm text-orange-600 dark:text-orange-400">
+                          Log in with your Nostr account to purchase artwork, zap the artist, and participate in auctions. Browsing is always free!
                         </p>
                       </div>
                       <LoginArea className="max-w-48" />
@@ -348,8 +348,7 @@ const Art = () => {
                 <div>
                   <h2 className="text-2xl font-bold">Art Gallery</h2>
                   <p className="text-muted-foreground">
-                    Explore artworks from BitPopArt
-                    {!user && " • Login required for purchases"}
+                    Explore Bitcoin pop art by Johannes Oppewal
                   </p>
                 </div>
 
@@ -516,7 +515,7 @@ const Art = () => {
                         <CardDescription>
                           {selectedFilter !== 'all'
                             ? `No artworks found with the "${selectedFilter}" filter. Try a different filter or relay.`
-                            : "No artworks have been added yet. Try switching to a different relay or be the first to add artwork!"
+                            : "No artworks found on this relay. Try switching to a different relay to discover the collection."
                           }
                         </CardDescription>
                       </div>
