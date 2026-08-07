@@ -16,7 +16,10 @@ import { useIsAdmin } from '@/hooks/useIsAdmin';
 
 const BASE = import.meta.env.BASE_URL ?? '/';
 const base = BASE.endsWith('/') ? BASE.slice(0, -1) : BASE;
-const GALLERY_SRC = `${base}/gallery/index.html`;
+// Use /gallery-src/ (not /gallery/) to avoid GitHub Pages serving the static
+// file directly when someone navigates to /gallery — that would bypass React
+// and show the raw Three.js app without the site nav bar.
+const GALLERY_SRC = `${base}/gallery-src/index.html`;
 
 export default function Gallery() {
   const [html, setHtml] = useState<string | null>(null);
@@ -45,7 +48,8 @@ export default function Gallery() {
 
   /**
    * When the admin is logged in, show the ADMIN button inside the gallery
-   * by injecting a small inline script that un-hides #adminBtn.
+   * by injecting a small inline script that fully restores #adminBtn.
+   * The button is hidden with multiple CSS properties, so we clear them all.
    */
   const galleryHtml = html
     ? isAdmin
@@ -54,7 +58,13 @@ export default function Gallery() {
           `<script>
 (function(){
   var btn = document.getElementById('adminBtn');
-  if(btn) btn.style.display = '';
+  if(btn){
+    btn.style.display = 'inline-block';
+    btn.style.visibility = 'visible';
+    btn.style.pointerEvents = 'auto';
+    btn.style.position = 'static';
+    btn.style.left = 'auto';
+  }
 })();
 </script>
 </body>`
