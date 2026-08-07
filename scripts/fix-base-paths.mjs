@@ -1,10 +1,9 @@
-import { readFileSync, writeFileSync, existsSync, unlinkSync, readdirSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join } from 'path';
 
 const distDir = 'dist';
 const indexPath = join(distDir, 'index.html');
 const manifestPath = join(distDir, 'manifest.webmanifest');
-
 // Check if dist directory exists
 if (!existsSync(distDir)) {
   console.error('❌ dist directory does not exist');
@@ -23,11 +22,9 @@ try {
   // Fix base paths
   indexHtml = indexHtml.replace(/%VITE_BASE%/g, '/');
 
-  // Remove Shakespeare dev-environment Tailwind config script injection.
-  // The script tag can appear in various forms depending on how it was injected
-  // (e.g. directly after a </style>, on its own line, with or without spaces).
-  // Use a broad pattern that catches all variants.
-  indexHtml = indexHtml.replace(/<script\s[^>]*src="[^"]*shakespeare_tailwind[^"]*"[^>]*><\/script>/gi, '');
+  // Remove Shakespeare dev-environment Tailwind config script injection
+  // This script is injected by the Shakespeare build system but should not be in production
+  indexHtml = indexHtml.replace(/<script type="module" src="\/shakespeare_tailwind\.config[^"]*\.js"><\/script>/g, '');
 
   writeFileSync(indexPath, indexHtml);
   console.log('✅ Fixed base paths in index.html');
@@ -35,19 +32,6 @@ try {
 } catch (e) {
   console.error('❌ Error fixing index.html:', e.message);
   process.exit(1);
-}
-
-// Delete shakespeare_tailwind config JS/map files from dist (wrong MIME type on GitHub Pages)
-try {
-  const distFiles = readdirSync(distDir);
-  for (const f of distFiles) {
-    if (/shakespeare_tailwind/i.test(f)) {
-      unlinkSync(join(distDir, f));
-      console.log(`✅ Deleted ${f} from dist (dev-only file)`);
-    }
-  }
-} catch (e) {
-  console.warn('⚠️  Warning: Could not delete shakespeare_tailwind files:', e.message);
 }
 
 // Fix manifest if it exists
@@ -62,6 +46,7 @@ try {
   }
 } catch (e) {
   console.warn('⚠️  Warning: Could not fix manifest.webmanifest:', e.message);
+  // Don't exit on manifest errors, it's optional
 }
 
 console.log('✅ Base path fixing complete');
