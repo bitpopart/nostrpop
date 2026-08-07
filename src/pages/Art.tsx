@@ -38,6 +38,8 @@ import {
   CheckCircle,
   Megaphone,
   Printer,
+  Box,
+  ArrowRight,
 } from 'lucide-react';
 
 const Art = () => {
@@ -246,6 +248,58 @@ const Art = () => {
         {/* Art page banner (shipping delay / travel notice etc.) */}
         <div className="max-w-6xl mx-auto mb-6">
           <ArtBanner />
+        </div>
+
+        {/* Virtual Gallery Banner */}
+        <div className="max-w-6xl mx-auto mb-8">
+          <a
+            href="/gallery"
+            className="block group relative overflow-hidden rounded-2xl shadow-2xl cursor-pointer"
+            style={{
+              background: 'linear-gradient(135deg, #1a0040 0%, #f97316 40%, #ec4899 70%, #0f172a 100%)',
+            }}
+          >
+            {/* Animated shimmer overlay */}
+            <div
+              className="absolute inset-0 opacity-20"
+              style={{
+                background: 'repeating-linear-gradient(45deg, transparent, transparent 20px, rgba(255,255,255,0.06) 20px, rgba(255,255,255,0.06) 40px)',
+              }}
+            />
+            <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-6 px-8 py-8">
+              {/* Left: Icon + Text */}
+              <div className="flex items-center gap-5">
+                <div className="flex-shrink-0 p-4 rounded-2xl bg-white/15 backdrop-blur-sm border border-white/20 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <Box className="h-10 w-10 text-white" />
+                </div>
+                <div className="text-white">
+                  <p className="text-xs font-bold tracking-[3px] uppercase text-orange-300 mb-1">
+                    NEW ⚡ Immersive Experience
+                  </p>
+                  <h2
+                    className="text-3xl sm:text-4xl font-black tracking-wide leading-tight"
+                    style={{ fontFamily: 'Bangers, Impact, sans-serif', letterSpacing: '4px' }}
+                  >
+                    POP WORLD
+                  </h2>
+                  <p className="text-base font-semibold text-white/80 mt-0.5">
+                    A Walkable BitPopArt Virtual Gallery
+                  </p>
+                  <p className="text-sm text-white/60 mt-1">
+                    Walk around · 21 wall frames · 15 floor tiles · Tap to explore
+                  </p>
+                </div>
+              </div>
+
+              {/* Right: CTA Button */}
+              <div className="flex-shrink-0">
+                <span className="inline-flex items-center gap-2 bg-white text-orange-600 font-extrabold text-base px-7 py-3.5 rounded-full shadow-xl group-hover:shadow-orange-300/50 group-hover:scale-105 transition-all duration-200">
+                  ENTER GALLERY
+                  <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                </span>
+              </div>
+            </div>
+          </a>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full max-w-6xl mx-auto">

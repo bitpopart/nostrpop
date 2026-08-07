@@ -69,6 +69,7 @@ import ProposalPublicPage from "./pages/ProposalPublicPage";
 import Sitemap from "./pages/Sitemap";
 import CloudPage from "./pages/Cloud";
 import CloudAppViewer from "./pages/CloudAppViewer";
+import Gallery from "./pages/Gallery";
 import NotFound from "./pages/NotFound";
 
 export function AppRouter() {
@@ -153,6 +154,8 @@ export function AppRouter() {
         {/* Cloud private space — no site Layout wrapper; full-screen experience */}
         <Route path="/cloud" element={<CloudPage />} />
         <Route path="/cloud/:appId" element={<CloudAppViewer />} />
+        {/* POP WORLD Virtual Gallery — full-screen iframe experience */}
+        <Route path="/gallery" element={<LayoutIframe><Gallery /></LayoutIframe>} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="/:slug" element={<Layout><CustomPage /></Layout>} />
         <Route path="*" element={<Layout><NotFound /></Layout>} />

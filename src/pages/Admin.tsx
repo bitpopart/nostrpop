@@ -29,6 +29,7 @@ import { ArtworkOrderManager } from '@/components/art/ArtworkOrderManager';
 import { ArtworkCleanupTool } from '@/components/art/ArtworkCleanupTool';
 import { ArtBannerAdmin } from '@/components/art/ArtBannerAdmin';
 import { ArtworkSalesManager } from '@/components/art/ArtworkSalesManager';
+import { VirtualGalleryAdmin } from '@/components/art/VirtualGalleryAdmin';
 import { ArtProgressManagement } from '@/components/artprogress/ArtProgressManagement';
 import { WallManagement } from '@/components/wall/WallManagement';
 import { AppContentManagement } from '@/components/app/AppContentManagement';
@@ -1252,6 +1253,9 @@ const Admin = () => {
           </TabsContent>
 
           <TabsContent value="art" className="space-y-6">
+            {/* Virtual Gallery — shown first for easy access */}
+            <VirtualGalleryAdmin />
+
             {/* Sales — most important for admin, shown first */}
             <Card>
               <CardHeader>
