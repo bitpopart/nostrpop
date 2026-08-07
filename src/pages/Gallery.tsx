@@ -6,7 +6,13 @@ import { useSeoMeta } from '@unhead/react';
  * A full-screen Three.js walkable art gallery served from /gallery/index.html
  * (public/gallery/index.html). The iframe fills the entire space below the
  * navigation bar supplied by LayoutIframe.
+ *
+ * Uses BASE_URL so it works both on bitpopart.com (base = "/") and in the
+ * Shakespeare preview environment (base = "/preview/nostrpop/").
  */
+
+const BASE = import.meta.env.BASE_URL ?? '/';
+
 export default function Gallery() {
   useSeoMeta({
     title: 'POP WORLD Virtual Gallery — BitPopArt',
@@ -21,9 +27,13 @@ export default function Gallery() {
     robots: 'index, follow',
   });
 
+  // Strip trailing slash from base, then append path
+  const base = BASE.endsWith('/') ? BASE.slice(0, -1) : BASE;
+  const src = `${base}/gallery/index.html`;
+
   return (
     <iframe
-      src="/gallery/index.html"
+      src={src}
       title="POP WORLD Virtual Gallery"
       style={{ flex: 1, width: '100%', height: '100%', border: 'none', display: 'block' }}
       allow="fullscreen"
