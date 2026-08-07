@@ -3,7 +3,7 @@ import path from "node:path";
 import react from "@vitejs/plugin-react-swc";
 import { defineConfig } from "vitest/config";
 
-// HTML Base Path Plugin - updates the base tag
+// HTML Base Path Plugin - updates the base tag and strips dev-only injections
 function basePathPlugin(base: string) {
   return {
     name: 'base-path-plugin',
@@ -12,7 +12,9 @@ function basePathPlugin(base: string) {
       handler(html: string) {
         // Replace the base tag href with the correct base path  
         console.log(`[basePathPlugin] Running for base: ${base}`);
-        const result = html.replace(/<base href="\/"\s*\/?>/, `<base href="${base}" />`);
+        let result = html.replace(/<base href="\/"\s*\/?>/, `<base href="${base}" />`);
+        // Strip Shakespeare dev-environment Tailwind config script — never needed in production
+        result = result.replace(/<script type="module" src="\/shakespeare_tailwind\.config[^"]*\.js"><\/script>/g, '');
         return result;
       }
     }
