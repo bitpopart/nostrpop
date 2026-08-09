@@ -8,24 +8,21 @@ import { Box, ExternalLink, Upload, Settings2, Image, Info } from 'lucide-react'
  * VirtualGalleryAdmin
  *
  * A section shown in Admin → Art tab that gives the admin quick access
- * to the POP WORLD virtual gallery and its built-in admin panel.
+ * to the POP WORLD virtual gallery.
  *
- * The gallery is a self-contained Three.js HTML app at /gallery.
- * It ships with its own ADMIN panel (click the ADMIN button inside the gallery)
- * which lets you:
- *  - Upload artwork images to the 21 wall frames and 15 floor tiles
- *  - Set per-artwork titles
- *  - Export/import the full gallery state as JSON
- *  - Export a curated self-contained HTML page
+ * The gallery is a self-contained Three.js HTML app at /gallery and is a
+ * public viewing experience — it ships with no admin UI. Artwork is added
+ * to the gallery by the BitPopArt admin only, through the main site's
+ * "Create Art" flow on the Art page (publishes Nostr kind 39239 events).
  */
 export function VirtualGalleryAdmin() {
   const navigate = useNavigate();
 
   const features = [
-    { icon: Image, label: '21 wall frames', desc: 'Hang artwork on the gallery walls' },
-    { icon: Box, label: '15 floor tiles', desc: 'Showcase art on the floor' },
-    { icon: Upload, label: 'Upload images', desc: 'Drag & drop or click to add art' },
-    { icon: Settings2, label: 'Built-in ADMIN', desc: 'Tap ADMIN button inside the gallery' },
+    { icon: Image, label: '21 wall frames', desc: 'Curated art hanging on the gallery walls' },
+    { icon: Box, label: '15 floor tiles', desc: 'Showcase tiles on the floor' },
+    { icon: Upload, label: 'Admin-only uploads', desc: 'Art is added only by the BitPopArt admin' },
+    { icon: Settings2, label: 'View-only page', desc: 'No admin controls in the public gallery' },
   ];
 
   return (
@@ -66,21 +63,22 @@ export function VirtualGalleryAdmin() {
           ))}
         </div>
 
-        {/* Admin instructions */}
+        {/* How it works */}
         <div className="rounded-xl border border-blue-100 dark:border-blue-800/50 bg-blue-50/60 dark:bg-blue-900/10 p-4 flex gap-3">
           <Info className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" />
           <div className="space-y-1.5">
             <p className="text-sm font-semibold text-blue-800 dark:text-blue-200">
-              How to upload & curate art
+              How artwork gets into the gallery
             </p>
             <ol className="text-xs text-blue-700 dark:text-blue-300 space-y-1 list-decimal list-inside">
-              <li>Click <strong>"Open Virtual Gallery"</strong> below to enter the 3D experience</li>
-              <li>Click the <strong>ADMIN</strong> button in the top-right corner</li>
-              <li>Click a wall frame or floor tile, then upload your artwork image</li>
-              <li>Add a title for each artwork when prompted</li>
-              <li>Use <strong>"Export Page"</strong> in the Admin panel to save a curated version</li>
-              <li>Use <strong>"Export JSON"</strong> to backup your gallery layout</li>
+              <li>Open the <strong>Art page → "Create Art"</strong> tab (admin only)</li>
+              <li>Fill in the artwork details and upload images</li>
+              <li>The artwork is published to Nostr (kind 39239) by your admin account</li>
+              <li>It then appears in the Art Gallery and POP WORLD accordingly</li>
             </ol>
+            <p className="text-xs text-blue-700 dark:text-blue-300 pt-1">
+              Only the BitPopArt admin account can upload artwork to the gallery.
+            </p>
           </div>
         </div>
 
@@ -107,7 +105,7 @@ export function VirtualGalleryAdmin() {
 
         <p className="text-xs text-muted-foreground">
           The virtual gallery lives at <code className="bg-muted px-1 py-0.5 rounded text-xs">bitpopart.com/gallery</code>.
-          All artwork uploads and layout changes are managed directly inside the gallery's built-in admin panel.
+          It is a public, view-only experience — the ADMIN button was removed from the gallery page.
         </p>
       </CardContent>
     </Card>

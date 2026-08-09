@@ -3,6 +3,7 @@ import { useNostr } from '@nostrify/react';
 import { getArtworksByFilter, getArtworkById, type ArtworkData, type ArtworkFilter } from '@/lib/artTypes';
 import { useCurrentUser } from './useCurrentUser';
 import { useToast } from './useToast';
+import { isAdminUser } from '@/lib/adminUtils';
 import { nip19 } from 'nostr-tools';
 
 // ONLY show artworks from the BitPopArt admin
@@ -424,6 +425,11 @@ export function useCreateArtwork() {
         throw new Error('User must be logged in to create artwork');
       }
 
+      // Only the BitPopArt admin can upload artwork to the gallery
+      if (!isAdminUser(user.pubkey)) {
+        throw new Error('Only the site admin can upload artwork to the gallery');
+      }
+
       // Create artwork content
       const content = {
         title: artworkData.title,
@@ -513,6 +519,11 @@ export function useDeleteArtwork() {
     mutationFn: async ({ artworkId, artistPubkey }: { artworkId: string; artistPubkey: string }) => {
       if (!user) {
         throw new Error('User must be logged in to delete artwork');
+      }
+
+      // Only the BitPopArt admin can delete artwork from the gallery
+      if (!isAdminUser(user.pubkey)) {
+        throw new Error('Only the site admin can delete artwork from the gallery');
       }
 
       // Try to determine the kind from the existing artwork
