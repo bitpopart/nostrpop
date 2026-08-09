@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AlertTriangle, ImageIcon, Loader2, Upload } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -12,9 +12,10 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useCreateArtwork } from '@/hooks/useArtworks';
+import { useCreateArtwork, useUpdateArtwork } from '@/hooks/useArtworks';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useUploadFile } from '@/hooks/useUploadFile';
+import type { ArtworkData } from '@/lib/artTypes';
 
 /** True when a NIP-07 browser extension signer is injected on the page. */
 function hasBrowserExtension(): boolean {
@@ -29,6 +30,8 @@ function extensionErrorMessage(): string {
 interface GalleryUploadDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** When set, the dialog edits this artwork instead of creating a new one. */
+  editArtwork?: ArtworkData | null;
 }
 
 /** Largest image dimension after optimization (plenty for a 3D wall frame). */
@@ -74,18 +77,31 @@ async function optimizeImage(file: File): Promise<File> {
  * auto-populates from these Nostr artworks, so once published the new piece
  * appears on the wall for every visitor.
  */
-export function GalleryUploadDialog({ open, onOpenChange }: GalleryUploadDialogProps) {
+export function GalleryUploadDialog({ open, onOpenChange, editArtwork }: GalleryUploadDialogProps) {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [title, setTitle] = useState('');
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const isEdit = !!editArtwork;
+  const existingImage = editArtwork?.images?.[0] ?? null;
+
   const { mutateAsync: uploadFile, isPending: isUploading } = useUploadFile();
-  const { mutateAsync: createArtwork, isPending: isPublishing } = useCreateArtwork();
+  const { mutateAsync: createArtwork, isPending: isCreating } = useCreateArtwork();
+  const { mutateAsync: updateArtwork, isPending: isUpdating } = useUpdateArtwork();
   const { user } = useCurrentUser();
 
-  const busy = isUploading || isPublishing;
+  const busy = isUploading || isCreating || isUpdating;
+
+  // Prefill the form each time the dialog opens.
+  useEffect(() => {
+    if (!open) return;
+    setTitle(editArtwork?.title ?? '');
+    setFile(null);
+    setPreview(null);
+    setError(null);
+  }, [open, editArtwork]);
 
   // If the logged-in session relies on a browser extension that is not present,
   // signing will fail. Detect this up-front and tell the user exactly how to fix it.
@@ -131,7 +147,8 @@ export function GalleryUploadDialog({ open, onOpenChange }: GalleryUploadDialogP
       setError(extensionErrorMessage());
       return;
     }
-    if (!file) {
+    // Adding requires an image. Editing can keep the existing image.
+    if (!file && !(isEdit && existingImage)) {
       setError('Choose an image first.');
       return;
     }
@@ -142,18 +159,28 @@ export function GalleryUploadDialog({ open, onOpenChange }: GalleryUploadDialogP
     }
     setError(null);
     try {
-      const optimized = await optimizeImage(file);
-      const tags = await uploadFile(optimized);
-      const url = tags?.[0]?.[1];
-      if (!url) {
-        throw new Error('Image upload failed — no URL returned.');
+      // Upload a new image if one was chosen; otherwise reuse the current one.
+      let imageUrl = existingImage ?? '';
+      if (file) {
+        const optimized = await optimizeImage(file);
+        const tags = await uploadFile(optimized);
+        const url = tags?.[0]?.[1];
+        if (!url) {
+          throw new Error('Image upload failed — no URL returned.');
+        }
+        imageUrl = url;
       }
-      await createArtwork({
-        title: trimmedTitle,
-        description: '',
-        images: [url],
-        saleType: 'not_for_sale',
-      });
+
+      if (isEdit && editArtwork) {
+        await updateArtwork({ existing: editArtwork, title: trimmedTitle, imageUrl });
+      } else {
+        await createArtwork({
+          title: trimmedTitle,
+          description: '',
+          images: [imageUrl],
+          saleType: 'not_for_sale',
+        });
+      }
       reset();
       onOpenChange(false);
     } catch (e) {
@@ -170,11 +197,12 @@ export function GalleryUploadDialog({ open, onOpenChange }: GalleryUploadDialogP
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Upload className="h-5 w-5 text-orange-500" />
-            Add Art to POP WORLD
+            {isEdit ? 'Edit Artwork' : 'Add Art to POP WORLD'}
           </DialogTitle>
           <DialogDescription>
-            Publishes a new artwork to Nostr as the site admin. It hangs in the
-            virtual gallery for every visitor to see.
+            {isEdit
+              ? 'Replace the image or title, then save. The artwork updates in place for every visitor.'
+              : 'Publishes a new artwork to Nostr as the site admin. It hangs in the virtual gallery for every visitor to see.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -190,7 +218,7 @@ export function GalleryUploadDialog({ open, onOpenChange }: GalleryUploadDialogP
           {/* Image picker */}
           <div>
             <Label htmlFor="gallery-upload-file" className="mb-2 block">
-              Artwork image
+              {isEdit ? 'Artwork image (choose a new one to replace it)' : 'Artwork image'}
             </Label>
             <input
               id="gallery-upload-file"
@@ -200,7 +228,7 @@ export function GalleryUploadDialog({ open, onOpenChange }: GalleryUploadDialogP
               className="hidden"
               onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
             />
-            {preview ? (
+            {(preview || existingImage) ? (
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
@@ -208,12 +236,12 @@ export function GalleryUploadDialog({ open, onOpenChange }: GalleryUploadDialogP
                 title="Change image"
               >
                 <img
-                  src={preview}
+                  src={preview || existingImage || ''}
                   alt="Preview"
                   className="max-h-56 w-full object-contain bg-gray-50 dark:bg-gray-900"
                 />
                 <span className="absolute inset-0 hidden items-center justify-center bg-black/40 text-sm font-semibold text-white group-hover:flex">
-                  Change image
+                  {file ? 'Change image' : 'Replace image'}
                 </span>
               </button>
             ) : (
@@ -257,18 +285,18 @@ export function GalleryUploadDialog({ open, onOpenChange }: GalleryUploadDialogP
           </Button>
           <Button
             onClick={() => void handleSubmit()}
-            disabled={busy || signerUnavailable || !file || !title.trim()}
+            disabled={busy || signerUnavailable || (!file && !(isEdit && existingImage)) || !title.trim()}
             className="bg-gradient-to-r from-orange-500 to-pink-500 text-white hover:from-orange-600 hover:to-pink-600"
           >
             {busy ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                {isUploading ? 'Uploading…' : 'Publishing…'}
+                {isUploading ? 'Uploading…' : 'Saving…'}
               </>
             ) : (
               <>
                 <Upload className="h-4 w-4" />
-                Publish to Gallery
+                {isEdit ? 'Save Changes' : 'Publish to Gallery'}
               </>
             )}
           </Button>

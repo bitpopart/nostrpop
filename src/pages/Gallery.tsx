@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useSeoMeta } from '@unhead/react';
-import { Box, Plus } from 'lucide-react';
+import { Box, Upload } from 'lucide-react';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useArtworks } from '@/hooks/useArtworks';
 import { GalleryUploadDialog } from '@/components/art/GalleryUploadDialog';
@@ -30,9 +30,37 @@ export default function Gallery() {
   const [html, setHtml] = useState<string | null>(null);
   const [error, setError] = useState(false);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [editArtwork, setEditArtwork] = useState<ArtworkData | null>(null);
   const isAdmin = useIsAdmin();
   const { data: artworks } = useArtworks('all');
   const galleryData = useMemo(() => buildGalleryData(artworks), [artworks]);
+
+  // Keep the latest artworks in a ref so the iframe message handler never goes stale.
+  const artworksRef = useRef(artworks);
+  useEffect(() => {
+    artworksRef.current = artworks;
+  }, [artworks]);
+
+  // When the admin clicks an artwork inside the 3D gallery, the iframe posts a
+  // message with the slot index. Open the upload popup in edit mode for it
+  // (or in add mode if that frame is empty).
+  useEffect(() => {
+    if (!isAdmin) return;
+    const onMessage = (e: MessageEvent) => {
+      const d = e.data as { type?: string; slot?: number } | null;
+      if (!d || d.type !== 'bitpop-gallery-art' || typeof d.slot !== 'number') return;
+      const art = artworksRef.current?.[d.slot] ?? null;
+      setEditArtwork(art);
+      setUploadOpen(true);
+    };
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, [isAdmin]);
+
+  const closeUpload = (open: boolean) => {
+    setUploadOpen(open);
+    if (!open) setEditArtwork(null);
+  };
 
   useSeoMeta({
     title: 'POP WORLD Virtual Gallery -- BitPopArt',
@@ -59,23 +87,16 @@ export default function Gallery() {
       /<script type="application\/json" id="galleryData">[\s\S]*?<\/script>/,
       '<script type="application/json" id="galleryData">' + dataJson + '<\/script>'
     );
-    if (isAdmin) {
-      // Admin: unlock the button (remove the .adminLocked class that hides it
-      // with !important) and make it visible/clickable so only the admin can upload.
-      result = result.replace(
-        '</body>',
-        '<script>(function(){var b=document.getElementById("adminBtn");if(b){b.classList.remove("adminLocked");b.style.display="inline-block";b.style.visibility="visible";b.style.pointerEvents="auto";b.style.position="static";b.style.left="auto";}})();<\/script></body>'
-      );
-    } else {
-      // Visitors: keep the ADMIN button locked, hide the admin panel and disable
-      // the upload inputs so nothing admin-related is reachable or visible.
-      result = result.replace(
-        '</body>',
-        '<script>(function(){var b=document.getElementById("adminBtn");if(b){b.classList.add("adminLocked");b.style.display="none";}var p=document.getElementById("admin");if(p){p.style.display="none";p.style.pointerEvents="none";}var f=document.getElementById("fileIn");if(f){f.disabled=true;}var j=document.getElementById("jsonIn");if(j){j.disabled=true;}})();<\/script></body>'
-      );
-    }
+    // The built-in iframe ADMIN button/panel is removed for EVERYONE (admin
+    // included). Artwork is added/edited through the React upload popup instead.
+    // Keep the ADMIN button locked, the panel hidden and the inputs disabled so
+    // no admin UI is reachable or visible inside the 3D gallery.
+    result = result.replace(
+      '</body>',
+      '<script>(function(){var b=document.getElementById("adminBtn");if(b){b.classList.add("adminLocked");b.style.display="none";}var p=document.getElementById("admin");if(p){p.style.display="none";p.style.pointerEvents="none";}var f=document.getElementById("fileIn");if(f){f.disabled=true;}var j=document.getElementById("jsonIn");if(j){j.disabled=true;}})();<\/script></body>'
+    );
     return result;
-  }, [html, galleryData, isAdmin]);
+  }, [html, galleryData]);
 
   if (!galleryHtml && !error) {
     return (
@@ -114,8 +135,8 @@ export default function Gallery() {
       {isAdmin && (
         <>
           <button
-            onClick={() => setUploadOpen(true)}
-            title="Publish a new artwork to the gallery (admin only)"
+            onClick={() => { setEditArtwork(null); setUploadOpen(true); }}
+            title="Upload a new artwork to the gallery (admin only)"
             className="admin-addart-btn"
             style={{
               position:'absolute',top:12,left:12,zIndex:20,
@@ -128,11 +149,11 @@ export default function Gallery() {
               transition:'transform .15s ease, box-shadow .15s ease',
             }}
           >
-            <Plus style={{width:16,height:16}} strokeWidth={3} />
-            ADD ART
+            <Upload style={{width:16,height:16}} strokeWidth={3} />
+            UPLOAD
           </button>
           <style>{'.admin-addart-btn:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(236,72,153,.5)!important}.admin-addart-btn:active{transform:translateY(0)}'}</style>
-          <GalleryUploadDialog open={uploadOpen} onOpenChange={setUploadOpen} />
+          <GalleryUploadDialog open={uploadOpen} onOpenChange={closeUpload} editArtwork={editArtwork} />
         </>
       )}
     </div>

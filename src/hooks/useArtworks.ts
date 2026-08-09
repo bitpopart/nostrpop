@@ -509,6 +509,108 @@ export function useCreateArtwork() {
   });
 }
 
+export function useUpdateArtwork() {
+  const { nostr } = useNostr();
+  const { user } = useCurrentUser();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ existing, title, imageUrl }: {
+      existing: ArtworkData;
+      title: string;
+      imageUrl: string;
+    }) => {
+      if (!user) {
+        throw new Error('User must be logged in to edit artwork');
+      }
+
+      // Only the BitPopArt admin can edit artwork in the gallery
+      if (!isAdminUser(user.pubkey)) {
+        throw new Error('Only the site admin can edit artwork in the gallery');
+      }
+
+      // Republish with the SAME d-tag so the addressable event is replaced
+      // in place, and keep the original created_at so the gallery order is stable.
+      const content = {
+        title,
+        description: existing.description || '',
+        images: [imageUrl],
+        medium: existing.medium,
+        dimensions: existing.dimensions,
+        year: existing.year,
+        tags: existing.tags,
+        edition: existing.edition,
+        certificate_url: existing.certificate_url,
+        shipping: existing.shipping ? {
+          local_countries: existing.shipping.local_countries,
+          local_cost: existing.shipping.local_cost,
+          international_cost: existing.shipping.international_cost
+        } : undefined,
+        ...(existing.sale_type === 'fixed' && {
+          price: existing.price,
+          currency: existing.currency
+        }),
+        ...(existing.sale_type === 'auction' && {
+          starting_bid: existing.starting_bid,
+          current_bid: existing.current_bid,
+          currency: existing.currency,
+          auction_start: existing.auction_start,
+          auction_end: existing.auction_end
+        })
+      };
+
+      const tags: string[][] = [
+        ['d', existing.id],
+        ['title', title],
+        ['t', 'artwork'],
+        ['t', 'art'],
+        ...(existing.sale_type !== 'not_for_sale' ? [['sale', existing.sale_type]] : []),
+        ...(existing.featured ? [['featured', 'true']] : []),
+        ...(existing.print_available ? [['print_available', 'true']] : []),
+        ...(existing.order !== undefined ? [['order', String(existing.order)]] : []),
+        ...(existing.tags?.map(tag => ['t', tag.toLowerCase()]) || [])
+      ];
+
+      if (existing.price && existing.currency) {
+        tags.push(['price', existing.price.toString()]);
+        tags.push(['currency', existing.currency]);
+      }
+
+      const createdAt = existing.event?.created_at ?? Math.floor(Date.now() / 1000);
+
+      const artworkEvent = {
+        kind: existing.event?.kind === 30023 ? 30023 : 39239,
+        content: JSON.stringify(content),
+        tags,
+        created_at: createdAt,
+      };
+
+      const signedEvent = await user.signer.signEvent(artworkEvent);
+      await nostr.event(signedEvent, { signal: AbortSignal.timeout(5000) });
+
+      return { artwork: { title }, event: signedEvent };
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Artwork Updated",
+        description: `"${data.artwork.title}" has been updated in the gallery.`,
+      });
+
+      // Invalidate and refetch artworks
+      queryClient.invalidateQueries({ queryKey: ['artworks'] });
+    },
+    onError: (error) => {
+      console.error('Failed to update artwork:', error);
+      toast({
+        title: "Update Failed",
+        description: "Failed to update artwork. Please try again.",
+        variant: "destructive"
+      });
+    },
+  });
+}
+
 export function useDeleteArtwork() {
   const { nostr } = useNostr();
   const { user } = useCurrentUser();
