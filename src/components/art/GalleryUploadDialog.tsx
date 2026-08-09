@@ -41,7 +41,7 @@ const MAX_DIMENSION = 1600;
  * Downscale/recompress large images before uploading so the virtual gallery
  * (and the Blossom server) stay fast. GIFs and SVGs pass through untouched.
  */
-async function optimizeImage(file: File): Promise<File> {
+export async function optimizeImage(file: File): Promise<File> {
   if (file.type === 'image/gif' || file.type === 'image/svg+xml') {
     return file;
   }

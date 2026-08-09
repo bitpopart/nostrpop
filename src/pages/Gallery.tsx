@@ -1,18 +1,20 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useSeoMeta } from '@unhead/react';
-import { Box, Upload } from 'lucide-react';
+import { Box, Paintbrush, Upload } from 'lucide-react';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useArtworks } from '@/hooks/useArtworks';
 import { GalleryUploadDialog } from '@/components/art/GalleryUploadDialog';
+import { GalleryWallsDialog } from '@/components/art/GalleryWallsDialog';
+import { DEFAULT_WALLS, useGalleryWalls, type GalleryWalls } from '@/hooks/useGalleryWalls';
 import type { ArtworkData } from '@/lib/artTypes';
 
 const BASE = import.meta.env.BASE_URL ?? '/';
 const base = BASE.endsWith('/') ? BASE.slice(0, -1) : BASE;
 const GALLERY_SRC = base + '/gallery-src/index.html';
 
-function buildGalleryData(artworks: ArtworkData[] | undefined): Record<string, unknown> {
+function buildGalleryData(artworks: ArtworkData[] | undefined, walls?: GalleryWalls): Record<string, unknown> {
   const data: Record<string, unknown> = {
-    _walls: { n: '#f97316', s: '#ffffff', w: '#fff7ed', e: '#fff7ed' },
+    _walls: { ...DEFAULT_WALLS, ...(walls ?? {}) },
     _props: { s: [{ t: 'POP!', c: '#f97316' }], cube: { c: '#f7931a' } },
   };
   if (!artworks || artworks.length === 0) return data;
@@ -30,10 +32,12 @@ export default function Gallery() {
   const [html, setHtml] = useState<string | null>(null);
   const [error, setError] = useState(false);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [wallsOpen, setWallsOpen] = useState(false);
   const [editArtwork, setEditArtwork] = useState<ArtworkData | null>(null);
   const isAdmin = useIsAdmin();
   const { data: artworks } = useArtworks('all');
-  const galleryData = useMemo(() => buildGalleryData(artworks), [artworks]);
+  const { data: walls } = useGalleryWalls();
+  const galleryData = useMemo(() => buildGalleryData(artworks, walls), [artworks, walls]);
 
   // Keep the latest artworks in a ref so the iframe message handler never goes stale.
   const artworksRef = useRef(artworks);
@@ -141,26 +145,45 @@ export default function Gallery() {
       <iframe srcDoc={galleryHtml!} title="POP WORLD Virtual Gallery" style={{flex:1,width:'100%',height:'100%',border:'none',display:'block',minHeight:0}} sandbox="allow-scripts allow-same-origin allow-pointer-lock allow-fullscreen" />
       {isAdmin && (
         <>
-          <button
-            onClick={() => { setEditArtwork(null); setUploadOpen(true); }}
-            title="Upload a new artwork to the gallery (admin only)"
-            className="admin-addart-btn"
-            style={{
-              position:'absolute',top:12,left:12,zIndex:20,
-              display:'inline-flex',alignItems:'center',gap:7,
-              padding:'9px 18px',border:'none',borderRadius:9999,cursor:'pointer',
-              background:'linear-gradient(135deg,#f97316,#ec4899)',
-              color:'#fff',fontFamily:"'Righteous',Impact,sans-serif",
-              fontSize:14,letterSpacing:2,fontWeight:400,
-              boxShadow:'0 4px 14px rgba(249,115,22,.45)',
-              transition:'transform .15s ease, box-shadow .15s ease',
-            }}
-          >
-            <Upload style={{width:16,height:16}} strokeWidth={3} />
-            UPLOAD
-          </button>
-          <style>{'.admin-addart-btn:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(236,72,153,.5)!important}.admin-addart-btn:active{transform:translateY(0)}'}</style>
+          <div style={{position:'absolute',top:12,left:12,zIndex:20,display:'flex',gap:8}}>
+            <button
+              onClick={() => { setEditArtwork(null); setUploadOpen(true); }}
+              title="Upload a new artwork to the gallery (admin only)"
+              className="admin-addart-btn"
+              style={{
+                display:'inline-flex',alignItems:'center',gap:7,
+                padding:'9px 18px',border:'none',borderRadius:9999,cursor:'pointer',
+                background:'linear-gradient(135deg,#f97316,#ec4899)',
+                color:'#fff',fontFamily:"'Righteous',Impact,sans-serif",
+                fontSize:14,letterSpacing:2,fontWeight:400,
+                boxShadow:'0 4px 14px rgba(249,115,22,.45)',
+                transition:'transform .15s ease, box-shadow .15s ease',
+              }}
+            >
+              <Upload style={{width:16,height:16}} strokeWidth={3} />
+              UPLOAD
+            </button>
+            <button
+              onClick={() => setWallsOpen(true)}
+              title="Change wall colors or upload wall images (admin only)"
+              className="admin-walls-btn"
+              style={{
+                display:'inline-flex',alignItems:'center',gap:7,
+                padding:'9px 18px',border:'none',borderRadius:9999,cursor:'pointer',
+                background:'linear-gradient(135deg,#8b5cf6,#ec4899)',
+                color:'#fff',fontFamily:"'Righteous',Impact,sans-serif",
+                fontSize:14,letterSpacing:2,fontWeight:400,
+                boxShadow:'0 4px 14px rgba(139,92,246,.45)',
+                transition:'transform .15s ease, box-shadow .15s ease',
+              }}
+            >
+              <Paintbrush style={{width:16,height:16}} strokeWidth={3} />
+              WALLS
+            </button>
+          </div>
+          <style>{'.admin-addart-btn:hover,.admin-walls-btn:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(236,72,153,.5)!important}.admin-addart-btn:active,.admin-walls-btn:active{transform:translateY(0)}'}</style>
           <GalleryUploadDialog open={uploadOpen} onOpenChange={closeUpload} editArtwork={editArtwork} />
+          <GalleryWallsDialog open={wallsOpen} onOpenChange={setWallsOpen} />
         </>
       )}
     </div>
