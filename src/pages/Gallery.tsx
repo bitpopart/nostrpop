@@ -58,9 +58,18 @@ export default function Gallery() {
       '<script type="application/json" id="galleryData">' + dataJson + '<\/script>'
     );
     if (isAdmin) {
+      // Admin: unlock the button (remove the .adminLocked class that hides it
+      // with !important) and make it visible/clickable so only the admin can upload.
       result = result.replace(
         '</body>',
-        '<script>(function(){var b=document.getElementById("adminBtn");if(b){b.style.display="inline-block";b.style.visibility="visible";b.style.pointerEvents="auto";b.style.position="static";b.style.left="auto";}})();<\/script></body>'
+        '<script>(function(){var b=document.getElementById("adminBtn");if(b){b.classList.remove("adminLocked");b.style.display="inline-block";b.style.visibility="visible";b.style.pointerEvents="auto";b.style.position="static";b.style.left="auto";}})();<\/script></body>'
+      );
+    } else {
+      // Visitors: keep the ADMIN button locked, hide the admin panel and disable
+      // the upload inputs so nothing admin-related is reachable or visible.
+      result = result.replace(
+        '</body>',
+        '<script>(function(){var b=document.getElementById("adminBtn");if(b){b.classList.add("adminLocked");b.style.display="none";}var p=document.getElementById("admin");if(p){p.style.display="none";p.style.pointerEvents="none";}var f=document.getElementById("fileIn");if(f){f.disabled=true;}var j=document.getElementById("jsonIn");if(j){j.disabled=true;}})();<\/script></body>'
       );
     }
     return result;

@@ -63,6 +63,11 @@ html,body { width:100%; height:100%; overflow:hidden; overscroll-behavior:none;
 .card .big { margin-top:16px; font-size:15px; padding:13px 34px; border-radius:9999px; }
 
 #fileIn, #jsonIn { display:none; }
+/* ADMIN LOCK — hidden for everyone by default. Only the logged-in admin's
+   injected script removes the .adminLocked class to reveal the button.
+   !important guards block any stray reveal scripts from older builds. */
+#adminBtn.adminLocked { display:none !important; visibility:hidden !important;
+  pointer-events:none !important; position:absolute !important; left:-9999px !important; }
 #admin { position:fixed; inset:0; z-index:12; display:none; flex-direction:column;
   background:rgba(3,7,18,.62); padding:14px; }
 .apanel { background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAFElEQVR4nGP8/uMnAwwwMSAB3BwAklIC8H7uh+gAAAAASUVORK5CYII=); border:1px solid #e2e8f0;
@@ -129,7 +134,7 @@ html,body { width:100%; height:100%; overflow:hidden; overscroll-behavior:none;
   <div class="btns">
     <button class="pbtn" id="viewBtn">FULL VIEW</button>
     <button class="pbtn ghost" id="helpBtn">?</button>
-    <button class="pbtn cta" id="adminBtn" style="display:none;visibility:hidden;pointer-events:none;position:absolute;left:-9999px">ADMIN</button>
+    <button class="pbtn cta adminLocked" id="adminBtn" style="display:none;visibility:hidden;pointer-events:none;position:absolute;left:-9999px">ADMIN</button>
   </div>
 </div>
 
