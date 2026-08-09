@@ -95,6 +95,13 @@ export default function Gallery() {
       '</body>',
       '<script>(function(){var b=document.getElementById("adminBtn");if(b){b.classList.add("adminLocked");b.style.display="none";}var p=document.getElementById("admin");if(p){p.style.display="none";p.style.pointerEvents="none";}var f=document.getElementById("fileIn");if(f){f.disabled=true;}var j=document.getElementById("jsonIn");if(j){j.disabled=true;}})();<\/script></body>'
     );
+    // Clear stale localStorage overrides from the old admin panel BEFORE the
+    // gallery bundle runs, so the Nostr artworks (galleryData) are the single
+    // source of truth for the frames.
+    result = result.replace(
+      '<body>',
+      '<body><script>try{localStorage.removeItem("bitpop_world_gallery_v1")}catch(e){}<\/script>'
+    );
     return result;
   }, [html, galleryData]);
 
