@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useSeoMeta } from '@unhead/react';
-import { Box } from 'lucide-react';
+import { Box, Plus } from 'lucide-react';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useArtworks } from '@/hooks/useArtworks';
+import { GalleryUploadDialog } from '@/components/art/GalleryUploadDialog';
 import type { ArtworkData } from '@/lib/artTypes';
 
 const BASE = import.meta.env.BASE_URL ?? '/';
@@ -28,6 +29,7 @@ function buildGalleryData(artworks: ArtworkData[] | undefined): Record<string, u
 export default function Gallery() {
   const [html, setHtml] = useState<string | null>(null);
   const [error, setError] = useState(false);
+  const [uploadOpen, setUploadOpen] = useState(false);
   const isAdmin = useIsAdmin();
   const { data: artworks } = useArtworks('all');
   const galleryData = useMemo(() => buildGalleryData(artworks), [artworks]);
@@ -106,5 +108,33 @@ export default function Gallery() {
     );
   }
 
-  return <iframe srcDoc={galleryHtml!} title="POP WORLD Virtual Gallery" style={{flex:1,width:'100%',height:'100%',border:'none',display:'block',minHeight:0}} sandbox="allow-scripts allow-same-origin allow-pointer-lock allow-fullscreen" />;
+  return (
+    <div style={{flex:1,position:'relative',minHeight:0,display:'flex'}}>
+      <iframe srcDoc={galleryHtml!} title="POP WORLD Virtual Gallery" style={{flex:1,width:'100%',height:'100%',border:'none',display:'block',minHeight:0}} sandbox="allow-scripts allow-same-origin allow-pointer-lock allow-fullscreen" />
+      {isAdmin && (
+        <>
+          <button
+            onClick={() => setUploadOpen(true)}
+            title="Publish a new artwork to the gallery (admin only)"
+            className="admin-addart-btn"
+            style={{
+              position:'absolute',top:12,left:12,zIndex:20,
+              display:'inline-flex',alignItems:'center',gap:7,
+              padding:'9px 18px',border:'none',borderRadius:9999,cursor:'pointer',
+              background:'linear-gradient(135deg,#f97316,#ec4899)',
+              color:'#fff',fontFamily:"'Righteous',Impact,sans-serif",
+              fontSize:14,letterSpacing:2,fontWeight:400,
+              boxShadow:'0 4px 14px rgba(249,115,22,.45)',
+              transition:'transform .15s ease, box-shadow .15s ease',
+            }}
+          >
+            <Plus style={{width:16,height:16}} strokeWidth={3} />
+            ADD ART
+          </button>
+          <style>{'.admin-addart-btn:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(236,72,153,.5)!important}.admin-addart-btn:active{transform:translateY(0)}'}</style>
+          <GalleryUploadDialog open={uploadOpen} onOpenChange={setUploadOpen} />
+        </>
+      )}
+    </div>
+  );
 }
