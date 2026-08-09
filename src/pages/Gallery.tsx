@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSeoMeta } from '@unhead/react';
 import { Box } from 'lucide-react';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 
 /**
  * Gallery — POP WORLD Virtual Gallery
@@ -9,8 +10,9 @@ import { Box } from 'lucide-react';
  * stays embedded under the site navigation bar. Using srcdoc avoids any
  * GitHub Pages MIME-type / SPA-redirect issues with the static file URL.
  *
- * The gallery is a public viewing experience — no admin UI is exposed.
- * Artwork is uploaded by the admin through the main site (Art page).
+ * The ADMIN button is hidden by default and only revealed when the
+ * logged-in user is the BitPopArt admin, allowing curation of wall frames.
+ * Public visitors see no admin UI and cannot upload artwork.
  */
 
 const BASE = import.meta.env.BASE_URL ?? '/';
@@ -23,6 +25,7 @@ const GALLERY_SRC = `${base}/gallery-src/index.html`;
 export default function Gallery() {
   const [html, setHtml] = useState<string | null>(null);
   const [error, setError] = useState(false);
+  const isAdmin = useIsAdmin();
 
   useSeoMeta({
     title: 'POP WORLD Virtual Gallery — BitPopArt',
@@ -44,7 +47,31 @@ export default function Gallery() {
       .catch(() => setError(true));
   }, []);
 
-  const galleryHtml = html;
+  /**
+   * When the admin is logged in, reveal the ADMIN button inside the gallery
+   * so they can curate wall frames. The button is hidden by multiple CSS
+   * properties by default, so we clear them all.
+   */
+  const galleryHtml = html
+    ? isAdmin
+      ? html.replace(
+          '</body>',
+          `<script>
+(function(){
+  var btn = document.getElementById('adminBtn');
+  if(btn){
+    btn.style.display = 'inline-block';
+    btn.style.visibility = 'visible';
+    btn.style.pointerEvents = 'auto';
+    btn.style.position = 'static';
+    btn.style.left = 'auto';
+  }
+})();
+</script>
+</body>`
+        )
+      : html
+    : null;
 
   // Loading splash
   if (!galleryHtml && !error) {
