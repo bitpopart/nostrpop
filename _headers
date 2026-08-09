@@ -1,0 +1,35 @@
+# index.html must never be cached — ensures users always get the latest JS bundle
+/index.html
+  Cache-Control: no-cache, no-store, must-revalidate
+  Pragma: no-cache
+  Expires: 0
+  Content-Type: text/html; charset=UTF-8
+  Content-Security-Policy: default-src 'none'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://esm.sh https://www.googletagmanager.com https://*.google-analytics.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://cdn.skypack.dev; style-src 'self' 'unsafe-inline' https://esm.sh https://fonts.googleapis.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com; font-src 'self' data: https://esm.sh https://fonts.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; base-uri 'self'; manifest-src 'self'; connect-src 'self' blob: https: wss:; img-src 'self' data: blob: https:; media-src 'self' blob: https:; frame-src https: blob:; object-src 'none'; worker-src 'self' blob:
+
+# SPA fallback also must not be cached
+/
+  Cache-Control: no-cache, no-store, must-revalidate
+  Pragma: no-cache
+  Expires: 0
+  Content-Security-Policy: default-src 'none'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://esm.sh https://www.googletagmanager.com https://*.google-analytics.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://cdn.skypack.dev; style-src 'self' 'unsafe-inline' https://esm.sh https://fonts.googleapis.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com; font-src 'self' data: https://esm.sh https://fonts.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; base-uri 'self'; manifest-src 'self'; connect-src 'self' blob: https: wss:; img-src 'self' data: blob: https:; media-src 'self' blob: https:; frame-src https: blob:; object-src 'none'; worker-src 'self' blob:
+
+# Virtual Gallery source — permissive CSP for Three.js self-contained app
+# Gallery static file — served at /gallery-src/, fetched by the React SPA Gallery route
+/gallery-src/index.html
+  Cache-Control: no-cache, no-store, must-revalidate
+  Content-Type: text/html; charset=UTF-8
+  Content-Security-Policy: default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https:; img-src 'self' data: blob: https:; connect-src 'self' blob: https: wss:; worker-src 'self' blob:; frame-ancestors 'self'
+
+# Root-level JS bundles (Shakespeare build system outputs JS to root, not /assets/)
+/*.js
+  Content-Type: application/javascript; charset=UTF-8
+  Cache-Control: public, max-age=31536000, immutable
+
+# Root-level CSS
+/*.css
+  Content-Type: text/css; charset=UTF-8
+  Cache-Control: public, max-age=31536000, immutable
+
+# Versioned assets (JS/CSS with content hash in filename) can be cached forever
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable

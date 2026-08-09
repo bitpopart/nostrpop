@@ -1,0 +1,164 @@
+======================================================
+  BitPopArt — Complete Color Reference
+  bitpopart.com · Bitcoin Pop Art by Johannes Oppewal
+  Updated: 2026-07-16
+======================================================
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  BRAND ORANGE SCALE  (Primary Brand Color)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+orange-50   #fff7ed   rgb(255, 247, 237)  — Light tint background
+orange-100  #ffedd5   rgb(255, 237, 213)  — Very light tint
+orange-200  #fed7aa   rgb(254, 215, 170)  — Border / divider
+orange-300  #fdba74   rgb(253, 186, 116)  — Soft border (cards, badges)
+orange-400  #fb923c   rgb(251, 146, 60)   — Mid-weight accent
+orange-500  #f97316   rgb(249, 115, 22)   — ★ PRIMARY BRAND COLOR ★
+orange-600  #ea580c   rgb(234, 88, 12)    — Hover / pressed state
+orange-700  #c2410c   rgb(194, 65, 12)    — Dark accent / deep press
+orange-800  #9a3412   rgb(154, 52, 18)    — Very dark orange
+orange-900  #7c2d12   rgb(124, 45, 18)    — Dark mode bg layer
+orange-950  #431407   rgb(67, 20, 7)      — Darkest orange / canvas bg
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  THEME / CSS VARIABLE COLORS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+--accent-color          #e99840   Theme accent (slightly warmer than orange-500)
+--primary-gradient-from #e99840   CSS gradient start
+--primary-gradient-to   #e99840   CSS gradient end (solid in default theme)
+--link-color            #e99840   Hyperlink color
+--link-hover-color      #c87a30   Hyperlink hover
+--hover-color           #e99840   General hover state
+--hover-color-dark      #c87a30   Dark hover state
+--icon-color            #e99840   Icon tint
+--page-background       #f7f8f9   Base page bg (light mode)
+--body-text-color       #1a1a1a   Body copy
+--heading-text-color    #1a1a1a   All headings
+--button-text-color     #ffffff   Text on gradient/solid buttons
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  BITCOIN BRAND COLORS  (from original logo SVG)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Bitcoin Official Orange   #f7931a   — Used in bitpopart-logo.svg (cls-6)
+Bitcoin Pop Red           #ff042c   — Logo accent, ART button cls-6
+Bitcoin Black             #000000   — Logo strokes
+Bitcoin White             #ffffff   — Logo fill (cls-4, cls-7)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  POP-ART ACCENT COLORS  (button tiles / UI layers)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Pop Teal        #4cc1bb   — Art button tile background
+Pop Yellow      #fce000   — Art button tile + Bitcoin badge
+Block Orange    #fcaa59   — Block text logo fill variant (cls-4)
+Pop Bright Yel  #ecff1a   — Art tile accent (cls-5)
+Block Sand      #ffc17d   — BTC block text color (cls-9/10)
+Block Deep Org  #fc942d   — BTC block accent (cls-11)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  KEY GRADIENTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Bitcoin Orange (CTA buttons, share, order):
+  from #f97316 to #ea580c  (orange-500 → orange-600)
+  CSS: bg-gradient-to-r from-orange-500 to-orange-600
+
+Nostr Publish / Share (orange → pink):
+  from #f97316 to #ec4899  (orange-500 → pink-500)
+  CSS: bg-gradient-to-r from-orange-500 to-pink-500
+  Hover: from-orange-600 to-pink-600
+
+Hero Text Gradient (orange → yellow → orange):
+  from #f97316 via #facc15 to #f97316  (orange → yellow → orange)
+  CSS: bg-gradient-to-r from-orange-500 via-yellow-400 to-orange-500
+  Apply: bg-clip-text text-transparent
+
+Page Background (light):
+  from orange-950/10 via background to orange-950/5
+  CSS: bg-gradient-to-b from-orange-950/10 via-background to-orange-950/5
+
+Block Art Canvas (dark):
+  from #431407 to #7c2d12  (orange-950 → orange-900)
+  CSS: bg-gradient-to-br from-orange-950 to-orange-900
+
+Fear & Greed accent divider:
+  from transparent via orange-300 to transparent
+  CSS: bg-gradient-to-r from-transparent via-orange-300 to-transparent
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  TEXT LOGO COLORS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+bitpopart-text-logo.svg fills:
+  cls-1, cls-2  #231f20  (near-black; "BitPopArt" wordmark)
+  cls-3         #f7931a  (orange; "B" bitcoin symbol + "IT")
+  cls-4         #ff1b27  (red; "ART" letters)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  NEUTRALS / SYSTEM COLORS  (Tailwind / shadcn)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Background (light)   #ffffff   --background (cards, nav)
+Background (page)    #f7f8f9   --page-background
+Foreground           #0f172a   --foreground (approx. dark blue-gray)
+Muted bg             #f1f5f9   --muted
+Muted text           #64748b   --muted-foreground
+Border               #e2e8f0   --border
+Input                #e2e8f0   --input
+
+Background (dark)    #030712   --background dark
+Foreground (dark)    #f8fafc   --foreground dark
+Muted bg (dark)      #1e293b   --muted dark
+Border (dark)        #1e293b   --border dark
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  STATUS COLORS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Success (image ready)    #16a34a  green-600
+Live / pulse indicator   #22c55e  green-500
+Error / destructive      #ef4444  red-500
+Warning                  #f59e0b  amber-500
+Zap (Bitcoin lightning)  #facc15  yellow-400
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  TYPOGRAPHY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Primary font:    Inter Variable (@fontsource-variable/inter)
+Fallback:        system-ui, sans-serif
+Monospace:       'Courier New', 'JetBrains Mono', monospace
+
+Font weights used:
+  400  Regular — body text
+  500  Medium  — labels, metadata
+  600  Semibold — card titles, subheadings
+  700  Bold    — badges, button labels
+  800  Extrabold — section headings
+  900  Black   — hero display, statement text
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  BORDER RADIUS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+--radius:    0.5rem (8px)  — shadcn base
+  sm:        4px   (rounded-sm)
+  md:        6px   (rounded-md)
+  DEFAULT:   8px   (rounded-lg) ← used on most cards
+  xl:        12px  (rounded-xl) — image cards, art tiles
+  2xl:       16px  (rounded-2xl) — larger panels
+  full:      9999px (rounded-full) — pills, badges, avatars
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SHADOWS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Card hover (light):  shadow-lg shadow-orange-100
+Card hover (dark):   shadow-orange-900/20
+Badge:               shadow-md (small solid orange badge)
+
+======================================================
+  End of BitPopArt Color Reference
+======================================================

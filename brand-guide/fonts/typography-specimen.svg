@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 600" width="820" height="600">
+  <rect width="820" height="600" fill="#111111"/>
+
+  <text x="40" y="48" font-family="Inter, system-ui, sans-serif" font-size="22" font-weight="800" fill="white" letter-spacing="1">Typography — BitPopArt</text>
+  <text x="40" y="68" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#555">Primary typeface: Inter Variable · Fallback: system-ui, sans-serif</text>
+  <line x1="40" y1="82" x2="780" y2="82" stroke="#333" stroke-width="1"/>
+
+  <!-- Display / Hero -->
+  <text x="40" y="112" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="700" fill="#555" letter-spacing="2">DISPLAY / HERO</text>
+  <text x="40" y="155" font-family="Inter, system-ui, sans-serif" font-size="44" font-weight="900" fill="white">Every 10 minutes.</text>
+  <text x="40" y="168" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#555">font-size: 44px · font-weight: 900 · tracking: tight · color: white / foreground</text>
+
+  <line x1="40" y1="184" x2="780" y2="184" stroke="#222" stroke-width="1"/>
+
+  <!-- H1 Gradient -->
+  <text x="40" y="210" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="700" fill="#555" letter-spacing="2">H1 — GRADIENT TEXT</text>
+  <defs>
+    <linearGradient id="tg1" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#f97316"/>
+      <stop offset="50%" style="stop-color:#facc15"/>
+      <stop offset="100%" style="stop-color:#f97316"/>
+    </linearGradient>
+  </defs>
+  <text x="40" y="248" font-family="Inter, system-ui, sans-serif" font-size="32" font-weight="900" fill="url(#tg1)">A new piece of art. ₿</text>
+  <text x="40" y="262" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#555">font-size: 32px · font-weight: 900 · bg-gradient from-orange-500 via-yellow-400 to-orange-500 · bg-clip-text</text>
+
+  <line x1="40" y1="278" x2="780" y2="278" stroke="#222" stroke-width="1"/>
+
+  <!-- H2 -->
+  <text x="40" y="304" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="700" fill="#555" letter-spacing="2">H2 — SECTION HEADING</text>
+  <text x="40" y="336" font-family="Inter, system-ui, sans-serif" font-size="24" font-weight="800" fill="white">BTClock BitPopArt Edition</text>
+  <text x="40" y="350" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#555">font-size: 24px · font-weight: 800 · color: foreground (white/dark)</text>
+
+  <line x1="40" y1="366" x2="780" y2="366" stroke="#222" stroke-width="1"/>
+
+  <!-- Body -->
+  <text x="40" y="392" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="700" fill="#555" letter-spacing="2">BODY TEXT</text>
+  <text x="40" y="420" font-family="Inter, system-ui, sans-serif" font-size="15" fill="#d1d5db">Pop-art designs for every Bitcoin block. Share on Nostr. Zap the artist.</text>
+  <text x="40" y="436" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#555">font-size: 15px · color: #d1d5db (light foreground on dark) · line-height: relaxed</text>
+
+  <line x1="40" y1="452" x2="780" y2="452" stroke="#222" stroke-width="1"/>
+
+  <!-- Small / Mono -->
+  <text x="40" y="478" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="700" fill="#555" letter-spacing="2">MONOSPACE — BLOCK DATA</text>
+  <text x="40" y="506" font-family="'Courier New', 'JetBrains Mono', monospace" font-size="14" fill="#f97316">Block #857,482 · 0x0000000000000000000421a9…</text>
+  <text x="40" y="522" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#555">font-family: 'Courier New', monospace · font-size: 14px · color: orange-500</text>
+
+  <line x1="40" y1="538" x2="780" y2="538" stroke="#222" stroke-width="1"/>
+
+  <!-- Badge label -->
+  <text x="40" y="564" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="700" fill="#555" letter-spacing="2">MICRO / BADGE LABEL</text>
+  <text x="40" y="588" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="700" fill="#f97316" letter-spacing="1">Live · mempool.space  ·  #857482  ·  Special Edition  ·  2,847 txs</text>
+</svg>

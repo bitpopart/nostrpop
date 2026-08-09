@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 560" width="820" height="560">
+  <rect width="820" height="560" fill="#111111"/>
+
+  <!-- Title -->
+  <text x="40" y="44" font-family="Inter, system-ui, sans-serif" font-size="22" font-weight="800" fill="white" letter-spacing="1">BitPopArt — Color Palette</text>
+  <text x="40" y="64" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#666">bitpopart.com · Nostr Pop Art</text>
+
+  <!-- ROW 1: Core Bitcoin Orange scale -->
+  <text x="40" y="100" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="700" fill="#888" letter-spacing="2">BITCOIN ORANGE SCALE</text>
+
+  <!-- orange-50 -->
+  <rect x="40" y="112" width="88" height="60" rx="8" fill="#fff7ed"/>
+  <text x="84" y="188" font-family="'Courier New', monospace" font-size="10" fill="#aaa" text-anchor="middle">#fff7ed</text>
+  <text x="84" y="200" font-family="Inter, sans-serif" font-size="10" fill="#666" text-anchor="middle">orange-50</text>
+
+  <!-- orange-100 -->
+  <rect x="138" y="112" width="88" height="60" rx="8" fill="#ffedd5"/>
+  <text x="182" y="188" font-family="'Courier New', monospace" font-size="10" fill="#aaa" text-anchor="middle">#ffedd5</text>
+  <text x="182" y="200" font-family="Inter, sans-serif" font-size="10" fill="#666" text-anchor="middle">orange-100</text>
+
+  <!-- orange-200 -->
+  <rect x="236" y="112" width="88" height="60" rx="8" fill="#fed7aa"/>
+  <text x="280" y="188" font-family="'Courier New', monospace" font-size="10" fill="#aaa" text-anchor="middle">#fed7aa</text>
+  <text x="280" y="200" font-family="Inter, sans-serif" font-size="10" fill="#666" text-anchor="middle">orange-200</text>
+
+  <!-- orange-300 -->
+  <rect x="334" y="112" width="88" height="60" rx="8" fill="#fdba74"/>
+  <text x="378" y="188" font-family="'Courier New', monospace" font-size="10" fill="#aaa" text-anchor="middle">#fdba74</text>
+  <text x="378" y="200" font-family="Inter, sans-serif" font-size="10" fill="#666" text-anchor="middle">orange-300</text>
+
+  <!-- orange-400 -->
+  <rect x="432" y="112" width="88" height="60" rx="8" fill="#fb923c"/>
+  <text x="476" y="188" font-family="'Courier New', monospace" font-size="10" fill="#aaa" text-anchor="middle">#fb923c</text>
+  <text x="476" y="200" font-family="Inter, sans-serif" font-size="10" fill="#666" text-anchor="middle">orange-400</text>
+
+  <!-- orange-500 PRIMARY -->
+  <rect x="530" y="108" width="92" height="68" rx="8" fill="#f97316" stroke="white" stroke-width="2.5"/>
+  <text x="576" y="148" font-family="Inter, sans-serif" font-size="9" font-weight="700" fill="white" text-anchor="middle">PRIMARY</text>
+  <text x="576" y="188" font-family="'Courier New', monospace" font-size="10" fill="#f97316" text-anchor="middle">#f97316</text>
+  <text x="576" y="200" font-family="Inter, sans-serif" font-size="10" fill="#aaa" text-anchor="middle">orange-500 ★</text>
+
+  <!-- orange-600 -->
+  <rect x="632" y="112" width="88" height="60" rx="8" fill="#ea580c"/>
+  <text x="676" y="188" font-family="'Courier New', monospace" font-size="10" fill="#aaa" text-anchor="middle">#ea580c</text>
+  <text x="676" y="200" font-family="Inter, sans-serif" font-size="10" fill="#666" text-anchor="middle">orange-600</text>
+
+  <!-- orange-700 -->
+  <rect x="730" y="112" width="72" height="60" rx="8" fill="#c2410c"/>
+  <text x="766" y="188" font-family="'Courier New', monospace" font-size="10" fill="#aaa" text-anchor="middle">#c2410c</text>
+  <text x="766" y="200" font-family="Inter, sans-serif" font-size="10" fill="#666" text-anchor="middle">orange-700</text>
+
+  <!-- ROW 2: Theme accent + legacy -->
+  <text x="40" y="226" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="700" fill="#888" letter-spacing="2">THEME ACCENT + BITCOIN BRAND</text>
+
+  <!-- Theme orange #e99840 -->
+  <rect x="40" y="238" width="116" height="60" rx="8" fill="#e99840" stroke="white" stroke-width="2"/>
+  <text x="98" y="270" font-family="Inter, sans-serif" font-size="9" font-weight="700" fill="white" text-anchor="middle">THEME ACCENT</text>
+  <text x="98" y="312" font-family="'Courier New', monospace" font-size="11" fill="#e99840" text-anchor="middle">#e99840</text>
+  <text x="98" y="326" font-family="Inter, sans-serif" font-size="10" fill="#888" text-anchor="middle">--accent-color</text>
+
+  <!-- Bitcoin official #f7931a -->
+  <rect x="166" y="238" width="116" height="60" rx="8" fill="#f7931a" stroke="#ffb347" stroke-width="1.5"/>
+  <text x="224" y="270" font-family="Inter, sans-serif" font-size="9" font-weight="700" fill="white" text-anchor="middle">₿ BITCOIN OFFICIAL</text>
+  <text x="224" y="312" font-family="'Courier New', monospace" font-size="11" fill="#f7931a" text-anchor="middle">#f7931a</text>
+  <text x="224" y="326" font-family="Inter, sans-serif" font-size="10" fill="#888" text-anchor="middle">SVG Logo fill</text>
+
+  <!-- Bitcoin Red #ff042c -->
+  <rect x="292" y="238" width="116" height="60" rx="8" fill="#ff042c"/>
+  <text x="350" y="270" font-family="Inter, sans-serif" font-size="9" font-weight="700" fill="white" text-anchor="middle">POP RED</text>
+  <text x="350" y="312" font-family="'Courier New', monospace" font-size="11" fill="#ff042c" text-anchor="middle">#ff042c</text>
+  <text x="350" y="326" font-family="Inter, sans-serif" font-size="10" fill="#888" text-anchor="middle">logo cls-5 / cls-4</text>
+
+  <!-- Pop Teal #4cc1bb -->
+  <rect x="418" y="238" width="116" height="60" rx="8" fill="#4cc1bb"/>
+  <text x="476" y="270" font-family="Inter, sans-serif" font-size="9" font-weight="700" fill="white" text-anchor="middle">POP TEAL</text>
+  <text x="476" y="312" font-family="'Courier New', monospace" font-size="11" fill="#4cc1bb" text-anchor="middle">#4cc1bb</text>
+  <text x="476" y="326" font-family="Inter, sans-serif" font-size="10" fill="#888" text-anchor="middle">button Art tile</text>
+
+  <!-- Pop Yellow #fce000 -->
+  <rect x="544" y="238" width="116" height="60" rx="8" fill="#fce000"/>
+  <text x="602" y="270" font-family="Inter, sans-serif" font-size="9" font-weight="700" fill="#1a1a1a" text-anchor="middle">POP YELLOW</text>
+  <text x="602" y="312" font-family="'Courier New', monospace" font-size="11" fill="#fce000" text-anchor="middle">#fce000</text>
+  <text x="602" y="326" font-family="Inter, sans-serif" font-size="10" fill="#888" text-anchor="middle">Art button tile</text>
+
+  <!-- Pink #ec4899 -->
+  <rect x="670" y="238" width="116" height="60" rx="8" fill="#ec4899"/>
+  <text x="728" y="270" font-family="Inter, sans-serif" font-size="9" font-weight="700" fill="white" text-anchor="middle">NOSTR PINK</text>
+  <text x="728" y="312" font-family="'Courier New', monospace" font-size="11" fill="#ec4899" text-anchor="middle">#ec4899</text>
+  <text x="728" y="326" font-family="Inter, sans-serif" font-size="10" fill="#888" text-anchor="middle">pink-500 / CTA</text>
+
+  <!-- ROW 3: Neutrals -->
+  <text x="40" y="352" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="700" fill="#888" letter-spacing="2">NEUTRALS + TEXT</text>
+
+  <rect x="40" y="364" width="100" height="50" rx="8" fill="#1a1a1a"/>
+  <text x="90" y="428" font-family="'Courier New', monospace" font-size="10" fill="#aaa" text-anchor="middle">#1a1a1a</text>
+  <text x="90" y="440" font-family="Inter, sans-serif" font-size="10" fill="#666" text-anchor="middle">body text</text>
+
+  <rect x="150" y="364" width="100" height="50" rx="8" fill="#231f20"/>
+  <text x="200" y="428" font-family="'Courier New', monospace" font-size="10" fill="#aaa" text-anchor="middle">#231f20</text>
+  <text x="200" y="440" font-family="Inter, sans-serif" font-size="10" fill="#666" text-anchor="middle">text-logo fill</text>
+
+  <rect x="260" y="364" width="100" height="50" rx="8" fill="#374151"/>
+  <text x="310" y="428" font-family="'Courier New', monospace" font-size="10" fill="#aaa" text-anchor="middle">#374151</text>
+  <text x="310" y="440" font-family="Inter, sans-serif" font-size="10" fill="#666" text-anchor="middle">gray-700</text>
+
+  <rect x="370" y="364" width="100" height="50" rx="8" fill="#6b7280"/>
+  <text x="420" y="428" font-family="'Courier New', monospace" font-size="10" fill="#aaa" text-anchor="middle">#6b7280</text>
+  <text x="420" y="440" font-family="Inter, sans-serif" font-size="10" fill="#666" text-anchor="middle">muted text</text>
+
+  <rect x="480" y="364" width="100" height="50" rx="8" fill="#e5e7eb" stroke="#d1d5db" stroke-width="1"/>
+  <text x="530" y="428" font-family="'Courier New', monospace" font-size="10" fill="#888" text-anchor="middle">#e5e7eb</text>
+  <text x="530" y="440" font-family="Inter, sans-serif" font-size="10" fill="#666" text-anchor="middle">border / input</text>
+
+  <rect x="590" y="364" width="100" height="50" rx="8" fill="#f7f8f9" stroke="#e2e5e8" stroke-width="1"/>
+  <text x="640" y="428" font-family="'Courier New', monospace" font-size="10" fill="#888" text-anchor="middle">#f7f8f9</text>
+  <text x="640" y="440" font-family="Inter, sans-serif" font-size="10" fill="#666" text-anchor="middle">page background</text>
+
+  <rect x="700" y="364" width="100" height="50" rx="8" fill="#ffffff" stroke="#e2e5e8" stroke-width="1"/>
+  <text x="750" y="428" font-family="'Courier New', monospace" font-size="10" fill="#888" text-anchor="middle">#ffffff</text>
+  <text x="750" y="440" font-family="Inter, sans-serif" font-size="10" fill="#666" text-anchor="middle">card / nav bg</text>
+
+  <!-- ROW 4: Dark mode key colors -->
+  <text x="40" y="468" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="700" fill="#888" letter-spacing="2">DARK MODE</text>
+
+  <rect x="40" y="480" width="100" height="50" rx="8" fill="#0a0a0a" stroke="#222" stroke-width="1"/>
+  <text x="90" y="544" font-family="'Courier New', monospace" font-size="10" fill="#aaa" text-anchor="middle">#0a0a0a</text>
+
+  <rect x="150" y="480" width="100" height="50" rx="8" fill="#111827" stroke="#222" stroke-width="1"/>
+  <text x="200" y="544" font-family="'Courier New', monospace" font-size="10" fill="#aaa" text-anchor="middle">#111827</text>
+
+  <rect x="260" y="480" width="100" height="50" rx="8" fill="#1f2937" stroke="#222" stroke-width="1"/>
+  <text x="310" y="544" font-family="'Courier New', monospace" font-size="10" fill="#aaa" text-anchor="middle">#1f2937</text>
+
+  <rect x="370" y="480" width="100" height="50" rx="8" fill="#431407"/>
+  <text x="420" y="544" font-family="'Courier New', monospace" font-size="10" fill="#aaa" text-anchor="middle">#431407</text>
+
+  <rect x="480" y="480" width="100" height="50" rx="8" fill="#7c2d12"/>
+  <text x="530" y="544" font-family="'Courier New', monospace" font-size="10" fill="#aaa" text-anchor="middle">#7c2d12</text>
+
+  <rect x="590" y="480" width="100" height="50" rx="8" fill="#9a3412"/>
+  <text x="640" y="544" font-family="'Courier New', monospace" font-size="10" fill="#aaa" text-anchor="middle">#9a3412</text>
+
+  <rect x="700" y="480" width="100" height="50" rx="8" fill="#fbbf24"/>
+  <text x="750" y="544" font-family="'Courier New', monospace" font-size="10" fill="#aaa" text-anchor="middle">#fbbf24</text>
+</svg>
