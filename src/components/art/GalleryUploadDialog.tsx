@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
-import { ImageIcon, Loader2, Upload } from 'lucide-react';
+import { AlertTriangle, ImageIcon, Loader2, Upload } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -13,7 +13,18 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCreateArtwork } from '@/hooks/useArtworks';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useUploadFile } from '@/hooks/useUploadFile';
+
+/** True when a NIP-07 browser extension signer is injected on the page. */
+function hasBrowserExtension(): boolean {
+  return typeof window !== 'undefined' && 'nostr' in window;
+}
+
+/** Friendly message for failures caused by a missing extension signer. */
+function extensionErrorMessage(): string {
+  return 'Your session uses a browser-extension signer, but no NIP-07 extension is available here. Install/unlock your extension, or log out and log back in with your secret key (nsec) to upload.';
+}
 
 interface GalleryUploadDialogProps {
   open: boolean;
@@ -72,8 +83,14 @@ export function GalleryUploadDialog({ open, onOpenChange }: GalleryUploadDialogP
 
   const { mutateAsync: uploadFile, isPending: isUploading } = useUploadFile();
   const { mutateAsync: createArtwork, isPending: isPublishing } = useCreateArtwork();
+  const { user } = useCurrentUser();
 
   const busy = isUploading || isPublishing;
+
+  // If the logged-in session relies on a browser extension that is not present,
+  // signing will fail. Detect this up-front and tell the user exactly how to fix it.
+  const signerUnavailable =
+    user?.method === 'extension' && !hasBrowserExtension();
 
   const handleFile = useCallback((selected: File | null) => {
     setError(null);
@@ -110,6 +127,10 @@ export function GalleryUploadDialog({ open, onOpenChange }: GalleryUploadDialogP
   };
 
   const handleSubmit = async () => {
+    if (signerUnavailable) {
+      setError(extensionErrorMessage());
+      return;
+    }
     if (!file) {
       setError('Choose an image first.');
       return;
@@ -137,7 +158,9 @@ export function GalleryUploadDialog({ open, onOpenChange }: GalleryUploadDialogP
       onOpenChange(false);
     } catch (e) {
       console.error('Gallery upload failed:', e);
-      setError(e instanceof Error ? e.message : 'Upload failed. Please try again.');
+      const msg = e instanceof Error ? e.message : 'Upload failed. Please try again.';
+      // A missing extension signer surfaces as "...extension not available".
+      setError(/extension/i.test(msg) ? extensionErrorMessage() : msg);
     }
   };
 
@@ -156,6 +179,14 @@ export function GalleryUploadDialog({ open, onOpenChange }: GalleryUploadDialogP
         </DialogHeader>
 
         <div className="space-y-4 py-2">
+          {/* Signer warning — extension session with no extension present */}
+          {signerUnavailable && (
+            <div className="flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-300">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <p>{extensionErrorMessage()}</p>
+            </div>
+          )}
+
           {/* Image picker */}
           <div>
             <Label htmlFor="gallery-upload-file" className="mb-2 block">
@@ -226,7 +257,7 @@ export function GalleryUploadDialog({ open, onOpenChange }: GalleryUploadDialogP
           </Button>
           <Button
             onClick={() => void handleSubmit()}
-            disabled={busy || !file || !title.trim()}
+            disabled={busy || signerUnavailable || !file || !title.trim()}
             className="bg-gradient-to-r from-orange-500 to-pink-500 text-white hover:from-orange-600 hover:to-pink-600"
           >
             {busy ? (

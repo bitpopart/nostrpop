@@ -22,6 +22,10 @@ export function useCurrentUser() {
     }
   }, [nostr]);
 
+  // A NIP-07 "extension" login can only sign when a browser extension has
+  // injected `window.nostr`. Detect whether that is the case in this browser.
+  const extensionAvailable = typeof window !== 'undefined' && 'nostr' in window;
+
   const users = useMemo(() => {
     const users: NUser[] = [];
 
@@ -37,7 +41,16 @@ export function useCurrentUser() {
     return users;
   }, [logins, loginToUser]);
 
-  const user = users[0] as NUser | undefined;
+  // Pick the current user. Normally this is the first login, but if that login
+  // relies on a browser extension that is not present, prefer a login method
+  // that can actually sign (nsec / bunker). This keeps uploads and publishing
+  // working instead of failing with "extension not available".
+  const user = useMemo(() => {
+    if (users.length === 0) return undefined as NUser | undefined;
+    if (extensionAvailable) return users[0];
+    return users.find((u) => u.method !== 'extension') ?? users[0];
+  }, [users, extensionAvailable]);
+
   const author = useAuthor(user?.pubkey);
 
   return {

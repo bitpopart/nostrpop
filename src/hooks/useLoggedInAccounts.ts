@@ -35,16 +35,23 @@ export function useLoggedInAccounts() {
     retry: 3,
   });
 
-  // Current user is the first login
+  // Current user is the first login — unless that login relies on a browser
+  // extension that is not present in this browser, in which case prefer a
+  // login method that can actually sign (mirrors useCurrentUser behavior).
+  const extensionAvailable = typeof window !== 'undefined' && 'nostr' in window;
+  const currentLogin = extensionAvailable
+    ? logins[0]
+    : logins.find((l) => l.type !== 'extension') ?? logins[0];
+
   const currentUser: Account | undefined = (() => {
-    const login = logins[0];
+    const login = currentLogin;
     if (!login) return undefined;
     const author = authors.find((a) => a.id === login.id);
     return { metadata: {}, ...author, id: login.id, pubkey: login.pubkey };
   })();
 
   // Other users are all logins except the current one
-  const otherUsers = (authors || []).slice(1) as Account[];
+  const otherUsers = (authors || []).filter((a) => a.id !== currentLogin?.id) as Account[];
 
   return {
     authors,
