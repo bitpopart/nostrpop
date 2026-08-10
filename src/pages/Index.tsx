@@ -1694,6 +1694,14 @@ const Index = () => {
                 {/* Divider */}
                 <div className="h-6 w-px bg-rose-300/60 dark:bg-rose-600/40 flex-shrink-0" />
 
+                {/* Art — highlighted */}
+                <Link to="/art" title="Art" className="flex flex-col items-center gap-0.5 group">
+                  <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-fuchsia-500 to-purple-600 shadow-md flex items-center justify-center group-hover:scale-110 group-hover:shadow-lg transition-all duration-200">
+                    <Palette className="h-4 w-4 text-white" />
+                  </div>
+                  <span className="text-[9px] font-bold text-fuchsia-600 dark:text-fuchsia-400 leading-tight">Art</span>
+                </Link>
+
                 {/* Shop — highlighted */}
                 <Link to="/shop" title="Shop" className="flex flex-col items-center gap-0.5 group">
                   <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-pink-500 to-rose-500 shadow-md flex items-center justify-center group-hover:scale-110 group-hover:shadow-lg transition-all duration-200">
@@ -1703,7 +1711,7 @@ const Index = () => {
                 </Link>
 
                 {/* Images */}
-                <Link to="/app" title="Images" className="flex flex-col items-center gap-0.5 group">
+                <Link to="/free" title="Images" className="flex flex-col items-center gap-0.5 group">
                   <div className="w-9 h-9 rounded-lg bg-white/70 dark:bg-white/10 hover:bg-white dark:hover:bg-white/20 shadow-sm flex items-center justify-center group-hover:scale-110 transition-all duration-200">
                     <ImageIcon className="h-4 w-4 text-pink-500" />
                   </div>
