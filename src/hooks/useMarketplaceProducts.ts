@@ -178,8 +178,9 @@ function parseNip99Event(event: NostrEvent): MarketplaceProduct | null {
     // Contact / product URLs
     const contactUrl = getTag('r') || getTag('contact') || undefined;
 
-    // Status tag — map "sold" to out-of-stock
+    // Status tag — map "sold" to out-of-stock; treat explicit "deleted" as gone
     const status = getTag('status');
+    if (status === 'deleted') return null;
     const effectiveQuantity = status === 'sold' ? 0 : quantity;
 
     // Discount from custom tag (not in NIP-99 spec but BitPopArt extension)
@@ -243,6 +244,10 @@ function parseNip15Event(event: NostrEvent): MarketplaceProduct | null {
     const discount = content.discount !== undefined
       ? Number(content.discount)
       : discountTag ? Number(discountTag) : undefined;
+
+    // NIP-15 legacy status tag — treat explicit "deleted" as gone
+    const statusTag = event.tags.find(([name]) => name === 'status')?.[1];
+    if (statusTag === 'deleted') return null;
 
     if (!dTag || !name) return null;
 

@@ -57,20 +57,20 @@ export function ProductPage() {
   }, [product, isLoading, navigate]);
 
   useSeoMeta({
-    title: product ? `${product.title} - BitPopArt Shop` : 'Product - BitPopArt Shop',
+    title: product ? `${product.name} - BitPopArt Shop` : 'Product - BitPopArt Shop',
     description: product?.description || 'Buy exclusive Bitcoin pop art products from the BitPopArt marketplace. Pay with Bitcoin Lightning.',
     author: 'Johannes Oppewal (BitPopArt)',
     ogType: 'product',
-    ogTitle: product ? `${product.title} - BitPopArt Shop` : 'Product - BitPopArt Shop',
+    ogTitle: product ? `${product.name} - BitPopArt Shop` : 'Product - BitPopArt Shop',
     ogDescription: product?.description || 'Buy exclusive Bitcoin pop art products from the BitPopArt marketplace. Pay with Bitcoin Lightning.',
     ogImage: (product?.images && product.images[0]) || 'https://bitpopart.com/bitpopart-logo.png',
-    ogImageAlt: product?.title || 'BitPopArt Product',
+    ogImageAlt: product?.name || 'BitPopArt Product',
     ogSiteName: 'BitPopArt',
     twitterCard: 'summary_large_image',
-    twitterTitle: product ? `${product.title} - BitPopArt Shop` : 'Product - BitPopArt Shop',
+    twitterTitle: product ? `${product.name} - BitPopArt Shop` : 'Product - BitPopArt Shop',
     twitterDescription: product?.description || 'Buy exclusive Bitcoin pop art products from the BitPopArt marketplace.',
     twitterImage: (product?.images && product.images[0]) || 'https://bitpopart.com/bitpopart-logo.png',
-    twitterImageAlt: product?.title || 'BitPopArt Product',
+    twitterImageAlt: product?.name || 'BitPopArt Product',
     robots: 'index, follow, max-snippet:-1, max-image-preview:large',
   });
 
