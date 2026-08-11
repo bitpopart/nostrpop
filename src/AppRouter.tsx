@@ -70,6 +70,7 @@ import Sitemap from "./pages/Sitemap";
 import CloudPage from "./pages/Cloud";
 import CloudAppViewer from "./pages/CloudAppViewer";
 import Gallery from "./pages/Gallery";
+import IconDownloads from "./pages/IconDownloads";
 import NotFound from "./pages/NotFound";
 
 export function AppRouter() {
@@ -117,6 +118,7 @@ export function AppRouter() {
         <Route path="/orders" element={<Layout><OrdersPage /></Layout>} />
         <Route path="/debug" element={<Layout><ShopDebugPage /></Layout>} />
         <Route path="/free" element={<Layout><FreeGallery /></Layout>} />
+        <Route path="/icon-downloads" element={<Layout><IconDownloads /></Layout>} />
         <Route path="/free/images" element={<Layout><FreeDownloads /></Layout>} />
         <Route path="/games" element={<Layout><Games /></Layout>} />
         <Route path="/games/moneyprinter" element={<LayoutIframe><GameMoneyPrinter /></LayoutIframe>} />
