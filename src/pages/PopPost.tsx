@@ -2,13 +2,13 @@ import { useState, useCallback } from 'react';
 import { useSeoMeta } from '@unhead/react';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
-import { useNavigate } from 'react-router-dom';
 import { useScheduledPosts } from '@/hooks/useScheduledPosts';
 import type { ScheduledPost } from '@/hooks/useScheduledPosts';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { LoginArea } from '@/components/auth/LoginArea';
 import {
   Shield,
@@ -36,11 +36,12 @@ import { PostComposer } from '@/components/poppost/PostComposer';
 import { ScheduleAgenda } from '@/components/poppost/ScheduleAgenda';
 import { EngagementDashboard } from '@/components/poppost/EngagementDashboard';
 import { useScheduledPostsPublisher } from '@/hooks/useScheduledPostsPublisher';
+import { usePoppostFeed } from '@/hooks/usePoppostFeed';
+import type { PoppostEntry } from '@/hooks/usePoppostFeed';
 
 const PopPost = () => {
   const { user } = useCurrentUser();
   const isAdmin = useIsAdmin();
-  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('schedule');
   const [composerOpen, setComposerOpen] = useState(false);
   const [editingPost, setEditingPost] = useState<ScheduledPost | null>(null);
@@ -64,10 +65,14 @@ const PopPost = () => {
     onMarkFailed: markFailed,
   });
 
+  const { data: feedPosts, isLoading: feedLoading } = usePoppostFeed();
+
   useSeoMeta({
-    title: 'PopPost — Nostr Content Scheduler',
-    description: 'Schedule and manage your Nostr content posts for BitPopArt community.',
-    robots: 'noindex, nofollow',
+    title: 'POP Posts — BitPopArt | Unique Bitcoin Pop Art',
+    description: 'POP posts from the BitPopArt Nostr community — images shared by Johannes Oppewal, mirrored from the \u201cSchedule POP posts\u201d channel.',
+    ...(feedPosts?.[0]?.images?.[0]?.src
+      ? { ogImage: `${window.location.origin}${feedPosts[0].images[0].src}` }
+      : {}),
   });
 
   const handleOpenComposer = useCallback((post?: ScheduledPost) => {
@@ -80,48 +85,10 @@ const PopPost = () => {
     setComposerOpen(false);
   }, []);
 
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-pink-50 to-yellow-50 dark:from-gray-900 dark:via-orange-900/20 dark:to-yellow-900/20 flex items-center justify-center">
-        <Card className="max-w-md mx-auto">
-          <CardHeader className="text-center">
-            <Shield className="h-12 w-12 mx-auto mb-4 text-orange-600" />
-            <CardTitle className="text-2xl">PopPost Admin</CardTitle>
-            <CardDescription>
-              Please log in with your admin account to access the scheduler.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <LoginArea className="w-full" />
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  const isAdminUser = Boolean(user && isAdmin);
 
-  if (!isAdmin) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-pink-50 to-yellow-50 dark:from-gray-900 dark:via-orange-900/20 dark:to-yellow-900/20 flex items-center justify-center">
-        <Card className="max-w-md mx-auto border-red-200 dark:border-red-800">
-          <CardHeader className="text-center">
-            <Shield className="h-12 w-12 mx-auto mb-4 text-red-500" />
-            <CardTitle className="text-2xl text-red-600 dark:text-red-400">Access Denied</CardTitle>
-            <CardDescription>
-              Only the BitPopArt admin can access PopPost.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={() => navigate('/')} className="w-full" variant="outline">
-              Go Home
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-pink-50 to-yellow-50 dark:from-gray-900 dark:via-orange-900/20 dark:to-yellow-900/20">
+  const adminContent = (
+    <div>
       <div className="container mx-auto px-4 py-8 max-w-7xl">
 
         {/* Header */}
@@ -333,7 +300,152 @@ const PopPost = () => {
       )}
     </div>
   );
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-pink-50 to-yellow-50 dark:from-gray-900 dark:via-orange-900/20 dark:to-yellow-900/20">
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+
+        {/* ── Public POP Posts feed (all visitors) ── */}
+        <div className="flex items-center gap-3 mb-1">
+          <div className="p-2 rounded-xl bg-gradient-to-r from-orange-500 to-pink-500 text-white shadow-lg">
+            <Sparkles className="h-6 w-6" />
+          </div>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent">
+            POP Posts
+          </h1>
+          <Badge className="bg-gradient-to-r from-orange-500 to-pink-500 text-white border-0 text-xs">
+            Live
+          </Badge>
+        </div>
+        <p className="text-sm text-muted-foreground ml-14 mb-6">
+          Images posted by BitPopArt in the “Schedule POP posts” channel — mirrored here
+          automatically and published to Nostr.
+        </p>
+
+        <PopPostFeed posts={feedPosts ?? []} loading={feedLoading} />
+
+        <div className="my-12 border-t-2 border-dashed border-orange-200 dark:border-orange-800/30" />
+
+        {/* ── Admin scheduler (owners only) ── */}
+        {isAdminUser
+          ? adminContent
+          : <AdminGate user={Boolean(user)} />}
+      </div>
+    </div>
+  );
 };
+
+// ── PopPostFeed Component ───────────────────────────────────────────────────────
+
+interface PopPostFeedProps {
+  posts: PoppostEntry[];
+  loading: boolean;
+}
+
+function PopPostFeed({ posts, loading }: PopPostFeedProps) {
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {[0, 1, 2, 3, 4, 5].map((i) => (
+          <div key={i} className="space-y-3">
+            <Skeleton className="aspect-square w-full rounded-xl" />
+            <Skeleton className="h-4 w-2/3" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (posts.length === 0) {
+    return (
+      <Card className="border-dashed">
+        <CardContent className="py-16 text-center">
+          <ImageIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground text-lg font-medium mb-2">No POP posts yet</p>
+          <p className="text-muted-foreground text-sm">
+            Post an image in the “Schedule POP posts” channel and it will appear here automatically.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {posts.map((post) => (
+        <Card
+          key={post.eventId}
+          className="overflow-hidden bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-0 shadow-md transition-all hover:shadow-lg"
+        >
+          {post.images.map((img, i) => (
+            <img
+              key={i}
+              src={img.src}
+              alt={img.alt ?? post.caption ?? 'POP post'}
+              loading="lazy"
+              className="w-full object-cover max-h-80"
+            />
+          ))}
+          <CardContent className="p-4">
+            {post.caption && (
+              <p className="text-sm text-foreground line-clamp-3 mb-2">{post.caption}</p>
+            )}
+            <div className="flex items-center justify-between gap-2">
+              {post.hashtags && post.hashtags.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {post.hashtags.slice(0, 4).map((t) => (
+                    <span key={t} className="text-xs text-orange-600 dark:text-orange-400">#{t}</span>
+                  ))}
+                </div>
+              )}
+              <span className="text-xs text-muted-foreground ml-auto flex items-center gap-1 shrink-0">
+                <Calendar className="h-3 w-3" />
+                {new Date(post.createdAt * 1000).toLocaleDateString('en-US', {
+                  month: 'short', day: 'numeric', year: 'numeric',
+                })}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+// ── AdminGate Component ─────────────────────────────────────────────────────────
+
+function AdminGate({ user }: { user: boolean }) {
+  if (!user) {
+    return (
+      <Card className="max-w-md mx-auto">
+        <CardHeader className="text-center">
+          <Shield className="h-12 w-12 mx-auto mb-4 text-orange-600" />
+          <CardTitle className="text-2xl">PopPost Scheduler</CardTitle>
+          <CardDescription>
+            Log in with your admin account to access the scheduler.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <LoginArea className="w-full" />
+        </CardContent>
+      </Card>
+    );
+  }
+  return (
+    <Card className="max-w-md mx-auto border-red-200 dark:border-red-800">
+      <CardHeader className="text-center">
+        <Shield className="h-12 w-12 mx-auto mb-4 text-red-500" />
+        <CardTitle className="text-2xl text-red-600 dark:text-red-400">Access Denied</CardTitle>
+        <CardDescription>Only the BitPopArt admin can access the scheduler.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Button onClick={() => window.location.assign('/')} className="w-full" variant="outline">
+          Go Home
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
 
 // ── PostCard Component ──────────────────────────────────────────────────────────
 
