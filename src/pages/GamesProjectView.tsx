@@ -78,7 +78,7 @@ function injectGamestrBridge(html: string): string {
     }
   });
 })();
-<\/script>`;
+</script>`;
 
   if (/<head[^>]*>/i.test(html)) {
     return html.replace(/<head([^>]*)>/i, `<head$1>${bridgeScript}`);
@@ -134,6 +134,7 @@ export default function GamesProjectView() {
     () => (brandSiteUrl ? htmlCache.get(brandSiteUrl) ?? null : null)
   );
   const [fetchingHtml, setFetchingHtml] = useState(false);
+  const [fetchError, setFetchError] = useState('');
   const fetchingUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -142,10 +143,24 @@ export default function GamesProjectView() {
     if (fetchingUrlRef.current === brandSiteUrl) return;
     fetchingUrlRef.current = brandSiteUrl;
     setFetchingHtml(true);
+    setFetchError('');
     fetch(brandSiteUrl)
-      .then(r => r.text())
-      .then(html => { htmlCache.set(brandSiteUrl, html); setFetchedHtml(html); setFetchingHtml(false); })
-      .catch(() => setFetchingHtml(false));
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.text();
+      })
+      .then(html => {
+        if (html.trim().length === 0) throw new Error('Empty response');
+        htmlCache.set(brandSiteUrl, html);
+        setFetchedHtml(html);
+        setFetchingHtml(false);
+      })
+      .catch((err) => {
+        console.error('Game HTML fetch failed:', err);
+        setFetchedHtml(null);
+        setFetchError('The game file could not be loaded from its host.');
+        setFetchingHtml(false);
+      });
   }, [brandSiteUrl]);
 
   const srcDocHtml = fetchedHtml ? injectGamestrBridge(fetchedHtml) : null;
@@ -198,11 +213,14 @@ export default function GamesProjectView() {
     );
   }
 
-  if (!project || !brandSiteUrl) {
+  if (!project || !brandSiteUrl || fetchError) {
     return (
       <div className="flex-1 flex items-center justify-center">
         <div className="text-center space-y-4">
-          <p className="text-muted-foreground">Game not found.</p>
+          <p className="text-muted-foreground">{fetchError || 'Game not found.'}</p>
+          {fetchError && (
+            <p className="text-xs text-muted-foreground">The game published from {brandSiteUrl} isn't reachable right now.</p>
+          )}
           <button
             className="text-sm underline text-orange-600"
             onClick={() => navigate('/games')}
