@@ -2,21 +2,18 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSeoMeta } from '@unhead/react';
 import { Trophy, Zap, Timer, Users, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import {
   useGameLeaderboard,
   usePublishGameScore,
   useJackpotState,
-  addDepositToJackpot,
-  updateRoundHighScore,
   resolveJackpot,
   formatCountdown,
   JACKPOT_GOAL,
   MIN_SATS,
 } from '@/hooks/useGameJackpot';
-import { useLNURL } from '@/hooks/useLNURL';
+import { useLNURL, pollVerifyPayment } from '@/hooks/useLNURL';
 import { LoginArea } from '@/components/auth/LoginArea';
 import { nip19 } from 'nostr-tools';
 import QRCode from 'qrcode';
@@ -96,7 +93,6 @@ function JackpotStrip({ game }: { game: string }) {
 
 // Medal colours for top 3
 const MEDALS = ['🥇', '🥈', '🥉'];
-const ROW_COLORS = ['bg-[#FCE000]/30', 'bg-[#C0C0C0]/20', 'bg-[#CD7F32]/20'];
 
 function Scoreboard({ game, myScore, onClose }: { game: string; myScore?: number; onClose: () => void }) {
   const { data: scores = [], isLoading } = useGameLeaderboard(game);
@@ -205,10 +201,12 @@ function Scoreboard({ game, myScore, onClose }: { game: string; myScore?: number
                       {entry.name}
                       {isMe && <span className="ml-2 text-sm">← YOU</span>}
                     </p>
-                    {entry.sats_deposited > 0 && (
+                    {entry.sats_deposited > 0 ? (
                       <p className="text-xs" style={{ color: isMe ? '#6200EA' : '#F7931A' }}>
                         ⚡ {entry.sats_deposited.toLocaleString()} sats
                       </p>
+                    ) : (
+                      <p className="text-xs text-white/40">FREE PLAY</p>
                     )}
                   </div>
 
@@ -261,14 +259,20 @@ interface PayPanelProps {
 
 function PayPanel({ playerName, playerNpub, sats, onSetName, onSetNpub, onSetSats, onPaid, onBack }: PayPanelProps) {
   const [invoice, setInvoice] = useState<string | null>(null);
+  const [invoiceVerify, setInvoiceVerify] = useState<string | null>(null);
   const [qrUrl, setQrUrl] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [verified, setVerified] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [payError, setPayError] = useState('');
   const [nameErr, setNameErr] = useState('');
   const [npubErr, setNpubErr] = useState('');
   const [satsErr, setSatsErr] = useState('');
   const { user } = useCurrentUser();
   const { lnurlData, getZapInvoice, isLoading: lnLoading } = useLNURL(LIGHTNING_ADDRESS);
+
+  const hasWebln = typeof window !== 'undefined' && !!window.webln;
 
   // Auto-fill npub from logged-in user
   useEffect(() => {
@@ -276,7 +280,7 @@ function PayPanel({ playerName, playerNpub, sats, onSetName, onSetNpub, onSetSat
   }, [user, playerNpub, onSetNpub]);
 
   const generateInvoice = async () => {
-    setNameErr(''); setNpubErr(''); setSatsErr('');
+    setNameErr(''); setNpubErr(''); setSatsErr(''); setPayError(''); setVerified(false);
     if (!playerName.trim()) { setNameErr('Name required'); return; }
     if (!playerNpub.trim() || !playerNpub.startsWith('npub1')) { setNpubErr('Valid npub required (npub1...)'); return; }
     if (sats < MIN_SATS) { setSatsErr(`Min ${MIN_SATS} sats`); return; }
@@ -285,6 +289,7 @@ function PayPanel({ playerName, playerNpub, sats, onSetName, onSetNpub, onSetSat
       const inv = await getZapInvoice(sats);
       if (!inv) return;
       setInvoice(inv.pr);
+      setInvoiceVerify(inv.verify ?? null);
       // Uppercase + no URI prefix = alphanumeric QR mode → smaller, denser QR reads reliably in all wallets
       const qr = await QRCode.toDataURL(inv.pr.toUpperCase(), { width: 256, margin: 2, errorCorrectionLevel: 'M', color: { dark: '#000000', light: '#ffffff' } });
       setQrUrl(qr);
@@ -299,10 +304,39 @@ function PayPanel({ playerName, playerNpub, sats, onSetName, onSetNpub, onSetSat
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // Pay directly in-browser with WebLN (real payment — the wallet confirms the tx)
+  const payWithWebln = async () => {
+    if (!window.webln || !invoice) return;
+    setPayError(''); setVerifying(true);
+    try {
+      await window.webln.enable();
+      await window.webln.sendPayment(invoice);
+      setVerified(true);
+    } catch (e) {
+      setPayError(e instanceof Error ? `Payment failed or was cancelled: ${e.message}` : 'Payment failed or was cancelled.');
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  // Poll the LNURL-verify endpoint when the provider supports it (rizful does not)
+  const verifyPayment = async () => {
+    if (!invoiceVerify || !invoice) return;
+    setPayError(''); setVerifying(true);
+    const ok = await pollVerifyPayment(invoiceVerify, 180_000);
+    setVerifying(false);
+    if (ok) setVerified(true);
+    else setPayError('Could not confirm the payment. If you paid, check your wallet — or try WebLN.');
+  };
+
   const handlePaid = () => {
-    // Invoice must exist — prevents bypassing payment by clicking without generating
+    // A verified invoice, OR an explicit confirm when auto-verification is
+    // unavailable (browser has no WebLN and the provider has no verify URL).
     if (!invoice || !playerName.trim() || !playerNpub.startsWith('npub1')) return;
-    addDepositToJackpot(GAME_ID, sats);
+    if (!verified && hasWebln) {
+      setPayError('Pay with WebLN above, or confirm manually below.');
+      return;
+    }
     onPaid(sats);
   };
 
@@ -418,6 +452,16 @@ function PayPanel({ playerName, playerNpub, sats, onSetName, onSetNpub, onSetSat
               </div>
             )}
             <div className="flex gap-2">
+              {hasWebln && (
+                <button
+                  className="flex-1 py-2 rounded-xl font-bold transition-all active:scale-95 text-sm disabled:opacity-60"
+                  style={{ fontFamily: "'Bangers', Impact, sans-serif", letterSpacing: '1px', border: '3px solid #1A0040', background: verified ? '#22c55e' : '#FCE000', color: '#1A0040' }}
+                  onClick={payWithWebln}
+                  disabled={verifying || verified}
+                >
+                  {verified ? 'PAID ✓' : verifying ? 'PAYING…' : 'PAY WITH WEBLN ⚡'}
+                </button>
+              )}
               <button
                 className="flex-1 py-2 rounded-xl font-bold transition-all hover:bg-yellow-300 active:scale-95 text-sm"
                 style={{ fontFamily: "'Bangers', Impact, sans-serif", letterSpacing: '1px', border: '3px solid #1A0040', background: '#FCE000', color: '#1A0040' }}
@@ -433,15 +477,34 @@ function PayPanel({ playerName, playerNpub, sats, onSetName, onSetNpub, onSetSat
                 {copied ? 'COPIED ✓' : 'COPY'}
               </button>
             </div>
+            {invoiceVerify && !verified && (
+              <button
+                className="w-full py-2 rounded-xl font-bold transition-all active:scale-95 text-sm disabled:opacity-60"
+                style={{ fontFamily: "'Bangers', Impact, sans-serif", letterSpacing: '1px', border: '3px solid #6200EA', background: '#fff', color: '#6200EA' }}
+                onClick={verifyPayment}
+                disabled={verifying}
+              >
+                {verifying ? 'CHECKING PAYMENT…' : 'VERIFY PAYMENT ✓'}
+              </button>
+            )}
+            {payError && (
+              <p className="text-xs text-red-500 text-center" style={{ fontFamily: 'sans-serif' }}>{payError}</p>
+            )}
+            {!hasWebln && !invoiceVerify && (
+              <p className="text-xs text-[#1A004088] text-center" style={{ fontFamily: 'sans-serif' }}>
+                No WebLN wallet detected — auto-verification isn't available here. Pay with any wallet, then confirm below.
+              </p>
+            )}
             <button
-              className="w-full py-3 rounded-2xl border-4 border-black bg-[#FF0080] text-white font-bold text-xl shadow-[5px_5px_0_#FCE000] active:translate-y-1 active:shadow-none transition-all"
+              className="w-full py-3 rounded-2xl border-4 border-black bg-[#FF0080] text-white font-bold text-xl shadow-[5px_5px_0_#FCE000] active:translate-y-1 active:shadow-none transition-all disabled:opacity-70"
               style={{ fontFamily: "'Bangers', Impact, sans-serif", letterSpacing: '2px' }}
               onClick={handlePaid}
+              disabled={verifying}
             >
-              I ZAPPED IT · PLAY ⚡
+              {verified ? 'PAID ✓ · PLAY ⚡' : 'I PAID · PLAY ⚡'}
             </button>
             <button className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors"
-              onClick={() => { setInvoice(null); setQrUrl(null); }}>
+              onClick={() => { setInvoice(null); setQrUrl(null); setInvoiceVerify(null); setVerified(false); setPayError(''); }}>
               ← Change amount
             </button>
           </div>
@@ -477,7 +540,6 @@ function GameOverPanel({ score, paidMode, playerName, playerNpub, satsPaid, onAg
     try {
       await publishScore(GAME_ID, playerName, score, satsPaid, npub);
       setPublished(true);
-      updateRoundHighScore(GAME_ID, user.pubkey, npub, playerName, score);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to publish score';
       setPublishError(msg);
@@ -527,7 +589,7 @@ function GameOverPanel({ score, paidMode, playerName, playerNpub, satsPaid, onAg
 
         {(!paidMode || satsPaid === 0) && (
           <div className="bg-orange-50 border-2 border-orange-400 rounded-xl p-2 text-sm" style={{ fontFamily: 'sans-serif' }}>
-            <p className="text-orange-700 font-bold">Deposit sats to enter the jackpot &amp; scoreboard!</p>
+            <p className="text-orange-700 font-bold">Your free score counts on the board! Add sats to enter the jackpot &amp; win the pot.</p>
           </div>
         )}
 

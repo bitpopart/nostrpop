@@ -28,7 +28,6 @@ import {
   useGameLeaderboard,
   usePublishGameScore,
   useJackpotState,
-  updateRoundHighScore,
   resolveJackpot,
   formatCountdown,
   JACKPOT_GOAL,
@@ -167,10 +166,12 @@ function Scoreboard({ game, myScore, onClose }: { game: string; myScore?: number
                       style={{ fontFamily: "'Bangers', Impact, sans-serif", letterSpacing: '1.5px', fontSize: 'clamp(14px,3.5vw,18px)', color: isMe ? '#1A0040' : '#FFF' }}>
                       {entry.name}{isMe && <span className="ml-2 text-xs">← YOU</span>}
                     </p>
-                    {entry.sats_deposited > 0 && (
+                    {entry.sats_deposited > 0 ? (
                       <p className="text-xs" style={{ color: isMe ? '#6200EA' : '#F7931A' }}>
                         ⚡ {entry.sats_deposited.toLocaleString()} sats
                       </p>
+                    ) : (
+                      <p className="text-xs text-white/40">FREE PLAY</p>
                     )}
                   </div>
                   <div className="shrink-0 text-right"
@@ -228,7 +229,6 @@ function GameOverPanel({ gameId, score, playerName, playerNpub, satsPaid, onPlay
     try {
       await publishScore(gameId, displayName, score, satsPaid, displayNpub || nip19.npubEncode(user.pubkey));
       setPublished(true);
-      updateRoundHighScore(gameId, user.pubkey, displayNpub || nip19.npubEncode(user.pubkey), displayName, score);
     } catch {
       setPublishError('Failed to publish — check your Nostr connection and try again.');
     }

@@ -514,6 +514,7 @@ $('paidBtn').onclick=async()=>{
   if(!npub.startsWith('npub1')){$('pnpub').style.borderColor='#FF0080';$('pnpub').placeholder='VALID NPUB REQUIRED';$('pnpub').value='';return;}
   if(sats<MIN_SATS){$('psats').style.borderColor='#FF0080';$('psats').value=MIN_SATS;return;}
   paidMode=true;playerName=name;playerNpub=npub;
+  paidSatsAmt=sats;
   await addDeposit(sats);
   $('satsScreen').classList.add('hidden');
   reset();state=ST.PLAY;
@@ -526,9 +527,10 @@ $('boardBtn').onclick=async()=>{
 };
 $('backBtn').onclick=()=>{$('boardOnly').classList.add('hidden');$('menu').classList.remove('hidden');};
 
+var paidSatsAmt=0;
 // ---------- Gamestr NIP-762 integration ----------
-const GS_RELAYS=['wss://relay.damus.io','wss://relay.primal.net','wss://nos.lol','wss://main.relay.gamestr.io'];
-const GS_GAME_ID='bitpopart-moneyprinter';
+const GS_RELAYS=['wss://relay.ditto.pub','wss://relay.dreamith.to','wss://relay.primal.net','wss://main.relay.gamestr.io'];
+const GS_GAME_ID='clownworld-moneyprinter';
 const GS_PUBKEY_HEX='43baaf0c28e6cfb195b17ee083e19eb3a4afdfac54d9b6baf170270ed193e34c';
 
 function hexToBytes(hex){const b=new Uint8Array(hex.length/2);for(let i=0;i<hex.length;i+=2)b[i/2]=parseInt(hex.slice(i,i+2),16);return b;}
@@ -593,6 +595,10 @@ async function gsPublishScore(finalScore, playerNpubVal){
         ['state','active'],
         ['t','arcade'],
         ['t','bitcoin'],
+        ['name',(typeof playerName!=='undefined'&&playerName)?playerName.toUpperCase().slice(0,12):'PLAYER'],
+        ['npub',playerNpub||''],
+        ['sats',paidMode?String(paidSatsAmt||0):'0'],
+        ['paid',paidMode?'true':'false'],
         ['alt','Game score: '+finalScore+' bucks in Clownworld Money Printer Mayhem by BitPopArt'],
       ]
     };

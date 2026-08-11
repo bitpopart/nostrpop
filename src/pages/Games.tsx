@@ -28,6 +28,35 @@ export default function Games() {
       subtitle="Bitcoin and pop art inspired games by BitPopArt"
       icon={<Gamepad2 className="h-12 w-12 text-violet-600" />}
       gradient="from-violet-50 via-fuchsia-50 to-pink-50 dark:from-gray-900 dark:via-violet-900/20 dark:to-fuchsia-900/20"
+      builtinProjects={[
+        {
+          id: 'moneyprinter',
+          name: 'Money Printer Mayhem',
+          description: 'Catch fiat & shitcoins, dodge the Bitcoin — 3 lives, trust us. Deposit 21 sats to join the jackpot: 21% feeds the pot, 2100 sats triggers a 21h battle, top score wins it all.',
+          url: '/games/moneyprinter',
+          thumbnailEmoji: '💵',
+          thumbnailGradient: 'from-pink-500 via-red-500 to-yellow-500',
+          order: 1,
+        },
+        {
+          id: 'quiz21',
+          name: '21 Quiz',
+          description: '21 questions on Bitcoin & Nostr. Timed rounds, no googling, no excuses 🤘 Deposit sats to hit the scoreboard and play for the Lightning jackpot.',
+          url: '/games/quiz21',
+          thumbnailEmoji: '⚡',
+          thumbnailGradient: 'from-orange-500 via-amber-500 to-red-500',
+          order: 2,
+        },
+        {
+          id: '100m-canvas',
+          name: '100M Canvas',
+          description: 'A collaborative 100 million pixel canvas. 1 sat = 1 pixel, zapped over Lightning and stamped with the Bitcoin block height. Sacred pixels — forever.',
+          url: '/games/100m-canvas',
+          thumbnailEmoji: '🖌️',
+          thumbnailGradient: 'from-purple-500 via-fuchsia-500 to-pink-500',
+          order: 3,
+        },
+      ]}
       emptyIcon={
         <div className="relative inline-flex">
           <Gamepad2 className="h-20 w-20 text-violet-400" />
