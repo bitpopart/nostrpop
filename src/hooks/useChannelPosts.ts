@@ -1,34 +1,34 @@
 import { useQuery } from '@tanstack/react-query';
 
 /**
- * Feed of POP posts mirrored from the "Schedule POP posts" Buzz channel.
+ * Image posts mirrored from the "Schedule POP posts" Buzz channel.
  * Data is produced by `scripts/poppost-sync.mjs` into public/poppost/posts.json
- * and deployed with the site (GitHub Pages).
+ * and deployed with the site. The admin scheduler imports these as drafts.
  */
-export interface PoppostImage {
+export interface ChannelImage {
   src: string;
   alt?: string;
 }
 
-export interface PoppostEntry {
+export interface ChannelPost {
   eventId: string;
   author?: string;
   createdAt: number;
   caption?: string;
   hashtags?: string[];
-  images: PoppostImage[];
+  images: ChannelImage[];
 }
 
-interface PoppostFeedData {
+interface ChannelFeedData {
   generatedAt?: number;
-  posts: PoppostEntry[];
+  posts: ChannelPost[];
 }
 
-export function usePoppostFeed(enabled = true) {
+export function useChannelPosts(enabled = true) {
   return useQuery({
-    queryKey: ['poppost-feed'],
+    queryKey: ['channel-posts'],
     enabled,
-    queryFn: async ({ signal }): Promise<PoppostEntry[]> => {
+    queryFn: async ({ signal }): Promise<ChannelPost[]> => {
       // ts=<now> busts any stale cache after a deploy
       const res = await fetch(`/poppost/posts.json?ts=${Date.now()}`, {
         signal,
@@ -39,9 +39,9 @@ export function usePoppostFeed(enabled = true) {
         return [];
       }
       if (!res.ok) {
-        throw new Error(`poppost feed unavailable (HTTP ${res.status})`);
+        throw new Error(`channel feed unavailable (HTTP ${res.status})`);
       }
-      const data = (await res.json()) as PoppostFeedData;
+      const data = (await res.json()) as ChannelFeedData;
       return Array.isArray(data.posts) ? data.posts : [];
     },
     staleTime: 60_000,

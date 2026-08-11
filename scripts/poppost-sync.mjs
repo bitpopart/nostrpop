@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
  * poppost-sync.mjs — mirror image posts from the "Schedule POP posts" Buzz
- * channel into public/poppost/ so they render on https://bitpopart.com/poppost.
+ * channel into public/poppost/posts.json so the admin PopPost scheduler's
+ * Channel inbox can import them as scheduled Nostr posts.
  *
  * Flow:
  *   1. `buzz messages get --channel <SCHEDULE_CHANNEL>` (authenticated bot).
@@ -12,6 +13,11 @@
  *      (Blossom get auth, since the URLs 401 anonymously); external image
  *      URLs (nostr.build, blossom.primal.net, …) are fetched with plain fetch.
  *   4. Append new entries to public/poppost/posts.json, newest first.
+ *
+ * URLs in posts.json are ABSOLUTE (https://bitpopart.com/poppost/images/…):
+ * the private relay's media URLs 401 anonymously, and the composer publishes
+ * imeta `url …` values verbatim — so imported scheduler posts must carry
+ * publicly reachable image URLs.
  *
  * Idempotent: already-ingested event IDs are skipped. Safe to re-run.
  *
@@ -34,6 +40,7 @@ const REPO_ROOT = join(__dirname, '..');
 const CHANNEL = 'f831a1a5-389f-426b-9df6-b5d3b9ec2133'; // "Schedule POP posts"
 const OWNER = '7eb59ca9f99bf6ddace147794035855a91eac5c378fc5177a16b3f540afae41a'; // BitPopArt
 const BUZZ_MEDIA_HOST = 'bitpopart.communities.buzz.xyz';
+const SITE_BASE = 'https://bitpopart.com'; // public deploy; posts.json refs must be absolute
 const KINDS = '1,9,20';
 
 function parseArgs(argv) {
@@ -196,7 +203,7 @@ async function main() {
       try {
         mkdirSync(destDir, { recursive: true });
         const dest = await downloadImage(images[i].url, destDir, i);
-        stored.push({ src: `/poppost/images/${ev.id}/${i}${extname(dest)}`, alt: images[i].alt });
+        stored.push({ src: `${SITE_BASE}/poppost/images/${ev.id}/${i}${extname(dest)}`, alt: images[i].alt });
       } catch (err) {
         failed++;
         console.error(`  ⚠️  Failed to download ${images[i].url}: ${err.message}`);
