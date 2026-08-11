@@ -277,6 +277,7 @@ var LN = "bitpopart@walletofsatoshi.com";
 var JACKPOT_GOAL = 2100, WINDOW_MS = 21*3600*1000;
 
 var idx=0, score=0, name="", npubMe="", paid=false, locked=false, lastT=0;
+var paidSats=0;
 var QT=21, tLeft=21, tInt=null;
 var totalMs=0, qStart=0;
 function $(id){ return document.getElementById(id); }
@@ -349,6 +350,7 @@ $("btnPaidGo").onclick=function(){
   name = $("inpName").value.trim() || "Anon Pleb";
   npubMe = np;
   paid = true;
+  paidSats = amt;
   var cut = Math.round(amt*0.21);
   S.jackpot += cut;
   if(!S.win && S.jackpot >= JACKPOT_GOAL){
@@ -445,6 +447,8 @@ function pick(i){
 
 $("btnNext").onclick=function(){ idx++; if(idx>=21) endQuiz(); else showQ(); };
 
+function postToParent(msg){try{if(window.parent&&window.parent!==window)window.parent.postMessage(msg,'*');}catch(e){}}
+
 function fmtMs(ms){
   var t=Math.round(ms/1000);
   return Math.floor(t/60)+":"+((t%60)<10?"0":"")+(t%60);
@@ -474,6 +478,7 @@ function endQuiz(){
   renderBoard(); renderWinners(); renderJack();
   gsLoad();
   if(paid && window.nostr && window.nostr.signEvent) gsPublish(score, totalMs, true);
+  postToParent({type:'game_over',score:score,totalMs:totalMs,paid:paid,name:name,npub:npubMe,satsPaid:paid?paidSats:0});
   window.scrollTo(0,0);
 }
 
@@ -581,6 +586,10 @@ function gsPublish(sc, ms, silent){
         ["t","quiz"],
         ["t","bitcoin"],
         ["t","arcade"],
+        ["name",(name||"PLAYER").toUpperCase().slice(0,12)],
+        ["npub",npubMe||""],
+        ["sats",paid?String(paidSats):"0"],
+        ["paid",paid?"true":"false"],
         ["alt","Game score: "+sc+"/21 in "+Math.round(ms/1000)+"s in BitPopArt 21 Quiz"]
       ],
       content:String(sc) };
