@@ -48,7 +48,15 @@ import { usePrintPosters, useBtcEurRate, eurToLiveSats } from '@/hooks/usePrintP
 import type { PrintPoster, PosterFormat } from '@/hooks/usePrintPosters';
 import { usePublishToMarketplace, NOSTR_MARKETPLACES } from '@/hooks/usePublishToMarketplace';
 import type { MarketplaceProduct } from '@/lib/sampleProducts';
-import { Store, Send, Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { Store, Send, Loader2, CheckCircle2 } from 'lucide-react';
+
+// The live shop-carousel banner on blossom.primal.net is a single 13.9 MB SVG
+// export — render a compressed WebP (bundled from it) instead so the shop
+// above-the-fold image loads fast. Replaceable whenever a new carousel image
+// is uploaded properly (WebP/JPEG, ideally under ~300 KB).
+const SHOP_CAROUSEL_OVERRIDES: Record<string, string> = {
+  'https://blossom.primal.net/5fbf5ea34902733d57ad9ac182880b18af0c33c274edacdb0d2b53c3a0989b4d.svg': '/shop-carousel.webp',
+};
 
 // ── Shop Image Carousel ────────────────────────────────────
 
@@ -97,6 +105,8 @@ function ShopCarousel({ items, isLoading }: { items: CarouselItem[]; isLoading: 
         src={currentItem.image_url}
         alt=""
         aria-hidden="true"
+        fetchPriority={index === 0 ? 'high' : 'auto'}
+        decoding="async"
         className="w-full h-auto block opacity-0 pointer-events-none max-h-[320px] sm:max-h-[400px] object-contain"
       />
       {items.map((it, i) => (
@@ -104,6 +114,8 @@ function ShopCarousel({ items, isLoading }: { items: CarouselItem[]; isLoading: 
           key={it.id}
           src={it.image_url}
           alt={it.title}
+          fetchPriority={i === 0 ? 'high' : 'auto'}
+          decoding="async"
           className={`absolute inset-0 w-full h-full object-contain transition-opacity duration-700 ${i === index ? 'opacity-100' : 'opacity-0'}`}
           loading={i === 0 ? 'eager' : 'lazy'}
         />
@@ -233,6 +245,15 @@ const Shop = () => {
 
   // Fetch shop carousel images (separate from the /app carousel)
   const { data: carouselMedia = [], isLoading: carouselLoading } = useAppMedia('shop-carousel');
+
+  // Swap oversized/blocked carousel sources for bundled compressed copies
+  const carouselItems = useMemo(
+    () => (carouselMedia ?? []).map(m => ({
+      ...m,
+      image_url: SHOP_CAROUSEL_OVERRIDES[m.image_url] ?? m.image_url,
+    })),
+    [carouselMedia]
+  );
 
   // Check if current user is admin
   const isAdmin = useIsAdmin();
@@ -455,9 +476,9 @@ const Shop = () => {
           </div>
 
           {/* Carousel — constrained to same width as content, capped height */}
-          {(carouselLoading || carouselMedia.length > 0) && (
+          {(carouselLoading || carouselItems.length > 0) && (
             <div className="mb-4">
-              <ShopCarousel items={carouselMedia} isLoading={carouselLoading} />
+              <ShopCarousel items={carouselItems} isLoading={carouselLoading} />
             </div>
           )}
 
