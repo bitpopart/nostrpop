@@ -1,7 +1,9 @@
 import { useNostr } from '@nostrify/react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
-import { nip19 } from 'nostr-tools';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { nip19, finalizeEvent, generateSecretKey, getPublicKey, SimplePool } from 'nostr-tools';
+import { bytesToHex, hexToBytes } from 'nostr-tools/utils';
 
 // Kind 30762 — Gamestr standard game score event (addressable)
 // See: https://gamestr.io/developers
@@ -10,6 +12,107 @@ import { nip19 } from 'nostr-tools';
 // and read back from the app's read relays — one game id per game, everywhere.
 
 export const GAMESTR_RELAY = 'wss://main.relay.gamestr.io';
+
+// Write relays the guest-score path publishes to. Must stay in sync with the
+// presetRelays in src/App.tsx (all 4 write relays so scores land everywhere
+// they're read from).
+const WRITE_RELAYS = [
+  'wss://relay.ditto.pub',
+  'wss://relay.dreamith.to',
+  'wss://relay.primal.net',
+  'wss://main.relay.gamestr.io',
+];
+
+const GUEST_KEY_STORAGE = 'bitpopart-games-guest-key';
+
+export interface GuestIdentity {
+  pubkey: string;
+  npub: string;
+  secretKey: Uint8Array;
+}
+
+/**
+ * A per-browser guest Nostr identity, so players can publish scores and appear
+ * on the scoreboard WITHOUT creating a Nostr account or logging in. The key is
+ * generated once and persisted in localStorage; if the player later logs in
+ * with their own key, use that instead (see useGameIdentity).
+ */
+export function getGuestIdentity(): GuestIdentity {
+  try {
+    const raw = localStorage.getItem(GUEST_KEY_STORAGE);
+    if (raw) {
+      const secretKey = hexToBytes(raw);
+      const pubkey = getPublicKey(secretKey);
+      return { pubkey, npub: nip19.npubEncode(pubkey), secretKey };
+    }
+  } catch { /* corrupt storage — regenerate below */ }
+  const secretKey = generateSecretKey();
+  const pubkey = getPublicKey(secretKey);
+  try {
+    localStorage.setItem(GUEST_KEY_STORAGE, bytesToHex(secretKey));
+  } catch { /* private mode — identity lasts for this session only */ }
+  return { pubkey, npub: nip19.npubEncode(pubkey), secretKey };
+}
+
+/**
+ * The identity to publish scores under: the logged-in user's key when present,
+ * otherwise the per-browser guest key. `isGuest` tells callers which path to
+ * advertise (e.g. "playing as guest").
+ */
+export function useGameIdentity(): { pubkey: string; npub: string; isGuest: boolean } {
+  const { user } = useCurrentUser();
+  if (user) {
+    const pubkey = user.pubkey;
+    return { pubkey, npub: nip19.npubEncode(pubkey), isGuest: false };
+  }
+  const guest = getGuestIdentity();
+  return { pubkey: guest.pubkey, npub: guest.npub, isGuest: true };
+}
+
+/**
+ * Publish a kind 30762 game score signed with the guest key — no login needed.
+ * Same tag schema as the logged-in path (game/score/name/npub/sats/paid/p).
+ */
+export async function publishScoreAsGuest(
+  game: string,
+  name: string,
+  score: number,
+  satsDeposited: number,
+): Promise<string> {
+  const guest = getGuestIdentity();
+  const event = finalizeEvent({
+    kind: 30762,
+    created_at: Math.floor(Date.now() / 1000),
+    content: `${name} scored ${score.toLocaleString()} in ${game}! ⚡`,
+    tags: [
+      ['d', `${game}:${guest.pubkey}`],
+      ['game', game],
+      ['score', String(score)],
+      ['p', guest.pubkey],
+      ['state', 'active'],
+      ['t', 'bitcoin'],
+      ['t', 'clownworld'],
+      ['t', 'bitpopart'],
+      ['name', name.toUpperCase().slice(0, 12)],
+      ['sats', String(satsDeposited)],
+      ['paid', satsDeposited > 0 ? 'true' : 'false'],
+      ['npub', guest.npub],
+    ],
+  }, guest.secretKey);
+
+  const pool = new SimplePool();
+  try {
+    const results = await Promise.allSettled(
+      WRITE_RELAYS.map(r => pool.publish([r], event)),
+    );
+    if (results.every(r => r.status === 'rejected')) {
+      throw new Error('No relay accepted the score — check your connection.');
+    }
+  } finally {
+    pool.close(WRITE_RELAYS);
+  }
+  return event.id;
+}
 
 const ADMIN_NPUB = 'npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz';
 const ADMIN_PUBKEY = nip19.decode(ADMIN_NPUB).data as string;
@@ -196,10 +299,13 @@ export function deriveJackpot(events: GameScore[], trustedBase = 0, game = ''): 
   };
 }
 
-// Hook: publish a score to Nostr (kind 30762 — Gamestr standard)
+// Hook: publish a score to Nostr (kind 30762 — Gamestr standard).
+// Uses the logged-in user's signer when available; otherwise falls back to the
+// per-browser guest key so ANYONE can get on the board — "just zap, add a name, play".
 export function usePublishGameScore() {
   const { mutateAsync, isPending } = useNostrPublish();
   const queryClient = useQueryClient();
+  const { user } = useCurrentUser();
 
   const publishScore = async (
     game: string,
@@ -208,6 +314,15 @@ export function usePublishGameScore() {
     satsDeposited: number,
     playerNpub?: string,
   ) => {
+    // Guest path — no login required
+    if (!user) {
+      const eventId = await publishScoreAsGuest(game, name, score, satsDeposited);
+      queryClient.invalidateQueries({ queryKey: ['game-leaderboard', game] });
+      queryClient.invalidateQueries({ queryKey: ['game-jackpot', game] });
+      return eventId;
+    }
+
+    // Logged-in path — sign with the user's key
     // Decode npub to hex pubkey for the p tag
     let playerPubkey = '';
     if (playerNpub) {

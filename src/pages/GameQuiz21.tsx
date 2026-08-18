@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSeoMeta } from '@unhead/react';
-import { Trophy, X } from 'lucide-react';
+import { Trophy, Users, X } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
 import {
   useGameLeaderboard,
   useJackpotState,
@@ -11,10 +10,11 @@ import {
   JACKPOT_GOAL,
 } from '@/hooks/useGameJackpot';
 import { GameMechanismOverlay } from '@/components/games/GameMechanismOverlay';
-import { LoginArea } from '@/components/auth/LoginArea';
-import { nip19 } from 'nostr-tools';
+import { GamePayPanel } from '@/components/games/GamePayPanel';
+import { trackGameStarted, trackGameFinished } from '@/lib/gameAnalytics';
 
 const GAME_ID = 'bitpopart-21-quiz';
+const LIGHTNING_ADDRESS = 'bitpopart@rizful.com';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -253,41 +253,34 @@ function Scoreboard({ onClose }: { onClose: () => void }) {
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
-type Screen = 'game' | 'scoreboard';
+type Screen = 'menu' | 'game' | 'pay' | 'scoreboard';
 
 export default function GameQuiz21() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const [screen, setScreen] = useState<Screen>('game');
+  const [screen, setScreen] = useState<Screen>('menu');
   const [iframeReady, setIframeReady] = useState(false);
-  const [iframeKey, setIframeKey] = useState(0);
   const [score, setScore] = useState(0);
   const [isGameOver, setIsGameOver] = useState(false);
   const [playerName, setPlayerName] = useState('');
   const [playerNpub, setPlayerNpub] = useState('');
   const [satsPaid, setSatsPaid] = useState(0);
-  const { user } = useCurrentUser();
+  const [paidMode, setPaidMode] = useState(false);
 
   useSeoMeta({
     title: '21 QUIZ — Bitcoin & Nostr · BitPopArt Games',
-    description: 'Test your Bitcoin & Nostr knowledge with 21 QUIZ by BitPopArt! 21 questions, timed rounds, Lightning jackpot. Deposit sats to compete on the scoreboard!',
+    description: 'Test your Bitcoin & Nostr knowledge with 21 QUIZ by BitPopArt! 21 questions, timed rounds, Lightning jackpot. Zap, add your name, play — scores land on the Nostr board.',
     ogTitle: '21 QUIZ — Bitcoin & Nostr · BitPopArt ⚡',
     ogDescription: '21 questions. Bitcoin & Nostr. No googling, no excuses 🤘',
     ogImage: 'https://bitpopart.com/bitpopart-logo.png',
   });
 
-  // Auto-fill npub when user is logged in — post to iframe
-  const sendNpub = useCallback(() => {
-    if (user && iframeRef.current) {
-      const npub = nip19.npubEncode(user.pubkey);
-      iframeRef.current.contentWindow?.postMessage({ type: 'set_npub', npub }, '*');
-    }
-  }, [user]);
+  const sendToGame = useCallback((msg: object) => {
+    iframeRef.current?.contentWindow?.postMessage(msg, '*');
+  }, []);
 
   const handleIframeLoad = useCallback(() => {
     setIframeReady(true);
-    // Give the iframe a moment to initialize, then send the npub
-    setTimeout(sendNpub, 500);
-  }, [sendNpub]);
+  }, []);
 
   // Listen for postMessage events from the game iframe
   const handleIframeMessage = useCallback((e: MessageEvent) => {
@@ -295,29 +288,50 @@ export default function GameQuiz21() {
     const msg = e.data as GameMessage;
     if (msg.type === 'ready') {
       setIframeReady(true);
-      sendNpub();
     } else if (msg.type === 'game_over' && typeof msg.score === 'number') {
       setScore(msg.score);
       setPlayerName(typeof msg.name === 'string' ? msg.name : '');
       setPlayerNpub(typeof msg.npub === 'string' ? msg.npub : '');
-      setSatsPaid(typeof msg.satsPaid === 'number' ? msg.satsPaid : 0);
+      const sats = typeof msg.satsPaid === 'number' ? msg.satsPaid : 0;
+      setSatsPaid(sats);
+      trackGameFinished(GAME_ID, '21 Quiz', paidMode ? 'paid' : 'free', msg.score, sats);
       setIsGameOver(true);
     }
-  }, [sendNpub]);
+  }, [paidMode]);
 
   useEffect(() => {
     window.addEventListener('message', handleIframeMessage);
     return () => window.removeEventListener('message', handleIframeMessage);
   }, [handleIframeMessage]);
 
-  const handlePlayAgain = useCallback(() => {
-    setScore(0);
-    setIsGameOver(false);
-    setPlayerName('');
-    setPlayerNpub('');
+  const startFreeGame = useCallback(() => {
+    setPaidMode(false);
     setSatsPaid(0);
-    setIframeKey(k => k + 1);
-  }, []);
+    setPlayerName('Free Pleb');
+    setPlayerNpub('');
+    setIsGameOver(false);
+    setScore(0);
+    setScreen('game');
+    trackGameStarted(GAME_ID, '21 Quiz', 'free');
+    setTimeout(() => sendToGame({ type: 'start_game', paidMode: false }), 300);
+  }, [sendToGame]);
+
+  const startPaidGame = useCallback((sats: number, name?: string, npub?: string) => {
+    setPaidMode(true);
+    setSatsPaid(sats);
+    if (name) setPlayerName(name);
+    if (npub) setPlayerNpub(npub);
+    setIsGameOver(false);
+    setScore(0);
+    setScreen('game');
+    trackGameStarted(GAME_ID, '21 Quiz', 'paid', sats);
+    setTimeout(() => sendToGame({ type: 'start_game', paidMode: true, name: name || playerName, npub: npub || playerNpub, satsPaid: sats }), 300);
+  }, [sendToGame, playerName, playerNpub]);
+
+  const handlePlayAgain = useCallback(() => {
+    if (paidMode) startPaidGame(satsPaid, playerName, playerNpub);
+    else startFreeGame();
+  }, [paidMode, satsPaid, playerName, playerNpub, startPaidGame, startFreeGame]);
 
   return (
     <div
@@ -349,7 +363,6 @@ export default function GameQuiz21() {
         )}
 
         <iframe
-          key={iframeKey}
           ref={iframeRef}
           src="/games/quiz21.html"
           title="21 Quiz — Bitcoin & Nostr"
@@ -357,6 +370,68 @@ export default function GameQuiz21() {
           sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
           onLoad={handleIframeLoad}
         />
+
+        {/* ── Menu overlay ── */}
+        {screen === 'menu' && iframeReady && (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 bg-[#0a0a0a]/92 backdrop-blur-[2px] px-4 py-6 overflow-y-auto">
+            <div className="text-center">
+              <h1 className="text-[clamp(36px,9vw,60px)] text-[#f97316] leading-none"
+                style={{ letterSpacing: '3px', textShadow: '3px 3px 0 #ff042c, 5px 5px 0 #000' }}>
+                21 QUIZ
+              </h1>
+              <p className="text-[#4cc1bb] mt-2 text-xl" style={{ letterSpacing: '2px' }}>
+                BITCOIN &amp; NOSTR · NO GOOGLING
+              </p>
+            </div>
+
+            <div className="bg-white/5 border-2 border-[#f97316] rounded-2xl p-4 text-left text-white max-w-xs w-full"
+              style={{ fontSize: 'clamp(14px,3.5vw,18px)', lineHeight: '1.5', fontFamily: 'sans-serif' }}>
+              21 questions · timed rounds.<br />
+              <strong className="text-[#f97316]">Zap, add your name, play.</strong><br />
+              Scores land on the Nostr board ⚡
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3 w-full max-w-xs justify-center">
+              <button
+                className="flex-1 py-3 rounded-2xl border-4 border-black bg-[#4cc1bb] text-black font-bold shadow-[5px_5px_0_#f97316] active:translate-y-1 active:shadow-none transition-all"
+                style={{ fontSize: 'clamp(18px,4vw,24px)', letterSpacing: '2px' }}
+                onClick={startFreeGame}
+              >
+                PLAY FREE ⚡
+              </button>
+              <button
+                className="flex-1 py-3 rounded-2xl border-4 border-black bg-[#f97316] text-white font-bold shadow-[5px_5px_0_#ff042c] active:translate-y-1 active:shadow-none transition-all"
+                style={{ fontSize: 'clamp(18px,4vw,24px)', letterSpacing: '2px' }}
+                onClick={() => setScreen('pay')}
+              >
+                FOR SATS ⚡
+              </button>
+            </div>
+
+            <button
+              className="flex items-center gap-2 text-white text-lg hover:text-[#f97316] transition-colors"
+              style={{ letterSpacing: '1px' }}
+              onClick={() => setScreen('scoreboard')}
+            >
+              <Users className="h-5 w-5" />
+              SCOREBOARD
+            </button>
+
+            <p className="text-xs text-white/40" style={{ letterSpacing: '2px' }}>BITPOPART · 21 CLUB</p>
+          </div>
+        )}
+
+        {/* ── Pay overlay ── */}
+        {screen === 'pay' && (
+          <GamePayPanel
+            gameId={GAME_ID}
+            lightningAddress={LIGHTNING_ADDRESS}
+            title="PLAY FOR SATS ⚡"
+            theme={{ bg: '#0a0a0a', accent: '#f97316', accent2: '#fce000', highlight: '#4cc1bb', cta: '#ff042c' }}
+            onPaid={(info) => startPaidGame(info.satsPaid, info.name, info.npub)}
+            onBack={() => setScreen('menu')}
+          />
+        )}
 
         {/* Game-over overlay (Nostr score publishing) */}
         <GameMechanismOverlay
@@ -372,19 +447,9 @@ export default function GameQuiz21() {
 
         {/* Scoreboard overlay */}
         {screen === 'scoreboard' && (
-          <Scoreboard onClose={() => setScreen('game')} />
+          <Scoreboard onClose={() => setScreen('menu')} />
         )}
       </div>
-
-      {/* Optional bottom bar when user is logged in — shows login hint if not */}
-      {!user && iframeReady && !isGameOver && (
-        <div className="shrink-0 bg-[#0a0a0a]/90 px-4 py-2 flex items-center justify-between gap-3 z-40">
-          <p className="text-xs text-white/70 flex-1">
-            Log in with Nostr to auto-fill your npub &amp; publish scores ⚡
-          </p>
-          <LoginArea className="shrink-0" />
-        </div>
-      )}
     </div>
   );
 }

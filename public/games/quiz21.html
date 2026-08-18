@@ -328,6 +328,30 @@ function renderJack(){
 setInterval(renderJack, 1000);
 renderJack();
 
+/* ---------- parent (React shell) bridge ---------- */
+window.addEventListener('message',function(e){
+  if(!e.data||typeof e.data!=='object')return;
+  if(e.data.type==='start_game'){
+    var pn=(typeof e.data.name==='string'&&e.data.name)?e.data.name:'Anon Pleb';
+    var np=(typeof e.data.npub==='string')?e.data.npub:'';
+    if(e.data.paidMode){
+      var amt=(typeof e.data.satsPaid==='number'&&e.data.satsPaid>0)?e.data.satsPaid:21;
+      name=pn; npubMe=np; paid=true; paidSats=amt;
+      var cut=Math.round(amt*0.21);
+      S.jackpot+=cut;
+      if(!S.win&&S.jackpot>=JACKPOT_GOAL){
+        S.win={start:Date.now(),end:Date.now()+WINDOW_MS,entries:[]};
+      }
+      saveS(S); renderJack();
+    } else {
+      name=pn; npubMe=np; paid=false; paidSats=0;
+    }
+    var st=document.getElementById('scrStart'), py=document.getElementById('scrPay');
+    if(st)st.classList.add('hide'); if(py)py.classList.add('hide');
+    beginQuiz();
+  }
+});
+
 /* ---------- start / deposit ---------- */
 $("btnFree").onclick=function(){ paid=false; name="Free Pleb"; npubMe=""; beginQuiz(); };
 $("btnPaid").onclick=function(){ $("scrStart").classList.add("hide"); $("scrPay").classList.remove("hide"); };

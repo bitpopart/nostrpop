@@ -32,7 +32,7 @@ export default function Games() {
         {
           id: 'moneyprinter',
           name: 'Money Printer Mayhem',
-          description: 'Catch fiat & shitcoins, dodge the Bitcoin — 3 lives, trust us. Deposit 21 sats to join the jackpot: 21% feeds the pot, 2100 sats triggers a 21h battle, top score wins it all.',
+          description: 'Catch fiat & shitcoins, dodge the Bitcoin — 3 lives, trust us. Zap ⚡, add your name, play: your score hits the Nostr board instantly and 21% of your zap feeds the shared jackpot.',
           url: '/games/moneyprinter',
           thumbnailEmoji: '💵',
           thumbnailGradient: 'from-pink-500 via-red-500 to-yellow-500',
@@ -41,7 +41,7 @@ export default function Games() {
         {
           id: 'quiz21',
           name: '21 Quiz',
-          description: '21 questions on Bitcoin & Nostr. Timed rounds, no googling, no excuses 🤘 Deposit sats to hit the scoreboard and play for the Lightning jackpot.',
+          description: '21 questions on Bitcoin & Nostr. Timed rounds, no googling, no excuses 🤘 Zap ⚡, add your name, play — scoreboard + jackpot on Nostr, no login needed.',
           url: '/games/quiz21',
           thumbnailEmoji: '⚡',
           thumbnailGradient: 'from-orange-500 via-amber-500 to-red-500',

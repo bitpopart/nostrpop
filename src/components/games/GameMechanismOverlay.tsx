@@ -22,8 +22,6 @@
 import { useState, useEffect } from 'react';
 import { Trophy, Zap, Timer, X, Users, Loader2, CheckCircle2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { LoginArea } from '@/components/auth/LoginArea';
 import {
   useGameLeaderboard,
   usePublishGameScore,
@@ -32,7 +30,6 @@ import {
   formatCountdown,
   JACKPOT_GOAL,
 } from '@/hooks/useGameJackpot';
-import { nip19 } from 'nostr-tools';
 
 const MEDALS = ['🥇', '🥈', '🥉'];
 
@@ -214,23 +211,31 @@ interface GameOverPanelProps {
 
 function GameOverPanel({ gameId, score, playerName, playerNpub, satsPaid, onPlayAgain }: GameOverPanelProps) {
   const { publishScore, isPending } = usePublishGameScore();
-  const { user } = useCurrentUser();
   const [published, setPublished] = useState(false);
   const [publishError, setPublishError] = useState('');
   const [showBoard, setShowBoard] = useState(false);
 
-  // Compute display name & npub
-  const displayNpub = playerNpub || (user ? nip19.npubEncode(user.pubkey) : '');
-  const displayName = playerName || (user ? 'PLAYER' : '???');
+  // Auto-publish paid scores — no login needed (guest key fallback).
+  useEffect(() => {
+    if (satsPaid > 0 && score > 0 && !published && !isPending) {
+      publishScore(gameId, playerName || 'PLAYER', score, satsPaid, playerNpub || undefined)
+        .then(() => setPublished(true))
+        .catch((err) => {
+          setPublishError(err instanceof Error ? err.message : 'Failed to publish — try again.');
+        });
+    }
+  }, [gameId, satsPaid, score, playerName, playerNpub, published, isPending, publishScore]);
+
+  const displayName = playerName || 'PLAYER';
 
   const handlePublish = async () => {
-    if (!user || published || isPending) return;
+    if (published || isPending) return;
     setPublishError('');
     try {
-      await publishScore(gameId, displayName, score, satsPaid, displayNpub || nip19.npubEncode(user.pubkey));
+      await publishScore(gameId, displayName, score, satsPaid, playerNpub || undefined);
       setPublished(true);
-    } catch {
-      setPublishError('Failed to publish — check your Nostr connection and try again.');
+    } catch (err) {
+      setPublishError(err instanceof Error ? err.message : 'Failed to publish — try again.');
     }
   };
 
@@ -251,39 +256,35 @@ function GameOverPanel({ gameId, score, playerName, playerNpub, satsPaid, onPlay
         SCORE: {score.toLocaleString()}
       </div>
 
-      {/* Nostr score publishing — only shown when we have a score > 0 */}
+      {/* Nostr score publishing — works with or without login (guest key fallback) */}
       {score > 0 && (
         <div className="w-full max-w-xs space-y-2">
-          {user ? (
+          {!published ? (
             <>
-              {!published ? (
-                <button
-                  className="w-full py-2.5 rounded-2xl border-4 border-[#FCE000] text-[#1A0040] font-bold text-lg bg-[#FCE000] shadow-[4px_4px_0_#F7931A] active:translate-y-1 active:shadow-none transition-all disabled:opacity-60"
-                  style={{ letterSpacing: '2px' }}
-                  onClick={handlePublish}
-                  disabled={isPending}>
-                  {isPending ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />PUBLISHING…
-                    </span>
-                  ) : 'POST TO NOSTR LEADERBOARD ⚡'}
-                </button>
-              ) : (
-                <div className="flex items-center justify-center gap-2 text-[#00CFFF] text-lg" style={{ letterSpacing: '1px' }}>
-                  <CheckCircle2 className="h-5 w-5" />SCORE ON NOSTR!
-                </div>
-              )}
-              {publishError && (
-                <p className="text-red-400 text-xs text-center" style={{ fontFamily: 'sans-serif' }}>{publishError}</p>
+              <button
+                className="w-full py-2.5 rounded-2xl border-4 border-[#FCE000] text-[#1A0040] font-bold text-lg bg-[#FCE000] shadow-[4px_4px_0_#F7931A] active:translate-y-1 active:shadow-none transition-all disabled:opacity-60"
+                style={{ letterSpacing: '2px' }}
+                onClick={handlePublish}
+                disabled={isPending}>
+                {isPending ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />PUBLISHING…
+                  </span>
+                ) : 'POST TO NOSTR LEADERBOARD ⚡'}
+              </button>
+              {satsPaid > 0 && !published && !isPending && (
+                <p className="text-[#FCE000] text-xs text-center" style={{ fontFamily: 'sans-serif' }}>
+                  {playerNpub ? 'Your paid score posts automatically…' : 'No login needed — your paid score posts with your guest key.'}
+                </p>
               )}
             </>
           ) : (
-            <div className="w-full text-center space-y-2">
-              <p className="text-[#FCE000] text-sm" style={{ fontFamily: 'sans-serif' }}>
-                Log in to post your score to Nostr:
-              </p>
-              <LoginArea className="w-full" />
+            <div className="flex items-center justify-center gap-2 text-[#00CFFF] text-lg" style={{ letterSpacing: '1px' }}>
+              <CheckCircle2 className="h-5 w-5" />SCORE ON NOSTR!
             </div>
+          )}
+          {publishError && (
+            <p className="text-red-400 text-xs text-center" style={{ fontFamily: 'sans-serif' }}>{publishError}</p>
           )}
         </div>
       )}
