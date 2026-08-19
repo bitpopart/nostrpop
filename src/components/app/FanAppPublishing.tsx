@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +18,8 @@ import {
   ShieldCheck,
   Package,
   Upload,
+  UploadCloud,
+  Loader2,
   Code2,
   BookOpen,
   AlertCircle,
@@ -25,6 +27,8 @@ import {
   Users,
   Lock,
 } from 'lucide-react';
+import { useZapstoreUpload, type ZapstoreUploadResult } from '@/hooks/useZapstoreUpload';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 
 // Android icon SVG (simple)
 function AndroidIcon({ className }: { className?: string }) {
@@ -160,6 +164,143 @@ function AppOverview() {
 
 // ── Zapstore Tab ───────────────────────────────────────────
 
+// Real in-browser uploader: pick an APK → hashes it → uploads to
+// cdn.zapstore.dev (Blossom) → returns content-addressed URL + SHA-256.
+// This is the same proven flow as TravelTelly's /admin/app-builder, ported
+// here so the BitPopArt admin can do it directly.
+function ApkUploaderCard() {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [stage, setStage] = useState<string>('');
+  const [pct, setPct] = useState<number>(0);
+  const [result, setResult] = useState<ZapstoreUploadResult | null>(null);
+  const [copied, setCopied] = useState<'url' | 'sha' | null>(null);
+  const { user } = useCurrentUser();
+  const upload = useZapstoreUpload();
+
+  const pickFile = () => fileInputRef.current?.click();
+
+  const onFileChosen = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    setFile(f ?? null);
+    setResult(null);
+    setStage('');
+    setPct(0);
+    if (f) e.target.value = '';
+  };
+
+  const doUpload = () => {
+    if (!file) return;
+    setResult(null);
+    upload.mutate(
+      { file, onProgress: (s, p) => { setStage(s); setPct(p); } },
+      {
+        onSuccess: (r) => setResult(r),
+      },
+    );
+  };
+
+  const copy = async (kind: 'url' | 'sha', value: string) => {
+    await navigator.clipboard.writeText(value);
+    setCopied(kind);
+    setTimeout(() => setCopied(null), 2000);
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base flex items-center gap-2">
+          <UploadCloud className="h-5 w-5 text-yellow-600" />
+          Upload APK to the Blossom CDN → get SHA-256
+        </CardTitle>
+        <CardDescription>
+          Pick your signed APK, and this hashes + uploads it to cdn.zapstore.dev, then returns the CDN URL
+          and SHA-256 you'll need for the Zapstore asset (kind 3063) & release (kind 30063) events.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".apk,application/vnd.android.package-archive"
+          className="hidden"
+          onChange={onFileChosen}
+        />
+
+        <div className="flex flex-wrap items-center gap-3">
+          <Button type="button" variant="outline" className="gap-2" onClick={pickFile}>
+            <Upload className="h-4 w-4" /> Choose APK
+          </Button>
+          <span className="text-sm text-muted-foreground truncate max-w-xs">
+            {file ? `${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)` : 'No file selected'}
+          </span>
+          {file && (
+            <Button type="button" className="gap-2" onClick={doUpload} disabled={upload.isPending}>
+              {upload.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <UploadCloud className="h-4 w-4" />}
+              {upload.isPending ? 'Uploading…' : 'Upload to CDN'}
+            </Button>
+          )}
+        </div>
+
+        {!user && (
+          <p className="text-xs text-yellow-700 dark:text-yellow-500">
+            You must be logged in (as an admin) to upload. Sign in with the account that owns the app.
+          </p>
+        )}
+
+        {stage && (
+          <div className="space-y-1">
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>{stage}</span>
+              <span>{pct}%</span>
+            </div>
+            <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+              <div className="h-full bg-yellow-500 transition-all" style={{ width: `${pct}%` }} />
+            </div>
+          </div>
+        )}
+
+        {upload.isError && (
+          <Alert className="border-red-300 bg-red-50 dark:bg-red-950/20">
+            <AlertCircle className="h-4 w-4 text-red-600" />
+            <AlertDescription className="text-red-800 dark:text-red-200 text-sm">
+              {upload.error?.message ?? 'Upload failed.'}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {result && (
+          <div className="space-y-3 rounded-lg border p-3 bg-muted/30">
+            <div className="flex items-center gap-2 text-sm font-semibold text-green-600">
+              <CheckCircle2 className="h-4 w-4" /> Upload complete
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">CDN URL</p>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 text-xs break-all bg-muted px-2 py-1 rounded">{result.url}</code>
+                <Button size="sm" variant="outline" className="gap-1" onClick={() => copy('url', result.url)}>
+                  {copied === 'url' ? <CheckCircle2 className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
+                  {copied === 'url' ? 'Copied' : 'Copy'}
+                </Button>
+              </div>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">SHA-256</p>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 text-xs break-all bg-muted px-2 py-1 rounded">{result.sha256}</code>
+                <Button size="sm" variant="outline" className="gap-1" onClick={() => copy('sha', result.sha256)}>
+                  {copied === 'sha' ? <CheckCircle2 className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
+                  {copied === 'sha' ? 'Copied' : 'Copy'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 function ZapstoreTab() {
   const zapstoreYaml = `# zapstore.yaml — commit this to your repo root
 name: "BitPopArt Fan App"
@@ -194,6 +335,8 @@ zsp publish -r github.com/bitpopart/nostrpop`;
           <strong>Zapstore</strong> is the Nostr-native app store — no gatekeeping, no permission needed. Apps are signed by developers and verified cryptographically. Perfect for the BitPopArt fan app!
         </AlertDescription>
       </Alert>
+
+      <ApkUploaderCard />
 
       {/* What is Zapstore */}
       <Card>
