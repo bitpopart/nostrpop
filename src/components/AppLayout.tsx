@@ -39,7 +39,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <a
-                      href="https://zapstore.dev/apps"
+                      href="https://zapstore.dev/apps/com.bitpopart.fanapp"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-1 px-2 py-1 rounded-lg border border-yellow-300 dark:border-yellow-700 bg-yellow-50 dark:bg-yellow-900/20 hover:bg-yellow-100 dark:hover:bg-yellow-900/40 transition-all"
@@ -50,7 +50,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                         className="h-4 w-4"
                         onError={(e) => { e.currentTarget.style.display = 'none'; }}
                       />
-                      <span className="text-[10px] font-bold text-yellow-700 dark:text-yellow-300 hidden sm:inline">Zapstore</span>
+                      <span className="text-[10px] font-bold text-yellow-700 dark:text-yellow-300">Zapstore</span>
                     </a>
                   </TooltipTrigger>
                   <TooltipContent side="bottom">
