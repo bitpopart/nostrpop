@@ -15,6 +15,9 @@
     { "src": "public/app-icon-512.png", "type": "image/png", "sizes": "512x512" },
     { "src": "public/app-icon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "maskable" }
   ],
+  "screenshots": [
+    { "src": "public/app-screenshots/free-downloads-1080x1920.png", "type": "image/png", "sizes": "1080x1920" }
+  ],
   "signing": {
     "path": "/path/to/bitpopart-fanapp.keystore",
     "alias": "bitpopart"

@@ -13,7 +13,15 @@
   "id": "com.bitpopart.fanapp",
   "categories": ["entertainment", "social", "lifestyle", "art", "photography"],
   "keywords": ["bitcoin art", "pop art", "nostr", "fan app", "free downloads", "bitcoin culture", "good vibes", "wallpapers", "gifs"],
-  "screenshots": [],
+  "screenshots": [
+    {
+      "src": "/app-screenshots/free-downloads-1080x1920.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "label": "Free downloads",
+      "form_factor": "narrow"
+    }
+  ],
   "icons": [
     {
       "src": "/app-icon-192.png",
