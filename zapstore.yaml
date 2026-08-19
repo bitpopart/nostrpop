@@ -1,0 +1,18 @@
+# Zapstore app manifest — https://zapstore.dev/docs/publish
+# The Zapstore relay fetches this file from the repo to verify the app's
+# pubkey (must match the key that signs the kind-32267 app event) and to
+# whitelist future publishes automatically.
+name: "BitPopArt Fan App"
+identifier: "com.bitpopart.fanapp"
+repository: https://github.com/bitpopart/nostrpop
+pubkey: npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz
+website: https://bitpopart.com/app
+description: >
+  The BitPopArt fan community app — free wallpapers, GIFs, animations,
+  avatars, merch and more! Bitcoin pop art for fans worldwide.
+  No login, no KYC, no barriers.
+categories:
+  - Art
+  - Entertainment
+  - Social
+license: MIT

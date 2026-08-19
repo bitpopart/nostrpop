@@ -28,6 +28,7 @@ import {
   Lock,
 } from 'lucide-react';
 import { useZapstoreUpload, type ZapstoreUploadResult } from '@/hooks/useZapstoreUpload';
+import { ZapstorePublishCard } from '@/components/app/ZapstorePublishCard';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { FanAppAssetsEditor } from '@/components/app/FanAppAssetsEditor';
 import { useFanAppPublishingSettings } from '@/hooks/useFanAppPublishingSettings';
@@ -310,7 +311,7 @@ function ZapstoreTab() {
 name: "BitPopArt Fan App"
 identifier: "com.bitpopart.fanapp"
 repository: https://github.com/bitpopart/nostrpop
-pubkey: npub105em547c5m5gdxslr4fp2f29jav54sxml6cpk6gda7xyvxuzmv6s84a642
+pubkey: npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz
 website: https://bitpopart.com/app
 description: >
   The BitPopArt fan community app — free wallpapers, GIFs, animations,
@@ -341,6 +342,9 @@ zsp publish -r github.com/bitpopart/nostrpop`;
       </Alert>
 
       <ApkUploaderCard />
+
+      {/* One-click publish: app metadata + APK release */}
+      <ZapstorePublishCard />
 
       {/* What is Zapstore */}
       <Card>
@@ -389,7 +393,7 @@ zsp publish -r github.com/bitpopart/nostrpop`;
             </Step>
 
             <Step number={4} title="Get whitelisted automatically">
-              <p>When the app event reaches the Zapstore relay, it fetches your <code className="bg-muted px-1 rounded text-xs">zapstore.yaml</code> from the repo, verifies the pubkey matches, and whitelists you. Your Nostr identity <code className="bg-muted px-1 rounded text-xs">npub105em...</code> is already registered — future publishes pass immediately.</p>
+              <p>When the app event reaches the Zapstore relay, it fetches your <code className="bg-muted px-1 rounded text-xs">zapstore.yaml</code> from the repo, verifies the pubkey matches, and whitelists you. Your Nostr identity <code className="bg-muted px-1 rounded text-xs">npub1gwa27...</code> is already registered — future publishes pass immediately.</p>
             </Step>
 
             <Step number={5} title="Done — fans can now find your app!">
