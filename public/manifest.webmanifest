@@ -13,42 +13,29 @@
   "id": "com.bitpopart.fanapp",
   "categories": ["entertainment", "social", "lifestyle", "art", "photography"],
   "keywords": ["bitcoin art", "pop art", "nostr", "fan app", "free downloads", "bitcoin culture", "good vibes", "wallpapers", "gifs"],
-  "screenshots": [
-    {
-      "src": "/fan-app-icon.png",
-      "sizes": "828x828",
-      "type": "image/png",
-      "label": "BitPopArt Fan App"
-    },
-    {
-      "src": "/bitpopart-logo.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "label": "BitPopArt"
-    }
-  ],
+  "screenshots": [],
   "icons": [
     {
-      "src": "/App_icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "/app-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/fan-app-icon.png",
+      "src": "/app-icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/fan-app-icon.png",
+      "src": "/app-icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "/bitpopart-logo.png",
-      "sizes": "512x512",
+      "src": "/app-icon-1024.png",
+      "sizes": "1024x1024",
       "type": "image/png",
       "purpose": "any"
     }

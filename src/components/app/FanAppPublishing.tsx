@@ -29,6 +29,8 @@ import {
 } from 'lucide-react';
 import { useZapstoreUpload, type ZapstoreUploadResult } from '@/hooks/useZapstoreUpload';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { FanAppAssetsEditor } from '@/components/app/FanAppAssetsEditor';
+import { useFanAppPublishingSettings } from '@/hooks/useFanAppPublishingSettings';
 
 // Android icon SVG (simple)
 function AndroidIcon({ className }: { className?: string }) {
@@ -87,6 +89,8 @@ function CopyableCode({ code }: { code: string }) {
 // ── App Overview Card ──────────────────────────────────────
 
 function AppOverview() {
+  const { data: settings } = useFanAppPublishingSettings();
+  const iconSrc = settings?.iconUrl || '/App_icon.svg';
   return (
     <Card className="border-orange-200 dark:border-orange-800 bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/30">
       <CardContent className="pt-6">
@@ -95,7 +99,7 @@ function AppOverview() {
           <div className="flex-shrink-0">
             <div className="w-24 h-24 rounded-2xl overflow-hidden shadow-lg ring-4 ring-orange-200 dark:ring-orange-800 bg-red-500">
               <img
-                src="/App_icon.svg"
+                src={iconSrc}
                 alt="BitPopArt Fan App Icon"
                 className="w-full h-full object-cover"
               />
@@ -828,6 +832,9 @@ export function FanAppPublishing() {
 
       {/* App Overview */}
       <AppOverview />
+
+      {/* App Icon & Store Screenshots editor */}
+      <FanAppAssetsEditor />
 
       {/* PWA Checklist */}
       <PwaChecklist />

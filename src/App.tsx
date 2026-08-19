@@ -12,6 +12,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { NostrLoginProvider } from '@nostrify/react/login';
 import { AppProvider } from '@/components/AppProvider';
 import { ThemeColorLoader } from '@/components/ThemeColorLoader';
+import { FanAppManifestSync } from '@/components/FanAppManifestSync';
 import { AppConfig } from '@/contexts/AppContext';
 import AppRouter from './AppRouter';
 
@@ -58,6 +59,7 @@ export function App() {
           <NostrLoginProvider storageKey='nostr:login'>
             <NostrProvider>
               <ThemeColorLoader />
+              <FanAppManifestSync />
               <TooltipProvider>
                 <Toaster />
                 <Sonner />

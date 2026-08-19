@@ -31,10 +31,10 @@ const cspPlugin = () => ({
       const isDev = !context.bundle;
 
       // Production CSP with unsafe-eval for React runtime features
-      const prodCSP = "default-src 'none'; script-src 'self' 'unsafe-eval' https://esm.sh; style-src 'self' 'unsafe-inline' https://esm.sh; font-src 'self' data: https://esm.sh; base-uri 'self'; manifest-src 'self'; connect-src 'self' blob: https: wss:; img-src 'self' data: blob: https:; media-src 'self' https:; object-src 'none'; worker-src 'self' blob:";
+      const prodCSP = "default-src 'none'; script-src 'self' 'unsafe-eval' https://esm.sh; style-src 'self' 'unsafe-inline' https://esm.sh; font-src 'self' data: https://esm.sh; base-uri 'self'; manifest-src 'self' blob:; connect-src 'self' blob: https: wss:; img-src 'self' data: blob: https:; media-src 'self' https:; object-src 'none'; worker-src 'self' blob:";
 
       // More permissive CSP for development (allows Vite HMR)
-      const devCSP = "default-src 'none'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; base-uri 'self'; manifest-src 'self'; connect-src 'self' blob: https: wss:; img-src 'self' data: blob: https:; media-src 'self' https:; object-src 'none'; worker-src 'self' blob:";
+      const devCSP = "default-src 'none'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; base-uri 'self'; manifest-src 'self' blob:; connect-src 'self' blob: https: wss:; img-src 'self' data: blob: https:; media-src 'self' https:; object-src 'none'; worker-src 'self' blob:";
 
       const csp = isDev ? devCSP : prodCSP;
       const comment = isDev
