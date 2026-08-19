@@ -1,0 +1,130 @@
+name: Build Android APK (Bubblewrap TWA)
+
+# Path B: "the builder inside the repo". Wraps https://bitpopart.com/app as a
+# Trusted Web Activity and produces a SIGNED APK + AAB with Bubblewrap on a
+# GitHub runner (which has the JDK + Android SDK). The signed APK is the file
+# that gets uploaded to the Blossom CDN (admin → Publish Fan App → Zapstore →
+# Upload APK) and published to Zapstore as kind 3063/30063.
+#
+# Secrets required (repo → Settings → Secrets and variables → Actions):
+#   APP_KEYSTORE_B64       base64 of the Android signing keystore (.keystore/.jks)
+#   APP_KEYSTORE_PASS      keystore password
+#   APP_KEY_ALIAS          key alias
+#   APP_KEY_ALIAS_PASS     key password
+# Create the keystore once locally, e.g.:
+#   keytool -genkey -v -keystore bitpopart-fanapp.keystore \
+#     -alias bitpopart -keyalg RSA -keysize 2048 -validity 10000 \
+#     -storetype jks
+#   base64 -i bitpopart-fanapp.keystore   # (macOS) → paste into APP_KEYSTORE_B64
+# Note: the TWA also needs digital asset links (.well-known/assetlinks.json on
+# bitpopart.com) containing the cert's SHA-256 fingerprint for production. Run
+# `bubblewrap fingerprint --keystorePath ... --keystorePass ...` locally once,
+# or see https://developer.chrome.com/docs/android/trusted-web-activity/quick-start.
+
+on:
+  workflow_dispatch:
+    inputs:
+      unsigned:
+        description: "Build UNSIGNED (no keystore secrets needed — for testing)"
+        type: boolean
+        default: false
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Setup Java (JDK 17, required by Bubblewrap/Gradle)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Write Bubblewrap config (JDK + Android SDK paths)
+        shell: bash
+        run: |
+          mkdir -p "$HOME/.bubblewrap"
+          node -e '
+            const fs = require("fs");
+            const cfg = {
+              jdkPath: process.env.JAVA_HOME,
+              androidSdkPath: process.env.ANDROID_HOME,
+            };
+            if (!cfg.jdkPath) throw new Error("JAVA_HOME not set");
+            if (!cfg.androidSdkPath) throw new Error("ANDROID_HOME not set");
+            fs.writeFileSync(process.env.HOME + "/.bubblewrap/config.json", JSON.stringify(cfg));
+            console.log("bubblewrap config:", JSON.stringify(cfg));
+          '
+
+      - name: Write signing keystore (skip when unsigned)
+        if: ${{ !inputs.unsigned }}
+        shell: bash
+        env:
+          APP_KEYSTORE_B64: ${{ secrets.APP_KEYSTORE_B64 }}
+        run: |
+          if [ -z "$APP_KEYSTORE_B64" ]; then
+            echo "::error::APP_KEYSTORE_B64 secret is not set. Add it (see workflow header) or run with 'unsigned' input."
+            exit 1
+          fi
+          echo "$APP_KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/bitpopart-fanapp.keystore"
+          ls -la "$RUNNER_TEMP/bitpopart-fanapp.keystore"
+
+      - name: Build signed APK + AAB (Bubblewrap 1.25.0)
+        shell: bash
+        env:
+          BUBBLEWRAP_KEYSTORE_PASSWORD: ${{ secrets.APP_KEYSTORE_PASS }}
+          BUBBLEWRAP_KEY_PASSWORD: ${{ secrets.APP_KEY_ALIAS_PASS }}
+        run: |
+          CMD="npx --yes @bubblewrap/cli@1.25.0 build --manifest ./twa-manifest.json"
+          if [ "${{ inputs.unsigned }}" == "true" ]; then
+            CMD="$CMD --skipSigning"
+          else
+            CMD="$CMD --signingKeyPath '$RUNNER_TEMP/bitpopart-fanapp.keystore' --signingKeyAlias '${{ secrets.APP_KEY_ALIAS }}'"
+          fi
+          echo "Running: $CMD"
+          # 'y' answers Bubblewrap's "generate/update the Android project?" prompt
+          # on a fresh checkout (the project itself is generated in CI, not committed).
+          printf 'y\n' | eval "$CMD"
+          echo "--- outputs ---"
+          ls -la app-release-signed.apk app-release-bundle.aab 2>/dev/null || ls -la app-release-*.apk app-release-*.aab 2>/dev/null
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: bitpopart-fanapp-release
+          if-no-files-found: error
+          path: |
+            app-release-signed.apk
+            app-release-bundle.aab
+
+      - name: Attach to GitHub Release (tag runs only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            app-release-signed.apk
+            app-release-bundle.aab
+
+      - name: Next steps (info)
+        run: |
+          echo "Signed APK ready. Next:"
+          echo "  1. Download the APK from the workflow artifacts (or the GitHub Release)."
+          echo "  2. bitpopart.com/admin → Publish Fan App → Zapstore → Upload APK to Blossom CDN → get SHA-256."
+          echo "  3. Publish the Zapstore asset (kind 3063) + release (kind 30063) with that URL + SHA-256."
+          echo "  (Nostr/Blossom signing is intentionally kept out of CI — the owner's key stays in the admin.)"

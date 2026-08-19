@@ -1,0 +1,22 @@
+{
+  "packageId": "com.bitpopart.fanapp",
+  "host": "bitpopart.com",
+  "name": "BitPopArt Fan App",
+  "launcherName": "BitPopArt",
+  "display": "standalone",
+  "themeColor": "#f97316",
+  "backgroundColor": "#fef3c7",
+  "navigationColor": "#000000",
+  "enableNotifications": false,
+  "startUrl": "/app",
+  "fullScreen": false,
+  "webManifestUrl": "https://bitpopart.com/manifest.webmanifest",
+  "icons": [
+    { "src": "public/app-icon-512.png", "type": "image/png", "sizes": "512x512" },
+    { "src": "public/app-icon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "maskable" }
+  ],
+  "signing": {
+    "path": "/path/to/bitpopart-fanapp.keystore",
+    "alias": "bitpopart"
+  }
+}

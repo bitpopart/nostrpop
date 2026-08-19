@@ -166,5 +166,18 @@
       })();
     </script>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // Register the service worker (PWA installability + offline app shell).
+      // The worker lives at the origin root so its scope covers every route.
+      try {
+        if ('serviceWorker' in navigator) {
+          window.addEventListener('load', function () {
+            navigator.serviceWorker.register('/sw.js').catch(function (err) {
+              console.warn('Service worker registration failed:', err);
+            });
+          });
+        }
+      } catch (e) {}
+    </script>
   </body>
 </html>
