@@ -13,6 +13,7 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useThumbnailUrl } from '@/hooks/useThumbnailUrl';
 import { useAppMedia } from '@/hooks/useAppContent';
 import { useCardTemplates } from '@/hooks/useCardTemplates';
 import { useLatestCards } from '@/hooks/useLatestCards';
@@ -101,9 +102,34 @@ interface CarouselItem {
   title: string;
 }
 
+/** Resized, speed-optimized URL for a carousel slide.
+ *  Serves a fast WebP thumbnail through the configured image proxy (wsrv.nl)
+ *  instead of the full-size original — the single biggest lever for speeding
+ *  up the carousel on slow connections. GIFs keep their animation; when the
+ *  proxy is off (empty string) the original URL is returned unchanged.
+ */
+const CAROUSEL_THUMB_WIDTH = 1080;
+
+function carouselSlideSrc(
+  thumbnail: (src: string, width: number, opts?: { animated?: boolean }) => string,
+  item: CarouselItem,
+): string {
+  // Animated GIFs are served from the original URL directly — resizing a large
+  // animation through the proxy can time out and break the slide. Static images
+  // get the fast WebP thumb.
+  if (item.id.startsWith('gif-')) return item.image_url;
+  return thumbnail(item.image_url, CAROUSEL_THUMB_WIDTH);
+}
+
 function ImageCarousel({ items, isLoading }: { items: CarouselItem[]; isLoading: boolean }) {
   const [index, setIndex] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Outgoing slide — kept mounted only to crossfade out. It was already the
+  // active slide a moment ago, so it is in the browser cache and the fade
+  // costs no extra download over the network.
+  const [fadingImage, setFadingImage] = useState<CarouselItem | null>(null);
+  const visibleRef = useRef<CarouselItem | null>(null);
+  const thumbnail = useThumbnailUrl();
 
   const resetTimer = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -118,6 +144,49 @@ function ImageCarousel({ items, isLoading }: { items: CarouselItem[]; isLoading:
     resetTimer();
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [resetTimer]);
+
+  // Remember the previously-visible slide so it can crossfade out on change.
+  useEffect(() => {
+    const item = items[index];
+    if (!item) return;
+    if (visibleRef.current && visibleRef.current.id !== item.id) {
+      setFadingImage(visibleRef.current);
+    }
+    visibleRef.current = item;
+  }, [index, items]);
+
+  // Unmount the outgoing slide once its fade-out has finished.
+  useEffect(() => {
+    if (!fadingImage) return;
+    const t = setTimeout(() => setFadingImage(null), 750);
+    return () => clearTimeout(t);
+  }, [fadingImage]);
+
+  const currentItem = items[index];
+  const currentSrc = currentItem ? carouselSlideSrc(thumbnail, currentItem) : '';
+  const nextSrc = items.length > 0
+    ? carouselSlideSrc(thumbnail, items[(index + 1) % items.length])
+    : '';
+
+  // Start the active image download immediately and pre-warm the next slide
+  // so auto-advance / manual nav paints without a network wait.
+  useEffect(() => {
+    const added: HTMLLinkElement[] = [];
+    const addLink = (href: string, rel: string, fetchPriority: 'high' | 'low' | 'auto') => {
+      if (!href) return;
+      if (document.head.querySelector(`link[href="${href}"]`)) return;
+      const link = document.createElement('link');
+      link.rel = rel;
+      link.href = href;
+      link.as = 'image';
+      link.fetchPriority = fetchPriority;
+      document.head.appendChild(link);
+      added.push(link);
+    };
+    addLink(currentSrc, 'preload', 'high');
+    addLink(nextSrc, 'prefetch', 'low');
+    return () => { added.forEach(l => l.remove()); };
+  }, [currentSrc, nextSrc]);
 
   const prev = () => { setIndex(i => (i - 1 + items.length) % items.length); resetTimer(); };
   const next = () => { setIndex(i => (i + 1) % items.length); resetTimer(); };
@@ -138,27 +207,34 @@ function ImageCarousel({ items, isLoading }: { items: CarouselItem[]; isLoading:
     );
   }
 
-  const currentItem = items[index];
+  if (!currentItem) {
+    return null;
+  }
 
   return (
     <div className="relative w-full rounded-2xl overflow-hidden group">
-      {/* Invisible spacer image keeps the container sized to the active image's natural dimensions */}
+      {/* The active slide is the in-flow, layout-driving image (natural size).
+          Unlike before, there is no second opacity-0 spacer image fetching the
+          same URL, and non-active slides are not fetched until they are shown —
+          so every slide downloads exactly once and only when needed. */}
       <img
-        key={currentItem.id + '-spacer'}
-        src={currentItem.image_url}
-        alt=""
-        aria-hidden="true"
-        className="w-full h-auto block opacity-0 pointer-events-none"
+        key={currentItem.id}
+        src={currentSrc}
+        alt={currentItem.title}
+        fetchPriority="high"
+        decoding="async"
+        className="w-full h-auto block object-contain"
       />
-      {items.map((it, i) => (
+      {/* Outgoing slide fades out over the new one during the crossfade */}
+      {fadingImage && fadingImage.id !== currentItem.id && (
         <img
-          key={it.id}
-          src={it.image_url}
-          alt={it.title}
-          className={`absolute inset-0 w-full h-full object-contain transition-opacity duration-700 ${i === index ? 'opacity-100' : 'opacity-0'}`}
-          loading={i === 0 ? 'eager' : 'lazy'}
+          key={`fading-${fadingImage.id}`}
+          src={carouselSlideSrc(thumbnail, fadingImage)}
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 w-full h-full object-contain carousel-fade-out pointer-events-none"
         />
-      ))}
+      )}
 
       {/* Nav buttons */}
       {items.length > 1 && (
