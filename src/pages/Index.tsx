@@ -1791,12 +1791,12 @@ const Index = () => {
                 </Link>
 
                 {/* Magazine — highlighted */}
-                <a href="https://www.bitpopart.com/magazine" target="_blank" rel="noopener noreferrer" title="Magazine" className="flex flex-col items-center gap-0.5 group">
+                <Link to="/magazine" title="Magazine" className="flex flex-col items-center gap-0.5 group">
                   <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-rose-500 to-orange-500 shadow-md flex items-center justify-center group-hover:scale-110 group-hover:shadow-lg transition-all duration-200">
                     <Newspaper className="h-4 w-4 text-white" />
                   </div>
                   <span className="text-[9px] font-bold text-rose-600 dark:text-rose-400 leading-tight">Magazine</span>
-                </a>
+                </Link>
 
                 {/* Nostr */}
                 <Link to="/feed" title="Nostr" className="flex flex-col items-center gap-0.5 group">
