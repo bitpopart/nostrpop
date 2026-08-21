@@ -1,7 +1,7 @@
 import { useNostr } from '@nostrify/react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { PageData, SocialMediaLink } from '@/lib/pageTypes';
-import { getAdminPubkeyHex } from '@/lib/adminUtils';
+import { getAdminPubkeyHex, PAGE_OWNER_PUBKEYS } from '@/lib/adminUtils';
 
 const ADMIN_PUBKEY = getAdminPubkeyHex();
 const PAGES_STORAGE_KEY = 'bitpopart:pages';
@@ -142,6 +142,22 @@ function eventToPageData(event: { id: string; pubkey: string; kind: number; cont
 }
 
 /**
+ * Dedupe pages by slug, keeping the newest version (by created_at).
+ * Pages are addressable Nostr events, so different owner pubkeys can hold a
+ * different version of the same slug; the newest one must win across keys.
+ */
+function dedupeByNewest(pages: PageData[]): PageData[] {
+  const byId = new Map<string, PageData>();
+  for (const page of pages) {
+    const prev = byId.get(page.id);
+    if (!prev || new Date(page.created_at).getTime() > new Date(prev.created_at).getTime()) {
+      byId.set(page.id, page);
+    }
+  }
+  return [...byId.values()].sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+}
+
+/**
  * Fetch all pages — Nostr is source of truth for visitors,
  * localStorage fills in pages not yet synced or on admin's own browser.
  */
@@ -160,7 +176,9 @@ export function usePages() {
       let nostrPages: PageData[] = [];
       try {
         const events = await nostr.query(
-          [{ kinds: [38175], authors: [ADMIN_PUBKEY], limit: 50 }],
+          // Read pages from every owner key — pages may be published under any
+          // of BitPopArt's keys, and the newest version of each slug must win.
+          [{ kinds: [38175], authors: PAGE_OWNER_PUBKEYS, limit: 50 }],
           { signal }
         );
         nostrPages = events
@@ -173,8 +191,8 @@ export function usePages() {
       const nostrIds = new Set(nostrPages.map(p => p.id));
       const localOnly = localPages.filter(p => !nostrIds.has(p.id));
 
-      const merged = [...nostrPages, ...localOnly]
-        .sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+      // Dedupe by slug across owner keys, keeping the newest version.
+      const merged = dedupeByNewest([...nostrPages, ...localOnly]);
 
       // Seed the per-page cache so navigating to /:slug renders instantly
       // without a second relay round-trip.
@@ -201,7 +219,7 @@ export function useFooterPages() {
       let nostrPages: PageData[] = [];
       try {
         const events = await nostr.query(
-          [{ kinds: [38175], authors: [ADMIN_PUBKEY], '#footer': ['true'], limit: 20 }],
+          [{ kinds: [38175], authors: PAGE_OWNER_PUBKEYS, '#footer': ['true'], limit: 20 }],
           { signal }
         );
         nostrPages = events
@@ -213,8 +231,7 @@ export function useFooterPages() {
       const nostrIds = new Set(nostrPages.map(p => p.id));
       const localOnly = localPages.filter(p => !nostrIds.has(p.id));
 
-      return [...nostrPages, ...localOnly]
-        .sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+      return dedupeByNewest([...nostrPages, ...localOnly]);
     },
   });
 }
@@ -241,7 +258,11 @@ export function usePage(slug: string) {
       // Try Nostr — it is the source of truth for all visitors
       try {
         const events = await nostr.query(
-          [{ kinds: [38175], authors: [ADMIN_PUBKEY], '#d': [slug], limit: 1 }],
+          // Read from every owner key. Bump the limit so a relay can't truncate
+          // to a single (possibly stale) version of the slug — NSet keeps only
+          // the newest per publisher and sorts newest-first, so events[0] is
+          // the latest version across all owner keys.
+          [{ kinds: [38175], authors: PAGE_OWNER_PUBKEYS, '#d': [slug], limit: 20 }],
           { signal }
         );
         if (events.length > 0) {

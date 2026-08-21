@@ -3,6 +3,19 @@ import { nip19 } from 'nostr-tools';
 // BitPopArt admin npub (bitpopart)
 const ADMIN_NPUB = 'npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz';
 
+// BitPopArt's operator pubkeys that are authoritative for site content.
+// ⚠️ Keep this in sync with the "real" publishing keys. Pages (kind 38175)
+// may be published from more than one key — the site reads from every key
+// listed here and serves the newest version of each page (see usePages.tsx).
+const PRIMARY_OWNER_PUBKEY = '43baaf0c28e6cfb195b17ee083e19eb3a4afdfac54d9b6baf170270ed193e34c'; // npub1gwa27... (site admin/content key)
+const ARTIST_OWNER_PUBKEY = '7d33ba57d8a6e8869a1f1d5215254597594ac0dbfeb01b690def8c461b82db35'; // npub105em547c5m... (artist key, site founder/author)
+
+/** Pubkeys whose custom pages (kind 38175) the site treats as authoritative. */
+export const PAGE_OWNER_PUBKEYS: string[] = [
+  PRIMARY_OWNER_PUBKEY,
+  ARTIST_OWNER_PUBKEY,
+];
+
 // Convert npub to hex format for comparison
 let ADMIN_PUBKEY_HEX: string;
 try {
