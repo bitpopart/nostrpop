@@ -19,6 +19,7 @@ import { useCardTemplates } from '@/hooks/useCardTemplates';
 import { useLatestCards } from '@/hooks/useLatestCards';
 import { useFreeDownloads } from '@/hooks/useFreeDownloads';
 import { useAnimations } from '@/hooks/useAnimations';
+import { usePage } from '@/hooks/usePages';
 
 import { ZapButton } from '@/components/ZapButton';
 import { getAdminPubkeyHex } from '@/lib/adminUtils';
@@ -2190,6 +2191,9 @@ export default function AppPage() {
   // Library item view (ready-made meme or card — view only, no edit)
   const [libraryItem, setLibraryItem] = useState<{ id: string; image_url: string; title: string } | null>(null);
 
+  // In-app magazine reader — keeps the magazine inside the app's own frames
+  const [magazineOpen, setMagazineOpen] = useState(false);
+
   // Data
   const { data: wallpapers = [], isLoading: wpLoading } = useAppMedia('app-wallpaper');
   const { data: gifs = [], isLoading: gifLoading } = useAppMedia('app-gif');
@@ -2203,6 +2207,8 @@ export default function AppPage() {
   const { data: latestCards = [], isLoading: cardsLoading } = useLatestCards(5);
   // Dedicated carousel images (managed from admin → App → Carousel)
   const { data: carouselImages = [], isLoading: carouselLoading } = useAppMedia('app-carousel');
+  // Magazine — a Nostr custom page whose embedded brand-site HTML IS the magazine.
+  const magazinePage = usePage('magazine');
 
   // Use dedicated carousel images when available, otherwise fall back to a mix
   const allMediaItems: CarouselItem[] = carouselImages.length > 0
@@ -2323,8 +2329,8 @@ export default function AppPage() {
                   { label: 'Banners',    icon: <PanelTop className="h-4 w-4" />,     color: 'text-sky-700 dark:text-sky-400',      bg: 'bg-sky-50 dark:bg-sky-900/20 hover:bg-sky-100 dark:hover:bg-sky-900/30 border-sky-200 dark:border-sky-800',             count: banners.length, loading: bannerLoading,                          onDownload: 'banner' as MediaTab },
                   { label: 'Coloring',   icon: <Palette className="h-4 w-4" />,      color: 'text-rose-700 dark:text-rose-400',    bg: 'bg-rose-50 dark:bg-rose-900/20 hover:bg-rose-100 dark:hover:bg-rose-900/30 border-rose-200 dark:border-rose-800',       count: coloringPages.length, loading: coloringLoading,                   onDownload: 'coloring' as MediaTab },
                   { label: 'Cards',      icon: <CreditCard className="h-4 w-4" />,   color: 'text-pink-700 dark:text-pink-400',    bg: 'bg-pink-50 dark:bg-pink-900/20 hover:bg-pink-100 dark:hover:bg-pink-900/30 border-pink-200 dark:border-pink-800',       count: latestCards.length, loading: cardsLoading,                       onCreate: 'card' as const },
-                  { label: 'Magazine',  icon: <Newspaper className="h-4 w-4" />,   color: 'text-rose-700 dark:text-rose-400',    bg: 'bg-rose-50 dark:bg-rose-900/20 hover:bg-rose-100 dark:hover:bg-rose-900/30 border-rose-200 dark:border-rose-800',       count: 0, loading: false, sub: 'Read',                                       onNavigate: '/magazine' as const },
-                ] as Array<{ label: string; icon: React.ReactNode; color: string; bg: string; count: number; loading: boolean; onDownload?: MediaTab; onCreate?: 'meme' | 'card' | 'avatar'; onNavigate?: string; sub?: string }>).map((cat) => {
+                  { label: 'Magazine',  icon: <Newspaper className="h-4 w-4" />,   color: 'text-rose-700 dark:text-rose-400',    bg: 'bg-rose-50 dark:bg-rose-900/20 hover:bg-rose-100 dark:hover:bg-rose-900/30 border-rose-200 dark:border-rose-800',       count: 0, loading: false, sub: 'Read',                                       openMagazine: true },
+                ] as Array<{ label: string; icon: React.ReactNode; color: string; bg: string; count: number; loading: boolean; onDownload?: MediaTab; onCreate?: 'meme' | 'card' | 'avatar'; onNavigate?: string; sub?: string; openMagazine?: boolean }>).map((cat) => {
                   const inner = (
                     <div className={`flex flex-col items-center gap-0.5 py-2 px-1 rounded-xl border text-center transition-all duration-200 cursor-pointer w-full ${cat.bg} ${cat.color}`}>
                       {cat.icon}
@@ -2340,6 +2346,17 @@ export default function AppPage() {
                         key={cat.label}
                         className="contents"
                         onClick={() => navigate(cat.onNavigate!)}
+                      >
+                        {inner}
+                      </button>
+                    );
+                  }
+                  if (cat.openMagazine) {
+                    return (
+                      <button
+                        key={cat.label}
+                        className="contents"
+                        onClick={() => { setMagazineOpen(true); }}
                       >
                         {inner}
                       </button>
@@ -2628,6 +2645,34 @@ export default function AppPage() {
         )}
 
       </div>
+
+      {/* ══ IN-APP MAGAZINE READER — keeps the magazine inside the app's own frames ══ */}
+      {magazineOpen && (
+        <div className="fixed inset-0 z-40 bg-white dark:bg-gray-950 overflow-auto">
+          {/* Reader chrome — the magazine sits inside the app's own shell */}
+          <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-supports supports-[backdrop-filter]:bg-background/80 border-b border-border px-4 py-3 flex items-center gap-2">
+            <button
+              onClick={() => setMagazineOpen(false)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-orange-600 bg-orange-50 dark:bg-orange-900/30 border-orange-200 dark:border-orange-800 hover:bg-orange-100 transition-all"
+            >
+              <ArrowLeft className="h-4 w-4 stroke-[1.5]" />
+              <span className="text-xs font-bold">Back</span>
+            </button>
+            <span className="text-sm font-bold flex items-center gap-1.5">
+              <Newspaper className="h-4 w-4 text-rose-500" /> Magazine
+            </span>
+          </div>
+
+          {/* Magazine content — iframe of the magazine's embedded site, framed in-app */}
+          <iframe
+            title="BitPopArt Magazine"
+            className="w-full border-0"
+            style={{ minHeight: 'calc(100dvh - 48px)', height: '1000px', width: '100%' }}
+            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads"
+            src={magazinePage.data?.brand_site || 'https://www.bitpopart.com/magazine'}
+          />
+        </div>
+      )}
 
       {/* ══ LIBRARY ITEM FULL-VIEW DIALOG (view-only: print/download/share) ══ */}
       <Dialog open={!!libraryItem} onOpenChange={open => { if (!open) setLibraryItem(null); }}>
