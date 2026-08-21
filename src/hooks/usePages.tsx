@@ -2,6 +2,7 @@ import { useNostr } from '@nostrify/react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { PageData, SocialMediaLink } from '@/lib/pageTypes';
 import { getAdminPubkeyHex, PAGE_OWNER_PUBKEYS } from '@/lib/adminUtils';
+import { MAGAZINE_SLUG } from '@/lib/magazineEmbed';
 
 const ADMIN_PUBKEY = getAdminPubkeyHex();
 const PAGES_STORAGE_KEY = 'bitpopart:pages';
@@ -167,7 +168,9 @@ export function usePages() {
 
   return useQuery({
     queryKey: ['pages'],
-    staleTime: 60_000,
+    // Always revalidate so the admin editor list reflects the newest published
+    // version of each page (and the magazine) without waiting out 60s of cache.
+    staleTime: 0,
     gcTime: 5 * 60_000,
     queryFn: async (c) => {
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(RELAY_TIMEOUT)]);
@@ -239,13 +242,20 @@ export function useFooterPages() {
 /** Single page by slug */
 export function usePage(slug: string) {
   const { nostr } = useNostr();
+  // The magazine is updated by republishing the HTML at /magazine. It must
+  // always reflect the newest published version, so we never serve it from the
+  // 60s cache — a freshly published edition otherwise stays hidden for up to a
+  // minute. Other pages keep the faster cached revalidation.
+  const isMagazine = slug === MAGAZINE_SLUG;
 
   return useQuery({
     queryKey: ['page', slug],
-    // Serve cached/local data instantly and only revalidate after 60s. This
-    // avoids a blocking Nostr round-trip on every navigation. When data is
-    // stale, React Query refetches in the background while showing cached data.
-    staleTime: 60_000,
+    // Serve cached/local data instantly and only revalidate (after 60s for
+    // regular pages; the magazine always refetches so a new version shows
+    // immediately). This avoids a blocking Nostr round-trip on every
+    // navigation. When data is stale, React Query refetches in the background
+    // while showing cached data.
+    staleTime: isMagazine ? 0 : 60_000,
     gcTime: 5 * 60_000,
     enabled: !!slug,
     // Return localStorage immediately as initial data so the page never shows

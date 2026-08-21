@@ -571,7 +571,7 @@ export function PageManagement() {
         brand_site_inline: brandSiteInline,
         brand_site_is_srcdoc: false, // always false — HTML lives on Blossom, not inline
         author_pubkey: '',
-        created_at: editingPage?.created_at ?? new Date().toISOString(),
+        created_at: new Date().toISOString(),
         show_in_footer: showInFooter,
         order: order ? parseInt(order) : undefined,
         show_zap_button: showZapButton,
