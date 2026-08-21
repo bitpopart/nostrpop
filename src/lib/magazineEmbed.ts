@@ -114,3 +114,8 @@ export async function fetchRemoteHtml(url: string): Promise<string | null> {
     clearTimeout(timer);
   }
 }
+/** Clear all in-memory fetched magazine HTML so a freshly published version is re-fetched. */
+export function purgeMagazineCache() {
+  magazineHtmlCache.clear();
+}
+

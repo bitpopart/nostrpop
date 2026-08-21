@@ -25,6 +25,7 @@ import type { PageData } from '@/lib/pageTypes';
 import { MediaPicker } from './MediaPicker';
 import type { MediaShowcaseType } from './MediaShowcaseBlock';
 import { HtmlEditor } from './HtmlEditor';
+import { MAGAZINE_SLUG, purgeMagazineCache } from '@/lib/magazineEmbed';
 import { PagePreviewDialog } from './PagePreviewDialog';
 import ReactMarkdown from 'react-markdown';
 import { toast } from 'sonner';
@@ -625,7 +626,10 @@ export function PageManagement() {
               created_at,
             });
             await nostr.event(event, { signal: AbortSignal.timeout(8000) });
-            toast.success('Page published to Nostr ✓', { duration: 3000 });
+            // For the magazine, drop the in-memory fetched HTML cache so the
+            // just-published version is re-fetched on the next view — never a stale copy.
+            if (slug === MAGAZINE_SLUG) purgeMagazineCache();
+            toast.success(editingPage ? 'Page updated ✓' : 'Page created ✓', { duration: 3000 });
           } catch (e) {
             toast.error(`Nostr publish failed: ${String(e).slice(0, 80)}. Page is saved locally.`);
           }
