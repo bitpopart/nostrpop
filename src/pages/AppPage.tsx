@@ -56,6 +56,7 @@ import {
   ArrowDown,
   ArrowUp,
   Move,
+  Newspaper,
   Share2,
   Laugh,
   CreditCard,
@@ -2322,16 +2323,28 @@ export default function AppPage() {
                   { label: 'Banners',    icon: <PanelTop className="h-4 w-4" />,     color: 'text-sky-700 dark:text-sky-400',      bg: 'bg-sky-50 dark:bg-sky-900/20 hover:bg-sky-100 dark:hover:bg-sky-900/30 border-sky-200 dark:border-sky-800',             count: banners.length, loading: bannerLoading,                          onDownload: 'banner' as MediaTab },
                   { label: 'Coloring',   icon: <Palette className="h-4 w-4" />,      color: 'text-rose-700 dark:text-rose-400',    bg: 'bg-rose-50 dark:bg-rose-900/20 hover:bg-rose-100 dark:hover:bg-rose-900/30 border-rose-200 dark:border-rose-800',       count: coloringPages.length, loading: coloringLoading,                   onDownload: 'coloring' as MediaTab },
                   { label: 'Cards',      icon: <CreditCard className="h-4 w-4" />,   color: 'text-pink-700 dark:text-pink-400',    bg: 'bg-pink-50 dark:bg-pink-900/20 hover:bg-pink-100 dark:hover:bg-pink-900/30 border-pink-200 dark:border-pink-800',       count: latestCards.length, loading: cardsLoading,                       onCreate: 'card' as const },
-                ] as Array<{ label: string; icon: React.ReactNode; color: string; bg: string; count: number; loading: boolean; onDownload?: MediaTab; onCreate?: 'meme' | 'card' | 'avatar' }>).map((cat) => {
+                  { label: 'Magazine',  icon: <Newspaper className="h-4 w-4" />,   color: 'text-rose-700 dark:text-rose-400',    bg: 'bg-rose-50 dark:bg-rose-900/20 hover:bg-rose-100 dark:hover:bg-rose-900/30 border-rose-200 dark:border-rose-800',       count: 0, loading: false, sub: 'Read',                                       onNavigate: '/magazine' as const },
+                ] as Array<{ label: string; icon: React.ReactNode; color: string; bg: string; count: number; loading: boolean; onDownload?: MediaTab; onCreate?: 'meme' | 'card' | 'avatar'; onNavigate?: string; sub?: string }>).map((cat) => {
                   const inner = (
                     <div className={`flex flex-col items-center gap-0.5 py-2 px-1 rounded-xl border text-center transition-all duration-200 cursor-pointer w-full ${cat.bg} ${cat.color}`}>
                       {cat.icon}
                       <span className="font-semibold text-[10px] leading-tight whitespace-nowrap">{cat.label}</span>
                       <span className="text-[9px] font-bold opacity-70">
-                        {cat.loading ? '…' : `(${cat.count})`}
+                        {cat.sub ? cat.sub : (cat.loading ? '…' : `(${cat.count})`)}
                       </span>
                     </div>
                   );
+                  if (cat.onNavigate) {
+                    return (
+                      <button
+                        key={cat.label}
+                        className="contents"
+                        onClick={() => navigate(cat.onNavigate!)}
+                      >
+                        {inner}
+                      </button>
+                    );
+                  }
                   if (cat.onCreate) {
                     return (
                       <button
