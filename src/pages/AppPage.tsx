@@ -9,7 +9,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -20,6 +19,7 @@ import { useLatestCards } from '@/hooks/useLatestCards';
 import { useFreeDownloads } from '@/hooks/useFreeDownloads';
 import { useAnimations } from '@/hooks/useAnimations';
 import { usePage } from '@/hooks/usePages';
+import { injectMagazineReadOnly, injectDownloadScript, isRemoteHtmlUrl, fetchRemoteHtml, magazineHtmlCache } from '@/lib/magazineEmbed';
 
 import { ZapButton } from '@/components/ZapButton';
 import { getAdminPubkeyHex } from '@/lib/adminUtils';
@@ -56,6 +56,7 @@ import {
   Copy,
   ArrowDown,
   ArrowUp,
+  ArrowLeft,
   Move,
   Newspaper,
   Share2,
@@ -2172,17 +2173,12 @@ type CreateSubTab = 'meme' | 'card' | 'avatar';
 
 export default function AppPage() {
   const navigate = useNavigate();
-  const { user, metadata } = useCurrentUser();
   const isAdmin = useIsAdmin();
 
-  // Magazine embed: once the in-app frame finishes loading, tell it who the
-  // viewer is (their Nostr pubkey hex) so it can reveal owner-only editing.
-  const magazineFrameRef = useRef<HTMLIFrameElement | null>(null);
-  const sendOwnerToMagazine = () => {
-    const f = magazineFrameRef.current;
-    if (!f) return;
-    try { f.contentWindow.postMessage({ type: 'bp-mag-owner', hex: user?.pubkey || '' }, '*'); } catch { /* ignore */ }
-  };
+  // Magazine: the in-app reader loads the magazine's embedded HTML from its
+  // remote site as srcdoc (instead of raw src), so the site controls the
+  // document and can inject the read-only neutralizer. Nobody edits the live
+  // magazine — updates happen only by uploading a new version at /magazine.
   const { getGradientStyle } = useThemeColors();
 
   // Active tab
@@ -2218,6 +2214,30 @@ export default function AppPage() {
   const { data: carouselImages = [], isLoading: carouselLoading } = useAppMedia('app-carousel');
   // Magazine — a Nostr custom page whose embedded brand-site HTML IS the magazine.
   const magazinePage = usePage('magazine');
+
+  // Fetch the magazine's embedded HTML from its remote site so the in-app
+  // reader can render it as srcdoc (site-controlled) with the read-only
+  // neutralizer injected — the editor can never surface even in-app.
+  const [magazineHtml, setMagazineHtml] = useState<string | null>(null);
+  useEffect(() => {
+    const url = magazinePage.data?.brand_site;
+    if (!url || !isRemoteHtmlUrl(url)) { setMagazineHtml(null); return; }
+    if (magazineHtmlCache.has(url)) { setMagazineHtml(magazineHtmlCache.get(url) ?? null); return; }
+    let cancelled = false;
+    fetchRemoteHtml(url).then(h => { if (!cancelled) setMagazineHtml(h); });
+    return () => { cancelled = true; };
+  }, [magazinePage.data?.brand_site]);
+
+  // Handle download links tapped inside the in-app magazine iframe.
+  useEffect(() => {
+    const handler = (e: MessageEvent) => {
+      if (!e.data || e.data.type !== '__download__') return;
+      const { url, filename } = e.data as { type: string; url: string; filename: string };
+      handleDownload(url, filename);
+    };
+    window.addEventListener('message', handler);
+    return () => window.removeEventListener('message', handler);
+  }, []);
 
   // Use dedicated carousel images when available, otherwise fall back to a mix
   const allMediaItems: CarouselItem[] = carouselImages.length > 0
@@ -2678,9 +2698,8 @@ export default function AppPage() {
             className="w-full border-0"
             style={{ minHeight: 'calc(100dvh - 48px)', height: '1000px', width: '100%' }}
             sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads"
-            ref={magazineFrameRef}
-            onLoad={sendOwnerToMagazine}
-            src={magazinePage.data?.brand_site || 'https://www.bitpopart.com/magazine'}
+            srcDoc={magazineHtml ? injectMagazineReadOnly(injectDownloadScript(magazineHtml)) : undefined}
+            src={magazineHtml ? undefined : (magazinePage.data?.brand_site || 'https://www.bitpopart.com/magazine')}
           />
         </div>
       )}

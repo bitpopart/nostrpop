@@ -12,6 +12,7 @@ import { MediaShowcaseBlock } from '@/components/pages/MediaShowcaseBlock';
 import type { MediaShowcaseType } from '@/components/pages/MediaShowcaseBlock';
 import { ArrowLeft, ExternalLink, Globe, Image as ImageIcon, Coffee, Loader2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import { MAGAZINE_SLUG, injectMagazineReadOnly } from '@/lib/magazineEmbed';
 
 // Admin pubkey (page author for Zap recipient)
 const ADMIN_PUBKEY = '43baaf0c28e6cfb195b17ee083e19eb3a4afdfac54d9b6baf170270ed193e34c';
@@ -313,12 +314,19 @@ export default function CustomPage() {
     const showOverlay = !iframeLoaded;
 
     if (htmlSrcDoc) {
+      // Compose the final embedded document: download bridge for every page,
+      // plus the read-only editor neutralizer for the magazine (nobody edits
+      // it), or the owner-gate for other custom pages (unchanged behaviour).
+      const renderSourceDoc = (html: string): string => {
+        const bridged = injectDownloadScript(html);
+        return slug === MAGAZINE_SLUG ? injectMagazineReadOnly(bridged) : injectOwnerHex(bridged);
+      };
       return (
         <div className={wrapperClassName} style={{ position: 'relative' }}>
           <IframeLoadingOverlay visible={showOverlay} />
           <iframe
             ref={iframeRef}
-            srcDoc={injectDownloadScript(injectOwnerHex(htmlSrcDoc))}
+            srcDoc={renderSourceDoc(htmlSrcDoc)}
             title={page.title}
             className={iframeClassName}
             sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads"
