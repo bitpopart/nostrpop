@@ -2174,6 +2174,15 @@ export default function AppPage() {
   const navigate = useNavigate();
   const { user, metadata } = useCurrentUser();
   const isAdmin = useIsAdmin();
+
+  // Magazine embed: once the in-app frame finishes loading, tell it who the
+  // viewer is (their Nostr pubkey hex) so it can reveal owner-only editing.
+  const magazineFrameRef = useRef<HTMLIFrameElement | null>(null);
+  const sendOwnerToMagazine = () => {
+    const f = magazineFrameRef.current;
+    if (!f) return;
+    try { f.contentWindow.postMessage({ type: 'bp-mag-owner', hex: user?.pubkey || '' }, '*'); } catch { /* ignore */ }
+  };
   const { getGradientStyle } = useThemeColors();
 
   // Active tab
@@ -2669,6 +2678,8 @@ export default function AppPage() {
             className="w-full border-0"
             style={{ minHeight: 'calc(100dvh - 48px)', height: '1000px', width: '100%' }}
             sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads"
+            ref={magazineFrameRef}
+            onLoad={sendOwnerToMagazine}
             src={magazinePage.data?.brand_site || 'https://www.bitpopart.com/magazine'}
           />
         </div>

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSeoMeta } from '@unhead/react';
 import { usePage } from '@/hooks/usePages';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -90,6 +91,7 @@ export default function CustomPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { data: page, isLoading } = usePage(slug || '');
+  const { user } = useCurrentUser();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   // Track whether the iframe has fired its onLoad event
@@ -296,6 +298,17 @@ export default function CustomPage() {
 
   // Render iframe — uses srcDoc for HTML pages (with injected download bridge),
   // or src= for plain external URLs. Shows a branded overlay while loading.
+  // Pass the viewer's Nostr pubkey into an inline (srcdoc) embedded page so a
+  // custom magazine/page can show owner-only editing controls. Non-owner
+  // visitors get a plain read-only embed.
+  const injectOwnerHex = (html: string): string => {
+    const viewerHex = (user?.pubkey || '').toLowerCase();
+    const script = `<script>window.__bpMagOwner=${JSON.stringify(viewerHex)};\u003C/script>`;
+    if (html.includes('</head>')) return html.replace('</head>', script + '</head>');
+    if (html.includes('<body')) return html.replace('<body', script + '<body');
+    return script + html;
+  };
+
   const renderBrandSiteIframe = (wrapperClassName = 'flex-1 w-full relative', iframeClassName = 'w-full h-full border-0') => {
     const showOverlay = !iframeLoaded;
 
@@ -305,7 +318,7 @@ export default function CustomPage() {
           <IframeLoadingOverlay visible={showOverlay} />
           <iframe
             ref={iframeRef}
-            srcDoc={injectDownloadScript(htmlSrcDoc)}
+            srcDoc={injectDownloadScript(injectOwnerHex(htmlSrcDoc))}
             title={page.title}
             className={iframeClassName}
             sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads"
