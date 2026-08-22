@@ -662,7 +662,7 @@ export function EditProductForm({ product, onSuccess, onCancel }: EditProductFor
                       min="0"
                       max="99"
                       step="1"
-                      {...register('discount', { valueAsNumber: true })}
+                      {...register('discount', { setValueAs: (v: unknown) => (v === '' || v == null ? undefined : Number(v)) })}
                       placeholder="e.g. 21"
                       className="pr-8"
                     />
