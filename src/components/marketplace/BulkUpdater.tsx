@@ -77,10 +77,14 @@ function parseRow(event: NostrEvent): Row {
     getTag(event.tags, 'url') ??
     '';
 
+  // Legacy NIP-15 (30018) rows keep currency in its own tag (no price[2]) —
+  // fall back to it so the Currency column isn't empty for those rows.
+  const currency = priceTag?.[2] ?? getTag(event.tags, 'currency') ?? '';
+
   const data: RowData = {
     title: getTag(event.tags, 'title') ?? '',
     priceAmount: priceTag?.[1] ?? '',
-    priceCurrency: priceTag?.[2] ?? '',
+    priceCurrency: currency,
     stock: getTag(event.tags, 'stock') ?? getTag(event.tags, 'quantity') ?? '',
     status,
     categories: getTags(event.tags, 't').join(', '),
@@ -98,7 +102,7 @@ function parseRow(event: NostrEvent): Row {
   };
 }
 
-const PRESERVED_TAGS = new Set(['title', 'price', 'stock', 'quantity', 'status', 'visibility', 't', 'location', 'summary', 'd', 'client']);
+const PRESERVED_TAGS = new Set(['title', 'price', 'currency', 'stock', 'quantity', 'status', 'visibility', 't', 'location', 'summary', 'd', 'client']);
 
 function buildTags(row: Row): string[][] {
   const extra = row.sourceTags.filter(([n]) => !PRESERVED_TAGS.has(n));
@@ -116,6 +120,39 @@ function buildTags(row: Row): string[][] {
   if (row.data.location.trim()) tags.push(['location', row.data.location.trim()]);
   if (row.data.summary.trim()) tags.push(['summary', row.data.summary.trim()]);
   return tags;
+}
+
+/**
+ * NIP-15 (30018) legacy rows keep their editable fields in a different shape:
+ * title/currency/quantity live in standalone tags and name/price/quantity also
+ * live inside the JSON `content`. Rebuild both so an edited row stays a valid
+ * NIP-15 product instead of silently becoming a NIP-99 (30402) event.
+ */
+function buildLegacyTags(row: Row): string[][] {
+  const extra = row.sourceTags.filter(([n]) => !PRESERVED_TAGS.has(n));
+  const tags: string[][] = [['d', row.id], ...extra];
+  if (row.data.title.trim()) tags.push(['title', row.data.title.trim()]);
+  if (row.data.priceAmount.trim()) tags.push(['price', row.data.priceAmount.trim()]);
+  if (row.data.priceCurrency.trim()) tags.push(['currency', row.data.priceCurrency.trim().toUpperCase()]);
+  if (row.data.stock.trim() !== '') tags.push(['quantity', row.data.stock.trim()]);
+  for (const cat of row.data.categories.split(',').map(s => s.trim().toLowerCase()).filter(Boolean)) {
+    tags.push(['t', cat]);
+  }
+  return tags;
+}
+
+/** Merge the spreadsheet edits into a legacy NIP-15 JSON payload. */
+function buildLegacyContent(row: Row): string {
+  try {
+    const parsed = JSON.parse(row.original.content || '{}');
+    if (row.data.title.trim()) parsed.name = row.data.title.trim();
+    if (row.data.priceAmount.trim()) parsed.price = Number(row.data.priceAmount.trim());
+    if (row.data.priceCurrency.trim()) parsed.currency = row.data.priceCurrency.trim().toUpperCase();
+    if (row.data.stock.trim() !== '') parsed.quantity = Number(row.data.stock.trim());
+    return JSON.stringify(parsed);
+  } catch {
+    return row.original.content;
+  }
 }
 
 function isDirty(row: Row): boolean {
@@ -320,17 +357,54 @@ export function BulkUpdater() {
     queryKey: ['bulk-updater-products', user?.pubkey],
     enabled: !!user?.pubkey,
     queryFn: async ({ signal }) => {
-      const events = await nostr.query(
-        [{ kinds: [30402], authors: [user!.pubkey], limit: 500 }],
+      // Match the shop grid (useMarketplaceProducts): read NIP-99 (30402) AND legacy
+      // NIP-15 (30018) products plus kind-5 deletions, so every product that appears
+      // on bitpopart.com/shop is manageable here.
+      const allEvents = await nostr.query(
+        [
+          { kinds: [30402, 30018], authors: [user!.pubkey], limit: 5000 },
+          { kinds: [5], authors: [user!.pubkey], limit: 2000 },
+        ],
         { signal: AbortSignal.any([signal, AbortSignal.timeout(15000)]) }
       );
-      const map = new Map<string, NostrEvent>();
-      for (const ev of events) {
-        const d = getTag(ev.tags, 'd') ?? ev.id;
-        const existing = map.get(d);
-        if (!existing || ev.created_at > existing.created_at) map.set(d, ev);
+
+      const productEvents = allEvents.filter(e => e.kind === 30402 || e.kind === 30018);
+      const deletionEvents = allEvents.filter(e => e.kind === 5);
+
+      // Addresses deleted via kind-5 (same set the shop honours)
+      const deletedAddresses = new Set<string>();
+      for (const del of deletionEvents) {
+        for (const [name, value] of del.tags) {
+          if (name === 'a' && (value.startsWith('30402:') || value.startsWith('30018:'))) {
+            deletedAddresses.add(value);
+          }
+        }
       }
-      const parsed = [...map.values()]
+
+      // Ecards are never shop products; status=deleted rows are soft-deleted
+      const isEcard = (e: NostrEvent) => e.tags.some(([n, v]) => n === 't' && v === 'ecard');
+      const isSoftDeleted = (e: NostrEvent) => getTag(e.tags, 'status') === 'deleted';
+      const live = (e: NostrEvent) => !isEcard(e) && !isSoftDeleted(e);
+
+      // Dedupe by d-tag with NIP-99 priority, mirroring useMarketplaceProducts
+      const seenDTags = new Set<string>();
+      const deduped: NostrEvent[] = [];
+      const nip99 = productEvents.filter(e => e.kind === 30402 && live(e));
+      const nip15 = productEvents.filter(e => e.kind === 30018 && live(e));
+      for (const ev of nip99) {
+        const d = getTag(ev.tags, 'd') ?? ev.id;
+        if (deletedAddresses.has(`30402:${ev.pubkey}:${d}`) || seenDTags.has(d)) continue;
+        seenDTags.add(d);
+        deduped.push(ev);
+      }
+      for (const ev of nip15) {
+        const d = getTag(ev.tags, 'd') ?? ev.id;
+        if (deletedAddresses.has(`30018:${ev.pubkey}:${d}`) || seenDTags.has(d)) continue;
+        seenDTags.add(d);
+        deduped.push(ev);
+      }
+
+      const parsed = deduped
         .sort((a, b) => (getTag(a.tags, 'title') ?? '').localeCompare(getTag(b.tags, 'title') ?? ''))
         .map(parseRow);
       setRows(parsed);
@@ -389,7 +463,12 @@ export function BulkUpdater() {
   const saveRow = useCallback(async (row: Row) => {
     setSavingIds(prev => new Set(prev).add(row.id));
     try {
-      await publishEvent({ kind: 30402, content: row.original.content, tags: buildTags(row) });
+      const isLegacy = row.original.kind === 30018;
+      await publishEvent({
+        kind: isLegacy ? 30018 : 30402,
+        content: isLegacy ? buildLegacyContent(row) : row.original.content,
+        tags: isLegacy ? buildLegacyTags(row) : buildTags(row),
+      });
       setRows(prev => prev.map(r => r.id === row.id ? { ...r, base: { ...r.data } } : r));
       setSavedIds(prev => new Set(prev).add(row.id));
       toast({ title: 'Saved', description: `"${row.data.title}" updated.` });
@@ -418,13 +497,14 @@ export function BulkUpdater() {
   const deleteRow = useCallback(async (row: Row) => {
     setDeletingIds(prev => new Set(prev).add(row.id));
     try {
+      const kind = row.original.kind ?? 30402;
       await publishEvent({
         kind: 5,
         content: `Deleted listing: ${row.data.title}`,
         tags: [
           ['e', row.original.id],
-          ['a', `30402:${row.original.pubkey}:${row.id}`],
-          ['k', '30402'],
+          ['a', `${kind}:${row.original.pubkey}:${row.id}`],
+          ['k', String(kind)],
         ],
       });
       setRows(prev => prev.filter(r => r.id !== row.id));
@@ -472,7 +552,7 @@ export function BulkUpdater() {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-3 text-muted-foreground">
         <Package className="h-10 w-10 opacity-40" />
-        <p className="text-sm">No NIP-99 listings found for your pubkey.</p>
+        <p className="text-sm">No NIP-99 / NIP-15 listings found for your pubkey.</p>
         <p className="text-xs opacity-70">Create products first in the Products tab.</p>
       </div>
     );
