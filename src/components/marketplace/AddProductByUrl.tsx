@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/useToast';
 import { Link2, Loader2, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { isPrintifyUrl, parsePrintifyStorefront } from '@/utils/printifyStorefront';
 
 interface ScrapedProductData {
   name: string;
@@ -63,7 +64,7 @@ function detectCategory(productName: string, productType?: string): string | und
   const lower = (productName + ' ' + (productType || '')).toLowerCase();
   if (lower.includes('coaster')) return 'Keychains';
   if (lower.includes('keychain')) return 'Keychains';
-  if (lower.includes('t-shirt') || lower.includes('tshirt') || lower.includes('shirt')) return 'T-shirts';
+  if (lower.includes('t-shirt') || lower.includes('tshirt') || lower.includes('shirt') || /\btees?\b/.test(lower)) return 'T-shirts';
   if (lower.includes('art') || lower.includes('print') || lower.includes('poster')) return 'Art';
   if (lower.includes('digital') || lower.includes('ebook') || lower.includes('download') || lower.includes('pdf')) return 'Digital Downloads';
   return undefined;
@@ -86,6 +87,33 @@ async function fiatToSats(price: number, currency: string): Promise<number | und
     console.warn('Failed to fetch BTC price for sats conversion:', err);
   }
   return undefined;
+}
+
+// Fetch a product from a Printify pop-up store front (public {store}.printify.me
+// storefront). Printify blocks plain fetches (HTTP 403) but serves the page to
+// the shop's CORS proxy, and the price lives in the page markup
+// (data-testid="variantPrice") rather than in OG tags, so this needs its own
+// extraction path instead of the generic OG-meta fallback.
+async function fetchPrintifyProduct(parsedUrl: URL): Promise<ScrapedProductData> {
+  const corsProxy = 'https://proxy.shakespeare.diy/?url=';
+  let response: Response;
+  try {
+    response = await fetch(corsProxy + encodeURIComponent(parsedUrl.href), { signal: AbortSignal.timeout(20000) });
+  } catch {
+    throw new Error('Could not reach the Printify storefront (timeout). Try again in a moment.');
+  }
+  if (!response.ok) {
+    throw new Error(`Printify storefront returned HTTP ${response.status}.`);
+  }
+  const html = await response.text();
+  const parsed = parsePrintifyStorefront(html, parsedUrl);
+  if (!parsed) {
+    throw new Error(
+      "Could not read this Printify page. Links inside the Printify app (printify.com/app/...) are behind your login - paste the public storefront product link instead, e.g. https://your-store.printify.me/product/1234"
+    );
+  }
+  const priceInSats = await fiatToSats(parsed.price, parsed.currency);
+  return { ...parsed, priceInSats };
 }
 
 // Try fetching product data from a Shopify store's product JSON API
@@ -135,7 +163,7 @@ async function fetchViaOgMeta(rawUrl: string): Promise<ScrapedProductData> {
   const response = await fetch(corsProxy + encodeURIComponent(rawUrl), { signal: AbortSignal.timeout(15000) });
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch product page (HTTP ${response.status}). Try entering the URL directly from storeofvalue.eu.`);
+    throw new Error(`Failed to fetch product page (HTTP ${response.status}). Try entering the URL directly from storeofvalue.eu, Redbubble, or your Printify storefront.`);
   }
 
   const html = await response.text();
@@ -206,12 +234,18 @@ export function AddProductByUrl({ onProductScraped }: AddProductByUrlProps) {
     try {
       let scrapedData: ScrapedProductData | null = null;
 
-      // 1. Try Shopify JSON API first (works for storeofvalue.eu and any Shopify store)
-      scrapedData = await fetchShopifyProduct(parsedUrl);
+      // 1. Printify storefront pages need their own extractor (price is in the
+      //    page markup, not in OG tags, and Printify blocks direct fetches)
+      if (isPrintifyUrl(parsedUrl)) {
+        scrapedData = await fetchPrintifyProduct(parsedUrl);
+      } else {
+        // 2. Try the Shopify JSON API (works for storeofvalue.eu and any Shopify store)
+        scrapedData = await fetchShopifyProduct(parsedUrl);
 
-      // 2. Fall back to OG meta scraping via CORS proxy
-      if (!scrapedData) {
-        scrapedData = await fetchViaOgMeta(parsedUrl.href);
+        // 3. Fall back to OG meta scraping via CORS proxy
+        if (!scrapedData) {
+          scrapedData = await fetchViaOgMeta(parsedUrl.href);
+        }
       }
 
       onProductScraped(scrapedData);
@@ -241,7 +275,7 @@ export function AddProductByUrl({ onProductScraped }: AddProductByUrlProps) {
           Add Product by URL
         </CardTitle>
         <CardDescription className="text-blue-600 dark:text-blue-400">
-          Import product data from storeofvalue.eu or any Shopify store
+          Import product data from storeofvalue.eu, your Printify storefront, or any Shopify store
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -266,6 +300,9 @@ export function AddProductByUrl({ onProductScraped }: AddProductByUrlProps) {
           <p className="text-xs text-muted-foreground">
             Example: https://www.storeofvalue.eu/products/nostr-coaster-hang-loose-by-bitpopart
           </p>
+          <p className="text-xs text-muted-foreground">
+            Printify: paste your public storefront product link, e.g. https://your-store.printify.me/product/1234
+          </p>
         </div>
 
         <Button
@@ -288,7 +325,7 @@ export function AddProductByUrl({ onProductScraped }: AddProductByUrlProps) {
 
         <div className="pt-2 border-t">
           <p className="text-xs text-muted-foreground">
-            <strong>How it works:</strong> Paste a product URL from storeofvalue.eu (or any Shopify store) and we'll automatically import the title, description, price, and all product images.
+            <strong>How it works:</strong> Paste a product URL from storeofvalue.eu, your Printify storefront, or any Shopify store and we'll automatically import the title, description, price, and all product images.
           </p>
         </div>
       </CardContent>
