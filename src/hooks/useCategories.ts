@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { getAllCategories as getDefaultCategories } from '@/config/categories';
 import { useToast } from '@/hooks/useToast';
 
@@ -137,7 +137,10 @@ export function useCategories() {
   }, []);
 
   const featuredCategories = categories.filter(cat => featuredCategoryIds.includes(cat.id));
-  const categoryNames = categories.map(cat => cat.name);
+  // Memoize so the array identity is stable across renders. A fresh array here
+  // would re-trigger any useEffect that depends on categoryNames on every render
+  // (e.g. CreateProductForm re-applying imported values → infinite re-render).
+  const categoryNames = useMemo(() => categories.map(cat => cat.name), [categories]);
 
   return {
     categories,
