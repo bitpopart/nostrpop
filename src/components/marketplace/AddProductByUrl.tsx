@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/useToast';
 import { Link2, Loader2, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { isPrintifyUrl, parsePrintifyStorefront } from '@/utils/printifyStorefront';
+import { getMetaContent, getTitleText } from '@/utils/htmlExtract';
 
 interface ScrapedProductData {
   name: string;
@@ -167,25 +168,17 @@ async function fetchViaOgMeta(rawUrl: string): Promise<ScrapedProductData> {
   }
 
   const html = await response.text();
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, 'text/html');
 
-  const getMeta = (property: string): string | null => {
-    const el = doc.querySelector(`meta[property="${property}"]`) ||
-               doc.querySelector(`meta[name="${property}"]`);
-    return el?.getAttribute('content') ?? null;
-  };
+  const title = (getMetaContent(html, 'og:title') || getTitleText(html) || '')
+    .split('|')[0].split('–')[0].trim();
+  const description = getMetaContent(html, 'og:description') || getMetaContent(html, 'description') || '';
+  const imageUrl = getMetaContent(html, 'og:image') || '';
+  const priceAmount = getMetaContent(html, 'og:price:amount') || getMetaContent(html, 'product:price:amount') || '';
+  const priceCurrency = (getMetaContent(html, 'og:price:currency') || getMetaContent(html, 'product:price:currency') || 'USD').toUpperCase();
 
-  const title = getMeta('og:title') || doc.querySelector('title')?.textContent || '';
-  const description = getMeta('og:description') || getMeta('description') || '';
-  const imageUrl = getMeta('og:image') || '';
-  const priceAmount = getMeta('og:price:amount') || getMeta('product:price:amount') || '';
-  const priceCurrency = (getMeta('og:price:currency') || getMeta('product:price:currency') || 'USD').toUpperCase();
-
-  const cleanTitle = title.split('|')[0].split('–')[0].trim();
   const price = parseFloat(priceAmount) || 0;
 
-  if (!cleanTitle || !description) {
+  if (!title || !description) {
     throw new Error('Could not extract product information from the page. Make sure the URL points to a product page.');
   }
 
@@ -197,14 +190,14 @@ async function fetchViaOgMeta(rawUrl: string): Promise<ScrapedProductData> {
   const priceInSats = await fiatToSats(price, priceCurrency);
 
   return {
-    name: cleanTitle,
+    name: title,
     description,
     price,
     currency: priceCurrency,
     priceInSats,
     images,
     url: rawUrl,
-    category: detectCategory(cleanTitle),
+    category: detectCategory(title),
   };
 }
 

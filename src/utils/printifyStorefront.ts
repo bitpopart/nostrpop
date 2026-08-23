@@ -10,6 +10,8 @@
 // price 0 and the create form would then refuse to submit. This module extracts
 // the fields the rest of the importer needs.
 
+import { getMetaContent, getTitleText, getDataTestIdText } from './htmlExtract';
+
 export interface PrintifyParsedProduct {
   name: string;
   description: string;
@@ -86,25 +88,18 @@ function detectCategory(productName: string): string | undefined {
 // the page is not a readable product page (e.g. a dashboard page, or the page
 // failed to include the product data).
 export function parsePrintifyStorefront(html: string, sourceUrl: URL): PrintifyParsedProduct | null {
-  const doc = new DOMParser().parseFromString(html, 'text/html');
-
-  const getMeta = (property: string): string | null => {
-    const el = doc.querySelector(`meta[property="${property}"]`) || doc.querySelector(`meta[name="${property}"]`);
-    return el?.getAttribute('content') ?? null;
-  };
-
-  const title = (getMeta('og:title') || doc.querySelector('title')?.textContent || '')
+  const title = (getMetaContent(html, 'og:title') || getTitleText(html) || '')
     .split('|')[0].split('–')[0].trim();
-  const description = getMeta('og:description') || '';
+  const description = getMetaContent(html, 'og:description') || '';
   if (!title || !description) return null;
 
-  const imageUrl = getMeta('og:image') || '';
+  const imageUrl = getMetaContent(html, 'og:image') || '';
   const images: string[] = [];
   if (imageUrl) {
     images.push(imageUrl.startsWith('http') ? imageUrl : new URL(imageUrl, sourceUrl.href).href);
   }
 
-  const priceFromPage = parsePriceText(doc.querySelector('[data-testid="variantPrice"]')?.textContent);
+  const priceFromPage = parsePriceText(getDataTestIdText(html, 'variantPrice'));
   if (!priceFromPage) return null;
 
   return {
