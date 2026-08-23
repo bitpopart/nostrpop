@@ -324,8 +324,10 @@ export function EditProductForm({ product, onSuccess, onCancel }: EditProductFor
         ['price', data.price.toString(), data.currency.toUpperCase()],
         // Gamma Spec type: ["type", "simple", "digital|physical"]
         ['type', 'simple', data.type],
-        // Gamma Spec visibility
-        ['visibility', 'on-sale'],
+        // Gamma Spec visibility — preserve the product's current visibility
+        // (so an edited URL-imported/hidden product stays hidden, not flipped
+        // back to public 'on-sale')
+        ['visibility', product.visibility || 'on-sale'],
         // Status
         ['status', data.quantity === 0 ? 'sold' : 'active'],
       ];

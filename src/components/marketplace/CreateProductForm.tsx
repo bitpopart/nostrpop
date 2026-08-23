@@ -354,8 +354,11 @@ export function CreateProductForm({ onSuccess, onCancel, initialData }: CreatePr
         ['price', data.price.toString(), data.currency.toUpperCase()],
         // Gamma Spec type: ["type", "simple|variable|variation", "digital|physical"]
         ['type', 'simple', data.type],
-        // Gamma Spec visibility
-        ['visibility', 'on-sale'],
+        // Gamma Spec visibility — URL-imported products are for the bitpopart.com
+        // shop only (on-demand/print-on-demand), so keep them hidden from Nostr
+        // marketplace listing/discovery unless the owner explicitly publishes
+        // them. Manually-created products stay 'on-sale' (intended for the markets).
+        ['visibility', initialData ? 'hidden' : 'on-sale'],
         // Status
         ['status', 'active'],
       ];

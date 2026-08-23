@@ -93,3 +93,48 @@ describe('CreateProductForm URL-import: on-demand print is unlimited stock', () 
     await waitFor(() => expect((screen.getByLabelText(/Quantity Available/i) as HTMLInputElement).value).toBe(''), { timeout: 2000 });
   });
 });
+
+describe('CreateProductForm visibility guard: URL-imported products are NOT published as on-sale', () => {
+  beforeEach(() => { vi.clearAllMocks(); });
+
+  it('publishes a hidden (unlisted) visibility tag after a URL import, not on-sale', async () => {
+    render(<CreateProductForm initialData={IMPORTED} />);
+    const submit = screen.getByRole('button', { name: /create product/i });
+    await waitFor(() => expect(submit).toBeEnabled(), { timeout: 5000 });
+
+    fireEvent.click(submit);
+    await waitFor(() => expect(publishMock.mutate).toHaveBeenCalled(), { timeout: 5000 });
+    const { tags } = publishMock.mutate.mock.calls[0][0];
+    const visibility = tags.find((tag: string[]) => tag[0] === 'visibility');
+    expect(visibility).toBeDefined();
+    expect(visibility![1]).toBe('hidden');
+  });
+
+  it('still keeps the product in the shop (does not default quantity to a finite count)', async () => {
+    render(<CreateProductForm initialData={IMPORTED} />);
+    const qtyInput = screen.getByLabelText(/Quantity Available/i) as HTMLInputElement;
+    expect(qtyInput.value).toBe('');
+  });
+});
+
+describe('CreateProductForm manual creation still defaults to on-sale visibility', () => {
+  beforeEach(() => { vi.clearAllMocks(); });
+
+  it('publishes visibility on-sale when NO import data is present (manual create)', async () => {
+    render(<CreateProductForm />);
+    const submit = screen.getByRole('button', { name: /create product/i });
+
+    // Fill required fields by hand (no import data present)
+    fireEvent.change(screen.getByLabelText(/Product Name/i), { target: { value: 'Handmade Neon Mug' } });
+    fireEvent.change(screen.getByLabelText(/Description/i), { target: { value: 'A one-of-a-kind handmade mug, laser-glazed.' } });
+    fireEvent.change(screen.getByLabelText(/Price/i), { target: { value: '42' } });
+
+    await waitFor(() => expect(submit).toBeEnabled(), { timeout: 5000 });
+    fireEvent.click(submit);
+    await waitFor(() => expect(publishMock.mutate).toHaveBeenCalled(), { timeout: 5000 });
+    const { tags } = publishMock.mutate.mock.calls[0][0];
+    const visibility = tags.find((tag: string[]) => tag[0] === 'visibility');
+    expect(visibility).toBeDefined();
+    expect(visibility![1]).toBe('on-sale');
+  });
+});
