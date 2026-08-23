@@ -640,7 +640,7 @@ export function EditProductForm({ product, onSuccess, onCancel }: EditProductFor
                 <Input
                   id="quantity"
                   type="number"
-                  {...register('quantity', { valueAsNumber: true })}
+                  {...register('quantity', { setValueAs: (v: unknown) => (v === '' || v == null ? undefined : Number(v)) })}
                   placeholder="Unlimited"
                 />
               </div>

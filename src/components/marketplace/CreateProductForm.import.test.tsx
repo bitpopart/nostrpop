@@ -5,8 +5,12 @@ import { CreateProductForm } from './CreateProductForm';
 vi.mock('@/hooks/useCurrentUser', () => ({
   useCurrentUser: () => ({ user: { id: 'test-user', pubkey: '01'.repeat(32), displayName: 'Test' } }),
 }));
+const publishMock = {
+  mutate: vi.fn(),
+  isPending: false,
+};
 vi.mock('@/hooks/useNostrPublish', () => ({
-  useNostrPublish: () => ({ mutate: vi.fn(), isPending: false }),
+  useNostrPublish: () => publishMock,
 }));
 vi.mock('@/hooks/useUploadFile', () => ({
   useUploadFile: () => ({ mutateAsync: vi.fn(async () => ['url', 'https://example.com/img.png']) }),
@@ -56,5 +60,36 @@ describe('CreateProductForm URL-import flow (discount empty must not block)', ()
     fireEvent.change(discountInput, { target: { value: '0' } });
     await waitFor(() => expect(submit).toBeEnabled(), { timeout: 500 });
     expect(screen.queryByText(/received nan/i)).not.toBeInTheDocument();
+  });
+});
+
+
+describe('CreateProductForm URL-import: on-demand print is unlimited stock', () => {
+  it('leaves quantity empty (unlimited) and publishes NO stock tag', async () => {
+    render(<CreateProductForm initialData={IMPORTED} />);
+    const submit = screen.getByRole('button', { name: /create product/i });
+    await waitFor(() => expect(submit).toBeEnabled(), { timeout: 5000 });
+
+    // Quantity field should be empty = unlimited, not defaulted to 1
+    const qtyInput = screen.getByLabelText(/Quantity Available/i) as HTMLInputElement;
+    expect(qtyInput.value).toBe('');
+
+    // Submitting must not emit a "stock" tag (unlimited on demand print)
+    fireEvent.click(submit);
+    await waitFor(() => expect(publishMock.mutate).toHaveBeenCalled(), { timeout: 5000 });
+    const { tags } = publishMock.mutate.mock.calls[0][0];
+    expect(tags.some((tag: string[]) => (tag[0] ?? '') === 'stock')).toBe(false);
+  });
+
+  it('leaves quantity empty even when the user clears it back to empty', async () => {
+    render(<CreateProductForm initialData={IMPORTED} />);
+    const submit = screen.getByRole('button', { name: /create product/i });
+    await waitFor(() => expect(submit).toBeEnabled(), { timeout: 5000 });
+
+    const qtyInput = screen.getByLabelText(/Quantity Available/i) as HTMLInputElement;
+    fireEvent.change(qtyInput, { target: { value: '7' } });
+    await waitFor(() => expect((screen.getByLabelText(/Quantity Available/i) as HTMLInputElement).value).toBe('7'), { timeout: 2000 });
+    fireEvent.change(qtyInput, { target: { value: '' } });
+    await waitFor(() => expect((screen.getByLabelText(/Quantity Available/i) as HTMLInputElement).value).toBe(''), { timeout: 2000 });
   });
 });

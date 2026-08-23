@@ -140,7 +140,10 @@ export function CreateProductForm({ onSuccess, onCancel, initialData }: CreatePr
       type: 'physical',
       category: initialData?.category || categoryNames[0] || '',
       stallId: 'default',
-      quantity: 1,
+      // URL-imported products are on-demand (print-on-demand) with no fixed
+      // stock, so default to unlimited (empty = no "stock" tag). Manually
+      // created products default to a single physical unit.
+      quantity: initialData ? undefined : 1,
       contactUrl: initialData?.url || ''
     }
   });
@@ -788,7 +791,7 @@ export function CreateProductForm({ onSuccess, onCancel, initialData }: CreatePr
                 <Input
                   id="quantity"
                   type="number"
-                  {...register('quantity', { valueAsNumber: true })}
+                  {...register('quantity', { setValueAs: (v: unknown) => (v === '' || v == null ? undefined : Number(v)) })}
                   placeholder="Unlimited"
                 />
               </div>
