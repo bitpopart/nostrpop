@@ -33,7 +33,7 @@ const IMPORTED = {
   currency: 'EUR',
   priceInSats: 15000,
   images: ['https://example.com/img.png'],
-  url: 'https://www.storeofvalue.eu/products/cool-ostrich-t-shirt',
+  url: 'https://bitpopart.printify.me/product/31220114',
   category: 'T-shirts',
 };
 

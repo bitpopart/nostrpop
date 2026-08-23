@@ -164,7 +164,7 @@ async function fetchViaOgMeta(rawUrl: string): Promise<ScrapedProductData> {
   const response = await fetch(corsProxy + encodeURIComponent(rawUrl), { signal: AbortSignal.timeout(15000) });
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch product page (HTTP ${response.status}). Try entering the URL directly from storeofvalue.eu, Redbubble, or your Printify storefront.`);
+    throw new Error(`Failed to fetch product page (HTTP ${response.status}). Try entering a storefront or product page URL directly.`);
   }
 
   const html = await response.text();
@@ -232,7 +232,7 @@ export function AddProductByUrl({ onProductScraped }: AddProductByUrlProps) {
       if (isPrintifyUrl(parsedUrl)) {
         scrapedData = await fetchPrintifyProduct(parsedUrl);
       } else {
-        // 2. Try the Shopify JSON API (works for storeofvalue.eu and any Shopify store)
+        // 2. Try the Shopify JSON API (works for any Shopify store)
         scrapedData = await fetchShopifyProduct(parsedUrl);
 
         // 3. Fall back to OG meta scraping via CORS proxy
@@ -268,7 +268,7 @@ export function AddProductByUrl({ onProductScraped }: AddProductByUrlProps) {
           Add Product by URL
         </CardTitle>
         <CardDescription className="text-blue-600 dark:text-blue-400">
-          Import product data from storeofvalue.eu, your Printify storefront, or any Shopify store
+          Import product data from your Printify storefront or any Shopify store
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -284,14 +284,14 @@ export function AddProductByUrl({ onProductScraped }: AddProductByUrlProps) {
           <Input
             id="product-url"
             type="url"
-            placeholder="https://www.storeofvalue.eu/products/..."
+            placeholder="https://bitpopart.printify.me/product/31220114"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleScrapeUrl()}
             disabled={isLoading}
           />
           <p className="text-xs text-muted-foreground">
-            Example: https://www.storeofvalue.eu/products/nostr-coaster-hang-loose-by-bitpopart
+            Example: https://bitpopart.printify.me/product/31220114
           </p>
           <p className="text-xs text-muted-foreground">
             Printify: paste your public storefront product link, e.g. https://your-store.printify.me/product/1234
@@ -318,7 +318,7 @@ export function AddProductByUrl({ onProductScraped }: AddProductByUrlProps) {
 
         <div className="pt-2 border-t">
           <p className="text-xs text-muted-foreground">
-            <strong>How it works:</strong> Paste a product URL from storeofvalue.eu, your Printify storefront, or any Shopify store and we'll automatically import the title, description, price, and all product images.
+            <strong>How it works:</strong> Paste a product URL from your Printify storefront or any Shopify store and we'll automatically import the title, description, price, and all product images.
           </p>
         </div>
       </CardContent>

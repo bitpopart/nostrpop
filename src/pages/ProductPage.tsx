@@ -106,7 +106,7 @@ export function ProductPage() {
       window.open(product.contact_url, '_blank', 'noopener,noreferrer');
       toast({
         title: "Redirecting to Store",
-        description: "Opening product page on storeofvalue.eu...",
+        description: "Opening product page on the external shop...",
       });
     } else {
       setPaymentDialogOpen(true);

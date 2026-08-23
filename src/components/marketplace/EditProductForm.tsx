@@ -760,7 +760,7 @@ export function EditProductForm({ product, onSuccess, onCancel }: EditProductFor
                   <Input
                     id="contactUrl"
                     {...register('contactUrl')}
-                    placeholder="https://storeofvalue.eu/shop/product-..."
+                    placeholder="https://your-store.printify.me/product/..."
                   />
                   {errors.contactUrl && (
                     <p className="text-sm text-red-500">{errors.contactUrl.message}</p>

@@ -84,7 +84,7 @@ describe('isPrintifyUrl', () => {
   });
 
   it('rejects non-Printify hosts', () => {
-    expect(isPrintifyUrl(new URL('https://www.storeofvalue.eu/products/cool-ostrich-t-shirt'))).toBe(false);
+    expect(isPrintifyUrl(new URL('https://www.redbubble.com/shop/cool-ostrich-tee'))).toBe(false);
     expect(isPrintifyUrl(new URL('https://bitpopart.com/shop'))).toBe(false);
     expect(isPrintifyUrl(new URL('https://printify.evil.example/product/1'))).toBe(false);
   });
@@ -108,7 +108,7 @@ describe('AddProductByUrl Printify flow', () => {
 
     render(<AddProductByUrl onProductScraped={onProductScraped} />);
 
-    fireEvent.change(screen.getByPlaceholderText(/storeofvalue\.eu\/products/i), {
+    fireEvent.change(screen.getByPlaceholderText(/printify\.me\/product/i), {
       target: { value: 'https://your-store.printify.me/product/1234/bitcoin-tee' },
     });
     fireEvent.click(screen.getByRole('button', { name: /load product from url/i }));
@@ -132,7 +132,7 @@ describe('AddProductByUrl Printify flow', () => {
 
     render(<AddProductByUrl onProductScraped={onProductScraped} />);
 
-    fireEvent.change(screen.getByPlaceholderText(/storeofvalue\.eu\/products/i), {
+    fireEvent.change(screen.getByPlaceholderText(/printify\.me\/product/i), {
       target: { value: 'https://printify.com/app/products/1234' },
     });
     fireEvent.click(screen.getByRole('button', { name: /load product from url/i }));
