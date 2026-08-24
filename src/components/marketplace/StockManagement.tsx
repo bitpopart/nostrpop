@@ -32,6 +32,10 @@ import {
 } from 'lucide-react';
 import type { MarketplaceProduct } from '@/lib/sampleProducts';
 import { formatCurrency } from '@/hooks/usePayment';
+import {
+  buildDigitalUnlimitedTemplate,
+  countDigitalWithLeftoverStock,
+} from '@/lib/unlimitedStock';
 
 // ── Stock status helpers ────────────────────────────────────────────────────
 
@@ -333,6 +337,8 @@ export function StockManagement() {
   const [savingId, setSavingId] = useState<string | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [isBulkSaving, setIsBulkSaving] = useState(false);
+  const [unlimitedOpen, setUnlimitedOpen] = useState(false);
+  const [isUnlimitedRunning, setIsUnlimitedRunning] = useState(false);
 
   // Filter + sort
   const filtered = useMemo(() => {
@@ -360,6 +366,13 @@ export function StockManagement() {
       unlimited: all.filter((p) => getStockStatus(p) === 'unlimited').length,
     };
   }, [products]);
+
+  // Digital downloads that still carry a leftover stock cap in their stored
+  // listing event — candidates for the one-time "make unlimited" pass.
+  const digitalStaleCount = useMemo(
+    () => countDigitalWithLeftoverStock(products ?? []),
+    [products]
+  );
 
   // Selection helpers
   const toggleSelect = (id: string) =>
@@ -491,6 +504,43 @@ export function StockManagement() {
     clearSelection();
   };
 
+  // ── one-time pass: set every digital download to Unlimited ──────────────
+  // Rewrites each digital product's stored listing event to drop any leftover
+  // stock cap (Gamma `stock` tag on NIP-99, `quantity` in NIP-15 content).
+  const runUnlimitedPass = async () => {
+    if (!user || !products) return;
+    setIsUnlimitedRunning(true);
+
+    let done = 0;
+    let failed = 0;
+    for (const product of products) {
+      const tpl = buildDigitalUnlimitedTemplate(product);
+      if (!tpl) continue; // not digital, or already unlimited
+
+      await new Promise<void>((resolve) => {
+        // Fresh created_at gives the re-published event a new id, so relays
+        // treat it as the latest addressable update (replacing the old).
+        publishEvent(
+          { ...tpl, created_at: Math.floor(Date.now() / 1000) },
+          {
+            onSuccess: () => { done++; resolve(); },
+            onError: () => { failed++; resolve(); },
+          }
+        );
+      });
+    }
+
+    toast({
+      title: 'Digital Downloads Updated',
+      description:
+        `Set ${done} digital download${done !== 1 ? 's' : ''} to Unlimited${failed > 0 ? ` · ${failed} failed` : ''}.`,
+    });
+    queryClient.invalidateQueries({ queryKey: ['marketplace-products'] });
+    setIsUnlimitedRunning(false);
+    setUnlimitedOpen(false);
+    clearSelection();
+  };
+
   // Products for bulk edit
   const selectedProducts = (products ?? []).filter((p) => selectedIds.has(p.id));
 
@@ -565,6 +615,22 @@ export function StockManagement() {
         <Button variant="outline" size="sm" onClick={() => refetch()}>
           Refresh
         </Button>
+        {!isLoading && digitalStaleCount > 0 && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setUnlimitedOpen(true)}
+            disabled={isUnlimitedRunning}
+            className="gap-1.5 border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+          >
+            {isUnlimitedRunning ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4" />
+            )}
+            Set {digitalStaleCount} digital to Unlimited
+          </Button>
+        )}
       </div>
 
       {/* Results count */}
@@ -705,6 +771,47 @@ export function StockManagement() {
           onSave={handleBulkSave}
           isSaving={isBulkSaving}
         />
+      )}
+
+      {/* One-time pass: make all digital downloads Unlimited */}
+      {unlimitedOpen && (
+        <Dialog open onOpenChange={() => !isUnlimitedRunning && setUnlimitedOpen(false)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Download className="h-4 w-4 text-emerald-600" />
+                Set digital downloads to Unlimited
+              </DialogTitle>
+            </DialogHeader>
+            <div className="py-3 text-sm text-muted-foreground">
+              This rewrites <strong>{digitalStaleCount}</strong> digital-download
+              listing{digitalStaleCount !== 1 ? 's' : ''} to remove their leftover
+              stock cap, so they can never run out. Physical products are untouched.
+            </div>
+            <DialogFooter className="gap-2 mt-2">
+              <Button variant="outline" onClick={() => setUnlimitedOpen(false)} disabled={isUnlimitedRunning}>
+                Cancel
+              </Button>
+              <Button
+                onClick={runUnlimitedPass}
+                disabled={isUnlimitedRunning}
+                className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white"
+              >
+                {isUnlimitedRunning ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Updating…
+                  </>
+                ) : (
+                  <>
+                    <Download className="h-4 w-4 mr-2" />
+                    Make Unlimited
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );
