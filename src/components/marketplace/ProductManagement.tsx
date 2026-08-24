@@ -684,7 +684,7 @@ export function ProductManagement() {
                     </div>
 
                     {/* Stock Status */}
-                    {product.quantity !== undefined && product.quantity <= 0 && (
+                    {product.type !== 'digital' && product.quantity !== undefined && product.quantity <= 0 && (
                       <div className="absolute top-2 right-2">
                         <Badge variant="destructive" className="text-xs">
                           Out of Stock
@@ -703,7 +703,11 @@ export function ProductManagement() {
                           <Badge variant="outline" className="text-xs">
                             {product.category}
                           </Badge>
-                          {product.quantity !== undefined && (
+                          {product.type === 'digital' ? (
+                            <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                              Unlimited
+                            </span>
+                          ) : product.quantity !== undefined && (
                             <span className="text-xs text-muted-foreground">
                               {product.quantity} available
                             </span>

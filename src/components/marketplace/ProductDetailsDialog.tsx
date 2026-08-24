@@ -54,7 +54,9 @@ export function ProductDetailsDialog({ open, onOpenChange, product }: ProductDet
   const [selectedImage, setSelectedImage] = useState(0);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
 
-  const isOutOfStock = product.quantity !== undefined && product.quantity <= 0;
+  // Digital downloads never run out — always unlimited regardless of any
+  // stock value stored on a legacy digital product.
+  const isOutOfStock = product.type !== 'digital' && product.quantity !== undefined && product.quantity <= 0;
   const hasShipping = product.shipping && product.shipping.length > 0;
   const createdDate = new Date(product.created_at);
   const hasDiscount = product.discount && product.discount > 0;
@@ -246,7 +248,9 @@ export function ProductDetailsDialog({ open, onOpenChange, product }: ProductDet
                   </div>
                 )}
 
-                {product.quantity !== undefined && (
+                {product.type === 'digital' ? (
+                  <div className="text-sm text-muted-foreground">Unlimited downloads</div>
+                ) : product.quantity !== undefined && (
                   <div className="text-sm text-muted-foreground">
                     {product.quantity} available
                   </div>

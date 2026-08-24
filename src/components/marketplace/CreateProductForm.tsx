@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -102,6 +103,15 @@ export function CreateProductForm({ onSuccess, onCancel, initialData }: CreatePr
     { id: 'region-1', name: '', countries: '', cost: 0 }
   ]);
 
+  // Unlimited-stock flag. Digital downloads are ALWAYS unlimited (a digital
+  // file never runs out). URL-imported products are on-demand/print-on-demand
+  // with no fixed stock, so they default to unlimited too. Manually-created
+  // physical products default to a finite quantity (1 unit).
+  const [unlimited, setUnlimited] = useState<boolean>(() => {
+    if (initialData?.url) return true;   // print-on-demand / no fixed stock
+    return false;
+  });
+
   const addShippingRegion = () => {
     setShippingRegions(prev => [...prev, { id: `region-${Date.now()}`, name: '', countries: '', cost: 0 }]);
   };
@@ -154,6 +164,13 @@ export function CreateProductForm({ onSuccess, onCancel, initialData }: CreatePr
   const watchedPrice = watch('price');
   const watchedDiscount = watch('discount');
   const isPhysical = productType === 'physical';
+  const isDigital = productType === 'digital';
+
+  // Digital downloads are always unlimited — selecting "digital" flips the
+  // Quantity Available option to Unlimited automatically.
+  useEffect(() => {
+    if (isDigital) setUnlimited(true);
+  }, [isDigital]);
 
   // Calculate discounted price for preview
   const discountedPrice = watchedDiscount && watchedDiscount > 0 && watchedPrice > 0
@@ -311,6 +328,10 @@ export function CreateProductForm({ onSuccess, onCancel, initialData }: CreatePr
     }
 
     try {
+      // Unlimited → no fixed stock (no `stock` tag gets emitted). Digital
+      // downloads are always unlimited; physical products can opt in.
+      const finalQuantity = unlimited ? undefined : data.quantity;
+
       // Filter out empty specs
       const validSpecs = specs.filter(spec => spec.key.trim() && spec.value.trim());
 
@@ -332,7 +353,7 @@ export function CreateProductForm({ onSuccess, onCancel, initialData }: CreatePr
         price: data.price,
         currency: data.currency,
         discount: data.discount || undefined,
-        quantity: data.quantity,
+        quantity: finalQuantity,
         specs: validSpecs.length > 0 ? validSpecs.map(spec => [spec.key, spec.value]) : undefined,
         shipping: validShipping && validShipping.length > 0 ? validShipping : undefined,
         contact_url: data.contactUrl || undefined,
@@ -363,9 +384,10 @@ export function CreateProductForm({ onSuccess, onCancel, initialData }: CreatePr
         ['status', 'active'],
       ];
 
-      // Stock / quantity (Gamma Spec: "stock" tag)
-      if (data.quantity !== undefined) {
-        tags.push(['stock', data.quantity.toString()]);
+      // Stock / quantity (Gamma Spec: "stock" tag) — omitted entirely when
+      // unlimited (empty stock = unlimited, so no quantity cap is recorded)
+      if (finalQuantity !== undefined) {
+        tags.push(['stock', finalQuantity.toString()]);
       }
 
       // Images with sort order (Gamma Spec: ["image", url, dims, order])
@@ -791,12 +813,33 @@ export function CreateProductForm({ onSuccess, onCancel, initialData }: CreatePr
 
               <div className="space-y-2">
                 <Label htmlFor="quantity">Quantity Available</Label>
-                <Input
-                  id="quantity"
-                  type="number"
-                  {...register('quantity', { setValueAs: (v: unknown) => (v === '' || v == null ? undefined : Number(v)) })}
-                  placeholder="Unlimited"
-                />
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="quantity"
+                    type="number"
+                    disabled={unlimited}
+                    className={unlimited ? 'opacity-60' : undefined}
+                    {...register('quantity', { setValueAs: (v: unknown) => (v === '' || v == null ? undefined : Number(v)) })}
+                    placeholder="Unlimited"
+                  />
+                  <label className="flex items-center gap-2 whitespace-nowrap text-sm font-medium cursor-pointer select-none">
+                    <Checkbox
+                      checked={unlimited}
+                      disabled={isDigital}
+                      onCheckedChange={(checked) => {
+                        const next = checked === true;
+                        setUnlimited(next);
+                        setValue('quantity', next ? undefined : 1, { shouldValidate: true });
+                      }}
+                    />
+                    Unlimited
+                  </label>
+                </div>
+                {isDigital ? (
+                  <p className="text-xs text-muted-foreground">Digital downloads are always unlimited.</p>
+                ) : unlimited ? (
+                  <p className="text-xs text-muted-foreground">No fixed stock — this product never runs out.</p>
+                ) : null}
               </div>
             </div>
 
