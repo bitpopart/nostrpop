@@ -47,6 +47,42 @@ export const CATEGORIES: Category[] = [
     name: 'Digital Downloads',
     description: 'Digital products and downloads',
     icon: '💾'
+  },
+  {
+    id: 'mugs',
+    name: 'Mugs',
+    description: 'Mugs and drinkware',
+    icon: '☕'
+  },
+  {
+    id: 'pillows',
+    name: 'Pillows',
+    description: 'Pillows and cushions',
+    icon: '🛏️'
+  },
+  {
+    id: 'puzzles',
+    name: 'Puzzles',
+    description: 'Puzzles and games',
+    icon: '🧩'
+  },
+  {
+    id: 'hoodies',
+    name: 'Hoodie',
+    description: 'Hoodies and sweatshirts',
+    icon: '🧥'
+  },
+  {
+    id: 'pluche',
+    name: 'Pluche',
+    description: 'Plush toys',
+    icon: '🧸'
+  },
+  {
+    id: 'prints',
+    name: 'Prints',
+    description: 'Posters and prints',
+    icon: '🖼️'
   }
 ];
 
