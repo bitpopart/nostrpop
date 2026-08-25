@@ -1,13 +1,19 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Image as ImageIcon, SlidersHorizontal, ShoppingBag } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { ArrowLeft, Image as ImageIcon, SlidersHorizontal, ShoppingBag, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { MediaUploader, MediaList } from './AppContentManagement';
+import { useShopCarouselSettings, useUpdateShopCarouselSettings } from '@/hooks/useShopCarouselSettings';
 
 interface CarouselAdminProps {
   onBack: () => void;
 }
 
 export function CarouselAdmin({ onBack }: CarouselAdminProps) {
+  const { enabled: shopCarouselEnabled, isLoading: settingsLoading } = useShopCarouselSettings();
+  const updateSettings = useUpdateShopCarouselSettings();
+
   return (
     <div className="space-y-6">
       <Button variant="ghost" size="sm" onClick={onBack} className="gap-1.5">
@@ -63,6 +69,30 @@ export function CarouselAdmin({ onBack }: CarouselAdminProps) {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Show/hide switch */}
+          <div className="flex items-start justify-between gap-3 rounded-lg border border-dashed border-pink-300/60 dark:border-pink-700/60 bg-pink-50/60 dark:bg-pink-950/30 p-3">
+            <div className="space-y-1">
+              <Label htmlFor="shop-carousel-enabled" className="flex items-center gap-1.5 text-sm font-medium cursor-pointer">
+                {shopCarouselEnabled ? <Eye className="h-4 w-4 text-pink-600" /> : <EyeOff className="h-4 w-4 text-muted-foreground" />}
+                Show carousel on /shop
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Turn the carousel off and it will not appear on the shop page &mdash; even if images are uploaded.
+                Turn it back on whenever you want it to show again. Saved for all visitors.
+              </p>
+            </div>
+            {settingsLoading ? (
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            ) : (
+              <Switch
+                id="shop-carousel-enabled"
+                checked={shopCarouselEnabled}
+                disabled={updateSettings.isPending}
+                onCheckedChange={(checked) => updateSettings.mutate(checked)}
+              />
+            )}
+          </div>
+
           <MediaUploader type="shop-carousel" label="Shop Carousel Image" />
           <MediaList type="shop-carousel" aspectClass="aspect-natural" />
         </CardContent>
