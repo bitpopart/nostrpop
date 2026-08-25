@@ -5,6 +5,7 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useMarketplaceProducts } from '@/hooks/useMarketplaceProducts';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useAppMedia } from '@/hooks/useAppContent';
+import { useShopCarouselSettings } from '@/hooks/useShopCarouselSettings';
 import { useCart } from '@/hooks/useCart';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -246,6 +247,8 @@ const Shop = () => {
 
   // Fetch shop carousel images (separate from the /app carousel)
   const { data: carouselMedia = [], isLoading: carouselLoading } = useAppMedia('shop-carousel');
+  // Admin on/off switch for the /shop carousel (default on)
+  const { enabled: shopCarouselEnabled } = useShopCarouselSettings();
 
   // Swap oversized/blocked carousel sources for bundled compressed copies
   const carouselItems = useMemo(
@@ -477,7 +480,7 @@ const Shop = () => {
           </div>
 
           {/* Carousel — constrained to same width as content, capped height */}
-          {(carouselLoading || carouselItems.length > 0) && (
+          {shopCarouselEnabled && (carouselLoading || carouselItems.length > 0) && (
             <div className="mb-4">
               <ShopCarousel items={carouselItems} isLoading={carouselLoading} />
             </div>
