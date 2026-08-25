@@ -39,6 +39,7 @@ import {
   X,
   RefreshCw,
   Star,
+  ExternalLink,
 } from 'lucide-react';
 
 import { useCategories } from '@/hooks/useCategories';
@@ -598,6 +599,18 @@ const Shop = () => {
                   </div>
                 </div>
               )}
+
+              {/* ── Redbubble banner — thin, below the tag cloud ── */}
+              <a
+                href="https://www.redbubble.com/people/bitpopart"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 rounded-md border border-orange-200 dark:border-orange-800 bg-gradient-to-r from-orange-50 via-amber-50 to-orange-50 dark:from-orange-950/30 dark:via-amber-950/20 dark:to-orange-950/30 px-4 py-2.5 text-sm font-medium text-orange-700 dark:text-orange-300 transition-colors hover:border-orange-400 hover:bg-orange-100/70"
+              >
+                <ExternalLink className="h-4 w-4 flex-shrink-0" />
+                <span>Full collection on Redbubble — bitpopart</span>
+                <span aria-hidden="true">→</span>
+              </a>
 
               {/* ── Category tab bar — plain buttons, avoids nesting inside outer Tabs ── */}
               <div className="w-full">
