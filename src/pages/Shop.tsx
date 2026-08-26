@@ -43,7 +43,6 @@ import {
   ExternalLink,
 } from 'lucide-react';
 
-import { useCategories } from '@/hooks/useCategories';
 import { useShopTags } from '@/hooks/useShopTags';
 import { useFeaturedProducts } from '@/hooks/useFeaturedProducts';
 import { usePrintPosters, useBtcEurRate, eurToLiveSats } from '@/hooks/usePrintPosters';
@@ -262,8 +261,6 @@ const Shop = () => {
   // Check if current user is admin
   const isAdmin = useIsAdmin();
 
-  // Admin-created categories (localStorage via useCategories)
-  const { categoryNames } = useCategories();
   // Admin-curated tag library — only show visible tags in the cloud
   const { visibleTags: visibleShopTags } = useShopTags();
   // Featured/pinned products (admin-chosen order shown first)
@@ -319,15 +316,44 @@ const Shop = () => {
   // Fetch ALL marketplace products (category filtering done client-side)
   const { data: allProducts, isLoading: productsLoading, error: productsError } = useMarketplaceProducts();
 
-  // Tabs = only the admin-created categories (from useCategories / localStorage)
-  // Count how many products match each category name (case-insensitive against p.category)
-  const categoryCounts = useMemo(() => {
+  // Category tabs are derived from the *actual products* so that every real
+  // category on the relay becomes a working tab. Products carry their category
+  // as the first (non-type) t-tag (e.g. "hoodies/sweaters", "digital downloads"),
+  // which often does NOT match a friendly display name. We show the raw category
+  // as the label and use its exact lowercase value for filtering, guaranteeing
+  // that clicking a tab always returns that category's products.
+  const prettyCategory = (raw: string): string => {
+    const map: Record<string, string> = {
+      't-shirts': 'T-shirts',
+      mugs: 'Mugs',
+      stickers: 'Stickers',
+      'hoodies/sweaters': 'Hoodies & Sweaters',
+      'hoodie': 'Hoodie',
+      'digital downloads': 'Digital Downloads',
+      keychains: 'Keychains',
+      buttons: 'Buttons',
+      pillows: 'Pillows',
+      puzzles: 'Puzzles',
+      pluche: 'Pluche',
+      prints: 'Prints',
+      art: 'Art',
+    };
+    if (map[raw]) return map[raw];
+    // Title-case fallback (e.g. "Other" -> "Other")
+    return raw.replace(/\b\w/g, (c) => c.toUpperCase());
+  };
+
+  const categoryTabs = useMemo(() => {
+    if (!allProducts) return [];
     const counts: Record<string, number> = {};
-    allProducts?.forEach(p => {
-      const key = p.category.toLowerCase();
-      counts[key] = (counts[key] ?? 0) + 1;
+    allProducts.forEach(p => {
+      const key = (p.category || 'Other').trim().toLowerCase();
+      counts[key] = (counts[key] || 0) + 1;
     });
-    return counts;
+    // Sort most-populated first; keep a stable, readable order afterwards.
+    return Object.entries(counts)
+      .map(([category, count]) => ({ category, label: prettyCategory(category), count }))
+      .sort((a, b) => b.count - a.count);
   }, [allProducts]);
 
   // Tag cloud: count all keyword tags from products
@@ -650,21 +676,20 @@ const Shop = () => {
                       )}
                     </button>
 
-                    {/* One tab per admin-created category */}
-                    {categoryNames.map(cat => {
-                      const isActive = selectedCategory.toLowerCase() === cat.toLowerCase();
-                      const count = categoryCounts[cat.toLowerCase()] ?? 0;
+                    {/* One tab per product category */}
+                    {categoryTabs.map(({ category, label, count }) => {
+                      const isActive = selectedCategory.toLowerCase() === category;
                       return (
                         <button
-                          key={cat}
+                          key={category}
                           type="button"
-                          onClick={() => { setSelectedCategory(cat); setSelectedTag(null); }}
+                          onClick={() => { setSelectedCategory(category); setSelectedTag(null); }}
                           className={`relative h-9 border-b-2 px-4 text-sm font-medium transition-colors whitespace-nowrap
                             ${isActive
                               ? 'border-orange-500 text-orange-600'
                               : 'border-transparent text-muted-foreground hover:text-foreground'}`}
                         >
-                          {cat}
+                          {label}
                           {count > 0 && (
                             <span className="ml-1.5 text-xs text-muted-foreground">{count}</span>
                           )}
@@ -724,11 +749,11 @@ const Shop = () => {
                             <CardTitle className="mb-2">No Products Found</CardTitle>
                             <CardDescription>
                               {selectedTag
-                                ? `No products tagged #${selectedTag}${selectedCategory !== 'all' && selectedCategory !== 'featured' ? ` in "${selectedCategory}"` : ''}. Try clearing the tag filter.`
+                                ? `No products tagged #${selectedTag}${selectedCategory !== 'all' && selectedCategory !== 'featured' ? ` in "${prettyCategory(selectedCategory)}"` : ''}. Try clearing the tag filter.`
                                 : selectedCategory === 'featured'
                                 ? 'No featured products have been set yet. Browse all products below.'
                                 : selectedCategory !== 'all'
-                                ? `No products tagged "${selectedCategory}". Try a different tab or relay.`
+                                ? `No products tagged "${prettyCategory(selectedCategory)}". Try a different tab or relay.`
                                 : 'No products have been listed yet. Try switching to a different relay or be the first to list a product!'}
                             </CardDescription>
                           </div>
@@ -751,7 +776,7 @@ const Shop = () => {
                       <p className="text-xs text-muted-foreground flex items-center gap-1.5 flex-wrap">
                         <span>{products.length} product{products.length !== 1 ? 's' : ''}</span>
                         {selectedCategory === 'featured' && <span className="inline-flex items-center gap-1"><Star className="h-3 w-3 fill-current text-orange-400" />featured</span>}
-                        {selectedCategory !== 'all' && selectedCategory !== 'featured' && <span>in "{selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)}"</span>}
+                        {selectedCategory !== 'all' && selectedCategory !== 'featured' && <span>in "{prettyCategory(selectedCategory)}"</span>}
                         {selectedTag && (
                           <span className="inline-flex items-center gap-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 px-2 py-0.5 rounded-full border border-orange-200 dark:border-orange-800">
                             <Tag className="h-3 w-3" />#{selectedTag}
