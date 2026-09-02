@@ -388,6 +388,15 @@ export function EditProductForm({ product, onSuccess, onCancel }: EditProductFor
         tags.push(['discount', data.discount.toString()]);
       }
 
+      // Digital files (BitPopArt extension tag): ["file", "<name>", "<url>"]
+      if (data.type === 'digital') {
+        digitalFiles.forEach((url, i) => {
+          if (url.trim()) {
+            tags.push(['file', (digitalFileNames[i] || `file-${i + 1}`).trim(), url.trim()]);
+          }
+        });
+      }
+
       // Category and keyword t-tags
       tags.push(['t', data.category.toLowerCase()]);
       keywordTags.forEach(tag => tags.push(['t', tag.toLowerCase()]));
