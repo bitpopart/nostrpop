@@ -417,6 +417,15 @@ export function CreateProductForm({ onSuccess, onCancel, initialData }: CreatePr
         tags.push(['discount', data.discount.toString()]);
       }
 
+      // Digital files (BitPopArt extension tag): ["file", "<name>", "<url>"]
+      if (data.type === 'digital') {
+        digitalFiles.forEach(f => {
+          if (f.name.trim() && f.url.trim()) {
+            tags.push(['file', f.name.trim(), f.url.trim()]);
+          }
+        });
+      }
+
       // Category and keyword t-tags (relay-queryable)
       tags.push(['t', data.category.toLowerCase()]);
       keywordTags.forEach(tag => tags.push(['t', tag.toLowerCase()]));

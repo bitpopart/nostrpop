@@ -187,6 +187,9 @@ function parseNip99Event(event: NostrEvent): MarketplaceProduct | null {
     const discountStr = getTag('discount');
     const discount = discountStr ? Number(discountStr) : undefined;
 
+    // Digital files (BitPopArt extension tag): ["file", "<name>", "<url>"]
+    const fileTags = getAllTags('file').filter(t => t[1] && t[2]);
+
     return {
       id: dTag,
       event,
@@ -210,8 +213,8 @@ function parseNip99Event(event: NostrEvent): MarketplaceProduct | null {
       dimensions,
       shippingOptionRefs: shippingOptionRefs.length > 0 ? shippingOptionRefs : undefined,
       shipping: [],
-      digital_files: [],
-      digital_file_names: [],
+      digital_files: fileTags.map(t => t[2]),
+      digital_file_names: fileTags.map(t => t[1]),
       contact_url: contactUrl,
       stall_id: 'default',
       created_at: new Date(event.created_at * 1000).toISOString(),
