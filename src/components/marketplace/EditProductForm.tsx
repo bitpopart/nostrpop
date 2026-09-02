@@ -62,6 +62,11 @@ const productSchema = z.object({
     key: z.string().min(1),
     value: z.string().min(1)
   })).optional()
+}).superRefine((data, ctx) => {
+  // Physical products must have a real price; digital downloads may be free (price 0).
+  if (data.type !== 'digital' && data.price <= 0) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['price'], message: 'Price must be greater than 0' });
+  }
 });
 
 interface ShippingRegion {
@@ -116,6 +121,11 @@ export function EditProductForm({ product, onSuccess, onCancel }: EditProductFor
     return false;
   });
   const [tagInput, setTagInput] = useState('');
+  // Free-download flag — only relevant for digital products. Marks the product
+  // as price 0 so customers can grab the file(s) (e.g. an SVG) without paying.
+  // Stored on the listing as a NIP-99 price tag with amount 0.
+  const [isFree, setIsFree] = useState<boolean>(() => product.type === 'digital' && product.price <= 0);
+  const previousPriceRef = useRef<number>(product.price);
 
   const addShippingRegion = () => {
     setShippingRegions(prev => [...prev, { id: `region-${Date.now()}`, name: '', countries: '', cost: 0 }]);
@@ -190,6 +200,8 @@ export function EditProductForm({ product, onSuccess, onCancel }: EditProductFor
     setValue('contactUrl', product.contact_url || '');
     setShippingRegions(normalizeShipping(product.shipping));
     setKeywordTags((product as { keyword_tags?: string[] }).keyword_tags || []);
+    setIsFree(product.type === 'digital' && product.price <= 0);
+    previousPriceRef.current = product.price;
   }, [product, setValue]);
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -386,14 +398,17 @@ export function EditProductForm({ product, onSuccess, onCancel }: EditProductFor
         tags.push(['r', data.contactUrl]);
       }
 
+      // Free digital downloads display "Free" instead of the 0 amount
+      const priceLabel = data.type === 'digital' && isFree ? 'Free' : `${data.price} ${data.currency}`;
+
       // NIP-31 alt tag
-      tags.push(['alt', `${data.type === 'digital' ? 'Digital' : 'Physical'} product: ${data.name} — ${data.price} ${data.currency}`]);
+      tags.push(['alt', `${data.type === 'digital' ? 'Digital' : 'Physical'} product: ${data.name} — ${priceLabel}`]);
 
       // Markdown content
       const specsSection = validSpecs.length > 0
         ? `\n\n**Specs:**\n${validSpecs.map(s => `- ${s.key}: ${s.value}`).join('\n')}`
         : '';
-      const markdownContent = `## ${data.name}\n\n${data.description}\n\n**Price:** ${data.price} ${data.currency}${data.discount ? ` (-${data.discount}%)` : ''}\n**Category:** ${data.category}\n**Type:** ${data.type === 'digital' ? 'Digital Download' : 'Physical Product'}${specsSection}\n\n*Listed by BitPopArt*`;
+      const markdownContent = `## ${data.name}\n\n${data.description}\n\n**Price:** ${priceLabel}${data.discount ? ` (-${data.discount}%)` : ''}\n**Category:** ${data.category}\n**Type:** ${data.type === 'digital' ? 'Digital Download' : 'Physical Product'}${specsSection}\n\n*Listed by BitPopArt*`;
 
       // Publish as NIP-99 kind 30402 (Gamma Spec compliant, addressable update)
       createEvent({
@@ -594,7 +609,15 @@ export function EditProductForm({ product, onSuccess, onCancel }: EditProductFor
               <div className="flex items-center space-x-2">
                 <Switch
                   checked={productType === 'digital'}
-                  onCheckedChange={(checked) => setValue('type', checked ? 'digital' : 'physical')}
+                  onCheckedChange={(checked) => {
+                    setValue('type', checked ? 'digital' : 'physical');
+                    // Free is only available on digital products — switching a
+                    // free product back to physical restores its previous price.
+                    if (!checked && isFree) {
+                      setIsFree(false);
+                      setValue('price', previousPriceRef.current > 0 ? previousPriceRef.current : 1, { shouldValidate: true });
+                    }
+                  }}
                 />
                 <Label className="flex items-center space-x-2">
                   {productType === 'digital' ? (
@@ -628,15 +651,43 @@ export function EditProductForm({ product, onSuccess, onCancel }: EditProductFor
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="price">Price *</Label>
-                <Input
-                  id="price"
-                  type="number"
-                  step="0.01"
-                  {...register('price', { valueAsNumber: true })}
-                  placeholder="0.00"
-                />
+                <div className="relative">
+                  <Input
+                    id="price"
+                    type="number"
+                    step="0.01"
+                    disabled={isFree}
+                    className={isFree ? 'opacity-60 pr-12' : undefined}
+                    {...register('price', { valueAsNumber: true })}
+                    placeholder={isFree ? 'Free' : '0.00'}
+                  />
+                  {isFree && (
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-green-600 pointer-events-none">Free</span>
+                  )}
+                </div>
                 {errors.price && (
                   <p className="text-sm text-red-500">{errors.price.message}</p>
+                )}
+                {isDigital && (
+                  <label className="flex items-center gap-2 whitespace-nowrap text-sm font-medium cursor-pointer select-none">
+                    <Checkbox
+                      checked={isFree}
+                      onCheckedChange={(checked) => {
+                        const next = checked === true;
+                        setIsFree(next);
+                        if (next) {
+                          previousPriceRef.current = watchedPrice > 0 ? watchedPrice : previousPriceRef.current;
+                          setValue('price', 0, { shouldValidate: true });
+                        } else {
+                          setValue('price', previousPriceRef.current > 0 ? previousPriceRef.current : 1, { shouldValidate: true });
+                        }
+                      }}
+                    />
+                    Free download
+                  </label>
+                )}
+                {isFree && (
+                  <p className="text-xs text-green-600 dark:text-green-400">Customers can download the files for free — no payment required.</p>
                 )}
               </div>
 

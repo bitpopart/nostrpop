@@ -100,6 +100,10 @@ export function PaymentDialog({ open, onOpenChange, product }: PaymentDialogProp
   const { isDetecting: isDetectingPayment, startDetection, stopDetection, payWithWebLN, openLightningWallet } = useEnhancedPaymentDetection();
   const { toast } = useToast();
 
+  // Free digital products (price 0) skip payment entirely — customers download
+  // the file(s) directly, no invoice or buyer form.
+  const isFree = product.type === 'digital' && product.price <= 0;
+
   // Load global shipping zones
   const { data: shippingConfig } = useShippingConfig();
   const config = shippingConfig ?? DEFAULT_SHIPPING_CONFIG;
@@ -472,6 +476,55 @@ export function PaymentDialog({ open, onOpenChange, product }: PaymentDialogProp
           </div>
 
           {/* Fixed Footer */}
+          <div className="flex-shrink-0 pt-4 border-t">
+            <Button onClick={() => onOpenChange(false)} className="w-full">
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  if (isFree) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader className="text-center flex-shrink-0 pb-4">
+            <div className="mx-auto mb-4 w-12 h-12 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center">
+              <Download className="w-6 h-6 text-green-600 dark:text-green-400" />
+            </div>
+            <DialogTitle className="text-xl">Free Download</DialogTitle>
+            <DialogDescription>
+              {product.name} — no payment required
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex-1 overflow-y-auto space-y-4 pr-2 min-h-0">
+            <Card>
+              <CardContent className="pt-4">
+                <div className="text-center space-y-2">
+                  <p className="font-medium">{product.name}</p>
+                  <p className="text-2xl font-bold text-green-600">Free</p>
+                  <p className="text-sm text-muted-foreground">
+                    Your files are ready to download below
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <DigitalDownload
+              product={product}
+              paymentConfirmed
+              onDownloadComplete={() => {
+                toast({
+                  title: "Download Complete",
+                  description: "Enjoy your free download!",
+                });
+              }}
+            />
+          </div>
+
           <div className="flex-shrink-0 pt-4 border-t">
             <Button onClick={() => onOpenChange(false)} className="w-full">
               Close

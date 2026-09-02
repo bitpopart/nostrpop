@@ -94,6 +94,8 @@ export function ProductCard({ product, onViewDetails }: ProductCardProps) {
 
   const isOutOfStock = product.quantity !== undefined && product.quantity <= 0;
   const hasShipping = product.shipping && product.shipping.length > 0;
+  // Free digital products (price 0) — everyone can download the file(s), no payment.
+  const isFreeDigital = product.type === 'digital' && product.price <= 0;
   // External-only: product has a contact_url pointing to an external webshop.
   // These products can appear on Nostr marketplaces but are NOT sold through this site.
   const externalBuyUrl = product.contact_url && product.contact_url.trim() !== ''
@@ -236,7 +238,9 @@ export function ProductCard({ product, onViewDetails }: ProductCardProps) {
 
           {/* Price */}
           <div className="mb-3">
-            {priceLoading ? (
+            {isFreeDigital ? (
+              <div className="text-xl font-bold text-green-600 dark:text-green-400">Free</div>
+            ) : priceLoading ? (
               <Skeleton className="h-6 w-20" />
             ) : (
               <>
@@ -322,12 +326,12 @@ export function ProductCard({ product, onViewDetails }: ProductCardProps) {
                     className="text-white border-0 flex-1"
                     style={!isOutOfStock ? getGradientStyle('primary') : undefined}
                   >
-                    <ShoppingCart className="w-4 h-4 mr-1" />
-                    {isOutOfStock ? 'Sold Out' : (product.type === 'physical' ? 'View Product' : 'Buy Now')}
+                    {isFreeDigital ? <Download className="w-4 h-4 mr-1" /> : <ShoppingCart className="w-4 h-4 mr-1" />}
+                    {isOutOfStock ? 'Sold Out' : (product.type === 'physical' ? 'View Product' : (isFreeDigital ? 'Download Free' : 'Buy Now'))}
                   </Button>
                 </div>
-                {/* Add to Cart button — hidden for external products */}
-                {!isOutOfStock && (
+                {/* Add to Cart button — hidden for external products and free digital downloads */}
+                {!isOutOfStock && !isFreeDigital && (
                   <Button
                     variant="outline"
                     size="sm"

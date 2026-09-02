@@ -58,6 +58,8 @@ export function ProductDetailsDialog({ open, onOpenChange, product }: ProductDet
   // stock value stored on a legacy digital product.
   const isOutOfStock = product.type !== 'digital' && product.quantity !== undefined && product.quantity <= 0;
   const hasShipping = product.shipping && product.shipping.length > 0;
+  // Free digital products (price 0) — everyone can download the file(s), no payment.
+  const isFreeDigital = product.type === 'digital' && product.price <= 0;
   const createdDate = new Date(product.created_at);
   const hasDiscount = product.discount && product.discount > 0;
   const discountedPrice = hasDiscount ? product.price * (1 - product.discount! / 100) : null;
@@ -225,7 +227,7 @@ export function ProductDetailsDialog({ open, onOpenChange, product }: ProductDet
                   </div>
                 )}
                 <div className="text-3xl font-bold text-green-600 dark:text-green-400">
-                  {formatCurrency(discountedPrice ?? product.price, product.currency)}
+                  {isFreeDigital ? 'Free' : formatCurrency(discountedPrice ?? product.price, product.currency)}
                 </div>
 
                 {product.type === 'physical' && hasShipping && (
@@ -337,8 +339,8 @@ export function ProductDetailsDialog({ open, onOpenChange, product }: ProductDet
                 className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0"
                 size="lg"
               >
-                <ShoppingCart className="w-5 h-5 mr-2" />
-                {isOutOfStock ? 'Out of Stock' : `Buy Now - ${formatCurrency(discountedPrice ?? product.price, product.currency)}${product.type === 'physical' && hasShipping ? ' + shipping' : ''}`}
+                {isFreeDigital ? <Download className="w-5 h-5 mr-2" /> : <ShoppingCart className="w-5 h-5 mr-2" />}
+                {isOutOfStock ? 'Out of Stock' : (isFreeDigital ? 'Download Free' : `Buy Now - ${formatCurrency(discountedPrice ?? product.price, product.currency)}${product.type === 'physical' && hasShipping ? ' + shipping' : ''}`)}
               </Button>
             </div>
           </div>

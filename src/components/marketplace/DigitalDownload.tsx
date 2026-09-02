@@ -30,6 +30,11 @@ export function DigitalDownload({ product, paymentConfirmed, onDownloadComplete 
   const [downloadingFiles, setDownloadingFiles] = useState<string[]>([]);
   const { toast } = useToast();
 
+  // Free products (price 0) skip the payment gate — e.g. free SVG downloads
+  // selected by the shop owner. Everyone can grab the file(s) right away.
+  const isFree = product.price <= 0;
+  const canDownload = paymentConfirmed || isFree;
+
   // Create file objects with URLs and names
   const digitalFiles = (() => {
     // Check if we have actual digital files with proper data
@@ -105,7 +110,7 @@ export function DigitalDownload({ product, paymentConfirmed, onDownloadComplete 
   };
 
   const handleDownload = async (file: { name: string; url: string }) => {
-    if (!paymentConfirmed) {
+    if (!canDownload) {
       toast({
         title: "Payment Required",
         description: "Please complete payment before downloading files.",
@@ -187,7 +192,7 @@ Thank you for choosing our digital marketplace!`;
   const isFileDownloaded = (fileName: string) => downloadedFiles.includes(fileName);
   const isFileDownloading = (fileName: string) => downloadingFiles.includes(fileName);
 
-  if (!paymentConfirmed) {
+  if (!canDownload) {
     return (
       <Alert className="border-yellow-200 bg-yellow-50/50 dark:bg-yellow-900/10 dark:border-yellow-800">
         <Clock className="h-4 w-4 text-yellow-600" />
@@ -209,10 +214,10 @@ Thank you for choosing our digital marketplace!`;
       <CardHeader>
         <CardTitle className="flex items-center space-x-2 text-green-700 dark:text-green-300">
           <Download className="h-5 w-5 text-green-600" />
-          <span>Digital Downloads Ready!</span>
+          <span>{isFree ? 'Free Download!' : 'Digital Downloads Ready!'}</span>
         </CardTitle>
         <CardDescription className="text-green-600 dark:text-green-400">
-          Your payment has been confirmed. Download your digital files below.
+          {isFree ? 'No payment needed — grab your files below.' : 'Your payment has been confirmed. Download your digital files below.'}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -220,8 +225,9 @@ Thank you for choosing our digital marketplace!`;
         <Alert>
           <CheckCircle className="h-4 w-4" />
           <AlertDescription>
-            Payment confirmed! You now have access to download your digital files.
-            Downloads are available for 30 days from purchase date.
+            {isFree
+              ? 'These files are completely free. Download them as many times as you like.'
+              : 'Payment confirmed! You now have access to download your digital files. Downloads are available for 30 days from purchase date.'}
           </AlertDescription>
         </Alert>
 
@@ -283,7 +289,7 @@ Thank you for choosing our digital marketplace!`;
               {downloadedFiles.length} of {digitalFiles.length} files downloaded
             </span>
             <span>
-              Downloads expire in 30 days
+              {isFree ? 'Free download — no payment required' : 'Downloads expire in 30 days'}
             </span>
           </div>
         </div>
