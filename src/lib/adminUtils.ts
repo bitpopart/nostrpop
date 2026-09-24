@@ -9,11 +9,17 @@ const ADMIN_NPUB = 'npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta
 // listed here and serves the newest version of each page (see usePages.tsx).
 const PRIMARY_OWNER_PUBKEY = '43baaf0c28e6cfb195b17ee083e19eb3a4afdfac54d9b6baf170270ed193e34c'; // npub1gwa27... (site admin/content key)
 const ARTIST_OWNER_PUBKEY = '7d33ba57d8a6e8869a1f1d5215254597594ac0dbfeb01b690def8c461b82db35'; // npub105em547c5m... (artist key, site founder/author)
+// BitBot MANAGER (agent ops key) — publishes pages like /b (Just B Surprise Box)
+// on the owner's behalf. Newest version wins per slug, so any edit saved from
+// /admin under an owner key supersedes the agent-published version. Remove this
+// entry if agent-published pages are no longer wanted.
+const AGENT_MANAGER_PUBKEY = '2e121d0e7fb05c2035812e5d2dfcf17c856d6b64e7138af459b319d3bf79d76e'; // BitBot MANAGER (bot-ops key)
 
 /** Pubkeys whose custom pages (kind 38175) the site treats as authoritative. */
 export const PAGE_OWNER_PUBKEYS: string[] = [
   PRIMARY_OWNER_PUBKEY,
   ARTIST_OWNER_PUBKEY,
+  AGENT_MANAGER_PUBKEY,
 ];
 
 // Convert npub to hex format for comparison
