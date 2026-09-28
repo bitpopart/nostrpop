@@ -44,9 +44,10 @@ const presetRelays = [
   // read+write: queried for content AND published to.
   { url: 'wss://relay.ditto.pub', name: 'Ditto', read: true, write: true },
   { url: 'wss://relay.dreamith.to', name: 'Dreamith', read: true, write: true },
-  // write-only: published to for wide distribution, but NOT queried for reads
-  // so a slow relay can't gate every query. (Ditto uses this same pattern.)
-  { url: 'wss://relay.primal.net', name: 'Primal', read: false, write: true },
+  // Primal serves kind-30078 settings (homepage gridTiles, etc.) to anonymous
+  // readers, while Ditto/Dreamith NIP-42 AUTH-gate those reads — so the home
+  // page needs Primal in the read pool to load its settings.
+  { url: 'wss://relay.primal.net', name: 'Primal', read: true, write: true },
   // Gamestr gaming relay — write game scores (kind 30762) here for discovery on gamestr.io
   { url: 'wss://main.relay.gamestr.io', name: 'Gamestr', read: false, write: true },
 ];
