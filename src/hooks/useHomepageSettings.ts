@@ -153,7 +153,12 @@ export function useHomepageSettings() {
 
         if (events.length > 0 && events[0].content) {
           try {
-            const parsed = JSON.parse(events[0].content);
+            // Relays may return different versions of the settings (each relay
+            // honours limit:1 with its own newest). NPool does not sort, so
+            // pick the newest by created_at instead of arrival order.
+            const parsed = JSON.parse(
+              [...events].sort((a, b) => b.created_at - a.created_at)[0].content,
+            );
             console.log('[useHomepageSettings] Loaded settings from Nostr:', parsed);
 
             // Handle both old format (array) and new format (object with sections + buttons)

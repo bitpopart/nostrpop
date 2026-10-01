@@ -115,11 +115,15 @@ const NostrProvider: React.FC<NostrProviderProps> = (props) => {
         return [...writeRelays];
       },
       // After the first relay sends EOSE, wait this many ms for the other
-      // read-pool relays before resolving. Now that reads only hit the two
-      // fast relays (Ditto + Dreamith) instead of all presets, this can be
-      // short like Ditto (300ms). Previously 4000ms, which made the home
-      // page (which fires ~10 queries) feel sluggish.
-      eoseTimeout: 500,
+      // read-pool relays before resolving. The pool is Ditto + Dreamith (both
+      // NIP-42 AUTH-gate kind-30078, sending CLOSED instead of EOSE) plus the
+      // anonymous-serving relays Primal + nostr.net. Events are yielded as
+      // they arrive, but a slow anonymous relay loses the race to the gated
+      // relays' EOSE if the timeout is too tight — 1500ms keeps the home page
+      // snappy while giving both anonymous relays room to deliver settings.
+      // (Previously 4000ms, which made the home page feel sluggish; 500ms was
+      // too tight once the pool grew beyond the two fast relays.)
+      eoseTimeout: 1500,
     });
   }
 

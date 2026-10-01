@@ -44,10 +44,13 @@ const presetRelays = [
   // read+write: queried for content AND published to.
   { url: 'wss://relay.ditto.pub', name: 'Ditto', read: true, write: true },
   { url: 'wss://relay.dreamith.to', name: 'Dreamith', read: true, write: true },
-  // Primal serves kind-30078 settings (homepage gridTiles, etc.) to anonymous
-  // readers, while Ditto/Dreamith NIP-42 AUTH-gate those reads — so the home
-  // page needs Primal in the read pool to load its settings.
+  // Primal and nostr.net serve kind-30078 settings (homepage gridTiles, etc.)
+  // to anonymous readers, while Ditto/Dreamith NIP-42 AUTH-gate those reads —
+  // so the home page needs at least one anonymous-serving relay in the read
+  // pool. Keep BOTH Primal and nostr.net here for redundancy: Primal pruned
+  // the settings event once (Oct 2026) and the site went tile-less as a result.
   { url: 'wss://relay.primal.net', name: 'Primal', read: true, write: true },
+  { url: 'wss://relay.nostr.net', name: 'NostrNet', read: true, write: true },
   // Gamestr gaming relay — write game scores (kind 30762) here for discovery on gamestr.io
   { url: 'wss://main.relay.gamestr.io', name: 'Gamestr', read: false, write: true },
 ];
