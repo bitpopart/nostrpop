@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useNFTCharacters, type NFTCharacter, type NFTLayerGroup } from '@/hooks/useNFTCharacters';
+import { useNftCollection } from '@/hooks/useNftCollection';
 import { getAdminPubkeyHex } from '@/lib/adminUtils';
 import { ZapButton } from '@/components/ZapButton';
 import { RelaySelector } from '@/components/RelaySelector';
@@ -20,9 +21,27 @@ import {
   Images,
   Expand,
   X,
+  ExternalLink,
+  Clock3,
 } from 'lucide-react';
 
 const ADMIN_PUBKEY = getAdminPubkeyHex();
+const NFC_PROFILE_URL =
+  'https://nonfungible.cash/p/e85ccdd15333f88c34fbd63d5a352fc37d959c1b68157e519e655705c337a3b0';
+
+/** Compact "minted …ago / date" label for a unix-seconds timestamp. */
+function formatMinted(unix: number): string {
+  const now = Date.now();
+  const diffH = Math.floor((now - unix * 1000) / 3600000);
+  if (diffH < 1) return 'just minted';
+  if (diffH < 24) return `${diffH}h ago`;
+  if (diffH < 24 * 30) return `${Math.floor(diffH / 24)}d ago`;
+  return new Date(unix * 1000).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
 
 // ─── Canvas compositor ────────────────────────────────────────────────────────
 
@@ -425,6 +444,7 @@ export default function NFTPage() {
   });
 
   const { data: characters, isLoading } = useNFTCharacters();
+  const { collection, source, error } = useNftCollection();
 
   // Exclude 'block' category — those power the /Block page, not the NFT generator
   const nftCharacters = (characters ?? []).filter(c => c.category !== 'block');
@@ -599,6 +619,122 @@ export default function NFTPage() {
       <div className="text-center pb-8 text-xs text-muted-foreground/60">
         Nostr Fungible Tokens · No blockchain · No gas fees · Just Nostr
       </div>
+
+      {/* ── Nonfungible.cash collection ── */}
+      {!error && (
+        <div className="container mx-auto px-4 pb-16">
+          <div className="max-w-5xl mx-auto text-center mb-10">
+            <h2 className="text-3xl md:text-4xl font-black mb-2">
+              <span className="bg-gradient-to-r from-orange-500 to-pink-500 bg-clip-text text-transparent">
+                The BitPopArt NFT Collection
+              </span>
+            </h2>
+            <p className="text-muted-foreground">
+              {collection ? (
+                <>
+                  {collection.total} Nostr Fungible Tokens, newest first — minted on{' '}
+                  <a
+                    href={collection.profile_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-foreground underline underline-offset-2 hover:text-orange-500"
+                  >
+                    Nonfungible.cash
+                  </a>
+                </>
+              ) : (
+                <>Minted on Nonfungible.cash</>
+              )}
+              {source === 'live' && (
+                <span className="ml-2 text-xs text-emerald-600 dark:text-emerald-400">● live</span>
+              )}
+            </p>
+          </div>
+
+          {collection ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+              {collection.cards.map((card, i) => (
+                <a
+                  key={card.h}
+                  href={collection.profile_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group"
+                >
+                  <Card className="overflow-hidden border-2 border-transparent hover:border-orange-200 dark:hover:border-orange-800 transition-colors h-full">
+                    <div className="relative bg-gradient-to-br from-orange-50 to-pink-50 dark:from-orange-950/30 dark:to-pink-950/30 aspect-square">
+                      <img
+                        src={card.image}
+                        alt={card.title}
+                        loading="lazy"
+                        decoding="async"
+                        className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-[1.03]"
+                      />
+                      {i < 6 && (
+                        <Badge className="absolute top-2 left-2 z-10 bg-gradient-to-r from-orange-500 to-pink-500 text-white text-xs border-0">
+                          <Sparkles className="h-2.5 w-2.5 mr-1" />
+                          New
+                        </Badge>
+                      )}
+                    </div>
+                    <CardContent className="p-3 space-y-0.5">
+                      <p className="font-bold text-sm truncate">{card.title}</p>
+                      <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+                        <Clock3 className="h-3 w-3 shrink-0" />
+                        {formatMinted(card.created)}
+                        {card.status === 'sent' ? ' · sent' : ''}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </a>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              {[...Array(8)].map((_, i) => (
+                <div key={i} className="space-y-2">
+                  <Skeleton className="aspect-square rounded-lg" />
+                  <Skeleton className="h-4 w-3/4" />
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="text-center mt-8">
+            <Button asChild variant="outline" size="sm" className="gap-1.5">
+              <a
+                href={collection?.profile_url ?? NFC_PROFILE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                View all on Nonfungible.cash
+                <ExternalLink className="h-3.5 w-3.5" />
+              </a>
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {error && (
+        <div className="container mx-auto px-4 pb-16">
+          <div className="max-w-sm mx-auto">
+            <Card className="border-dashed">
+              <CardContent className="py-10 px-8 text-center space-y-3">
+                <ImageIcon className="h-10 w-10 mx-auto text-muted-foreground/40" />
+                <p className="text-muted-foreground text-sm">
+                  Couldn't load the NFT collection right now.
+                </p>
+                <Button asChild variant="outline" size="sm">
+                  <a href={NFC_PROFILE_URL} target="_blank" rel="noopener noreferrer">
+                    View on Nonfungible.cash
+                    <ExternalLink className="h-3.5 w-3.5 ml-1.5" />
+                  </a>
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
