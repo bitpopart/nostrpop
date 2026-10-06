@@ -5,12 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "npm i && vite",
-    "build": "npm i && vite build && node scripts/fix-base-paths.mjs && touch dist/.nojekyll",
-    "build:ci": "vite build && node scripts/fix-base-paths.mjs && touch dist/.nojekyll",
+    "build": "npm i && node scripts/sync-nfcs.mjs && vite build && node scripts/fix-base-paths.mjs && touch dist/.nojekyll",
+    "build:ci": "node scripts/sync-nfcs.mjs && vite build && node scripts/fix-base-paths.mjs && touch dist/.nojekyll",
     "poppost:sync": "node scripts/poppost-sync.mjs",
     "test": "npm i && tsc -p tsconfig.app.json --noEmit && eslint && vitest run && vite build && node scripts/fix-base-paths.mjs",
     "deploy": "npm run build && npx -y nostr-deploy-cli deploy --skip-setup",
-    "deploy:gh": "npm run build && gh-pages -d dist"
+    "deploy:gh": "npm run build && gh-pages -d dist",
+    "sync:nfcs": "node scripts/sync-nfcs.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
