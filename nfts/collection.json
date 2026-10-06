@@ -1,0 +1,191 @@
+{
+  "pubkey": "e85ccdd15333f88c34fbd63d5a352fc37d959c1b68157e519e655705c337a3b0",
+  "name": "BitPopArt",
+  "profile_url": "https://nonfungible.cash/p/e85ccdd15333f88c34fbd63d5a352fc37d959c1b68157e519e655705c337a3b0",
+  "updated_at": 1791319500,
+  "total": 26,
+  "cards": [
+    {
+      "title": "Chestnut",
+      "h": "44ec5ede51012a733ab2f8b915faff019f7aa712e8ace2a711bcc90b9bb72fb0",
+      "created": 1791317021,
+      "status": "owned",
+      "image": "https://nonfungible.cash/api/images/44ec5ede51012a733ab2f8b915faff019f7aa712e8ace2a711bcc90b9bb72fb0"
+    },
+    {
+      "title": "Hazelnut",
+      "h": "2452d8735940413141e937a0b9c344fd3ca2a4adcc7c1fe1dcf607606cf8a5c1",
+      "created": 1791315486,
+      "status": "owned",
+      "image": "https://nonfungible.cash/api/images/2452d8735940413141e937a0b9c344fd3ca2a4adcc7c1fe1dcf607606cf8a5c1"
+    },
+    {
+      "title": "Coconut",
+      "h": "0c1454ca26cd18c5102930a8344d3f0fcffe85c37c6b8e4bc7dace04f9d76e27",
+      "created": 1791312491,
+      "status": "owned",
+      "image": "https://nonfungible.cash/api/images/0c1454ca26cd18c5102930a8344d3f0fcffe85c37c6b8e4bc7dace04f9d76e27"
+    },
+    {
+      "title": "Pistachios",
+      "h": "1e33b10467deafedf15a72779e95d95ddb734f875bb3e99a32ca1412b7bb4f24",
+      "created": 1791308811,
+      "status": "owned",
+      "image": "https://nonfungible.cash/api/images/1e33b10467deafedf15a72779e95d95ddb734f875bb3e99a32ca1412b7bb4f24"
+    },
+    {
+      "title": "Peanut",
+      "h": "34e91a2716f5dc72b9dca87063fb48463715fcbaf94a5e2c64d543453bf97431",
+      "created": 1791308697,
+      "status": "owned",
+      "image": "https://nonfungible.cash/api/images/34e91a2716f5dc72b9dca87063fb48463715fcbaf94a5e2c64d543453bf97431"
+    },
+    {
+      "title": "Macadamia",
+      "h": "14c035d8239c8f5af65c248637b38290ad3e58b3f9bc9b433690201112617196",
+      "created": 1791308570,
+      "status": "owned",
+      "image": "https://nonfungible.cash/api/images/14c035d8239c8f5af65c248637b38290ad3e58b3f9bc9b433690201112617196"
+    },
+    {
+      "title": "Almond",
+      "h": "1cceeb7cbb767270160a93f8227800f84c2f11bbc03041b8a697abcd826a4b8b",
+      "created": 1791308480,
+      "status": "owned",
+      "image": "https://nonfungible.cash/api/images/1cceeb7cbb767270160a93f8227800f84c2f11bbc03041b8a697abcd826a4b8b"
+    },
+    {
+      "title": "Cashew",
+      "h": "0362ab2d42114e2729f65a71749cd619feaa398948079c22ddcb8f89ff1522e1",
+      "created": 1791308379,
+      "status": "owned",
+      "image": "https://nonfungible.cash/api/images/0362ab2d42114e2729f65a71749cd619feaa398948079c22ddcb8f89ff1522e1"
+    },
+    {
+      "title": "GM coffee wizard",
+      "h": "4c72999dbda6210c97d968c0dfd4b40a62c862a8e75214b14bd05047248a9aab",
+      "created": 1791305962,
+      "status": "owned",
+      "image": "https://nonfungible.cash/api/images/4c72999dbda6210c97d968c0dfd4b40a62c862a8e75214b14bd05047248a9aab"
+    },
+    {
+      "title": "GM wizard",
+      "h": "173403bb5d27e5915b411ac5091d4452b03023cab21ae8bcd2e19fa8fd1b18f0",
+      "created": 1791305797,
+      "status": "owned",
+      "image": "https://nonfungible.cash/api/images/173403bb5d27e5915b411ac5091d4452b03023cab21ae8bcd2e19fa8fd1b18f0"
+    },
+    {
+      "title": "Sats",
+      "h": "0f06e26dbd0fe5d9cb67a221669bd79e96f094787ebf9ae6cddeb5ef43736d92",
+      "created": 1791305433,
+      "status": "owned",
+      "image": "https://nonfungible.cash/api/images/0f06e26dbd0fe5d9cb67a221669bd79e96f094787ebf9ae6cddeb5ef43736d92"
+    },
+    {
+      "title": "Mexican",
+      "h": "4f478c70e815f1bfdaa84655f87432db35ab309a8d75fbf509c864610e2f1943",
+      "created": 1791305283,
+      "status": "owned",
+      "image": "https://nonfungible.cash/api/images/4f478c70e815f1bfdaa84655f87432db35ab309a8d75fbf509c864610e2f1943"
+    },
+    {
+      "title": "Privacy",
+      "h": "344437bfb7869c708fb9e51815687b01611cff7d677e3ad503d0b604cf82c538",
+      "created": 1791305187,
+      "status": "owned",
+      "image": "https://nonfungible.cash/api/images/344437bfb7869c708fb9e51815687b01611cff7d677e3ad503d0b604cf82c538"
+    },
+    {
+      "title": "Nostr Friends",
+      "h": "5836f43a349363346dacbbfbe8326667a0faafbedb56f2cdc837117328375535",
+      "created": 1791305066,
+      "status": "owned",
+      "image": "https://nonfungible.cash/api/images/5836f43a349363346dacbbfbe8326667a0faafbedb56f2cdc837117328375535"
+    },
+    {
+      "title": "No Shitcoins",
+      "h": "22b97385e1bbc1f1e2f3f318efe5ad07b11cd1e02aea411451a63fa298cd172e",
+      "created": 1791304919,
+      "status": "owned",
+      "image": "https://nonfungible.cash/api/images/22b97385e1bbc1f1e2f3f318efe5ad07b11cd1e02aea411451a63fa298cd172e"
+    },
+    {
+      "title": "Love",
+      "h": "6b8caeab3c5b3b3eb6b66022ff8ae328eec0ea850e0a5cbeec249af7223cc67f",
+      "created": 1791304815,
+      "status": "owned",
+      "image": "https://nonfungible.cash/api/images/6b8caeab3c5b3b3eb6b66022ff8ae328eec0ea850e0a5cbeec249af7223cc67f"
+    },
+    {
+      "title": "King",
+      "h": "5f04d131162aa1786adaf802c056c778ac020f28a2e0ebf11b93d36ed092885b",
+      "created": 1791304638,
+      "status": "owned",
+      "image": "https://nonfungible.cash/api/images/5f04d131162aa1786adaf802c056c778ac020f28a2e0ebf11b93d36ed092885b"
+    },
+    {
+      "title": "Celebrate",
+      "h": "30f223d954bc3ca3c759da07cbf46986437ee9ce5af72baf4082e22941f5d3db",
+      "created": 1791304530,
+      "status": "owned",
+      "image": "https://nonfungible.cash/api/images/30f223d954bc3ca3c759da07cbf46986437ee9ce5af72baf4082e22941f5d3db"
+    },
+    {
+      "title": "Sick",
+      "h": "30c9cbeff65b6a519f9a929776c9422e8079d6bd77ddefe2e723a16ad35ce9cf",
+      "created": 1791304303,
+      "status": "owned",
+      "image": "https://nonfungible.cash/api/images/30c9cbeff65b6a519f9a929776c9422e8079d6bd77ddefe2e723a16ad35ce9cf"
+    },
+    {
+      "title": "Funny",
+      "h": "67f897202ff9bce499c54f45aa2c99c67d1afe53c321b416110917070edc5bbc",
+      "created": 1791304179,
+      "status": "owned",
+      "image": "https://nonfungible.cash/api/images/67f897202ff9bce499c54f45aa2c99c67d1afe53c321b416110917070edc5bbc"
+    },
+    {
+      "title": "Frog Hang Loose",
+      "h": "607c5c80795111db40ac7e8c2c62212099b34635e2746639aa9699c3977e0857",
+      "created": 1791303716,
+      "status": "owned",
+      "image": "https://nonfungible.cash/api/images/607c5c80795111db40ac7e8c2c62212099b34635e2746639aa9699c3977e0857"
+    },
+    {
+      "title": "Diamond Hands",
+      "h": "4c8aca8908ad5e32583168771518e84558f0e19995a7e0fcc986a5fc68be7116",
+      "created": 1791303613,
+      "status": "owned",
+      "image": "https://nonfungible.cash/api/images/4c8aca8908ad5e32583168771518e84558f0e19995a7e0fcc986a5fc68be7116"
+    },
+    {
+      "title": "GM coffee",
+      "h": "0da2fa37ef71e6d78cb960049a035f03dcc4bbb9bd30d42b20527958fa8a2f00",
+      "created": 1791303325,
+      "status": "owned",
+      "image": "https://nonfungible.cash/api/images/0da2fa37ef71e6d78cb960049a035f03dcc4bbb9bd30d42b20527958fa8a2f00"
+    },
+    {
+      "title": "GM",
+      "h": "01671b7bc6c074ab2a9e5d4921ce2deb83f9ce24df941fb24a4eb37ddbc0a95c",
+      "created": 1791302974,
+      "status": "owned",
+      "image": "https://nonfungible.cash/api/images/01671b7bc6c074ab2a9e5d4921ce2deb83f9ce24df941fb24a4eb37ddbc0a95c"
+    },
+    {
+      "title": "Stay Nuts",
+      "h": "040812813cfc975300814363555e66f283644c2c4de6d5233edd1d72fd0e90d3",
+      "created": 1791297957,
+      "status": "sent",
+      "image": "https://nonfungible.cash/api/images/040812813cfc975300814363555e66f283644c2c4de6d5233edd1d72fd0e90d3"
+    },
+    {
+      "title": "Nutti is sick",
+      "h": "64756ccbf185a23b379f1342a1413dabf12f2a536b0e0041c206294ed7e4f64a",
+      "created": 1791297338,
+      "status": "sent",
+      "image": "https://nonfungible.cash/api/images/64756ccbf185a23b379f1342a1413dabf12f2a536b0e0041c206294ed7e4f64a"
+    }
+  ]
+}
