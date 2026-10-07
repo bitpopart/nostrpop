@@ -2,9 +2,58 @@
   "pubkey": "e85ccdd15333f88c34fbd63d5a352fc37d959c1b68157e519e655705c337a3b0",
   "name": "BitPopArt",
   "profile_url": "https://nonfungible.cash/p/e85ccdd15333f88c34fbd63d5a352fc37d959c1b68157e519e655705c337a3b0",
-  "updated_at": 1791319500,
-  "total": 26,
+  "updated_at": 1791353635,
+  "total": 33,
   "cards": [
+    {
+      "title": "Puddles Fire",
+      "h": "29813a275226a77922770efab38818ea436304054706ebe528c006abb1eb7aef",
+      "created": 1791353524,
+      "status": "owned",
+      "image": "https://nonfungible.cash/api/images/29813a275226a77922770efab38818ea436304054706ebe528c006abb1eb7aef"
+    },
+    {
+      "title": "Puddles Bunny",
+      "h": "36cac8c3c3c23a8c09fda59f2f8540efc4b1ea8cd75e6318b29e60dcf93ea376",
+      "created": 1791353482,
+      "status": "owned",
+      "image": "https://nonfungible.cash/api/images/36cac8c3c3c23a8c09fda59f2f8540efc4b1ea8cd75e6318b29e60dcf93ea376"
+    },
+    {
+      "title": "Puddles Fire",
+      "h": "582a6c447eb3201bf5329cd9aa3a4ae0422fbcb6b5360d6092ac43a96e04e6bf",
+      "created": 1791353444,
+      "status": "owned",
+      "image": "https://nonfungible.cash/api/images/582a6c447eb3201bf5329cd9aa3a4ae0422fbcb6b5360d6092ac43a96e04e6bf"
+    },
+    {
+      "title": "Puddles Cloud",
+      "h": "69099a414e583df850d9acb3367fff16b1d529dbec9c0d1bc0b2baf46365687d",
+      "created": 1791353409,
+      "status": "owned",
+      "image": "https://nonfungible.cash/api/images/69099a414e583df850d9acb3367fff16b1d529dbec9c0d1bc0b2baf46365687d"
+    },
+    {
+      "title": "Puddles Beer",
+      "h": "26c6006d4ccdd892262a4a97e1d754aa03043e630d1e7e79dcbe63721909b6a6",
+      "created": 1791353374,
+      "status": "owned",
+      "image": "https://nonfungible.cash/api/images/26c6006d4ccdd892262a4a97e1d754aa03043e630d1e7e79dcbe63721909b6a6"
+    },
+    {
+      "title": "Acorn",
+      "h": "2042307b46314968190791cdce68de809ce3400956a758ea2378211c54dbdd0b",
+      "created": 1791352986,
+      "status": "owned",
+      "image": "https://nonfungible.cash/api/images/2042307b46314968190791cdce68de809ce3400956a758ea2378211c54dbdd0b"
+    },
+    {
+      "title": "Brazil Nut",
+      "h": "3b6939215a545bb4794f24abe396e51b5feaa1a811e2d9efe86a2673f034a89e",
+      "created": 1791352937,
+      "status": "owned",
+      "image": "https://nonfungible.cash/api/images/3b6939215a545bb4794f24abe396e51b5feaa1a811e2d9efe86a2673f034a89e"
+    },
     {
       "title": "Chestnut",
       "h": "44ec5ede51012a733ab2f8b915faff019f7aa712e8ace2a711bcc90b9bb72fb0",
