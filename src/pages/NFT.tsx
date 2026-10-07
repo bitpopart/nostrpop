@@ -606,8 +606,6 @@ export default function NFTPage() {
       {/* ── Big statement ── */}
       <div className="container mx-auto px-4 py-16 text-center">
         <p className="text-4xl md:text-6xl lg:text-7xl font-black leading-tight tracking-tight">
-          <span className="text-foreground">Don't buy NFTs,</span>
-          <br />
           <span className="text-foreground">Don't do Shitcoins!</span>
           <br />
           <span className="bg-gradient-to-r from-orange-500 to-yellow-400 bg-clip-text text-transparent">
