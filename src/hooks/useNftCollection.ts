@@ -31,7 +31,7 @@ export interface NfcCollection {
   cards: NfcCard[];
 }
 
-const PROFILE_PUBKEY = 'e85ccdd15333f88c34fbd63d5a352fc37d959c1b68157e519e655705c337a3b0';
+const PROFILE_PUBKEY = '43baaf0c28e6cfb195b17ee083e19eb3a4afdfac54d9b6baf170270ed193e34c';
 const SNAPSHOT_URL = `${import.meta.env.BASE_URL || '/'}nfts/collection.json`;
 const LIVE_API = `https://nonfungible.cash/api/profiles/${PROFILE_PUBKEY}`;
 const CORS_PROXY = 'https://proxy.shakespeare.diy/?url=';

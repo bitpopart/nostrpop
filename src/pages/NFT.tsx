@@ -27,7 +27,7 @@ import {
 
 const ADMIN_PUBKEY = getAdminPubkeyHex();
 const NFC_PROFILE_URL =
-  'https://nonfungible.cash/p/e85ccdd15333f88c34fbd63d5a352fc37d959c1b68157e519e655705c337a3b0';
+  'https://nonfungible.cash/p/43baaf0c28e6cfb195b17ee083e19eb3a4afdfac54d9b6baf170270ed193e34c';
 
 /** Compact "minted …ago / date" label for a unix-seconds timestamp. */
 function formatMinted(unix: number): string {
