@@ -1,0 +1,17 @@
+{
+ "name": "ZAPPER self-built (ESP32-C6-Zero)",
+ "version": "1.12.3",
+ "new_install_prompt_erase": true,
+ "new_install_improv_wait_time": 0,
+ "builds": [
+  {
+   "chipFamily": "ESP32-C6",
+   "parts": [
+    {
+     "path": "../firmware/1.12.3/lamp01-1.12.3-factory.bin",
+     "offset": 0
+    }
+   ]
+  }
+ ]
+}
