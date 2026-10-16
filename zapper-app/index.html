@@ -1,0 +1,556 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>Zapper control</title>
+<meta name="description" content="Open één ZAPPER in je browser en beheer ze allemaal: updates, feestjes, deuntjes en instellingen. Niets te installeren, met ondertekende updates.">
+<meta property="og:title" content="Zapper control">
+<meta property="og:description" content="Al je ZAPPERS op één plek. Updates, feestjes en deuntjes, op je telefoon en je computer.">
+<meta property="og:image" content="https://bitpopart.com/zapper-app/beeld/icon-512.png">
+<meta property="og:url" content="https://bitpopart.com/zapper/">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="beeld/logo.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="beeld/apple-touch-icon.png">
+<meta name="theme-color" content="#0b0517">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Zapper">
+<style>
+/* The colours of the ZAPPER logo: its purple (#9d00f9, also nostr's), its
+   orange (#ff7f00, #ef8d25), the yellow of the bulb (#fbc808), the red heart. */
+:root{
+  --purple:#9d00f9;--purple2:#b84dff;--orange:#ff7f00;--amber:#ef8d25;--yellow:#fbc808;--red:#ed1f33;
+  --ink:#f7f3ff;--soft:#c2b6dc;--quiet:#9286ad;--dim:#665b80;--night:#0b0517;
+  --glass:rgba(34,18,58,.6);--hair:rgba(255,255,255,.08);--hair2:rgba(255,255,255,.14);
+  --brand:linear-gradient(120deg,var(--purple) 0%,#d23cff 38%,var(--orange) 78%,var(--yellow) 100%);
+  --knop:linear-gradient(135deg,var(--purple) 0%,#c41dd8 55%,var(--orange) 130%);
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",Roboto,system-ui,sans-serif;
+  --display:-apple-system,BlinkMacSystemFont,"SF Pro Display","Inter","Segoe UI",Roboto,system-ui,sans-serif;
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{background:var(--night);-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{margin:0;color:var(--ink);font:16px/1.6 var(--font);-webkit-font-smoothing:antialiased;background:var(--night);overflow-x:hidden}
+body::before{content:"";position:fixed;inset:-25vmax;z-index:-2;pointer-events:none;
+  background:
+    radial-gradient(38vmax 30vmax at 14% 4%,rgba(157,0,249,.55),transparent 64%),
+    radial-gradient(30vmax 22vmax at 62% 14%,rgba(210,60,255,.2),transparent 66%),
+    radial-gradient(36vmax 28vmax at 94% 92%,rgba(255,127,0,.34),transparent 62%),
+    radial-gradient(30vmax 24vmax at 6% 96%,rgba(106,0,200,.3),transparent 70%);
+  animation:zweef 30s ease-in-out infinite alternate}
+body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.5;
+  background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1.2px);background-size:26px 26px;
+  -webkit-mask-image:radial-gradient(ellipse at 50% 0%,#000,transparent 75%);mask-image:radial-gradient(ellipse at 50% 0%,#000,transparent 75%)}
+@keyframes zweef{to{transform:translate3d(3vmax,-2vmax,0) rotate(2deg) scale(1.05)}}
+a{color:var(--amber)}
+.wrap{max-width:1080px;margin:0 auto;padding:max(18px,env(safe-area-inset-top)) 22px 60px}
+
+/* top bar */
+.balk{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:36px}
+.merk{display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--ink)}
+.merk img{width:44px;height:44px;border-radius:13px;box-shadow:0 8px 24px -6px rgba(157,0,249,.8),0 0 0 1px rgba(255,255,255,.12)}
+.merk b{font:800 19px/1 var(--display);letter-spacing:-.02em}
+.taal{display:inline-flex;border:1px solid var(--hair2);background:rgba(255,255,255,.06);border-radius:99px;padding:3px}
+.taal button{background:none;border:0;color:var(--soft);padding:6px 13px;cursor:pointer;font:650 13px var(--font);min-height:32px;border-radius:99px}
+.taal button.actief{background:var(--knop);color:#fff;box-shadow:0 3px 12px -2px rgba(157,0,249,.8)}
+
+/* hero */
+.held{display:grid;grid-template-columns:1.15fr .85fr;gap:40px;align-items:center;margin-bottom:70px}
+.tag{font:700 13px/1 var(--display);letter-spacing:.16em;text-transform:uppercase;color:var(--amber);margin:0 0 14px}
+h1{font:800 clamp(40px,6.4vw,72px)/1.02 var(--display);letter-spacing:-.045em;margin:0 0 18px}
+h1 span{background:var(--brand);-webkit-background-clip:text;background-clip:text;color:transparent}
+.lead{font-size:clamp(17px,2vw,20px);color:var(--soft);margin:0 0 30px;max-width:34em}
+.knoppen{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.knop{display:inline-flex;align-items:center;gap:10px;background:var(--knop);color:#fff;text-decoration:none;border:0;padding:15px 26px;border-radius:16px;
+  font:700 17px var(--font);letter-spacing:-.01em;box-shadow:0 12px 34px -10px rgba(157,0,249,.95),inset 0 1px 0 rgba(255,255,255,.25);transition:transform .12s,filter .15s;cursor:pointer}
+.knop:hover{filter:brightness(1.08) saturate(1.1);transform:translateY(-1px)}
+.knop svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.knop.licht{background:rgba(255,255,255,.08);box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
+.klein{font-size:13.5px;color:var(--quiet)}
+.lamp{position:relative;display:grid;place-items:center;min-height:360px}
+.lamp::before{content:"";position:absolute;width:340px;height:340px;border-radius:50%;
+  background:radial-gradient(circle,rgba(251,200,8,.5),rgba(255,127,0,.22) 42%,rgba(157,0,249,.16) 62%,transparent 72%);animation:adem 4.6s ease-in-out infinite}
+.lamp img{position:relative;height:320px;width:auto;filter:drop-shadow(0 0 3px rgba(251,200,8,.85)) drop-shadow(0 0 22px rgba(255,127,0,.6)) drop-shadow(0 0 46px rgba(157,0,249,.55));animation:zap 9s ease-in-out infinite}
+@keyframes adem{50%{opacity:.55;transform:scale(.94)}}
+@keyframes zap{0%,82%,100%{opacity:1}84%,88%,92%{opacity:.25}86%,90%{opacity:1}}
+
+/* sections */
+section{margin-bottom:64px}
+h2{font:800 clamp(26px,3.4vw,38px)/1.1 var(--display);letter-spacing:-.035em;margin:0 0 10px}
+.sub{color:var(--soft);margin:0 0 26px;max-width:40em}
+.raster{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.kaart{background:var(--glass);border:1px solid var(--hair);border-radius:24px;padding:24px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 24px 50px -22px rgba(0,0,0,.75);-webkit-backdrop-filter:blur(26px) saturate(160%);backdrop-filter:blur(26px) saturate(160%)}
+.kaart h3{font:750 19px/1.25 var(--display);letter-spacing:-.02em;margin:12px 0 8px}
+.kaart p{margin:0;color:var(--soft);font-size:15px}
+.icoon{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(135deg,rgba(157,0,249,.45),rgba(255,127,0,.3));box-shadow:inset 0 1px 0 rgba(255,255,255,.15)}
+.icoon svg{width:24px;height:24px;fill:none;stroke:#fff;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+
+/* how to start */
+.os{display:inline-flex;gap:3px;padding:4px;border-radius:16px;background:rgba(255,255,255,.055);border:1px solid var(--hair);margin-bottom:18px}
+.os button{border:0;background:none;color:var(--soft);font:650 14px var(--font);padding:9px 18px;border-radius:12px;cursor:pointer;min-height:40px}
+.os button.actief{background:var(--knop);color:#fff;box-shadow:0 4px 16px -4px rgba(157,0,249,.9)}
+ol.stappen{list-style:none;counter-reset:s;margin:0;padding:0;display:grid;gap:14px}
+ol.stappen li{counter-increment:s;position:relative;padding:4px 0 4px 54px;min-height:40px;color:var(--soft)}
+ol.stappen li b{color:var(--ink)}
+ol.stappen li::before{content:counter(s);position:absolute;left:0;top:0;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;
+  font:800 16px var(--display);color:#fff;background:var(--knop);box-shadow:0 6px 18px -6px rgba(157,0,249,.9)}
+code{font:14px var(--mono);background:rgba(8,3,18,.55);border:1px solid var(--hair);padding:2px 8px;border-radius:8px;color:#fde7cf;white-space:nowrap}
+
+/* newest */
+.nieuw{display:grid;grid-template-columns:auto 1fr;gap:22px;align-items:start}
+.versie{font:800 54px/1 var(--display);letter-spacing:-.04em;background:linear-gradient(120deg,#fff,var(--yellow) 35%,var(--orange));-webkit-background-clip:text;background-clip:text;color:transparent}
+.notities{white-space:pre-line;color:var(--soft);margin:6px 0 0}
+.sleutel{font:12.5px var(--mono);color:var(--quiet);word-break:break-all;margin-top:12px}
+
+/* footer */
+footer{border-top:1px solid var(--hair);padding-top:24px;color:var(--quiet);font-size:14px;display:grid;gap:16px}
+footer a{color:var(--soft)}
+.npubs{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:12px}
+.np{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;align-items:center;padding:14px 16px;border-radius:18px;background:var(--glass);border:1px solid var(--hair)}
+.np .av{grid-row:span 2;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font:800 18px var(--display);color:#fff;background:var(--knop);box-shadow:0 6px 16px -6px rgba(157,0,249,.9)}
+.np b{color:var(--ink);font:700 16px var(--display);letter-spacing:-.01em}
+.np .sleutelnp{font:12px var(--mono);color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.np .acties{grid-column:1/-1;display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.pil{display:inline-flex;align-items:center;gap:6px;border:0;cursor:pointer;text-decoration:none;font:650 13px var(--font);color:var(--ink);
+  padding:7px 12px;border-radius:999px;background:rgba(255,255,255,.08);min-height:34px}
+.pil:hover{background:rgba(157,0,249,.35)}
+.pil.paars{background:var(--knop);box-shadow:0 4px 14px -6px rgba(157,0,249,.9)}
+.pil.rond{width:34px;padding:0;justify-content:center}
+.pil svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.links{display:flex;gap:8px;flex-wrap:wrap}
+.privacy{font-size:13px;max-width:52em}
+.np .zapknop{background:linear-gradient(135deg,#ff7f00,#fbc808);color:#1a0b00}
+.np .zapknop:hover{filter:brightness(1.08);background:linear-gradient(135deg,#ff7f00,#fbc808)}
+/* QR to open this page on a phone (computers only) */
+.qrkaart{display:flex;gap:22px;align-items:center;margin-top:16px}
+.qrkaart img{width:132px;height:132px;border-radius:14px;background:#fff;padding:8px;flex:none}
+@media (max-width:860px),(pointer:coarse){.qrkaart{display:none}}
+/* downloads and older versions */
+.downloads{display:grid;gap:8px;margin-top:16px}
+.dl{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:12px 14px;border-radius:14px;background:rgba(0,0,0,.25);border:1px solid var(--hair)}
+.dl b{flex:1 1 220px;font-weight:650;color:var(--ink)}
+.dl a{font-size:13.5px}
+.eerder{margin-top:14px}
+.eerder summary{cursor:pointer;color:var(--soft);font-weight:650}
+.eerder .rijv{display:grid;grid-template-columns:auto 1fr;gap:4px 16px;padding:12px 0;border-bottom:1px solid var(--hair)}
+.eerder .rijv:last-child{border:0}
+.eerder .rijv b{font:800 18px var(--display)}
+/* signature check */
+.check{display:inline-flex;align-items:center;gap:8px;margin-top:14px;padding:8px 14px;border-radius:999px;font-weight:650;font-size:14px;background:rgba(255,255,255,.07)}
+.check.goed{background:rgba(95,214,138,.14);color:#7ee8a0}
+.check.fout{background:rgba(237,31,51,.18);color:#ff9b93}
+/* questions */
+.vragen details{border-bottom:1px solid var(--hair);padding:14px 2px}
+.vragen details:last-child{border:0}
+.vragen summary{cursor:pointer;font-weight:650;color:var(--ink);list-style:none;display:flex;justify-content:space-between;gap:12px}
+.vragen summary::-webkit-details-marker{display:none}
+.vragen summary::after{content:"+";color:var(--amber);font-weight:800}
+.vragen details[open] summary::after{content:"\2212"}
+.vragen details p{margin:10px 0 0;color:var(--soft)}
+.melding{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom));background:var(--knop);color:#fff;padding:12px 20px;border-radius:999px;font-weight:650;z-index:9;box-shadow:0 12px 30px -10px rgba(157,0,249,.9)}
+
+/* my Zappers */
+.mijn{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:14px;margin-bottom:16px}
+.mz{display:flex;align-items:center;gap:14px;padding:16px 18px;text-decoration:none;color:var(--ink)}
+.mz img{height:48px;width:auto;filter:drop-shadow(0 0 2px rgba(251,200,8,.8)) drop-shadow(0 0 10px rgba(255,127,0,.5))}
+.mz .t{flex:1;min-width:0}.mz b{display:block;font:750 18px/1.2 var(--display);letter-spacing:-.02em}
+.mz span{display:block;font:13px var(--mono);color:var(--quiet);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mz .weg{border:0;background:rgba(255,255,255,.07);color:var(--soft);width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:18px;line-height:1;flex:none}
+.mz .weg:hover{background:rgba(237,31,51,.25);color:#fff}
+.mz .open{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--knop);box-shadow:0 6px 16px -6px rgba(157,0,249,.9)}
+.mz .open svg{width:16px;height:16px;fill:none;stroke:#fff;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.toevoegen{display:grid;grid-template-columns:1fr 1.3fr auto;gap:10px;align-items:end}
+.toevoegen label{display:block;font:600 13px var(--font);color:var(--soft);margin-bottom:6px}
+.toevoegen input{width:100%;padding:11px 13px;background:rgba(8,3,18,.5);border:1px solid rgba(255,255,255,.12);border-radius:12px;color:var(--ink);font-size:16px;min-height:46px}
+.toevoegen input:focus{outline:0;border-color:var(--purple2);box-shadow:0 0 0 4px rgba(157,0,249,.32)}
+@media (max-width:520px){.os.toestellen{display:grid;grid-template-columns:1fr 1fr}
+  code{white-space:normal;word-break:break-all}}
+.leegmijn{grid-column:1/-1;color:var(--quiet);padding:6px 2px 6px}
+/* install steps with the real buttons drawn */
+.toestellen{max-width:100%;overflow-x:auto;scrollbar-width:none}.toestellen::-webkit-scrollbar{display:none}
+.toestellen button{white-space:nowrap}
+.toestel h3{display:flex;align-items:center;gap:10px;margin-top:0}
+.knopje{display:inline-grid;place-items:center;vertical-align:-5px;width:26px;height:26px;border-radius:7px;background:rgba(255,255,255,.12);margin:0 2px}
+.knopje svg{width:16px;height:16px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.installeer{margin-top:16px}
+.verborgen{display:none!important}
+.app .alleenweb{display:none}
+.web .alleenapp{display:none}
+@media (max-width:620px){.toevoegen{grid-template-columns:1fr}}
+@media (max-width:860px){
+  .held{grid-template-columns:1fr;text-align:center;gap:10px}
+  .held .lead{margin-left:auto;margin-right:auto}.held .knoppen{justify-content:center}
+  .lamp{order:-1;min-height:250px}.lamp img{height:220px}.lamp::before{width:250px;height:250px}
+  .raster{grid-template-columns:1fr}
+  .nieuw{grid-template-columns:1fr}
+}
+@media (max-width:520px){.wrap{padding:max(14px,env(safe-area-inset-top)) 16px 48px}.knop{width:100%;justify-content:center}
+  .os{display:flex}.os button{flex:1;padding:9px 6px}.kaart{padding:20px}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="melding verborgen" id="melding"></div>
+
+<div class="balk">
+ <a class="merk" href="./"><img src="beeld/logo.svg" alt=""><b><span class="alleenweb">Zapper control</span><span class="alleenapp">Zapper</span></b></a>
+ <span class="taal"><button data-taal="nl">NL</button><button data-taal="en">EN</button></span>
+</div>
+
+<div class="held alleenweb">
+ <div>
+  <p class="tag" data-t="tag"></p>
+  <h1><span data-t="titel1"></span><br><span data-t="titel2"></span></h1>
+  <p class="lead" data-t="lead"></p>
+  <div class="knoppen">
+   <a class="knop" href="#open"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg><span data-t="hoe"></span></a>
+   <a class="knop licht" href="#telefoon" data-t="naarTel"></a>
+  </div>
+  <p class="klein" id="controlVersie"></p>
+ </div>
+ <div class="lamp" aria-hidden="true"><img src="beeld/lamp-aan.svg" alt=""></div>
+</div>
+
+<section class="alleenweb">
+ <h2 data-t="watKop"></h2>
+ <p class="sub" data-t="watSub"></p>
+ <div class="raster">
+  <div class="kaart"><div class="icoon"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 21h16"/></svg></div>
+   <h3 data-t="k1"></h3><p data-t="k1t"></p></div>
+  <div class="kaart"><div class="icoon"><svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div>
+   <h3 data-t="k2"></h3><p data-t="k2t"></p></div>
+  <div class="kaart"><div class="icoon"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z"/></svg></div>
+   <h3 data-t="k3"></h3><p data-t="k3t"></p></div>
+ </div>
+</section>
+
+<section id="open" class="alleenweb">
+ <h2 data-t="openKop"></h2>
+ <p class="sub" data-t="openSub"></p>
+ <div class="kaart"><ol class="stappen" id="stOpen"></ol>
+  <p class="klein" data-t="openNoot" style="margin:16px 0 0"></p></div>
+</section>
+
+<section id="start" class="alleenweb">
+ <h2 data-t="startKop"></h2>
+ <p class="sub" data-t="startSub"></p>
+ <div class="knoppen" style="margin-bottom:18px"><a class="knop" href="control/zapper-control.py" download="zapper-control.py">
+  <svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><span data-t="download"></span></a><span class="klein" id="pcVersie"></span></div>
+ <div class="os" id="os"><button data-os="win">Windows</button><button data-os="mac">Mac</button><button data-os="linux">Linux</button></div>
+ <div class="kaart"><ol class="stappen" id="stappen"></ol></div>
+</section>
+
+<section id="telefoon" class="alleenweb">
+ <h2 data-t="telKop"></h2>
+ <p class="sub" data-t="telSub"></p>
+ <div class="os toestellen" id="toestellen"><button data-tel="iphone">iPhone / iPad</button><button data-tel="android">Android</button><button data-tel="graphene">GrapheneOS</button><button data-tel="samsung">Samsung</button></div>
+ <div class="kaart toestel"><h3><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg><span id="telNaam"></span></h3>
+  <ol class="stappen" id="stTel"></ol>
+  <button class="knop installeer verborgen" id="installeer" data-t="installeerNu"></button>
+  <p class="klein" id="telNoot" style="margin:14px 0 0"></p></div>
+ <p class="klein" data-t="telLamp" style="margin-top:16px"></p>
+ <div class="kaart qrkaart"><img src="beeld/qr-site.svg" alt="QR"><div><h3 data-t="qrKop" style="margin-top:0"></h3><p data-t="qrTekst"></p></div></div>
+</section>
+
+<section id="mijn">
+ <h2 data-t="mijnKop"></h2>
+ <p class="sub" data-t="mijnSub"></p>
+ <div class="mijn" id="mijnLijst"></div>
+ <div class="kaart"><div class="toevoegen">
+  <div><label data-t="mijnNaam"></label><input id="mzNaam" placeholder="zapper02" autocomplete="off"></div>
+  <div><label data-t="mijnAdres"></label><input id="mzAdres" placeholder="192.168.178.142" autocomplete="off" inputmode="url"></div>
+  <button class="knop" id="mzVoeg" data-t="mijnVoeg"></button></div>
+  <p class="klein" data-t="mijnTip" style="margin:12px 0 0"></p></div>
+</section>
+
+<section>
+ <h2 data-t="nieuwKop"></h2>
+ <p class="sub" data-t="nieuwSub"></p>
+ <div class="kaart nieuw">
+  <div><div class="versie" id="fwVersie">…</div><div class="klein" id="fwDatum"></div></div>
+  <div><p class="notities" id="fwNotities"></p></div>
+ </div>
+ <div class="kaart" style="margin-top:16px"><h3 data-t="dlKop" style="margin-top:0"></h3><p data-t="dlSub"></p>
+  <div class="downloads" id="downloads"></div>
+  <details class="eerder" id="eerderVak"><summary data-t="eerderKop"></summary><div id="eerder"></div></details></div>
+</section>
+
+<section>
+ <h2 data-t="veiligKop"></h2>
+ <div class="kaart"><p data-t="veiligTekst"></p><div class="sleutel" id="pubkey"></div>
+  <div class="check" id="check"></div></div>
+</section>
+
+<section id="vragen">
+ <h2 data-t="vragenKop"></h2>
+ <div class="kaart vragen" id="vragenLijst"></div>
+</section>
+
+<section class="alleenweb">
+ <div class="kaart"><h3 data-t="zelfKop" style="margin-top:0"></h3><p data-t="zelfTekst"></p></div>
+</section>
+
+<footer>
+ <div data-t="voet"></div>
+ <div class="npubs" id="npubs"></div>
+ <div class="links">
+  <a class="pil" href="https://github.com/JaccoElektro/zapper-updates" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M9 19c-4 1.3-4-2-6-2.5M15 22v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 0 0-1.3-3.2 4.2 4.2 0 0 0-.1-3.2s-1-.3-3.4 1.3a11.7 11.7 0 0 0-6.2 0C6.6 2.8 5.6 3.1 5.6 3.1a4.2 4.2 0 0 0-.1 3.2A4.6 4.6 0 0 0 4.2 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V22"/></svg><span data-t="github"></span></a>
+  <a class="pil" href="https://bitpopart.com" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>bitpopart.com</a>
+  <a class="pil" href="handleiding.pdf" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5M8 7h7"/></svg><span data-t="handleiding"></span></a>
+  <a class="pil" href="manifest.json" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h7M9 17h5"/></svg><span data-t="lijstLink"></span></a>
+ </div>
+ <p class="privacy" data-t="privacy"></p>
+</footer>
+</div>
+
+<script>
+const T={
+ tag:["Voor ZAPPER zap-lampen","For ZAPPER zap lamps"],
+ titel1:["Al je Zappers.","All your Zappers."],titel2:["Eén plek.","One place."],
+ lead:["Open één ZAPPER in je browser en beheer ze allemaal: updates, feestjes en deuntjes, instellingen en wifi. Niets te installeren, op je telefoon en op je computer.","Open one ZAPPER in your browser and manage them all: updates, celebrations and tunes, settings and Wi-Fi. Nothing to install, on your phone and on your computer."],
+ download:["Download Zapper control","Download Zapper control"],hoe:["Zo open je je Zappers","How to open your Zappers"],naarTel:["Op je telefoon","On your phone"],
+ controlVersie:["Firmware %v · gratis · ondertekend zoals nostr","Firmware %v · free · signed like nostr"],
+ pcVersie:["Versie %v · Windows, Mac en Linux","Version %v · Windows, Mac and Linux"],
+ openKop:["Zo open je je Zappers","How to open your Zappers"],
+ openSub:["Je hoeft niets te installeren: elke ZAPPER heeft zijn eigen pagina, en vanaf één lamp beheer je ze allemaal.","Nothing to install: every ZAPPER has its own page, and from one lamp you manage them all."],
+ stOpen:[["Zet je telefoon of computer op <b>dezelfde wifi</b> als je Zappers.","Put your phone or computer on <b>the same Wi-Fi</b> as your Zappers."],
+  ["Open in je browser <code>http://zapper01.local</code> (met de naam van je lamp), of het adres in je netwerk, zoals <code>http://192.168.178.142</code>. Op Android werkt alleen het adres met cijfers.","Open <code>http://zapper01.local</code> in your browser (with your lamp's name), or its address on your network, like <code>http://192.168.178.142</code>. On Android only the address in numbers works."],
+  ["Log in (standaard met <b>Bitcoin21</b>, tot je het verandert) en tik op <b>Alle Zappers</b>. Daar zie je ze allemaal, live; kies er een paar om ze samen bij te werken, deuntjes te geven of in te stellen.","Log in (with <b>Bitcoin21</b> by default, until you change it) and tap <b>All Zappers</b>. There you see them all, live; pick a few to update them together, give them tunes or set them up."]],
+ openNoot:["Alle Zappers zit in firmware 1.9 en nieuwer. Een oudere lamp werk je eerst één keer bij: vanaf 1.8 onder Systeem, Updates; daarvoor met het bestand bij Nieuwste firmware hieronder.","All Zappers is in firmware 1.9 and newer. Update an older lamp once first: from 1.8 under System, Updates; before that with the file under Newest firmware below."],
+ qrKop:["Open deze pagina op je telefoon","Open this page on your phone"],qrTekst:["Scan de code met de camera van je telefoon en volg daar de stappen voor je toestel.","Scan the code with your phone's camera and follow the steps for your device there."],
+ watKop:["Wat kun je ermee?","What can it do?"],
+ watSub:["Elke Zapper krijgt een kaart met zijn eigen lamp, die live meeknippert bij een zap. Tik op de lamp om hem aan of uit te zetten.","Every Zapper gets a card with its own lamp, which blinks along live on a zap. Tap the lamp to switch it on or off."],
+ k1:["Updates in één klik","Updates in one click"],k1t:["Alle Zappers naar de nieuwste firmware, één voor één, en daarna gecontroleerd.","Every Zapper to the newest firmware, one after the other, and checked afterwards."],
+ k2:["Feestjes en deuntjes","Celebrations and tunes"],k2t:["Kies per lamp een deuntje bij elke zap en bij een feestje, of geef ze allemaal een ander.","Choose a tune per lamp for every zap and for a celebration, or give each one a different one."],
+ k3:["Alles in bulk","Everything in bulk"],k3t:["Instellingen, wifi, mijlpalen en een back-up voor al je Zappers tegelijk.","Settings, Wi-Fi, milestones and a backup for all your Zappers at once."],
+ startKop:["Liever een programma? Zapper control","Prefer a program? Zapper control"],
+ startSub:["Voor gevorderden: een klein programma op je computer dat hetzelfde doet, ook met Zappers van vóór 1.9. Je computer moet op hetzelfde netwerk zitten als je Zappers; het praat alleen met je eigen lampen.","For advanced users: a small program on your computer that does the same, also with Zappers from before 1.9. Your computer has to be on the same network as your Zappers; it only talks to your own lamps."],
+ voet:["ZAPPER is ontworpen en gebouwd door JaccoElektro, aangeboden aan BitPopArt. Op nostr:","ZAPPER is designed and built by JaccoElektro, offered to BitPopArt. On nostr:"],
+ nieuwKop:["Nieuwste firmware","Newest firmware"],
+ nieuwSub:["Een ZAPPER vanaf versie 1.8 ziet dit zelf en meldt het op zijn overzicht. Bijwerken doe je bij Systeem → Updates, of voor al je lampen tegelijk bij Alle Zappers.","A ZAPPER from version 1.8 sees this by itself and shows it on its overview. Update under System → Updates, or for all your lamps at once under All Zappers."],
+ dlKop:["Firmware als bestand","Firmware as a file"],
+ dlSub:["Alleen nodig voor een lamp van vóór 1.8, of een nieuwe printplaat. Het bijwerkbestand zet je op de lamp bij Systeem; het volledige bestand is voor flashen via USB.","Only needed for a lamp from before 1.8, or a new board. The update file goes onto the lamp under System; the full file is for flashing over USB."],
+ bordReva:["ZAPPER-printplaat (REV A)","ZAPPER board (REV A)"],bordLamp01:["Zelfbouw: ESP32-C6-Zero met MOSFET","Self-built: ESP32-C6-Zero with MOSFET"],
+ ota:["Bijwerkbestand","Update file"],fabriek:["Volledig (USB)","Full (USB)"],eerderKop:["Eerdere versies","Earlier versions"],
+ checkBezig:["Handtekening controleren…","Checking the signature…"],checkGoed:["Handtekening gecontroleerd in je browser: de lijst komt echt van de maker","Signature checked in your browser: the list really comes from the maker"],
+ checkFout:["De handtekening klopt niet. Installeer niets en meld het aan de maker.","The signature does not match. Install nothing and tell the maker."],
+ vragenKop:["Vragen","Questions"],
+ vragen:[
+  [["Mijn Zapper staat er niet bij","My Zapper does not show up"],["Zit je toestel op dezelfde wifi? Een gastnetwerk houdt apparaten vaak uit elkaar. Probeer het adres met cijfers (te vinden in je router of op de lamp onder Systeem), en kijk of het lampje op het board groen is.","Is your device on the same Wi-Fi? A guest network often keeps devices apart. Try the address in numbers (in your router, or on the lamp under System), and check that the light on the board is green."]],
+  [["Ik ben het wachtwoord vergeten","I forgot the password"],["Houd de knop op het board 10 seconden ingedrukt. De lamp gaat terug naar de fabrieksinstellingen; het wachtwoord is dan weer Bitcoin21. Verander het na het inloggen bij Instellingen.","Hold the button on the board for 10 seconds. The lamp goes back to factory settings; the password is Bitcoin21 again. Change it after logging in, under Settings."]],
+  [["Hoe zet ik al mijn Zappers op een ander netwerk?","How do I move all my Zappers to another network?"],["Bij Alle Zappers: kies ze, open Wifi en vul het nieuwe netwerk in. Elke lamp kijkt eerst of hij het netwerk ziet en blijft anders zoals hij is.","Under All Zappers: pick them, open Wi-Fi and enter the new network. Each lamp first checks that it can see the network and otherwise stays as it is."]],
+  [["Wat als een update mislukt?","What if an update fails?"],["Dan draait de lamp gewoon door op de oude versie. Hij installeert alleen wat bij de ondertekende lijst hoort, en start pas opnieuw als het nieuwe bestand helemaal klopt.","Then the lamp keeps running the old version. It only installs what matches the signed list, and only restarts once the new file checks out completely."]],
+  [["Werkt dit ook buiten mijn huis?","Does this work away from home?"],["Je lampen beheren kan alleen op je eigen netwerk; zo kan niemand van buiten erbij. Updates haalt een lamp wel zelf van internet, ook als jij ver weg bent.","Managing your lamps only works on your own network, so nobody outside can get in. A lamp does fetch updates from the internet by itself, even when you are far away."]],
+  [["Waarom zegt mijn browser \u0022niet beveiligd\u0022?","Why does my browser say \u0022not secure\u0022?"],["Een lamp praat gewoon http in je eigen netwerk, zonder certificaat. Je wachtwoord gaat er niet als leesbare tekst overheen: de browser rekent er eerst een eenmalige code mee uit.","A lamp speaks plain http on your own network, without a certificate. Your password does not travel as readable text: the browser first computes a one-time code with it."]],
+  [["Kost het iets?","Does it cost anything?"],["Nee. De firmware, de updates, deze app en Zapper control zijn gratis.","No. The firmware, the updates, this app and Zapper control are free."]]],
+ zelfKop:["Zelf een ZAPPER?","A ZAPPER of your own?"],
+ zelfTekst:["Vraag het via nostr aan JaccoElektro of BitPopArt: hun profielen staan hieronder.","Ask JaccoElektro or BitPopArt on nostr: their profiles are below."],
+ handleiding:["Handleiding (PDF)","Manual (PDF)"],zap:["Zap","Zap"],
+ geimporteerd:["%n Zappers toegevoegd aan Mijn Zappers","%n Zappers added to My Zappers"],
+ veiligKop:["Ondertekend, zoals nostr","Signed, like nostr"],
+ veiligTekst:["Elke update staat in een lijst die is ondertekend met de sleutel van de maker (BIP340 Schnorr, dezelfde handtekening als nostr). Een Zapper en Zapper control installeren alleen wat bij die handtekening en controlesom hoort. De publieke sleutel:","Every update is in a list signed with the maker's key (BIP340 Schnorr, the same signature as nostr). A Zapper and Zapper control only install what matches that signature and checksum. The public key:"],
+ mijnKop:["Mijn Zappers","My Zappers"],
+ mijnSub:["Zet je lampen hier één keer neer; met één tik open je ze. Dit blijft alleen op dit toestel bewaard.","Add your lamps here once; one tap opens them. This stays on this device only."],
+ mijnNaam:["Naam","Name"],mijnAdres:["Adres in je netwerk","Address on your network"],mijnVoeg:["Toevoegen","Add"],
+ mijnLeeg:["Nog geen Zappers. Voeg je eerste hieronder toe.","No Zappers yet. Add your first one below."],
+ mijnTip:["Sneller: open Alle Zappers op een lamp, kies je lampen en tik op Naar je telefoon; scan de code en ze staan er allemaal. Met de hand: het adres staat onder Systeem van je lamp, bijvoorbeeld 192.168.178.142. Op Android werkt alleen het getal, niet zapper02.local. Je telefoon moet op de wifi thuis zitten.","Quicker: open All Zappers on a lamp, pick your lamps and tap To your phone; scan the code and they are all here. By hand: the address is under System on your lamp, for example 192.168.178.142. On Android only the number works, not zapper02.local. Your phone has to be on your home Wi-Fi."],
+ mijnWeg:["Verwijderen","Remove"],mijnOpen:["Openen","Open"],
+ telKop:["Op je telefoon","On your phone"],
+ telSub:["Zet Zapper als app op je beginscherm: met het logo als icoon, schermvullend, en het opent ook zonder internet.","Put Zapper on your home screen as an app: the logo as its icon, full screen, and it opens without internet too."],
+ telLamp:["Tip: een lamp zelf kan ook op je beginscherm. Open hem in je browser (bijvoorbeeld http://192.168.178.142) en volg dezelfde stappen.","Tip: a lamp itself can go on your home screen too. Open it in your browser (for example http://192.168.178.142) and follow the same steps."],
+ installeerNu:["Installeren","Install"],
+ tel:{
+  iphone:{naam:["iPhone en iPad","iPhone and iPad"],stappen:[
+   ["Open deze pagina in <b>Safari</b>.","Open this page in <b>Safari</b>."],
+   ["Tik onderaan op <b>Deel</b> <span class=\"knopje\"><svg viewBox=\"0 0 24 24\"><path d=\"M12 3v12M7 8l5-5 5 5\"/><path d=\"M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7\"/></svg></span>.","Tap <b>Share</b> <span class=\"knopje\"><svg viewBox=\"0 0 24 24\"><path d=\"M12 3v12M7 8l5-5 5 5\"/><path d=\"M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7\"/></svg></span> at the bottom."],
+   ["Kies <b>Zet op beginscherm</b> <span class=\"knopje\"><svg viewBox=\"0 0 24 24\"><rect x=\"4\" y=\"4\" width=\"16\" height=\"16\" rx=\"4\"/><path d=\"M12 8v8M8 12h8\"/></svg></span>. Staat het er niet, scrol dan in het menu naar beneden.","Choose <b>Add to Home Screen</b> <span class=\"knopje\"><svg viewBox=\"0 0 24 24\"><rect x=\"4\" y=\"4\" width=\"16\" height=\"16\" rx=\"4\"/><path d=\"M12 8v8M8 12h8\"/></svg></span>. Not there? Scroll down in the menu."],
+   ["Tik rechtsboven op <b>Voeg toe</b>. Zapper staat nu tussen je apps.","Tap <b>Add</b> at the top right. Zapper is now among your apps."]],
+   noot:["Op iOS 16.4 en nieuwer kan het ook vanuit Chrome, Edge of Firefox: via het menu, Deel, Zet op beginscherm.","On iOS 16.4 and newer it works from Chrome, Edge or Firefox too: menu, Share, Add to Home Screen."]},
+  android:{naam:["Android","Android"],stappen:[
+   ["Open deze pagina in <b>Chrome</b>.","Open this page in <b>Chrome</b>."],
+   ["Tik op de knop <b>Installeren</b> hieronder, of op het menu <span class=\"knopje\"><svg viewBox=\"0 0 24 24\"><circle cx=\"12\" cy=\"5\" r=\"1.3\"/><circle cx=\"12\" cy=\"12\" r=\"1.3\"/><circle cx=\"12\" cy=\"19\" r=\"1.3\"/></svg></span> rechtsboven.","Tap the <b>Install</b> button below, or the menu <span class=\"knopje\"><svg viewBox=\"0 0 24 24\"><circle cx=\"12\" cy=\"5\" r=\"1.3\"/><circle cx=\"12\" cy=\"12\" r=\"1.3\"/><circle cx=\"12\" cy=\"19\" r=\"1.3\"/></svg></span> at the top right."],
+   ["Kies <b>App installeren</b> (of <b>Toevoegen aan startscherm</b>).","Choose <b>Install app</b> (or <b>Add to Home screen</b>)."],
+   ["Bevestig met <b>Installeren</b>. Zapper staat nu tussen je apps.","Confirm with <b>Install</b>. Zapper is now among your apps."]],
+   noot:["Edge, Brave en Opera werken hetzelfde. In Firefox: menu <span class=\"knopje\"><svg viewBox=\"0 0 24 24\"><circle cx=\"12\" cy=\"5\" r=\"1.3\"/><circle cx=\"12\" cy=\"12\" r=\"1.3\"/><circle cx=\"12\" cy=\"19\" r=\"1.3\"/></svg></span>, <b>Installeren</b> of <b>Toevoegen aan startscherm</b>.","Edge, Brave and Opera work the same way. In Firefox: menu <span class=\"knopje\"><svg viewBox=\"0 0 24 24\"><circle cx=\"12\" cy=\"5\" r=\"1.3\"/><circle cx=\"12\" cy=\"12\" r=\"1.3\"/><circle cx=\"12\" cy=\"19\" r=\"1.3\"/></svg></span>, <b>Install</b> or <b>Add to Home screen</b>."]},
+  graphene:{naam:["GrapheneOS","GrapheneOS"],stappen:[
+   ["Open deze pagina in <b>Vanadium</b>, de standaardbrowser van GrapheneOS.","Open this page in <b>Vanadium</b>, the default browser of GrapheneOS."],
+   ["Tik op de knop <b>Installeren</b> hieronder, of op het menu <span class=\"knopje\"><svg viewBox=\"0 0 24 24\"><circle cx=\"12\" cy=\"5\" r=\"1.3\"/><circle cx=\"12\" cy=\"12\" r=\"1.3\"/><circle cx=\"12\" cy=\"19\" r=\"1.3\"/></svg></span> rechtsboven.","Tap the <b>Install</b> button below, or the menu <span class=\"knopje\"><svg viewBox=\"0 0 24 24\"><circle cx=\"12\" cy=\"5\" r=\"1.3\"/><circle cx=\"12\" cy=\"12\" r=\"1.3\"/><circle cx=\"12\" cy=\"19\" r=\"1.3\"/></svg></span> at the top right."],
+   ["Kies <b>App installeren</b> of <b>Toevoegen aan startscherm</b>.","Choose <b>Install app</b> or <b>Add to Home screen</b>."],
+   ["Bevestig. Zapper staat nu op je startscherm en opent schermvullend.","Confirm. Zapper is now on your home screen and opens full screen."]],
+   noot:["Er zijn geen Google Play-diensten voor nodig en er gaat niets naar Google. Zonder Play-diensten kan Android het icoon een klein browserlogo geven; de app werkt hetzelfde. Kies je liever een andere browser (Cromite, Brave, Firefox), dan staat de optie in hetzelfde menu.","No Google Play services needed, and nothing goes to Google. Without Play services Android may put a small browser badge on the icon; the app works the same. Prefer another browser (Cromite, Brave, Firefox)? The option is in the same menu."]},
+  samsung:{naam:["Samsung Internet","Samsung Internet"],stappen:[
+   ["Open deze pagina in <b>Samsung Internet</b>.","Open this page in <b>Samsung Internet</b>."],
+   ["Tik rechtsonder op het menu <span class=\"knopje\"><svg viewBox=\"0 0 24 24\"><path d=\"M5 7h14M5 12h14M5 17h14\"/></svg></span>.","Tap the menu <span class=\"knopje\"><svg viewBox=\"0 0 24 24\"><path d=\"M5 7h14M5 12h14M5 17h14\"/></svg></span> at the bottom right."],
+   ["Kies <b>Pagina toevoegen aan</b>, daarna <b>Startscherm</b>. Zie je in de adresbalk een installeericoon, dan kan het ook daarmee.","Choose <b>Add page to</b>, then <b>Home screen</b>. See an install icon in the address bar? That works too."],
+   ["Bevestig met <b>Toevoegen</b>. Zapper staat nu tussen je apps.","Confirm with <b>Add</b>. Zapper is now among your apps."]],
+   noot:["Een Samsung-telefoon met Chrome? Volg dan de stappen bij Android.","A Samsung phone with Chrome? Follow the Android steps."]}
+ },
+ github:["Updates op GitHub","Updates on GitHub"],lijstLink:["Ondertekende lijst","Signed list"],
+ bekijk:["Profiel","Profile"],openApp:["In app","In app"],kopieer:["Kopieer","Copy"],gekopieerd:["Gekopieerd","Copied"],
+ privacy:["Geen cookies, geen tracking, geen account. Mijn Zappers blijft op dit toestel, en Zapper control praat alleen met de lampen in je eigen netwerk. Voor de zap-knoppen leest deze pagina de openbare nostr-profielen hierboven van een paar relays.","No cookies, no tracking, no account. My Zappers stays on this device, and Zapper control only talks to the lamps on your own network. For the zap buttons this page reads the public nostr profiles above from a few relays."],
+ stappen:{
+  win:[["Installeer <b>Python 3</b> van <a href=\"https://www.python.org/downloads/\" target=\"_blank\" rel=\"noopener\">python.org</a>. Vink bij de installatie <b>Add python.exe to PATH</b> aan.","Install <b>Python 3</b> from <a href=\"https://www.python.org/downloads/\" target=\"_blank\" rel=\"noopener\">python.org</a>. Tick <b>Add python.exe to PATH</b> during setup."],
+       ["Download <b>zapper-control.py</b> met de knop hierboven.","Download <b>zapper-control.py</b> with the button above."],
+       ["Dubbelklik op het bestand, of typ in een opdrachtvenster <code>py zapper-control.py</code>. Je browser opent Zapper control.","Double-click the file, or type <code>py zapper-control.py</code> in a command window. Your browser opens Zapper control."]],
+  mac:[["Installeer <b>Python 3</b> van <a href=\"https://www.python.org/downloads/\" target=\"_blank\" rel=\"noopener\">python.org</a> (op een Mac staat het soms al).","Install <b>Python 3</b> from <a href=\"https://www.python.org/downloads/\" target=\"_blank\" rel=\"noopener\">python.org</a> (a Mac sometimes has it already)."],
+       ["Download <b>zapper-control.py</b> met de knop hierboven.","Download <b>zapper-control.py</b> with the button above."],
+       ["Open <b>Terminal</b> en typ <code>python3 ~/Downloads/zapper-control.py</code>. Je browser opent Zapper control.","Open <b>Terminal</b> and type <code>python3 ~/Downloads/zapper-control.py</code>. Your browser opens Zapper control."]],
+  linux:[["Python 3 zit er meestal al op; anders <code>sudo apt install python3</code>.","Python 3 is usually there already; otherwise <code>sudo apt install python3</code>."],
+       ["Download <b>zapper-control.py</b> met de knop hierboven.","Download <b>zapper-control.py</b> with the button above."],
+       ["Typ <code>python3 ~/Downloads/zapper-control.py</code>. Je browser opent Zapper control.","Type <code>python3 ~/Downloads/zapper-control.py</code>. Your browser opens Zapper control."]]
+ }
+};
+let taal='nl';try{taal=localStorage.getItem('zc_taal')||((navigator.language||'').toLowerCase().startsWith('nl')?'nl':'en')}catch(e){}
+let os=/Win/.test(navigator.platform)?'win':/Mac|iPhone|iPad/.test(navigator.platform)?'mac':'linux';
+const ua=navigator.userAgent;
+let tel=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)?'iphone':/SamsungBrowser/.test(ua)?'samsung':'android';
+let installPrompt=null;
+const i=()=>taal==='nl'?0:1,$=id=>document.getElementById(id);
+let manifest=null;
+function teken(){
+ document.documentElement.lang=taal;
+ document.querySelectorAll('[data-t]').forEach(e=>{const v=T[e.dataset.t];if(v)e.textContent=v[i()]});
+ document.querySelectorAll('[data-taal]').forEach(b=>b.classList.toggle('actief',b.dataset.taal===taal));
+ document.querySelectorAll('[data-os]').forEach(b=>b.classList.toggle('actief',b.dataset.os===os));
+ $('stappen').innerHTML=T.stappen[os].map(s=>`<li>${s[i()]}</li>`).join('');
+ $('stOpen').innerHTML=T.stOpen.map(s=>`<li>${s[i()]}</li>`).join('');
+ $('vragenLijst').innerHTML=T.vragen.map(([q,a])=>`<details><summary>${q[i()]}</summary><p>${a[i()]}</p></details>`).join('');
+ tekenCheck();
+ const t=T.tel[tel];
+ document.querySelectorAll('[data-tel]').forEach(b=>b.classList.toggle('actief',b.dataset.tel===tel));
+ $('telNaam').textContent=t.naam[i()];
+ $('stTel').innerHTML=t.stappen.map(s=>`<li>${s[i()]}</li>`).join('');
+ $('telNoot').innerHTML=t.noot[i()];
+ $('installeer').classList.toggle('verborgen',!installPrompt||tel==='iphone');
+ tekenNpubs();
+ document.querySelectorAll('[data-t-ph]').forEach(e=>{const v=T[e.dataset.tPh];if(v)e.placeholder=v[i()]});
+ tekenMijn();
+ if(manifest){
+  $('fwVersie').textContent=manifest.versie;
+  $('fwDatum').textContent=new Date(manifest.datum).toLocaleDateString(taal==='nl'?'nl-NL':'en-GB',{day:'numeric',month:'long',year:'numeric'});
+  $('fwNotities').textContent=(manifest.notities||{})[taal]||'';
+  $('controlVersie').textContent=T.controlVersie[i()].replace('%v',manifest.versie||'');
+  $('pcVersie').textContent=T.pcVersie[i()].replace('%v',(manifest.control||{}).versie||'');
+  $('downloads').innerHTML=bestanden(manifest);
+ }
+ tekenEerder();
+}
+// ---- firmware files per board, newest and earlier
+const BORD={"Zapper REV A":"bordReva","ESP32-C6-Zero + MOSFET":"bordLamp01"};
+function bestanden(m){return Object.keys(m.firmware||{}).map(b=>{const o=m.firmware[b],f=(m.fabriek||{})[b];
+ return `<div class="dl"><b>${esc(T[BORD[b]]?T[BORD[b]][i()]:b)}</b><a class="pil" href="${esc(o.url)}" download>${T.ota[i()]}</a>${f?`<a class="pil" href="${esc(f.url)}" download>${T.fabriek[i()]}</a>`:''}</div>`}).join('')}
+let versies=null;
+function tekenEerder(){if(!versies||!manifest)return;const oud=versies.filter(x=>x.versie!==manifest.versie);
+ $('eerderVak').classList.toggle('verborgen',!oud.length);
+ $('eerder').innerHTML=oud.map(x=>`<div class="rijv"><b>${esc(x.versie)}</b><span class="klein">${esc(x.datum||'')}</span>
+  <p class="notities" style="grid-column:1/-1;margin:0">${esc((x.notities||{})[taal]||'')}</p><div style="grid-column:1/-1" class="downloads">${bestanden(x)}</div></div>`).join('')}
+
+// ---- the signature, checked here with BIP340 (the same maths as the lamp)
+const RELEASE_PUBKEY='5e3ccae16b53c902c312cc4af9290575915f569fde9439f5a6cc2d7670d7d543';
+let checkStaat='bezig';
+function tekenCheck(){const c=$('check');c.className='check '+(checkStaat==='goed'?'goed':checkStaat==='fout'?'fout':'');
+ c.textContent=(checkStaat==='goed'?'\u2713 ':checkStaat==='fout'?'\u2717 ':'')+T[checkStaat==='goed'?'checkGoed':checkStaat==='fout'?'checkFout':'checkBezig'][i()]}
+const SP=2n**256n-0x1000003D1n,SN=0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141n;
+const SG=[0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798n,0x483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8n];
+const md=(a,m=SP)=>((a%m)+m)%m;
+function mpow(b,e,m=SP){let r=1n;b=md(b,m);while(e>0n){if(e&1n)r=r*b%m;b=b*b%m;e>>=1n}return r}
+function padd(a,b){if(!a)return b;if(!b)return a;if(a[0]===b[0]&&a[1]!==b[1])return null;
+ const l=a[0]===b[0]&&a[1]===b[1]?md(3n*a[0]*a[0]*mpow(2n*a[1],SP-2n)):md((b[1]-a[1])*mpow(b[0]-a[0],SP-2n));
+ const x=md(l*l-a[0]-b[0]);return[x,md(l*(a[0]-x)-a[1])]}
+function pmul(p,n){let r=null;while(n>0n){if(n&1n)r=padd(r,p);p=padd(p,p);n>>=1n}return r}
+const hexB=h=>new Uint8Array(h.match(/../g).map(x=>parseInt(x,16)));
+const bBig=b=>BigInt('0x'+[...b].map(x=>x.toString(16).padStart(2,'0')).join('')||'0');
+const sha=async b=>new Uint8Array(await crypto.subtle.digest('SHA-256',b));
+async function tagged(tag,...delen){const t=await sha(new TextEncoder().encode(tag));const m=new Uint8Array(64+delen.reduce((a,d)=>a+d.length,0));
+ m.set(t,0);m.set(t,32);let o=64;for(const d of delen){m.set(d,o);o+=d.length}return sha(m)}
+async function bip340(pubHex,msg,sigHex){
+ const pub=hexB(pubHex),sig=hexB(sigHex.trim()),x=bBig(pub);if(sig.length!==64||x>=SP)return false;
+ const y2=md(x**3n+7n),y0=mpow(y2,(SP+1n)/4n);if(md(y0*y0)!==y2)return false;const P=[x,y0%2n?SP-y0:y0];
+ const r=bBig(sig.slice(0,32)),s=bBig(sig.slice(32));if(r>=SP||s>=SN)return false;
+ const e=md(bBig(await tagged('BIP0340/challenge',sig.slice(0,32),pub,msg)),SN);
+ const R=padd(pmul(SG,s),pmul(P,SN-e));return!!R&&R[1]%2n===0n&&R[0]===r}
+
+// ---- nostr profiles in the footer
+const NPUBS=[["ZAPPER","npub14cgegu5krm5gacdn8eqatfpmmwd6dlm8sx3sjrdjyav0ltuvl0ns6yx52u"],
+ ["JaccoElektro","npub1vxehyetdargg2vc4hjvxlm65y2w6fqgzyz0hukcskeh6yamdkmwqvn87da"],
+ ["BitPopArt","npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz"]];
+function tekenNpubs(){
+ $('npubs').innerHTML=NPUBS.map(([naam,np])=>`<div class="np"><span class="av" aria-hidden="true">${naam[0]}</span><b>${naam}</b><span class="sleutelnp" title="${np}">${np}</span>
+  <div class="acties"><a class="pil paars" href="https://njump.me/${np}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>${T.bekijk[i()]}</a>
+  <a class="pil" href="nostr:${np}"><svg viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>${T.openApp[i()]}</a>
+  ${lud[np]?`<a class="pil zapknop" href="lightning:${esc(lud[np])}" title="${esc(lud[np])}"><svg viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>${T.zap[i()]}</a>`:''}
+  <button class="pil rond" data-kopieer="${np}" title="${T.kopieer[i()]}" aria-label="${T.kopieer[i()]}"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a1 1 0 0 1 1-1h10"/></svg></button></div></div>`).join('')}
+const lud={};
+const B32='qpzry9x8gf2tvdw0s3jn54khce6mua7l';
+function npubHex(n){const d=[...n.slice(n.lastIndexOf('1')+1)].map(c=>B32.indexOf(c)).slice(0,-6);let a=0,b=0,o='';
+ for(const v of d){a=((a<<5)|v)&0xfff;b+=5;while(b>=8){b-=8;o+=((a>>b)&255).toString(16).padStart(2,'0')}}return o}
+function haalLud(){
+ // The lightning address from each profile (kind 0), straight from public relays; nothing is stored.
+ const auteurs=Object.fromEntries(NPUBS.map(([,np])=>[npubHex(np),np])),nieuwst={};
+ for(const url of ['wss://nos.lol','wss://relay.primal.net','wss://relay.damus.io'])try{
+  const ws=new WebSocket(url);setTimeout(()=>ws.close(),8000);
+  ws.onopen=()=>ws.send(JSON.stringify(['REQ','p',{kinds:[0],authors:Object.keys(auteurs)}]));
+  ws.onmessage=e=>{const m=JSON.parse(e.data);if(m[0]==='EOSE')return ws.close();if(m[0]!=='EVENT')return;
+   const ev=m[2],np=auteurs[ev.pubkey];if(!np||(nieuwst[np]||0)>=ev.created_at)return;
+   try{const a=JSON.parse(ev.content).lud16;if(typeof a==='string'&&/^[a-z0-9._-]+@[a-z0-9.-]+\.[a-z]{2,}$/i.test(a)){nieuwst[np]=ev.created_at;lud[np]=a;tekenNpubs()}}catch(x){}}}catch(x){}}
+$('npubs').addEventListener('click',async e=>{const b=e.target.closest('[data-kopieer]');if(!b)return;
+ try{await navigator.clipboard.writeText(b.dataset.kopieer)}catch(x){const r=document.createRange();r.selectNodeContents(b.closest('.np').querySelector('.sleutelnp'));getSelection().removeAllRanges();getSelection().addRange(r);return}
+ const oud=b.innerHTML;b.innerHTML='<svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg>';b.title=T.gekopieerd[i()];setTimeout(()=>{b.innerHTML=oud;b.title=T.kopieer[i()]},1600)});
+
+// ---- my Zappers: kept on this device only
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function leesMijn(){try{return JSON.parse(localStorage.getItem('zapper_mijn')||'[]')}catch(e){return[]}}
+function bewaarMijn(l){try{localStorage.setItem('zapper_mijn',JSON.stringify(l))}catch(e){}}
+function adresUrl(a){a=a.trim();if(!/^https?:\/\//i.test(a))a='http://'+a;return a.replace(/\/+$/,'')+'/'}
+function tekenMijn(){const l=leesMijn();
+ $('mijnLijst').innerHTML=l.length?l.map((z,n)=>`<a class="kaart mz" href="${esc(adresUrl(z.adres))}" target="_blank" rel="noopener">
+   <img src="beeld/lamp-aan.svg" alt=""><span class="t"><b>${esc(z.naam)}</b><span>${esc(z.adres)}</span></span>
+   <button class="weg" data-weg="${n}" title="${T.mijnWeg[i()]}" aria-label="${T.mijnWeg[i()]}">\u00d7</button>
+   <span class="open" aria-label="${T.mijnOpen[i()]}"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></a>`).join('')
+  :`<div class="leegmijn">${T.mijnLeeg[i()]}</div>`}
+$('mijnLijst').addEventListener('click',e=>{const b=e.target.closest('[data-weg]');if(!b)return;e.preventDefault();
+ const l=leesMijn();l.splice(+b.dataset.weg,1);bewaarMijn(l);tekenMijn()});
+$('mzVoeg').onclick=()=>{const naam=$('mzNaam').value.trim(),adres=$('mzAdres').value.trim();
+ if(!adres){$('mzAdres').focus();return}
+ const l=leesMijn();l.push({naam:naam||adres,adres});bewaarMijn(l);$('mzNaam').value='';$('mzAdres').value='';tekenMijn()};
+$('mzAdres').addEventListener('keydown',e=>{if(e.key==='Enter')$('mzVoeg').click()});
+function melding(t){const m=$('melding');m.textContent=t;m.classList.remove('verborgen');setTimeout(()=>m.classList.add('verborgen'),3500)}
+(function importeer(){const q=new URLSearchParams(location.search),d=q.get('mijn');if(!d)return;
+ try{const lijst=JSON.parse(decodeURIComponent(escape(atob(d.replace(/-/g,'+').replace(/_/g,'/')))));
+  const l=leesMijn();let n=0;
+  for(const z of Array.isArray(lijst)?lijst.slice(0,40):[]){const adres=String(z.a||'').trim(),naam=String(z.n||adres).slice(0,60);
+   if(!/^[a-z0-9.-]{3,64}$/i.test(adres))continue;
+   const er=l.find(x=>x.adres===adres);if(er){er.naam=naam}else{l.push({naam,adres});n++}}
+  bewaarMijn(l);setTimeout(()=>{melding(T.geimporteerd[i()].replace('%n',n));$('mijn').scrollIntoView({behavior:'smooth'})},400)}catch(e){}
+ q.delete('mijn');history.replaceState(null,'',location.pathname+(q.toString()?'?'+q:'')+location.hash)})();
+
+// ---- installed as an app, or a website?
+const alsApp=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true||new URLSearchParams(location.search).has('app');
+document.body.classList.add(alsApp?'app':'web');
+addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;teken()});
+$('installeer').onclick=async()=>{if(!installPrompt)return;installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;$('installeer').classList.add('verborgen')};
+document.querySelectorAll('[data-tel]').forEach(b=>b.onclick=()=>{tel=b.dataset.tel;teken()});
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+
+document.querySelectorAll('[data-taal]').forEach(b=>b.onclick=()=>{taal=b.dataset.taal;try{localStorage.setItem('zc_taal',taal)}catch(e){}teken()});
+document.querySelectorAll('[data-os]').forEach(b=>b.onclick=()=>{os=b.dataset.os;teken()});
+(async()=>{try{
+ const ruw=new Uint8Array(await (await fetch('manifest.json',{cache:'no-store'})).arrayBuffer());
+ manifest=JSON.parse(new TextDecoder().decode(ruw));teken();
+ const sig=await (await fetch('manifest.sig',{cache:'no-store'})).text();
+ checkStaat=crypto.subtle&&await bip340(RELEASE_PUBKEY,await sha(ruw),sig)?'goed':'fout';
+}catch(e){if(manifest)checkStaat='fout'}tekenCheck()})();
+fetch('versies.json',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(v=>{versies=Array.isArray(v)?v:null;tekenEerder()}).catch(()=>{});
+haalLud();
+fetch('beeld/pubkey.txt',{cache:'no-store'}).then(r=>r.text()).then(t=>$('pubkey').textContent=t.trim()).catch(()=>{});
+teken();
+</script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+{
+ "app": "zapper",
+ "versie": "1.10",
+ "datum": "2026-10-16",
+ "notities": {
+  "nl": "• Openen vanuit Alle Zappers brengt je meteen ingelogd naar die lamp, met al zijn instellingen.\n• Alle Zappers toont de totalen van al je lampen (zaps, sats, grootste zap) en een live overzicht van de laatste zaps op elke lamp: wie, hoeveel sats, het bericht en naar welke lamp.\n• Per lamp zie je zaps, sats, relays, wifi-signaal en de npub (open op njump of kopieer).\n• Hoe werkt dit? legt de pagina in vijf regels uit voor wie nieuw is met zaps.",
+  "en": "• Open a lamp from All Zappers and you are in, already logged in, with every setting of that lamp: relays, nostr key, wallet, goal, alerts and the rest. The session travels after the # of the link, so it never goes over the network, and a lamp from 1.10 turns it into its own cookie.\n• All Zappers shows the totals of all your lamps (zaps, sats, biggest zap) and a live feed of the latest zaps on every lamp: who, how many sats, the message, and to which lamp. A zap refreshes it within seconds.\n• Each lamp shows its zaps, sats, relays and Wi-Fi signal, and its npub (open it on njump, or copy it).\n• \"How does this work?\" explains the page in five lines for someone new to zaps.\n• A lamp now reads its session cookies by their exact names, so an expired one no longer hides a valid one."
+ },
+ "firmware": {
+  "Zapper REV A": {
+   "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.10/zapper-reva-1.10-ota.bin",
+   "sha256": "22b55eb23d4a1878094e266cc372b10a1bb4f401c8ad9e1cb44f1716f6c1238f",
+   "grootte": 2471600
+  },
+  "ESP32-C6-Zero + MOSFET": {
+   "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.10/lamp01-1.10-ota.bin",
+   "sha256": "ef7d2896092249b9b59f0c0bad7b816ec14a385062a5ea01ad72759a423f84c2",
+   "grootte": 2447376
+  }
+ },
+ "fabriek": {
+  "Zapper REV A": {
+   "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.10/zapper-reva-1.10-factory.bin",
+   "sha256": "066bf4f6d4acd4cc39a614cb9f8367262b35a1b5e3f17da9e297920611b2e454",
+   "grootte": 2602672
+  },
+  "ESP32-C6-Zero + MOSFET": {
+   "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.10/lamp01-1.10-factory.bin",
+   "sha256": "d89abfb4031dc4a3ea2121e6eade2c78aabe3b0b36245a4c2f1c444e3c31dc7f",
+   "grootte": 2512912
+  }
+ },
+ "control": {
+  "versie": "2.3",
+  "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/control/zapper-control.py",
+  "sha256": "4bb3788d016186d87870ead6631cfee1c19a56367139ebd6dd284664c6629c2d",
+  "grootte": 152992
+ }
+}
