@@ -71,6 +71,7 @@ import CloudPage from "./pages/Cloud";
 import CloudAppViewer from "./pages/CloudAppViewer";
 import Gallery from "./pages/Gallery";
 import IconDownloads from "./pages/IconDownloads";
+import Zapper from "./pages/Zapper";
 import NotFound from "./pages/NotFound";
 
 export function AppRouter() {
@@ -158,6 +159,8 @@ export function AppRouter() {
         <Route path="/cloud/:appId" element={<CloudAppViewer />} />
         {/* POP WORLD Virtual Gallery — full-screen iframe experience */}
         <Route path="/gallery" element={<LayoutIframe><Gallery /></LayoutIframe>} />
+        {/* Zapper — ZAPPER zap lamps updates & control, inline under the site menu/footer */}
+        <Route path="/zapper" element={<Layout><Zapper /></Layout>} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="/:slug" element={<Layout><CustomPage /></Layout>} />
         <Route path="*" element={<Layout><NotFound /></Layout>} />
