@@ -3,14 +3,17 @@ import { useSeoMeta } from '@unhead/react';
 
 /**
  * Zapper — the ZAPPER zap-lamp updates & control page (from
- * JaccoElektro/zapper-updates), shown inline under the site Layout so the
- * bitpopart.com menu and footer stay visible, like every other page.
+ * JaccoElektro/zapper-updates, upstream commit 689b41b, v1.12.3), shown
+ * inline under the site Layout so the bitpopart.com menu and footer stay
+ * visible, like every other page.
  *
  * The Zapper app is a self-contained static site shipped at
  * /zapper-app/index.html (see public/zapper-app/). It runs unchanged in a
  * same-origin, auto-height iframe: the app keeps all its own functionality
- * (signed update list, downloads, My Zappers, language switch) while the
- * page scrolls with the site instead of showing its own scrollbars.
+ * (signed update list, downloads, My Zappers, USB flashing, language switch)
+ * while the page scrolls with the site instead of showing its own scrollbars.
+ * allow="serial" lets the Web Serial API work inside the iframe so
+ * "Flash a new Zapper" can write firmware over USB (Chrome/Edge on a computer).
  */
 export default function Zapper() {
   const frameRef = useRef<HTMLIFrameElement>(null);
@@ -76,6 +79,7 @@ export default function Zapper() {
         ref={frameRef}
         src="/zapper-app/"
         title="Zapper control — ZAPPER zap lamps"
+        allow="serial"
         className="w-full border-0 block"
         style={{ height }}
       />

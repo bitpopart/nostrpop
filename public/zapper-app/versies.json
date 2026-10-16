@@ -1,9 +1,105 @@
 [
  {
+  "versie": "1.12.3",
+  "datum": "2026-10-16",
+  "notities": {
+   "nl": "• De downloadpagina staat nu op GitHub Pages: https://jaccoelektro.github.io/zapper-updates/ (gratis en altijd de nieuwste). De QR Naar je telefoon en Zapper control wijzen daarheen.\n• Nieuwe Zapper flashen via USB, de gids met schermafdrukken, en Zapper control met nostr-instellingen.",
+   "en": "• The download page moved to GitHub Pages: https://jaccoelektro.github.io/zapper-updates/ (free, always the newest, no build credits). The QR \"To your phone\", Zapper control's download and flash buttons, the manual and the README point there."
+  },
+  "firmware": {
+   "Zapper REV A": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.12.3/zapper-reva-1.12.3-ota.bin",
+    "sha256": "85a226382d7b4d7874065bf261906a2a8c5d6d8d0759aa62462c6c54c91521ed",
+    "grootte": 2525456
+   },
+   "ESP32-C6-Zero + MOSFET": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.12.3/lamp01-1.12.3-ota.bin",
+    "sha256": "46487220a393242422fa91fbbec376290d898abb7f5becfdf1ba4028d1739ccf",
+    "grootte": 2501232
+   }
+  },
+  "fabriek": {
+   "Zapper REV A": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.12.3/zapper-reva-1.12.3-factory.bin",
+    "sha256": "eaf2d26762181bd8d783bbf0726e58f7bbd0d4f07a7a9d1bfd2e4d7e9cb7e988",
+    "grootte": 2656528
+   },
+   "ESP32-C6-Zero + MOSFET": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.12.3/lamp01-1.12.3-factory.bin",
+    "sha256": "0b760c392ba911be2bbd47a9ea47d7bfa074c92f751c490d9cf35cdbef9da9dd",
+    "grootte": 2566768
+   }
+  }
+ },
+ {
+  "versie": "1.12.2",
+  "datum": "2026-10-16",
+  "notities": {
+   "nl": "• Flash a new board over USB straight from the download page (Chrome or Edge on a computer): one button per board, always with the newest firmware. Zapper control 2.5 has a button for it.\n• A brand new board no longer logs a storage error at its first start.",
+   "en": "• Flash a new board over USB straight from the download page (Chrome or Edge on a computer): one button per board, always with the newest firmware. Zapper control 2.5 has a button for it.\n• A brand new board no longer logs a storage error at its first start."
+  },
+  "firmware": {
+   "Zapper REV A": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.12.2/zapper-reva-1.12.2-ota.bin",
+    "sha256": "0c86089d9354bf15dc7816305b7caa3e211b85f0b110b5f2591d45c8701a2d16",
+    "grootte": 2525408
+   },
+   "ESP32-C6-Zero + MOSFET": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.12.2/lamp01-1.12.2-ota.bin",
+    "sha256": "decec4723c0e58828d82771a598c2e5ba8eb0e4d6e5e61a1c026eee8ed1045ca",
+    "grootte": 2501168
+   }
+  },
+  "fabriek": {
+   "Zapper REV A": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.12.2/zapper-reva-1.12.2-factory.bin",
+    "sha256": "d29f2ba33f8c08c8ab34dd6ad9419e8f6ff21e321b49045e91d5a4d1fa8974c9",
+    "grootte": 2656480
+   },
+   "ESP32-C6-Zero + MOSFET": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.12.2/lamp01-1.12.2-factory.bin",
+    "sha256": "6711abc6f6b220a82f9e742daf66fdbd8467c549093ac6438e437828cdb8a827",
+    "grootte": 2566704
+   }
+  }
+ },
+ {
+  "versie": "1.11",
+  "datum": "2026-10-16",
+  "notities": {
+   "nl": "• The Zapper screen (/scherm): a clean page for a TV or tablet with every lamp, lighting up live, its nostr picture and name, a QR to zap it, its lightning address, zaps, sats, goal and latest zap, and the block height. No settings on it; back and full screen in the corners.\n• Control a lamp by nostr DM from your own npub (old NIP-04 and private NIP-17 DMs): party, zap, on, off, auto, stop, find. Signature checked, once per message, at most two minutes old.\n• All Zappers: top zappers with their nostr pictures, sats per day for the last 30 days, the block height, a QR per lamp, a simple view, NIP-05 for all lamps on your own domain (with nostr.json), and a new block celebration and the DM owner in the bulk settings.\n• Settings, Carry settings over: one tap to copy them to your other Zappers.\n• The GitHub link in the lamp points to the public update channel.",
+   "en": "• The Zapper screen (/scherm): a clean page for a TV or tablet with every lamp, lighting up live, its nostr picture and name, a QR to zap it, its lightning address, zaps, sats, goal and latest zap, and the block height. No settings on it; back and full screen in the corners.\n• Control a lamp by nostr DM from your own npub (old NIP-04 and private NIP-17 DMs): party, zap, on, off, auto, stop, find. Signature checked, once per message, at most two minutes old.\n• All Zappers: top zappers with their nostr pictures, sats per day for the last 30 days, the block height, a QR per lamp, a simple view, NIP-05 for all lamps on your own domain (with nostr.json), and a new block celebration and the DM owner in the bulk settings.\n• Settings, Carry settings over: one tap to copy them to your other Zappers.\n• The GitHub link in the lamp points to the public update channel."
+  },
+  "firmware": {
+   "Zapper REV A": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.11/zapper-reva-1.11-ota.bin",
+    "sha256": "af451f183bbf3af35918d66dc7181498b57495a19d2734fbb4e1a60322131104",
+    "grootte": 2508448
+   },
+   "ESP32-C6-Zero + MOSFET": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.11/lamp01-1.11-ota.bin",
+    "sha256": "3ee06e46912d7412b037d1b8f3bef801aee14b5bfc6dc1d752ab284f04f3e567",
+    "grootte": 2484272
+   }
+  },
+  "fabriek": {
+   "Zapper REV A": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.11/zapper-reva-1.11-factory.bin",
+    "sha256": "a5bae6ba53061f2f003db3bae47c99f2a823e29e59b5bfb7f3e6014eb0f5c006",
+    "grootte": 2639520
+   },
+   "ESP32-C6-Zero + MOSFET": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.11/lamp01-1.11-factory.bin",
+    "sha256": "54f9fab6110900925a1e12c73aaf7683d6dcad42c50968b77850b5ad06476b1d",
+    "grootte": 2549808
+   }
+  }
+ },
+ {
   "versie": "1.10",
   "datum": "2026-10-16",
   "notities": {
-   "nl": "• Openen vanuit Alle Zappers brengt je meteen ingelogd naar die lamp, met al zijn instellingen.\n• Alle Zappers toont de totalen van al je lampen (zaps, sats, grootste zap) en een live overzicht van de laatste zaps op elke lamp: wie, hoeveel sats, het bericht en naar welke lamp.\n• Per lamp zie je zaps, sats, relays, wifi-signaal en de npub (open op njump of kopieer).\n• Hoe werkt dit? legt de pagina in vijf regels uit voor wie nieuw is met zaps.",
+   "nl": "• Open a lamp from All Zappers and you are in, already logged in, with every setting of that lamp: relays, nostr key, wallet, goal, alerts and the rest. The session travels after the # of the link, so it never goes over the network, and a lamp from 1.10 turns it into its own cookie.\n• All Zappers shows the totals of all your lamps (zaps, sats, biggest zap) and a live feed of the latest zaps on every lamp: who, how many sats, the message, and to which lamp. A zap refreshes it within seconds.\n• Each lamp shows its zaps, sats, relays and Wi-Fi signal, and its npub (open it on njump, or copy it).\n• \"How does this work?\" explains the page in five lines for someone new to zaps.\n• A lamp now reads its session cookies by their exact names, so an expired one no longer hides a valid one.",
    "en": "• Open a lamp from All Zappers and you are in, already logged in, with every setting of that lamp: relays, nostr key, wallet, goal, alerts and the rest. The session travels after the # of the link, so it never goes over the network, and a lamp from 1.10 turns it into its own cookie.\n• All Zappers shows the totals of all your lamps (zaps, sats, biggest zap) and a live feed of the latest zaps on every lamp: who, how many sats, the message, and to which lamp. A zap refreshes it within seconds.\n• Each lamp shows its zaps, sats, relays and Wi-Fi signal, and its npub (open it on njump, or copy it).\n• \"How does this work?\" explains the page in five lines for someone new to zaps.\n• A lamp now reads its session cookies by their exact names, so an expired one no longer hides a valid one."
   },
   "firmware": {
