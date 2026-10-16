@@ -204,4 +204,12 @@
     <changefreq>daily</changefreq>
     <priority>0.5</priority>
   </url>
+
+  <!-- Zapper -->
+  <url>
+    <loc>https://bitpopart.com/zapper</loc>
+    <lastmod>2026-10-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
 </urlset>

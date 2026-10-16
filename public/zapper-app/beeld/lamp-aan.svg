@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="280" height="315" viewBox="0 0 280 315" role="img" aria-label="ZAPPER lamp aan">
+ <title>ZAPPER lamp aan</title>
+ <desc>Haarscherpe ZAPPER vector-gloeilamp met lichtstralen. Volledig uit vectorpaden opgebouwd.</desc>
+ <g fill="none" stroke="#080808" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M 137 31 L 137 55"/>
+  <path d="M 89 45 L 99 66"/>
+  <path d="M 184 44 L 175 66"/>
+  <path d="M 52 70 L 70 86"/>
+  <path d="M 221 70 L 203 87"/>
+  <path d="M 32 103 L 53 113"/>
+  <path d="M 241 103 L 220 113"/>
+  <path d="M 29 148 L 49 148"/>
+  <path d="M 245 148 L 225 148"/>
+  <path d="M 41 193 L 62 183"/>
+  <path d="M 232 193 L 213 183"/>
+  <path d="M 77 229 L 91 214"/>
+  <path d="M 198 229 L 184 214"/>
+ </g>
+ <!-- Clean, smoothed lightbulb silhouette with integral socket. -->
+ <path fill="#080808" d="M 137 78
+   C 99 78, 71 107, 71 142
+   C 71 165, 81 181, 96 197
+   C 102 204, 104 213, 104 220
+   Q 104 224, 108 226
+   L 108 258 Q 108 266, 116 266
+   C 122 275, 129 280, 137 280
+   C 145 280, 152 275, 159 266
+   Q 166 265, 166 258
+   L 166 226 Q 169 224, 170 217
+   C 171 207, 177 199, 185 190
+   C 197 177, 203 161, 203 143
+   C 203 107, 175 78, 137 78 Z"/>
+ <!-- Glass body, bold flat fill, faithfully following the cartoon bulb. -->
+ <path fill="#FFD206" d="M 137 89
+   C 107 89, 82 112, 82 143
+   C 82 162, 90 175, 105 191
+   C 112 199, 115 206, 115 213
+   L 159 213
+   C 159 204, 163 197, 171 189
+   C 186 174, 192 159, 192 143
+   C 192 113, 168 89, 137 89 Z"/>
+ <!-- Individual smooth heart-and-halo details. -->
+ <g fill="none" stroke="#080808" stroke-width="4.3" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M 101 120 L 97 116"/>
+  <path d="M 108 117 L 105 111"/>
+  <path d="M 116 113 L 114 106"/>
+  <path d="M 125 111 L 123 104"/>
+  <path d="M 136 111 L 136 103"/>
+  <path d="M 146 111 L 148 104"/>
+  <path d="M 157 113 L 161 107"/>
+  <path d="M 166 116 L 172 111"/>
+  <path d="M 175 122 L 181 119"/>
+  <path d="M 179 131 L 187 130"/>
+  <path d="M 179 143 L 188 143"/>
+  <path d="M 174 156 L 181 160"/>
+  <path d="M 164 166 L 169 172"/>
+  <path d="M 149 176 L 151 181"/>
+  <path d="M 137 179 L 137 185"/>
+  <path d="M 123 175 L 119 181"/>
+  <path d="M 109 165 L 104 169"/>
+  <path d="M 99 153 L 93 155"/>
+  <path d="M 96 141 L 90 142"/>
+  <path d="M 97 130 L 90 128"/>
+ </g>
+ <path fill="#EF2242" stroke="#080808" stroke-width="6" stroke-linejoin="round"
+   d="M 137 142
+      C 130 134, 125 130, 119 130
+      C 110 130, 106 136, 106 142
+      C 106 154, 125 167, 137 173
+      C 149 167, 169 154, 169 142
+      C 169 134, 164 130, 156 130
+      C 148 130, 143 135, 137 142 Z"/>
+ <!-- Horizontal purple threaded stripes and tiny purple glint at the tip. -->
+ <g fill="#A000FF">
+  <rect x="118" y="224" width="38" height="5" rx="2.5"/>
+  <rect x="118" y="239" width="38" height="5" rx="2.5"/>
+  <rect x="118" y="254" width="38" height="5" rx="2.5"/>
+  <path d="M 129 269 Q 137 274 145 269 Q 137 272 129 269 Z"/>
+ </g>
+</svg>

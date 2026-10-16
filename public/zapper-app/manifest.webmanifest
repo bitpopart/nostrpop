@@ -1,0 +1,18 @@
+{
+ "name": "Zapper",
+ "short_name": "Zapper",
+ "description": "Al je ZAPPER zap-lampen op één plek: open ze, zie de nieuwste versie en de uitleg.",
+ "id": "./",
+ "start_url": "./?app",
+ "scope": "./",
+ "display": "standalone",
+ "orientation": "portrait",
+ "background_color": "#0b0517",
+ "theme_color": "#0b0517",
+ "lang": "nl",
+ "icons": [
+  {"src": "beeld/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+  {"src": "beeld/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+  {"src": "beeld/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+ ]
+}

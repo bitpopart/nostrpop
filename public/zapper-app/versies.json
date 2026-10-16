@@ -1,0 +1,98 @@
+[
+ {
+  "versie": "1.10",
+  "datum": "2026-10-16",
+  "notities": {
+   "nl": "• Openen vanuit Alle Zappers brengt je meteen ingelogd naar die lamp, met al zijn instellingen.\n• Alle Zappers toont de totalen van al je lampen (zaps, sats, grootste zap) en een live overzicht van de laatste zaps op elke lamp: wie, hoeveel sats, het bericht en naar welke lamp.\n• Per lamp zie je zaps, sats, relays, wifi-signaal en de npub (open op njump of kopieer).\n• Hoe werkt dit? legt de pagina in vijf regels uit voor wie nieuw is met zaps.",
+   "en": "• Open a lamp from All Zappers and you are in, already logged in, with every setting of that lamp: relays, nostr key, wallet, goal, alerts and the rest. The session travels after the # of the link, so it never goes over the network, and a lamp from 1.10 turns it into its own cookie.\n• All Zappers shows the totals of all your lamps (zaps, sats, biggest zap) and a live feed of the latest zaps on every lamp: who, how many sats, the message, and to which lamp. A zap refreshes it within seconds.\n• Each lamp shows its zaps, sats, relays and Wi-Fi signal, and its npub (open it on njump, or copy it).\n• \"How does this work?\" explains the page in five lines for someone new to zaps.\n• A lamp now reads its session cookies by their exact names, so an expired one no longer hides a valid one."
+  },
+  "firmware": {
+   "Zapper REV A": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.10/zapper-reva-1.10-ota.bin",
+    "sha256": "22b55eb23d4a1878094e266cc372b10a1bb4f401c8ad9e1cb44f1716f6c1238f",
+    "grootte": 2471600
+   },
+   "ESP32-C6-Zero + MOSFET": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.10/lamp01-1.10-ota.bin",
+    "sha256": "ef7d2896092249b9b59f0c0bad7b816ec14a385062a5ea01ad72759a423f84c2",
+    "grootte": 2447376
+   }
+  },
+  "fabriek": {
+   "Zapper REV A": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.10/zapper-reva-1.10-factory.bin",
+    "sha256": "066bf4f6d4acd4cc39a614cb9f8367262b35a1b5e3f17da9e297920611b2e454",
+    "grootte": 2602672
+   },
+   "ESP32-C6-Zero + MOSFET": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.10/lamp01-1.10-factory.bin",
+    "sha256": "d89abfb4031dc4a3ea2121e6eade2c78aabe3b0b36245a4c2f1c444e3c31dc7f",
+    "grootte": 2512912
+   }
+  }
+ },
+ {
+  "versie": "1.9.1",
+  "datum": "2026-10-16",
+  "notities": {
+   "nl": "• The default password is Bitcoin21 again, as before 1.9: leave it empty at setup and that is the password; change it after the first login under Settings, and the overview reminds you until you do. The Bluetooth PIN is the lamp password, so Bitcoin21 by default. All Zappers and Zapper control try it on lamps that still have it.",
+   "en": "• The default password is Bitcoin21 again, as before 1.9: leave it empty at setup and that is the password; change it after the first login under Settings, and the overview reminds you until you do. The Bluetooth PIN is the lamp password, so Bitcoin21 by default. All Zappers and Zapper control try it on lamps that still have it."
+  },
+  "firmware": {
+   "Zapper REV A": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.9.1/zapper-reva-1.9.1-ota.bin",
+    "sha256": "85717ce7068e7ca4aa5aa3289a38b5a2376c3468d9ae2208bd6f0a84ee8e0319",
+    "grootte": 2464304
+   },
+   "ESP32-C6-Zero + MOSFET": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.9.1/lamp01-1.9.1-ota.bin",
+    "sha256": "55cffc847e5f7f286bfb7aeabc378f2aa481a9e6f1ba01cbaf94cd8f4be2931c",
+    "grootte": 2440080
+   }
+  },
+  "fabriek": {
+   "Zapper REV A": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.9.1/zapper-reva-1.9.1-factory.bin",
+    "sha256": "31dcc35b36c86016ce7dc93aa7c6a7329104a77f522e060f674c5a74799339f6",
+    "grootte": 2595376
+   },
+   "ESP32-C6-Zero + MOSFET": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.9.1/lamp01-1.9.1-factory.bin",
+    "sha256": "6186581f8bd541f55dfb7bba4b732bdc99ff17471104859ca968eb57ba7911c8",
+    "grootte": 2505616
+   }
+  }
+ },
+ {
+  "versie": "1.9",
+  "datum": "2026-10-16",
+  "notities": {
+   "nl": "• All Zappers: every lamp now manages the other ZAPPERs on your network, with nothing to install. Open any lamp in your browser, on a phone or a computer, and tap All Zappers: each lamp with its own picture that follows the real one, Automatic, Always on and Always off, and the tunes for a zap and a celebration.\n• Pick several lamps to act on them together: update to the newest firmware, test zap, celebration, find me, lamp mode, restart, tunes, common settings, Wi-Fi, copy this lamp's settings, one backup file, and a QR code that puts them under My Zappers in the phone app.\n• No default password any more. You choose one of at least 8 characters when you set the lamp up; a lamp set up over Bluetooth asks for one on the first visit. Until it has one, its Bluetooth PIN is its own name. A lamp that still has the old factory password says so on its overview.",
+   "en": "• All Zappers: every lamp now manages the other ZAPPERs on your network, with nothing to install. Open any lamp in your browser, on a phone or a computer, and tap All Zappers: each lamp with its own picture that follows the real one, Automatic, Always on and Always off, and the tunes for a zap and a celebration.\n• Pick several lamps to act on them together: update to the newest firmware, test zap, celebration, find me, lamp mode, restart, tunes, common settings, Wi-Fi, copy this lamp's settings, one backup file, and a QR code that puts them under My Zappers in the phone app.\n• No default password any more. You choose one of at least 8 characters when you set the lamp up; a lamp set up over Bluetooth asks for one on the first visit. Until it has one, its Bluetooth PIN is its own name. A lamp that still has the old factory password says so on its overview."
+  },
+  "firmware": {
+   "Zapper REV A": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.9/zapper-reva-1.9-ota.bin",
+    "sha256": "141a797594e4162369de884b730d4f5a1b713ebdfe006062c468e33503fbe145",
+    "grootte": 2467472
+   },
+   "ESP32-C6-Zero + MOSFET": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.9/lamp01-1.9-ota.bin",
+    "sha256": "7dda46e0c82c31f78107a54e651d07a0513fb2cd662302c278b3120265e9cf10",
+    "grootte": 2443216
+   }
+  },
+  "fabriek": {
+   "Zapper REV A": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.9/zapper-reva-1.9-factory.bin",
+    "sha256": "fff3659e35fdb05a2a4f167807d865b778c0365dd24e9400a0b9694d6bc53db4",
+    "grootte": 2598544
+   },
+   "ESP32-C6-Zero + MOSFET": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.9/lamp01-1.9-factory.bin",
+    "sha256": "d5f28ea9ee50a3cbf77d77ec1d2fe657a38904295d7a8a71633998aaead67146",
+    "grootte": 2508752
+   }
+  }
+ }
+]
