@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>Niet gevonden · Zapper</title>
+
+<style>
+:root{--ink:#f6f1ff;--soft:#c9bfdc;--knop:linear-gradient(135deg,#9d00f9,#ed1f33 120%)}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px 16px;text-align:center;color:var(--ink);
+  font:16px/1.55 -apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",Roboto,sans-serif;
+  background:radial-gradient(800px 500px at 10% -10%,rgba(157,0,249,.35),transparent 60%),radial-gradient(700px 480px at 100% 110%,rgba(255,127,0,.22),transparent 60%),#0b0517}
+img{height:180px;width:auto;filter:drop-shadow(0 0 18px rgba(157,0,249,.45))}
+h1{font-size:clamp(28px,6vw,44px);letter-spacing:-.03em;margin:18px 0 6px}
+p{color:var(--soft);margin:0 0 26px}
+a{display:inline-block;background:var(--knop);color:#fff;text-decoration:none;font-weight:700;padding:14px 24px;border-radius:16px;box-shadow:0 12px 34px -10px rgba(157,0,249,.95)}
+</style>
+</head>
+<body>
+<main>
+ <img id="lamp" alt="">
+ <h1 id="kop">Deze lamp is uit</h1>
+ <p id="tekst">Deze pagina bestaat niet (meer).</p>
+ <a href="./" id="terug">Naar Zapper</a>
+</main>
+<script>
+// This page answers for any unknown address at any depth, so it finds the site's own
+// root itself: /zapper-updates/ on GitHub Pages, / on a domain of its own.
+const basis=location.hostname.endsWith('github.io')?'/'+location.pathname.split('/')[1]+'/':'/';
+document.getElementById('lamp').src=basis+'beeld/lamp-uit.svg';
+document.getElementById('terug').href=basis;
+const ico=document.createElement('link');ico.rel='icon';ico.type='image/svg+xml';ico.href=basis+'beeld/logo.svg';document.head.appendChild(ico);
+if(!(navigator.language||'').toLowerCase().startsWith('nl')){document.documentElement.lang='en';
+ document.getElementById('kop').textContent='This lamp is off';
+ document.getElementById('tekst').textContent='This page does not exist (any more).';
+ document.getElementById('terug').textContent='To Zapper'}
+</script>
+</body>
+</html>

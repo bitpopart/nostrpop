@@ -1,39 +1,39 @@
 {
  "app": "zapper",
- "versie": "1.10",
+ "versie": "1.12.3",
  "datum": "2026-10-16",
  "notities": {
-  "nl": "• Openen vanuit Alle Zappers brengt je meteen ingelogd naar die lamp, met al zijn instellingen.\n• Alle Zappers toont de totalen van al je lampen (zaps, sats, grootste zap) en een live overzicht van de laatste zaps op elke lamp: wie, hoeveel sats, het bericht en naar welke lamp.\n• Per lamp zie je zaps, sats, relays, wifi-signaal en de npub (open op njump of kopieer).\n• Hoe werkt dit? legt de pagina in vijf regels uit voor wie nieuw is met zaps.",
-  "en": "• Open a lamp from All Zappers and you are in, already logged in, with every setting of that lamp: relays, nostr key, wallet, goal, alerts and the rest. The session travels after the # of the link, so it never goes over the network, and a lamp from 1.10 turns it into its own cookie.\n• All Zappers shows the totals of all your lamps (zaps, sats, biggest zap) and a live feed of the latest zaps on every lamp: who, how many sats, the message, and to which lamp. A zap refreshes it within seconds.\n• Each lamp shows its zaps, sats, relays and Wi-Fi signal, and its npub (open it on njump, or copy it).\n• \"How does this work?\" explains the page in five lines for someone new to zaps.\n• A lamp now reads its session cookies by their exact names, so an expired one no longer hides a valid one."
+  "nl": "• De downloadpagina staat nu op GitHub Pages: https://jaccoelektro.github.io/zapper-updates/ (gratis en altijd de nieuwste). De QR Naar je telefoon en Zapper control wijzen daarheen.\n• Nieuwe Zapper flashen via USB, de gids met schermafdrukken, en Zapper control met nostr-instellingen.",
+  "en": "• The download page moved to GitHub Pages: https://jaccoelektro.github.io/zapper-updates/ (free, always the newest, no build credits). The QR \"To your phone\", Zapper control's download and flash buttons, the manual and the README point there."
  },
  "firmware": {
   "Zapper REV A": {
-   "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.10/zapper-reva-1.10-ota.bin",
-   "sha256": "22b55eb23d4a1878094e266cc372b10a1bb4f401c8ad9e1cb44f1716f6c1238f",
-   "grootte": 2471600
+   "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.12.3/zapper-reva-1.12.3-ota.bin",
+   "sha256": "85a226382d7b4d7874065bf261906a2a8c5d6d8d0759aa62462c6c54c91521ed",
+   "grootte": 2525456
   },
   "ESP32-C6-Zero + MOSFET": {
-   "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.10/lamp01-1.10-ota.bin",
-   "sha256": "ef7d2896092249b9b59f0c0bad7b816ec14a385062a5ea01ad72759a423f84c2",
-   "grootte": 2447376
+   "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.12.3/lamp01-1.12.3-ota.bin",
+   "sha256": "46487220a393242422fa91fbbec376290d898abb7f5becfdf1ba4028d1739ccf",
+   "grootte": 2501232
   }
  },
  "fabriek": {
   "Zapper REV A": {
-   "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.10/zapper-reva-1.10-factory.bin",
-   "sha256": "066bf4f6d4acd4cc39a614cb9f8367262b35a1b5e3f17da9e297920611b2e454",
-   "grootte": 2602672
+   "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.12.3/zapper-reva-1.12.3-factory.bin",
+   "sha256": "eaf2d26762181bd8d783bbf0726e58f7bbd0d4f07a7a9d1bfd2e4d7e9cb7e988",
+   "grootte": 2656528
   },
   "ESP32-C6-Zero + MOSFET": {
-   "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.10/lamp01-1.10-factory.bin",
-   "sha256": "d89abfb4031dc4a3ea2121e6eade2c78aabe3b0b36245a4c2f1c444e3c31dc7f",
-   "grootte": 2512912
+   "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.12.3/lamp01-1.12.3-factory.bin",
+   "sha256": "0b760c392ba911be2bbd47a9ea47d7bfa074c92f751c490d9cf35cdbef9da9dd",
+   "grootte": 2566768
   }
  },
  "control": {
-  "versie": "2.3",
+  "versie": "2.7",
   "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/control/zapper-control.py",
-  "sha256": "4bb3788d016186d87870ead6631cfee1c19a56367139ebd6dd284664c6629c2d",
-  "grootte": 152992
+  "sha256": "89fe8d4519eac77e2455ab4f10a88ca3ffe64ca587e5f679a1404d1c9690f4f5",
+  "grootte": 170259
  }
 }
