@@ -157,6 +157,7 @@ select:focus,input:focus{outline:0;border-color:#b84dff;box-shadow:0 0 0 4px rgb
    <h3 id="fKop"></h3>
    <p class="uitleg" id="fUitleg"></p>
    <span class="chip" id="fChip"></span>
+   <p class="uitleg verborgen" id="fNieuwePrint" data-t="nieuwePrint"></p>
    <details class="meer" id="fMeer"><summary data-t="meer"></summary>
     <div class="opties">
      <div><label class="kop" data-t="versie"></label><select id="versie"></select></div>
@@ -188,6 +189,7 @@ select:focus,input:focus{outline:0;border-color:#b84dff;box-shadow:0 0 0 4px rgb
   </div>
  </section>
 
+ <details class="meer"><summary data-t="usbLog"></summary><pre id="usbLog" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:240px;overflow:auto;font-size:12px"></pre></details>
  <p class="voet"><span data-t="voet"></span> <a href="https://github.com/espressif/esptool-js" target="_blank" rel="noopener">esptool-js</a> · <span data-t="veilig"></span></p>
 </div>
 
@@ -202,6 +204,9 @@ const T={
  nietOndersteund:["Deze browser kan geen USB-apparaten gebruiken. Open deze pagina in Chrome, Edge of Opera op een computer.","This browser cannot use USB devices. Open this page in Chrome, Edge or Opera on a computer."],
  geenPoort:["Geen Zapper gekozen.","No Zapper chosen."],geenAntwoord:["de Zapper reageert niet","the Zapper does not answer"],
  bootTip:["Haal de USB-kabel even los, sluit hem weer aan en probeer het opnieuw. Helpt dat niet: houd BOOT ingedrukt, tik op RESET en laat BOOT los.","Unplug the USB cable for a moment, plug it back in and try again. If that does not help: hold BOOT, tap RESET and let go of BOOT."],
+ usbLog:["USB logboek","USB log"],
+ poortOpenUit:["De browser kan de USB-poort niet openen. Sluit andere USB-flasher-tabbladen en seriële monitors. Sluit de kabel opnieuw aan en kies de nieuwe USB-poort via Verbind je Zapper.","The browser cannot open the USB port. Close other USB flasher tabs and serial monitors. Reconnect the cable and choose the new USB port using Connect your Zapper."],
+ nieuwePrint:["Deze print heeft geen herkende Zapper-installatie. Kies hieronder ZAPPER REV A of Zelfbouw. Vink daarna Alles wissen aan om de eerste installatie toe te staan. Eventuele bestaande instellingen en sleutels worden dan verwijderd.","This board has no recognised Zapper installation. Choose ZAPPER REV A or Self-built below. Then select Erase everything to allow the first installation. Any existing settings and keys will be removed."],
  nietC6:["Dit is geen ZAPPER: de chip is %c.","This is not a ZAPPER: the chip is %c."],fout:["Mislukt: %f","Failed: %f"],
  ander:["Andere Zapper","Another Zapper"],
  subZapper:["ZAPPER %v · %w","ZAPPER %v · %w"],subOud:["ZAPPER, oudere versie","ZAPPER, older version"],subLeeg:["Nieuwe print, nog leeg","New board, still empty"],subAnders:["Andere firmware","Other firmware"],
@@ -328,11 +333,13 @@ function serVraag(cmd,ms){
  }));ser.keten=p;return p}
 async function vraagStatus(){try{return await serVraag('wifi status',2500)}catch(e){await serSluit();await serOpen();return await serVraag('wifi status',3500)}}
 
+// Only bootloader diagnostics: never log firmware Wi-Fi commands or credentials.
+function usbLog(bericht){const e=$('usbLog');e.textContent=(e.textContent+String(bericht)+'\n').split('\n').slice(-160).join('\n')}
 // ---- the bootloader (esptool-js), for reading the board and for flashing
 async function espOpen(){
  await serSluit();
  transport=new Transport(poort,false);
- loader=new ESPLoader({transport,baudrate:921600,terminal:{clean(){},writeLine(){},write(){}}});
+ loader=new ESPLoader({transport,baudrate:921600,terminal:{clean(){},writeLine:usbLog,write:usbLog}});
  const chip=await metLimiet(loader.main(),25000,t('geenAntwoord'));
  if(!/ESP32-C6/i.test(chip))throw new Error(t('nietC6',{c:chip}));
  return chip}
@@ -375,7 +382,7 @@ async function verbind(){
  let gekozen;
  try{gekozen=await navigator.serial.requestPort({filters:[{usbVendorId:0x303a}]})}catch(e){if(!apparaat)toonBeginFout(t('geenPoort'));return}
  await stopWachter();
- bezig=true;$('verbind').disabled=true;$('verbind').textContent=t('verbinden');$('ander').disabled=true;
+ usbLog('Connect');bezig=true;$('verbind').disabled=true;$('verbind').textContent=t('verbinden');$('ander').disabled=true;
  try{
   await serSluit();await espSluit(false);poort=gekozen;apparaat=null;netwerken=null;gekozenNet=null;paneel=null;
   // First ask the firmware itself, without touching it: name, version, board, Wi-Fi.
@@ -390,13 +397,15 @@ async function verbind(){
    apparaat={naam:'zapper-'+mac.replace(/:/g,'').slice(-4).toLowerCase(),mac:mac.toLowerCase(),chip,herkend:herken(tabel),leeg:!tabel.length,firmware:null,wifi:null};
    if(apparaat.herkend)await espSluit(true);  // older ZAPPER firmware: let it run again
   }
-  bordBewust=!!apparaat.herkend;if(apparaat.herkend)bord=apparaat.herkend;
+  bordBewust=!!apparaat.herkend;if(apparaat.herkend)bord=apparaat.herkend;else $('fMeer').open=true;
   $('wis').checked=false; // erasing always needs an explicit choice
   // the obvious next step opens by itself
   paneel=!apparaat.firmware||!isNieuwst()?'firmware':(apparaat.wifi&&!apparaat.wifi.verbonden?'wifi':null);zet('fStatus','');zet('wStatus','');
- }catch(e){console.error('verbinden',e);await serSluit();await espSluit(false);apparaat=null;toonBeginFout(t('fout',{f:e.message||e})+' '+t('bootTip'))}
+ }catch(e){console.error('verbinden',e);usbLog(e.message);await serSluit();await espSluit(false);apparaat=null;toonBeginFout(usbFout(e))}
  finally{bezig=false;$('verbind').disabled=false;$('ander').disabled=false;render();if(paneel==='wifi')zoekNetten()}
 }
+function usbFout(e){const bericht=e?.message||String(e);return /failed to open|port.*(?:already open|in use)|access.*denied|device.*busy/i.test(bericht)
+ ?t('poortOpenUit'):t('fout',{f:bericht})+' '+t('bootTip')}
 function toonBeginFout(s){$('beginFout').textContent=s;$('beginFout').classList.remove('verborgen');$('verbind').textContent=t('verbind')}
 const isNieuwst=()=>apparaat&&apparaat.firmware&&manifest&&vgl(apparaat.firmware,manifest.versie)>=0;
 const wifiKan=()=>apparaat&&apparaat.wifi&&ser.open;
@@ -464,8 +473,9 @@ function renderFirmware(){
  $('fKop').textContent=w&&apparaat.herkend?t('fKopWis',{v}):!apparaat.herkend?t('fKopNieuw',{v}):apparaat.firmware===v?t('fKopOpnieuw',{v}):t('fKopBij',{v});
  $('fUitleg').textContent=w&&apparaat.herkend?t('fUitlegWis'):!apparaat.herkend?t('fUitlegNieuw'):t('fUitlegBij');
  $('flash').textContent=w&&apparaat.herkend?t('fKnopWis'):!apparaat.herkend?t('fKnopNieuw'):apparaat.firmware===v?t('fKnopOpnieuw'):t('fKnopBij');
+ $('fNieuwePrint').classList.toggle('verborgen',!!apparaat.herkend);
  const nieuwste=v===manifest.versie;$('fChip').className='chip '+(nieuwste&&manifestOk?'groen':'');$('fChip').textContent=nieuwste?(manifestOk?t('ondertekend'):''):t('ouder');
- document.querySelectorAll('[data-bord]').forEach(b=>b.classList.toggle('actief',b.dataset.bord===bord));
+ document.querySelectorAll('[data-bord]').forEach(b=>b.classList.toggle('actief',bordBewust&&b.dataset.bord===bord));
  $('flash').disabled=bezig||(!kanBij&&!w)||(!apparaat.herkend&&!bordBewust);
 }
 function tekenVersies(){
@@ -485,7 +495,7 @@ async function flash(){
  if(wis&&!confirm(taal==='nl'?'Alles wissen? Identiteit, sleutels en instellingen gaan verloren.':'Erase everything? Identity, keys and settings will be lost.'))return;
  const bron=((wis?v.fabriek:v.firmware)||{})[BORD[bord]];
  if(!bron){zet('fStatus',t('fout',{f:'no image'}),true);return}
- bezig=true;render();$('balk').classList.remove('verborgen');$('balkVul').style.width='0%';
+ let flashMislukt=false;usbLog('Install '+versie);bezig=true;render();$('balk').classList.remove('verborgen');$('balkVul').style.width='0%';
  try{
   zet('fStatus',t('downloaden'));
   const data=new Uint8Array(await(await fetch('../firmware/'+versie+'/'+bron.url.split('/').pop())).arrayBuffer());
@@ -523,8 +533,11 @@ async function flash(){
   }else{apparaat={...apparaat,herkend:bord,leeg:false,wifi:null};
    zet('fStatus','<span>'+esc(taal==='nl'?'Geschreven; draaiende firmware nog niet bevestigd.':'Written; running firmware not yet confirmed.')+'</span><div class="wacht" style="margin-top:12px"><span class="draai"></span>'+esc(t('wWachten',{n:apparaat.naam}))+'</div>',false,true)}
   $('balk').classList.add('verborgen');
- }catch(e){console.error('flashen',e);zet('fStatus',t('fout',{f:e.message||e})+' '+t('bootTip'),true)}
- finally{bezig=false;render();const k=$('naarWifi');if(k)k.onclick=()=>open('wifi');if(!ser.open&&apparaat&&apparaat.firmware)wachtTerug()}
+ }catch(e){flashMislukt=true;console.error('flashen',e);usbLog(e.message);
+  // An interrupted protocol session cannot be reused on the next attempt.
+  // Keep the chip in its current state; do not boot a partly written image.
+  await serSluit();await espSluit(false);$('balk').classList.add('verborgen');zet('fStatus',usbFout(e),true)}
+ finally{bezig=false;render();const k=$('naarWifi');if(k)k.onclick=()=>open('wifi');if(!flashMislukt&&!ser.open&&apparaat&&apparaat.firmware)wachtTerug()}
 }
 function zet(id,s,fout,html){const e=$(id);if(html)e.innerHTML=s;else e.textContent=s;e.classList.toggle('fout',!!fout)}
 
@@ -595,6 +608,7 @@ $('wHost').oninput=()=>{$('wNaamTekst').textContent=$('wHost').value};
 $('wPass').onkeydown=e=>{if(e.key==='Enter')wBewaar()};
 if('serial' in navigator)navigator.serial.addEventListener('disconnect',e=>{if(e.target===poort&&!bezig){ser.open=false;ser.lezer=null;render();if(apparaat&&apparaat.firmware)wachtTerug()}});
 if(!('serial' in navigator)){$('nietOndersteund').classList.remove('verborgen');$('verbind').disabled=true}
+if('serviceWorker' in navigator)navigator.serviceWorker.register('../sw.js').catch(()=>{});
 render();
 laadLijsten().catch(e=>toonBeginFout(t('fout',{f:e.message})));
 </script>

@@ -1,7 +1,7 @@
 // The ZAPPER site: opens offline too. The page and its pictures come from the
 // cache at once and are refreshed in the background; the update list always
 // tries the network first, so the version shown is the newest one.
-const CACHE = 'zapper-app-v6';
+const CACHE = 'zapper-app-v8';
 const KERN = ['./', 'index.html', 'manifest.webmanifest', 'beeld/logo.svg', 'beeld/lamp-aan.svg', 'beeld/lamp-uit.svg',
   'beeld/icon-192.png', 'beeld/icon-512.png', 'beeld/apple-touch-icon.png', 'beeld/pubkey.txt'];
 
@@ -15,6 +15,11 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   if (e.request.method !== 'GET' || url.origin !== location.origin) return;
+  // USB tooling must be current before it opens a physical device.
+  if (url.pathname.includes('/flash/')) {
+    e.respondWith(fetch(e.request, {cache: 'no-store'}));
+    return;
+  }
   // firmware: never from the cache
   if (url.pathname.includes('/firmware/')) return;
   if (url.pathname.endsWith('manifest.json') || url.pathname.endsWith('manifest.sig')) {

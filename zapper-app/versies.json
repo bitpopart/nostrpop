@@ -1,5 +1,37 @@
 [
  {
+  "versie": "1.15.1",
+  "datum": "2026-10-17",
+  "notities": {
+   "nl": "Control en Screen hebben nu duidelijke knoppen met pictogrammen en uitleg. Op de downloadpagina zie je echte foto’s van de ZAPPER met open en gesloten behuizing.",
+   "en": "Control and Screen now have clear buttons with icons and descriptions. The download page shows real photos of the ZAPPER with its case open and closed."
+  },
+  "firmware": {
+   "Zapper REV A": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.15.1/zapper-reva-1.15.1-ota.bin",
+    "sha256": "9f3d8c753764b8a693040e4488f0a6f9e36e5638dba30474cb29b21a381c4800",
+    "grootte": 2585360
+   },
+   "ESP32-C6-Zero + MOSFET": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.15.1/lamp01-1.15.1-ota.bin",
+    "sha256": "06f46b2caf092bc801b92af91d6157e51a0302c9e41cff76e95955d29b97afe4",
+    "grootte": 2560928
+   }
+  },
+  "fabriek": {
+   "Zapper REV A": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.15.1/zapper-reva-1.15.1-factory.bin",
+    "sha256": "87b7714b554c5e52a013f8e3549542fdcab11b0cf370b764c8c54f0e8ceec1e2",
+    "grootte": 2716432
+   },
+   "ESP32-C6-Zero + MOSFET": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.15.1/lamp01-1.15.1-factory.bin",
+    "sha256": "ae0b12707957f5702e4db76c6122cc596ee182a761a3f07f98ade7b4f8f0b04e",
+    "grootte": 2626464
+   }
+  }
+ },
+ {
   "versie": "1.15.0",
   "datum": "2026-10-17",
   "notities": {
