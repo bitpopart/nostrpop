@@ -1,5 +1,165 @@
 [
  {
+  "versie": "1.15.0",
+  "datum": "2026-10-17",
+  "notities": {
+   "nl": "Eigen npub en Andere npub volgen zijn nu afzonderlijk aan of uit te zetten. Volgen staat standaard uit en vraagt alleen een openbare npub. Zaps op profiel, berichten en reacties tellen mee. Nieuwe instellingen bovenaan, bijgewerkte Control en handleiding.",
+   "en": "Own npub and Follow another npub now have independent on/off switches. Following defaults off and needs only a public npub. Profile, post and reply zaps count. Clearer settings, updated Control and manual."
+  },
+  "firmware": {
+   "Zapper REV A": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.15.0/zapper-reva-1.15.0-ota.bin",
+    "sha256": "e4d2b47c0a394812ca81ee813ac6a0b38b12d696f191db7b26501241e3ff0d79",
+    "grootte": 2583520
+   },
+   "ESP32-C6-Zero + MOSFET": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.15.0/lamp01-1.15.0-ota.bin",
+    "sha256": "b83b12631fc03354477d704517d3a181e40aaa39225c44e17fa18de7c19c4e31",
+    "grootte": 2559104
+   }
+  },
+  "fabriek": {
+   "Zapper REV A": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.15.0/zapper-reva-1.15.0-factory.bin",
+    "sha256": "29fa6357513374427de4f83ef4b3b2006405f500f25f1962f0e751961cd32938",
+    "grootte": 2714592
+   },
+   "ESP32-C6-Zero + MOSFET": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.15.0/lamp01-1.15.0-factory.bin",
+    "sha256": "292ca03238b916593cfa249d9c1e9fb38d3649c8be231d1859edd9057ac9d0e9",
+    "grootte": 2624640
+   }
+  }
+ },
+ {
+  "versie": "1.14.2",
+  "datum": "2026-10-17",
+  "notities": {
+   "nl": "Nieuw voor speciale momenten: Frysk folksliet (volledig), één compleet couplet met het herhaalde refrein, ongeveer 33 seconden. Kies het in Jukebox of als groepsfeestdeuntje. Werk alle deelnemende zoemers bij. De korte De âlde Friezen blijft de standaard; Stop onderbreekt direct.",
+   "en": "New for special occasions: Frysk folksliet (volledig), the complete melody of one verse and the repeated refrain, about 33 seconds. Select it in Jukebox or as the group-party tune. Update all participating buzzers. The short De âlde Friezen remains the default; Stop interrupts immediately."
+  },
+  "firmware": {
+   "Zapper REV A": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.14.2/zapper-reva-1.14.2-ota.bin",
+    "sha256": "32ec001196204230380dbbbe92232fcf7a2f6ff2e9af598357d7be08cd21e0ca",
+    "grootte": 2574592
+   },
+   "ESP32-C6-Zero + MOSFET": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.14.2/lamp01-1.14.2-ota.bin",
+    "sha256": "5be22b3c104aff051ba172eb90b08dfad18f70a0b04d3ef7c6fd4d7235e08a35",
+    "grootte": 2550160
+   }
+  },
+  "fabriek": {
+   "Zapper REV A": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.14.2/zapper-reva-1.14.2-factory.bin",
+    "sha256": "242ab986290e2245d9a7f09626685e1cdf02b39496e13ebd976422e9c517adc5",
+    "grootte": 2705664
+   },
+   "ESP32-C6-Zero + MOSFET": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.14.2/lamp01-1.14.2-factory.bin",
+    "sha256": "5542f69658ce47a72a1a85c5b37699edd512f42d407fb724597e232783f871cc",
+    "grootte": 2615696
+   }
+  }
+ },
+ {
+  "versie": "1.14.1",
+  "datum": "2026-10-17",
+  "notities": {
+   "nl": "Zapper Screen heeft nu zichtbare NL- en EN-knoppen. Wissel direct tussen Nederlands en Engels; je keuze blijft in deze browser bewaard. De titel blijft op telefoons vrij van de hoekknoppen. Inclusief de USB-flasherreparatie voor nieuwe lampen.",
+   "en": "Zapper Screen now has visible NL and EN buttons. Switch instantly between Dutch and English; this browser remembers your choice. On phones, the heading stays clear of the corner controls. Includes the USB flasher fix for new lamps."
+  },
+  "firmware": {
+   "Zapper REV A": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.14.1/zapper-reva-1.14.1-ota.bin",
+    "sha256": "7ed6c7c5f8131e73cf4d482f8c1a7efade9c314530cd73770ce1f158abdecd41",
+    "grootte": 2574144
+   },
+   "ESP32-C6-Zero + MOSFET": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.14.1/lamp01-1.14.1-ota.bin",
+    "sha256": "3d3674035efadc2cf4469bbd9183eb4cb7ed2e6221d8495574af90a581c18b96",
+    "grootte": 2549712
+   }
+  },
+  "fabriek": {
+   "Zapper REV A": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.14.1/zapper-reva-1.14.1-factory.bin",
+    "sha256": "1466ceebac78658dfc043c752abb747695e2ad3afec60820a18404f8d401bbc2",
+    "grootte": 2705216
+   },
+   "ESP32-C6-Zero + MOSFET": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.14.1/lamp01-1.14.1-factory.bin",
+    "sha256": "682e74b3d78b5ce44de61fe4fb0d3e69decc9f7960d0e4cf33bc72da3624675c",
+    "grootte": 2615248
+   }
+  }
+ },
+ {
+  "versie": "1.14.0",
+  "datum": "2026-10-17",
+  "notities": {
+   "nl": "Groepsfeest werkt met 2 tot 32 lampen en controleert ontvanger, tijd, herhaling en nachtrust. Control toont bereikbaarheid, gedeelde instellingen en resultaten per lamp; Jukebox meldt geaccepteerd, overgeslagen of mislukt. Duidelijkere mobiele menu’s en USB-herstel met behoud van identiteit. Actuele handleiding en voorbeelden.",
+   "en": "Group party supports 2 to 32 lamps with recipient, freshness, replay and quiet-hours checks. Control shows reachability, shared settings and per-lamp results; Jukebox distinguishes accepted, skipped and failed actions. Clearer mobile menus and USB recovery that preserves identity. Updated manual and examples."
+  },
+  "firmware": {
+   "Zapper REV A": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.14.0/zapper-reva-1.14.0-ota.bin",
+    "sha256": "ea3c9611c2be87529cebc89598958cd2ccc7c52740040fe2c2b56fee5fce3e25",
+    "grootte": 2572960
+   },
+   "ESP32-C6-Zero + MOSFET": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.14.0/lamp01-1.14.0-ota.bin",
+    "sha256": "d069e6de7f62c3222e7717975c32e465bc1a61b2aba159e9ffc19ea0cadbf6ab",
+    "grootte": 2548528
+   }
+  },
+  "fabriek": {
+   "Zapper REV A": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.14.0/zapper-reva-1.14.0-factory.bin",
+    "sha256": "a3fa6141b25cf1d841d550be65cc4ca8d566578a4dd72f2df3a7abb3a81a54e8",
+    "grootte": 2704032
+   },
+   "ESP32-C6-Zero + MOSFET": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.14.0/lamp01-1.14.0-factory.bin",
+    "sha256": "dd782f87358ee46887331867af9dda64b5184db743f2570c04d1ab85f0f6d540",
+    "grootte": 2614064
+   }
+  }
+ },
+ {
+  "versie": "1.13.0",
+  "datum": "2026-10-17",
+  "notities": {
+   "nl": "• Zapper Control zit in elke lamp op /control: beheer meerdere lampen vanuit je browser, zonder installatie.\n• Volg de eigen lamp, maximaal vier andere accounts of alle zaps; de lampsleutel blijft behouden. Ongeldige invoer laat de instellingen intact.\n• Zapper Screen staat op /screen; de oude adressen blijven werken.\n• USB-flasher: één keer verbinden, daarna Firmware en Wifi als aparte tegels. Wifi zoeken werkt ook in setupstand en bij een onbereikbaar opgeslagen netwerk.\n• Betrouwbaardere USB-opdrachten en herstel na opnieuw aansluiten van dezelfde lamp. Handleiding en website bijgewerkt.",
+   "en": "• Zapper Control lives in every lamp at /control: manage several lamps in your browser, with nothing to install.\n• Follow the lamp itself, up to four other accounts or every zap, while keeping the lamp key. Invalid input leaves settings unchanged.\n• Zapper Screen lives at /screen; old addresses still work.\n• USB flasher: connect once, then use separate Firmware and Wi-Fi tiles. Network scanning works in setup mode and when the saved network is unreachable.\n• More reliable USB requests and recovery after reconnecting the same lamp. Manual and website updated."
+  },
+  "firmware": {
+   "Zapper REV A": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.13.0/zapper-reva-1.13.0-ota.bin",
+    "sha256": "52f4912a6f6b64f3fd27212a5c9ad1346252e20501bf7562bd6841d591bdebf4",
+    "grootte": 2539696
+   },
+   "ESP32-C6-Zero + MOSFET": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.13.0/lamp01-1.13.0-ota.bin",
+    "sha256": "8e30a40aa461238adbd6178995cf0092429b91300c592437dc66f551df1e6741",
+    "grootte": 2515440
+   }
+  },
+  "fabriek": {
+   "Zapper REV A": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.13.0/zapper-reva-1.13.0-factory.bin",
+    "sha256": "3e472f1cdcb5d6bfa57b34cc2e13a5462b7f458e9abf55a7ded6f7187fbc1dd6",
+    "grootte": 2670768
+   },
+   "ESP32-C6-Zero + MOSFET": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.13.0/lamp01-1.13.0-factory.bin",
+    "sha256": "55b89c6cb86333e3b97e481e9e5da9ec7892c2affcf96153a3058cb471a8a1dc",
+    "grootte": 2580976
+   }
+  }
+ },
+ {
   "versie": "1.12.3",
   "datum": "2026-10-16",
   "notities": {
