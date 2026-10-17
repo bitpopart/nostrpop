@@ -11,7 +11,7 @@
 <meta property="og:image" content="https://bitpopart.com/zapper-app/beeld/icon-512.png">
 <meta property="og:url" content="https://bitpopart.com/zapper/">
 <meta property="og:type" content="website">
-<meta name="twitter:card" content="summary">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="beeld/logo.svg" type="image/svg+xml">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="beeld/apple-touch-icon.png">
@@ -78,6 +78,15 @@ h1 span{background:var(--brand);-webkit-background-clip:text;background-clip:tex
 .lamp img{position:relative;height:320px;width:auto;filter:drop-shadow(0 0 3px rgba(251,200,8,.85)) drop-shadow(0 0 22px rgba(255,127,0,.6)) drop-shadow(0 0 46px rgba(157,0,249,.55));animation:zap 9s ease-in-out infinite}
 @keyframes adem{50%{opacity:.55;transform:scale(.94)}}
 @keyframes zap{0%,82%,100%{opacity:1}84%,88%,92%{opacity:.25}86%,90%{opacity:1}}
+
+/* product photos */
+.productfotos{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.productfotos figure{margin:0;overflow:hidden;border:1px solid var(--hair);border-radius:22px;background:var(--glass)}
+.productfotos a{display:block;line-height:0}
+.productfotos img{display:block;width:100%;height:clamp(220px,30vw,340px);object-fit:cover;transition:transform .25s}
+.productfotos a:hover img{transform:scale(1.025)}
+.productfotos figcaption{padding:14px 18px;color:var(--soft);font-size:14px}
+@media(max-width:700px){.productfotos{grid-template-columns:1fr}.productfotos img{height:auto;aspect-ratio:3/2;object-fit:cover}}
 
 /* sections */
 section{margin-bottom:64px}
@@ -206,17 +215,26 @@ ol.stappen.verder{counter-reset:s 2;margin-top:16px}
  <span class="taal"><button data-taal="nl">NL</button><button data-taal="en">EN</button></span>
 </div>
 
-<nav class="productnav" aria-label="ZAPPER"><a href="#start" data-t="navStart"></a><a href="#control">Control</a><a href="#screen">Screen</a><a href="flash/">USB-flasher</a><a href="handleiding.pdf" data-t="handleiding"></a></nav>
+<nav class="productnav" aria-label="ZAPPER"><a href="#start" data-t="navStart"></a><a href="#zapper" data-t="fotoNav"></a><a href="#control">Control</a><a href="#screen">Screen</a><a href="https://bitpopart.com/zapper/flash/">USB-flasher</a><a href="handleiding.pdf" data-t="handleiding"></a></nav>
 <div class="held">
  <div>
   <p class="tag" data-t="tag"></p>
   <h1><span data-t="titel1"></span><br><span data-t="titel2"></span></h1>
   <p class="lead" data-t="lead"></p>
-  <div class="knoppen"><a class="knop" href="#scannen" data-t="naarScan"></a><a class="knop licht" href="flash/" data-t="naarFlash"></a><a class="knop licht" href="handleiding.pdf" data-t="handleiding"></a></div>
+  <div class="knoppen"><a class="knop" href="#scannen" data-t="naarScan"></a><a class="knop licht" href="https://bitpopart.com/zapper/flash/" data-t="naarFlash"></a><a class="knop licht" href="handleiding.pdf" data-t="handleiding"></a></div>
   <p class="klein" id="versieRegel"></p>
  </div>
  <div class="lamp" aria-hidden="true"><img src="beeld/lamp-aan.svg" alt=""></div>
 </div>
+
+<section id="zapper">
+ <h2 data-t="fotoKop"></h2>
+ <p class="sub" data-t="fotoSub"></p>
+ <div class="productfotos">
+  <figure><a href="beeld/zapper-behuizing-gesloten.jpg" target="_blank" rel="noopener" aria-label="ZAPPER foto: gesloten behuizing"><img src="beeld/zapper-behuizing-gesloten.jpg" width="1536" height="1024" loading="lazy" data-t-alt="fotoGeslotenAlt" alt=""></a><figcaption data-t="fotoGesloten"></figcaption></figure>
+  <figure><a href="beeld/zapper-pcb-open.jpg" target="_blank" rel="noopener" aria-label="ZAPPER foto: open behuizing"><img src="beeld/zapper-pcb-open.jpg" width="1448" height="1086" loading="lazy" data-t-alt="fotoOpenAlt" alt=""></a><figcaption data-t="fotoOpen"></figcaption></figure>
+ </div>
+</section>
 
 <section>
  <h2 data-t="drieKop"></h2>
@@ -227,7 +245,7 @@ ol.stappen.verder{counter-reset:s 2;margin-top:16px}
   <div class="kaart"><div class="icoon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>
    <h3>Zapper Screen</h3><p data-t="d2"></p><a class="waar" href="#screen" data-t="d2w"></a></div>
   <div class="kaart"><div class="icoon"><svg viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></div>
-   <h3 data-t="d3k"></h3><p data-t="d3"></p><a class="waar" href="flash/" data-t="d3w"></a></div>
+   <h3 data-t="d3k"></h3><p data-t="d3"></p><a class="waar" href="https://bitpopart.com/zapper/flash/" data-t="d3w"></a></div>
  </div>
 </section>
 
@@ -274,7 +292,7 @@ ol.stappen.verder{counter-reset:s 2;margin-top:16px}
  <p class="sub" data-t="flashSub"></p>
  <div class="kaart flashkaart"><div class="flashicoon"><svg viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></div>
   <div><ol class="stappen kort" id="stFlash"></ol>
-   <div class="knoppen" style="margin-top:16px"><a class="knop" href="flash/"><svg viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg><span data-t="flashKnop"></span></a></div></div></div>
+   <div class="knoppen" style="margin-top:16px"><a class="knop" href="https://bitpopart.com/zapper/flash/"><svg viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg><span data-t="flashKnop"></span></a></div></div></div>
 </section>
 
 <section id="nieuw">
@@ -316,6 +334,12 @@ ol.stappen.verder{counter-reset:s 2;margin-top:16px}
 <script>
 const T={
  navStart:["Aan de slag","Get started"],
+ fotoNav:["De ZAPPER","The ZAPPER"],
+ fotoKop:["Zo ziet de ZAPPER eruit","Meet the ZAPPER"],
+ fotoSub:["Een echte ZAPPER REV A, met de behuizing dicht en open.","A real ZAPPER REV A, with the case closed and open."],
+ fotoGesloten:["Gesloten behuizing","Closed case"],fotoOpen:["Binnenkant met REV A-print","Inside with REV A board"],
+ fotoGeslotenAlt:["Oranje ZAPPER-behuizing met gesloten deksel","Orange ZAPPER with its case closed"],
+ fotoOpenAlt:["Open oranje behuizing met paarse ZAPPER REV A-print","Open orange case with purple ZAPPER REV A board"],
  tag:["ZAPPER zap-lamp","ZAPPER zap lamp"],
  titel1:["Elke zap","Every zap"],titel2:["licht op.","lights up."],
  lead:["Een lamp die oplicht bij elke zap op nostr. Alles wat je nodig hebt zit in de lamp zelf: open hem in je browser en je beheert al je Zappers. Geen app, geen account, niets te installeren.","A lamp that lights up on every zap on nostr. Everything you need is in the lamp itself: open it in your browser and you manage all your Zappers. No app, no account, nothing to install."],
@@ -332,7 +356,7 @@ const T={
  d3w:["Op deze site: Open de flasher","On this site: Open the flasher"],
  startKop:["Zo begin je","Get started"],
  startSub:["Eén keer, voor je eerste lamp. Daarna doe je alles vanuit Zapper Control.","Once, for your first lamp. After that you do everything from Zapper Control."],
- stStart:[["<b>Wifi.</b> Sluit de lamp met USB aan op je computer en kies je netwerk in de <a href=\"flash/\">USB-flasher</a>. Zonder computer: verbind je telefoon met het netwerk <code>zapper-xxxx-setup</code> van de lamp en kies daar je wifi.","<b>Wi-Fi.</b> Connect the lamp to your computer with USB and choose your network in the <a href=\"flash/\">USB flasher</a>. Without a computer: connect your phone to the lamp's network <code>zapper-xxxx-setup</code> and choose your Wi-Fi there."],
+ stStart:[["<b>Wifi.</b> Sluit de lamp met USB aan op je computer en kies je netwerk in de <a href=\"https://bitpopart.com/zapper/flash/\">USB-flasher</a>. Zonder computer: verbind je telefoon met het netwerk <code>zapper-xxxx-setup</code> van de lamp en kies daar je wifi.","<b>Wi-Fi.</b> Connect the lamp to your computer with USB and choose your network in the <a href=\"https://bitpopart.com/zapper/flash/\">USB flasher</a>. Without a computer: connect your phone to the lamp's network <code>zapper-xxxx-setup</code> and choose your Wi-Fi there."],
   ["<b>Openen.</b> Open <code>http://zapper01.local</code> in je browser (met de naam van je lamp), op een toestel in dezelfde wifi. Op Android werkt alleen het adres met cijfers, bijvoorbeeld <code>http://192.168.1.20</code>.","<b>Open.</b> Open <code>http://zapper01.local</code> in your browser (with your lamp's name), on a device on the same Wi-Fi. On Android only the address in numbers works, for example <code>http://192.168.1.20</code>."],
   ["<b>Inloggen.</b> Het wachtwoord is <b>Bitcoin21</b>. Kies daarna je eigen wachtwoord; het overzicht herinnert je eraan.","<b>Log in.</b> The password is <b>Bitcoin21</b>. Then choose your own password; the overview reminds you."],
   ["<b>Zappen.</b> Vul je lightning-adres in en publiceer het profiel (Overzicht, Aan de slag). Zap de lamp: hij licht op.","<b>Zap.</b> Fill in your lightning address and publish the profile (Overview, Getting started). Zap the lamp: it lights up."]],
@@ -413,6 +437,7 @@ let toestel=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform===
 function teken(){
  document.documentElement.lang=taal;
  document.querySelectorAll('[data-t]').forEach(e=>{const v=T[e.dataset.t];if(v)e.textContent=v[i()]});
+ document.querySelectorAll('[data-t-alt]').forEach(e=>{const v=T[e.dataset.tAlt];if(v)e.alt=v[i()]});
  document.querySelectorAll('[data-taal]').forEach(b=>b.classList.toggle('actief',b.dataset.taal===taal));
  $('stStart').innerHTML=lijst(T.stStart);$('stControl').innerHTML=lijst(T.stControl);$('stScreen').innerHTML=lijst(T.stScreen);
  $('stToestel').innerHTML=lijst(T.toestel[toestel]);$('stFlash').innerHTML=lijst(T.stFlash);
