@@ -1,0 +1,116 @@
+name: Zapper mirror auto-update
+
+on:
+  schedule:
+    - cron: '23 */6 * * *'      # every 6 hours
+  workflow_dispatch:            # or run manually from the Actions tab
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: zapper-mirror
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Compare upstream, mirror and live versions
+        id: compare
+        run: |
+          set -o pipefail
+          UP=$(curl -fsSL --retry 2 --retry-delay 5 https://jaccoelektro.github.io/zapper-updates/versies.json \
+            | python3 -c "import sys,json;print(json.load(sys.stdin)[0]['versie'])")
+          MIRROR=$(python3 -c "import json;print(json.load(open('public/zapper-app/versies.json'))[0]['versie'])")
+          LIVE=$(curl -fsSL --retry 2 --retry-delay 5 https://bitpopart.com/zapper-app/versies.json \
+            | python3 -c "import sys,json;print(json.load(sys.stdin)[0]['versie'])" 2>/dev/null || echo unknown)
+          echo "upstream=$UP mirror=$MIRROR live=$LIVE"
+          echo "UP=$UP" >> "$GITHUB_OUTPUT"
+          [ "$UP" != "$MIRROR" ] && echo "needs_update=true"  >> "$GITHUB_OUTPUT" || echo "needs_update=false" >> "$GITHUB_OUTPUT"
+          if [ "$MIRROR" != "$LIVE" ] && [ "$LIVE" != "unknown" ]; then
+            echo "needs_deploy=true" >> "$GITHUB_OUTPUT"   # self-heal: mirror is ahead of what is live
+          else
+            echo "needs_deploy=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Refresh mirror files from upstream
+        if: steps.compare.outputs.needs_update == 'true'
+        run: |
+          set -euxo pipefail
+          UP="${{ steps.compare.outputs.UP }}"
+          rm -rf /tmp/zapper-up
+          git clone --depth 1 --branch "v${UP}" https://github.com/JaccoElektro/zapper-updates.git /tmp/zapper-up 2>/dev/null \
+            || git clone --depth 1 https://github.com/JaccoElektro/zapper-updates.git /tmp/zapper-up
+          UP_COMMIT=$(git -C /tmp/zapper-up rev-parse --short HEAD)
+          echo "UP_COMMIT=${UP_COMMIT}" >> "$GITHUB_ENV"
+          rm -rf public/zapper-app && mkdir -p public/zapper-app
+          rsync -a --exclude='.git' --exclude='.github' --exclude='.nojekyll' /tmp/zapper-up/ public/zapper-app/
+          # Keep our localized QR (upstream's QR encodes their own site, must not replace ours)
+          git checkout -- public/zapper-app/beeld/qr-site.svg
+          # Localize og:image / og:url and drop any leftover upstream URL refs
+          sed -i 's#<meta property="og:image" content="[^"]*">#<meta property="og:image" content="https://bitpopart.com/zapper-app/beeld/icon-512.png">#' public/zapper-app/index.html
+          sed -i 's#<meta property="og:url" content="[^"]*">#<meta property="og:url" content="https://bitpopart.com/zapper/">#' public/zapper-app/index.html
+          sed -i 's#https://jaccoelektro.github.io/zapper-updates/#https://bitpopart.com/zapper/#g' public/zapper-app/index.html
+          # Update the provenance comment in Zapper.tsx
+          sed -i "s/upstream commit [0-9a-f]\{7,\}, v[0-9][0-9.]*/upstream commit ${UP_COMMIT}, v${UP}/" src/pages/Zapper.tsx
+          echo "--- sanity: leftover upstream URL refs in index.html ---"
+          grep -c "jaccoelektro.github.io" public/zapper-app/index.html || true
+
+      - name: Commit and push mirror to main
+        if: steps.compare.outputs.needs_update == 'true'
+        run: |
+          set -euxo pipefail
+          UP="${{ steps.compare.outputs.UP }}"
+          git add public/zapper-app src/pages/Zapper.tsx
+          if git diff --cached --quiet; then
+            echo "Mirror already matches upstream after localization; nothing to commit."
+          else
+            git -c user.name="BitBot MANAGER" \
+                -c user.email="2e121d0e7fb05c2035812e5d2dfcf17c856d6b64e7138af459b319d3bf79d76e@bitpopart.communities.buzz.xyz" \
+                commit -m "Zapper: mirror upstream v${UP} (auto)"
+            git push origin main
+          fi
+
+      # --- deploy (same steps as deploy.yml, kept in sync) ---
+      - name: Setup Node.js
+        if: steps.compare.outputs.needs_update == 'true' || steps.compare.outputs.needs_deploy == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        if: steps.compare.outputs.needs_update == 'true' || steps.compare.outputs.needs_deploy == 'true'
+        run: npm ci || npm install
+
+      - name: TypeScript check
+        if: steps.compare.outputs.needs_update == 'true' || steps.compare.outputs.needs_deploy == 'true'
+        continue-on-error: true
+        run: npx tsc -p tsconfig.app.json --noEmit
+
+      - name: Lint
+        if: steps.compare.outputs.needs_update == 'true' || steps.compare.outputs.needs_deploy == 'true'
+        continue-on-error: true
+        run: npx eslint
+
+      - name: Build
+        if: steps.compare.outputs.needs_update == 'true' || steps.compare.outputs.needs_deploy == 'true'
+        run: npm run build:ci
+
+      - name: Ensure .nojekyll exists
+        if: steps.compare.outputs.needs_update == 'true' || steps.compare.outputs.needs_deploy == 'true'
+        run: touch dist/.nojekyll
+
+      - name: Deploy to gh-pages branch
+        if: steps.compare.outputs.needs_update == 'true' || steps.compare.outputs.needs_deploy == 'true'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          cname: bitpopart.com
