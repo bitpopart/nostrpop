@@ -1,0 +1,602 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>Zapper via USB</title>
+<meta name="description" content="Firmware en wifi voor je ZAPPER, rechtstreeks vanuit je browser.">
+<link rel="icon" href="../beeld/logo.svg" type="image/svg+xml">
+<meta name="theme-color" content="#0b0517">
+<style>
+:root{--ink:#f6f1ff;--soft:#c9bfdc;--quiet:#968cab;--hair:rgba(255,255,255,.09);--glass:rgba(32,18,52,.62);
+  --purple:#9d00f9;--orange:#ff7f00;--yellow:#fbc808;--green:#7ee8a0;--knop:linear-gradient(135deg,#9d00f9,#ed1f33 120%);
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",Roboto,sans-serif;--display:"SF Pro Display",-apple-system,"Inter","Segoe UI",sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,monospace}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;color:var(--ink);font:16px/1.5 var(--font);-webkit-font-smoothing:antialiased;
+  background:radial-gradient(900px 560px at 50% -12%,rgba(157,0,249,.36),transparent 62%),radial-gradient(800px 520px at 100% 110%,rgba(255,127,0,.2),transparent 60%),#0b0517;background-attachment:fixed}
+.wrap{max-width:720px;margin:0 auto;padding:max(18px,env(safe-area-inset-top)) 20px 56px}
+.balk{display:flex;justify-content:space-between;align-items:center}
+.balk a{color:var(--soft);text-decoration:none;font-weight:600;font-size:14px}.balk a:hover{color:#fff}
+.taal{display:inline-flex;padding:3px;border-radius:99px;background:rgba(255,255,255,.06);border:1px solid var(--hair)}
+.taal button{border:0;background:none;color:var(--soft);font:650 13px var(--font);padding:6px 12px;border-radius:99px;cursor:pointer}
+.taal button.actief{background:var(--knop);color:#fff}
+.knop{display:inline-flex;align-items:center;justify-content:center;gap:10px;border:0;cursor:pointer;color:#fff;background:var(--knop);text-decoration:none;
+  font:700 16px var(--font);padding:13px 24px;border-radius:14px;min-height:50px;box-shadow:0 12px 30px -10px rgba(157,0,249,.95);transition:filter .15s,transform .1s}
+.knop:hover{filter:brightness(1.08)}.knop:active{transform:scale(.98)}
+.knop:disabled{opacity:.45;cursor:default;filter:none;transform:none;box-shadow:none}
+.knop.groot{width:100%;font-size:18px;min-height:58px;border-radius:16px}
+.knop.zacht{background:rgba(255,255,255,.09);box-shadow:none}
+.link{border:0;background:none;color:var(--soft);font:600 14px var(--font);cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:3px}
+.link:hover{color:#fff}
+.verborgen{display:none!important}
+
+/* start */
+.begin{text-align:center;padding:40px 0 10px;min-height:calc(100vh - 150px);display:flex;flex-direction:column;justify-content:center}
+.begin .lamp{position:relative;width:220px;height:220px;margin:0 auto 6px;display:grid;place-items:center}
+.begin .lamp::before{content:"";position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle,rgba(251,200,8,.32),rgba(255,127,0,.14) 45%,rgba(157,0,249,.12) 62%,transparent 72%);animation:adem 4.5s ease-in-out infinite}
+.begin .lamp img{position:relative;height:190px;filter:drop-shadow(0 0 3px rgba(251,200,8,.8)) drop-shadow(0 0 24px rgba(255,127,0,.55)) drop-shadow(0 0 46px rgba(157,0,249,.5))}
+@keyframes adem{50%{opacity:.55;transform:scale(.94)}}
+.begin h1{margin:8px 0 8px;font:800 clamp(32px,6vw,48px)/1.05 var(--display);letter-spacing:-.04em;
+  background:linear-gradient(100deg,#fff 0%,var(--yellow) 42%,var(--orange) 68%,#ec4899 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.begin p{margin:0 auto 26px;color:var(--soft);max-width:30em}
+.begin .knop{min-width:260px;font-size:18px;min-height:58px}
+.begin .klein{margin-top:16px;font-size:13.5px;color:var(--quiet)}
+.melding{margin:18px auto 0;padding:12px 16px;border-radius:14px;font-size:14px;max-width:520px}
+.melding.let{background:rgba(255,127,0,.12);border:1px solid rgba(255,127,0,.35);color:#ffd5a8}
+.melding.fout{background:rgba(237,31,51,.12);border:1px solid rgba(237,31,51,.35);color:#ffb3ba}
+
+/* the lamp */
+.lampkaart{display:flex;align-items:center;gap:18px;margin:26px 0 16px;padding:18px 20px;border-radius:24px;background:var(--glass);border:1px solid var(--hair);
+  -webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 24px 60px -30px rgba(0,0,0,.85)}
+.lampkaart img{height:76px;width:auto;flex:none;filter:drop-shadow(0 0 3px rgba(251,200,8,.85)) drop-shadow(0 0 16px rgba(255,127,0,.55))}
+.lampkaart .wie{flex:1;min-width:0}
+.lampkaart b{display:block;font:800 26px/1.15 var(--display);letter-spacing:-.03em}
+.lampkaart .sub{color:var(--soft);font-size:14.5px}
+.lampkaart .mac{font:12px var(--mono);color:var(--quiet);margin-top:2px}
+
+/* the two tiles */
+.tegels{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.tegel{position:relative;display:flex;flex-direction:column;gap:6px;padding:20px;border-radius:22px;background:var(--glass);border:1px solid var(--hair);cursor:pointer;
+  text-align:left;color:var(--ink);font:inherit;transition:border-color .2s,box-shadow .2s,transform .1s}
+.tegel:hover{border-color:rgba(176,64,255,.45)}
+.tegel.open{border-color:rgba(176,64,255,.75);box-shadow:0 0 0 1px rgba(176,64,255,.4),0 22px 50px -26px rgba(157,0,249,.9)}
+.tegel:disabled{cursor:default;opacity:.55}.tegel:disabled:hover{border-color:var(--hair)}
+.tegel .ic{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;background:linear-gradient(135deg,rgba(157,0,249,.5),rgba(255,127,0,.32));margin-bottom:6px}
+.tegel .ic svg{width:23px;height:23px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tegel h2{margin:0;font:750 19px var(--display);letter-spacing:-.02em}
+.tegel .stand{font-size:14.5px;color:var(--soft)}
+.tegel .stand.goed{color:var(--green)}.tegel .stand.let{color:#ffc98a}
+.tegel .pijl{position:absolute;right:18px;top:20px;color:var(--quiet);font-size:20px;transition:transform .2s}
+.tegel.open .pijl{transform:rotate(90deg);color:#fff}
+
+/* the panel under the tiles */
+.paneel{margin-top:14px;padding:22px;border-radius:22px;background:rgba(22,12,38,.78);border:1px solid rgba(176,64,255,.3)}
+.paneel h3{margin:0 0 4px;font:750 20px var(--display);letter-spacing:-.02em}
+.paneel .uitleg{margin:0 0 16px;color:var(--soft);font-size:14.5px}
+.chip{display:inline-block;padding:4px 11px;border-radius:99px;font-size:12.5px;font-weight:650;background:rgba(255,255,255,.08);color:var(--soft)}
+.chip.groen{background:rgba(95,214,138,.15);color:var(--green)}
+.voortgang{height:10px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:14px}
+.voortgang i{display:block;height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,#9d00f9,#ec4899,#ff7f00,#fbc808);transition:width .3s}
+.status{margin-top:12px;font-size:14.5px;color:var(--soft);min-height:22px}
+.status:empty{display:none}.status.fout{color:#ffb3ba}.status .goed{color:var(--green);font-weight:650}
+details.meer{margin-top:14px;font-size:14px;color:var(--soft)}
+details.meer summary{cursor:pointer;color:var(--soft);font-weight:600;list-style:none}
+details.meer summary::-webkit-details-marker{display:none}
+details.meer summary::before{content:"›";display:inline-block;margin-right:6px;transition:transform .2s}
+details.meer[open] summary::before{transform:rotate(90deg)}
+.opties{display:grid;gap:12px;margin-top:12px}
+.opties label.kop{display:block;font-size:12.5px;font-weight:650;color:var(--quiet);margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em}
+select,input{width:100%;padding:12px 14px;border-radius:13px;border:1px solid rgba(255,255,255,.12);background:rgba(8,3,18,.55);color:var(--ink);font:15px var(--font)}
+select{-webkit-appearance:none;appearance:none;padding-right:38px;background-image:url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath fill='%23c9bfdc' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;background-size:11px}
+select:focus,input:focus{outline:0;border-color:#b84dff;box-shadow:0 0 0 4px rgba(157,0,249,.3)}
+.keuze{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border-radius:13px;background:rgba(0,0,0,.28);border:1px solid var(--hair)}
+.keuze button{border:0;background:none;color:var(--soft);font:650 14px var(--font);padding:9px 6px;border-radius:10px;cursor:pointer}
+.keuze button.actief{background:var(--knop);color:#fff}
+.vink{display:flex;gap:10px;align-items:flex-start;font-size:14px;color:var(--soft);cursor:pointer}
+.vink input{width:auto;margin-top:3px;accent-color:var(--purple)}
+
+/* Wi-Fi list, like a phone */
+.netten{border-radius:16px;overflow:hidden;border:1px solid var(--hair);background:rgba(0,0,0,.22)}
+.net{display:flex;align-items:center;gap:12px;width:100%;padding:13px 16px;border:0;border-bottom:1px solid var(--hair);background:none;color:var(--ink);font:15px var(--font);cursor:pointer;text-align:left}
+.net:last-child{border-bottom:0}
+.net:hover{background:rgba(157,0,249,.12)}
+.net.gekozen{background:rgba(157,0,249,.22)}
+.net .naam{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.net .vinkje{width:18px;color:var(--green);font-weight:800}
+.net svg{width:20px;height:20px;flex:none}
+.net .slot{width:14px;height:14px;fill:none;stroke:var(--quiet);stroke-width:2.2;stroke-linecap:round}
+.net.ander{color:var(--soft)}
+.zoeken{padding:18px;text-align:center;color:var(--soft);font-size:14.5px}
+.draai{display:inline-block;width:15px;height:15px;border-radius:50%;border:2px solid rgba(255,255,255,.25);border-top-color:var(--orange);animation:draai .8s linear infinite;vertical-align:-3px;margin-right:6px}
+@keyframes draai{to{transform:rotate(360deg)}}
+.form{display:grid;gap:12px;margin-top:14px}
+.wwrij{position:relative}.wwrij input{padding-right:52px}
+.oog{position:absolute;right:8px;top:50%;transform:translateY(-50%);border:0;background:none;color:var(--soft);cursor:pointer;padding:8px;font-size:13px;font-weight:650}
+.naamrij{font-size:14px;color:var(--soft)}
+.wacht{display:flex;align-items:center;gap:10px;padding:14px 16px;border-radius:14px;background:rgba(0,0,0,.22);border:1px solid var(--hair);color:var(--soft);font-size:14.5px;margin-bottom:14px}
+.klaarblok{text-align:center;padding:8px 0 2px}
+.klaarblok .groot{font:800 22px var(--display);color:var(--green);margin-bottom:12px}
+
+.voet{text-align:center;margin-top:34px;font-size:13px;color:var(--quiet)}
+.voet a{color:var(--soft)}
+@media (max-width:560px){.wrap{padding-left:16px;padding-right:16px}.lampkaart{flex-wrap:wrap;gap:14px;padding:16px}.lampkaart img{height:58px}.lampkaart b{font-size:22px}
+  #ander{flex-basis:100%;text-align:left;padding-left:66px}.tegels{gap:10px}.tegel{padding:16px}.tegel h2{font-size:17px}.tegel .stand{font-size:13.5px}.tegel .pijl{right:14px;top:16px}.paneel{padding:18px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+ <div class="balk"><a href="../" id="terug"></a><span class="taal"><button data-taal="nl">NL</button><button data-taal="en">EN</button></span></div>
+
+ <!-- not connected yet -->
+ <section class="begin" id="begin">
+  <div class="lamp"><img src="../beeld/lamp-aan.svg" alt=""></div>
+  <h1 data-t="titel"></h1>
+  <p data-t="sub"></p>
+  <button class="knop" id="verbind" data-t="verbind"></button>
+  <p class="klein" data-t="kabel"></p>
+  <div class="melding let verborgen" id="nietOndersteund"></div>
+  <div class="melding fout verborgen" id="beginFout"></div>
+ </section>
+
+ <!-- connected -->
+ <section class="verborgen" id="verbonden">
+  <div class="lampkaart"><img src="../beeld/lamp-aan.svg" alt="" id="lampImg"><div class="wie"><b id="lampNaam"></b><div class="sub" id="lampSub"></div><div class="mac" id="lampMac"></div></div>
+   <button class="link" id="ander" data-t="ander"></button></div>
+
+  <div class="tegels">
+   <button class="tegel" id="tFirmware"><span class="pijl">›</span><span class="ic"><svg viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></span>
+    <h2 data-t="firmware"></h2><span class="stand" id="fStand"></span></button>
+   <button class="tegel" id="tWifi"><span class="pijl">›</span><span class="ic"><svg viewBox="0 0 24 24"><path d="M2 9a15 15 0 0 1 20 0M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19.3" r="1"/></svg></span>
+    <h2 data-t="wifi"></h2><span class="stand" id="wStand"></span></button>
+  </div>
+
+  <!-- firmware panel -->
+  <div class="paneel verborgen" id="pFirmware">
+   <h3 id="fKop"></h3>
+   <p class="uitleg" id="fUitleg"></p>
+   <span class="chip" id="fChip"></span>
+   <details class="meer" id="fMeer"><summary data-t="meer"></summary>
+    <div class="opties">
+     <div><label class="kop" data-t="versie"></label><select id="versie"></select></div>
+     <div><label class="kop" data-t="print"></label><div class="keuze"><button data-bord="zapper-reva" data-t="bordReva"></button><button data-bord="lamp01" data-t="bordLamp01"></button></div></div>
+     <label class="vink"><input type="checkbox" id="wis"><span><b data-t="wisKop"></b><br><span data-t="wisUit"></span></span></label>
+    </div>
+   </details>
+   <div style="margin-top:18px"><button class="knop groot" id="flash"></button></div>
+   <div class="voortgang verborgen" id="balk"><i id="balkVul"></i></div>
+   <div class="status" id="fStatus"></div>
+  </div>
+
+  <!-- Wi-Fi panel -->
+  <div class="paneel verborgen" id="pWifi">
+   <div id="wEerst" class="verborgen"><h3 id="weKop"></h3><p class="uitleg" id="weUit"></p><div id="weActie"></div></div>
+   <div id="wNormaal">
+   <h3 data-t="wKop"></h3>
+   <p class="uitleg" data-t="wUitleg"></p>
+   <div class="netten" id="netten"></div>
+   <div class="form verborgen" id="wForm">
+    <input id="wSsidHand" class="verborgen" data-t-ph="wHand" autocomplete="off" spellcheck="false">
+    <div class="wwrij"><input id="wPass" type="password" data-t-ph="wWachtwoord" autocomplete="off" spellcheck="false"><button class="oog" id="oog" type="button" data-t="toon"></button></div>
+    <div class="naamrij"><span data-t="wNaamLabel"></span> <b id="wNaamTekst"></b> · <button class="link" id="wNaamKnop" data-t="wijzig"></button>
+     <input id="wHost" class="verborgen" autocomplete="off" spellcheck="false" style="margin-top:8px"></div>
+    <button class="knop groot" id="wBewaar" data-t="wVerbind"></button>
+   </div>
+   </div>
+   <div class="status" id="wStatus"></div>
+  </div>
+ </section>
+
+ <p class="voet"><span data-t="voet"></span> <a href="https://github.com/espressif/esptool-js" target="_blank" rel="noopener">esptool-js</a> · <span data-t="veilig"></span></p>
+</div>
+
+<script type="module">
+import {ESPLoader, Transport} from './esptool/bundle.js';
+
+const T={
+ terug:["‹ Zapper","‹ Zapper"],titel:["Zapper via USB","Zapper over USB"],
+ sub:["Zet de nieuwste firmware op je ZAPPER, of stel de wifi in. Rechtstreeks vanuit je browser.","Put the newest firmware on your ZAPPER, or set up its Wi-Fi. Straight from your browser."],
+ verbind:["Verbind je Zapper","Connect your Zapper"],verbinden:["Verbinden…","Connecting…"],
+ kabel:["Met een USB-C-datakabel, in Chrome of Edge op een computer.","With a USB-C data cable, in Chrome or Edge on a computer."],
+ nietOndersteund:["Deze browser kan geen USB-apparaten gebruiken. Open deze pagina in Chrome, Edge of Opera op een computer.","This browser cannot use USB devices. Open this page in Chrome, Edge or Opera on a computer."],
+ geenPoort:["Geen Zapper gekozen.","No Zapper chosen."],geenAntwoord:["de Zapper reageert niet","the Zapper does not answer"],
+ bootTip:["Haal de USB-kabel even los, sluit hem weer aan en probeer het opnieuw. Helpt dat niet: houd BOOT ingedrukt, tik op RESET en laat BOOT los.","Unplug the USB cable for a moment, plug it back in and try again. If that does not help: hold BOOT, tap RESET and let go of BOOT."],
+ nietC6:["Dit is geen ZAPPER: de chip is %c.","This is not a ZAPPER: the chip is %c."],fout:["Mislukt: %f","Failed: %f"],
+ ander:["Andere Zapper","Another Zapper"],
+ subZapper:["ZAPPER %v · %w","ZAPPER %v · %w"],subOud:["ZAPPER, oudere versie","ZAPPER, older version"],subLeeg:["Nieuwe print, nog leeg","New board, still empty"],subAnders:["Andere firmware","Other firmware"],
+ opWifi:["op %s","on %s"],geenWifi:["nog geen wifi","no Wi-Fi yet"],nietOpWifi:["niet verbonden met %s","not connected to %s"],
+ firmware:["Firmware","Firmware"],wifi:["Wifi","Wi-Fi"],
+ fNieuwst:["✓ De nieuwste (%v)","✓ The newest (%v)"],fBeschikbaar:["%v beschikbaar","%v available"],fLeeg:["Nog niets geïnstalleerd","Nothing installed yet"],fOud:["Bijwerken aanbevolen","Update recommended"],
+ wOp:["✓ Verbonden met %s","✓ Connected to %s"],wGeen:["Nog geen wifi","No Wi-Fi yet"],wNiet:["Niet verbonden met %s","Not connected to %s"],wEerst:["Eerst firmware installeren","Install firmware first"],wOud:["Eerst bijwerken","Update first"],
+ fKopBij:["Bijwerken naar %v","Update to %v"],fKopOpnieuw:["%v opnieuw installeren","Reinstall %v"],fKopNieuw:["ZAPPER %v installeren","Install ZAPPER %v"],fKopWis:["Alles wissen en %v installeren","Erase everything and install %v"],
+ fKnopBij:["Bijwerken","Update"],fKnopOpnieuw:["Opnieuw installeren","Reinstall"],fKnopNieuw:["Installeren","Install"],fKnopWis:["Wissen en installeren","Erase and install"],
+ fUitlegBij:["Instellingen, wifi en de nostr-sleutel blijven staan. Duurt ongeveer een halve minuut.","Settings, Wi-Fi and the nostr key stay. Takes about half a minute."],
+ fUitlegNieuw:["Zet de firmware op de print. Daarna stel je de wifi in.","Puts the firmware on the board. Then you set up the Wi-Fi."],
+ fUitlegWis:["Wist alles, ook de nostr-sleutel: de lamp krijgt een nieuw npub.","Erases everything, the nostr key too: the lamp gets a new npub."],
+ ondertekend:["✓ Ondertekend en gecontroleerd","✓ Signed and checked"],ouder:["Oudere versie · alleen controlesom","Older version · checksum only"],
+ meer:["Meer opties","More options"],versie:["Versie","Version"],print:["Print","Board"],bordReva:["ZAPPER REV A","ZAPPER REV A"],bordLamp01:["Zelfbouw","Self-built"],
+ wisKop:["Alles wissen","Erase everything"],wisUit:["Voor een print die niet meer goed opstart. De lamp krijgt een nieuw npub.","For a board that no longer starts well. The lamp gets a new npub."],
+ nieuwst:["%v · de nieuwste","%v · the newest"],
+ downloaden:["Firmware ophalen…","Fetching the firmware…"],controleren:["Controleren…","Checking…"],naarFlashstand:["Verbinden met de chip…","Connecting to the chip…"],
+ wissen:["Wissen… (een halve minuut)","Erasing… (half a minute)"],schrijven:["Schrijven… %p%","Writing… %p%"],opstarten:["Opstarten…","Starting…"],
+ geflasht:["✓ %n draait nu %v","✓ %n now runs %v"],
+ naarWifi:["Wifi instellen →","Set up Wi-Fi →"],naarFirmware:["Naar firmware →","To firmware →"],
+ geflashtTerug:["✓ Geïnstalleerd. Haal de USB-kabel even los en sluit hem weer aan: de pagina vindt %n vanzelf terug.","✓ Installed. Unplug the USB cable and plug it back in: the page finds %n again by itself."],
+ wLosTegel:["Kabel even los en vast","Replug the cable"],wLosKop:["Kabel even los en weer vast","Unplug and replug the cable"],
+ wLosUit:["De verbinding met %n is even weg, bijvoorbeeld na een herstart. Haal de USB-kabel even los en sluit hem weer aan: de pagina vindt hem vanzelf terug.","The connection to %n is gone for a moment, for example after a restart. Unplug the USB cable and plug it back in: the page finds it again by itself."],
+ wWachten:["Wachten op %n…","Waiting for %n…"],wHandmatig:["Lukt het niet? Kies hem zelf","Not working? Choose it yourself"],
+ wEerstKop:["Eerst de firmware","Firmware first"],wEerstUit:["Op deze print staat nog niets. Installeer eerst de firmware, daarna stel je hier de wifi in.","This board is still empty. Install the firmware first, then set up the Wi-Fi here."],
+ wOudKop:["Eerst bijwerken","Update first"],wOudUit:["Wifi instellen via USB kan vanaf firmware 1.12.4. Werk de lamp eerst bij: wifi en instellingen blijven gewoon staan.","Wi-Fi over USB works from firmware 1.12.4. Update the lamp first: Wi-Fi and settings stay."],
+ somFout:["De controlesom klopt niet: niets geflasht.","The checksum does not match: nothing was flashed."],sigFout:["De handtekening van de lijst klopt niet: niets geflasht.","The list's signature does not match: nothing was flashed."],
+ bijNee:["Bijwerken kan alleen bij ZAPPER-firmware voor deze print. Kies Alles wissen.","Updating only works on ZAPPER firmware for this board. Choose Erase everything."],
+ wKop:["Kies een netwerk","Choose a network"],wUitleg:["De lamp onthoudt het. Je wachtwoord gaat alleen via de kabel naar de lamp.","The lamp remembers it. Your password only goes over the cable to the lamp."],
+ wZoeken:["Netwerken zoeken…","Looking for networks…"],wOpnieuw:["Opnieuw zoeken","Search again"],wAnder:["Ander netwerk…","Other network…"],wHand:["Naam van het netwerk","Name of the network"],
+ wWachtwoord:["Wachtwoord","Password"],toon:["Toon","Show"],verberg:["Verberg","Hide"],wNaamLabel:["Naam van de lamp:","Name of the lamp:"],wijzig:["wijzig","change"],
+ wVerbind:["Verbinden","Connect"],wOpslaan:["De lamp herstart en verbindt…","The lamp restarts and connects…"],
+ wGelukt:["✓ %h is verbonden met %s","✓ %h is connected to %s"],wOpen:["Open %h","Open %h"],
+ wMislukt:["%h kon niet verbinden met %s. Klopt het wachtwoord?","%h could not connect to %s. Is the password right?"],
+
+ wKiesEerst:["Kies of typ eerst een netwerk.","Choose or type a network first."],
+ voet:["Werkt met","Works with"],veilig:["nieuwste firmware gecontroleerd tegen de ondertekende lijst","newest firmware checked against the signed list"]
+};
+let taal='nl';try{taal=localStorage.getItem('zc_taal')||((navigator.language||'').toLowerCase().startsWith('nl')?'nl':'en')}catch(e){}
+const i=()=>taal==='nl'?0:1,$=id=>document.getElementById(id);
+const t=(k,v={})=>{let s=T[k][i()];for(const x in v)s=s.split('%'+x).join(v[x]);return s};
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const slaap=ms=>new Promise(r=>setTimeout(r,ms));
+const metLimiet=(belofte,ms,wat)=>Promise.race([belofte,new Promise((_,mis)=>setTimeout(()=>mis(new Error(wat)),ms))]);
+
+// Board names as the update list and the firmware use them.
+const BORD={'zapper-reva':'Zapper REV A','lamp01':'ESP32-C6-Zero + MOSFET'};
+const VAN_FIRMWARE={'Zapper REV A':'zapper-reva','ZapLamp REV A':'zapper-reva','ESP32-C6-Zero + MOSFET':'lamp01'};
+const RELEASE_PUBKEY='5e3ccae16b53c902c312cc4af9290575915f569fde9439f5a6cc2d7670d7d543';
+
+let poort=null,transport=null,loader=null,apparaat=null,versies=[],manifest=null,manifestOk=false,bord='zapper-reva',bordBewust=false,paneel=null,bezig=false;
+let netwerken=null,gekozenNet=null,wachter=null,stoppen=false;
+
+// ---- the signature on the update list (BIP340, as nostr and the lamp)
+const SP=2n**256n-0x1000003D1n,SN=0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141n;
+const SG=[0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798n,0x483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8n];
+const md=(a,m=SP)=>((a%m)+m)%m;
+function mpow(b,e,m=SP){let r=1n;b=md(b,m);while(e>0n){if(e&1n)r=r*b%m;b=b*b%m;e>>=1n}return r}
+function padd(a,b){if(!a)return b;if(!b)return a;if(a[0]===b[0]&&a[1]!==b[1])return null;
+ const l=a[0]===b[0]&&a[1]===b[1]?md(3n*a[0]*a[0]*mpow(2n*a[1],SP-2n)):md((b[1]-a[1])*mpow(b[0]-a[0],SP-2n));
+ const x=md(l*l-a[0]-b[0]);return[x,md(l*(a[0]-x)-a[1])]}
+function pmul(p,n){let r=null;while(n>0n){if(n&1n)r=padd(r,p);p=padd(p,p);n>>=1n}return r}
+const hexB=h=>new Uint8Array(h.match(/../g).map(x=>parseInt(x,16)));
+const bBig=b=>BigInt('0x'+[...b].map(x=>x.toString(16).padStart(2,'0')).join('')||'0');
+const sha=async b=>new Uint8Array(await crypto.subtle.digest('SHA-256',b));
+const hex=b=>[...b].map(x=>x.toString(16).padStart(2,'0')).join('');
+async function tagged(tag,...delen){const h=await sha(new TextEncoder().encode(tag));const m=new Uint8Array(64+delen.reduce((a,d)=>a+d.length,0));
+ m.set(h,0);m.set(h,32);let o=64;for(const d of delen){m.set(d,o);o+=d.length}return sha(m)}
+async function bip340(pubHex,msg,sigHex){
+ const pub=hexB(pubHex),sig=hexB(sigHex.trim()),x=bBig(pub);if(sig.length!==64||x>=SP)return false;
+ const y2=md(x**3n+7n),y0=mpow(y2,(SP+1n)/4n);if(md(y0*y0)!==y2)return false;const P=[x,y0%2n?SP-y0:y0];
+ const r=bBig(sig.slice(0,32)),s=bBig(sig.slice(32));if(r>=SP||s>=SN)return false;
+ const e=md(bBig(await tagged('BIP0340/challenge',sig.slice(0,32),pub,msg)),SN);
+ const R=padd(pmul(SG,s),pmul(P,SN-e));return!!R&&R[1]%2n===0n&&R[0]===r}
+
+
+// ---- the lists of firmware
+async function laadLijsten(){
+ const ruw=new Uint8Array(await(await fetch('../manifest.json',{cache:'no-store'})).arrayBuffer());
+ manifest=JSON.parse(new TextDecoder().decode(ruw));
+ const sig=await(await fetch('../manifest.sig',{cache:'no-store'})).text();
+ manifestOk=await bip340(RELEASE_PUBKEY,await sha(ruw),sig);
+ try{versies=await(await fetch('../versies.json',{cache:'no-store'})).json()}catch(e){versies=[]}
+ if(!versies.some(v=>v.versie===manifest.versie))versies.unshift({versie:manifest.versie,datum:manifest.datum,firmware:manifest.firmware,fabriek:manifest.fabriek});
+ render();
+}
+function vgl(a,b){const x=String(a).match(/\d+/g)||[],y=String(b).match(/\d+/g)||[];
+ for(let n=0;n<Math.max(x.length,y.length);n++){const d=(+x[n]||0)-(+y[n]||0);if(d)return d<0?-1:1}return 0}
+
+// ---- talking to the running firmware (115200 baud, "wifi status|scan|zet")
+const ser={lezer:null,buf:'',wacht:null,open:false,keten:Promise.resolve(),sluiten:null};
+async function serOpen(){
+ if(ser.sluiten)await ser.sluiten;
+ await poort.open({baudRate:115200});ser.open=true;
+ // RTS low first, then DTR: never the combination that resets the chip
+ try{await poort.setSignals({requestToSend:false})}catch(e){}try{await poort.setSignals({dataTerminalReady:false})}catch(e){}
+ ser.buf='';ser.lezer=poort.readable.getReader();serLees(ser.lezer)}
+async function serLees(lezer){const dec=new TextDecoder();
+ try{while(ser.lezer===lezer){const {value,done}=await lezer.read();if(done)break;ser.buf+=dec.decode(value,{stream:true});
+  let n;while((n=ser.buf.indexOf('\n'))>=0){const r=ser.buf.slice(0,n).trim();ser.buf=ser.buf.slice(n+1);
+   if(r.startsWith('@wifi ')&&ser.wacht){try{const v=JSON.parse(r.slice(6));if(ser.wacht.past(v))ser.wacht.ok(v)}catch(e){ser.wacht?.mis(new Error('invalid USB reply'))}}}}}
+ catch(e){}finally{if(ser.lezer===lezer){ser.lezer=null;ser.open=false;ser.wacht?.mis(new Error(t('geenAntwoord')));
+  try{lezer.releaseLock()}catch(e){}if(!bezig){render();wachtTerug()}}}}
+function serSluit(){
+ // Timeout, retry and bootloader handoff must await the same complete close.
+ // Rejecting the pending request resumes its catch before cancel/close finish.
+ if(ser.sluiten)return ser.sluiten;
+ const p=poort,l=ser.lezer,wasOpen=ser.open;ser.lezer=null;ser.open=false;ser.wacht?.mis(new Error(t('geenAntwoord')));
+ ser.sluiten=(async()=>{
+  if(l){try{await metLimiet(l.cancel(),2000,'cancel')}catch(e){}try{l.releaseLock()}catch(e){}}
+  if(wasOpen||(p&&(p.readable||p.writable))){try{await metLimiet(p.close(),3000,'close')}catch(e){}}
+ })().finally(()=>{ser.sluiten=null});
+ return ser.sluiten}
+function serVraag(cmd,ms){
+ // Replies have no request id: only one command may be in flight at a time.
+ const p=ser.keten.catch(()=>{}).then(()=>new Promise((ok,mis)=>{
+  if(!ser.open){mis(new Error(t('geenAntwoord')));return}
+  let timer;const klaar=(f,v)=>{if(ser.wacht!==w)return;ser.wacht=null;clearTimeout(timer);f(v)};
+  const w={ok:v=>klaar(ok,v),mis:e=>klaar(mis,e),
+   past:v=>v&&('fout' in v||(cmd==='wifi scan'?'netwerken' in v:cmd==='wifi status'?'versie' in v:'ok' in v))};ser.wacht=w;
+  timer=setTimeout(()=>{serSluit()},ms);
+  (async()=>{let sch;try{sch=poort.writable.getWriter();await sch.write(new TextEncoder().encode(cmd+'\n'))}
+   catch(e){w.mis(e)}finally{if(sch)sch.releaseLock()}})();
+ }));ser.keten=p;return p}
+async function vraagStatus(){try{return await serVraag('wifi status',2500)}catch(e){await serSluit();await serOpen();return await serVraag('wifi status',3500)}}
+
+// ---- the bootloader (esptool-js), for reading the board and for flashing
+async function espOpen(){
+ await serSluit();
+ transport=new Transport(poort,false);
+ loader=new ESPLoader({transport,baudrate:921600,terminal:{clean(){},writeLine(){},write(){}}});
+ const chip=await metLimiet(loader.main(),25000,t('geenAntwoord'));
+ if(!/ESP32-C6/i.test(chip))throw new Error(t('nietC6',{c:chip}));
+ return chip}
+async function espSluit(opnieuwStarten){
+ if(loader&&opnieuwStarten){try{await metLimiet(loader.after('hard_reset'),8000,'reset')}catch(e){console.warn('reset',e)}}
+ if(transport){try{await metLimiet(transport.disconnect(),3000,'disconnect')}catch(e){}}
+ transport=null;loader=null;
+ if(poort&&(poort.readable||poort.writable)){try{await metLimiet(poort.close(),3000,'close')}catch(e){}}}
+
+// After a restart the lamp comes back on USB, sometimes as a new port: find it again
+// (the browser already allowed it), and make sure it is the same lamp.
+async function wachtOpFirmware(ms,mac){
+ const eind=Date.now()+ms;
+ while(Date.now()<eind){
+  await slaap(1500);
+  let poorten=[];try{poorten=(await navigator.serial.getPorts()).filter(p=>(p.getInfo().usbVendorId||0)===0x303a)}catch(e){}
+  for(const p of [poort,...poorten.filter(x=>x!==poort)]){
+   if(!p)continue;
+   try{poort=p;await serOpen();const st=await serVraag('wifi status',2500);
+    if(st.versie&&st.mac&&(!mac||st.mac.toLowerCase()===mac.toLowerCase()))return st;await serSluit()}catch(e){await serSluit()}
+  }
+ }
+ return null}
+
+// ---- the partition table: what is on the board now
+function leesTabel(b){const uit=[];for(let o=0;o+32<=b.length;o+=32){const e=b.subarray(o,o+32);if(e[0]!==0xAA||e[1]!==0x50)break;
+ const dv=new DataView(e.buffer,e.byteOffset,32);uit.push({type:e[2],sub:e[3],adres:dv.getUint32(4,true),grootte:dv.getUint32(8,true),
+  naam:new TextDecoder().decode(e.subarray(12,28)).replace(/\0.*$/,'')})}return uit}
+function herken(tabel){const app=tabel.find(p=>p.type===0&&p.sub===0x10),od=tabel.find(p=>p.type===1&&p.sub===0);
+ if(!app||!od)return null;
+ if(app.adres===0x20000&&app.naam==='ota_0')return'zapper-reva';
+ if(app.adres===0x10000&&app.naam==='app0')return'lamp01';
+ return null}
+
+
+
+// ---- connect: once, for everything
+async function verbind(){
+ if(bezig)return;$('beginFout').classList.add('verborgen');
+ let gekozen;
+ try{gekozen=await navigator.serial.requestPort({filters:[{usbVendorId:0x303a}]})}catch(e){if(!apparaat)toonBeginFout(t('geenPoort'));return}
+ await stopWachter();
+ bezig=true;$('verbind').disabled=true;$('verbind').textContent=t('verbinden');$('ander').disabled=true;
+ try{
+  await serSluit();await espSluit(false);poort=gekozen;apparaat=null;netwerken=null;gekozenNet=null;paneel=null;
+  // First ask the firmware itself, without touching it: name, version, board, Wi-Fi.
+  let st=null;try{await serOpen();st=await vraagStatus()}catch(e){st=null}
+  if(st&&st.versie){
+   apparaat={naam:st.host,mac:(st.mac||'').toLowerCase(),firmware:st.versie.split(' ')[0],herkend:VAN_FIRMWARE[st.board]||null,wifi:st,leeg:false};
+  }else{
+   // No answer: an empty board, or firmware from before 1.12.4. Read the chip itself.
+   const chip=await espOpen();
+   const mac=await loader.chip.readMac(loader);
+   const tabel=leesTabel(await loader.readFlash(0x8000,0xC00));
+   apparaat={naam:'zapper-'+mac.replace(/:/g,'').slice(-4).toLowerCase(),mac:mac.toLowerCase(),chip,herkend:herken(tabel),leeg:!tabel.length,firmware:null,wifi:null};
+   if(apparaat.herkend)await espSluit(true);  // older ZAPPER firmware: let it run again
+  }
+  bordBewust=!!apparaat.herkend;if(apparaat.herkend)bord=apparaat.herkend;
+  $('wis').checked=false; // erasing always needs an explicit choice
+  // the obvious next step opens by itself
+  paneel=!apparaat.firmware||!isNieuwst()?'firmware':(apparaat.wifi&&!apparaat.wifi.verbonden?'wifi':null);zet('fStatus','');zet('wStatus','');
+ }catch(e){console.error('verbinden',e);await serSluit();await espSluit(false);apparaat=null;toonBeginFout(t('fout',{f:e.message||e})+' '+t('bootTip'))}
+ finally{bezig=false;$('verbind').disabled=false;$('ander').disabled=false;render();if(paneel==='wifi')zoekNetten()}
+}
+function toonBeginFout(s){$('beginFout').textContent=s;$('beginFout').classList.remove('verborgen');$('verbind').textContent=t('verbind')}
+const isNieuwst=()=>apparaat&&apparaat.firmware&&manifest&&vgl(apparaat.firmware,manifest.versie)>=0;
+const wifiKan=()=>apparaat&&apparaat.wifi&&ser.open;
+// why Wi-Fi cannot be set right now: no firmware, too old, or the lamp restarted and must be found again
+const wifiBlok=()=>!apparaat||wifiKan()?null:apparaat.leeg?'leeg':!apparaat.firmware||vgl(apparaat.firmware,'1.12.4')<0?'oud':'los';
+// After a restart the browser sometimes loses the lamp until the cable is replugged.
+// Keep looking in the background, so replugging is all it takes.
+function wachtTerug(){
+ if(wachter||!apparaat||bezig||stoppen)return;
+ const mijn={stop:false};wachter=mijn;
+ mijn.klaar=(async()=>{
+  while(!mijn.stop&&apparaat&&!ser.open){
+   const st=await wachtOpFirmware(3000,apparaat.mac);
+   if(st&&!mijn.stop){neemOver(st);break}
+   if(st)await serSluit()}
+  if(wachter===mijn)wachter=null;render()})()}
+async function stopWachter(){const w=wachter;if(w){stoppen=true;w.stop=true;try{await w.klaar}finally{stoppen=false}}}
+function neemOver(st){
+ apparaat={...apparaat,naam:st.host,firmware:st.versie.split(' ')[0],herkend:VAN_FIRMWARE[st.board]||apparaat.herkend,wifi:st,leeg:false};
+ netwerken=null;gekozenNet=null;
+ // just flashed and found back: say so; the next step opens by itself
+ const naFlash=!!$('fStatus').querySelector('.wacht');
+ zet('fStatus',naFlash?'<span class="goed">'+esc(t('geflasht',{n:st.host,v:apparaat.firmware}))+'</span>':'',false,true);zet('wStatus','');
+ if(!st.verbonden)paneel='wifi';
+ if(paneel==='wifi')zoekNetten();render()}
+
+// ---- what the page shows
+function render(){
+ document.documentElement.lang=taal;
+ document.querySelectorAll('[data-t]').forEach(e=>e.textContent=t(e.dataset.t));
+ document.querySelectorAll('[data-t-ph]').forEach(e=>e.placeholder=t(e.dataset.tPh));
+ document.querySelectorAll('[data-taal]').forEach(b=>b.classList.toggle('actief',b.dataset.taal===taal));
+ $('terug').textContent=t('terug');$('nietOndersteund').textContent=t('nietOndersteund');
+ $('oog').textContent=$('wPass').type==='password'?t('toon'):t('verberg');
+ const a=apparaat;
+ $('begin').classList.toggle('verborgen',!!a);$('verbonden').classList.toggle('verborgen',!a);
+ if(!a){$('verbind').textContent=bezig?t('verbinden'):t('verbind');return}
+ // the lamp
+ $('lampNaam').textContent=a.naam;$('lampMac').textContent='MAC '+a.mac;
+ const w=a.wifi?(a.wifi.instelstand?t('geenWifi'):a.wifi.verbonden?t('opWifi',{s:a.wifi.ssid}):t('nietOpWifi',{s:a.wifi.ssid})):'';
+ $('lampSub').textContent=a.firmware?t('subZapper',{v:a.firmware,w}):a.herkend?t('subOud'):a.leeg?t('subLeeg'):t('subAnders');
+ $('lampImg').src='../beeld/lamp-'+(a.leeg?'uit':'aan')+'.svg';
+ // firmware tile
+ const fs=$('fStand');
+ if(a.firmware&&isNieuwst()){fs.textContent=t('fNieuwst',{v:a.firmware});fs.className='stand goed'}
+ else if(a.firmware){fs.textContent=t('fBeschikbaar',{v:manifest?manifest.versie:'…'});fs.className='stand let'}
+ else if(a.leeg){fs.textContent=t('fLeeg');fs.className='stand let'}
+ else{fs.textContent=t('fOud');fs.className='stand let'}
+ // Wi-Fi tile
+ const ws=$('wStand');
+ if(wifiKan()){ws.textContent=a.wifi.verbonden?t('wOp',{s:a.wifi.ssid}):a.wifi.instelstand?t('wGeen'):t('wNiet',{s:a.wifi.ssid});ws.className='stand '+(a.wifi.verbonden?'goed':'let')}
+ else{const b=wifiBlok();ws.textContent=b==='leeg'?t('wEerst'):b==='los'?t('wLosTegel'):t('wOud');ws.className='stand let'}
+ $('tWifi').disabled=bezig;$('tFirmware').disabled=bezig;
+ $('ander').disabled=bezig;$('versie').disabled=bezig;$('wis').disabled=bezig;
+ $('tFirmware').classList.toggle('open',paneel==='firmware');$('tWifi').classList.toggle('open',paneel==='wifi');
+ $('pFirmware').classList.toggle('verborgen',paneel!=='firmware');$('pWifi').classList.toggle('verborgen',paneel!=='wifi');
+ renderFirmware();renderWifi();
+}
+function renderFirmware(){
+ if(!manifest||!apparaat)return;
+ tekenVersies();
+ const v=$('versie').value||manifest.versie,wis=$('wis').checked,kanBij=apparaat.herkend===bord;
+
+ const w=$('wis').checked;
+ $('fKop').textContent=w&&apparaat.herkend?t('fKopWis',{v}):!apparaat.herkend?t('fKopNieuw',{v}):apparaat.firmware===v?t('fKopOpnieuw',{v}):t('fKopBij',{v});
+ $('fUitleg').textContent=w&&apparaat.herkend?t('fUitlegWis'):!apparaat.herkend?t('fUitlegNieuw'):t('fUitlegBij');
+ $('flash').textContent=w&&apparaat.herkend?t('fKnopWis'):!apparaat.herkend?t('fKnopNieuw'):apparaat.firmware===v?t('fKnopOpnieuw'):t('fKnopBij');
+ const nieuwste=v===manifest.versie;$('fChip').className='chip '+(nieuwste&&manifestOk?'groen':'');$('fChip').textContent=nieuwste?(manifestOk?t('ondertekend'):''):t('ouder');
+ document.querySelectorAll('[data-bord]').forEach(b=>b.classList.toggle('actief',b.dataset.bord===bord));
+ $('flash').disabled=bezig||(!kanBij&&!w)||(!apparaat.herkend&&!bordBewust);
+}
+function tekenVersies(){
+ const sel=$('versie'),voor=sel.value;
+ // from 1.9.1 (Bitcoin21 as the default password, as the manual says), at most the last five
+ const mogelijk=versies.filter(v=>(v.fabriek||{})[BORD[bord]]&&vgl(v.versie,'1.9.1')>=0).slice(0,5);
+ sel.innerHTML=mogelijk.map((v,n)=>`<option value="${v.versie}">${n===0&&v.versie===manifest.versie?t('nieuwst',{v:v.versie}):v.versie}</option>`).join('');
+ if(mogelijk.some(v=>v.versie===voor))sel.value=voor}
+
+// ---- flashing
+async function flash(){
+ if(bezig||!apparaat)return;
+ await stopWachter();
+ const versie=$('versie').value,v=versies.find(x=>x.versie===versie);if(!v)return;
+ const wis=$('wis').checked;
+ if(!wis&&apparaat.herkend!==bord){zet('fStatus',t('bijNee'),true);return}
+ if(wis&&!confirm(taal==='nl'?'Alles wissen? Identiteit, sleutels en instellingen gaan verloren.':'Erase everything? Identity, keys and settings will be lost.'))return;
+ const bron=((wis?v.fabriek:v.firmware)||{})[BORD[bord]];
+ if(!bron){zet('fStatus',t('fout',{f:'no image'}),true);return}
+ bezig=true;render();$('balk').classList.remove('verborgen');$('balkVul').style.width='0%';
+ try{
+  zet('fStatus',t('downloaden'));
+  const data=new Uint8Array(await(await fetch('../firmware/'+versie+'/'+bron.url.split('/').pop())).arrayBuffer());
+  zet('fStatus',t('controleren'));
+  // the same check as an update over the internet: the image must match the signed list
+  if(hex(await sha(data))!==bron.sha256||data.length!==bron.grootte)throw new Error(t('somFout'));
+  if(versie===manifest.versie){if(!manifestOk)throw new Error(t('sigFout'));
+   const lijst=(wis?manifest.fabriek:manifest.firmware)[BORD[bord]];if(!lijst||lijst.sha256!==bron.sha256)throw new Error(t('somFout'))}
+  zet('fStatus',t('naarFlashstand'));
+  if(!loader)await espOpen();
+  const tabel=leesTabel(await loader.readFlash(0x8000,0xC00));
+  let bestanden;
+  if(wis)bestanden=[{data,address:0}];
+  else{if(herken(tabel)!==bord)throw new Error(t('bijNee'));
+   const app=tabel.find(p=>p.type===0&&p.sub===0x10),od=tabel.find(p=>p.type===1&&p.sub===0);
+   if(!od||od.grootte!==0x2000||tabel.some(p=>p!==app&&p!==od&&(app.adres<p.adres+p.grootte&&p.adres<app.adres+data.length||od.adres<p.adres+p.grootte&&p.adres<od.adres+od.grootte)))throw new Error('overlapping or invalid partition table');
+   if(data.length>app.grootte)throw new Error('image larger than the app partition');
+   // the app in the first app slot, and the boot choice cleared so it starts that one
+   bestanden=[{data,address:app.adres},{data:new Uint8Array(od.grootte).fill(0xff),address:od.adres}]}
+  const totaal=bestanden.reduce((a,b)=>a+b.data.length,0),gedaan=new Array(bestanden.length).fill(0);
+  zet('fStatus',wis?t('wissen'):t('schrijven',{p:0}));
+  await loader.writeFlash({fileArray:bestanden,flashSize:'keep',flashMode:'keep',flashFreq:'keep',eraseAll:wis,compress:true,
+   reportProgress:(n,geschreven,tot)=>{gedaan[n]=bestanden[n].data.length*geschreven/tot;
+    const p=Math.round(100*gedaan.reduce((a,b)=>a+b,0)/totaal);$('balkVul').style.width=p+'%';zet('fStatus',t('schrijven',{p}))}});
+  zet('fStatus',t('opstarten'));
+  const mac=apparaat.mac;
+  await espSluit(true);
+  // wait until the new firmware answers on USB
+  const st=await wachtOpFirmware(45000,mac);
+  if(st){apparaat={...apparaat,naam:st.host,mac,firmware:st.versie.split(' ')[0],herkend:VAN_FIRMWARE[st.board]||bord,wifi:st,leeg:false};
+   if(st.versie.split(' ')[0]!==versie)throw new Error(taal==='nl'?'De lamp meldt een andere firmwareversie. Controleer en probeer opnieuw.':'The lamp reports a different firmware version. Check and retry.');
+   let h='<span class="goed">'+esc(t('geflasht',{n:st.host,v:st.versie.split(' ')[0]}))+'</span>';
+   if(!st.verbonden)h+='<div style="margin-top:12px"><button class="knop" id="naarWifi">'+esc(t('naarWifi'))+'</button></div>';
+   zet('fStatus',h,false,true);
+  }else{apparaat={...apparaat,herkend:bord,leeg:false,wifi:null};
+   zet('fStatus','<span>'+esc(taal==='nl'?'Geschreven; draaiende firmware nog niet bevestigd.':'Written; running firmware not yet confirmed.')+'</span><div class="wacht" style="margin-top:12px"><span class="draai"></span>'+esc(t('wWachten',{n:apparaat.naam}))+'</div>',false,true)}
+  $('balk').classList.add('verborgen');
+ }catch(e){console.error('flashen',e);zet('fStatus',t('fout',{f:e.message||e})+' '+t('bootTip'),true)}
+ finally{bezig=false;render();const k=$('naarWifi');if(k)k.onclick=()=>open('wifi');if(!ser.open&&apparaat&&apparaat.firmware)wachtTerug()}
+}
+function zet(id,s,fout,html){const e=$(id);if(html)e.innerHTML=s;else e.textContent=s;e.classList.toggle('fout',!!fout)}
+
+// ---- Wi-Fi
+const BALKJES=r=>{const n=r>-60?4:r>-68?3:r>-76?2:1;return `<svg viewBox="0 0 20 20">${[0,1,2,3].map(k=>`<rect x="${2+k*4.5}" y="${15-k*4}" width="3" height="${3+k*4}" rx="1" fill="${k<n?'#f6f1ff':'rgba(255,255,255,.18)'}"/>`).join('')}</svg>`};
+async function zoekNetten(){
+ if(!wifiKan()||bezig)return;bezig=true;netwerken=null;zet('wStatus','');render();
+ try{const r=await serVraag('wifi scan',25000);if(r.fout)throw new Error(r.fout);netwerken=(r.netwerken||[]).sort((a,b)=>b.rssi-a.rssi)}
+ catch(e){netwerken=[];zet('wStatus',t('fout',{f:e.message}),true)}
+ if(!gekozenNet&&apparaat.wifi&&apparaat.wifi.ssid&&netwerken.some(n=>n.ssid===apparaat.wifi.ssid))gekozenNet=apparaat.wifi.ssid;
+ bezig=false;render()}
+function renderWifi(){
+ if(!apparaat)return;
+ const b=wifiBlok();
+ $('wEerst').classList.toggle('verborgen',!b);$('wNormaal').classList.toggle('verborgen',!!b);
+ if(b){
+  $('weKop').textContent=b==='leeg'?t('wEerstKop'):b==='oud'?t('wOudKop'):t('wLosKop');
+  $('weUit').textContent=b==='leeg'?t('wEerstUit'):b==='oud'?t('wOudUit'):t('wLosUit',{n:apparaat.naam});
+  $('weActie').innerHTML=b==='los'?`<div class="wacht"><span class="draai"></span>${esc(t('wWachten',{n:apparaat.naam}))}</div><button class="link" id="weZelf">${esc(t('wHandmatig'))}</button>`
+   :`<button class="knop" id="weFirmware">${esc(t('naarFirmware'))}</button>`;
+  const k=$('weZelf')||$('weFirmware');k.onclick=b==='los'?verbind:()=>open('firmware');
+  if(b==='los')wachtTerug();
+  return}
+ const el=$('netten');
+ if(netwerken===null){el.innerHTML=`<div class="zoeken"><span class="draai"></span>${t('wZoeken')}</div>`}
+ else{el.innerHTML=netwerken.map(n=>`<button class="net${gekozenNet===n.ssid?' gekozen':''}" data-ssid="${esc(n.ssid)}"><span class="vinkje">${apparaat.wifi&&apparaat.wifi.verbonden&&apparaat.wifi.ssid===n.ssid?'✓':''}</span><span class="naam">${esc(n.ssid)}</span>${n.slot?'<svg class="slot" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>':''}${BALKJES(n.rssi)}</button>`).join('')
+  +`<button class="net ander${gekozenNet==='__ander'?' gekozen':''}" data-ssid="__ander"><span class="vinkje"></span><span class="naam">${t('wAnder')}</span></button>`
+  +`<button class="net ander" data-zoek="1"><span class="vinkje"></span><span class="naam">↻ ${t('wOpnieuw')}</span></button>`}
+ $('wForm').classList.toggle('verborgen',!gekozenNet);
+ $('wSsidHand').classList.toggle('verborgen',gekozenNet!=='__ander');
+ $('wNaamTekst').textContent=$('wHost').value||apparaat.naam;
+ $('wBewaar').disabled=bezig;
+}
+async function wBewaar(){
+ const ssid=gekozenNet==='__ander'?$('wSsidHand').value.trim():gekozenNet;
+ if(!ssid){zet('wStatus',t('wKiesEerst'),true);return}
+ if(!wifiKan()||bezig)return;
+ bezig=true;render();zet('wStatus','');
+ try{const host=($('wHost').value.trim()||apparaat.naam);
+  const r=await serVraag('wifi zet '+JSON.stringify({ssid,pass:$('wPass').value,host}),6000);
+  if(!r.ok)throw new Error(r.fout||'?');
+  $('wPass').value='';zet('wStatus','<span class="draai"></span>'+esc(t('wOpslaan')),false,true);
+  const mac=apparaat.mac;await serSluit();
+  // it restarts with the new settings: wait until it is on the Wi-Fi, or clearly is not
+  let st=await wachtOpFirmware(30000,mac);const eind=Date.now()+25000;
+  while(st&&!st.verbonden&&Date.now()<eind){await slaap(2500);try{st=await serVraag('wifi status',3000)}catch(e){}}
+  if(!st){bezig=false;paneel='wifi';render();return}
+  apparaat.naam=st.host;apparaat.wifi=st;
+  if(st.verbonden)zet('wStatus',`<div class="klaarblok"><div class="groot">${esc(t('wGelukt',{h:st.host,s:st.ssid}))}</div><a class="knop" href="http://${esc(st.ip)}/" target="_blank" rel="noopener">${esc(t('wOpen',{h:st.host}))}</a></div>`,false,true);
+  else zet('wStatus',t('wMislukt',{h:st.host,s:ssid}),true)}
+ catch(e){zet('wStatus',t('fout',{f:e.message}),true)}
+ finally{bezig=false;render()}}
+
+function open(welk){if(bezig)return;paneel=paneel===welk?null:welk;if(paneel==='wifi'&&netwerken===null)zoekNetten();render();
+ const p=$(welk==='wifi'?'pWifi':'pFirmware');if(paneel)setTimeout(()=>p.scrollIntoView({behavior:'smooth',block:'nearest'}),50)}
+
+document.querySelectorAll('[data-taal]').forEach(b=>b.onclick=()=>{taal=b.dataset.taal;try{localStorage.setItem('zc_taal',taal)}catch(e){}render()});
+$('verbind').onclick=verbind;$('ander').onclick=verbind;
+$('tFirmware').onclick=()=>open('firmware');$('tWifi').onclick=()=>open('wifi');
+$('flash').onclick=flash;$('wBewaar').onclick=wBewaar;
+$('versie').onchange=renderFirmware;$('wis').onchange=renderFirmware;
+document.querySelectorAll('[data-bord]').forEach(b=>b.onclick=()=>{if(bezig)return;bord=b.dataset.bord;bordBewust=true;renderFirmware()});
+$('netten').onclick=e=>{const b=e.target.closest('button');if(!b||bezig)return;if(b.dataset.zoek){zoekNetten();return}
+ gekozenNet=b.dataset.ssid;zet('wStatus','');renderWifi();setTimeout(()=>(gekozenNet==='__ander'?$('wSsidHand'):$('wPass')).focus(),30)};
+$('oog').onclick=()=>{$('wPass').type=$('wPass').type==='password'?'text':'password';render()};
+$('wNaamKnop').onclick=()=>{$('wHost').classList.remove('verborgen');$('wHost').value=$('wHost').value||apparaat.naam;$('wHost').focus()};
+$('wHost').oninput=()=>{$('wNaamTekst').textContent=$('wHost').value};
+$('wPass').onkeydown=e=>{if(e.key==='Enter')wBewaar()};
+if('serial' in navigator)navigator.serial.addEventListener('disconnect',e=>{if(e.target===poort&&!bezig){ser.open=false;ser.lezer=null;render();if(apparaat&&apparaat.firmware)wachtTerug()}});
+if(!('serial' in navigator)){$('nietOndersteund').classList.remove('verborgen');$('verbind').disabled=true}
+render();
+laadLijsten().catch(e=>toonBeginFout(t('fout',{f:e.message})));
+</script>
+</body>
+</html>
