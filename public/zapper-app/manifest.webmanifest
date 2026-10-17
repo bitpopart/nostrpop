@@ -1,9 +1,9 @@
 {
  "name": "Zapper",
  "short_name": "Zapper",
- "description": "Al je ZAPPER zap-lampen op één plek: open ze, zie de nieuwste versie en de uitleg.",
+ "description": "ZAPPER: uitleg, de nieuwste firmware en de USB-flasher.",
  "id": "./",
- "start_url": "./?app",
+ "start_url": "./",
  "scope": "./",
  "display": "standalone",
  "orientation": "portrait",

@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>Zapper control</title>
-<meta name="description" content="Open één ZAPPER in je browser en beheer ze allemaal: updates, feestjes, deuntjes en instellingen. Niets te installeren, met ondertekende updates.">
-<meta property="og:title" content="Zapper control">
-<meta property="og:description" content="Al je ZAPPERS op één plek. Updates, feestjes en deuntjes, op je telefoon en je computer.">
+<title>ZAPPER</title>
+<meta name="description" content="Een lamp die oplicht bij elke zap op nostr. Zapper Control en Zapper Screen zitten in elke lamp; nieuwe lampen flash je hier via USB.">
+<meta property="og:title" content="ZAPPER">
+<meta property="og:description" content="Elke zap licht op. Zapper Control en Zapper Screen in elke lamp, niets te installeren.">
 <meta property="og:image" content="https://bitpopart.com/zapper-app/beeld/icon-512.png">
 <meta property="og:url" content="https://bitpopart.com/zapper/">
 <meta property="og:type" content="website">
@@ -127,13 +127,13 @@ footer a{color:var(--soft)}
 .links{display:flex;gap:8px;flex-wrap:wrap}
 .privacy{font-size:13px;max-width:52em}
 /* flashing over USB */
-.flashborden{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:14px;margin-top:16px}
-.flashborden .kaart h3{margin-top:0}
-.flashborden .klein{margin:0 0 14px}
+.flashkaart{display:flex;gap:26px;align-items:center}
+.flashicoon{width:110px;height:110px;flex:none;display:grid;place-items:center;border-radius:28px;background:linear-gradient(135deg,rgba(157,0,249,.4),rgba(255,127,0,.25))}
+.flashicoon svg{width:64px;height:64px;fill:none;stroke:#fbc808;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 12px rgba(255,127,0,.6))}
+@media (max-width:620px){.flashkaart{flex-direction:column;align-items:flex-start}.flashicoon{width:80px;height:80px}}
 .letop{border-left:4px solid var(--orange);background:rgba(255,127,0,.1);border-radius:14px;padding:12px 16px;color:var(--soft);font-size:14.5px;margin:0 0 18px}
 .letop b{color:var(--ink)}
-esp-web-install-button [slot=unsupported],esp-web-install-button [slot=not-allowed]{display:block;color:#ffc98a;font-size:14px}
-body{--mdc-theme-primary:#9d00f9;--mdc-theme-on-primary:#fff}
+
 /* the illustrated guide */
 .gids{display:grid;gap:16px}
 .gids .kaart h3{margin-top:0;font-size:21px}
@@ -146,23 +146,13 @@ body{--mdc-theme-primary:#9d00f9;--mdc-theme-on-primary:#fff}
 .wat{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:16px 0 0}
 .wat div{padding:12px 14px;border-radius:14px;background:rgba(0,0,0,.25);border:1px solid var(--hair);font-size:14px;color:var(--soft)}
 .wat b{display:block;color:var(--ink);margin-bottom:2px}
+.scanveld{display:grid;grid-template-columns:1fr auto;gap:8px 12px;align-items:end;margin-bottom:12px}
+.scanveld label{grid-column:1/-1;font-weight:650;color:var(--soft);font-size:14px}
+.scanveld input{min-width:0;min-height:44px;padding:10px 14px;border-radius:12px;border:1px solid var(--hair);background:rgba(0,0,0,.24);color:var(--ink);font:14px var(--mono)}
+#scanResultaat .wat{margin-top:16px}
 @media (max-width:700px){.beelden{grid-template-columns:1fr}.beelden .tel{max-width:280px;margin:0 auto}}
 .np .zapknop{background:linear-gradient(135deg,#ff7f00,#fbc808);color:#1a0b00}
 .np .zapknop:hover{filter:brightness(1.08);background:linear-gradient(135deg,#ff7f00,#fbc808)}
-/* QR to open this page on a phone (computers only) */
-.qrkaart{display:flex;gap:22px;align-items:center;margin-top:16px}
-.qrkaart img{width:132px;height:132px;border-radius:14px;background:#fff;padding:8px;flex:none}
-@media (max-width:860px),(pointer:coarse){.qrkaart{display:none}}
-/* downloads and older versions */
-.downloads{display:grid;gap:8px;margin-top:16px}
-.dl{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:12px 14px;border-radius:14px;background:rgba(0,0,0,.25);border:1px solid var(--hair)}
-.dl b{flex:1 1 220px;font-weight:650;color:var(--ink)}
-.dl a{font-size:13.5px}
-.eerder{margin-top:14px}
-.eerder summary{cursor:pointer;color:var(--soft);font-weight:650}
-.eerder .rijv{display:grid;grid-template-columns:auto 1fr;gap:4px 16px;padding:12px 0;border-bottom:1px solid var(--hair)}
-.eerder .rijv:last-child{border:0}
-.eerder .rijv b{font:800 18px var(--display)}
 /* signature check */
 .check{display:inline-flex;align-items:center;gap:8px;margin-top:14px;padding:8px 14px;border-radius:999px;font-weight:650;font-size:14px;background:rgba(255,255,255,.07)}
 .check.goed{background:rgba(95,214,138,.14);color:#7ee8a0}
@@ -177,34 +167,7 @@ body{--mdc-theme-primary:#9d00f9;--mdc-theme-on-primary:#fff}
 .vragen details p{margin:10px 0 0;color:var(--soft)}
 .melding{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom));background:var(--knop);color:#fff;padding:12px 20px;border-radius:999px;font-weight:650;z-index:9;box-shadow:0 12px 30px -10px rgba(157,0,249,.9)}
 
-/* my Zappers */
-.mijn{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:14px;margin-bottom:16px}
-.mz{display:flex;align-items:center;gap:14px;padding:16px 18px;text-decoration:none;color:var(--ink)}
-.mz img{height:48px;width:auto;filter:drop-shadow(0 0 2px rgba(251,200,8,.8)) drop-shadow(0 0 10px rgba(255,127,0,.5))}
-.mz .t{flex:1;min-width:0}.mz b{display:block;font:750 18px/1.2 var(--display);letter-spacing:-.02em}
-.mz span{display:block;font:13px var(--mono);color:var(--quiet);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.mz .weg{border:0;background:rgba(255,255,255,.07);color:var(--soft);width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:18px;line-height:1;flex:none}
-.mz .weg:hover{background:rgba(237,31,51,.25);color:#fff}
-.mz .open{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--knop);box-shadow:0 6px 16px -6px rgba(157,0,249,.9)}
-.mz .open svg{width:16px;height:16px;fill:none;stroke:#fff;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
-.toevoegen{display:grid;grid-template-columns:1fr 1.3fr auto;gap:10px;align-items:end}
-.toevoegen label{display:block;font:600 13px var(--font);color:var(--soft);margin-bottom:6px}
-.toevoegen input{width:100%;padding:11px 13px;background:rgba(8,3,18,.5);border:1px solid rgba(255,255,255,.12);border-radius:12px;color:var(--ink);font-size:16px;min-height:46px}
-.toevoegen input:focus{outline:0;border-color:var(--purple2);box-shadow:0 0 0 4px rgba(157,0,249,.32)}
-@media (max-width:520px){.os.toestellen{display:grid;grid-template-columns:1fr 1fr}
-  code{white-space:normal;word-break:break-all}}
-.leegmijn{grid-column:1/-1;color:var(--quiet);padding:6px 2px 6px}
-/* install steps with the real buttons drawn */
-.toestellen{max-width:100%;overflow-x:auto;scrollbar-width:none}.toestellen::-webkit-scrollbar{display:none}
-.toestellen button{white-space:nowrap}
-.toestel h3{display:flex;align-items:center;gap:10px;margin-top:0}
-.knopje{display:inline-grid;place-items:center;vertical-align:-5px;width:26px;height:26px;border-radius:7px;background:rgba(255,255,255,.12);margin:0 2px}
-.knopje svg{width:16px;height:16px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.installeer{margin-top:16px}
 .verborgen{display:none!important}
-.app .alleenweb{display:none}
-.web .alleenapp{display:none}
-@media (max-width:620px){.toevoegen{grid-template-columns:1fr}}
 @media (max-width:860px){
   .held{grid-template-columns:1fr;text-align:center;gap:10px}
   .held .lead{margin-left:auto;margin-right:auto}.held .knoppen{justify-content:center}
@@ -215,134 +178,114 @@ body{--mdc-theme-primary:#9d00f9;--mdc-theme-on-primary:#fff}
 @media (max-width:520px){.wrap{padding:max(14px,env(safe-area-inset-top)) 16px 48px}.knop{width:100%;justify-content:center}
   .os{display:flex}.os button{flex:1;padding:9px 6px}.kaart{padding:20px}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+/* three things */
+.raster.drie{grid-template-columns:repeat(3,1fr)}
+.raster .kaart{display:flex;flex-direction:column}
+.raster .kaart .waar{margin-top:auto;padding-top:14px;font:600 13px var(--mono);color:var(--amber)}
+.raster .kaart a.waar{text-decoration:none}
+/* steps with a picture */
+.duo{display:grid;grid-template-columns:1.1fr .9fr;gap:22px;align-items:start}
+.os{max-width:100%;overflow-x:auto;scrollbar-width:none}.os::-webkit-scrollbar{display:none}
+.os button{white-space:nowrap}
+@media (max-width:860px){.raster.drie{grid-template-columns:1fr}.duo{grid-template-columns:1fr}}
+@media (max-width:520px){code{white-space:normal;word-break:break-all}}
+.knopje{display:inline-grid;place-items:center;vertical-align:-5px;width:26px;height:26px;border-radius:7px;background:rgba(255,255,255,.12);margin:0 2px}
+.knopje svg{width:16px;height:16px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+/* the device steps follow on from step 2 */
+ol.stappen.verder{counter-reset:s 2;margin-top:16px}
+.productnav{display:flex;gap:8px 20px;flex-wrap:wrap;margin:10px 0 30px}.productnav a{display:inline-flex;align-items:center;min-height:44px;color:var(--soft);text-decoration:none}.kaart{box-shadow:none}.lamp::before{opacity:.45}
+.tel img{max-height:580px;object-fit:cover;object-position:top}.tel a{display:block}.tel{align-self:start}
+:focus-visible{outline:3px solid #f5b85d;outline-offset:3px}
 </style>
 </head>
 <body>
 <div class="wrap">
-<div class="melding verborgen" id="melding"></div>
 
 <div class="balk">
- <a class="merk" href="./"><img src="beeld/logo.svg" alt=""><b><span class="alleenweb">Zapper control</span><span class="alleenapp">Zapper</span></b></a>
+ <a class="merk" href="./"><img src="beeld/logo.svg" alt=""><b>ZAPPER</b></a>
  <span class="taal"><button data-taal="nl">NL</button><button data-taal="en">EN</button></span>
 </div>
 
-<div class="held alleenweb">
+<nav class="productnav" aria-label="ZAPPER"><a href="#start" data-t="navStart"></a><a href="#control">Control</a><a href="#screen">Screen</a><a href="flash/">USB-flasher</a><a href="handleiding.pdf" data-t="handleiding"></a></nav>
+<div class="held">
  <div>
   <p class="tag" data-t="tag"></p>
   <h1><span data-t="titel1"></span><br><span data-t="titel2"></span></h1>
   <p class="lead" data-t="lead"></p>
-  <div class="knoppen">
-   <a class="knop" href="#open"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg><span data-t="hoe"></span></a>
-   <a class="knop licht" href="#telefoon" data-t="naarTel"></a>
-  </div>
-  <p class="klein" id="controlVersie"></p>
+  <div class="knoppen"><a class="knop" href="#scannen" data-t="naarScan"></a><a class="knop licht" href="flash/" data-t="naarFlash"></a><a class="knop licht" href="handleiding.pdf" data-t="handleiding"></a></div>
+  <p class="klein" id="versieRegel"></p>
  </div>
  <div class="lamp" aria-hidden="true"><img src="beeld/lamp-aan.svg" alt=""></div>
 </div>
 
-<section class="alleenweb">
- <h2 data-t="watKop"></h2>
- <p class="sub" data-t="watSub"></p>
- <div class="raster">
-  <div class="kaart"><div class="icoon"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 21h16"/></svg></div>
-   <h3 data-t="k1"></h3><p data-t="k1t"></p></div>
-  <div class="kaart"><div class="icoon"><svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div>
-   <h3 data-t="k2"></h3><p data-t="k2t"></p></div>
-  <div class="kaart"><div class="icoon"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z"/></svg></div>
-   <h3 data-t="k3"></h3><p data-t="k3t"></p></div>
+<section>
+ <h2 data-t="drieKop"></h2>
+ <p class="sub" data-t="drieSub"></p>
+ <div class="raster drie">
+  <div class="kaart"><div class="icoon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div>
+   <h3>Zapper Control</h3><p data-t="d1"></p><a class="waar" href="#control" data-t="d1w"></a></div>
   <div class="kaart"><div class="icoon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>
-   <h3 data-t="k4"></h3><p data-t="k4t"></p></div>
+   <h3>Zapper Screen</h3><p data-t="d2"></p><a class="waar" href="#screen" data-t="d2w"></a></div>
+  <div class="kaart"><div class="icoon"><svg viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></div>
+   <h3 data-t="d3k"></h3><p data-t="d3"></p><a class="waar" href="flash/" data-t="d3w"></a></div>
  </div>
 </section>
 
-<section id="open" class="alleenweb">
- <h2 data-t="openKop"></h2>
- <p class="sub" data-t="openSub"></p>
- <div class="kaart"><ol class="stappen" id="stOpen"></ol>
-  <p class="klein" data-t="openNoot" style="margin:16px 0 0"></p></div>
-</section>
-
-<section id="gids" class="alleenweb">
- <h2 data-t="gidsKop"></h2>
- <p class="sub" data-t="gidsSub"></p>
- <div class="gids">
-  <div class="kaart"><h3 data-t="gBeheerKop"></h3>
-   <div class="beelden"><figure><a href="beeld/gids-alle-pc.webp" target="_blank"><img src="beeld/gids-alle-pc.webp" alt="" loading="lazy" width="1280" height="860"></a><figcaption data-t="gOpPc"></figcaption></figure>
-    <figure class="tel"><a href="beeld/gids-alle-tel.webp" target="_blank"><img src="beeld/gids-alle-tel.webp" alt="" loading="lazy" width="780" height="1688"></a><figcaption data-t="gOpTel"></figcaption></figure></div>
-   <ol class="stappen" id="stBeheer"></ol>
-   <div class="wat" id="watBeheer"></div></div>
-  <div class="kaart"><h3 data-t="gSchermKop"></h3>
-   <div class="beelden een"><figure><a href="beeld/gids-scherm.webp" target="_blank"><img src="beeld/gids-scherm.webp" alt="" loading="lazy" width="1600" height="1112"></a><figcaption data-t="gOpTablet"></figcaption></figure></div>
-   <ol class="stappen" id="stScherm"></ol>
-   <div class="os toestellen" id="gidsToestel" style="margin-top:6px"><button data-gids="ipad">iPad / iPhone</button><button data-gids="android">Android</button><button data-gids="pc">Windows / Linux</button><button data-gids="mac">Mac</button><button data-gids="tv">Tv</button></div>
-   <ol class="stappen" id="stToestel"></ol>
-   <div class="wat" id="watScherm"></div></div>
-  <div class="kaart"><h3 data-t="gProgKop"></h3><p data-t="gProgTekst"></p>
-   <div class="knoppen" style="margin-top:14px"><a class="knop licht" href="#start" data-t="gProgKnop"></a></div></div>
- </div>
-</section>
-
-<section id="start" class="alleenweb">
+<section id="start">
  <h2 data-t="startKop"></h2>
  <p class="sub" data-t="startSub"></p>
- <div class="knoppen" style="margin-bottom:18px"><a class="knop" id="pcDownload" href="#">
-  <svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><span id="pcDownloadTekst"></span></a><span class="klein" id="pcVersie"></span></div>
- <div class="os" id="os"><button data-os="win">Windows</button><button data-os="mac">Mac</button><button data-os="linux">Linux</button></div>
- <div class="kaart"><ol class="stappen" id="stappen"></ol>
-  <p class="klein" style="margin:14px 0 0"><span data-t="metPython"></span> <a href="control/zapper-control.py" download="zapper-control.py">zapper-control.py</a></p></div>
+ <div class="kaart"><ol class="stappen" id="stStart"></ol></div>
 </section>
 
-<section id="telefoon" class="alleenweb">
- <h2 data-t="telKop"></h2>
- <p class="sub" data-t="telSub"></p>
- <div class="os toestellen" id="toestellen"><button data-tel="iphone">iPhone / iPad</button><button data-tel="android">Android</button><button data-tel="graphene">GrapheneOS</button><button data-tel="samsung">Samsung</button></div>
- <div class="kaart toestel"><h3><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg><span id="telNaam"></span></h3>
-  <ol class="stappen" id="stTel"></ol>
-  <button class="knop installeer verborgen" id="installeer" data-t="installeerNu"></button>
-  <p class="klein" id="telNoot" style="margin:14px 0 0"></p></div>
- <p class="klein" data-t="telLamp" style="margin-top:16px"></p>
- <div class="kaart qrkaart"><img src="beeld/qr-site.svg" alt="QR"><div><h3 data-t="qrKop" style="margin-top:0"></h3><p data-t="qrTekst"></p></div></div>
+<section id="control">
+ <h2>Zapper Control</h2>
+ <p class="sub" data-t="cSub"></p>
+ <div class="kaart">
+  <div class="beelden"><figure><a href="beeld/gids-control-pc.webp" target="_blank"><img src="beeld/gids-control-pc.webp" alt="" loading="lazy" width="1280" height="1100"></a><figcaption data-t="cOpPc"></figcaption></figure>
+   <figure class="tel"><a href="beeld/gids-control-tel.webp" target="_blank"><img src="beeld/gids-control-tel.webp" alt="" loading="lazy" width="390" height="929"></a><figcaption data-t="cOpTel"></figcaption></figure></div>
+  <ol class="stappen" id="stControl"></ol>
+  <div class="wat" id="watControl"></div></div>
 </section>
 
-<section id="mijn">
- <h2 data-t="mijnKop"></h2>
- <p class="sub" data-t="mijnSub"></p>
- <div class="mijn" id="mijnLijst"></div>
- <div class="kaart"><div class="toevoegen">
-  <div><label data-t="mijnNaam"></label><input id="mzNaam" placeholder="zapper02" autocomplete="off"></div>
-  <div><label data-t="mijnAdres"></label><input id="mzAdres" placeholder="192.168.178.142" autocomplete="off" inputmode="url"></div>
-  <button class="knop" id="mzVoeg" data-t="mijnVoeg"></button></div>
-  <p class="klein" data-t="mijnTip" style="margin:12px 0 0"></p></div>
+<section id="scannen">
+ <h2 data-t="scanKop"></h2>
+ <p class="sub" data-t="scanSub"></p>
+ <div class="kaart">
+  <div class="scanveld"><label for="scanAdres" data-t="scanAdres"></label>
+   <input id="scanAdres" value="zapper01.local" autocomplete="url" spellcheck="false">
+   <button class="knop" onclick="scanZappers()" data-t="scanKnop"></button></div>
+  <p class="hint" data-t="scanUitleg"></p><div id="scanResultaat" aria-live="polite"></div>
+ </div>
 </section>
 
-<section>
+<section id="screen">
+ <h2>Zapper Screen</h2>
+ <p class="sub" data-t="sSub"></p>
+ <div class="kaart">
+  <div class="beelden een"><figure><a href="beeld/gids-scherm.webp" target="_blank"><img src="beeld/gids-scherm.webp" alt="" loading="lazy" width="1920" height="1080"></a><figcaption data-t="sOpTablet"></figcaption></figure></div>
+  <ol class="stappen" id="stScreen"></ol>
+  <div class="os" id="toestel" style="margin-top:14px"><button data-toestel="ipad">iPad / iPhone</button><button data-toestel="android">Android</button><button data-toestel="pc">Windows / Linux</button><button data-toestel="mac">Mac</button><button data-toestel="tv">TV</button></div>
+  <ol class="stappen verder" id="stToestel"></ol>
+  <div class="wat" id="watScreen"></div></div>
+</section>
+
+<section id="flashen">
+ <h2 data-t="flashKop"></h2>
+ <p class="sub" data-t="flashSub"></p>
+ <div class="kaart flashkaart"><div class="flashicoon"><svg viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></div>
+  <div><ol class="stappen kort" id="stFlash"></ol>
+   <div class="knoppen" style="margin-top:16px"><a class="knop" href="flash/"><svg viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg><span data-t="flashKnop"></span></a></div></div></div>
+</section>
+
+<section id="nieuw">
  <h2 data-t="nieuwKop"></h2>
  <p class="sub" data-t="nieuwSub"></p>
  <div class="kaart nieuw">
   <div><div class="versie" id="fwVersie">…</div><div class="klein" id="fwDatum"></div></div>
   <div><p class="notities" id="fwNotities"></p></div>
  </div>
- <div class="kaart" style="margin-top:16px"><h3 data-t="dlKop" style="margin-top:0"></h3><p data-t="dlSub"></p>
-  <div class="downloads" id="downloads"></div>
-  <details class="eerder" id="eerderVak"><summary data-t="eerderKop"></summary><div id="eerder"></div></details></div>
+ <details class="eerder verborgen" id="eerderVak"><summary data-t="eerderKop"></summary><div id="eerder"></div></details>
 </section>
-
-<section id="flashen" class="alleenweb">
- <h2 data-t="flashKop"></h2>
- <p class="sub" data-t="flashSub"></p>
- <div class="letop" id="flashLet"></div>
- <div class="kaart"><ol class="stappen" id="stFlash"></ol>
-  <div class="flashborden">
-   <div class="kaart"><h3 data-t="bordReva"></h3><p class="klein" id="flashVersieReva"></p>
-    <esp-web-install-button manifest="flash/zapper-reva.json"><button slot="activate" class="knop" data-t="flashKnop"></button>
-     <span slot="unsupported" data-t="flashNiet"></span><span slot="not-allowed" data-t="flashHttps"></span></esp-web-install-button></div>
-   <div class="kaart"><h3 data-t="bordLamp01"></h3><p class="klein" id="flashVersieLamp01"></p>
-    <esp-web-install-button manifest="flash/lamp01.json"><button slot="activate" class="knop" data-t="flashKnop"></button>
-     <span slot="unsupported" data-t="flashNiet"></span><span slot="not-allowed" data-t="flashHttps"></span></esp-web-install-button></div>
-  </div>
-  <p class="klein" data-t="flashLukt" style="margin:16px 0 0"></p></div>
-</section>
-<script type="module" src="flash/ewt/install-button.js"></script>
 
 <section>
  <h2 data-t="veiligKop"></h2>
@@ -355,7 +298,7 @@ body{--mdc-theme-primary:#9d00f9;--mdc-theme-on-primary:#fff}
  <div class="kaart vragen" id="vragenLijst"></div>
 </section>
 
-<section class="alleenweb">
+<section>
  <div class="kaart"><h3 data-t="zelfKop" style="margin-top:0"></h3><p data-t="zelfTekst"></p></div>
 </section>
 
@@ -363,216 +306,152 @@ body{--mdc-theme-primary:#9d00f9;--mdc-theme-on-primary:#fff}
  <div data-t="voet"></div>
  <div class="npubs" id="npubs"></div>
  <div class="links">
-  <a class="pil" href="https://github.com/JaccoElektro/zapper-updates" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M9 19c-4 1.3-4-2-6-2.5M15 22v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 0 0-1.3-3.2 4.2 4.2 0 0 0-.1-3.2s-1-.3-3.4 1.3a11.7 11.7 0 0 0-6.2 0C6.6 2.8 5.6 3.1 5.6 3.1a4.2 4.2 0 0 0-.1 3.2A4.6 4.6 0 0 0 4.2 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V22"/></svg><span data-t="github"></span></a>
-  <a class="pil" href="https://bitpopart.com" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>bitpopart.com</a>
   <a class="pil" href="handleiding.pdf" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5M8 7h7"/></svg><span data-t="handleiding"></span></a>
+  <a class="pil" href="https://bitpopart.com" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>bitpopart.com</a>
   <a class="pil" href="manifest.json" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h7M9 17h5"/></svg><span data-t="lijstLink"></span></a>
  </div>
  <p class="privacy" data-t="privacy"></p>
 </footer>
 </div>
-
 <script>
 const T={
- tag:["Voor ZAPPER zap-lampen","For ZAPPER zap lamps"],
- titel1:["Al je Zappers.","All your Zappers."],titel2:["Eén plek.","One place."],
- lead:["Open één ZAPPER in je browser en beheer ze allemaal: updates, feestjes en deuntjes, instellingen en wifi. Niets te installeren, op je telefoon en op je computer.","Open one ZAPPER in your browser and manage them all: updates, celebrations and tunes, settings and Wi-Fi. Nothing to install, on your phone and on your computer."],
- download:["Download Zapper control","Download Zapper control"],hoe:["Zo open je je Zappers","How to open your Zappers"],naarTel:["Op je telefoon","On your phone"],
- controlVersie:["Firmware %v · gratis · ondertekend zoals nostr","Firmware %v · free · signed like nostr"],
- pcVersie:["Versie %v · Windows, Mac en Linux","Version %v · Windows, Mac and Linux"],
- openKop:["Zo open je je Zappers","How to open your Zappers"],
- gidsKop:["Op je tablet, iPad, pc of Mac","On your tablet, iPad, PC or Mac"],
- flashKop:["Nieuwe Zapper flashen","Flash a new Zapper"],
- flashSub:["Voor een nieuwe print, of een lamp die niet meer opstart. Je computer zet de nieuwste firmware er rechtstreeks op, vanuit de browser; je hoeft niets te installeren.","For a new board, or a lamp that no longer starts. Your computer puts the newest firmware on it directly, from the browser; nothing to install."],
- flashLet:["<b>Flashen wist alles</b>: wifi, wachtwoord, instellingen en de nostr-sleutel (de lamp krijgt een nieuw npub). Een lamp die werkt, werk je bij via Systeem, Updates of Alle Zappers; dan blijft alles staan.","<b>Flashing erases everything</b>: Wi-Fi, password, settings and the nostr key (the lamp gets a new npub). A lamp that works is updated under System, Updates or All Zappers; then everything stays."],
- stFlash:[["Gebruik <b>Chrome</b>, <b>Edge</b> of <b>Opera</b> op een computer (Windows, Mac of Linux). Op een telefoon of iPad kan het niet.","Use <b>Chrome</b>, <b>Edge</b> or <b>Opera</b> on a computer (Windows, Mac or Linux). A phone or iPad cannot do it."],
-  ["Haal de lamp uit de lamp-aansluiting en de adapter eraf, en verbind de print met een <b>USB-C-datakabel</b> met je computer.","Unplug the lamp from the lamp socket and the adapter, and connect the board to your computer with a <b>USB-C data cable</b>."],
-  ["Klik hieronder bij jouw print op <b>Flashen</b>, kies de poort (<b>USB JTAG/serial debug unit</b>) en bevestig. Dat duurt ongeveer een minuut.","Click <b>Flash</b> for your board below, choose the port (<b>USB JTAG/serial debug unit</b>) and confirm. It takes about a minute."],
-  ["De lamp start opnieuw en het lampje pulseert lichtblauw. Lamp en adapter terug, en stel hem in via het wifi-netwerk <b>zapper-xxxx-setup</b>; het wachtwoord is daarna Bitcoin21.","The lamp restarts and its light pulses light blue. Lamp and adapter back, and set it up through the Wi-Fi network <b>zapper-xxxx-setup</b>; the password is then Bitcoin21."]],
- flashKnop:["Flashen","Flash"],flashVersie:["Firmware %v, de nieuwste","Firmware %v, the newest"],
- flashNiet:["Deze browser kan niet via USB flashen. Gebruik Chrome of Edge op een computer.","This browser cannot flash over USB. Use Chrome or Edge on a computer."],
- flashHttps:["Flashen kan alleen via de https-pagina: https://bitpopart.com/zapper/","Flashing only works from the https page: https://bitpopart.com/zapper/"],
- flashLukt:["Ziet je computer de print niet? Probeer een andere kabel (niet elke kabel draagt data). Lukt verbinden niet: houd BOOT ingedrukt, tik op RESET, laat BOOT los en probeer opnieuw.","Does your computer not see the board? Try another cable (not every cable carries data). Connecting fails: hold BOOT, tap RESET, let go of BOOT and try again."],
- gidsSub:["Er zijn twee schermen: Alle Zappers om je lampen te beheren, en het Zapper-scherm om ze te laten zappen. Allebei werken ze in de browser, op elk toestel in je wifi.","There are two screens: All Zappers to manage your lamps, and the Zapper screen to let people zap them. Both work in the browser, on any device on your Wi-Fi."],
- gBeheerKop:["1. Beheren: Alle Zappers","1. Manage: All Zappers"],gOpPc:["Alle Zappers op een computer","All Zappers on a computer"],gOpTel:["En op een telefoon","And on a phone"],
- stBeheer:[["Zet je telefoon, tablet of computer op <b>dezelfde wifi</b> als je Zappers.","Put your phone, tablet or computer on <b>the same Wi-Fi</b> as your Zappers."],
-  ["Open een Zapper in de browser: <code>http://zapper01.local</code>, of het adres met cijfers (op Android alleen dat). Log in; standaard is het wachtwoord <b>Bitcoin21</b>.","Open a Zapper in the browser: <code>http://zapper01.local</code>, or the address in numbers (on Android only that). Log in; the default password is <b>Bitcoin21</b>."],
-  ["Tik rechtsboven op het icoon met de twee lampjes <img class=\"inline-icoon\" src=\"beeld/gids-icoon.webp\" alt=\"\">, of in het menu op <b>Alle Zappers</b>.","Tap the icon with the two lamps at the top right <img class=\"inline-icoon\" src=\"beeld/gids-icoon.webp\" alt=\"\">, or <b>All Zappers</b> in the menu."],
-  ["Zet de pagina op je beginscherm (zie <a href=\"#telefoon\">Op je telefoon</a>): dan opent hij voortaan als app.","Put the page on your home screen (see <a href=\"#telefoon\">On your phone</a>): from then on it opens as an app."]],
- watBeheer:[["Bovenaan","At the top"],["Of alles in orde is, of welke lamp aandacht vraagt; daaronder zaps, sats, grootste zap en de blokhoogte.","Whether all is well, or which lamp needs attention; below it zaps, sats, biggest zap and block height."],
-  ["Per lamp","Per lamp"],["Tik op de lamp om hem aan of uit te zetten, kies Auto, Altijd aan of Altijd uit, en het deuntje voor een zap en een feestje.","Tap the lamp to switch it on or off, choose Auto, Always on or Always off, and the tune for a zap and a celebration."],
-  ["Openen","Open"],["Brengt je naar die lamp, al ingelogd, met al zijn instellingen.","Takes you to that lamp, already logged in, with all its settings."],
-  ["Samen","Together"],["Vink lampen aan voor bijwerken, deuntjes, instellingen, wifi of een back-up in één keer.","Tick lamps to update, set tunes, settings, Wi-Fi or a backup in one go."]],
- gSchermKop:["2. Laten zappen: het Zapper-scherm","2. Let people zap: the Zapper screen"],gOpTablet:["Het Zapper-scherm op een tablet","The Zapper screen on a tablet"],
- stScherm:[["Open op het toestel dat het scherm wordt <b>Alle Zappers</b> en tik op <b>Zapper-scherm</b>. Bewaar dat adres als bladwijzer: het werkt zonder inloggen.","On the device that becomes the screen, open <b>All Zappers</b> and tap <b>Zapper screen</b>. Bookmark that address: it works without logging in."],
+ navStart:["Aan de slag","Get started"],
+ tag:["ZAPPER zap-lamp","ZAPPER zap lamp"],
+ titel1:["Elke zap","Every zap"],titel2:["licht op.","lights up."],
+ lead:["Een lamp die oplicht bij elke zap op nostr. Alles wat je nodig hebt zit in de lamp zelf: open hem in je browser en je beheert al je Zappers. Geen app, geen account, niets te installeren.","A lamp that lights up on every zap on nostr. Everything you need is in the lamp itself: open it in your browser and you manage all your Zappers. No app, no account, nothing to install."],
+ naarStart:["Zo begin je","Get started"],naarScan:["Zappers zoeken","Find Zappers"],naarFlash:["Nieuwe Zapper flashen","Flash a new Zapper"],
+ versieRegel:["Firmware %v · gratis · ondertekend zoals nostr","Firmware %v · free · signed like nostr"],
+ drieKop:["Drie dingen. Meer niet.","Three things. Nothing more."],
+ drieSub:["Twee zitten in elke ZAPPER, de derde staat op deze site.","Two are in every ZAPPER, the third is on this site."],
+ d1:["Al je lampen op één pagina: live aan en uit, zaps en sats, updates in één tik, instellingen, deuntjes, wifi en nostr voor allemaal tegelijk.","All your lamps on one page: live on and off, zaps and sats, updates in one tap, settings, tunes, Wi-Fi and nostr for all of them at once."],
+ d1w:["In elke lamp: /control","In every lamp: /control"],
+ d2:["Een schoon scherm voor een tv, tablet of etalage: elke lamp met zijn nostr-profiel en een QR, zodat iedereen de lamp van zijn keuze kan zappen.","A clean screen for a TV, tablet or shop window: each lamp with its nostr profile and a QR, so anyone can zap the lamp of their choice."],
+ d2w:["In elke lamp: /screen","In every lamp: /screen"],
+ d3k:["USB-flasher","USB flasher"],
+ d3:["Voor een nieuwe print, of wifi instellen op een nieuwe plek: kabel erin, één knop, klaar. In Chrome of Edge op een computer.","For a new board, or setting up Wi-Fi at a new place: plug in the cable, one button, done. In Chrome or Edge on a computer."],
+ d3w:["Op deze site: Open de flasher","On this site: Open the flasher"],
+ startKop:["Zo begin je","Get started"],
+ startSub:["Eén keer, voor je eerste lamp. Daarna doe je alles vanuit Zapper Control.","Once, for your first lamp. After that you do everything from Zapper Control."],
+ stStart:[["<b>Wifi.</b> Sluit de lamp met USB aan op je computer en kies je netwerk in de <a href=\"flash/\">USB-flasher</a>. Zonder computer: verbind je telefoon met het netwerk <code>zapper-xxxx-setup</code> van de lamp en kies daar je wifi.","<b>Wi-Fi.</b> Connect the lamp to your computer with USB and choose your network in the <a href=\"flash/\">USB flasher</a>. Without a computer: connect your phone to the lamp's network <code>zapper-xxxx-setup</code> and choose your Wi-Fi there."],
+  ["<b>Openen.</b> Open <code>http://zapper01.local</code> in je browser (met de naam van je lamp), op een toestel in dezelfde wifi. Op Android werkt alleen het adres met cijfers, bijvoorbeeld <code>http://192.168.1.20</code>.","<b>Open.</b> Open <code>http://zapper01.local</code> in your browser (with your lamp's name), on a device on the same Wi-Fi. On Android only the address in numbers works, for example <code>http://192.168.1.20</code>."],
+  ["<b>Inloggen.</b> Het wachtwoord is <b>Bitcoin21</b>. Kies daarna je eigen wachtwoord; het overzicht herinnert je eraan.","<b>Log in.</b> The password is <b>Bitcoin21</b>. Then choose your own password; the overview reminds you."],
+  ["<b>Zappen.</b> Vul je lightning-adres in en publiceer het profiel (Overzicht, Aan de slag). Zap de lamp: hij licht op.","<b>Zap.</b> Fill in your lightning address and publish the profile (Overview, Getting started). Zap the lamp: it lights up."]],
+ cSub:["Open één lamp en je ziet ze allemaal. Op je computer, je tablet en je telefoon.","Open one lamp and you see them all. On your computer, your tablet and your phone."],
+ scanKop:["Zappers op je netwerk zoeken","Find Zappers on your network"],
+ scanSub:["Gebruik deze pagina op een computer die met dezelfde wifi is verbonden als je lampen.","Use this page on a computer connected to the same Wi-Fi as your lamps."],
+ scanAdres:["Adres van één Zapper op je netwerk","Address of one Zapper on your network"],
+ scanKnop:["Zoek Zappers","Find Zappers"],
+ scanUitleg:["Chrome of Edge vraagt toestemming voor toegang tot je lokale netwerk. Voer het adres van één lamp in; die zoekt de andere Zappers via mDNS. Er wordt niets veranderd aan je lampen.","Chrome or Edge will ask permission to access your local network. Enter one lamp's address; it finds the other Zappers through mDNS. Nothing is changed on your lamps."],
+ scanBezig:["Zoeken…","Searching…"],
+ scanFout:["Niet gelukt. Controleer het adres, dezelfde wifi en de toestemming voor lokaal netwerk in Chrome of Edge (versie 142 of hoger).","Could not connect. Check the address, same Wi-Fi, and Local Network permission in Chrome or Edge (version 142 or newer)."],
+ scanGeen:["Geen andere Zappers gevonden.","No other Zappers found."],
+ scanEigen:["Startlamp","Starting lamp"],
+ cOpPc:["Zapper Control op een computer","Zapper Control on a computer (Dutch UI; English available)"],cOpTel:["En op een telefoon","On a phone (Dutch UI; English available)"],
+ stControl:[["Open een lamp in je browser en tik op <b>Zapper Control</b> in het menu, gebruik de zichtbare productlink naast Zapper Screen.","Open a lamp in your browser and tap <b>Zapper Control</b> in the menu, use the visible product link next to Zapper Screen."],
+  ["Alle Zappers in je wifi verschijnen vanzelf. Heeft een lamp een ander wachtwoord, dan vraagt zijn kaart het één keer.","Every Zapper on your Wi-Fi shows up by itself. Does a lamp have a different password? Its card asks for it once."],
+  ["Op je telefoon: tik op het telefoonicoon <span class=\"knopje\"><svg viewBox=\"0 0 24 24\"><rect x=\"7\" y=\"2.5\" width=\"10\" height=\"19\" rx=\"2.5\"/><path d=\"M11 18.5h2\"/></svg></span> en scan de code. Zet de pagina daar met <b>Delen</b>, <b>Zet op beginscherm</b> als app op je beginscherm.","On your phone: tap the phone icon <span class=\"knopje\"><svg viewBox=\"0 0 24 24\"><rect x=\"7\" y=\"2.5\" width=\"10\" height=\"19\" rx=\"2.5\"/><path d=\"M11 18.5h2\"/></svg></span> and scan the code. Put the page on your home screen there as an app with <b>Share</b>, <b>Add to Home Screen</b>."]],
+ watControl:[["Bovenaan","At the top"],["Updates met één knop, en of alles in orde is of welke lamp aandacht vraagt. Daaronder zaps, sats, grootste zap en de blokhoogte.","Updates with one button, and whether all is well or which lamp needs attention. Below it zaps, sats, biggest zap and the block height."],
+  ["Per lamp","Per lamp"],["Tik op de lamp om hem aan of uit te zetten. Auto, Altijd aan of Altijd uit, Zoek me, de QR om te zappen, en Openen: naar die lamp, al ingelogd.","Tap the lamp to switch it on or off. Auto, Always on or Always off, Find me, the QR to zap it, and Open: to that lamp, already logged in."],
+  ["Samen","Together"],["Vink lampen aan. Lamp, Geluid, Instellingen, Wifi, Nostr en Onderhoud: alles voor de gekozen lampen in één keer.","Tick lamps. Lamp, Sound, Settings, Wi-Fi, Nostr and Maintenance: everything for the selected lamps in one go."],
+  ["Zaps","Zaps"],["De laatste zaps van al je lampen, de top zappers met hun nostr-foto, en sats per dag over een maand.","The latest zaps on all your lamps, the top zappers with their nostr picture, and sats per day over a month."]],
+ sSub:["Laat iedereen zappen. Zonder inloggen en zonder knoppen die je niet wilt laten zien.","Let anyone zap. Without logging in and without buttons you do not want to show."],
+ sOpTablet:["Zapper Screen op een tablet","Zapper Screen on a tablet"],
+ stScreen:[["Open op het toestel dat het scherm wordt <b>Zapper Control</b> en tik op <b>Zapper Screen</b>. Bewaar dat adres als bladwijzer: het werkt zonder inloggen.","On the device that becomes the screen, open <b>Zapper Control</b> and tap <b>Zapper Screen</b>. Bookmark that address: it works without logging in."],
   ["Maak het schermvullend en zet het vast, zodat gasten er niet uit kunnen. Kies je toestel:","Make it fill the screen and lock it, so guests cannot leave it. Pick your device:"]],
- gToestel:{
+ toestel:{
   ipad:[["Safari kent geen volledig scherm. Tik met het Zapper-scherm open op <b>Deel</b> en <b>Zet op beginscherm</b>; open het voortaan via dat icoon, dan vult het het hele scherm.","Safari has no full screen. With the Zapper screen open, tap <b>Share</b> and <b>Add to Home Screen</b>; open it from that icon from now on, and it fills the whole screen."],
    ["Vastzetten: <b>Instellingen</b>, <b>Toegankelijkheid</b>, <b>Begeleide toegang</b> aan. Open het scherm, druk drie keer op de zijknop (of de thuisknop) en tik op <b>Start</b>.","Lock it: <b>Settings</b>, <b>Accessibility</b>, <b>Guided Access</b> on. Open the screen, press the side button (or home button) three times and tap <b>Start</b>."]],
   android:[["Raak het scherm aan en tik rechtsboven op <b>volledig scherm</b> (de vier hoekjes).","Touch the screen and tap <b>full screen</b> at the top right (the four corners)."],
    ["Vastzetten: <b>Instellingen</b>, <b>Beveiliging</b>, <b>App vastzetten</b> aan. Open het overzicht van je apps, tik op het icoon van de browser en kies <b>Vastzetten</b>.","Lock it: <b>Settings</b>, <b>Security</b>, <b>App pinning</b> on. Open the overview of your apps, tap the browser's icon and choose <b>Pin</b>."]],
   pc:[["Tik rechtsboven op <b>volledig scherm</b>, of druk op <b>F11</b>.","Tap <b>full screen</b> at the top right, or press <b>F11</b>."],
-   ["Voor een vaste opstelling start je Chrome of Edge in kioskmodus met het adres: <code>chrome --kiosk http://zapper01.local/scherm</code> (met het adres uit je bladwijzer).","For a fixed setup, start Chrome or Edge in kiosk mode with the address: <code>chrome --kiosk http://zapper01.local/scherm</code> (with the address from your bookmark)."]],
+   ["Voor een vaste opstelling start je Chrome of Edge in kioskmodus met het adres: <code>chrome --kiosk http://zapper01.local/screen</code> (met het adres uit je bladwijzer).","For a fixed setup, start Chrome or Edge in kiosk mode with the address: <code>chrome --kiosk http://zapper01.local/screen</code> (with the address from your bookmark)."]],
   mac:[["Tik rechtsboven op <b>volledig scherm</b>, of druk op <b>Ctrl Cmd F</b>.","Tap <b>full screen</b> at the top right, or press <b>Ctrl Cmd F</b>."],
    ["Liever een vaste opstelling: zet de Mac bij <b>Systeeminstellingen</b>, <b>Vergrendelscherm</b> nooit op slot.","For a fixed setup: in <b>System Settings</b>, <b>Lock Screen</b>, never lock the Mac."]],
   tv:[["Open het adres uit je bladwijzer in de browser van je smart-tv, en zet de tv op <b>nooit uitschakelen</b>.","Open the address from your bookmark in your smart TV's browser, and set the TV to <b>never switch off</b>."],
    ["Heeft je tv geen goede browser? Een goedkope Android-tablet of tv-stick met Chrome werkt het makkelijkst.","Does your TV have no good browser? A cheap Android tablet or TV stick with Chrome is easiest."]]},
- watScherm:[["Per lamp","Per lamp"],["De lamp die live mee aan en uit gaat, de nostr-foto en naam, een QR om te zappen, zaps en sats, het doel en de laatste zap.","The lamp going on and off live, its nostr picture and name, a QR to zap it, zaps and sats, the goal and the latest zap."],
+ watScreen:[["Per lamp","Per lamp"],["De lamp die live mee aan en uit gaat, de nostr-foto en naam, een QR om te zappen, zaps en sats, het doel en de laatste zap.","The lamp going on and off live, its nostr picture and name, a QR to zap it, zaps and sats, the goal and the latest zap."],
   ["Bij een zap","On a zap"],["De kaart van die lamp gloeit op met ⚡ ZAP!, en de cijfers lopen meteen bij.","That lamp's card lights up with ⚡ ZAP!, and the numbers update at once."],
   ["⚡ QR","⚡ QR"],["Het knopje in de hoek zet een tweede code aan voor elke lightning-wallet, voor gasten zonder nostr-app.","The button in the corner adds a second code for any lightning wallet, for guests without a nostr app."],
   ["Altijd aan","Always on"],["Het scherm blijft vanzelf aan. De knoppen in de hoeken verdwijnen als niemand het scherm aanraakt.","The screen stays on by itself. The buttons in the corners fade out when nobody touches the screen."]],
- gProgKop:["3. Liever een programma op pc of Mac?","3. Prefer a program on your PC or Mac?"],
- gProgTekst:["Zapper control doet hetzelfde als Alle Zappers, ook met oudere Zappers, en heeft het Zapper-scherm en een QR per lamp. Downloaden, dubbelklikken, klaar.","Zapper control does the same as All Zappers, also with older Zappers, and has the Zapper screen and a QR per lamp. Download, double-click, done."],
- gProgKnop:["Naar de download","To the download"],
- openSub:["Je hoeft niets te installeren: elke ZAPPER heeft zijn eigen pagina, en vanaf één lamp beheer je ze allemaal.","Nothing to install: every ZAPPER has its own page, and from one lamp you manage them all."],
- stOpen:[["Zet je telefoon of computer op <b>dezelfde wifi</b> als je Zappers.","Put your phone or computer on <b>the same Wi-Fi</b> as your Zappers."],
-  ["Open in je browser <code>http://zapper01.local</code> (met de naam van je lamp), of het adres in je netwerk, zoals <code>http://192.168.178.142</code>. Op Android werkt alleen het adres met cijfers.","Open <code>http://zapper01.local</code> in your browser (with your lamp's name), or its address on your network, like <code>http://192.168.178.142</code>. On Android only the address in numbers works."],
-  ["Log in (standaard met <b>Bitcoin21</b>, tot je het verandert) en tik op <b>Alle Zappers</b>. Daar zie je ze allemaal, live; kies er een paar om ze samen bij te werken, deuntjes te geven of in te stellen.","Log in (with <b>Bitcoin21</b> by default, until you change it) and tap <b>All Zappers</b>. There you see them all, live; pick a few to update them together, give them tunes or set them up."]],
- openNoot:["Alle Zappers zit in firmware 1.9 en nieuwer. Een oudere lamp werk je eerst één keer bij: vanaf 1.8 onder Systeem, Updates; daarvoor met het bestand bij Nieuwste firmware hieronder.","All Zappers is in firmware 1.9 and newer. Update an older lamp once first: from 1.8 under System, Updates; before that with the file under Newest firmware below."],
- qrKop:["Open deze pagina op je telefoon","Open this page on your phone"],qrTekst:["Scan de code met de camera van je telefoon en volg daar de stappen voor je toestel.","Scan the code with your phone's camera and follow the steps for your device there."],
- watKop:["Wat kun je ermee?","What can it do?"],
- watSub:["Elke Zapper krijgt een kaart met zijn eigen lamp, die live meeknippert bij een zap. Tik op de lamp om hem aan of uit te zetten.","Every Zapper gets a card with its own lamp, which blinks along live on a zap. Tap the lamp to switch it on or off."],
- k1:["Updates in één klik","Updates in one click"],k1t:["Alle Zappers naar de nieuwste firmware, één voor één, en daarna gecontroleerd.","Every Zapper to the newest firmware, one after the other, and checked afterwards."],
- k2:["Feestjes en deuntjes","Celebrations and tunes"],k2t:["Kies per lamp een deuntje bij elke zap en bij een feestje, of geef ze allemaal een ander.","Choose a tune per lamp for every zap and for a celebration, or give each one a different one."],
- k4:["Zapper-scherm","Zapper screen"],k4t:["Een schoon scherm voor een tv of tablet: elke lamp met zijn nostr-profiel en een QR, en hij licht live op bij een zap.","A clean screen for a TV or tablet: every lamp with its nostr profile and a QR, lighting up live on a zap."],
- k3:["Alles in bulk","Everything in bulk"],k3t:["Instellingen, wifi, mijlpalen en een back-up voor al je Zappers tegelijk.","Settings, Wi-Fi, milestones and a backup for all your Zappers at once."],
- startKop:["Liever een programma? Zapper control","Prefer a program? Zapper control"],
- startSub:["Een programma voor je computer dat hetzelfde doet, ook met Zappers van vóór 1.9, met het Zapper-scherm en een QR per lamp. Downloaden, dubbelklikken, klaar: er hoeft niets bij geïnstalleerd te worden. Je computer moet op hetzelfde netwerk zitten als je Zappers.","A program for your computer that does the same, also with Zappers from before 1.9, with the Zapper screen and a QR per lamp. Download, double-click, done: nothing else to install. Your computer has to be on the same network as your Zappers."],
- downloadVoor:["Download voor %o","Download for %o"],
- metPython:["Heb je Python al, of een Mac met een Intel-chip? Dan kan het ook met het losse bestand:","Already have Python, or a Mac with an Intel chip? Then the single file works too:"],
- voet:["ZAPPER is ontworpen en gebouwd door JaccoElektro, aangeboden aan BitPopArt. Op nostr:","ZAPPER is designed and built by JaccoElektro, offered to BitPopArt. On nostr:"],
+ flashKop:["USB-flasher","USB flasher"],
+ flashSub:["Voor een nieuwe print, een lamp die niet meer opstart, of wifi op een nieuwe plek. Vanuit je browser, niets te installeren.","For a new board, a lamp that no longer starts, or Wi-Fi at a new place. From your browser, nothing to install."],
+ stFlash:[["<b>Verbind</b> de lamp met een USB-C-datakabel, in Chrome of Edge op een computer.","<b>Connect</b> the lamp with a USB-C data cable, in Chrome or Edge on a computer."],
+  ["<b>Firmware:</b> de nieuwste erop, ondertekend en gecontroleerd. Instellingen en sleutel blijven staan.","<b>Firmware:</b> the newest on it, signed and checked. Settings and key stay."],
+  ["<b>Wifi:</b> kies je netwerk uit de lijst en vul het wachtwoord in.","<b>Wi-Fi:</b> choose your network from the list and enter the password."]],
+ flashKnop:["Open de flasher","Open the flasher"],
  nieuwKop:["Nieuwste firmware","Newest firmware"],
- nieuwSub:["Een ZAPPER vanaf versie 1.8 ziet dit zelf en meldt het op zijn overzicht. Bijwerken doe je bij Systeem → Updates, of voor al je lampen tegelijk bij Alle Zappers.","A ZAPPER from version 1.8 sees this by itself and shows it on its overview. Update under System → Updates, or for all your lamps at once under All Zappers."],
- dlKop:["Firmware als bestand","Firmware as a file"],
- dlSub:["Alleen nodig voor een lamp van vóór 1.8, of een nieuwe printplaat. Het bijwerkbestand zet je op de lamp bij Systeem; het volledige bestand is voor flashen via USB.","Only needed for a lamp from before 1.8, or a new board. The update file goes onto the lamp under System; the full file is for flashing over USB."],
- bordReva:["ZAPPER-printplaat (REV A)","ZAPPER board (REV A)"],bordLamp01:["Zelfbouw: ESP32-C6-Zero met MOSFET","Self-built: ESP32-C6-Zero with MOSFET"],
- ota:["Bijwerkbestand","Update file"],fabriek:["Volledig (USB)","Full (USB)"],eerderKop:["Eerdere versies","Earlier versions"],
+ nieuwSub:["Je lampen zien dit zelf. Bijwerken doe je in Zapper Control met één knop, voor allemaal tegelijk.","Your lamps see this by themselves. Update in Zapper Control with one button, for all of them at once."],
+ eerderKop:["Eerdere versies","Earlier versions"],
+ veiligKop:["Ondertekend, zoals nostr","Signed, like nostr"],
+ veiligTekst:["De nieuwste update staat in een lijst die is ondertekend met de sleutel van de maker (BIP340 Schnorr, dezelfde handtekening als nostr). De lamp en de USB-flasher controleren die handtekening en de controlesom. Oudere versies onder Meer opties in de USB-flasher hebben alleen een controlesom. De publieke sleutel:","The newest update is listed in a manifest signed with the maker's key (BIP340 Schnorr, the same signature as nostr). The lamp and the USB flasher check that signature and the checksum. Older versions under More options in the USB flasher have a checksum only. The public key:"],
  checkBezig:["Handtekening controleren…","Checking the signature…"],checkGoed:["Handtekening gecontroleerd in je browser: de lijst komt echt van de maker","Signature checked in your browser: the list really comes from the maker"],
  checkFout:["De handtekening klopt niet. Installeer niets en meld het aan de maker.","The signature does not match. Install nothing and tell the maker."],
  vragenKop:["Vragen","Questions"],
  vragen:[
+  [["Moet ik iets installeren?","Do I need to install anything?"],["Nee. Zapper Control en Zapper Screen zitten in elke lamp en werken in elke browser. Alleen voor de USB-flasher heb je Chrome of Edge op een computer nodig.","No. Zapper Control and Zapper Screen are in every lamp and work in any browser. Only the USB flasher needs Chrome or Edge on a computer."]],
   [["Mijn Zapper staat er niet bij","My Zapper does not show up"],["Zit je toestel op dezelfde wifi? Een gastnetwerk houdt apparaten vaak uit elkaar. Probeer het adres met cijfers (te vinden in je router of op de lamp onder Systeem), en kijk of het lampje op het board groen is.","Is your device on the same Wi-Fi? A guest network often keeps devices apart. Try the address in numbers (in your router, or on the lamp under System), and check that the light on the board is green."]],
   [["Ik ben het wachtwoord vergeten","I forgot the password"],["Houd de knop op het board 10 seconden ingedrukt. De lamp gaat terug naar de fabrieksinstellingen; het wachtwoord is dan weer Bitcoin21. Verander het na het inloggen bij Instellingen.","Hold the button on the board for 10 seconds. The lamp goes back to factory settings; the password is Bitcoin21 again. Change it after logging in, under Settings."]],
-  [["Hoe zet ik al mijn Zappers op een ander netwerk?","How do I move all my Zappers to another network?"],["Bij Alle Zappers: kies ze, open Wifi en vul het nieuwe netwerk in. Elke lamp kijkt eerst of hij het netwerk ziet en blijft anders zoals hij is.","Under All Zappers: pick them, open Wi-Fi and enter the new network. Each lamp first checks that it can see the network and otherwise stays as it is."]],
-  [["Wat als een update mislukt?","What if an update fails?"],["Dan draait de lamp gewoon door op de oude versie. Hij installeert alleen wat bij de ondertekende lijst hoort, en start pas opnieuw als het nieuwe bestand helemaal klopt.","Then the lamp keeps running the old version. It only installs what matches the signed list, and only restarts once the new file checks out completely."]],
-  [["Werkt dit ook buiten mijn huis?","Does this work away from home?"],["Je lampen beheren kan alleen op je eigen netwerk; zo kan niemand van buiten erbij. Updates haalt een lamp wel zelf van internet, ook als jij ver weg bent.","Managing your lamps only works on your own network, so nobody outside can get in. A lamp does fetch updates from the internet by itself, even when you are far away."]],
-  [["Waarom zegt mijn browser \u0022niet beveiligd\u0022?","Why does my browser say \u0022not secure\u0022?"],["Een lamp praat gewoon http in je eigen netwerk, zonder certificaat. Je wachtwoord gaat er niet als leesbare tekst overheen: de browser rekent er eerst een eenmalige code mee uit.","A lamp speaks plain http on your own network, without a certificate. Your password does not travel as readable text: the browser first computes a one-time code with it."]],
-  [["Kost het iets?","Does it cost anything?"],["Nee. De firmware, de updates, deze app en Zapper control zijn gratis.","No. The firmware, the updates, this app and Zapper control are free."]]],
+  [["Hoe zet ik mijn Zappers op een ander netwerk?","How do I move my Zappers to another network?"],["Allemaal tegelijk: in Zapper Control, kies ze en open Wifi. Elke lamp kijkt eerst of hij het nieuwe netwerk ziet en blijft anders zoals hij is. Staat de lamp al op een nieuwe plek: sluit hem met USB aan en kies het netwerk in de USB-flasher.","All at once: in Zapper Control, select them and open Wi-Fi. Each lamp first checks that it sees the new network and otherwise stays as it is. Is the lamp already at a new place: connect it with USB and choose the network in the USB flasher."]],
+  [["Wat als een update mislukt?","What if an update fails?"],["Dan draait de lamp gewoon door op de oude versie. Hij installeert alleen wat bij de ondertekende lijst hoort, en start pas opnieuw als het nieuwe bestand helemaal klopt.","Then the lamp keeps running the old version. It only installs what matches the signed list, and only restarts once the new file is complete and correct."]],
+  [["Werkt dit ook buiten mijn huis?","Does this work away from home?"],["Je lampen beheren kan alleen op je eigen netwerk; zo kan niemand van buiten erbij. Updates haalt een lamp wel zelf van internet, en zaps komen overal vandaan.","Managing your lamps only works on your own network, so nobody outside can get in. A lamp does fetch updates from the internet itself, and zaps come from anywhere."]],
+  [["Waarom zegt mijn browser ‘niet beveiligd’?","Why does my browser say ‘not secure’?"],["Een lamp praat gewoon http in je eigen netwerk, zonder certificaat. Je wachtwoord gaat er niet als leesbare tekst overheen: de browser rekent er eerst een eenmalige code mee uit.","A lamp speaks plain http on your own network, without a certificate. Your password does not travel as readable text: the browser first works out a one-time code with it."]],
+  [["Ik had het programma Zapper control. En nu?","I had the Zapper control program. Now what?"],["Dat is niet meer nodig: alles wat het deed, zit nu in elke lamp onder Zapper Control. Je mag het programma weggooien.","It is no longer needed: everything it did is now in every lamp under Zapper Control. You can throw the program away."]],
+  [["Kost het iets?","Does it cost anything?"],["Nee. De firmware, de updates en de USB-flasher zijn gratis.","No. The firmware, the updates and the USB flasher are free."]]],
  zelfKop:["Zelf een ZAPPER?","A ZAPPER of your own?"],
  zelfTekst:["Vraag het via nostr aan JaccoElektro of BitPopArt: hun profielen staan hieronder.","Ask JaccoElektro or BitPopArt on nostr: their profiles are below."],
- handleiding:["Handleiding (PDF)","Manual (PDF)"],zap:["Zap","Zap"],
- geimporteerd:["%n Zappers toegevoegd aan Mijn Zappers","%n Zappers added to My Zappers"],
- veiligKop:["Ondertekend, zoals nostr","Signed, like nostr"],
- veiligTekst:["Elke update staat in een lijst die is ondertekend met de sleutel van de maker (BIP340 Schnorr, dezelfde handtekening als nostr). Een Zapper en Zapper control installeren alleen wat bij die handtekening en controlesom hoort. De publieke sleutel:","Every update is in a list signed with the maker's key (BIP340 Schnorr, the same signature as nostr). A Zapper and Zapper control only install what matches that signature and checksum. The public key:"],
- mijnKop:["Mijn Zappers","My Zappers"],
- mijnSub:["Zet je lampen hier één keer neer; met één tik open je ze. Dit blijft alleen op dit toestel bewaard.","Add your lamps here once; one tap opens them. This stays on this device only."],
- mijnNaam:["Naam","Name"],mijnAdres:["Adres in je netwerk","Address on your network"],mijnVoeg:["Toevoegen","Add"],
- mijnLeeg:["Nog geen Zappers. Voeg je eerste hieronder toe.","No Zappers yet. Add your first one below."],
- mijnTip:["Sneller: open Alle Zappers op een lamp, kies je lampen en tik op Naar je telefoon; scan de code en ze staan er allemaal. Met de hand: het adres staat onder Systeem van je lamp, bijvoorbeeld 192.168.178.142. Op Android werkt alleen het getal, niet zapper02.local. Je telefoon moet op de wifi thuis zitten.","Quicker: open All Zappers on a lamp, pick your lamps and tap To your phone; scan the code and they are all here. By hand: the address is under System on your lamp, for example 192.168.178.142. On Android only the number works, not zapper02.local. Your phone has to be on your home Wi-Fi."],
- mijnWeg:["Verwijderen","Remove"],mijnOpen:["Openen","Open"],
- telKop:["Op je telefoon","On your phone"],
- telSub:["Zet Zapper als app op je beginscherm: met het logo als icoon, schermvullend, en het opent ook zonder internet.","Put Zapper on your home screen as an app: the logo as its icon, full screen, and it opens without internet too."],
- telLamp:["Tip: een lamp zelf kan ook op je beginscherm. Open hem in je browser (bijvoorbeeld http://192.168.178.142) en volg dezelfde stappen.","Tip: a lamp itself can go on your home screen too. Open it in your browser (for example http://192.168.178.142) and follow the same steps."],
- installeerNu:["Installeren","Install"],
- tel:{
-  iphone:{naam:["iPhone en iPad","iPhone and iPad"],stappen:[
-   ["Open deze pagina in <b>Safari</b>.","Open this page in <b>Safari</b>."],
-   ["Tik onderaan op <b>Deel</b> <span class=\"knopje\"><svg viewBox=\"0 0 24 24\"><path d=\"M12 3v12M7 8l5-5 5 5\"/><path d=\"M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7\"/></svg></span>.","Tap <b>Share</b> <span class=\"knopje\"><svg viewBox=\"0 0 24 24\"><path d=\"M12 3v12M7 8l5-5 5 5\"/><path d=\"M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7\"/></svg></span> at the bottom."],
-   ["Kies <b>Zet op beginscherm</b> <span class=\"knopje\"><svg viewBox=\"0 0 24 24\"><rect x=\"4\" y=\"4\" width=\"16\" height=\"16\" rx=\"4\"/><path d=\"M12 8v8M8 12h8\"/></svg></span>. Staat het er niet, scrol dan in het menu naar beneden.","Choose <b>Add to Home Screen</b> <span class=\"knopje\"><svg viewBox=\"0 0 24 24\"><rect x=\"4\" y=\"4\" width=\"16\" height=\"16\" rx=\"4\"/><path d=\"M12 8v8M8 12h8\"/></svg></span>. Not there? Scroll down in the menu."],
-   ["Tik rechtsboven op <b>Voeg toe</b>. Zapper staat nu tussen je apps.","Tap <b>Add</b> at the top right. Zapper is now among your apps."]],
-   noot:["Op iOS 16.4 en nieuwer kan het ook vanuit Chrome, Edge of Firefox: via het menu, Deel, Zet op beginscherm.","On iOS 16.4 and newer it works from Chrome, Edge or Firefox too: menu, Share, Add to Home Screen."]},
-  android:{naam:["Android","Android"],stappen:[
-   ["Open deze pagina in <b>Chrome</b>.","Open this page in <b>Chrome</b>."],
-   ["Tik op de knop <b>Installeren</b> hieronder, of op het menu <span class=\"knopje\"><svg viewBox=\"0 0 24 24\"><circle cx=\"12\" cy=\"5\" r=\"1.3\"/><circle cx=\"12\" cy=\"12\" r=\"1.3\"/><circle cx=\"12\" cy=\"19\" r=\"1.3\"/></svg></span> rechtsboven.","Tap the <b>Install</b> button below, or the menu <span class=\"knopje\"><svg viewBox=\"0 0 24 24\"><circle cx=\"12\" cy=\"5\" r=\"1.3\"/><circle cx=\"12\" cy=\"12\" r=\"1.3\"/><circle cx=\"12\" cy=\"19\" r=\"1.3\"/></svg></span> at the top right."],
-   ["Kies <b>App installeren</b> (of <b>Toevoegen aan startscherm</b>).","Choose <b>Install app</b> (or <b>Add to Home screen</b>)."],
-   ["Bevestig met <b>Installeren</b>. Zapper staat nu tussen je apps.","Confirm with <b>Install</b>. Zapper is now among your apps."]],
-   noot:["Edge, Brave en Opera werken hetzelfde. In Firefox: menu <span class=\"knopje\"><svg viewBox=\"0 0 24 24\"><circle cx=\"12\" cy=\"5\" r=\"1.3\"/><circle cx=\"12\" cy=\"12\" r=\"1.3\"/><circle cx=\"12\" cy=\"19\" r=\"1.3\"/></svg></span>, <b>Installeren</b> of <b>Toevoegen aan startscherm</b>.","Edge, Brave and Opera work the same way. In Firefox: menu <span class=\"knopje\"><svg viewBox=\"0 0 24 24\"><circle cx=\"12\" cy=\"5\" r=\"1.3\"/><circle cx=\"12\" cy=\"12\" r=\"1.3\"/><circle cx=\"12\" cy=\"19\" r=\"1.3\"/></svg></span>, <b>Install</b> or <b>Add to Home screen</b>."]},
-  graphene:{naam:["GrapheneOS","GrapheneOS"],stappen:[
-   ["Open deze pagina in <b>Vanadium</b>, de standaardbrowser van GrapheneOS.","Open this page in <b>Vanadium</b>, the default browser of GrapheneOS."],
-   ["Tik op de knop <b>Installeren</b> hieronder, of op het menu <span class=\"knopje\"><svg viewBox=\"0 0 24 24\"><circle cx=\"12\" cy=\"5\" r=\"1.3\"/><circle cx=\"12\" cy=\"12\" r=\"1.3\"/><circle cx=\"12\" cy=\"19\" r=\"1.3\"/></svg></span> rechtsboven.","Tap the <b>Install</b> button below, or the menu <span class=\"knopje\"><svg viewBox=\"0 0 24 24\"><circle cx=\"12\" cy=\"5\" r=\"1.3\"/><circle cx=\"12\" cy=\"12\" r=\"1.3\"/><circle cx=\"12\" cy=\"19\" r=\"1.3\"/></svg></span> at the top right."],
-   ["Kies <b>App installeren</b> of <b>Toevoegen aan startscherm</b>.","Choose <b>Install app</b> or <b>Add to Home screen</b>."],
-   ["Bevestig. Zapper staat nu op je startscherm en opent schermvullend.","Confirm. Zapper is now on your home screen and opens full screen."]],
-   noot:["Er zijn geen Google Play-diensten voor nodig en er gaat niets naar Google. Zonder Play-diensten kan Android het icoon een klein browserlogo geven; de app werkt hetzelfde. Kies je liever een andere browser (Cromite, Brave, Firefox), dan staat de optie in hetzelfde menu.","No Google Play services needed, and nothing goes to Google. Without Play services Android may put a small browser badge on the icon; the app works the same. Prefer another browser (Cromite, Brave, Firefox)? The option is in the same menu."]},
-  samsung:{naam:["Samsung Internet","Samsung Internet"],stappen:[
-   ["Open deze pagina in <b>Samsung Internet</b>.","Open this page in <b>Samsung Internet</b>."],
-   ["Tik rechtsonder op het menu <span class=\"knopje\"><svg viewBox=\"0 0 24 24\"><path d=\"M5 7h14M5 12h14M5 17h14\"/></svg></span>.","Tap the menu <span class=\"knopje\"><svg viewBox=\"0 0 24 24\"><path d=\"M5 7h14M5 12h14M5 17h14\"/></svg></span> at the bottom right."],
-   ["Kies <b>Pagina toevoegen aan</b>, daarna <b>Startscherm</b>. Zie je in de adresbalk een installeericoon, dan kan het ook daarmee.","Choose <b>Add page to</b>, then <b>Home screen</b>. See an install icon in the address bar? That works too."],
-   ["Bevestig met <b>Toevoegen</b>. Zapper staat nu tussen je apps.","Confirm with <b>Add</b>. Zapper is now among your apps."]],
-   noot:["Een Samsung-telefoon met Chrome? Volg dan de stappen bij Android.","A Samsung phone with Chrome? Follow the Android steps."]}
- },
- github:["Updates op GitHub","Updates on GitHub"],lijstLink:["Ondertekende lijst","Signed list"],
- bekijk:["Profiel","Profile"],openApp:["In app","In app"],kopieer:["Kopieer","Copy"],gekopieerd:["Gekopieerd","Copied"],
- privacy:["Geen cookies, geen tracking, geen account. Mijn Zappers blijft op dit toestel, en Zapper control praat alleen met de lampen in je eigen netwerk. Voor de zap-knoppen leest deze pagina de openbare nostr-profielen hierboven van een paar relays.","No cookies, no tracking, no account. My Zappers stays on this device, and Zapper control only talks to the lamps on your own network. For the zap buttons this page reads the public nostr profiles above from a few relays."],
- stappen:{
-  win:[["Download <b>Zapper-control-windows.exe</b> met de knop hierboven.","Download <b>Zapper-control-windows.exe</b> with the button above."],
-       ["Dubbelklik erop. Zegt Windows <b>Windows heeft uw pc beschermd</b>? Klik op <b>Meer info</b> en dan <b>Toch uitvoeren</b>. Dat hoeft maar één keer: het programma is gratis en niet bij Microsoft gekocht.","Double-click it. Does Windows say <b>Windows protected your PC</b>? Click <b>More info</b>, then <b>Run anyway</b>. Only once: the program is free and not bought from Microsoft."],
-       ["Je browser opent Zapper control. Vraagt de firewall of het op je netwerk mag? Kies <b>Privénetwerken</b> en <b>Toegang toestaan</b>.","Your browser opens Zapper control. Does the firewall ask about your network? Choose <b>Private networks</b> and <b>Allow access</b>."]],
-  mac:[["Download <b>Zapper-control-mac.zip</b> met de knop hierboven en open hem: je krijgt <b>Zapper control</b>. Sleep dat naar <b>Programma's</b>.","Download <b>Zapper-control-mac.zip</b> with the button above and open it: you get <b>Zapper control</b>. Drag it to <b>Applications</b>."],
-       ["De eerste keer zegt je Mac dat hij het niet kan controleren. Klik met de rechtermuisknop op het programma, kies <b>Open</b> en nog eens <b>Open</b>. Lukt dat niet: <b>Systeeminstellingen</b>, <b>Privacy en beveiliging</b>, <b>Open toch</b>.","The first time your Mac says it cannot check it. Right-click the program, choose <b>Open</b> and <b>Open</b> again. Does that not work: <b>System Settings</b>, <b>Privacy &amp; Security</b>, <b>Open Anyway</b>."],
-       ["Je browser opent Zapper control. Vraagt je Mac om apparaten in je <b>lokale netwerk</b> te zoeken? Kies <b>Sta toe</b>.","Your browser opens Zapper control. Does your Mac ask to find devices on your <b>local network</b>? Choose <b>Allow</b>."]],
-  linux:[["Download <b>Zapper-control-linux</b> met de knop hierboven.","Download <b>Zapper-control-linux</b> with the button above."],
-       ["Maak het uitvoerbaar: rechtermuisknop, <b>Eigenschappen</b>, <b>Uitvoeren als programma</b>. Of in een terminal: <code>chmod +x ~/Downloads/Zapper-control-linux</code>.","Make it executable: right-click, <b>Properties</b>, <b>Run as a program</b>. Or in a terminal: <code>chmod +x ~/Downloads/Zapper-control-linux</code>."],
-       ["Dubbelklik erop, of start <code>~/Downloads/Zapper-control-linux</code>. Je browser opent Zapper control.","Double-click it, or run <code>~/Downloads/Zapper-control-linux</code>. Your browser opens Zapper control."]]
- }
+ voet:["ZAPPER is ontworpen en gebouwd door JaccoElektro, aangeboden aan BitPopArt. Op nostr:","ZAPPER is designed and built by JaccoElektro, offered to BitPopArt. On nostr:"],
+ handleiding:["Handleiding (PDF)","Manual (PDF)"],lijstLink:["Ondertekende lijst","Signed list"],
+ bekijk:["Profiel","Profile"],openApp:["In app","In app"],kopieer:["Kopieer","Copy"],gekopieerd:["Gekopieerd","Copied"],zap:["Zap","Zap"],
+ privacy:["Geen cookies, geen tracking, geen account. Je lampen praten alleen met elkaar in je eigen netwerk. Voor de zap-knoppen leest deze pagina de openbare nostr-profielen hierboven van een paar relays.","No cookies, no tracking, no account. Your lamps only talk to each other on your own network. For the zap buttons this page reads the public nostr profiles above from a few relays."]
 };
 let taal='nl';try{taal=localStorage.getItem('zc_taal')||((navigator.language||'').toLowerCase().startsWith('nl')?'nl':'en')}catch(e){}
-let os=/Win/.test(navigator.platform)?'win':/Mac|iPhone|iPad/.test(navigator.platform)?'mac':'linux';
-const ua=navigator.userAgent;
-let tel=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)?'iphone':/SamsungBrowser/.test(ua)?'samsung':'android';
-let installPrompt=null;
 const i=()=>taal==='nl'?0:1,$=id=>document.getElementById(id);
-let manifest=null;
-let gids=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)?'ipad':/Android/.test(navigator.userAgent)?'android':/Mac/.test(navigator.platform)?'mac':'pc';
-// Zapper control as a program, built by GitHub from the public repository.
-const RELEASE='https://github.com/JaccoElektro/zapper-updates/releases/latest/download/';
-const PROGRAMMA={win:RELEASE+'Zapper-control-windows.exe',mac:RELEASE+'Zapper-control-mac.zip',linux:RELEASE+'Zapper-control-linux'};
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const lijst=a=>a.map(s=>`<li>${s[i()]}</li>`).join('');
+let manifest=null,versies=null;
+let toestel=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)?'ipad':/Android/.test(navigator.userAgent)?'android':/Mac/.test(navigator.platform)?'mac':'pc';
 function teken(){
  document.documentElement.lang=taal;
  document.querySelectorAll('[data-t]').forEach(e=>{const v=T[e.dataset.t];if(v)e.textContent=v[i()]});
  document.querySelectorAll('[data-taal]').forEach(b=>b.classList.toggle('actief',b.dataset.taal===taal));
- document.querySelectorAll('[data-os]').forEach(b=>b.classList.toggle('actief',b.dataset.os===os));
- $('stappen').innerHTML=T.stappen[os].map(s=>`<li>${s[i()]}</li>`).join('');
- $('pcDownload').href=PROGRAMMA[os];$('pcDownloadTekst').textContent=T.downloadVoor[i()].replace('%o',{win:'Windows',mac:'Mac',linux:'Linux'}[os]);
- $('stOpen').innerHTML=T.stOpen.map(s=>`<li>${s[i()]}</li>`).join('');
- $('stBeheer').innerHTML=T.stBeheer.map(s=>`<li>${s[i()]}</li>`).join('');
- $('stFlash').innerHTML=T.stFlash.map(s=>`<li>${s[i()]}</li>`).join('');$('flashLet').innerHTML=T.flashLet[i()];
- if(manifest){$('flashVersieReva').textContent=$('flashVersieLamp01').textContent=T.flashVersie[i()].replace('%v',manifest.versie)}
- $('stScherm').innerHTML=T.stScherm.map(s=>`<li>${s[i()]}</li>`).join('');
- $('stToestel').innerHTML=T.gToestel[gids].map(s=>`<li>${s[i()]}</li>`).join('');
- document.querySelectorAll('[data-gids]').forEach(b=>b.classList.toggle('actief',b.dataset.gids===gids));
+ $('stStart').innerHTML=lijst(T.stStart);$('stControl').innerHTML=lijst(T.stControl);$('stScreen').innerHTML=lijst(T.stScreen);
+ $('stToestel').innerHTML=lijst(T.toestel[toestel]);$('stFlash').innerHTML=lijst(T.stFlash);
+ document.querySelectorAll('[data-toestel]').forEach(b=>b.classList.toggle('actief',b.dataset.toestel===toestel));
  const wat=l=>{let h='';for(let n=0;n<l.length;n+=2)h+=`<div><b>${l[n][i()]}</b>${l[n+1][i()]}</div>`;return h};
- $('watBeheer').innerHTML=wat(T.watBeheer);$('watScherm').innerHTML=wat(T.watScherm);
+ $('watControl').innerHTML=wat(T.watControl);$('watScreen').innerHTML=wat(T.watScreen);
  $('vragenLijst').innerHTML=T.vragen.map(([q,a])=>`<details><summary>${q[i()]}</summary><p>${a[i()]}</p></details>`).join('');
- tekenCheck();
- const t=T.tel[tel];
- document.querySelectorAll('[data-tel]').forEach(b=>b.classList.toggle('actief',b.dataset.tel===tel));
- $('telNaam').textContent=t.naam[i()];
- $('stTel').innerHTML=t.stappen.map(s=>`<li>${s[i()]}</li>`).join('');
- $('telNoot').innerHTML=t.noot[i()];
- $('installeer').classList.toggle('verborgen',!installPrompt||tel==='iphone');
- tekenNpubs();
- document.querySelectorAll('[data-t-ph]').forEach(e=>{const v=T[e.dataset.tPh];if(v)e.placeholder=v[i()]});
- tekenMijn();
+ tekenCheck();tekenNpubs();
  if(manifest){
   $('fwVersie').textContent=manifest.versie;
   $('fwDatum').textContent=new Date(manifest.datum).toLocaleDateString(taal==='nl'?'nl-NL':'en-GB',{day:'numeric',month:'long',year:'numeric'});
   $('fwNotities').textContent=(manifest.notities||{})[taal]||'';
-  $('controlVersie').textContent=T.controlVersie[i()].replace('%v',manifest.versie||'');
-  $('pcVersie').textContent=T.pcVersie[i()].replace('%v',(manifest.control||{}).versie||'');
-  $('downloads').innerHTML=bestanden(manifest);
+  $('versieRegel').textContent=T.versieRegel[i()].replace('%v',manifest.versie||'');
  }
  tekenEerder();
 }
-// ---- firmware files per board, newest and earlier
-const BORD={"Zapper REV A":"bordReva","ESP32-C6-Zero + MOSFET":"bordLamp01"};
-function bestanden(m){return Object.keys(m.firmware||{}).map(b=>{const o=m.firmware[b],f=(m.fabriek||{})[b];
- return `<div class="dl"><b>${esc(T[BORD[b]]?T[BORD[b]][i()]:b)}</b><a class="pil" href="${esc(o.url)}" download>${T.ota[i()]}</a>${f?`<a class="pil" href="${esc(f.url)}" download>${T.fabriek[i()]}</a>`:''}</div>`}).join('')}
-let versies=null;
-function tekenEerder(){if(!versies||!manifest)return;const oud=versies.filter(x=>x.versie!==manifest.versie);
+function scanBasisAdres(){
+ let h=$('scanAdres').value.trim().replace(/^https?:\/\//i,'').replace(/\/$/,'');
+ if(!h||h.includes('/')||h.includes('@')||h.includes(':'))throw new Error('address');
+ if(/^[a-z0-9-]+\.local$/i.test(h))return 'http://'+h;
+ const p=h.split('.').map(Number);
+ if(p.length!==4||p.some(n=>!Number.isInteger(n)||n<0||n>255)||
+    !(p[0]===10||p[0]===192&&p[1]===168||p[0]===172&&p[1]>=16&&p[1]<=31))throw new Error('address');
+ return 'http://'+h;
+}
+async function scanZappers(){
+ const box=$('scanResultaat');box.textContent=T.scanBezig[i()];let basis='';
+ try{
+  basis=scanBasisAdres();const url=basis+'/api/ontdek',ac=new AbortController(),tm=setTimeout(()=>ac.abort(),12000);
+  let r;try{r=await fetch(url,{mode:'cors',cache:'no-store',targetAddressSpace:'local',signal:ac.signal})}finally{clearTimeout(tm)}
+  if(!r.ok)throw new Error('http');const d=await r.json(),buren=d.buren||[],found=[{host:d.ik,ip:d.ipIk,naam:'',versie:'',own:true},...buren];
+  box.innerHTML=`<div class="wat">${found.map(l=>`<div><b>${l.own?esc(T.scanEigen[i()]):esc(l.naam||l.host||l.ip)}</b>${esc(l.host||'')} · ${esc(l.ip||'')} · ${esc(l.versie||'')}<br><a class="pil paars" href="http://${encodeURIComponent(l.ip||l.host)}/control" target="_blank" rel="noopener">Zapper Control</a></div>`).join('')}</div>`+(!buren.length?`<p style="margin-top:14px">${esc(T.scanGeen[i()])}</p>`:'');
+ }catch(e){box.textContent=T.scanFout[i()];if(basis){const a=document.createElement('a');a.href=basis+'/control';a.textContent=i()?'Open lamp directly':'Open lamp rechtstreeks';a.className='knop';box.appendChild(document.createElement('br'));box.appendChild(a)}}
+}
+// ---- what changed in earlier versions (the files themselves go through the USB flasher)
+function tekenEerder(){if(!versies||!manifest)return;const oud=versies.filter(x=>x.versie!==manifest.versie).slice(0,8);
  $('eerderVak').classList.toggle('verborgen',!oud.length);
  $('eerder').innerHTML=oud.map(x=>`<div class="rijv"><b>${esc(x.versie)}</b><span class="klein">${esc(x.datum||'')}</span>
-  <p class="notities" style="grid-column:1/-1;margin:0">${esc((x.notities||{})[taal]||'')}</p><div style="grid-column:1/-1" class="downloads">${bestanden(x)}</div></div>`).join('')}
-
+  <p class="notities" style="grid-column:1/-1;margin:0">${esc((x.notities||{})[taal]||'')}</p></div>`).join('')}
 // ---- the signature, checked here with BIP340 (the same maths as the lamp)
 const RELEASE_PUBKEY='5e3ccae16b53c902c312cc4af9290575915f569fde9439f5a6cc2d7670d7d543';
 let checkStaat='bezig';
@@ -625,44 +504,10 @@ $('npubs').addEventListener('click',async e=>{const b=e.target.closest('[data-ko
  try{await navigator.clipboard.writeText(b.dataset.kopieer)}catch(x){const r=document.createRange();r.selectNodeContents(b.closest('.np').querySelector('.sleutelnp'));getSelection().removeAllRanges();getSelection().addRange(r);return}
  const oud=b.innerHTML;b.innerHTML='<svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg>';b.title=T.gekopieerd[i()];setTimeout(()=>{b.innerHTML=oud;b.title=T.kopieer[i()]},1600)});
 
-// ---- my Zappers: kept on this device only
-const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-function leesMijn(){try{return JSON.parse(localStorage.getItem('zapper_mijn')||'[]')}catch(e){return[]}}
-function bewaarMijn(l){try{localStorage.setItem('zapper_mijn',JSON.stringify(l))}catch(e){}}
-function adresUrl(a){a=a.trim();if(!/^https?:\/\//i.test(a))a='http://'+a;return a.replace(/\/+$/,'')+'/'}
-function tekenMijn(){const l=leesMijn();
- $('mijnLijst').innerHTML=l.length?l.map((z,n)=>`<a class="kaart mz" href="${esc(adresUrl(z.adres))}" target="_blank" rel="noopener">
-   <img src="beeld/lamp-aan.svg" alt=""><span class="t"><b>${esc(z.naam)}</b><span>${esc(z.adres)}</span></span>
-   <button class="weg" data-weg="${n}" title="${T.mijnWeg[i()]}" aria-label="${T.mijnWeg[i()]}">\u00d7</button>
-   <span class="open" aria-label="${T.mijnOpen[i()]}"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></a>`).join('')
-  :`<div class="leegmijn">${T.mijnLeeg[i()]}</div>`}
-$('mijnLijst').addEventListener('click',e=>{const b=e.target.closest('[data-weg]');if(!b)return;e.preventDefault();
- const l=leesMijn();l.splice(+b.dataset.weg,1);bewaarMijn(l);tekenMijn()});
-$('mzVoeg').onclick=()=>{const naam=$('mzNaam').value.trim(),adres=$('mzAdres').value.trim();
- if(!adres){$('mzAdres').focus();return}
- const l=leesMijn();l.push({naam:naam||adres,adres});bewaarMijn(l);$('mzNaam').value='';$('mzAdres').value='';tekenMijn()};
-$('mzAdres').addEventListener('keydown',e=>{if(e.key==='Enter')$('mzVoeg').click()});
-function melding(t){const m=$('melding');m.textContent=t;m.classList.remove('verborgen');setTimeout(()=>m.classList.add('verborgen'),3500)}
-(function importeer(){const q=new URLSearchParams(location.search),d=q.get('mijn');if(!d)return;
- try{const lijst=JSON.parse(decodeURIComponent(escape(atob(d.replace(/-/g,'+').replace(/_/g,'/')))));
-  const l=leesMijn();let n=0;
-  for(const z of Array.isArray(lijst)?lijst.slice(0,40):[]){const adres=String(z.a||'').trim(),naam=String(z.n||adres).slice(0,60);
-   if(!/^[a-z0-9.-]{3,64}$/i.test(adres))continue;
-   const er=l.find(x=>x.adres===adres);if(er){er.naam=naam}else{l.push({naam,adres});n++}}
-  bewaarMijn(l);setTimeout(()=>{melding(T.geimporteerd[i()].replace('%n',n));$('mijn').scrollIntoView({behavior:'smooth'})},400)}catch(e){}
- q.delete('mijn');history.replaceState(null,'',location.pathname+(q.toString()?'?'+q:'')+location.hash)})();
-
-// ---- installed as an app, or a website?
-const alsApp=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true||new URLSearchParams(location.search).has('app');
-document.body.classList.add(alsApp?'app':'web');
-addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;teken()});
-$('installeer').onclick=async()=>{if(!installPrompt)return;installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;$('installeer').classList.add('verborgen')};
-document.querySelectorAll('[data-tel]').forEach(b=>b.onclick=()=>{tel=b.dataset.tel;teken()});
-document.querySelectorAll('[data-gids]').forEach(b=>b.onclick=()=>{gids=b.dataset.gids;teken()});
-if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
-
+// ---- start
+document.querySelectorAll('[data-toestel]').forEach(b=>b.onclick=()=>{toestel=b.dataset.toestel;teken()});
 document.querySelectorAll('[data-taal]').forEach(b=>b.onclick=()=>{taal=b.dataset.taal;try{localStorage.setItem('zc_taal',taal)}catch(e){}teken()});
-document.querySelectorAll('[data-os]').forEach(b=>b.onclick=()=>{os=b.dataset.os;teken()});
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 (async()=>{try{
  const ruw=new Uint8Array(await (await fetch('manifest.json',{cache:'no-store'})).arrayBuffer());
  manifest=JSON.parse(new TextDecoder().decode(ruw));teken();

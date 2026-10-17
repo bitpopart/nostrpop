@@ -1,7 +1,7 @@
 # ZAPPER updates
 
-Signed firmware updates for [ZAPPER](https://bitpopart.com) zap lamps, and **Zapper control**,
-the program to manage all ZAPPER lamps on your own network.
+Signed firmware updates for [ZAPPER](https://bitpopart.com) zap lamps, the download page and the
+USB flasher.
 
 ZAPPER is designed and built by JaccoElektro, offered to BitPopArt.
 
@@ -19,13 +19,15 @@ the firmware:
 5e3ccae16b53c902c312cc4af9290575915f569fde9439f5a6cc2d7670d7d543
 ```
 
-## Zapper control
+## Zapper Control and Zapper Screen
 
-Download page and phone app: **https://jaccoelektro.github.io/zapper-updates/** (served from this repository by
-GitHub Pages). Or download [`control/zapper-control.py`](control/zapper-control.py) and run it with Python 3
-(no packages needed): `python3 zapper-control.py`. It opens a page in your browser with every
-ZAPPER on your network, updates them from here, and updates itself.
+Nothing to download: every ZAPPER has them built in. Open any lamp in your browser and tap
+**Zapper Control** to manage all ZAPPER lamps on your network, or **Zapper Screen** for a public
+screen where anyone can zap the lamp of their choice.
+
+Download page, manual and USB flasher: **https://jaccoelektro.github.io/zapper-updates/** (served
+from this repository by GitHub Pages).
 
 ## Newest
 
-Version **1.12.3**, 2026-10-16.
+Version **1.15.0**, 2026-10-17.

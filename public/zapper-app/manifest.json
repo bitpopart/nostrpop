@@ -1,39 +1,33 @@
 {
  "app": "zapper",
- "versie": "1.12.3",
- "datum": "2026-10-16",
+ "versie": "1.15.0",
+ "datum": "2026-10-17",
  "notities": {
-  "nl": "• De downloadpagina staat nu op GitHub Pages: https://jaccoelektro.github.io/zapper-updates/ (gratis en altijd de nieuwste). De QR Naar je telefoon en Zapper control wijzen daarheen.\n• Nieuwe Zapper flashen via USB, de gids met schermafdrukken, en Zapper control met nostr-instellingen.",
-  "en": "• The download page moved to GitHub Pages: https://jaccoelektro.github.io/zapper-updates/ (free, always the newest, no build credits). The QR \"To your phone\", Zapper control's download and flash buttons, the manual and the README point there."
+  "nl": "Eigen npub en Andere npub volgen zijn nu afzonderlijk aan of uit te zetten. Volgen staat standaard uit en vraagt alleen een openbare npub. Zaps op profiel, berichten en reacties tellen mee. Nieuwe instellingen bovenaan, bijgewerkte Control en handleiding.",
+  "en": "Own npub and Follow another npub now have independent on/off switches. Following defaults off and needs only a public npub. Profile, post and reply zaps count. Clearer settings, updated Control and manual."
  },
  "firmware": {
   "Zapper REV A": {
-   "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.12.3/zapper-reva-1.12.3-ota.bin",
-   "sha256": "85a226382d7b4d7874065bf261906a2a8c5d6d8d0759aa62462c6c54c91521ed",
-   "grootte": 2525456
+   "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.15.0/zapper-reva-1.15.0-ota.bin",
+   "sha256": "e4d2b47c0a394812ca81ee813ac6a0b38b12d696f191db7b26501241e3ff0d79",
+   "grootte": 2583520
   },
   "ESP32-C6-Zero + MOSFET": {
-   "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.12.3/lamp01-1.12.3-ota.bin",
-   "sha256": "46487220a393242422fa91fbbec376290d898abb7f5becfdf1ba4028d1739ccf",
-   "grootte": 2501232
+   "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.15.0/lamp01-1.15.0-ota.bin",
+   "sha256": "b83b12631fc03354477d704517d3a181e40aaa39225c44e17fa18de7c19c4e31",
+   "grootte": 2559104
   }
  },
  "fabriek": {
   "Zapper REV A": {
-   "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.12.3/zapper-reva-1.12.3-factory.bin",
-   "sha256": "eaf2d26762181bd8d783bbf0726e58f7bbd0d4f07a7a9d1bfd2e4d7e9cb7e988",
-   "grootte": 2656528
+   "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.15.0/zapper-reva-1.15.0-factory.bin",
+   "sha256": "29fa6357513374427de4f83ef4b3b2006405f500f25f1962f0e751961cd32938",
+   "grootte": 2714592
   },
   "ESP32-C6-Zero + MOSFET": {
-   "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.12.3/lamp01-1.12.3-factory.bin",
-   "sha256": "0b760c392ba911be2bbd47a9ea47d7bfa074c92f751c490d9cf35cdbef9da9dd",
-   "grootte": 2566768
+   "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.15.0/lamp01-1.15.0-factory.bin",
+   "sha256": "292ca03238b916593cfa249d9c1e9fb38d3649c8be231d1859edd9057ac9d0e9",
+   "grootte": 2624640
   }
- },
- "control": {
-  "versie": "2.7",
-  "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/control/zapper-control.py",
-  "sha256": "89fe8d4519eac77e2455ab4f10a88ca3ffe64ca587e5f679a1404d1c9690f4f5",
-  "grootte": 170259
  }
 }
