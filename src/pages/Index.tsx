@@ -560,11 +560,50 @@ function InterSectionButtons({ buttons }: { buttons: HomepageButton[] }) {
   );
 }
 
-/** Pure image grid — no text, tiles link to their destination */
+/**
+ * Pure image grid — no text, tiles link to their destination.
+ *
+ * Tiles render through the thumbnail proxy (wsrv.nl) when it is healthy so
+ * mobile visitors download a small WebP instead of the full-size original.
+ * But a proxy outage can hang the request for minutes without ever erroring
+ * (connections stall, no HTTP status), which left tiles as permanent gray
+ * skeletons. So each tile falls back to the original image URL if the
+ * thumbnail hasn't loaded within a few seconds or reports an error.
+ */
 function PhotoGridTile({ tile }: { tile: GridTile }) {
+  const thumbnail = useThumbnailUrl();
+  const proxiedSrc = thumbnail(tile.imageUrl, 400);
+
+  const [src, setSrc] = useState(proxiedSrc);
   const [loaded, setLoaded] = useState(false);
   const [errored, setErrored] = useState(false);
-  const thumbnail = useThumbnailUrl();
+
+  // If the source URL ever changes, restart from the proxied thumbnail.
+  useEffect(() => {
+    setSrc(proxiedSrc);
+    setLoaded(false);
+    setErrored(false);
+  }, [proxiedSrc]);
+
+  // Proxy hang guard: the proxied thumbnail should load in well under a
+  // couple of seconds on any healthy connection. If it hasn't by the
+  // deadline, switch to the original image URL — a working tile is worth
+  // more than a lighter download that never arrives.
+  useEffect(() => {
+    if (loaded || errored || src !== proxiedSrc) return;
+    const timer = setTimeout(() => setSrc(tile.imageUrl), 6000);
+    return () => clearTimeout(timer);
+  }, [loaded, errored, src, proxiedSrc, tile.imageUrl]);
+
+  const handleImageError = () => {
+    if (src === proxiedSrc) {
+      // Proxy rejected the request (e.g. unsupported format) — try the
+      // original image directly before giving up.
+      setSrc(tile.imageUrl);
+      return;
+    }
+    setErrored(true);
+  };
 
   return (
     <div className="relative aspect-square overflow-hidden bg-gray-200 dark:bg-gray-800 group">
@@ -572,8 +611,14 @@ function PhotoGridTile({ tile }: { tile: GridTile }) {
       {!loaded && !errored && (
         <Skeleton className="absolute inset-0 h-full w-full" />
       )}
+      {/* Muted placeholder when even the original image fails to load */}
+      {errored && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <ImageIcon className="h-8 w-8 text-gray-400 dark:text-gray-600" />
+        </div>
+      )}
       <img
-        src={thumbnail(tile.imageUrl, 400)}
+        src={src}
         alt={tile.alt || ''}
         className={`w-full h-full object-cover transition-all duration-300 group-hover:scale-105 ${
           loaded ? 'opacity-100' : 'opacity-0'
@@ -583,7 +628,7 @@ function PhotoGridTile({ tile }: { tile: GridTile }) {
           if (el?.complete && el.naturalWidth > 0 && !loaded) setLoaded(true);
         }}
         onLoad={() => setLoaded(true)}
-        onError={() => setErrored(true)}
+        onError={handleImageError}
       />
       {/* subtle overlay on hover */}
       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200" />
