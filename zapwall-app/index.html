@@ -175,9 +175,11 @@ button{font:inherit;cursor:pointer;color:inherit}
 <div class="toast" id="toast" role="status"></div>
 
 <script>
-/* ===== EDIT ME: your channels. Change this list and republish. =====
-   status: 'live' | 'soon' | 'off'.  url: the channel page on Stream Road.
-   Set example:false once a channel is real. Colors a/b/g tint the avatar glow. */
+/* ===== Static seed channels =====
+   Live data comes from bitpopart.com: the site reads the admin-published list
+   (Nostr kind 30078, managed in /admin → Zapwall) and posts it here via
+   postMessage. This seed only shows when the dashboard is opened standalone.
+   status: 'live' | 'soon' | 'off'.  Colors a/b/g tint the avatar glow. */
 var CHANNELS = [
   {id:'bitfest-zap-wall', name:'Bitfest Zap Wall', handle:'bitpopart', cat:'Event', lang:'EN', status:'soon', example:false,
    url:'https://streamroad.money/', ln:'bitpopart@walletofsatoshi.com', schedule:'Around BitFest UK, 19-22 Nov 2026',
@@ -196,24 +198,24 @@ var I18N={
   hsub:function(n){return n+(n===1?' channel':' channels')+' streaming on Stream Road'},
   sub:function(n){return n+(n===1?' channel':' channels')},
   banner:function(l,n){return l?('All good: '+l+' live now, '+n+' on the wall.'):('All good: '+n+' channels on the wall, nobody live right now.')},
-  demo:'Example channels shown. Real ones go in the CHANNELS list at the top of the page.',
+  demo:'Example channels shown. Manage the real list in /admin → Zapwall.',
   sChannels:'Channels',sLive:'Live now',sSoon:'Coming up',sPinned:'Pinned',
   all:'All',live:'Live',soon:'Soon',off:'Offline',stStatus:'status',stCat:'category',stLang:'language',
   tAbout:'About',tSched:'Schedule',tZap:'Zap',watch:'Watch on Stream Road',copyLink:'Copy link',copy:'Copy',
   none:'No channels here yet. Check back soon.',powered:'Live on Stream Road, powered by Nostr and Lightning.',zapUs:'Zap the artist',
   copied:'Copied',pageCopied:'Page link copied',refreshed:'Refreshed',example:'Example',sel:'Select and copy',pin:'Pin channel',
-  sLiveTxt:'LIVE',sSoonTxt:'SOON',sOffTxt:'OFFLINE',schedEmpty:'Nothing scheduled yet'},
+  sLiveTxt:'LIVE',sSoonTxt:'SOON',sOffTxt:'OFFLINE',schedEmpty:'Nothing scheduled yet',liveData:'Live data loaded'},
  nl:{back:'bitpopart.com',openSR:'Open Stream Road',schedule:'Planning',scheduleLabel:'Planning',
   hsub:function(n){return n+(n===1?' kanaal':' kanalen')+' op Stream Road'},
   sub:function(n){return n+(n===1?' kanaal':' kanalen')},
   banner:function(l,n){return l?('Alles in orde: '+l+' nu live, '+n+' op de wall.'):('Alles in orde: '+n+' kanalen op de wall, nu niemand live.')},
-  demo:'Voorbeeldkanalen. De echte komen in de CHANNELS-lijst bovenaan de pagina.',
+  demo:'Voorbeeldkanalen. Beheer de echte lijst in /admin → Zapwall.',
   sChannels:'Kanalen',sLive:'Nu live',sSoon:'Binnenkort',sPinned:'Vastgepind',
   all:'Alles',live:'Live',soon:'Binnenkort',off:'Offline',stStatus:'status',stCat:'categorie',stLang:'taal',
   tAbout:'Info',tSched:'Planning',tZap:'Zap',watch:'Kijk op Stream Road',copyLink:'Kopieer link',copy:'Kopieer',
   none:'Hier staan nog geen kanalen. Kom snel terug.',powered:'Live op Stream Road, mogelijk door Nostr en Lightning.',zapUs:'Zap de artiest',
   copied:'Gekopieerd',pageCopied:'Paginalink gekopieerd',refreshed:'Ververst',example:'Voorbeeld',sel:'Selecteer en kopieer',pin:'Kanaal vastpinnen',
-  sLiveTxt:'LIVE',sSoonTxt:'BINNENKORT',sOffTxt:'OFFLINE',schedEmpty:'Nog niets gepland'}
+  sLiveTxt:'LIVE',sSoonTxt:'BINNENKORT',sOffTxt:'OFFLINE',schedEmpty:'Nog niets gepland',liveData:'Livegegevens geladen'}
 };
 var lang='en',filter='all',pins={},tabs={};
 function safe(fn,d){try{return fn()}catch(e){return d}}
@@ -293,7 +295,25 @@ document.addEventListener('click',function(ev){
   if(b=ev.target.closest('[data-copy]')){copyText($(b.getAttribute('data-copy')).textContent.trim(),b);return}
   if(b=ev.target.closest('[data-target]')){var tg=$(b.getAttribute('data-target'));if(tg)tg.scrollIntoView({behavior:'smooth',block:'start'});return}
   if(ev.target.closest('#shareBtn')){copyText('https://bitpopart.com/zapwall',null);return}
-  if(ev.target.closest('#refBtn')){render();toast(t('refreshed'));return}
+  if(ev.target.closest('#refBtn')){render();requestChannels();toast(t('refreshed'));return}
 });
+/* ===== Live data bridge =====
+   When embedded on bitpopart.com/zapwall the parent page posts the owner-
+   managed channel list here (edited in /admin → Zapwall, published to Nostr
+   as kind 30078). Standalone, the static seed list above is used. */
+var zwLive=0;
+function receiveChannels(data){
+  if(!data||data.source!=='bitpopart-zapwall'||data.type!=='channels'||!Array.isArray(data.channels))return false;
+  var list=data.channels.filter(function(x){return x&&typeof x==='object'&&x.id&&x.name});
+  if(!list.length)return false;
+  CHANNELS=list;render();return true;
+}
+function requestChannels(){
+  if(window.self!==window.top){safe(function(){window.parent.postMessage({source:'bitpopart-zapwall',type:'request'},'*')})}
+}
+window.addEventListener('message',function(ev){
+  if(receiveChannels(ev.data)&&!zwLive){zwLive=1;toast(t('liveData'))}
+});
+requestChannels();
 render();
 </script>
