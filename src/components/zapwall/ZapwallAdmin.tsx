@@ -44,7 +44,7 @@ function blankChannel(): ZapwallChannel {
     url: 'https://streamroad.money/',
     ln: 'bitpopart@walletofsatoshi.com',
     schedule: '',
-    about: { en: '', nl: '' },
+    about: { en: '' },
     a: '#fb923c',
     b: '#ea580c',
     g: 'rgba(251,146,60,.5)',
@@ -279,15 +279,9 @@ export function ZapwallAdmin() {
               />
             </div>
 
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-              <div className="space-y-1">
-                <Label className="text-xs">About (EN)</Label>
-                <Textarea rows={2} value={ch.about.en} onChange={(e) => update(i, { about: { ...ch.about, en: e.target.value } })} />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">About (NL)</Label>
-                <Textarea rows={2} value={ch.about.nl} onChange={(e) => update(i, { about: { ...ch.about, nl: e.target.value } })} />
-              </div>
+            <div className="space-y-1">
+              <Label className="text-xs">About</Label>
+              <Textarea rows={2} value={ch.about.en} onChange={(e) => update(i, { about: { ...ch.about, en: e.target.value } })} placeholder="Short description shown on the Zapwall card" />
             </div>
 
             <div className="flex flex-wrap items-end gap-4">

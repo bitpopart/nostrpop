@@ -103,7 +103,7 @@ export default function ZapWall() {
     };
 
     frame.addEventListener('load', onLoad);
-    // Safety net: the app's language/filter tabs change the height after load.
+    // Safety net: the app's filter tabs change the height after load.
     const interval = setInterval(measure, 2000);
     window.addEventListener('resize', measure);
 

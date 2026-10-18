@@ -26,7 +26,7 @@ export interface ZapwallChannel {
   url: string;
   ln: string;
   schedule: string;
-  about: { en: string; nl: string };
+  about: { en: string };
   a?: string;
   b?: string;
   g?: string;
@@ -38,21 +38,21 @@ export const DEFAULT_ZAPWALL_CHANNELS: ZapwallChannel[] = [
     id: 'bitfest-zap-wall', name: 'Bitfest Zap Wall', handle: 'bitpopart', cat: 'Event', lang: 'EN',
     status: 'soon', example: false, url: 'https://streamroad.money/',
     ln: 'bitpopart@walletofsatoshi.com', schedule: 'Around BitFest UK, 19-22 Nov 2026',
-    about: { en: 'The zap wall for BitFest UK in Manchester. Zap it, watch it fill up.', nl: 'De zapwall voor BitFest UK in Manchester. Zap mee en zie hem vollopen.' },
+    about: { en: 'The zap wall for BitFest UK in Manchester. Zap it, watch it fill up.' },
     a: '#fb923c', b: '#ea580c', g: 'rgba(251,146,60,.5)',
   },
   {
     id: 'bitpopart-live', name: 'BitPopArt Live', handle: 'bitpopart', cat: 'Art', lang: 'EN',
     status: 'soon', example: false, url: 'https://streamroad.money/',
     ln: 'bitpopart@walletofsatoshi.com', schedule: 'Time to be added',
-    about: { en: 'Live art sessions. Pop art, sketching, chat and zaps.', nl: 'Live kunstsessies. Pop art, schetsen, chat en zaps.' },
+    about: { en: 'Live art sessions. Pop art, sketching, chat and zaps.' },
     a: '#c026d3', b: '#6d28d9', g: 'rgba(192,38,211,.5)',
   },
   {
     id: 'zap-art-wall', name: 'Zap Art Wall', handle: 'bitpopart', cat: 'Art', lang: 'EN',
     status: 'soon', example: false, url: 'https://streamroad.money/',
     ln: 'bitpopart@walletofsatoshi.com', schedule: 'Time to be added',
-    about: { en: 'An art wall that grows with every zap.', nl: 'Een kunstwall die met elke zap groeit.' },
+    about: { en: 'An art wall that grows with every zap.' },
     a: '#ec4899', b: '#9d174d', g: 'rgba(236,72,153,.5)',
   },
 ];
@@ -84,7 +84,7 @@ export function sanitizeZapwallChannels(input: unknown): ZapwallChannel[] | null
         url: str(o.url, 'https://streamroad.money/'),
         ln: str(o.ln),
         schedule: str(o.schedule),
-        about: { en: str(about.en), nl: str(about.nl) },
+        about: { en: str(about.en) },
         ...(typeof o.a === 'string' && o.a ? { a: o.a } : {}),
         ...(typeof o.b === 'string' && o.b ? { b: o.b } : {}),
         ...(typeof o.g === 'string' && o.g ? { g: o.g } : {}),
