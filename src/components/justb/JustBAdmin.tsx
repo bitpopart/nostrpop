@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { ArrowDown, ArrowUp, Bot, Gift, Plus, RotateCcw, Save, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, Bot, Gift, KeyRound, Plus, RotateCcw, Save, ShieldCheck, Trash2, X } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,6 +16,9 @@ import {
   JUSTB_KIND,
   JUSTB_D_TAG,
   DEFAULT_JUSTB,
+  MAX_JUSTB_CODES,
+  WARN_JUSTB_CODES,
+  justbHashCode,
   type JustBData,
   type JustBDrop,
   type JustBPage,
@@ -43,6 +46,8 @@ export function JustBAdmin() {
   const [config, setConfig] = useState<JustBData>(DEFAULT_JUSTB);
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
   const dirtyRef = useRef(false);
+  const [codeInput, setCodeInput] = useState('');
+  const [hashing, setHashing] = useState(false);
 
   useEffect(() => {
     if (loaded && !dirtyRef.current) setConfig(loaded);
@@ -195,6 +200,63 @@ export function JustBAdmin() {
     }));
   };
 
+  const codes = config.codes?.hashes ?? [];
+
+  /** Hash the typed codes in this browser and append them to the registry. */
+  const addCodes = async () => {
+    if (!user) {
+      toast.error('Please log in to add codes');
+      return;
+    }
+    const raw = codeInput
+      .split('\n')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (raw.length === 0) {
+      toast.error('Enter at least one code — one per line.');
+      return;
+    }
+    setHashing(true);
+    try {
+      const existing = new Set(codes);
+      const added: string[] = [];
+      for (const r of raw) {
+        if (existing.size + added.length >= MAX_JUSTB_CODES) break;
+        const h = await justbHashCode(r);
+        if (!existing.has(h) && !added.includes(h)) added.push(h);
+      }
+      if (added.length === 0) {
+        toast.info('All codes you entered are already stored (or the registry is at its cap).');
+        setCodeInput('');
+        return;
+      }
+      dirtyRef.current = true;
+      setConfig((prev) => ({
+        ...prev,
+        codes: { hashes: [...(prev.codes?.hashes ?? []), ...added] },
+      }));
+      setCodeInput('');
+      toast.success(`Added ${added.length} code${added.length === 1 ? '' : 's'} — stored as secure hashes, nothing readable goes to Nostr.`);
+    } catch (e) {
+      toast.error('Could not hash the codes: ' + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setHashing(false);
+    }
+  };
+
+  const removeCode = (h: string) => {
+    dirtyRef.current = true;
+    setConfig((prev) => ({
+      ...prev,
+      codes: { hashes: (prev.codes?.hashes ?? []).filter((x) => x !== h) },
+    }));
+  };
+
+  const clearCodes = () => {
+    dirtyRef.current = true;
+    setConfig((prev) => ({ ...prev, codes: { hashes: [] } }));
+  };
+
   const published = () => {
     dirtyRef.current = false;
     setLastSavedAt(new Date().toLocaleTimeString());
@@ -289,8 +351,9 @@ export function JustBAdmin() {
         </CardTitle>
         <CardDescription>
           Everything data-driven on <code>bitpopart.com/b</code> lives here: the six base B's, the
-          surprise drops, shops, launch date, rarity ladder and the ledger stamp. Saves publish to
-          Nostr (kind 30078) and the page updates right away — no redeploy.
+          surprise drops, shops, launch date, rarity ladder, the ledger stamp and the claim-code
+          verification registry. Saves publish to Nostr (kind 30078) and the page updates right away —
+          no redeploy.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -322,7 +385,7 @@ export function JustBAdmin() {
             <LabeledInput label="Launch date (YYYY-MM-DD)" value={config.launch} onChange={(v) => update({ launch: v })} placeholder="2026-11-21" />
             <div className="flex items-end">
               <span className="text-xs text-muted-foreground">
-                {config.base.length} base B's · {config.drops.length} drops · {config.shops.length} shop(s) · {config.ladder.length} ladder rung(s)
+                {config.base.length} base B's · {config.drops.length} drops · {config.shops.length} shop(s) · {config.ladder.length} ladder rung(s) · {codes.length} code(s)
               </span>
             </div>
           </div>
@@ -380,6 +443,69 @@ export function JustBAdmin() {
             </div>
           </div>
           <LabeledInput label="Small print under CTA" value={config.bitbot.specNote} onChange={(v) => updateBitbot({ specNote: v })} placeholder="Spec sheet V21.001 · built to order · software updates always free" className="max-w-xl" />
+        </div>
+
+        {/* Claim codes — secure verification */}
+        <div className="space-y-3 rounded-lg border bg-card p-4">
+          <h3 className="flex items-center gap-2 text-sm font-semibold">
+            <ShieldCheck className="h-4 w-4 text-green-600" /> Claim codes — VERIFY MY ITEM
+          </h3>
+          <p className="text-xs text-muted-foreground">
+            These are the claim codes printed under the scratch-off stickers. Visitors enter their code on{' '}
+            <code>/b</code> and see <b>VALID</b> or <b>INVALID</b>. Codes are <b>hashed (SHA-256) in your
+            browser before saving</b> — only the hashes are published to Nostr, so nobody reading the relays
+            can ever recover the actual codes. Use long, random codes for each collectible.
+          </p>
+          <div className="space-y-1">
+            <Label className="text-xs">Codes to add — one per line</Label>
+            <Textarea
+              rows={4}
+              value={codeInput}
+              onChange={(e) => setCodeInput(e.target.value)}
+              placeholder={'JUSTB-XXXX-XXXX\nJUSTB-YYYY-YYYY'}
+              disabled={!user}
+            />
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="secondary" size="sm" onClick={addCodes} disabled={!user || hashing}>
+              {hashing ? 'Hashing…' : (<><KeyRound className="mr-1 h-3.5 w-3.5" /> Add code(s)</>)}
+            </Button>
+            <Button variant="destructive" size="sm" onClick={clearCodes} disabled={!user || codes.length === 0}>
+              <Trash2 className="mr-1 h-3.5 w-3.5" /> Clear all codes
+            </Button>
+            <span className="text-xs text-muted-foreground">
+              {codes.length} stored (hashes only) · cap {MAX_JUSTB_CODES}
+            </span>
+          </div>
+          {codes.length >= WARN_JUSTB_CODES && (
+            <p className="text-xs font-medium text-amber-600 dark:text-amber-400">
+              The registry is getting large — the saved event may soon exceed public-relay size limits.
+              Consider pruning old batches or using a shared registry.
+            </p>
+          )}
+          {codes.length > 0 && (
+            <div className="max-h-44 space-y-0.5 overflow-y-auto rounded border p-2">
+              {codes.map((h) => (
+                <div key={h} className="flex items-center justify-between gap-2 py-0.5 text-xs">
+                  <span className="font-mono truncate">{h.slice(0, 12)}…{h.slice(-8)}</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 shrink-0 p-0"
+                    onClick={() => removeCode(h)}
+                    aria-label="Delete code"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+          <p className="text-xs text-muted-foreground">
+            Stored entries show a short fingerprint of each hash — never the code itself. Save to publish the
+            registry to Nostr; the <code>/b</code> page then verifies against it live. Individual codes can be
+            deleted here at any time (the short fingerprint identifies the entry to remove).
+          </p>
         </div>
 
         {/* Base B's */}

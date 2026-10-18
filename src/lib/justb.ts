@@ -19,6 +19,32 @@ export const JUSTB_KIND = 30078;
 export const JUSTB_D_TAG = 'com.bitpopart.justb';
 export const JUSTB_DATA_SOURCE = 'bitpopart-justb';
 
+/**
+ * Hard cap on stored claim-code hashes. Each hash costs ~69 bytes in the
+ * published event and the config goes to public relays (ditto, primal, …)
+ * that reject very large events — keep the list well under their limits.
+ */
+export const MAX_JUSTB_CODES = 1000;
+/** Above this count the saved event gets close to common relay size caps. */
+export const WARN_JUSTB_CODES = 750;
+
+/** Matches a stored SHA-256 hash: 64 lowercase hex chars. */
+export const JUSTB_HASH_RE = /^[0-9a-f]{64}$/;
+
+/**
+ * Claim-code registry (the "VERIFY MY ITEM" check on /b).
+ *
+ * SECURITY: the published kind-30078 config only ever contains SHA-256
+ * hashes of claim codes — never the plaintext codes. Admin enters codes in
+ * the admin UI, they are hashed in the browser before publish, and the /b
+ * page hashes the visitor's entry and checks membership. Anyone reading the
+ * relays sees only hashes and cannot recover the codes.
+ */
+export interface JustBCodes {
+  /** Lowercase-hex SHA-256 of each claim code (normalized: trimmed, upper-cased). */
+  hashes: string[];
+}
+
 export interface JustBBaseEntry {
   slug: string;
   no: string;
@@ -124,6 +150,8 @@ export interface JustBData {
   ledger: JustBPage;
   /** BitBot (/bitbot) page config — birth date, status, copy, CTA. */
   bitbot: BitBotConfig;
+  /** Claim-code hash registry for the "VERIFY MY ITEM" check on /b. */
+  codes: JustBCodes;
 }
 
 /**
@@ -300,12 +328,34 @@ export const DEFAULT_JUSTB: JustBData = {
   ],
   "online": { "label": "PLAY JUST B ONLINE", "url": "/justb-app/online.html" },
   "ledger": { "label": "OPEN THE FULL LEDGER", "url": "/justb-app/ledger.html" },
-  "bitbot": DEFAULT_BITBOT
+  "bitbot": DEFAULT_BITBOT,
+  "codes": { "hashes": [] }
 };
 
 
 function str(v: unknown, d = ''): string {
   return typeof v === 'string' ? v : d;
+}
+
+/**
+ * Normalize a claim code before hashing — the SAME normalization the /b
+ * page applies when a visitor checks a code, so both sides agree:
+ * trim surrounding whitespace and upper-case (codes under scratch-off
+ * stickers are typically printed in capitals; this makes entry forgiving).
+ */
+export function normalizeJustBCode(code: string): string {
+  return code.trim().toUpperCase();
+}
+
+/**
+ * SHA-256 of a claim code as lowercase hex — the only form ever stored or
+ * published. Runs in the browser (Web Crypto); needs a secure context,
+ * which bitpopart.com and localhost both are.
+ */
+export async function justbHashCode(code: string): Promise<string> {
+  const data = new TextEncoder().encode(normalizeJustBCode(code));
+  const buf = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(buf), (b) => b.toString(16).padStart(2, '0')).join('');
 }
 
 function numOrNull(v: unknown): number | null {
@@ -397,6 +447,23 @@ export function sanitizeJustB(input: unknown): JustBData | null {
     return { label: str(e.label, dlabel) || dlabel, url: str(e.url, durl) || durl };
   };
 
+  /* claim-code hash registry: keep only valid lowercase-hex SHA-256 hashes,
+     dedupe (preserving order) and cap the list so the event stays small
+     enough for public relays. Anything malformed is dropped. */
+  const codesHashes: string[] = [];
+  const codesRaw = o.codes && typeof o.codes === 'object' ? (o.codes as Record<string, unknown>) : {};
+  if (Array.isArray(codesRaw.hashes)) {
+    const seen = new Set<string>();
+    for (const h of codesRaw.hashes) {
+      if (codesHashes.length >= MAX_JUSTB_CODES) break;
+      if (typeof h !== 'string') continue;
+      const hh = h.trim().toLowerCase();
+      if (!JUSTB_HASH_RE.test(hh) || seen.has(hh)) continue;
+      seen.add(hh);
+      codesHashes.push(hh);
+    }
+  }
+
   return {
     updated: str(o.updated),
     base,
@@ -407,6 +474,7 @@ export function sanitizeJustB(input: unknown): JustBData | null {
     online: page(o.online, DEFAULT_JUSTB.online.label, DEFAULT_JUSTB.online.url),
     ledger: page(o.ledger, DEFAULT_JUSTB.ledger.label, DEFAULT_JUSTB.ledger.url),
     bitbot: sanitizeBitBot(o.bitbot),
+    codes: { hashes: codesHashes },
   };
 }
 
