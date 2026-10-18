@@ -73,6 +73,7 @@ import Gallery from "./pages/Gallery";
 import IconDownloads from "./pages/IconDownloads";
 import Zapper from "./pages/Zapper";
 import ZapWall from "./pages/ZapWall";
+import JustB from "./pages/JustB";
 import NotFound from "./pages/NotFound";
 
 export function AppRouter() {
@@ -164,6 +165,8 @@ export function AppRouter() {
         <Route path="/zapper" element={<Layout><Zapper /></Layout>} />
         {/* Zapwall — Stream Road live channels & zap walls, inline under the site menu/footer */}
         <Route path="/zapwall" element={<Layout><ZapWall /></Layout>} />
+        {/* Just B — Mystery Box, inline under the site menu/footer */}
+        <Route path="/b" element={<Layout><JustB /></Layout>} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="/:slug" element={<Layout><CustomPage /></Layout>} />
         <Route path="*" element={<Layout><NotFound /></Layout>} />

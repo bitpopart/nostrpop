@@ -158,6 +158,11 @@ export function Footer() {
                 </Link>
               </li>
               <li>
+                <Link to="/b" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  Just B
+                </Link>
+              </li>
+              <li>
                 <Link to="/fundraising" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                   Fundraising
                 </Link>

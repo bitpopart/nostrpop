@@ -26,6 +26,7 @@ import { ZapAnalytics } from '@/components/analytics/ZapAnalytics';
 import { SiteSettings } from '@/components/settings/SiteSettings';
 import { HomepageSettings } from '@/components/settings/HomepageSettings';
 import { ZapwallAdmin } from '@/components/zapwall/ZapwallAdmin';
+import { JustBAdmin } from '@/components/justb/JustBAdmin';
 import { ArtworkOrderManager } from '@/components/art/ArtworkOrderManager';
 import { ArtworkCleanupTool } from '@/components/art/ArtworkCleanupTool';
 import { ArtBannerAdmin } from '@/components/art/ArtBannerAdmin';
@@ -415,6 +416,14 @@ const Admin = () => {
       badge: 'Zapwall'
     },
     {
+      title: 'Just B',
+      description: 'Mystery Box page: base B\u2019s, drops, shops, launch date & rarity ladder on /b',
+      icon: Shapes,
+      color: 'from-violet-500 to-indigo-500',
+      action: () => setActiveTab('justb'),
+      badge: 'Just B'
+    },
+    {
       title: 'PopUp Events',
       description: 'Manage worldwide event schedule',
       icon: MapPin,
@@ -639,6 +648,7 @@ const Admin = () => {
             <TabsTrigger value="artist">Artist</TabsTrigger>
             <TabsTrigger value="wall">Wall</TabsTrigger>
             <TabsTrigger value="zapwall">Zapwall</TabsTrigger>
+            <TabsTrigger value="justb">Just B</TabsTrigger>
             <TabsTrigger value="popup">PopUp</TabsTrigger>
             <TabsTrigger value="pages">Pages</TabsTrigger>
             <TabsTrigger value="social">Social</TabsTrigger>
@@ -962,6 +972,10 @@ const Admin = () => {
 
           <TabsContent value="zapwall">
             <ZapwallAdmin />
+          </TabsContent>
+
+          <TabsContent value="justb">
+            <JustBAdmin />
           </TabsContent>
 
           <TabsContent value="projects">
