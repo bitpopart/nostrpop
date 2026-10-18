@@ -51,13 +51,17 @@ export default function JustB() {
   // opens.
   useEffect(() => {
     const onMessage = (e: MessageEvent) => {
-      const d = e.data as { source?: string; type?: string } | null;
+      const d = e.data as { source?: string; type?: string; url?: string } | null;
       if (!d || d.source !== JUSTB_DATA_SOURCE) return;
       if (d.type === 'request') {
         sendData();
         void refresh();
       } else if (d.type === 'scrolltop') {
         frameRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else if (d.type === 'navigate' && d.url) {
+        // The in-app "GET A BITBOT" button opens a full site page (/bitbot)
+        // in the top window — never inside the /b iframe.
+        window.location.href = d.url;
       }
     };
     window.addEventListener('message', onMessage);

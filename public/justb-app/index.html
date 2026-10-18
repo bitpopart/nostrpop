@@ -1034,7 +1034,7 @@ window.JUSTB = {
     </div>
 
     <div class="bbcta">
-      <a class="btn" href="https://bitpopart.com" target="_blank" rel="noopener">GET A BITBOT</a>
+      <a class="btn" id="bitbotCta" href="/bitbot">GET A BITBOT</a>
       <p>Spec sheet V21.001 &middot; built to order &middot; software updates always free</p>
     </div>
   </div>
@@ -1150,6 +1150,13 @@ window.JUSTB = {
       lad.innerHTML = lh;
     }
 
+    /* bitbot CTA (label + href from config) */
+    var bb = document.getElementById('bitbotCta');
+    if (bb && D.bitbot && D.bitbot.cta) {
+      if (D.bitbot.cta.label) { bb.textContent = D.bitbot.cta.label; }
+      if (D.bitbot.cta.url) { bb.setAttribute('href', D.bitbot.cta.url); }
+    }
+
     /* in-page viewer button labels (fall back to defaults) */
     var bo = document.getElementById('openOnline');
     if (bo && D.online && D.online.label) { bo.textContent = D.online.label; }
@@ -1244,6 +1251,13 @@ var olb = document.getElementById('openLedger');
 if (olb) olb.addEventListener('click', function(){ openViewer(viewerEntry('ledger')); });
 var vb = document.getElementById('viewerBack');
 if (vb) vb.addEventListener('click', closeViewer);
+var bb2 = document.getElementById('bitbotCta');
+if (bb2) bb2.addEventListener('click', function(ev){
+  if (window.self !== window.top) {
+    ev.preventDefault();
+    try { window.parent.postMessage({source:'bitpopart-justb', type:'navigate', url: bb2.getAttribute('href') || '/bitbot'}, '*'); } catch(e){}
+  }
+});
 document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeViewer(); });
 })();
 </script>

@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { ArrowDown, ArrowUp, Gift, Plus, RotateCcw, Save, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, Bot, Gift, Plus, RotateCcw, Save, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useJustBData } from '@/hooks/useJustBData';
@@ -19,6 +21,7 @@ import {
   type JustBPage,
   type JustBShop,
   type JustBLadder,
+  type BitBotConfig,
 } from '@/lib/justb';
 
 /**
@@ -166,6 +169,11 @@ export function JustBAdmin() {
     setConfig((prev) => ({ ...prev, [key]: { ...prev[key], ...patch } }));
   };
 
+  const updateBitbot = (patch: Partial<BitBotConfig>) => {
+    dirtyRef.current = true;
+    setConfig((prev) => ({ ...prev, bitbot: { ...prev.bitbot, ...patch } }));
+  };
+
   const updateLadder = (i: number, patch: Partial<JustBLadder>) => {
     dirtyRef.current = true;
     setConfig((prev) => ({
@@ -201,6 +209,8 @@ export function JustBAdmin() {
     const shops = cfg.shops.filter((s) => s.name.trim());
     const ladder = cfg.ladder.filter((l) => l.name.trim());
     if (shops.length === 0 || ladder.length === 0) return null;
+    const features = cfg.bitbot.features.map((f) => f.trim()).filter(Boolean);
+    const buyLines = cfg.bitbot.buyLines.map((l) => l.trim()).filter(Boolean);
     return {
       ...cfg,
       updated: cfg.updated.trim(),
@@ -209,6 +219,12 @@ export function JustBAdmin() {
       drops,
       shops,
       ladder,
+      bitbot: {
+        ...cfg.bitbot,
+        features: features.length > 0 ? features : DEFAULT_JUSTB.bitbot.features,
+        buyLines: buyLines.length > 0 ? buyLines : DEFAULT_JUSTB.bitbot.buyLines,
+        birth: cfg.bitbot.birth.trim(),
+      },
     };
   };
 
@@ -310,6 +326,60 @@ export function JustBAdmin() {
               </span>
             </div>
           </div>
+        </div>
+
+        {/* BitBot */}
+        <div className="space-y-3 rounded-lg border bg-card p-4">
+          <h3 className="flex items-center gap-2 text-sm font-semibold">
+            <Bot className="h-4 w-4 text-red-500" /> BitBot — /bitbot page
+          </h3>
+          <p className="text-xs text-muted-foreground">
+            Everything on <code>bitpopart.com/bitbot</code> (and the <b>GET A BITBOT</b> button on{' '}
+            <code>/b</code>) lives here. Set the birth date, the in-progress stamp, the
+            &ldquo;not for sale yet&rdquo; note and the CTA — all updates show on the page right
+            after saving, no redeploy. Leave the birth date empty for &ldquo;To be announced&rdquo;.
+          </p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <LabeledInput label="Birth date (YYYY-MM-DD)" value={config.bitbot.birth} onChange={(v) => updateBitbot({ birth: v })} placeholder="2026-11-21 — empty = To be announced" />
+            <LabeledInput label="Status stamp" value={config.bitbot.status} onChange={(v) => updateBitbot({ status: v })} placeholder="IN PROGRESS" />
+            <LabeledInput label="Version" value={config.bitbot.version} onChange={(v) => updateBitbot({ version: v })} placeholder="V21.001" />
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <LabeledInput label="CTA label (GET A BITBOT button)" value={config.bitbot.cta.label} onChange={(v) => updateBitbot({ cta: { ...config.bitbot.cta, label: v } })} placeholder="GET A BITBOT" />
+            <LabeledInput label="CTA URL" value={config.bitbot.cta.url} onChange={(v) => updateBitbot({ cta: { ...config.bitbot.cta, url: v } })} placeholder="/bitbot" />
+            <LabeledInput label="Tag line" value={config.bitbot.tagline} onChange={(v) => updateBitbot({ tagline: v })} placeholder="Made by hand" />
+            <div className="flex items-end pb-1">
+              <div className="flex items-center gap-2">
+                <Switch checked={config.bitbot.available} onCheckedChange={(c) => updateBitbot({ available: c })} />
+                <Label className="text-xs">Available to buy</Label>
+              </div>
+            </div>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Availability note (shown while not for sale)</Label>
+            <Textarea rows={2} value={config.bitbot.availability} onChange={(e) => updateBitbot({ availability: e.target.value })} />
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="space-y-1">
+              <Label className="text-xs">Lead paragraph (HTML ok: &lt;b&gt;…&lt;/b&gt;)</Label>
+              <Textarea rows={3} value={config.bitbot.lead} onChange={(e) => updateBitbot({ lead: e.target.value })} />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Features — one per line</Label>
+              <Textarea rows={7} value={config.bitbot.features.join('\n')} onChange={(e) => updateBitbot({ features: e.target.value.split('\n') })} />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-2 gap-3">
+              <LabeledInput label="Buy once title" value={config.bitbot.buyTitle} onChange={(v) => updateBitbot({ buyTitle: v })} placeholder="BUY ONCE" />
+              <LabeledInput label="Buy once sub" value={config.bitbot.buySub} onChange={(v) => updateBitbot({ buySub: v })} placeholder="FREE FOREVER" />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Buy-once paragraphs — one per line</Label>
+              <Textarea rows={3} value={config.bitbot.buyLines.join('\n')} onChange={(e) => updateBitbot({ buyLines: e.target.value.split('\n') })} />
+            </div>
+          </div>
+          <LabeledInput label="Small print under CTA" value={config.bitbot.specNote} onChange={(v) => updateBitbot({ specNote: v })} placeholder="Spec sheet V21.001 · built to order · software updates always free" className="max-w-xl" />
         </div>
 
         {/* Base B's */}

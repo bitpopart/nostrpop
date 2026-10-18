@@ -74,6 +74,7 @@ import IconDownloads from "./pages/IconDownloads";
 import Zapper from "./pages/Zapper";
 import ZapWall from "./pages/ZapWall";
 import JustB from "./pages/JustB";
+import BitBot from "./pages/BitBot";
 import NotFound from "./pages/NotFound";
 
 export function AppRouter() {
@@ -167,6 +168,8 @@ export function AppRouter() {
         <Route path="/zapwall" element={<Layout><ZapWall /></Layout>} />
         {/* Just B — Mystery Box, inline under the site menu/footer */}
         <Route path="/b" element={<Layout><JustB /></Layout>} />
+        {/* BitBot — pocket bot page (birth date, in-progress), inline under the site menu/footer */}
+        <Route path="/bitbot" element={<Layout><BitBot /></Layout>} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="/:slug" element={<Layout><CustomPage /></Layout>} />
         <Route path="*" element={<Layout><NotFound /></Layout>} />

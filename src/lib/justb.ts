@@ -70,6 +70,42 @@ export interface JustBPage {
   url: string;
 }
 
+/**
+ * BitBot — the pocket bot page at bitpopart.com/bitbot.
+ *
+ * Same live-update principle as the rest of Just B: the owner edits these
+ * fields in /admin → Just B → BitBot, every save publishes them with the
+ * same kind-30078 config, and the /bitbot page re-renders from the relays —
+ * no redeploy when copy or the birth date changes.
+ */
+export interface BitBotConfig {
+  /** Spec sheet version, e.g. "V21.001". */
+  version: string;
+  /** Hero tag line, e.g. "Made by hand". */
+  tagline: string;
+  /** Hero paragraph (may contain <b>…</b>). */
+  lead: string;
+  /** Feature bullets, one per list item. */
+  features: string[];
+  /** "BUY ONCE" / "FREE FOREVER" yellow block. */
+  buyTitle: string;
+  buySub: string;
+  /** Paragraphs of the buy-once block (may contain <b>…</b>). */
+  buyLines: string[];
+  /** Small print under the CTA, e.g. "Spec sheet V21.001 · built to order …". */
+  specNote: string;
+  /** Birth date (YYYY-MM-DD). Empty string = to be announced. */
+  birth: string;
+  /** Big status stamp, e.g. "IN PROGRESS". */
+  status: string;
+  /** Availability note shown while BitBots are not for sale. */
+  availability: string;
+  /** True once BitBots can actually be bought (shows the buy CTA). */
+  available: boolean;
+  /** CTA button — used on /b ("GET A BITBOT" → /bitbot) and /bitbot once available. */
+  cta: { label: string; url: string };
+}
+
 export interface JustBData {
   /** Shown under the ledger so people know how fresh it is. */
   updated: string;
@@ -86,7 +122,47 @@ export interface JustBData {
   online: JustBPage;
   /** "OPEN THE FULL LEDGER" button + page, opened inside the page. */
   ledger: JustBPage;
+  /** BitBot (/bitbot) page config — birth date, status, copy, CTA. */
+  bitbot: BitBotConfig;
 }
+
+/**
+ * Seed BitBot config — mirrors the BitBot section in
+ * public/justb-app/index.html. `birth` is empty until the owner sets it in
+ * /admin (the page then shows "To be announced").
+ */
+export const DEFAULT_BITBOT: BitBotConfig = {
+  version: 'V21.001',
+  tagline: 'Made by hand',
+  lead:
+    'A <b>pocket bot we build by hand</b>, one at a time, then ship ready to switch on. You just talk to it. It zaps, it listens, it nags you about bedtime. Small enough to go in your bag, so it comes along for the ride.',
+  features: [
+    'Mini display with camera',
+    'Zap lamp, it lights up',
+    'Nostr built in',
+    'Hook up your Lightning wallet, send and receive zaps',
+    'Talk to your bot, it talks back',
+    'It teaches you its own tips and tricks',
+    'Give it tasks and keep it entertained',
+    'Tells the time',
+    "Tells you when it's your bedtime",
+    'Plays tunes',
+    'Hand gestures to control it',
+  ],
+  buyTitle: 'BUY ONCE',
+  buySub: 'FREE FOREVER',
+  buyLines: [
+    'You buy the <b>hardware</b>. That is the one and only thing you ever pay for.',
+    'The <b>software keeps coming, free</b>. New tricks, new tools, new nonsense dropped in regularly, so the bot you get today is not the bot you have in six months. Same box, more in it.',
+  ],
+  specNote: 'Spec sheet V21.001 · built to order · software updates always free',
+  birth: '',
+  status: 'IN PROGRESS',
+  availability:
+    'BitBot is still in the workshop — not available to buy yet. When the first batch is ready, it will be announced right here.',
+  available: false,
+  cta: { label: 'GET A BITBOT', url: '/bitbot' },
+};
 
 /** Seed config — mirrors window.JUSTB in public/justb-app/index.html. */
 export const DEFAULT_JUSTB: JustBData = {
@@ -223,7 +299,8 @@ export const DEFAULT_JUSTB: JustBData = {
     }
   ],
   "online": { "label": "PLAY JUST B ONLINE", "url": "/justb-app/online.html" },
-  "ledger": { "label": "OPEN THE FULL LEDGER", "url": "/justb-app/ledger.html" }
+  "ledger": { "label": "OPEN THE FULL LEDGER", "url": "/justb-app/ledger.html" },
+  "bitbot": DEFAULT_BITBOT
 };
 
 
@@ -329,5 +406,43 @@ export function sanitizeJustB(input: unknown): JustBData | null {
     ladder,
     online: page(o.online, DEFAULT_JUSTB.online.label, DEFAULT_JUSTB.online.url),
     ledger: page(o.ledger, DEFAULT_JUSTB.ledger.label, DEFAULT_JUSTB.ledger.url),
+    bitbot: sanitizeBitBot(o.bitbot),
+  };
+}
+
+/**
+ * Coerce a stored BitBot section into a clean config. Anything missing or
+ * malformed falls back to the seed so the page always renders complete.
+ */
+export function sanitizeBitBot(input: unknown): BitBotConfig {
+  if (!input || typeof input !== 'object') return DEFAULT_BITBOT;
+  const o = input as Record<string, unknown>;
+  const s = (v: unknown, d: string): string => (typeof v === 'string' ? v : d);
+  const lines = (v: unknown, d: string[]): string[] =>
+    Array.isArray(v)
+      ? v.filter((x): x is string => typeof x === 'string' && x.trim() !== '').map((x) => x.trim())
+      : d;
+  const ctaRaw = o.cta && typeof o.cta === 'object' ? (o.cta as Record<string, unknown>) : {};
+  return {
+    version: s(o.version, DEFAULT_BITBOT.version) || DEFAULT_BITBOT.version,
+    tagline: s(o.tagline, DEFAULT_BITBOT.tagline) || DEFAULT_BITBOT.tagline,
+    lead: s(o.lead, DEFAULT_BITBOT.lead) || DEFAULT_BITBOT.lead,
+    features: (lines(o.features, DEFAULT_BITBOT.features).length > 0
+      ? lines(o.features, DEFAULT_BITBOT.features)
+      : DEFAULT_BITBOT.features),
+    buyTitle: s(o.buyTitle, DEFAULT_BITBOT.buyTitle) || DEFAULT_BITBOT.buyTitle,
+    buySub: s(o.buySub, DEFAULT_BITBOT.buySub) || DEFAULT_BITBOT.buySub,
+    buyLines: (lines(o.buyLines, DEFAULT_BITBOT.buyLines).length > 0
+      ? lines(o.buyLines, DEFAULT_BITBOT.buyLines)
+      : DEFAULT_BITBOT.buyLines),
+    specNote: s(o.specNote, DEFAULT_BITBOT.specNote) || DEFAULT_BITBOT.specNote,
+    birth: s(o.birth, '').trim(),
+    status: s(o.status, DEFAULT_BITBOT.status) || DEFAULT_BITBOT.status,
+    availability: s(o.availability, DEFAULT_BITBOT.availability) || DEFAULT_BITBOT.availability,
+    available: o.available === true,
+    cta: {
+      label: s(ctaRaw.label, DEFAULT_BITBOT.cta.label) || DEFAULT_BITBOT.cta.label,
+      url: s(ctaRaw.url, DEFAULT_BITBOT.cta.url) || DEFAULT_BITBOT.cta.url,
+    },
   };
 }

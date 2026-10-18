@@ -101,6 +101,7 @@ import {
   Shapes,
   MessageSquare,
   Hash,
+  Bot,
   X,
   Smile,
   Cloud,
@@ -422,6 +423,14 @@ const Admin = () => {
       color: 'from-violet-500 to-indigo-500',
       action: () => setActiveTab('justb'),
       badge: 'Just B'
+    },
+    {
+      title: 'BitBot',
+      description: 'The /bitbot page: birth date, in-progress stamp & not-for-sale note',
+      icon: Bot,
+      color: 'from-red-500 to-rose-600',
+      action: () => setActiveTab('justb'),
+      badge: 'BitBot'
     },
     {
       title: 'PopUp Events',
