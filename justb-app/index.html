@@ -134,6 +134,22 @@ section{padding:56px 0}
 .lcard{border:3px solid #000;border-radius:12px;padding:16px;background-image:var(--t-white);box-shadow:5px 5px 0 var(--c)}
 .lcard h4{font-family:'PainDeMie','Bangers',sans-serif;font-size:22px;letter-spacing:1.4px;color:#0A0A0A}
 .lcard p{font-size:14px;color:#444;margin-top:4px}
+/* VERIFY MY ITEM — claim-code check */
+.vrow{display:flex;gap:8px;margin-top:12px;align-items:stretch}
+.vrow input{flex:1;min-width:0;border:3px solid #000;border-radius:8px;padding:9px 10px;
+  font-family:'BarlowC',sans-serif;font-weight:700;font-size:14px;letter-spacing:.08em;
+  text-transform:uppercase;color:#0A0A0A;background:#fff;outline:none}
+.vrow input:focus{box-shadow:0 0 0 3px var(--yel)}
+.vrow input::placeholder{color:#9a9a9a;text-transform:none}
+.vrow .btn{font-size:15px;padding:8px 14px;border-width:3px;box-shadow:3px 3px 0 var(--red);
+  letter-spacing:1.5px;white-space:nowrap}
+.vrow .btn:disabled{opacity:.55;cursor:wait}
+.vres{display:none;margin-top:10px;padding:9px 11px;border:3px solid #000;border-radius:8px;
+  font-family:'BarlowC',sans-serif;font-weight:700;font-size:13px;letter-spacing:.03em;line-height:1.4}
+.vres.show{display:block}
+.vres.ok{background:#eaffea;color:#0a7d2c}
+.vres.bad{background:#ffecec;color:#b00020}
+.vres.note{background:#f1f1f1;color:#555}
 .lcta{margin-top:22px;text-align:center}
 .lcta .btn{background-image:var(--t-orange);color:#fff;box-shadow:6px 6px 0 #000}
 .lcta p{margin-top:12px;font-family:'BarlowC',sans-serif;font-weight:700;font-size:11px;letter-spacing:.18em;
@@ -650,7 +666,7 @@ window.JUSTB = {
     <div class="lfoot" id="ledup"></div>
 
     <div class="live">
-      <div class="lcard" style="--c:#f97316"><h4>VERIFY MY ITEM</h4><p>Got a real one? Enter the number and the claim code from under the scratch-off sticker. Checks out, you get a verified badge you can claim on Nostr.</p></div>
+      <div class="lcard" style="--c:#f97316"><h4>VERIFY MY ITEM</h4><p>Got a real one? Enter the claim code from under the scratch-off sticker and check it against the registry.</p><div class="vrow"><input type="text" id="verifyCode" placeholder="Claim code" autocomplete="off" spellcheck="false" autocapitalize="characters"><button class="btn" type="button" id="verifyBtn">CHECK</button></div><div class="vres" id="verifyRes" role="status" aria-live="polite"></div></div>
       <div class="lcard" style="--c:#4cc1bb"><h4>HOW RARE IS MINE?</h4><p>Type the number printed on your collectible and see exactly where it sits in its run.</p></div>
       <div class="lcard" style="--c:#fce000"><h4>EVERY BATCH</h4><p>Each print run listed with its date and the Bitcoin block height it was printed at. Nothing hidden, nothing rounded.</p></div>
     </div>
@@ -1259,6 +1275,44 @@ if (bb2) bb2.addEventListener('click', function(ev){
   }
 });
 document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeViewer(); });
+
+/* ---------- VERIFY MY ITEM (claim-code check) ---------- */
+/* Mirrors src/lib/justb.ts: hash(trim+uppercase) as lowercase hex SHA-256.
+   The /b page was shipped hashes from admin, so both sides must agree. */
+function sha256Hex(str){
+  return crypto.subtle.digest('SHA-256', new TextEncoder().encode(str))
+    .then(function(buf){
+      var b = new Uint8Array(buf), hex = '';
+      for (var i = 0; i < b.length; i++) hex += (b[i] < 16 ? '0' : '') + b[i].toString(16);
+      return hex;
+    });
+}
+var vInput = document.getElementById('verifyCode');
+var vBtn = document.getElementById('verifyBtn');
+var vRes = document.getElementById('verifyRes');
+function vShow(cls, html){ vRes.className = 'vres show ' + cls; vRes.innerHTML = html; }
+function vCheck(){
+  if (!vInput || !vRes) return;
+  var code = (vInput.value || '').trim();
+  if (!code) { vShow('note', 'Enter a code first.'); return; }
+  var D = window.JUSTB || {};
+  var hashes = (D.codes && D.codes.hashes) || [];
+  vBtn.disabled = true;
+  sha256Hex(code.trim().toUpperCase()).then(function(h){
+    vBtn.disabled = false;
+    if (!hashes || hashes.length === 0) {
+      vShow('note', 'No codes in the registry yet &mdash; check back soon.');
+      return;
+    }
+    if (hashes.indexOf(h) > -1) {
+      vShow('ok', '<b>VALID</b> &mdash; this code is in the Just B registry. It\'s a genuine collectible.');
+    } else {
+      vShow('bad', '<b>INVALID</b> &mdash; this code is not in the registry. Double-check the code, or contact the shop you bought it from.');
+    }
+  }).catch(function(){ vBtn.disabled = false; vShow('note', 'Could not check right now &mdash; try again.'); });
+}
+if (vBtn) vBtn.addEventListener('click', vCheck);
+if (vInput) vInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') { e.preventDefault(); vCheck(); } });
 })();
 </script>
 </body>
