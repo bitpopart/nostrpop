@@ -72,6 +72,7 @@ import CloudAppViewer from "./pages/CloudAppViewer";
 import Gallery from "./pages/Gallery";
 import IconDownloads from "./pages/IconDownloads";
 import Zapper from "./pages/Zapper";
+import ZapWall from "./pages/ZapWall";
 import NotFound from "./pages/NotFound";
 
 export function AppRouter() {
@@ -161,6 +162,8 @@ export function AppRouter() {
         <Route path="/gallery" element={<LayoutIframe><Gallery /></LayoutIframe>} />
         {/* Zapper — ZAPPER zap lamps updates & control, inline under the site menu/footer */}
         <Route path="/zapper" element={<Layout><Zapper /></Layout>} />
+        {/* Zapwall — Stream Road live channels & zap walls, inline under the site menu/footer */}
+        <Route path="/zapwall" element={<Layout><ZapWall /></Layout>} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="/:slug" element={<Layout><CustomPage /></Layout>} />
         <Route path="*" element={<Layout><NotFound /></Layout>} />
