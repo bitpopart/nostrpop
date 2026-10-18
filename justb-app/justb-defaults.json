@@ -7,7 +7,7 @@
    "name": "B-BEAUTIFUL",
    "pwr": 6,
    "cost": 3,
-   "serial": "∞",
+   "serial": "\u221e",
    "move": "GOLDEN SAT FLASH",
    "released": 15,
    "first": null,
@@ -19,7 +19,7 @@
    "name": "B-GEEKY",
    "pwr": 6,
    "cost": 3,
-   "serial": "∞",
+   "serial": "\u221e",
    "move": "HASH RATE HEADBUTT",
    "released": 0,
    "first": null,
@@ -31,7 +31,7 @@
    "name": "B-COOL",
    "pwr": 6,
    "cost": 3,
-   "serial": "∞",
+   "serial": "\u221e",
    "move": "GOLDEN SAT FLASH",
    "released": 0,
    "first": null,
@@ -43,7 +43,7 @@
    "name": "B-LIGHTNING",
    "pwr": 7,
    "cost": 4,
-   "serial": "∞",
+   "serial": "\u221e",
    "move": "THUNDER STACK STRIKE",
    "released": 6,
    "first": null,
@@ -55,7 +55,7 @@
    "name": "B-COFFEE",
    "pwr": 7,
    "cost": 4,
-   "serial": "∞",
+   "serial": "\u221e",
    "move": "GRIND & HUSTLE",
    "released": 8,
    "first": null,
@@ -67,7 +67,7 @@
    "name": "B-BULLISH",
    "pwr": 8,
    "cost": 4,
-   "serial": "∞",
+   "serial": "\u221e",
    "move": "GREEN CANDLE CHARGE",
    "released": 21,
    "first": null,
@@ -108,7 +108,7 @@
  "ladder": [
   {
    "name": "STREET",
-   "run": "∞ unlimited",
+   "run": "\u221e unlimited",
    "deck": "4 per deck",
    "c": "#000000"
   },
@@ -130,5 +130,13 @@
    "deck": "1 per deck",
    "c": "#facc15"
   }
- ]
+ ],
+ "online": {
+  "label": "PLAY JUST B ONLINE",
+  "url": "/justb-app/online.html"
+ },
+ "ledger": {
+  "label": "OPEN THE FULL LEDGER",
+  "url": "/justb-app/ledger.html"
+ }
 }
