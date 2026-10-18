@@ -1,0 +1,134 @@
+{
+ "updated": "2026-10-18",
+ "base": [
+  {
+   "slug": "beautiful",
+   "no": "01",
+   "name": "B-BEAUTIFUL",
+   "pwr": 6,
+   "cost": 3,
+   "serial": "∞",
+   "move": "GOLDEN SAT FLASH",
+   "released": 15,
+   "first": null,
+   "block": null
+  },
+  {
+   "slug": "geeky",
+   "no": "02",
+   "name": "B-GEEKY",
+   "pwr": 6,
+   "cost": 3,
+   "serial": "∞",
+   "move": "HASH RATE HEADBUTT",
+   "released": 0,
+   "first": null,
+   "block": null
+  },
+  {
+   "slug": "cool",
+   "no": "03",
+   "name": "B-COOL",
+   "pwr": 6,
+   "cost": 3,
+   "serial": "∞",
+   "move": "GOLDEN SAT FLASH",
+   "released": 0,
+   "first": null,
+   "block": null
+  },
+  {
+   "slug": "lightning",
+   "no": "04",
+   "name": "B-LIGHTNING",
+   "pwr": 7,
+   "cost": 4,
+   "serial": "∞",
+   "move": "THUNDER STACK STRIKE",
+   "released": 6,
+   "first": null,
+   "block": null
+  },
+  {
+   "slug": "coffee",
+   "no": "05",
+   "name": "B-COFFEE",
+   "pwr": 7,
+   "cost": 4,
+   "serial": "∞",
+   "move": "GRIND & HUSTLE",
+   "released": 8,
+   "first": null,
+   "block": null
+  },
+  {
+   "slug": "bullish",
+   "no": "06",
+   "name": "B-BULLISH",
+   "pwr": 8,
+   "cost": 4,
+   "serial": "∞",
+   "move": "GREEN CANDLE CHARGE",
+   "released": 21,
+   "first": null,
+   "block": null
+  }
+ ],
+ "drops": [
+  {
+   "no": "07",
+   "name": "B-SUPERMAN",
+   "rarity": "Fixed run",
+   "supply": 8,
+   "released": 8,
+   "status": "live",
+   "first": null,
+   "block": null
+  },
+  {
+   "no": "08",
+   "name": "MYSTERY B #01",
+   "rarity": "Mystery Rare",
+   "supply": 21,
+   "released": 0,
+   "status": "soon",
+   "first": null,
+   "block": null
+  }
+ ],
+ "launch": "2026-11-21",
+ "shops": [
+  {
+   "name": "bitpopart.com",
+   "where": "Online",
+   "ships": "Ships worldwide",
+   "url": "https://bitpopart.com"
+  }
+ ],
+ "ladder": [
+  {
+   "name": "STREET",
+   "run": "∞ unlimited",
+   "deck": "4 per deck",
+   "c": "#000000"
+  },
+  {
+   "name": "RARE",
+   "run": "numbered of 1000",
+   "deck": "4 per deck",
+   "c": "#f97316"
+  },
+  {
+   "name": "ULTRA RARE",
+   "run": "numbered of 100",
+   "deck": "1 per deck",
+   "c": "#4cc1bb"
+  },
+  {
+   "name": "MYSTERY",
+   "run": "numbered of 21",
+   "deck": "1 per deck",
+   "c": "#facc15"
+  }
+ ]
+}
