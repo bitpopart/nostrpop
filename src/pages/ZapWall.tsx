@@ -1,5 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSeoMeta } from '@unhead/react';
+import { useZapwallChannels } from '@/hooks/useZapwallChannels';
+import type { ZapwallChannel } from '@/lib/zapwall';
 
 /**
  * Zapwall — the Stream Road live channels & zap walls dashboard, shown
@@ -10,10 +12,53 @@ import { useSeoMeta } from '@unhead/react';
  * /zapwall-app/index.html (see public/zapwall-app/). It runs unchanged in a
  * same-origin, auto-height iframe: the page scrolls with the site instead of
  * showing its own scrollbars.
+ *
+ * Live data: the owner manages the channels/events in /admin → Zapwall, which
+ * publishes a Nostr kind-30078 event. This page reads it from the relays and
+ * hands it to the iframe via postMessage (the iframe falls back to its static
+ * seed list when opened standalone).
  */
+const DATA_SOURCE = 'bitpopart-zapwall';
+
 export default function ZapWall() {
   const frameRef = useRef<HTMLIFrameElement>(null);
   const [height, setHeight] = useState(700);
+
+  const { data: channels, refetch } = useZapwallChannels();
+  const channelsRef = useRef<ZapwallChannel[] | null>(null);
+
+  /** Push the latest admin-published channels into the iframe dashboard. */
+  const sendChannels = useCallback(() => {
+    const frame = frameRef.current;
+    const list = channelsRef.current;
+    if (!frame || !frame.contentWindow || !list) return;
+    try {
+      frame.contentWindow.postMessage(
+        { source: DATA_SOURCE, type: 'channels', channels: list },
+        window.location.origin,
+      );
+    } catch {
+      // iframe not ready — the load handler re-sends
+    }
+  }, []);
+
+  // Keep the latest list and push it whenever it changes.
+  useEffect(() => {
+    channelsRef.current = channels ?? null;
+    sendChannels();
+  }, [channels, sendChannels]);
+
+  // The dashboard's refresh button asks for the latest data.
+  useEffect(() => {
+    const onMessage = (e: MessageEvent) => {
+      const d = e.data as { source?: string; type?: string } | null;
+      if (!d || d.source !== DATA_SOURCE || d.type !== 'request') return;
+      sendChannels();
+      void refetch();
+    };
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, [sendChannels, refetch]);
 
   useSeoMeta({
     title: 'Zapwall — Stream Road live channels | BitPopArt',
@@ -43,6 +88,7 @@ export default function ZapWall() {
 
     const onLoad = () => {
       measure();
+      sendChannels();
       const doc = frame.contentDocument;
       if (doc?.body) {
         try {
@@ -67,7 +113,7 @@ export default function ZapWall() {
       clearInterval(interval);
       (frame as HTMLIFrameElement & { __zapwallRO?: ResizeObserver }).__zapwallRO?.disconnect();
     };
-  }, []);
+  }, [sendChannels]);
 
   return (
     <div className="w-full" style={{ backgroundColor: '#0e0a17' }}>

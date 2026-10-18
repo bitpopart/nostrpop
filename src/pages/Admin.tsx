@@ -25,6 +25,7 @@ import { AnalyticsSettings } from '@/components/analytics/AnalyticsSettings';
 import { ZapAnalytics } from '@/components/analytics/ZapAnalytics';
 import { SiteSettings } from '@/components/settings/SiteSettings';
 import { HomepageSettings } from '@/components/settings/HomepageSettings';
+import { ZapwallAdmin } from '@/components/zapwall/ZapwallAdmin';
 import { ArtworkOrderManager } from '@/components/art/ArtworkOrderManager';
 import { ArtworkCleanupTool } from '@/components/art/ArtworkCleanupTool';
 import { ArtBannerAdmin } from '@/components/art/ArtBannerAdmin';
@@ -406,6 +407,14 @@ const Admin = () => {
       badge: 'Street Art'
     },
     {
+      title: 'Zapwall',
+      description: 'Stream Road channels & events on /zapwall',
+      icon: Zap,
+      color: 'from-purple-500 to-fuchsia-500',
+      action: () => setActiveTab('zapwall'),
+      badge: 'Zapwall'
+    },
+    {
       title: 'PopUp Events',
       description: 'Manage worldwide event schedule',
       icon: MapPin,
@@ -629,6 +638,7 @@ const Admin = () => {
             <TabsTrigger value="blog">News</TabsTrigger>
             <TabsTrigger value="artist">Artist</TabsTrigger>
             <TabsTrigger value="wall">Wall</TabsTrigger>
+            <TabsTrigger value="zapwall">Zapwall</TabsTrigger>
             <TabsTrigger value="popup">PopUp</TabsTrigger>
             <TabsTrigger value="pages">Pages</TabsTrigger>
             <TabsTrigger value="social">Social</TabsTrigger>
@@ -948,6 +958,10 @@ const Admin = () => {
 
           <TabsContent value="wall">
             <WallManagement />
+          </TabsContent>
+
+          <TabsContent value="zapwall">
+            <ZapwallAdmin />
           </TabsContent>
 
           <TabsContent value="projects">
