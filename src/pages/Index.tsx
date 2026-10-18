@@ -604,7 +604,7 @@ function PhotoGrid({ tiles }: { tiles: GridTile[] }) {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-4 text-muted-foreground">
         <LayoutGrid className="h-12 w-12 opacity-20" />
-        <p className="text-sm">No tiles configured yet. Add some in Homepage Settings → Photo Grid.</p>
+        <p className="text-sm">No tiles configured yet. Add some in Homepage Settings → Grid Tiles (they appear at the top of the homepage).</p>
       </div>
     );
   }
@@ -1832,6 +1832,13 @@ const Index = () => {
           </p>
         </div>
 
+        {/* Pinned grid tiles — always the first thing in the homepage grid */}
+        {settingsReady && (gridTiles.length > 0 || viewMode === 'grid') && (
+          <div className="mb-16">
+            <PhotoGrid tiles={gridTiles} />
+          </div>
+        )}
+
         {/* Conditional Content Based on View Mode */}
         {settingsLoading && !homepageSettings && (
           /* Settings still loading on cold start — show a skeleton so the
@@ -1855,11 +1862,6 @@ const Index = () => {
               isLoading={artProgressLoading}
             />
           </div>
-        )}
-
-        {viewMode === 'grid' && settingsReady && (
-          /* Photo Grid View — pure images, no text */
-          <PhotoGrid tiles={gridTiles} />
         )}
 
         {viewMode === 'gallery' && settingsReady && (

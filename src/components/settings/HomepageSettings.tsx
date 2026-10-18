@@ -33,6 +33,7 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { getAdminPubkeyHex } from '@/lib/adminUtils';
 import type { HomepageSection, HomepageButton, HomepageSettings, SiteBanner, BannerStyle, GridTile, HomepageView } from '@/hooks/useHomepageSettings';
+import { useUploadFile } from '@/hooks/useUploadFile';
 import { TilePickerDialog } from './TilePickerDialog';
 import {
   Home,
@@ -75,6 +76,8 @@ import {
   Ban,
   LayoutGrid,
   Link as LinkIcon,
+  Upload,
+  Loader2,
   X,
   Printer,
   Frame,
@@ -449,6 +452,22 @@ function SortableTile({ tile, onDelete, onUpdate, isEditing, onToggleEdit }: Sor
     isDragging,
   } = useSortable({ id: tile.id });
 
+  const { mutateAsync: uploadFile, isPending: uploadingFile } = useUploadFile();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const tags = await uploadFile(file);
+      onUpdate(tile.id, { imageUrl: tags[0][1] });
+    } catch (err) {
+      toast.error('Upload failed: ' + (err instanceof Error ? err.message : String(err)));
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   const style: CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -507,14 +526,34 @@ function SortableTile({ tile, onDelete, onUpdate, isEditing, onToggleEdit }: Sor
       {/* Inline edit panel (opens below the thumb) */}
       {isEditing && (
         <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-white dark:bg-gray-900 border rounded-lg shadow-lg p-2 space-y-1.5 min-w-[220px]">
-          <Label className="text-xs text-muted-foreground">Image URL</Label>
-          <Input
-            value={tile.imageUrl}
-            onChange={e => onUpdate(tile.id, { imageUrl: e.target.value })}
-            placeholder="https://..."
-            className="h-7 text-xs"
-            autoFocus
-          />
+          <Label className="text-xs text-muted-foreground">Image</Label>
+          <div className="flex items-center gap-1">
+            <Input
+              value={tile.imageUrl}
+              onChange={e => onUpdate(tile.id, { imageUrl: e.target.value })}
+              placeholder="https://... or upload"
+              className="h-7 text-xs flex-1 min-w-0"
+              autoFocus
+            />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleUpload}
+            />
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-xs shrink-0 px-2"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingFile}
+              title="Upload your own image"
+            >
+              {uploadingFile ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
+              <span className="ml-1">Upload</span>
+            </Button>
+          </div>
           <Label className="text-xs text-muted-foreground">Link URL</Label>
           <Input
             value={tile.linkUrl}
@@ -944,7 +983,7 @@ export function HomepageSettings() {
             className="relative"
           >
             <LayoutGrid className="h-4 w-4 mr-2" />
-            Photo Grid
+            Grid Tiles
             {gridTiles.length > 0 && (
               <span className="ml-1.5 inline-flex items-center justify-center w-4 h-4 rounded-full bg-purple-500 text-white text-[10px]">{gridTiles.length}</span>
             )}
@@ -1322,9 +1361,10 @@ export function HomepageSettings() {
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-2">
                 <div>
-                  <h3 className="font-semibold text-sm">Photo Grid Tiles</h3>
+                  <h3 className="font-semibold text-sm">Grid tiles — always first on the homepage</h3>
                   <p className="text-xs text-muted-foreground">
-                    Pick from your existing content — Art, Projects, Free Downloads, Shop.
+                    These tiles always sit at the top of the homepage, before everything else. Upload your own
+                    image (or pick from existing content) and link it to any page — e.g. <code>/justb</code>.
                     <br />On mobile 3 columns · desktop 6 columns.
                   </p>
                 </div>
@@ -1373,7 +1413,7 @@ export function HomepageSettings() {
               {gridTiles.length === 0 && (
                 <div className="border-2 border-dashed rounded-lg p-8 text-center text-muted-foreground text-sm">
                   <LayoutGrid className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                  No tiles yet. Click "Pick from content" to build your photo grid.
+                  No tiles yet. Click "Pick from content" or upload your own image (hover a tile → edit → Upload) — the tiles appear at the top of the homepage.
                 </div>
               )}
 
