@@ -472,9 +472,36 @@ footer .love{margin-top:16px;font-size:13px;color:#555}
   .boxface{min-height:240px}
   .sticker{font-size:15px;top:-2px;right:0}
 }
+
+/* IN-PAGE VIEWER */
+body.viewing > :not(#viewer){display:none !important}
+.viewer[hidden]{display:none !important}
+.viewer{display:flex;flex-direction:column;min-height:100vh}
+.viewer-bar{position:sticky;top:0;z-index:60;display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  padding:12px 16px;background:#0e0a17;border-bottom:4px solid #000;box-shadow:0 4px 0 var(--red)}
+.viewer-back{font-family:'BarlowC',sans-serif;font-weight:700;font-size:13px;letter-spacing:.14em;
+  text-transform:uppercase;background-image:var(--t-orange);color:#fff;border:3px solid #000;
+  border-radius:10px;padding:9px 16px;cursor:pointer;box-shadow:4px 4px 0 var(--red)}
+.viewer-back:hover{background-image:var(--t-yellow);color:#0A0A0A}
+.viewer-back:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--red)}
+.viewer-title{font-family:'PainDeMie','Bangers',sans-serif;font-size:22px;letter-spacing:2px;color:#fff}
+.viewer-frame{display:block;width:100%;border:0;flex:1;background:#fff}
+
 </style>
 </head>
 <body>
+
+<!-- ============================================================
+     IN-PAGE VIEWER. "PLAY JUST B ONLINE" and "OPEN THE FULL LEDGER"
+     open their pages here, inside the Just B page (no new tab).
+     ============================================================ -->
+<section class="viewer" id="viewer" hidden>
+  <div class="viewer-bar">
+    <button class="viewer-back" id="viewerBack" type="button">&larr; BACK TO JUST B</button>
+    <span class="viewer-title" id="viewerTitle"></span>
+  </div>
+  <iframe id="viewerFrame" class="viewer-frame" title="Just B page viewer"></iframe>
+</section>
 
 <!-- ============================================================
      JUST-B DATA. Edit this block only. Everything on the page
@@ -523,7 +550,12 @@ window.JUSTB = {
     { name:"RARE",       run:"numbered of 1000", deck:"4 per deck", c:"#f97316" },
     { name:"ULTRA RARE", run:"numbered of 100",  deck:"1 per deck", c:"#4cc1bb" },
     { name:"MYSTERY",    run:"numbered of 21",   deck:"1 per deck", c:"#facc15" }
-  ]
+  ],
+
+  // IN-PAGE PAGES. Which page the "PLAY JUST B ONLINE" and "OPEN THE FULL
+  // LEDGER" buttons open, and the button label. Both open INSIDE this page.
+  online: { label: "PLAY JUST B ONLINE", url: "/justb-app/online.html" },
+  ledger: { label: "OPEN THE FULL LEDGER", url: "/justb-app/ledger.html" }
 };
 </script>
 
@@ -624,7 +656,7 @@ window.JUSTB = {
     </div>
 
     <div class="lcta">
-      <a class="btn" href="https://claude.ai/artifact/32Xxfy65zieDZBw1ruiioF" target="_blank" rel="noopener">OPEN THE FULL LEDGER</a>
+      <button class="btn" type="button" id="openLedger">OPEN THE FULL LEDGER</button>
       <p>Live page &middot; updated with every new batch and code</p>
     </div>
 
@@ -679,7 +711,7 @@ window.JUSTB = {
       <div class="pn1">No deck needed</div>
       <h3>PLAY IT NOW,<br>ONLINE</h3>
       <p>Just B Online. The whole game in your browser, free, nothing to install. Learn it in a couple of rounds, then go play it for real with the printed cards.</p>
-      <a class="btn" href="https://claude.ai/artifact/Xt2XbDVAR22wLuJbXzLGvK" target="_blank" rel="noopener">PLAY JUST B ONLINE</a>
+      <button class="btn" type="button" id="openOnline">PLAY JUST B ONLINE</button>
       <div class="pn2">Free &middot; browser &middot; no sign-up</div>
     </div>
 
@@ -1117,6 +1149,12 @@ window.JUSTB = {
       }
       lad.innerHTML = lh;
     }
+
+    /* in-page viewer button labels (fall back to defaults) */
+    var bo = document.getElementById('openOnline');
+    if (bo && D.online && D.online.label) { bo.textContent = D.online.label; }
+    var bl = document.getElementById('openLedger');
+    if (bl && D.ledger && D.ledger.label) { bl.textContent = D.ledger.label; }
   }
 
 var btns=document.querySelectorAll('[data-target]');
@@ -1131,6 +1169,82 @@ window.addEventListener('message',function(e){
   var d=e.data;if(!d||d.source!=='bitpopart-justb')return;
   if(d.type==='data'&&d.data){window.JUSTB=d.data;renderJustB();}
 });
+
+/* ---------- IN-PAGE VIEWER (Just B Online + Full Ledger) ---------- */
+var viewerEl = document.getElementById('viewer');
+var viewerFrame = document.getElementById('viewerFrame');
+
+function viewerEntry(key){
+  var D = window.JUSTB || {};
+  var e = D[key];
+  if (e && e.url) return e;
+  return (key === 'online')
+    ? { label:'PLAY JUST B ONLINE', url:'/justb-app/online.html' }
+    : { label:'OPEN THE FULL LEDGER', url:'/justb-app/ledger.html' };
+}
+
+function viewerHeight(){
+  try { return Math.max((window.top && window.top !== window ? window.top.innerHeight : window.innerHeight) || 700, 520); }
+  catch(e){ return Math.max(window.innerHeight || 700, 520); }
+}
+
+var viewerFitObs = null;
+function viewerFit(){
+  if (viewerFrame.getAttribute('data-mode') !== 'page') return;
+  try {
+    var doc = viewerFrame.contentDocument;
+    if (doc && doc.documentElement) {
+      var h = Math.max(doc.documentElement.scrollHeight, doc.body ? doc.body.scrollHeight : 0);
+      viewerFrame.style.height = (h + 24) + 'px';
+    }
+  } catch(e) {}
+}
+function viewerFitMount(){
+  viewerFit();
+  try {
+    var doc = viewerFrame.contentDocument;
+    if (!doc || !doc.body) return;
+    if (viewerFitObs) viewerFitObs.disconnect();
+    viewerFitObs = new ResizeObserver(function(){ viewerFit(); });
+    viewerFitObs.observe(doc.body);
+  } catch(e) {}
+}
+
+function openViewer(entry){
+  if (!entry || !entry.url) return;
+  var title = document.getElementById('viewerTitle');
+  title.textContent = entry.label || '';
+  viewerFrame.onload = null;
+  viewerFrame.removeAttribute('src');
+  viewerFrame.setAttribute('data-mode', entry.url.indexOf('/online') > -1 ? 'app' : 'page');
+  if (viewerFrame.getAttribute('data-mode') === 'app') {
+    viewerFrame.style.height = viewerHeight() + 'px';
+  } else {
+    viewerFrame.style.height = '';
+  }
+  document.body.classList.add('viewing');
+  viewerEl.hidden = false;
+  viewerFrame.onload = viewerFitMount;
+  viewerFrame.src = entry.url;
+  /* tell the /b page to scroll the app back to the top so the viewer is visible */
+  try { if (window.parent && window.parent !== window) window.parent.postMessage({source:'bitpopart-justb', type:'scrolltop'}, '*'); } catch(e){}
+}
+
+function closeViewer(){
+  document.body.classList.remove('viewing');
+  viewerEl.hidden = true;
+  viewerFrame.onload = null;
+  if (viewerFitObs) { try { viewerFitObs.disconnect(); } catch(e){} viewerFitObs = null; }
+  viewerFrame.removeAttribute('src');
+}
+
+var ob = document.getElementById('openOnline');
+if (ob) ob.addEventListener('click', function(){ openViewer(viewerEntry('online')); });
+var olb = document.getElementById('openLedger');
+if (olb) olb.addEventListener('click', function(){ openViewer(viewerEntry('ledger')); });
+var vb = document.getElementById('viewerBack');
+if (vb) vb.addEventListener('click', closeViewer);
+document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeViewer(); });
 })();
 </script>
 </body>

@@ -16,6 +16,7 @@ import {
   DEFAULT_JUSTB,
   type JustBData,
   type JustBDrop,
+  type JustBPage,
   type JustBShop,
   type JustBLadder,
 } from '@/lib/justb';
@@ -158,6 +159,11 @@ export function JustBAdmin() {
       ...prev,
       shops: [...prev.shops, { name: 'New shop', where: 'Online', ships: 'Ships worldwide', url: '' }],
     }));
+  };
+
+  const updatePage = (key: 'online' | 'ledger', patch: Partial<JustBPage>) => {
+    dirtyRef.current = true;
+    setConfig((prev) => ({ ...prev, [key]: { ...prev[key], ...patch } }));
   };
 
   const updateLadder = (i: number, patch: Partial<JustBLadder>) => {
@@ -412,6 +418,27 @@ export function JustBAdmin() {
               </div>
             </div>
           ))}
+        </div>
+
+        {/* In-page pages */}
+        <div className="space-y-3 rounded-lg border bg-card p-4">
+          <h3 className="text-sm font-semibold">Play online &amp; full ledger</h3>
+          <p className="text-xs text-muted-foreground">
+            The two buttons on <code>/b</code> now open their pages <em>inside</em> the page
+            (no new tab). Edit the button label and the page URL here.
+          </p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="space-y-3 rounded-lg border p-3">
+              <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">PLAY JUST B ONLINE</h4>
+              <LabeledInput label="Button label" value={config.online.label} onChange={(v) => updatePage('online', { label: v })} placeholder="PLAY JUST B ONLINE" />
+              <LabeledInput label="Page URL" value={config.online.url} onChange={(v) => updatePage('online', { url: v })} placeholder="/justb-app/online.html" />
+            </div>
+            <div className="space-y-3 rounded-lg border p-3">
+              <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">OPEN THE FULL LEDGER</h4>
+              <LabeledInput label="Button label" value={config.ledger.label} onChange={(v) => updatePage('ledger', { label: v })} placeholder="OPEN THE FULL LEDGER" />
+              <LabeledInput label="Page URL" value={config.ledger.url} onChange={(v) => updatePage('ledger', { url: v })} placeholder="/justb-app/ledger.html" />
+            </div>
+          </div>
         </div>
 
         {/* Ladder */}

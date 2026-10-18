@@ -62,6 +62,14 @@ export interface JustBLadder {
   c: string;
 }
 
+/** One of the in-page viewer buttons on /b (Play online / Full ledger). */
+export interface JustBPage {
+  /** Button label, e.g. "PLAY JUST B ONLINE". */
+  label: string;
+  /** Page URL opened INSIDE the /b page (same origin, e.g. /justb-app/online.html). */
+  url: string;
+}
+
 export interface JustBData {
   /** Shown under the ledger so people know how fresh it is. */
   updated: string;
@@ -74,6 +82,10 @@ export interface JustBData {
   shops: JustBShop[];
   /** Rarity ladder, defined by print run. */
   ladder: JustBLadder[];
+  /** "PLAY JUST B ONLINE" button + page, opened inside the page. */
+  online: JustBPage;
+  /** "OPEN THE FULL LEDGER" button + page, opened inside the page. */
+  ledger: JustBPage;
 }
 
 /** Seed config — mirrors window.JUSTB in public/justb-app/index.html. */
@@ -209,7 +221,9 @@ export const DEFAULT_JUSTB: JustBData = {
       "deck": "1 per deck",
       "c": "#facc15"
     }
-  ]
+  ],
+  "online": { "label": "PLAY JUST B ONLINE", "url": "/justb-app/online.html" },
+  "ledger": { "label": "OPEN THE FULL LEDGER", "url": "/justb-app/ledger.html" }
 };
 
 
@@ -300,6 +314,12 @@ export function sanitizeJustB(input: unknown): JustBData | null {
     })
     .filter((x): x is JustBLadder => x !== null);
 
+  const page = (raw: unknown, dlabel: string, durl: string): JustBPage => {
+    if (!raw || typeof raw !== 'object') return { label: dlabel, url: durl };
+    const e = raw as Record<string, unknown>;
+    return { label: str(e.label, dlabel) || dlabel, url: str(e.url, durl) || durl };
+  };
+
   return {
     updated: str(o.updated),
     base,
@@ -307,5 +327,7 @@ export function sanitizeJustB(input: unknown): JustBData | null {
     launch: str(o.launch),
     shops,
     ladder,
+    online: page(o.online, DEFAULT_JUSTB.online.label, DEFAULT_JUSTB.online.url),
+    ledger: page(o.ledger, DEFAULT_JUSTB.ledger.label, DEFAULT_JUSTB.ledger.url),
   };
 }

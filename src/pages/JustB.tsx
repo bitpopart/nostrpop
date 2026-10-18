@@ -46,13 +46,19 @@ export default function JustB() {
     sendData();
   }, [data, sendData]);
 
-  // The dashboard may ask for the latest data.
+  // The dashboard may ask for the latest data, or ask the site to scroll
+  // back to the app top when an in-page viewer (Just B Online / Full Ledger)
+  // opens.
   useEffect(() => {
     const onMessage = (e: MessageEvent) => {
       const d = e.data as { source?: string; type?: string } | null;
-      if (!d || d.source !== JUSTB_DATA_SOURCE || d.type !== 'request') return;
-      sendData();
-      void refresh();
+      if (!d || d.source !== JUSTB_DATA_SOURCE) return;
+      if (d.type === 'request') {
+        sendData();
+        void refresh();
+      } else if (d.type === 'scrolltop') {
+        frameRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     };
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
