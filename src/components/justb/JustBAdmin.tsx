@@ -202,10 +202,14 @@ export function JustBAdmin() {
 
   const codes = config.codes?.hashes ?? [];
 
-  /** Hash the typed codes in this browser and append them to the registry. */
+  /** Hash the typed codes in this browser, append them to the registry AND publish immediately. */
   const addCodes = async () => {
     if (!user) {
       toast.error('Please log in to add codes');
+      return;
+    }
+    if (isPending) {
+      toast.info('A save is already publishing — wait a second and try again.');
       return;
     }
     const raw = codeInput
@@ -218,7 +222,7 @@ export function JustBAdmin() {
     }
     setHashing(true);
     try {
-      const existing = new Set(codes);
+      const existing = new Set(config.codes?.hashes ?? []);
       const added: string[] = [];
       for (const r of raw) {
         if (existing.size + added.length >= MAX_JUSTB_CODES) break;
@@ -230,13 +234,16 @@ export function JustBAdmin() {
         setCodeInput('');
         return;
       }
-      dirtyRef.current = true;
-      setConfig((prev) => ({
-        ...prev,
-        codes: { hashes: [...(prev.codes?.hashes ?? []), ...added] },
-      }));
+      const next: JustBData = {
+        ...config,
+        codes: { hashes: [...(config.codes?.hashes ?? []), ...added] },
+      };
+      setConfig(next);
       setCodeInput('');
-      toast.success(`Added ${added.length} code${added.length === 1 ? '' : 's'} — stored as secure hashes, nothing readable goes to Nostr.`);
+      publish(
+        next,
+        `Added ${added.length} code${added.length === 1 ? '' : 's'} and published — /b now verifies them (hashes only, the codes themselves never reach Nostr).`,
+      );
     } catch (e) {
       toast.error('Could not hash the codes: ' + (e instanceof Error ? e.message : String(e)));
     } finally {
@@ -244,23 +251,67 @@ export function JustBAdmin() {
     }
   };
 
+  /** Remove one code and publish the registry immediately (the code stops verifying). */
   const removeCode = (h: string) => {
-    dirtyRef.current = true;
-    setConfig((prev) => ({
-      ...prev,
-      codes: { hashes: (prev.codes?.hashes ?? []).filter((x) => x !== h) },
-    }));
+    if (!user) return;
+    const next: JustBData = {
+      ...config,
+      codes: { hashes: (config.codes?.hashes ?? []).filter((x) => x !== h) },
+    };
+    setConfig(next);
+    publish(next, 'Code removed and published — it no longer verifies on /b.');
   };
 
+  /** Empty the registry and publish immediately (nothing verifies until new codes are added). */
   const clearCodes = () => {
-    dirtyRef.current = true;
-    setConfig((prev) => ({ ...prev, codes: { hashes: [] } }));
+    if (!user) return;
+    const next: JustBData = { ...config, codes: { hashes: [] } };
+    setConfig(next);
+    publish(next, 'Registry cleared and published — no codes verify on /b right now.');
   };
 
   const published = () => {
     dirtyRef.current = false;
     setLastSavedAt(new Date().toLocaleTimeString());
     queryClient.invalidateQueries({ queryKey: ['justb-data'] });
+  };
+
+  /**
+   * Publish a config to Nostr (kind 30078, d com.bitpopart.justb) and update
+   * the local state to the published snapshot. Used by the top-level Save
+   * button AND by the claim-code actions, which publish immediately so the
+   * VERIFY MY ITEM registry on /b updates the moment a code is added.
+   */
+  const publish = (cfg: JustBData, msg: string) => {
+    if (!user) {
+      toast.error('Please log in to publish the Just B config');
+      return;
+    }
+    const prepared = prepare(cfg);
+    if (!prepared) {
+      toast.error('Keep at least one base B, one shop and one ladder rung before saving.');
+      return;
+    }
+    publishEvent(
+      {
+        kind: JUSTB_KIND,
+        content: JSON.stringify(prepared),
+        tags: [['d', JUSTB_D_TAG]],
+        created_at: Math.floor(Date.now() / 1000),
+      },
+      {
+        onSuccess: () => {
+          published();
+          setConfig(prepared);
+          // Hold the published snapshot until the relay refetch confirms it,
+          // so newly added codes never flash-revert from a stale read.
+          dirtyRef.current = true;
+          toast.success(msg);
+          window.dispatchEvent(new CustomEvent('justb-data-updated', { detail: { data: prepared } }));
+        },
+        onError: (e) => toast.error('Failed to publish Just B config: ' + e.message),
+      },
+    );
   };
 
   /** Trim names, coerce numbers/dates, drop empty shops/ladder rows. */
@@ -291,31 +342,7 @@ export function JustBAdmin() {
   };
 
   const save = () => {
-    if (!user) {
-      toast.error('Please log in to save the Just B config');
-      return;
-    }
-    const prepared = prepare(config);
-    if (!prepared) {
-      toast.error('Keep at least one base B, one shop and one ladder rung before saving.');
-      return;
-    }
-    publishEvent(
-      {
-        kind: JUSTB_KIND,
-        content: JSON.stringify(prepared),
-        tags: [['d', JUSTB_D_TAG]],
-        created_at: Math.floor(Date.now() / 1000),
-      },
-      {
-        onSuccess: () => {
-          published();
-          toast.success('Just B saved — published to Nostr, /b updates live');
-          window.dispatchEvent(new CustomEvent('justb-data-updated', { detail: { data: prepared } }));
-        },
-        onError: (e) => toast.error('Failed to save Just B config: ' + e.message),
-      },
-    );
+    publish(config, 'Just B saved — published to Nostr, /b updates live');
   };
 
   const reset = () => {
@@ -453,8 +480,10 @@ export function JustBAdmin() {
           <p className="text-xs text-muted-foreground">
             These are the claim codes printed under the scratch-off stickers. Visitors enter their code on{' '}
             <code>/b</code> and see <b>VALID</b> or <b>INVALID</b>. Codes are <b>hashed (SHA-256) in your
-            browser before saving</b> — only the hashes are published to Nostr, so nobody reading the relays
-            can ever recover the actual codes. Use long, random codes for each collectible.
+            browser before publishing</b> — only the hashes ever go to Nostr, so nobody reading the relays
+            can recover the actual codes. Hitting <b>Add code(s)</b> publishes to Nostr <b>immediately</b>{' '}
+            (no extra Save needed) and <code>/b</code> verifies the new codes right away. Use long, random
+            codes for each collectible.
           </p>
           <div className="space-y-1">
             <Label className="text-xs">Codes to add — one per line</Label>
@@ -467,10 +496,10 @@ export function JustBAdmin() {
             />
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Button variant="secondary" size="sm" onClick={addCodes} disabled={!user || hashing}>
-              {hashing ? 'Hashing…' : (<><KeyRound className="mr-1 h-3.5 w-3.5" /> Add code(s)</>)}
+            <Button variant="secondary" size="sm" onClick={addCodes} disabled={!user || hashing || isPending}>
+              {hashing ? 'Hashing…' : isPending ? 'Publishing…' : (<><KeyRound className="mr-1 h-3.5 w-3.5" /> Add code(s) — publishes now</>)}
             </Button>
-            <Button variant="destructive" size="sm" onClick={clearCodes} disabled={!user || codes.length === 0}>
+            <Button variant="destructive" size="sm" onClick={clearCodes} disabled={!user || codes.length === 0 || isPending}>
               <Trash2 className="mr-1 h-3.5 w-3.5" /> Clear all codes
             </Button>
             <span className="text-xs text-muted-foreground">
@@ -493,6 +522,7 @@ export function JustBAdmin() {
                     size="sm"
                     className="h-6 w-6 shrink-0 p-0"
                     onClick={() => removeCode(h)}
+                    disabled={isPending}
                     aria-label="Delete code"
                   >
                     <X className="h-3.5 w-3.5" />
@@ -502,9 +532,11 @@ export function JustBAdmin() {
             </div>
           )}
           <p className="text-xs text-muted-foreground">
-            Stored entries show a short fingerprint of each hash — never the code itself. Save to publish the
-            registry to Nostr; the <code>/b</code> page then verifies against it live. Individual codes can be
-            deleted here at any time (the short fingerprint identifies the entry to remove).
+            Stored entries show a short fingerprint of each hash — never the code itself. Adding, deleting or
+            clearing codes <b>publishes immediately</b>: the <code>/b</code> VERIFY MY ITEM check updates the
+            moment you act, no separate Save needed (the top Save button is for the other sections). Deleting a
+            code instantly makes it stop verifying — use it to revoke a lost or misprinted sticker. The short
+            fingerprint identifies the entry to remove.
           </p>
         </div>
 
