@@ -228,4 +228,12 @@
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
+
+  <!-- The Stack — Just B Card Game -->
+  <url>
+    <loc>https://bitpopart.com/tcg</loc>
+    <lastmod>2026-10-19</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
 </urlset>
