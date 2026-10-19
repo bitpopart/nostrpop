@@ -202,6 +202,10 @@ const Admin = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState(() => searchParams.get('tab') || 'overview');
+  // Set when a newer deployed build exists than the one this tab is running.
+  // Stale admin tabs have silently eaten saves before (edits made against an
+  // old bundle never reach the relays), so make it visible instead.
+  const [newBuildAvailable, setNewBuildAvailable] = useState<string | null>(null);
 
   // Check if current user is admin
   const isAdmin = useIsAdmin();
@@ -226,6 +230,25 @@ const Admin = () => {
       navigate('/cards');
     }
   }, [user, isAdmin, navigate]);
+
+  // Detect a newer deployed build than the one this tab runs. The live
+  // index.html always references the newest hashed bundle; if it differs
+  // from the computed <script src> we loaded, a redeploy happened while
+  // this admin tab was open — warn so stale-bundle saves can't happen.
+  useEffect(() => {
+    const script = document.querySelector('script[src*="/assets/index-"]');
+    if (!script) return;
+    const currentSrc = script.getAttribute('src') || '';
+    fetch('/', { cache: 'no-store' })
+      .then((r) => r.text())
+      .then((html) => {
+        const m = html.match(/assets\/index-[A-Za-z0-9_-]+\.js/);
+        if (m && m[0] !== currentSrc.replace(/^\//, '')) {
+          setNewBuildAvailable(m[0]);
+        }
+      })
+      .catch(() => { /* non-fatal: only a warning affordance */ });
+  }, []);
 
   // Show login prompt if not logged in
   if (!user) {
@@ -620,6 +643,25 @@ const Admin = () => {
             Administrator Access
           </Badge>
         </div>
+
+        {/* New deployment warning — this tab may run an older build */}
+        {newBuildAvailable && (
+          <div className="mb-6 rounded-lg border-2 border-amber-400 bg-amber-50 dark:bg-amber-950/40 px-4 py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <p className="text-sm text-amber-800 dark:text-amber-200">
+              ⚠️ <strong>A newer version of this site was deployed</strong> while this admin page was open (new
+              build <code className="font-mono text-xs bg-amber-100 dark:bg-amber-900 px-1 rounded">{newBuildAvailable}</code>).
+              This tab still runs the previous build — saves made here may not appear on the live site.
+            </p>
+            <Button
+              size="sm"
+              variant="outline"
+              className="shrink-0 border-amber-500 text-amber-700 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/60"
+              onClick={() => window.location.reload()}
+            >
+              Reload now
+            </Button>
+          </div>
+        )}
 
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">

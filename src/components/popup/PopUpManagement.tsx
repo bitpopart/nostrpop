@@ -315,6 +315,33 @@ export function PopUpManagement() {
       tags.push(['finished', 'true']);
     }
 
+    // Read the event back from the relay pool after publishing a finished
+    // event and confirm it carries the finished tag — a save that never
+    // reaches a relay (stale bundle, aborted signing, relay hiccup) must not
+    // silently look successful.
+    const verifyPublished = async (dTag: string, author: string) => {
+      try {
+        const found = await nostr.query(
+          [{ kinds: [31922], authors: [author], '#d': [dTag], limit: 2 }],
+          { signal: AbortSignal.timeout(6000) }
+        );
+        const confirmed = found.some((ev) =>
+          ev.tags.some((t) => t[0] === 'finished' && t[1] === 'true')
+        );
+        if (confirmed) {
+          toast.success('✓ Verified on the relays — this event is now under Past Events on /popup.');
+        } else {
+          toast.warning(
+            'Published, but not yet confirmed on the relays. If it does not appear on /popup within a few seconds, hard-refresh the page (Cmd/Ctrl+Shift+R).'
+          );
+        }
+      } catch {
+        toast.warning(
+          'Published, but I could not confirm it on the relays. If it does not appear on /popup, hard-refresh (Cmd/Ctrl+Shift+R).'
+        );
+      }
+    };
+
     createEvent(
       {
         kind: 31922,
@@ -349,6 +376,9 @@ export function PopUpManagement() {
             finished: false,
           });
           queryClient.invalidateQueries({ queryKey: ['popup-events'] });
+          if (formData.finished && user?.pubkey) {
+            verifyPublished(eventId, user.pubkey);
+          }
         },
         onError: (error) => {
           console.error('Publish error:', error);
@@ -849,6 +879,9 @@ export function PopUpManagement() {
                 </div>
                 <p className="text-sm text-muted-foreground">
                   Check this box for completed events. They will appear in the "Past Events" section with smaller thumbnails.
+                  After saving you'll get a "✓ Verified on the relays" confirmation. If you DON'T see that confirmation
+                  (only "Published"), hard-refresh the page (Cmd/Ctrl+Shift+R) and try again — your tab may predate the
+                  latest site update.
                   {formData.finished ? ' (Event is marked as finished)' : ' (Event is active)'}
                 </p>
               </div>
