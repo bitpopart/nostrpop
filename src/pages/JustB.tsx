@@ -86,11 +86,11 @@ export default function JustB() {
       const doc = frame.contentDocument;
       const body = doc?.body;
       if (!body || !doc) return;
-      const h = Math.max(
-        body.scrollHeight,
-        doc.documentElement ? doc.documentElement.scrollHeight : 0,
-        600,
-      );
+      // Measure the BODY only. `documentElement.scrollHeight` is poisoned
+      // for an auto-height iframe: it never reports below the iframe's own
+      // viewport height, so once the height grew too big (e.g. the in-page
+      // viewer opening against a tall page) it could never shrink back.
+      const h = Math.max(body.scrollHeight, 600);
       setHeight((prev) => (Math.abs(prev - h) > 4 ? h : prev));
     };
 
