@@ -644,6 +644,46 @@ function PhotoGridTile({ tile }: { tile: GridTile }) {
   );
 }
 
+/**
+ * Resolve a tile link to an in-app route, or null when it points at a
+ * genuinely external destination.
+ *
+ * Tiles can be stored as relative routes ("/free"), bare paths ("bitbot"),
+ * or full URLs ("https://bitpopart.com/bitbot/"). Anything that stays on
+ * this site — relative paths and absolute URLs on the site's own host —
+ * renders as an in-app `<Link>` so it opens in the same frame, never a new
+ * tab. Only links to OTHER hosts (and non-http schemes) open externally.
+ */
+// The site's canonical hosts (CNAME → bitpopart.com). Full URLs pointing at
+// these open in-app even when the visitor is on a mirror/preview origin.
+const SITE_HOSTS = new Set(['bitpopart.com', 'www.bitpopart.com']);
+
+function internalPathFor(linkUrl: string): string | null {
+  const trimmed = (linkUrl || '').trim();
+  if (!trimmed) return null;
+  // Protocol-relative ("//host/...") is a different host — external.
+  if (trimmed.startsWith('//')) return null;
+  // No scheme → treat as an in-app route (pad with a leading "/" so the
+  // router resolves it from the root, keeping any query/hash intact).
+  if (!/^[a-z][a-z0-9+.-]*:/i.test(trimmed)) {
+    return trimmed.startsWith('/') ? trimmed : '/' + trimmed;
+  }
+  // Only http(s) can be same-site; mailto:, tel:, data:, etc. stay external.
+  if (!/^https?:\/\//i.test(trimmed)) return null;
+  try {
+    const u = new URL(trimmed);
+    const host = u.hostname.toLowerCase();
+    const sameSite = SITE_HOSTS.has(host) || host === window.location.hostname.toLowerCase();
+    if (!sameSite) return null;
+    // Strip the origin — the in-app router handles the path (and the
+    // trailing slash, which v6 matches loosely).
+    const path = u.pathname === '' ? '/' : u.pathname;
+    return path + u.search + u.hash;
+  } catch {
+    return null; // Unparseable URL — keep it as an external link.
+  }
+}
+
 function PhotoGrid({ tiles }: { tiles: GridTile[] }) {
   if (tiles.length === 0) {
     return (
@@ -659,15 +699,15 @@ function PhotoGrid({ tiles }: { tiles: GridTile[] }) {
   return (
     <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-1 sm:gap-1.5">
       {sorted.map(tile => {
-        const isExternal = tile.linkUrl.startsWith('http://') || tile.linkUrl.startsWith('https://');
+        const internalPath = internalPathFor(tile.linkUrl);
         const inner = <PhotoGridTile tile={tile} />;
 
-        return isExternal ? (
+        return internalPath === null ? (
           <a key={tile.id} href={tile.linkUrl} target="_blank" rel="noopener noreferrer" className="block rounded-sm overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500">
             {inner}
           </a>
         ) : (
-          <Link key={tile.id} to={tile.linkUrl} className="block rounded-sm overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500">
+          <Link key={tile.id} to={internalPath} className="block rounded-sm overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500">
             {inner}
           </Link>
         );
