@@ -306,53 +306,13 @@ export function PopUpManagement() {
       coordinates: { lat, lon },
     };
 
-    // If marked as finished, do not publish to Nostr.
-    // If editing an existing published event, send a deletion event to remove it from relays.
+    // Finished events are tagged ['finished', 'true'] and published like any
+    // other event — that is what makes them show up in the "Past Events"
+    // section on /popup (and as dimmed markers on the world map). They must
+    // NOT be deleted from Nostr: deleting them made them vanish from the site
+    // entirely. To remove an event completely, use the Delete button instead.
     if (formData.finished) {
-      if (editingEvent) {
-        const existingEventId = editingEvent.tags.find(t => t[0] === 'd')?.[1];
-        if (existingEventId) {
-          createEvent(
-            {
-              kind: 5,
-              content: 'Event marked as finished',
-              tags: [['a', `31922:${editingEvent.pubkey}:${existingEventId}`]],
-            },
-            {
-              onSuccess: () => {
-                toast.success('Event marked as finished and removed from Nostr.');
-                queryClient.invalidateQueries({ queryKey: ['popup-events'] });
-              },
-              onError: () => {
-                toast.info('Event marked as finished (could not remove from Nostr).');
-              },
-            }
-          );
-        } else {
-          toast.info('Event marked as finished and will not be published to Nostr.');
-        }
-      } else {
-        toast.info('Event marked as finished and will not be published to Nostr.');
-      }
-      setIsCreating(false);
-      setEditingEvent(null);
-      setFormData({
-        title: '',
-        description: '',
-        type: 'art',
-        status: 'confirmed',
-        location: '',
-        latitude: '',
-        longitude: '',
-        startDate: '',
-        endDate: '',
-        image: '',
-        galleryImages: [],
-        link: '',
-        brandSite: '',
-        finished: false,
-      });
-      return;
+      tags.push(['finished', 'true']);
     }
 
     createEvent(
@@ -363,7 +323,13 @@ export function PopUpManagement() {
       },
       {
         onSuccess: () => {
-          toast.success(editingEvent ? 'PopUp event updated!' : 'PopUp event created!');
+          toast.success(
+            formData.finished
+              ? 'Event marked as finished — it now appears under Past Events on /popup.'
+              : editingEvent
+                ? 'PopUp event updated!'
+                : 'PopUp event created!'
+          );
           setIsCreating(false);
           setEditingEvent(null);
           setFormData({
