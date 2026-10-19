@@ -85,6 +85,7 @@ import {
   Ticket,
   BookOpen,
   Layers,
+  Clock,
   Trophy,
   Rocket,
   Coffee,
@@ -571,6 +572,9 @@ function SortableTile({ tile, onDelete, onUpdate, isEditing, onToggleEdit }: Sor
           <Button size="sm" className="w-full h-7 text-xs mt-1" onClick={() => onToggleEdit(null)}>
             Done
           </Button>
+          <p className="text-[10px] text-muted-foreground leading-snug">
+            Tip: after editing, press <b>Publish tiles now</b> above to put this tile live on bitpopart.com.
+          </p>
         </div>
       )}
     </div>
@@ -624,6 +628,10 @@ export function HomepageSettings() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [editingTileId, setEditingTileId] = useState<string | null>(null);
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
+  const [lastTilesPublishedAt, setLastTilesPublishedAt] = useState<string | null>(null);
+  const [uploadingNewTile, setUploadingNewTile] = useState(false);
+  const uploadNewTileInputRef = useRef<HTMLInputElement>(null);
+  const { mutateAsync: uploadFile } = useUploadFile();
 
   // dnd-kit sensors — pointer + touch
   const sensors = useSensors(
@@ -810,6 +818,32 @@ export function HomepageSettings() {
     });
   }, []);
 
+  /** Upload the user's own image as a brand-new tile and open its link editor. */
+  const handleUploadNewTile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingNewTile(true);
+    try {
+      const tags = await uploadFile(file);
+      const id = `tile-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+      isDirty.current = true;
+      setGridTiles(prev => [...prev, {
+        id,
+        imageUrl: tags[0][1],
+        linkUrl: '/',
+        alt: file.name.replace(/\.[^.]+$/, '') || '',
+        order: prev.length,
+      }]);
+      setEditingTileId(id);
+      toast.success('Image uploaded — set the page link on the tile, then press “Publish tiles to homepage”.');
+    } catch (err) {
+      toast.error('Upload failed: ' + (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setUploadingNewTile(false);
+      if (uploadNewTileInputRef.current) uploadNewTileInputRef.current.value = '';
+    }
+  };
+
   // ─── Drag and drop handlers ──────────────────────────────────────────────
   const handleDragStart = (event: DragStartEvent) => {
     setActiveDragId(String(event.active.id));
@@ -863,17 +897,30 @@ export function HomepageSettings() {
     setBanners(prev => prev.filter(b => b.id !== id));
   };
 
-  // ─── Save / Reset ─────────────────────────────────────────────────────────
+  // ─── Save / Reset / Publish tiles ────────────────────────────────────────
+  /** Build the full homepage settings payload from local state. */
+  const buildPayload = (): HomepageSettings => ({
+    sections: sections.map((s, i) => ({ ...s, order: i })),
+    buttons,
+    banners,
+    defaultView,
+    gridTiles: gridTiles.map((t, i) => ({ ...t, order: i })),
+  });
+
+  /** Shared post-publish bookkeeping: refresh queries, notify open tabs, resync state. */
+  const handlePublished = (payload: HomepageSettings) => {
+    isDirty.current = false; // clear dirty flag — safe to sync from server again
+    queryClient.invalidateQueries({ queryKey: ['homepage-settings', adminPubkey] });
+    queryClient.invalidateQueries({ queryKey: ['homepage-settings-public', adminPubkey] });
+    queryClient.invalidateQueries({ queryKey: ['site-banner', adminPubkey] });
+    window.dispatchEvent(new CustomEvent('homepage-settings-updated', { detail: payload }));
+    refetch();
+  };
+
   const handleSave = () => {
     if (!user) { toast.error('Please log in to save homepage settings'); return; }
 
-    const payload: HomepageSettings = {
-      sections: sections.map((s, i) => ({ ...s, order: i })),
-      buttons,
-      banners,
-      defaultView,
-      gridTiles: gridTiles.map((t, i) => ({ ...t, order: i })),
-    };
+    const payload = buildPayload();
 
     publishEvent({
       kind: 30078,
@@ -881,15 +928,33 @@ export function HomepageSettings() {
       tags: [['d', 'com.bitpopart.homepage-settings']],
     }, {
       onSuccess: () => {
-        isDirty.current = false; // clear dirty flag — safe to sync from server again
+        handlePublished(payload);
         toast.success('Homepage settings saved to Nostr!');
-        queryClient.invalidateQueries({ queryKey: ['homepage-settings', adminPubkey] });
-        queryClient.invalidateQueries({ queryKey: ['homepage-settings-public', adminPubkey] });
-        queryClient.invalidateQueries({ queryKey: ['site-banner', adminPubkey] });
-        window.dispatchEvent(new CustomEvent('homepage-settings-updated', { detail: payload }));
-        refetch();
       },
       onError: (error) => toast.error('Failed to save settings: ' + error.message),
+    });
+  };
+
+  /** Publish the tile grid to the live homepage immediately — no extra Save needed. */
+  const publishTilesNow = () => {
+    if (!user) { toast.error('Please log in to publish grid tiles'); return; }
+    if (isPublishing) {
+      toast.info('A save is already publishing — wait a second and try again.');
+      return;
+    }
+    const payload = buildPayload();
+    publishEvent({
+      kind: 30078,
+      content: JSON.stringify(payload),
+      tags: [['d', 'com.bitpopart.homepage-settings']],
+      created_at: Math.floor(Date.now() / 1000),
+    }, {
+      onSuccess: () => {
+        handlePublished(payload);
+        setLastTilesPublishedAt(new Date().toLocaleTimeString());
+        toast.success('Tiles published — they now appear at the top of bitpopart.com.');
+      },
+      onError: (error) => toast.error('Failed to publish tiles: ' + error.message),
     });
   };
 
@@ -1357,18 +1422,54 @@ export function HomepageSettings() {
 
             <Separator />
 
+            {/* Publish tiles to homepage — immediate, no extra Save needed */}
+            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3 sm:p-4 flex flex-wrap items-center gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold text-sm text-green-800 dark:text-green-300 flex items-center gap-1.5">
+                  <Rocket className="h-4 w-4" /> Publish tiles to the homepage
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  The tiles below are staged here until you publish. Press <b>Publish tiles now</b> and they
+                  appear at the top of <code className="text-[11px]">bitpopart.com</code> instantly — no need to
+                  scroll down to the Save button.
+                  {lastTilesPublishedAt && (
+                    <span className="ml-1 inline-flex items-center gap-1">
+                      <Clock className="h-3 w-3" /> Last published at <span className="font-medium">{lastTilesPublishedAt}</span>
+                    </span>
+                  )}
+                </p>
+              </div>
+              <Button size="sm" onClick={publishTilesNow} disabled={isPublishing} className="shrink-0">
+                {isPublishing
+                  ? <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />Publishing…</>
+                  : <><Rocket className="h-3.5 w-3.5 mr-1.5" />Publish tiles now</>}
+              </Button>
+            </div>
+
             {/* Tile list */}
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-2">
                 <div>
                   <h3 className="font-semibold text-sm">Grid tiles — always first on the homepage</h3>
                   <p className="text-xs text-muted-foreground">
-                    These tiles always sit at the top of the homepage, before everything else. Upload your own
-                    image (or pick from existing content) and link it to any page — e.g. <code>/justb</code>.
+                    Each tile carries its own uploaded image and links to any page on this site — e.g.
+                    {' '}<code>/justb</code>. Upload a new image, pick from existing content, or add a blank
+                    tile; changes stay staged until you press <b>Publish tiles now</b> above.
                     <br />On mobile 3 columns · desktop 6 columns.
                   </p>
                 </div>
                 <div className="flex gap-1 shrink-0">
+                  <Button size="sm" variant="outline" onClick={() => uploadNewTileInputRef.current?.click()} title="Upload your own image as a new tile" disabled={uploadingNewTile}>
+                    {uploadingNewTile ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
+                    <span className="ml-1 hidden sm:inline">Upload tile</span>
+                  </Button>
+                  <input
+                    ref={uploadNewTileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleUploadNewTile}
+                  />
                   <Button size="sm" onClick={() => setPickerOpen(true)}>
                     <Plus className="h-3 w-3 mr-1" /> Pick from content
                   </Button>
@@ -1413,7 +1514,8 @@ export function HomepageSettings() {
               {gridTiles.length === 0 && (
                 <div className="border-2 border-dashed rounded-lg p-8 text-center text-muted-foreground text-sm">
                   <LayoutGrid className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                  No tiles yet. Click "Pick from content" or upload your own image (hover a tile → edit → Upload) — the tiles appear at the top of the homepage.
+                  No tiles yet. Press <b>Upload tile</b> to add your own image, or "Pick from content" for
+                  existing artwork — then press <b>Publish tiles now</b> to put them at the top of the homepage.
                 </div>
               )}
 
@@ -1490,7 +1592,7 @@ export function HomepageSettings() {
             <li>Use <strong>Sections</strong> tab to show/hide and reorder homepage sections</li>
             <li>Use <strong>Buttons</strong> tab to manage hero buttons (top of page) and buttons between sections</li>
             <li>Use <strong>Banners</strong> tab to show a banner under the navigation bar on every page — only one can be active at a time</li>
-            <li>Use <strong>Photo Grid</strong> tab to build a pure image grid and choose which view loads by default</li>
+            <li>Use <strong>Grid Tiles</strong> tab for tiles at the top of the homepage — upload your own image, link it to any page, and press <strong>Publish tiles now</strong> to make them live instantly</li>
             <li>When a live auction is running, the auction banner automatically overrides the site banner</li>
             <li>Changes are saved to Nostr and visible to all visitors</li>
           </ul>
