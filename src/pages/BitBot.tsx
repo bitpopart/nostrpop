@@ -76,6 +76,9 @@ export default function BitBot() {
         .bbcta{margin-top:28px;text-align:center}
         .bbcta .btn{display:inline-block;background:#fce000;color:#0A0A0A;font-weight:800;font-size:18px;letter-spacing:.06em;padding:15px 32px;border:3px solid #000;border-radius:8px;box-shadow:6px 6px 0 #000;text-decoration:none;text-transform:uppercase}
         .bbcta p{margin-top:12px;font-weight:700;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.65)}
+        .bbupdates{background-color:#0e0a17;padding:56px 20px 72px;border-bottom:5px solid #000}
+        .bbupdates h2{font-family:'Bangers','Impact',cursive;font-size:clamp(32px,6vw,54px);letter-spacing:2px;line-height:1.02;color:#ffd166;text-shadow:3px 3px 0 #000;margin:0 0 24px;text-align:center}
+        .bbupdates .bbupdates-img{display:block;max-width:360px;width:100%;margin:0 auto;border:3px solid #000;border-radius:12px;box-shadow:6px 6px 0 #fce000}
       `}</style>
 
       <section className="bitbot-sec">
@@ -129,6 +132,18 @@ export default function BitBot() {
             )}
             <p>{bb.specNote}</p>
           </div>
+        </div>
+      </section>
+
+      {/* REGULAR FIRMWARE AI UPDATES */}
+      <section className="bbupdates">
+        <div className="bitbot-wrap">
+          <h2>Regular Firmware BitBot Ai Updates.</h2>
+          <img
+            className="bbupdates-img"
+            src="/bitbot/ai-updates.png"
+            alt="BitBot Ai updates"
+          />
         </div>
       </section>
     </div>
