@@ -419,6 +419,7 @@ function setup(){
 }
 function potText(){return SETUP.pot==='b'?['B collectible','Winner takes both']:SETUP.pot==='sats'?['Sats','Winner takes all']:['Bragging rights','Play for fun'];}
 async function begin(){
+  window.scrollTo(0,0);
   newGame();G.turnOf=[0,0];
   G.first=Math.random()<.5?0:1;G.cur=G.first;
   render();
