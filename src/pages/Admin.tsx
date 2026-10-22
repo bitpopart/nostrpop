@@ -235,11 +235,17 @@ const Admin = () => {
   // index.html always references the newest hashed bundle; if it differs
   // from the computed <script src> we loaded, a redeploy happened while
   // this admin tab was open — warn so stale-bundle saves can't happen.
+  //
+  // The fetch must bypass every cache layer that can serve a stale shell:
+  // GitHub Pages sets max-age=600 on index.html AND the site's service worker
+  // answers non-navigation GETs cache-first. A unique query string makes every
+  // cache (browser HTTP cache, CDN edge, service worker) miss, so we always
+  // compare against the truly live index.html, never a cached copy.
   useEffect(() => {
     const script = document.querySelector('script[src*="/assets/index-"]');
     if (!script) return;
     const currentSrc = script.getAttribute('src') || '';
-    fetch('/', { cache: 'no-store' })
+    fetch(`/?_build=${Date.now()}_${Math.random().toString(36).slice(2)}`, { cache: 'no-store' })
       .then((r) => r.text())
       .then((html) => {
         const m = html.match(/assets\/index-[A-Za-z0-9_-]+\.js/);
@@ -656,7 +662,19 @@ const Admin = () => {
               size="sm"
               variant="outline"
               className="shrink-0 border-amber-500 text-amber-700 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/60"
-              onClick={() => window.location.reload()}
+              onClick={() => {
+                // A plain location.reload() can be answered from the browser
+                // cache (GitHub Pages serves the HTML shell with max-age=600)
+                // or from the service worker, so it may keep re-booting the
+                // same old bundle and this banner never clears. Instead
+                // navigate to a cache-unique URL: it 404s to 404.html, which
+                // loads the fresh shell, and the admin page comes back on the
+                // newest build. The current tab is preserved in ?tab=.
+                const url = new URL(window.location.href);
+                url.searchParams.set('tab', activeTab);
+                url.searchParams.set('_ref', `${Date.now()}_${Math.random().toString(36).slice(2)}`);
+                window.location.replace(url.toString());
+              }}
             >
               Reload now
             </Button>

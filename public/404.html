@@ -40,8 +40,17 @@
       try {
         sessionStorage.setItem('spa-redirect', redirect);
       } catch(e) {}
-      // Redirect to root — index.html will pick up the saved path
-      loc.replace('/');
+      // Redirect to the app shell. GitHub Pages serves index.html with
+      // Cache-Control: max-age=600 and the site's service worker may also hold
+      // a cached copy, so a plain reload to '/' can keep loading an old build
+      // (the admin "newer version deployed" banner never cleared). A unique
+      // query string makes this navigation miss every cache and fetch the
+      // newest shell — index.html then restores the saved path via replaceState.
+      try {
+        loc.replace('/?_=' + Date.now() + '_' + Math.random().toString(36).slice(2));
+      } catch(e) {
+        loc.replace('/');
+      }
     })();
   </script>
 </head>
