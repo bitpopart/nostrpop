@@ -96,6 +96,48 @@ export interface JustBPage {
   url: string;
 }
 
+/** One card inside a "New cards" post of the What's New feed (/new). */
+export interface JustBNewsCard {
+  name: string;
+  /** Display label, e.g. "Ultra Rare". */
+  kind: string;
+  /** Look used for the pill colour: street | rare | ultra | mystery. */
+  rarity: string;
+  /** Image name from the page's built-in bank (e.g. "karat") or an https:// address. */
+  image: string;
+  /** Small note under the card, e.g. "Numbered of 100." */
+  note: string;
+}
+
+/** One post on the What's New feed (bitpopart.com/new). */
+export interface JustBNewsPost {
+  id: string;
+  /** Mystery B teaser | New cards drop | plain news. */
+  type: 'mystery' | 'cards' | 'news';
+  status: 'coming' | 'live' | 'soldout';
+  /** Posted date (YYYY-MM-DD). The feed sorts newest first by this. */
+  date: string;
+  title: string;
+  text: string;
+  /** Image name from the page's built-in bank or an https:// address. */
+  image: string;
+  /** Optional drop date (YYYY-MM-DD) — shows a countdown while status is coming. */
+  dropDate: string;
+  /** Optional print run text, e.g. "21". */
+  run: string;
+  link: { label: string; url: string };
+  cards: JustBNewsCard[];
+}
+
+/** What's New feed config (bitpopart.com/new) — mirrors the owner's whats-new.html data. */
+export interface JustBNewsFeed {
+  title: string;
+  intro: string;
+  shopUrl: string;
+  ledgerUrl: string;
+  posts: JustBNewsPost[];
+}
+
 /**
  * BitBot — the pocket bot page at bitpopart.com/bitbot.
  *
@@ -152,6 +194,8 @@ export interface JustBData {
   bitbot: BitBotConfig;
   /** Claim-code hash registry for the "VERIFY MY ITEM" check on /b. */
   codes: JustBCodes;
+  /** What's New feed (bitpopart.com/new) — new collectibles & cards announcements. */
+  news: JustBNewsFeed;
 }
 
 /**
@@ -190,6 +234,63 @@ export const DEFAULT_BITBOT: BitBotConfig = {
     'BitBot is still in the workshop — not available to buy yet. When the first batch is ready, it will be announced right here.',
   available: false,
   cta: { label: 'GET A BITBOT', url: '/bitbot' },
+};
+
+/**
+ * Default What's New feed — mirrors the seed JSON embedded in
+ * public/justb-app/whats-new.html, so the /new page and the /admin editor
+ * show exactly what the owner designed before any save.
+ */
+export const DEFAULT_WHATS_NEW: JustBNewsFeed = {
+  title: "WHAT'S NEW",
+  intro: '',
+  shopUrl: 'https://bitpopart.com/shop',
+  ledgerUrl: 'https://bitpopart.com/b',
+  posts: [
+    {
+      id: 'mystery-next',
+      type: 'mystery',
+      status: 'coming',
+      date: '2026-10-22',
+      title: 'A new Mystery B is coming',
+      text: 'Shhh. A new B is on its way. Nobody knows who it is yet. When it drops it gets its own numbered run, and once it is sold out it never gets printed again.\nWatch this page. The reveal lands here first.',
+      image: 'mysteryb',
+      dropDate: '',
+      run: '',
+      link: { label: 'SEE THE RARITY LEDGER', url: 'https://bitpopart.com/b' },
+      cards: [],
+    },
+    {
+      id: 'launch',
+      type: 'news',
+      status: 'coming',
+      date: '2026-10-22',
+      title: 'Just B goes on sale',
+      text: 'Just Box, the Just B cards and the collectibles are available worldwide from 21 November 2026.',
+      image: '',
+      dropDate: '2026-11-21',
+      run: '',
+      link: { label: 'GET IT', url: 'https://bitpopart.com/shop' },
+      cards: [],
+    },
+    {
+      id: 'cards-gold',
+      type: 'cards',
+      status: 'live',
+      date: '2026-10-22',
+      title: 'New cards in the deck',
+      text: 'Fresh cards for the Just B trading card game. Numbered ones come with a serial number you can check in the Rarity Ledger.',
+      image: 'karat',
+      run: '',
+      dropDate: '',
+      link: { label: 'CHECK YOUR CARD', url: 'https://bitpopart.com/b' },
+      cards: [
+        { name: 'B-24 Karat', kind: 'Ultra Rare', rarity: 'ultra', image: 'karat', note: 'Numbered of 100.' },
+        { name: 'B-Goldrush', kind: 'Ultra Rare', rarity: 'ultra', image: 'goldrush', note: 'Numbered of 100.' },
+        { name: 'Diamond Hands', kind: 'Ultra Rare', rarity: 'ultra', image: 'dhands', note: 'Numbered of 100.' },
+      ],
+    },
+  ],
 };
 
 /** Seed config — mirrors window.JUSTB in public/justb-app/index.html. */
@@ -329,7 +430,8 @@ export const DEFAULT_JUSTB: JustBData = {
   "online": { "label": "PLAY JUST B ONLINE", "url": "/justb-app/online.html" },
   "ledger": { "label": "OPEN THE FULL LEDGER", "url": "/justb-app/ledger.html" },
   "bitbot": DEFAULT_BITBOT,
-  "codes": { "hashes": [] }
+  "codes": { "hashes": [] },
+  "news": DEFAULT_WHATS_NEW
 };
 
 
@@ -475,6 +577,7 @@ export function sanitizeJustB(input: unknown): JustBData | null {
     ledger: page(o.ledger, DEFAULT_JUSTB.ledger.label, DEFAULT_JUSTB.ledger.url),
     bitbot: sanitizeBitBot(o.bitbot),
     codes: { hashes: codesHashes },
+    news: sanitizeWhatsNew(o.news),
   };
 }
 
@@ -512,5 +615,70 @@ export function sanitizeBitBot(input: unknown): BitBotConfig {
       label: s(ctaRaw.label, DEFAULT_BITBOT.cta.label) || DEFAULT_BITBOT.cta.label,
       url: s(ctaRaw.url, DEFAULT_BITBOT.cta.url) || DEFAULT_BITBOT.cta.url,
     },
+  };
+}
+
+const WHATS_NEW_TYPES = ['mystery', 'cards', 'news'] as const;
+const WHATS_NEW_STATUS = ['coming', 'live', 'soldout'] as const;
+const WHATS_NEW_RARITY = ['street', 'rare', 'ultra', 'mystery'] as const;
+
+/**
+ * Coerce a stored What's New section (bitpopart.com/new) into a clean feed.
+ * Missing/malformed values fall back to the owner's seed. Posts without a
+ * title are dropped so a half-finished draft never ships to the page.
+ */
+export function sanitizeWhatsNew(input: unknown): JustBNewsFeed {
+  if (!input || typeof input !== 'object') return DEFAULT_WHATS_NEW;
+  const o = input as Record<string, unknown>;
+
+  const post = (raw: unknown): JustBNewsPost | null => {
+    if (!raw || typeof raw !== 'object') return null;
+    const p = raw as Record<string, unknown>;
+    const title = str(p.title).trim();
+    if (!title) return null;
+    const type = WHATS_NEW_TYPES.includes(p.type as never) ? (p.type as JustBNewsPost['type']) : 'news';
+    const status = WHATS_NEW_STATUS.includes(p.status as never) ? (p.status as JustBNewsPost['status']) : 'coming';
+    const linkRaw = p.link && typeof p.link === 'object' ? (p.link as Record<string, unknown>) : {};
+    const cardsRaw = Array.isArray(p.cards) ? p.cards : [];
+    const cards: JustBNewsCard[] = cardsRaw
+      .map((c): JustBNewsCard | null => {
+        if (!c || typeof c !== 'object') return null;
+        const e = c as Record<string, unknown>;
+        if (!str(e.name).trim()) return null;
+        const rarity = WHATS_NEW_RARITY.includes(e.rarity as never) ? (e.rarity as string) : 'street';
+        return {
+          name: str(e.name).trim(),
+          kind: str(e.kind),
+          rarity,
+          image: str(e.image),
+          note: str(e.note),
+        };
+      })
+      .filter((c): c is JustBNewsCard => c !== null);
+    return {
+      id: str(p.id).trim() || 'post-' + Math.random().toString(36).slice(2, 8),
+      type,
+      status,
+      date: str(p.date).trim(),
+      title,
+      text: str(p.text),
+      image: str(p.image),
+      dropDate: str(p.dropDate).trim(),
+      run: str(p.run).trim(),
+      link: { label: str(linkRaw.label), url: str(linkRaw.url) },
+      cards,
+    };
+  };
+
+  const posts = Array.isArray(o.posts)
+    ? o.posts.map(post).filter((p): p is JustBNewsPost => p !== null)
+    : DEFAULT_WHATS_NEW.posts;
+
+  return {
+    title: str(o.title).trim() || DEFAULT_WHATS_NEW.title,
+    intro: str(o.intro),
+    shopUrl: str(o.shopUrl).trim() || DEFAULT_WHATS_NEW.shopUrl,
+    ledgerUrl: str(o.ledgerUrl).trim() || DEFAULT_WHATS_NEW.ledgerUrl,
+    posts,
   };
 }

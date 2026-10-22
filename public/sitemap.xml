@@ -237,6 +237,14 @@
     <priority>0.6</priority>
   </url>
 
+  <!-- Just B What's New -->
+  <url>
+    <loc>https://bitpopart.com/new</loc>
+    <lastmod>2026-10-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
   <!-- The Stack — Just B Card Game -->
   <url>
     <loc>https://bitpopart.com/tcg</loc>

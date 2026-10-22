@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { ArrowDown, ArrowUp, Bot, Gift, KeyRound, Plus, RotateCcw, Save, ShieldCheck, Trash2, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, Bot, Gift, KeyRound, Megaphone, Plus, RotateCcw, Save, ShieldCheck, Trash2, X } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,6 +25,8 @@ import {
   type JustBShop,
   type JustBLadder,
   type BitBotConfig,
+  type JustBNewsFeed,
+  type JustBNewsPost,
 } from '@/lib/justb';
 
 /**
@@ -200,6 +202,108 @@ export function JustBAdmin() {
     }));
   };
 
+  /* ---- What's New feed (bitpopart.com/new) ---- */
+
+  const updateNews = (patch: Partial<JustBNewsFeed>) => {
+    dirtyRef.current = true;
+    setConfig((prev) => ({ ...prev, news: { ...prev.news, ...patch } }));
+  };
+
+  const updateNewsPost = (i: number, patch: Partial<JustBNewsPost>) => {
+    dirtyRef.current = true;
+    setConfig((prev) => ({
+      ...prev,
+      news: {
+        ...prev.news,
+        posts: prev.news.posts.map((p, idx) => (idx === i ? { ...p, ...patch } : p)),
+      },
+    }));
+  };
+
+  const moveNewsPost = (i: number, dir: -1 | 1) => {
+    dirtyRef.current = true;
+    setConfig((prev) => {
+      const j = i + dir;
+      if (j < 0 || j >= prev.news.posts.length) return prev;
+      const posts = [...prev.news.posts];
+      [posts[i], posts[j]] = [posts[j], posts[i]];
+      return { ...prev, news: { ...prev.news, posts } };
+    });
+  };
+
+  const removeNewsPost = (i: number) => {
+    dirtyRef.current = true;
+    setConfig((prev) => ({
+      ...prev,
+      news: { ...prev.news, posts: prev.news.posts.filter((_, idx) => idx !== i) },
+    }));
+  };
+
+  const addNewsPost = () => {
+    dirtyRef.current = true;
+    setConfig((prev) => ({
+      ...prev,
+      news: {
+        ...prev.news,
+        posts: [
+          {
+            id: 'post-' + Date.now().toString(36),
+            type: 'news',
+            status: 'coming',
+            date: new Date().toISOString().slice(0, 10),
+            title: 'New post',
+            text: '',
+            image: '',
+            dropDate: '',
+            run: '',
+            link: { label: '', url: '' },
+            cards: [],
+          },
+          ...prev.news.posts,
+        ],
+      },
+    }));
+  };
+
+  const updateNewsCard = (pi: number, ci: number, patch: Partial<JustBNewsPost['cards'][number]>) => {
+    dirtyRef.current = true;
+    setConfig((prev) => ({
+      ...prev,
+      news: {
+        ...prev.news,
+        posts: prev.news.posts.map((p, i) =>
+          i === pi
+            ? { ...p, cards: p.cards.map((c, j) => (j === ci ? { ...c, ...patch } : c)) }
+            : p,
+        ),
+      },
+    }));
+  };
+
+  const addNewsCard = (pi: number) => {
+    dirtyRef.current = true;
+    setConfig((prev) => ({
+      ...prev,
+      news: {
+        ...prev.news,
+        posts: prev.news.posts.map((p, i) =>
+          i === pi ? { ...p, cards: [...p.cards, { name: 'New card', kind: 'Rare', rarity: 'rare', image: '', note: '' }] } : p,
+        ),
+      },
+    }));
+  };
+
+  const removeNewsCard = (pi: number, ci: number) => {
+    dirtyRef.current = true;
+    setConfig((prev) => ({
+      ...prev,
+      news: {
+        ...prev.news,
+        posts: prev.news.posts.map((p, i) => (i === pi ? { ...p, cards: p.cards.filter((_, j) => j !== ci) } : p)),
+      },
+    }));
+  };
+
   const codes = config.codes?.hashes ?? [];
 
   /** Hash the typed codes in this browser, append them to the registry AND publish immediately. */
@@ -324,6 +428,20 @@ export function JustBAdmin() {
     if (shops.length === 0 || ladder.length === 0) return null;
     const features = cfg.bitbot.features.map((f) => f.trim()).filter(Boolean);
     const buyLines = cfg.bitbot.buyLines.map((l) => l.trim()).filter(Boolean);
+    const posts = cfg.news.posts
+      .filter((p) => p.title.trim())
+      .map((p) => ({
+        ...p,
+        id: p.id.trim(),
+        title: p.title.trim(),
+        date: p.date.trim(),
+        text: p.text.trim(),
+        image: p.image.trim(),
+        dropDate: p.dropDate.trim(),
+        run: p.run.trim(),
+        link: { label: p.link.label.trim(), url: p.link.url.trim() },
+        cards: p.cards.filter((c) => c.name.trim()).map((c) => ({ ...c, name: c.name.trim(), kind: c.kind.trim(), image: c.image.trim(), note: c.note.trim() })),
+      }));
     return {
       ...cfg,
       updated: cfg.updated.trim(),
@@ -337,6 +455,13 @@ export function JustBAdmin() {
         features: features.length > 0 ? features : DEFAULT_JUSTB.bitbot.features,
         buyLines: buyLines.length > 0 ? buyLines : DEFAULT_JUSTB.bitbot.buyLines,
         birth: cfg.bitbot.birth.trim(),
+      },
+      news: {
+        title: cfg.news.title.trim(),
+        intro: cfg.news.intro.trim(),
+        shopUrl: cfg.news.shopUrl.trim(),
+        ledgerUrl: cfg.news.ledgerUrl.trim(),
+        posts,
       },
     };
   };
@@ -377,10 +502,10 @@ export function JustBAdmin() {
           Just B — Mystery Box config
         </CardTitle>
         <CardDescription>
-          Everything data-driven on <code>bitpopart.com/b</code> lives here: the six base B's, the
-          surprise drops, shops, launch date, rarity ladder, the ledger stamp and the claim-code
-          verification registry. Saves publish to Nostr (kind 30078) and the page updates right away —
-          no redeploy.
+          Everything data-driven on <code>bitpopart.com/b</code> and <code>/new</code> lives here: the six base
+          B's, the surprise drops, shops, launch date, rarity ladder, the ledger stamp, the claim-code
+          verification registry and the What&rsquo;s New feed. Saves publish to Nostr (kind 30078) and the
+          pages update right away — no redeploy.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -416,6 +541,134 @@ export function JustBAdmin() {
               </span>
             </div>
           </div>
+        </div>
+
+        {/* What's New — /new feed */}
+        <div className="space-y-3 rounded-lg border bg-card p-4">
+          <div className="flex items-center justify-between">
+            <h3 className="flex items-center gap-2 text-sm font-semibold">
+              <Megaphone className="h-4 w-4 text-orange-500" /> What's New — /new page
+            </h3>
+            <Button variant="secondary" size="sm" onClick={addNewsPost} disabled={!user}>
+              <Plus className="mr-1 h-3.5 w-3.5" /> Add post
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Everything on <code>bitpopart.com/new</code> lives here — the feed of all new collectibles and
+            cards. Add, edit, delete and reorder posts: each one is a <b>Mystery B</b> teaser, a{' '}
+            <b>New cards</b> drop (with its own list of cards) or plain <b>News</b>. Save publishes to Nostr
+            (kind 30078) and /new updates right away — no redeploy. The feed always shows newest date first.
+          </p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <LabeledInput label="Page title" value={config.news.title} onChange={(v) => updateNews({ title: v })} placeholder="WHAT'S NEW" />
+            <LabeledInput label="Intro (optional)" value={config.news.intro} onChange={(v) => updateNews({ intro: v })} placeholder="All the new things" />
+            <LabeledInput label="Shop link" value={config.news.shopUrl} onChange={(v) => updateNews({ shopUrl: v })} placeholder="https://bitpopart.com/shop" />
+            <LabeledInput label="Ledger link" value={config.news.ledgerUrl} onChange={(v) => updateNews({ ledgerUrl: v })} placeholder="https://bitpopart.com/b" />
+          </div>
+          {config.news.posts.length === 0 && (
+            <p className="text-xs text-muted-foreground">No posts yet — hit Add post to start the feed, or the page shows &ldquo;Nothing here yet.&rdquo;</p>
+          )}
+          {config.news.posts.map((p, i) => (
+            <div key={p.id || `post-${i}`} className="space-y-3 rounded-lg border bg-muted/40 p-4">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-2 text-sm font-semibold">
+                  <span className="rounded bg-orange-500/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-orange-600 dark:text-orange-400">
+                    {i + 1}
+                  </span>
+                  {p.title || <span className="text-muted-foreground">Untitled post</span>}
+                </div>
+                <div className="flex shrink-0 gap-1">
+                  <Button variant="outline" size="sm" onClick={() => moveNewsPost(i, -1)} disabled={i === 0} aria-label="Move up"><ArrowUp className="h-3.5 w-3.5" /></Button>
+                  <Button variant="outline" size="sm" onClick={() => moveNewsPost(i, 1)} disabled={i === config.news.posts.length - 1} aria-label="Move down"><ArrowDown className="h-3.5 w-3.5" /></Button>
+                  <Button variant="destructive" size="sm" onClick={() => removeNewsPost(i)} disabled={!user} aria-label="Delete post"><Trash2 className="h-3.5 w-3.5" /></Button>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div className="space-y-1">
+                  <Label className="text-xs">Type</Label>
+                  <Select value={p.type} onValueChange={(v) => updateNewsPost(i, { type: v as JustBNewsPost['type'] })}>
+                    <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="mystery">Mystery B</SelectItem>
+                      <SelectItem value="cards">New cards</SelectItem>
+                      <SelectItem value="news">News</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Status</Label>
+                  <Select value={p.status} onValueChange={(v) => updateNewsPost(i, { status: v as JustBNewsPost['status'] })}>
+                    <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="coming">Coming soon</SelectItem>
+                      <SelectItem value="live">Out now</SelectItem>
+                      <SelectItem value="soldout">Sold out</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <LabeledInput label="Date posted" value={p.date} onChange={(v) => updateNewsPost(i, { date: v })} placeholder="2026-10-22" />
+                <LabeledInput label="Drop date (countdown)" value={p.dropDate} onChange={(v) => updateNewsPost(i, { dropDate: v })} placeholder="2026-11-21 — optional" />
+              </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <Label className="text-xs">Title</Label>
+                  <Input value={p.title} onChange={(e) => updateNewsPost(i, { title: e.target.value })} placeholder="A new Mystery B is coming" />
+                </div>
+                <LabeledInput label="Print run (optional)" value={p.run} onChange={(v) => updateNewsPost(i, { run: v })} placeholder="e.g. 21" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Text</Label>
+                <Textarea rows={2} value={p.text} onChange={(e) => updateNewsPost(i, { text: e.target.value })} placeholder="What is coming…" />
+              </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <LabeledInput label="Image" value={p.image} onChange={(v) => updateNewsPost(i, { image: v })} placeholder="name (mysteryb, karat…) or https://…" />
+                <LabeledInput label="Button URL" value={p.link.url} onChange={(v) => updateNewsPost(i, { link: { ...p.link, url: v } })} placeholder="https://bitpopart.com/b" />
+              </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <LabeledInput label="Button text" value={p.link.label} onChange={(v) => updateNewsPost(i, { link: { ...p.link, label: v } })} placeholder="SEE THE RARITY LEDGER" />
+                <span className="text-xs text-muted-foreground sm:col-span-2 lg:col-span-2 sm:flex sm:items-end sm:pb-1">
+                  Image names you can use: <code className="mx-1">beautiful, bullish, coffee, cool, geeky, lightning, orange, relay, cold, margin, printer, liquid, karat, goldrush, dhands, mystery, logo, bullish3d, beautiful3d, ch_beautiful, ch_geeky, ch_cool, ch_lightning, ch_coffee, ch_bullish, ch_mysterychar, ch_superman, mysteryb</code> — or paste an https:// address.
+                </span>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-semibold">Cards in this post ({p.cards.length})</Label>
+                  <Button variant="secondary" size="sm" onClick={() => addNewsCard(i)} disabled={!user}>
+                    <Plus className="mr-1 h-3.5 w-3.5" /> Add card
+                  </Button>
+                </div>
+                {p.cards.length === 0 && (
+                  <p className="text-xs text-muted-foreground">No cards yet — only used by &ldquo;New cards&rdquo; posts.</p>
+                )}
+                {p.cards.map((c, ci) => (
+                  <div key={`${p.id}-c${ci}`} className="space-y-2 rounded-md border bg-card p-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs font-semibold">{c.name || 'Unnamed card'}</Label>
+                      <Button variant="destructive" size="sm" onClick={() => removeNewsCard(i, ci)} disabled={!user} aria-label="Remove card"><X className="h-3.5 w-3.5" /></Button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                      <LabeledInput label="Name" value={c.name} onChange={(v) => updateNewsCard(i, ci, { name: v })} placeholder="B-24 Karat" />
+                      <LabeledInput label="Label" value={c.kind} onChange={(v) => updateNewsCard(i, ci, { kind: v })} placeholder="Ultra Rare" />
+                      <div className="space-y-1">
+                        <Label className="text-xs">Look</Label>
+                        <Select value={c.rarity} onValueChange={(v) => updateNewsCard(i, ci, { rarity: v })}>
+                          <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="street">Street</SelectItem>
+                            <SelectItem value="rare">Rare</SelectItem>
+                            <SelectItem value="ultra">Ultra</SelectItem>
+                            <SelectItem value="mystery">Mystery</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <LabeledInput label="Note" value={c.note} onChange={(v) => updateNewsCard(i, ci, { note: v })} placeholder="Numbered of 100." />
+                    </div>
+                    <LabeledInput label="Image" value={c.image} onChange={(v) => updateNewsCard(i, ci, { image: v })} placeholder="karat / goldrush / dhands or https://…" className="max-w-sm" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
 
         {/* BitBot */}

@@ -75,6 +75,7 @@ import Zapper from "./pages/Zapper";
 import ZapWall from "./pages/ZapWall";
 import JustB from "./pages/JustB";
 import Rare from "./pages/Rare";
+import WhatsNew from "./pages/WhatsNew";
 import TCG from "./pages/TCG";
 import BitBot from "./pages/BitBot";
 import NotFound from "./pages/NotFound";
@@ -172,6 +173,8 @@ export function AppRouter() {
         <Route path="/b" element={<Layout><JustB /></Layout>} />
         {/* RARE — the Just B rarity ledger full page, same document as the ledger on /b */}
         <Route path="/rare" element={<Layout><Rare /></Layout>} />
+        {/* NEW — the Just B "What's New" feed, inline under the site menu/footer */}
+        <Route path="/new" element={<Layout><WhatsNew /></Layout>} />
         {/* The Stack — Just B card game, inline under the site menu/footer */}
         <Route path="/tcg" element={<Layout><TCG /></Layout>} />
         {/* BitBot — pocket bot page (birth date, in-progress), inline under the site menu/footer */}
