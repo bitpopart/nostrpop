@@ -10,7 +10,7 @@
  * precache navigation URLs (their response is NOT ok and addAll would abort).
  * We precache only static files that return HTTP 200.
  */
-const VERSION = 'v1';
+const VERSION = 'v2';
 const CACHE = 'bitpopart-fanapp-' + VERSION;
 const SHELL = [
   '/index.html',
