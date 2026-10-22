@@ -229,6 +229,14 @@
     <priority>0.6</priority>
   </url>
 
+  <!-- Just B Rarity Ledger -->
+  <url>
+    <loc>https://bitpopart.com/rare</loc>
+    <lastmod>2026-10-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
   <!-- The Stack — Just B Card Game -->
   <url>
     <loc>https://bitpopart.com/tcg</loc>
