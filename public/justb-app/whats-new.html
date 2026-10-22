@@ -79,7 +79,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
  "title": "WHAT'S NEW",
  "intro": "",
  "shopUrl": "https://bitpopart.com/shop",
- "ledgerUrl": "https://bitpopart.com/b",
+ "ledgerUrl": "https://bitpopart.com/rare",
  "posts": [
   {
    "id": "mystery-next",
@@ -91,7 +91,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
    "image": "mysteryb",
    "dropDate": "",
    "run": "",
-   "link": { "label": "SEE THE RARITY LEDGER", "url": "https://bitpopart.com/b" }
+   "link": { "label": "SEE THE RARITY LEDGER", "url": "https://bitpopart.com/rare" }
   },
   {
    "id": "launch",
@@ -117,7 +117,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
     { "name": "B-Goldrush", "kind": "Ultra Rare", "rarity": "ultra", "image": "goldrush", "note": "Numbered of 100." },
     { "name": "Diamond Hands", "kind": "Ultra Rare", "rarity": "ultra", "image": "dhands", "note": "Numbered of 100." }
    ],
-   "link": { "label": "CHECK YOUR CARD", "url": "https://bitpopart.com/b" }
+   "link": { "label": "CHECK YOUR CARD", "url": "https://bitpopart.com/rare" }
   }
  ]
 }
@@ -133,6 +133,19 @@ const TYPES={mystery:'Mystery B',cards:'New cards',news:'News'};
 const STATUS={coming:'Coming soon',live:'Out now',soldout:'Sold out'};
 function src(v){v=String(v||'');if(IMG[v])return IMG[v];if(/^https:\/\//.test(v)||/^data:image\//.test(v))return v;return ''}
 function safeUrl(u){u=String(u||'');return /^https?:\/\//.test(u)?u:''}
+/* In-site links open in the top window (same tab, full site page) instead of a
+   new tab. External links keep the default new-tab behaviour. Same fix as /b:
+   the Rarity Ledger (/rare) is a site page, so it must open "in the site
+   itself", never in a separate page. */
+function siteNav(a){
+  var u=a.getAttribute('href');
+  if(!u)return true;
+  var same=u.charAt(0)==='/'||u.indexOf('https://bitpopart.com')===0||u.indexOf(location.origin)===0;
+  if(!same)return true; /* external link: let the browser open it as usual */
+  try{ if(window.self!==window.top&&window.top){window.top.location.href=u}else{window.location.href=u} }
+  catch(e){window.location.href=u}
+  return false;
+}
 function fmtDate(d){if(!/^\d{4}-\d{2}-\d{2}/.test(d||''))return '';const x=new Date(d.slice(0,10)+'T12:00:00');return x.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}
 let filter='all';
 function countdown(p){
@@ -146,7 +159,7 @@ function postHtml(p,i){
   const pills=`<span class="pill ${type==='mystery'?'mystery':type==='cards'?'rare':'street'}">${TYPES[type]}</span>`+(STATUS[p.status]?`<span class="pill ${esc(p.status)}">${STATUS[p.status]}</span>`:'');
   const cards=(p.cards||[]).length?`<div class="grid">${p.cards.map(c=>`<div class="c">${src(c.image)?`<img src="${esc(src(c.image))}" alt="${esc(c.name)} card" loading="lazy">`:''}<b>${esc(c.name)}</b><div class="pills"><span class="pill ${['rare','ultra','mystery','street'].includes(c.rarity)?c.rarity:'street'}">${esc(c.kind||c.rarity||'')}</span></div>${c.note?`<small>${esc(c.note)}</small>`:''}</div>`).join('')}</div>`:'';
   const stats=[p.run?`<span>Print run <b>${esc(p.run)}</b></span>`:'',p.dropDate?`<span>Drop <b>${esc(fmtDate(p.dropDate))}</b></span>`:''].filter(Boolean).join('');
-  const lk=p.link&&safeUrl(p.link.url)?`<a class="btn" href="${esc(safeUrl(p.link.url))}" target="_blank" rel="noopener">${esc(p.link.label||'LEARN MORE')}</a>`:'';
+  const lk=p.link&&safeUrl(p.link.url)?`<a class="btn" href="${esc(safeUrl(p.link.url))}" target="_blank" rel="noopener" onclick="return siteNav(this)">${esc(p.link.label||'LEARN MORE')}</a>`:'';
   return `<article class="post ${type} ${i===0?'new1':''}" id="${esc(p.id||'p'+i)}"><div class="ph">${im?`<img class="pic ${p.image&&!IMG[p.image]||['karat','goldrush','dhands','mystery','mysteryb'].includes(p.image)?'cover':''}" src="${esc(im)}" alt="">`:''}<div class="pm"><div class="pills">${pills}</div>${p.date?`<span class="date">${esc(fmtDate(p.date))}</span>`:''}<h2>${esc(p.title)}</h2></div></div>${p.text?`<p class="text">${esc(p.text)}</p>`:''}${countdown(p)}${stats?`<div class="stats">${stats}</div>`:''}${cards}${lk}</article>`;
 }
 function render(){
@@ -157,7 +170,7 @@ function shell(){
   $('#app').innerHTML=`<header class="head"><div><h1>${esc(D.title||"WHAT'S NEW")}<i> !</i></h1>${D.intro?`<p>${esc(D.intro)}</p>`:''}</div></header>
   ${window.__bad?`<div class="empty">The news data has a typo (${esc(window.__bad)}). Open this page with #edit to fix it.</div>`:''}
   <div id="feedwrap"></div>
-  <div class="foot">${safeUrl(D.shopUrl)?`<a href="${esc(safeUrl(D.shopUrl))}" target="_blank" rel="noopener">Shop</a>`:''}${safeUrl(D.ledgerUrl)?`<a href="${esc(safeUrl(D.ledgerUrl))}" target="_blank" rel="noopener">Rarity Ledger</a>`:''}<span>Just B by BitPopArt. Love, Freedom, Joy.</span></div>
+  <div class="foot">${safeUrl(D.shopUrl)?`<a href="${esc(safeUrl(D.shopUrl))}" target="_blank" rel="noopener" onclick="return siteNav(this)">Shop</a>`:''}${safeUrl(D.ledgerUrl)?`<a href="${esc(safeUrl(D.ledgerUrl))}" target="_blank" rel="noopener" onclick="return siteNav(this)">Rarity Ledger</a>`:''}<span>Just B by BitPopArt. Love, Freedom, Joy.</span></div>
   <div id="edit"></div>`;
   render();
 }

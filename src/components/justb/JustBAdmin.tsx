@@ -563,7 +563,7 @@ export function JustBAdmin() {
             <LabeledInput label="Page title" value={config.news.title} onChange={(v) => updateNews({ title: v })} placeholder="WHAT'S NEW" />
             <LabeledInput label="Intro (optional)" value={config.news.intro} onChange={(v) => updateNews({ intro: v })} placeholder="All the new things" />
             <LabeledInput label="Shop link" value={config.news.shopUrl} onChange={(v) => updateNews({ shopUrl: v })} placeholder="https://bitpopart.com/shop" />
-            <LabeledInput label="Ledger link" value={config.news.ledgerUrl} onChange={(v) => updateNews({ ledgerUrl: v })} placeholder="https://bitpopart.com/b" />
+            <LabeledInput label="Ledger link" value={config.news.ledgerUrl} onChange={(v) => updateNews({ ledgerUrl: v })} placeholder="https://bitpopart.com/rare" />
           </div>
           {config.news.posts.length === 0 && (
             <p className="text-xs text-muted-foreground">No posts yet — hit Add post to start the feed, or the page shows &ldquo;Nothing here yet.&rdquo;</p>
@@ -622,7 +622,7 @@ export function JustBAdmin() {
               </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <LabeledInput label="Image" value={p.image} onChange={(v) => updateNewsPost(i, { image: v })} placeholder="name (mysteryb, karat…) or https://…" />
-                <LabeledInput label="Button URL" value={p.link.url} onChange={(v) => updateNewsPost(i, { link: { ...p.link, url: v } })} placeholder="https://bitpopart.com/b" />
+                <LabeledInput label="Button URL" value={p.link.url} onChange={(v) => updateNewsPost(i, { link: { ...p.link, url: v } })} placeholder="https://bitpopart.com/rare" />
               </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 <LabeledInput label="Button text" value={p.link.label} onChange={(v) => updateNewsPost(i, { link: { ...p.link, label: v } })} placeholder="SEE THE RARITY LEDGER" />

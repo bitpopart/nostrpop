@@ -245,7 +245,7 @@ export const DEFAULT_WHATS_NEW: JustBNewsFeed = {
   title: "WHAT'S NEW",
   intro: '',
   shopUrl: 'https://bitpopart.com/shop',
-  ledgerUrl: 'https://bitpopart.com/b',
+  ledgerUrl: 'https://bitpopart.com/rare',
   posts: [
     {
       id: 'mystery-next',
@@ -257,7 +257,7 @@ export const DEFAULT_WHATS_NEW: JustBNewsFeed = {
       image: 'mysteryb',
       dropDate: '',
       run: '',
-      link: { label: 'SEE THE RARITY LEDGER', url: 'https://bitpopart.com/b' },
+      link: { label: 'SEE THE RARITY LEDGER', url: 'https://bitpopart.com/rare' },
       cards: [],
     },
     {
@@ -283,7 +283,7 @@ export const DEFAULT_WHATS_NEW: JustBNewsFeed = {
       image: 'karat',
       run: '',
       dropDate: '',
-      link: { label: 'CHECK YOUR CARD', url: 'https://bitpopart.com/b' },
+      link: { label: 'CHECK YOUR CARD', url: 'https://bitpopart.com/rare' },
       cards: [
         { name: 'B-24 Karat', kind: 'Ultra Rare', rarity: 'ultra', image: 'karat', note: 'Numbered of 100.' },
         { name: 'B-Goldrush', kind: 'Ultra Rare', rarity: 'ultra', image: 'goldrush', note: 'Numbered of 100.' },
