@@ -840,10 +840,11 @@ window.JUSTB = {
     { name:"MYSTERY",    run:"numbered of 21",   deck:"1 per deck", c:"#facc15" }
   ],
 
-  // IN-PAGE PAGES. Which page the "PLAY JUST B ONLINE" and "OPEN THE FULL
-  // LEDGER" buttons open, and the button label. Both open INSIDE this page.
+  // IN-PAGE PAGES. Which page the "PLAY JUST B ONLINE" button opens, and the
+  // button labels. "OPEN THE FULL LEDGER" navigates to the complete page at
+  // /rare (under the site menu/footer) instead of opening inside this page.
   online: { label: "PLAY JUST B ONLINE", url: "/justb-app/online.html" },
-  ledger: { label: "OPEN THE FULL LEDGER", url: "/justb-app/ledger.html" }
+  ledger: { label: "OPEN THE FULL LEDGER", url: "/rare" }
 };
 </script>
 
@@ -963,7 +964,7 @@ window.addEventListener('message',function(e){
   if(d.type==='data'&&d.data){window.JUSTB=d.data;renderJustB();}
 });
 
-/* ---------- IN-PAGE VIEWER (Just B Online + Full Ledger) ---------- */
+/* ---------- IN-PAGE VIEWER (Just B Online) ---------- */
 var viewerEl = document.getElementById('viewer');
 var viewerFrame = document.getElementById('viewerFrame');
 
@@ -973,7 +974,7 @@ function viewerEntry(key){
   if (e && e.url) return e;
   return (key === 'online')
     ? { label:'PLAY JUST B ONLINE', url:'/justb-app/online.html' }
-    : { label:'OPEN THE FULL LEDGER', url:'/justb-app/ledger.html' };
+    : { label:'OPEN THE FULL LEDGER', url:'/rare' };
 }
 
 function viewerHeight(){
@@ -1034,7 +1035,15 @@ function closeViewer(){
 var ob = document.getElementById('openOnline');
 if (ob) ob.addEventListener('click', function(){ openViewer(viewerEntry('online')); });
 var olb = document.getElementById('openLedger');
-if (olb) olb.addEventListener('click', function(){ openViewer(viewerEntry('ledger')); });
+if (olb) olb.addEventListener('click', function(){
+  /* The full ledger now lives at its own complete page (/rare) under the site
+     menu and footer - open that page instead of the in-page viewer. */
+  var url = '/rare';
+  try {
+    if (window.self !== window.top && window.top) { window.top.location.href = url; }
+    else { window.location.href = url; }
+  } catch (e) { window.location.href = url; }
+});
 var vb = document.getElementById('viewerBack');
 if (vb) vb.addEventListener('click', closeViewer);
 var bb2 = document.getElementById('bitbotCta');
