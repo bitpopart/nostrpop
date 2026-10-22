@@ -99,6 +99,49 @@ h2.sec{font-size:32px;border-bottom:3px solid var(--ink);padding-bottom:8px}
 .demo{font-size:12px;color:var(--sub)}
 .demo button{font:inherit;font-size:12px;border:0;background:none;color:var(--org);text-decoration:underline;cursor:pointer;padding:0}
 .steps{margin:0;padding-left:18px;font-size:13px;color:var(--sub)}
+
+.mkt{background:var(--panel);border:1px solid var(--line);border-left:5px solid var(--gold);border-radius:8px;padding:18px;display:flex;flex-direction:column;gap:14px}
+.mkt h2{font-size:30px}
+.mkt p.lead{margin:0;color:var(--sub);font-size:14px;max-width:64ch}
+.mtabs{display:flex;gap:6px;flex-wrap:wrap}
+.mtabs button{font-family:var(--f-d);font-style:italic;font-size:19px;letter-spacing:1px;padding:7px 16px;border:2px solid var(--ink);border-radius:6px;background:var(--panel);color:var(--ink);cursor:pointer}
+.mtabs button[aria-selected="true"]{background:var(--ink);color:#fff}
+.mtabs button:focus-visible,.mk-card button:focus-visible,.mkform button:focus-visible,.mkform textarea:focus-visible,.mkform input:focus-visible,.mkform select:focus-visible{outline:3px solid var(--org);outline-offset:2px}
+.mk-events{background:var(--soft);border:1px dashed #cfd3d6;border-radius:6px;padding:10px 12px;font-size:13px;color:var(--sub)}
+.mk-events b{color:var(--ink)}
+.mk-status{font-size:13px;color:var(--sub);min-height:20px}
+.mk-list{display:grid;gap:10px}
+.mk-card{display:grid;grid-template-columns:56px minmax(0,1fr) auto;gap:6px 14px;align-items:start;border:1px solid var(--line);border-radius:8px;padding:12px;background:var(--panel)}
+.mk-card.sold{opacity:.6}
+.mk-card .thumb{grid-row:1 / span 2}
+.mk-main{min-width:0;display:flex;flex-direction:column;gap:5px}
+.mk-main h3{font-size:23px;line-height:1.05;word-break:break-word}
+.mk-tags{display:flex;gap:6px;flex-wrap:wrap}
+.mk-pill{font-size:10.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;padding:2px 9px;border-radius:4px;color:#fff;background:#5b5b5b}
+.mk-pill.sell{background:var(--org)}.mk-pill.buy{background:var(--ink)}.mk-pill.sold{background:#8a8f93}
+.mk-chip{font-size:12px;font-weight:600;padding:2px 9px;border-radius:4px;background:var(--soft);border:1px solid var(--line)}
+.mk-chip.ev{background:#fff4e0;border-color:#f3cf8f;color:#7a4a00}
+.mk-note{margin:0;font-size:14px;color:#2d2d2d;white-space:pre-wrap;word-break:break-word}
+.mk-who{font-size:12px;color:var(--sub);display:flex;gap:6px 12px;flex-wrap:wrap;align-items:center}
+.mk-price{text-align:right;font-family:var(--f-m);font-weight:700;font-size:20px;line-height:1.1;font-variant-numeric:tabular-nums}
+.mk-price i{display:block;font-style:normal;font-family:var(--f-b);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--sub);font-weight:700;margin-top:2px}
+.mk-actions{grid-column:2 / -1;display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.mk-actions button,.mk-actions a{font-family:var(--f-d);font-style:italic;font-size:17px;letter-spacing:1px;padding:6px 14px;border:0;border-radius:5px;background:var(--org);color:#fff;cursor:pointer;text-decoration:none;display:inline-block}
+.mk-actions .alt{background:var(--ink)}.mk-actions .ghost{background:var(--soft);color:var(--ink);border:1px solid #cfd3d6}
+.mkform{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr))}
+.mkform label,.mkform .lab{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--sub);min-width:0}
+.mkform input[type=text],.mkform input[type=number],.mkform select,.mkform textarea{font:inherit;font-size:15px;letter-spacing:0;text-transform:none;font-weight:500;padding:9px 12px;border:1px solid #cfd3d6;border-radius:6px;background:var(--panel);color:var(--ink);min-width:0;width:100%}
+.mkform textarea{min-height:76px;resize:vertical}
+.mkform .full{grid-column:1 / -1}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg label{flex-direction:row;align-items:center;gap:6px;border:1px solid #cfd3d6;border-radius:6px;padding:8px 12px;font-size:14px;letter-spacing:0;text-transform:none;font-weight:600;color:var(--ink);cursor:pointer;background:var(--panel)}
+.seg label:has(input:checked){border-color:var(--ink);background:var(--ink);color:#fff}
+.seg input{accent-color:var(--org)}
+.mkform .opt{display:flex;flex-direction:column;gap:6px}
+.safe{border:1px solid var(--line);border-radius:6px;padding:10px 14px;background:var(--soft);font-size:14px}
+.safe summary{cursor:pointer;font-family:var(--f-d);font-style:italic;font-size:20px;letter-spacing:1px}
+.safe ol{margin:8px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:6px;color:#2d2d2d}
+@media (max-width:560px){.mk-card{grid-template-columns:56px minmax(0,1fr)}.mk-price{grid-column:2;text-align:left}.mk-actions{grid-column:1 / -1}}
 @media (max-width:720px){
   .hdr{display:none}
   .table{border:0;background:none;display:flex;flex-direction:column;gap:10px;overflow:visible}
@@ -169,6 +212,72 @@ h2.sec{font-size:32px;border-bottom:3px solid var(--ink);padding-bottom:8px}
     <div class="result" id="cOut" aria-live="polite">Pick your item and type the number printed on it.</div>
   </section>
 
+
+  <section class="mkt" id="market" aria-labelledby="mh">
+    <h2 id="mh">TRADING MARKET</h2>
+    <p class="lead">Buy, sell or swap Just B collectibles and cards with other collectors. Agree a price in sats, or make a deal and hand it over when you meet at an event. The Ledger never holds money or items. Deals are between you and the other collector.</p>
+    <div class="mtabs" role="tablist">
+      <button id="mt-b" role="tab" aria-selected="true" aria-controls="mk-browse">BROWSE</button>
+      <button id="mt-p" role="tab" aria-selected="false" aria-controls="mk-post">POST A LISTING</button>
+    </div>
+    <div id="mk-events" class="mk-events" hidden></div>
+
+    <div id="mk-browse" role="tabpanel" style="display:flex;flex-direction:column;gap:12px">
+      <div class="tools">
+        <select id="mk-side" aria-label="For sale or wanted"><option value="">For sale and wanted</option><option value="sell">For sale</option><option value="buy">Wanted</option></select>
+        <select id="mk-item" aria-label="Item"></select>
+        <select id="mk-deal" aria-label="How to hand over"><option value="">Any hand over</option><option value="event">Meet at an event</option><option value="ship">Shipping</option></select>
+        <button class="btn alt" id="mk-refresh" type="button">REFRESH</button>
+      </div>
+      <div class="mk-status" id="mk-status" aria-live="polite">Loading listings...</div>
+      <div class="mk-list" id="mk-list"></div>
+    </div>
+
+    <div id="mk-post" role="tabpanel" hidden>
+      <form class="mkform" id="mk-form" autocomplete="off">
+        <div class="lab full">I want to
+          <div class="seg"><label><input type="radio" name="mk-s" value="sell" checked> Sell</label><label><input type="radio" name="mk-s" value="buy"> Buy</label></div>
+        </div>
+        <label>Item<select id="mf-item"></select></label>
+        <label>Number on the item (optional)<input type="number" id="mf-serial" min="1" inputmode="numeric" placeholder="e.g. 7"></label>
+        <label>How many<input type="number" id="mf-qty" min="1" max="99" value="1" inputmode="numeric"></label>
+        <label>Condition (optional)<select id="mf-cond"><option value="">Not specified</option><option>New</option><option>Mint</option><option>Near mint</option><option>Played</option></select></label>
+        <div class="lab full">Price
+          <div class="seg">
+            <label><input type="radio" name="mk-p" value="fixed" checked> Price in sats</label>
+            <label><input type="radio" name="mk-p" value="offers"> Open to offers</label>
+            <label><input type="radio" name="mk-p" value="swap"> Swap only</label>
+          </div>
+        </div>
+        <label id="mf-satl">Sats<input type="number" id="mf-sats" min="1" inputmode="numeric" placeholder="e.g. 25000"></label>
+        <div class="lab full">Hand over
+          <div class="opt">
+            <div class="seg"><label><input type="checkbox" id="mf-ev"> Meet at an event</label><label><input type="checkbox" id="mf-sh"> Shipping</label></div>
+            <input type="text" id="mf-evt" maxlength="120" placeholder="Which event, where and when (e.g. Meetup Sneek, 21 Nov)" hidden aria-label="Event, place and date">
+            <input type="text" id="mf-sht" maxlength="80" placeholder="Where you ship to (e.g. Europe)" hidden aria-label="Shipping region">
+          </div>
+        </div>
+        <label class="full">Note (optional)<textarea id="mf-note" maxlength="280" placeholder="Anything the other person should know."></textarea></label>
+        <div class="full" style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="mf-go" type="submit">SIGN AND POST</button><button class="btn alt" id="mf-copy" type="button">COPY AS A NOTE</button></div>
+          <span class="note" id="mf-msg" aria-live="polite">Your listing is signed with your Nostr key, so people can see it is really you.</span>
+          <details id="mf-evwrap" hidden><summary class="note">Signed event (JSON)</summary><textarea id="mf-ev-json" readonly aria-label="Signed event" style="width:100%;min-height:92px;font:inherit;font-size:12px;padding:8px;border:1px solid #cfd3d6;border-radius:6px"></textarea></details>
+        </div>
+      </form>
+    </div>
+
+    <details class="safe">
+      <summary>TRADE SAFE</summary>
+      <ol>
+        <li>Meeting at an event is the safest way. Pay on the spot, in sats over Lightning or in cash.</li>
+        <li>Buying a 3D collectible? At the handover, ask the seller to show the claim code under the scratch-off, and check it in VERIFY MY ITEM above before you pay. If it says REAL ONE, it is real. Then claim your badge.</li>
+        <li>Numbered cards (Rare, Ultra Rare) have a serial number. Check it in HOW RARE IS MINE.</li>
+        <li>Check the seller's Nostr profile before you pay. Nobody here can refund you, so do not send sats to a stranger you have never talked to.</li>
+        <li>Listings are public Nostr notes signed by the person who posted them. This page does not check or approve them.</li>
+      </ol>
+    </details>
+  </section>
+
   <section style="display:flex;flex-direction:column;gap:14px">
     <h2 class="sec">WHERE TO GET THEM</h2>
     <div class="shop" id="shop"></div>
@@ -201,6 +310,12 @@ h2.sec{font-size:32px;border-bottom:3px solid var(--ink);padding-bottom:8px}
 const LEDGER = {
   updated: "2026-10-13",
   exampleData: false,          // set to false once the numbers are real
+  /* Upcoming Just B events where collectors can meet and trade. Add one line per event. Shown above the market. */
+  events: [
+    // { name:"Just B meetup", date:"2026-11-21", place:"Sneek, NL" },
+  ],
+  /* Hide listings from these npubs (scammers, spam). Paste the hex or npub string. */
+  blocked: [],
   links: {
     collectibles: "https://bitpopart.com",
     cards: "https://bitpopart.com",
@@ -342,7 +457,7 @@ $('#upd').textContent='Last updated '+LEDGER.updated;
 $('#merchBtn').href=LEDGER.links.merch;
 $('#shop').innerHTML=`<article><h3>3D COLLECTIBLES</h3><p>The physical B on its own card with a QR code. Collect it, trade it, play for it. Or grab a Just Box and find out which B you get.</p><a class="btn" target="_blank" rel="noopener" href="${LEDGER.links.collectibles}">BUY A B</a></article>
 <article><h3>CARDS</h3><p>Booster Packs are a full 21-card deck. Booster Boxes bring two decks and two Just Boxes.</p><a class="btn" target="_blank" rel="noopener" href="${LEDGER.links.cards}">BUY CARDS</a></article>
-<article><h3>NO CARDS YET?</h3><p>Play Just B online against a bot and see how it works before you buy anything.</p><a class="btn alt" href="./online.html">PLAY ONLINE</a></article>`;
+<article><h3>NO CARDS YET?</h3><p>Play Just B online against a bot and see how it works before you buy anything.</p><a class="btn alt" target="_blank" rel="noopener" href="https://claude.ai/artifact/Xt2XbDVAR22wLuJbXzLGvK">PLAY ONLINE</a></article>`;
 $('#chips').innerHTML=['TEES','HOODIES','PRINTS','STICKERS'].map(t=>`<span>${t}</span>`).join('');
 
 /* ---------- verify + Nostr badge ---------- */
@@ -366,11 +481,13 @@ function npubToHex(s){
   const bytes=convBits(d.slice(0,-6),5,8,false);if(bytes.length!==32)throw new Error('bad length');
   return bytes.map(b=>b.toString(16).padStart(2,'0')).join('');
 }
-function hexToNote(h){
+function hexToBech(hrp,h){
   const bytes=h.match(/../g).map(x=>parseInt(x,16));const d=convBits(bytes,8,5,true);
-  const pm=b32poly(b32hrp('note').concat(d,[0,0,0,0,0,0]))^1;const chk=[0,1,2,3,4,5].map(i=>(pm>>5*(5-i))&31);
-  return 'note1'+d.concat(chk).map(i=>B32[i]).join('');
+  const pm=b32poly(b32hrp(hrp).concat(d,[0,0,0,0,0,0]))^1;const chk=[0,1,2,3,4,5].map(i=>(pm>>5*(5-i))&31);
+  return hrp+'1'+d.concat(chk).map(i=>B32[i]).join('');
 }
+const hexToNote=h=>hexToBech('note',h);
+const hexToNpub=h=>hexToBech('npub',h);
 const RELAYS=['wss://relay.damus.io','wss://nos.lol','wss://relay.primal.net'];
 function publishEvent(ev){
   return Promise.all(RELAYS.map(u=>new Promise(res=>{
@@ -457,7 +574,164 @@ function verifyInit(){
     };
   };
 }
-summary();render();checker();verifyInit();
+
+/* ---------- Trading market: public Nostr classified listings (NIP-99, kind 30402) ---------- */
+const MK_TAG='justb-market',MK_MAX_AGE=90*86400;
+const MK={items:new Map(),me:null,tab:'b',loaded:false};
+const mkItemById=id=>ALL().find(i=>i.id===id);
+const mkTag=(ev,n)=>(ev.tags.find(t=>t[0]===n)||[]);
+function mkParse(ev){
+  try{
+    if(!ev||ev.kind!==30402||!Array.isArray(ev.tags)||typeof ev.pubkey!=='string'||!/^[0-9a-f]{64}$/.test(ev.pubkey))return null;
+    const d=mkTag(ev,'d')[1];if(!d||String(d).length>80)return null;
+    const side=mkTag(ev,'justb-side')[1];if(side!=='sell'&&side!=='buy')return null;
+    const it=mkItemById(mkTag(ev,'justb-item')[1]);if(!it)return null;
+    const status=mkTag(ev,'status')[1]||'active';
+    const mode=mkTag(ev,'justb-price')[1];const pm=['fixed','offers','swap'].includes(mode)?mode:'offers';
+    const sp=mkTag(ev,'price')[1];const sats=pm==='fixed'&&/^\d{1,12}$/.test(sp||'')?parseInt(sp,10):null;
+    if(pm==='fixed'&&!sats)return null;
+    const deal=mkTag(ev,'justb-deal')[1]||'';
+    const lim=(v,n)=>String(v==null?'':v).slice(0,n);
+    const ser=mkTag(ev,'justb-item')[2],qty=parseInt(mkTag(ev,'justb-item')[3],10);
+    return {key:ev.pubkey+':'+d,d,pubkey:ev.pubkey,created:ev.created_at|0,tags:ev.tags,item:it,side,status,pm,sats,
+      serial:/^\d{1,6}$/.test(ser||'')?parseInt(ser,10):null,qty:qty>0&&qty<100?qty:1,cond:lim(mkTag(ev,'justb-item')[4],20),
+      deal:['event','ship','both'].includes(deal)?deal:'',event:lim(mkTag(ev,'justb-event')[1],120),ship:lim(mkTag(ev,'justb-ship')[1],80),note:lim(mkTag(ev,'justb-note')[1],280),content:String(ev.content||'').slice(0,1200)};
+  }catch(e){return null}
+}
+function mkAdd(ev){
+  const L=mkParse(ev);if(!L)return;
+  const now=Date.now()/1000;if(L.created<now-MK_MAX_AGE||L.created>now+3600)return;
+  const bl=(LEDGER.blocked||[]).map(b=>{try{return b.startsWith('npub')?npubToHex(b):b}catch(e){return b}});
+  if(bl.includes(L.pubkey))return;
+  const old=MK.items.get(L.key);if(!old||old.created<L.created)MK.items.set(L.key,L);
+}
+function mkFetch(){
+  return new Promise(res=>{
+    let pending=RELAYS.length,ok=0,done=false;
+    const fin=()=>{if(done)return;done=true;res(ok)};
+    const t=setTimeout(fin,9000);
+    RELAYS.forEach(u=>{
+      let ws,closed=false;const end=()=>{if(closed)return;closed=true;try{ws&&ws.close()}catch(e){}if(--pending<=0){clearTimeout(t);fin()}};
+      try{ws=new WebSocket(u)}catch(e){return end()}
+      ws.onopen=()=>{ok++;ws.send(JSON.stringify(['REQ','jbm',{kinds:[30402],'#t':[MK_TAG],limit:300}]))};
+      ws.onmessage=m=>{try{const a=JSON.parse(m.data);if(a[0]==='EVENT')mkAdd(a[2]);else if(a[0]==='EOSE')end()}catch(e){}};
+      ws.onerror=()=>end();ws.onclose=()=>end();
+    });
+  });
+}
+const mkShort=h=>{const n=hexToNpub(h);return n.slice(0,10)+'...'+n.slice(-6)};
+function mkWhen(ts){const d=Math.max(0,Math.floor((Date.now()/1000-ts)/86400));return d===0?'today':d===1?'yesterday':d+' days ago'}
+function mkRender(){
+  const side=$('#mk-side').value,item=$('#mk-item').value,deal=$('#mk-deal').value;
+  let rows=[...MK.items.values()].filter(l=>l.status!=='closed'&&(!side||l.side===side)&&(!item||l.item.id===item)&&(!deal||l.deal===deal||l.deal==='both'));
+  rows.sort((a,b)=>(a.status==='sold')-(b.status==='sold')||b.created-a.created);
+  const box=$('#mk-list');
+  box.innerHTML=rows.map(l=>{
+    const it=l.item,kind=it.kind==='card'?'Card':'3D';
+    const title=`${esc(it.name)} <span style="font-size:.7em;color:var(--sub)">${kind}${l.serial?' #'+l.serial:''}${l.qty>1?' x'+l.qty:''}</span>`;
+    const price=l.pm==='fixed'?`${fmt(l.sats)} sats<i>${l.qty>1?'each or total, ask':'price'}</i>`:l.pm==='swap'?'Swap<i>trade only</i>':'Offers<i>open to offers</i>';
+    const chips=[];
+    if(l.cond)chips.push(`<span class="mk-chip">${esc(l.cond)}</span>`);
+    if(l.deal==='event'||l.deal==='both')chips.push(`<span class="mk-chip ev">Meet at event${l.event?': '+esc(l.event):''}</span>`);
+    if(l.deal==='ship'||l.deal==='both')chips.push(`<span class="mk-chip">Ships${l.ship?' to '+esc(l.ship):''}</span>`);
+    const mine=MK.me&&MK.me===l.pubkey,np=hexToNpub(l.pubkey);
+    const pill=l.status==='sold'?`<span class="mk-pill sold">${l.side==='buy'?'Found':'Sold'}</span>`:`<span class="mk-pill ${l.side}">${l.side==='sell'?'For sale':'Wanted'}</span>`;
+    return `<article class="mk-card ${l.status==='sold'?'sold':''}" data-k="${esc(l.key)}">${thumb(it,it.kind==='card'?'card':'col')}
+      <div class="mk-main"><h3>${title}</h3><div class="mk-tags">${pill}${chips.join('')}</div>${l.note?`<p class="mk-note">${esc(l.note)}</p>`:''}
+      <div class="mk-who"><span class="mono">${esc(mkShort(l.pubkey))}</span><span>${mkWhen(l.created)}</span></div></div>
+      <div class="mk-price">${price}</div>
+      <div class="mk-actions">${mine?(l.status==='sold'?'':`<button type="button" data-a="sold">MARK ${l.side==='buy'?'FOUND':'SOLD'}</button>`)+`<button type="button" class="alt" data-a="close">REMOVE</button>`
+        :`<a href="https://njump.me/${np}" target="_blank" rel="noopener">MESSAGE ON NOSTR</a><button type="button" class="ghost" data-a="copy" data-np="${np}">COPY NPUB</button>`}</div>
+    </article>`;}).join('');
+  const st=$('#mk-status');
+  if(!MK.loaded)st.textContent='Loading listings...';
+  else if(MK.relays===0&&!rows.length)st.textContent='Could not reach the Nostr relays from here. Open this ledger on bitpopart.com/b to see live listings. You can still prepare a listing.';
+  else if(!rows.length)st.textContent=MK.items.size?'No listings match. Try another filter.':'No listings yet. Be the first, post one.';
+  else st.textContent=rows.length+' listing'+(rows.length>1?'s':'')+'. Message the poster on Nostr to agree a deal.';
+}
+async function mkSign(tags,content){
+  if(!window.nostr||!window.nostr.signEvent)throw new Error('no-signer');
+  const pk=await window.nostr.getPublicKey();MK.me=pk;
+  const ev=await window.nostr.signEvent({kind:30402,created_at:Math.floor(Date.now()/1000),tags,content});
+  if(!ev||ev.pubkey!==pk||!ev.id||!ev.sig)throw new Error('bad-signer');
+  return ev;
+}
+function mkTabs(t){
+  MK.tab=t;$('#mt-b').setAttribute('aria-selected',t==='b');$('#mt-p').setAttribute('aria-selected',t==='p');
+  $('#mk-browse').hidden=t!=='b';$('#mk-post').hidden=t!=='p';
+}
+function mkBuild(){
+  const f=id=>$(id),side=document.querySelector('input[name=mk-s]:checked').value,pm=document.querySelector('input[name=mk-p]:checked').value;
+  const it=ALL()[+f('#mf-item').value],serial=parseInt(f('#mf-serial').value,10)||null,qty=Math.max(1,Math.min(99,parseInt(f('#mf-qty').value,10)||1));
+  const sats=parseInt(f('#mf-sats').value,10),ev=f('#mf-ev').checked,sh=f('#mf-sh').checked;
+  if(pm==='fixed'&&!(sats>0))throw new Error('Fill in a price in sats, or choose Open to offers or Swap only.');
+  if(serial&&it.printed&&serial>it.printed)throw new Error(`Only ${fmt(it.printed)} of ${it.name} have been released so far, so #${serial} does not exist yet.`);
+  const evt=f('#mf-evt').value.trim(),sht=f('#mf-sht').value.trim();
+  if(ev&&!evt)throw new Error('Say which event, where and when.');
+  const deal=ev&&sh?'both':ev?'event':sh?'ship':'';
+  const d='jb-'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+  const word=side==='sell'?'FOR SALE':'WANTED';
+  const priceTxt=pm==='fixed'?fmt(sats)+' sats':pm==='swap'?'swap only':'open to offers';
+  const title=`${word}: ${it.name} ${it.kind==='card'?'card':'3D collectible'}${serial?' #'+serial:''}`;
+  const note=f('#mf-note').value.trim().slice(0,280);
+  const lines=[title+' ('+priceTxt+')',qty>1?'Quantity: '+qty:'',f('#mf-cond').value?'Condition: '+f('#mf-cond').value:'',ev?'Meet at event: '+evt:'',sh?'Ships'+(sht?' to '+sht:''):'',note,'#justb #bitpopart'].filter(Boolean);
+  const tags=[['d',d],['title',title],['summary',priceTxt],['published_at',String(Math.floor(Date.now()/1000))],['status','active'],
+    ['t',MK_TAG],['t','justb'],['t','bitpopart'],['justb-side',side],['justb-item',it.id,serial?String(serial):'',String(qty),f('#mf-cond').value],['justb-price',pm],['justb-deal',deal]];
+  if(note)tags.push(['justb-note',note]);
+  if(pm==='fixed')tags.push(['price',String(sats),'SATS']);
+  if(ev)tags.push(['justb-event',evt]);if(sh&&sht)tags.push(['justb-ship',sht],['location',sht]);
+  return {tags,content:lines.join('\n')};
+}
+function marketInit(){
+  const all=ALL();
+  $('#mk-item').innerHTML='<option value="">All items</option>'+all.map(i=>`<option value="${i.id}">${esc(i.name)} (${i.kind==='card'?'card':'3D'})</option>`).join('');
+  $('#mf-item').innerHTML=all.map((i,k)=>`<option value="${k}">${esc(i.name)} (${i.kind==='card'?'card':'3D collectible'})</option>`).join('');
+  const evs=(LEDGER.events||[]);const eb=$('#mk-events');
+  if(evs.length){eb.hidden=false;eb.innerHTML='<b>Upcoming events:</b> '+evs.map(e=>`${esc(e.name)}, ${esc(e.date||'')}${e.place?', '+esc(e.place):''}`).join(' &middot; ')+'. Meet there, agree a deal and swap in person.';}
+  $('#mt-b').onclick=()=>mkTabs('b');$('#mt-p').onclick=()=>mkTabs('p');
+  ['#mk-side','#mk-item','#mk-deal'].forEach(s=>$(s).onchange=mkRender);
+  const load=async()=>{MK.loaded=false;mkRender();MK.relays=await mkFetch();MK.loaded=true;mkRender();};
+  $('#mk-refresh').onclick=load;
+  const sync=()=>{
+    const pm=document.querySelector('input[name=mk-p]:checked').value;$('#mf-satl').style.display=pm==='fixed'?'':'none';
+    $('#mf-evt').hidden=!$('#mf-ev').checked;$('#mf-sht').hidden=!$('#mf-sh').checked;
+  };
+  document.querySelectorAll('#mk-form input').forEach(i=>i.addEventListener('change',sync));sync();
+  const msg=t=>{$('#mf-msg').textContent=t};
+  $('#mf-copy').onclick=async()=>{
+    try{const b=mkBuild();const t=b.content;try{await navigator.clipboard.writeText(t);msg('Copied. Paste it in a normal Nostr note.')}catch(e){const a=$('#mf-ev-json');$('#mf-evwrap').hidden=false;$('#mf-evwrap').open=true;a.value=t;a.select();msg('Copy the selected text.')}}catch(e){msg(e.message)}
+  };
+  $('#mk-form').onsubmit=async e=>{
+    e.preventDefault();let b;try{b=mkBuild()}catch(er){msg(er.message);return}
+    $('#mf-go').disabled=true;msg('Waiting for your signer...');
+    try{
+      const ev=await mkSign(b.tags,b.content);
+      $('#mf-ev-json').value=JSON.stringify(ev,null,1);$('#mf-evwrap').hidden=false;
+      mkAdd(ev);mkRender();
+      msg('Signed. Sending your listing...');
+      const n=await publishEvent(ev);
+      if(n>0){msg('Posted to '+n+' relay'+(n>1?'s':'')+'. Your listing is live in Browse.');mkTabs('b');}
+      else{msg('Signed, but this page could not reach a Nostr relay from here. Copy the signed event below and post it with your Nostr app, or open this ledger on bitpopart.com/b and post again.');}
+    }catch(er){
+      msg(er.message==='no-signer'?'No Nostr signer found in this browser. Install one such as Alby or nos2x, or use Copy as a note and post it from your Nostr app.':er.message==='bad-signer'?'The signer returned something unexpected. Try again.':'Not signed: '+(er&&er.message?er.message:'cancelled')+'.');
+    }
+    $('#mf-go').disabled=false;
+  };
+  $('#mk-list').onclick=async e=>{
+    const b=e.target.closest('button[data-a]');if(!b)return;
+    const card=b.closest('.mk-card'),l=MK.items.get(card.dataset.k),a=b.dataset.a;
+    if(a==='copy'){try{await navigator.clipboard.writeText(b.dataset.np);b.textContent='COPIED'}catch(er){b.textContent=b.dataset.np}return}
+    if(!l||!MK.me||MK.me!==l.pubkey)return;
+    b.disabled=true;
+    try{
+      const tags=l.tags.map(t=>t[0]==='status'?['status',a==='sold'?'sold':'closed']:t);
+      const ev=await mkSign(tags,l.content||'');
+      mkAdd(ev);mkRender();await publishEvent(ev);
+    }catch(er){b.disabled=false}
+  };
+  load();
+}
+summary();render();checker();verifyInit();marketInit();
 </script>
 
 </body></html>
