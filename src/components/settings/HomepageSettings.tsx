@@ -34,6 +34,7 @@ import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { getAdminPubkeyHex } from '@/lib/adminUtils';
 import type { HomepageSection, HomepageButton, HomepageSettings, SiteBanner, BannerStyle, GridTile, HomepageView } from '@/hooks/useHomepageSettings';
 import { useUploadFile } from '@/hooks/useUploadFile';
+import { gifFileToStaticPreview } from '@/utils/staticPreview';
 import { TilePickerDialog } from './TilePickerDialog';
 import {
   Home,
@@ -460,8 +461,11 @@ function SortableTile({ tile, onDelete, onUpdate, isEditing, onToggleEdit }: Sor
     const file = e.target.files?.[0];
     if (!file) return;
     try {
-      const tags = await uploadFile(file);
+      const fileToUpload = (await gifFileToStaticPreview(file)) ?? file;
+      const tags = await uploadFile(fileToUpload);
+      const converted = fileToUpload !== file;
       onUpdate(tile.id, { imageUrl: tags[0][1] });
+      if (converted) toast.info('GIF tile uploaded as a static preview (first frame) — the animation lives on the page the tile links to.');
     } catch (err) {
       toast.error('Upload failed: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
@@ -824,7 +828,9 @@ export function HomepageSettings() {
     if (!file) return;
     setUploadingNewTile(true);
     try {
-      const tags = await uploadFile(file);
+      const fileToUpload = (await gifFileToStaticPreview(file)) ?? file;
+      const converted = fileToUpload !== file;
+      const tags = await uploadFile(fileToUpload);
       const id = `tile-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
       isDirty.current = true;
       setGridTiles(prev => [...prev, {
@@ -835,7 +841,11 @@ export function HomepageSettings() {
         order: prev.length,
       }]);
       setEditingTileId(id);
-      toast.success('Image uploaded — set the page link on the tile, then press “Publish tiles to homepage”.');
+      toast.success(
+        converted
+          ? 'GIF uploaded as a static preview (first frame) — set the page link, then press “Publish tiles to homepage”. The animation plays on the linked page.'
+          : 'Image uploaded — set the page link on the tile, then press “Publish tiles to homepage”.',
+      );
     } catch (err) {
       toast.error('Upload failed: ' + (err instanceof Error ? err.message : String(err)));
     } finally {

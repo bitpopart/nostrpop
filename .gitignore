@@ -28,3 +28,6 @@ dist-ssr
 .env
 .env.*
 !.env.example
+
+# Build-time generated homepage GIF tile previews (tools/gen-tile-previews.mjs)
+public/tiles/
