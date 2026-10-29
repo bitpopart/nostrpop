@@ -1,5 +1,37 @@
 [
  {
+  "versie": "1.15.2",
+  "datum": "2026-10-29",
+  "notities": {
+   "nl": "Het volgveld onder Reageren op zaps en in Control toont gevolgde accounts na laden en opslaan weer als npub, in plaats van als hex-sleutel. Het leek een ander account, maar het was dezelfde sleutel.",
+   "en": "The follow field under Respond to zaps and in Control shows followed accounts as npub again after loading and saving, instead of as a hex key. It looked like a different account, although it was the same key."
+  },
+  "firmware": {
+   "Zapper REV A": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.15.2/zapper-reva-1.15.2-ota.bin",
+    "sha256": "a938001ec363f04e8f935d53f9d87bd94a1aba8b45dfa10053ca4ab0b6d5780b",
+    "grootte": 2586688
+   },
+   "ESP32-C6-Zero + MOSFET": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.15.2/lamp01-1.15.2-ota.bin",
+    "sha256": "b9361e5b1073dfc513327995e9f7e5393fe156149a1eb792bfb4285d7749a49e",
+    "grootte": 2562256
+   }
+  },
+  "fabriek": {
+   "Zapper REV A": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.15.2/zapper-reva-1.15.2-factory.bin",
+    "sha256": "f71b71d6cb88c6f41a819aafefe71670c34ef245f843bcffe8c3818476dc1f49",
+    "grootte": 2717760
+   },
+   "ESP32-C6-Zero + MOSFET": {
+    "url": "https://raw.githubusercontent.com/JaccoElektro/zapper-updates/main/firmware/1.15.2/lamp01-1.15.2-factory.bin",
+    "sha256": "9bc2c10f51caebefac196c0ce3e1a620844bf3923fdbfb3dc298464fdbd6363d",
+    "grootte": 2627792
+   }
+  }
+ },
+ {
   "versie": "1.15.1",
   "datum": "2026-10-17",
   "notities": {

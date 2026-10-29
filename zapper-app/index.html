@@ -215,13 +215,13 @@ ol.stappen.verder{counter-reset:s 2;margin-top:16px}
  <span class="taal"><button data-taal="nl">NL</button><button data-taal="en">EN</button></span>
 </div>
 
-<nav class="productnav" aria-label="ZAPPER"><a href="#start" data-t="navStart"></a><a href="#zapper" data-t="fotoNav"></a><a href="#control">Control</a><a href="#screen">Screen</a><a href="https://bitpopart.com/zapper/flash/">USB-flasher</a><a href="handleiding.pdf" data-t="handleiding"></a></nav>
+<nav class="productnav" aria-label="ZAPPER"><a href="#start" data-t="navStart"></a><a href="#zapper" data-t="fotoNav"></a><a href="#control">Control</a><a href="#screen">Screen</a><a href="https://bitpopart.com/zapper/flash/">USB-flasher</a><a href="handleiding-nl.pdf" data-manual data-t="handleiding"></a></nav>
 <div class="held">
  <div>
   <p class="tag" data-t="tag"></p>
   <h1><span data-t="titel1"></span><br><span data-t="titel2"></span></h1>
   <p class="lead" data-t="lead"></p>
-  <div class="knoppen"><a class="knop" href="#scannen" data-t="naarScan"></a><a class="knop licht" href="https://bitpopart.com/zapper/flash/" data-t="naarFlash"></a><a class="knop licht" href="handleiding.pdf" data-t="handleiding"></a></div>
+  <div class="knoppen"><a class="knop" href="#scannen" data-t="naarScan"></a><a class="knop licht" href="https://bitpopart.com/zapper/flash/" data-t="naarFlash"></a><a class="knop licht" href="handleiding-nl.pdf" data-manual data-t="handleiding"></a></div>
   <p class="klein" id="versieRegel"></p>
  </div>
  <div class="lamp" aria-hidden="true"><img src="beeld/lamp-aan.svg" alt=""></div>
@@ -324,7 +324,7 @@ ol.stappen.verder{counter-reset:s 2;margin-top:16px}
  <div data-t="voet"></div>
  <div class="npubs" id="npubs"></div>
  <div class="links">
-  <a class="pil" href="handleiding.pdf" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5M8 7h7"/></svg><span data-t="handleiding"></span></a>
+  <a class="pil" href="handleiding-nl.pdf" data-manual target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5M8 7h7"/></svg><span data-t="handleiding"></span></a>
   <a class="pil" href="https://bitpopart.com" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>bitpopart.com</a>
   <a class="pil" href="manifest.json" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h7M9 17h5"/></svg><span data-t="lijstLink"></span></a>
  </div>
@@ -436,6 +436,7 @@ let manifest=null,versies=null;
 let toestel=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)?'ipad':/Android/.test(navigator.userAgent)?'android':/Mac/.test(navigator.platform)?'mac':'pc';
 function teken(){
  document.documentElement.lang=taal;
+ document.querySelectorAll('[data-manual]').forEach(e=>e.href=taal==='nl'?'handleiding-nl.pdf':'handleiding.pdf');
  document.querySelectorAll('[data-t]').forEach(e=>{const v=T[e.dataset.t];if(v)e.textContent=v[i()]});
  document.querySelectorAll('[data-t-alt]').forEach(e=>{const v=T[e.dataset.tAlt];if(v)e.alt=v[i()]});
  document.querySelectorAll('[data-taal]').forEach(b=>b.classList.toggle('actief',b.dataset.taal===taal));
