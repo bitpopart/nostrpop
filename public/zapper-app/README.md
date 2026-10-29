@@ -30,4 +30,4 @@ from this repository by GitHub Pages).
 
 ## Newest
 
-Version **1.15.1**, 2026-10-17.
+Version **1.15.2**, 2026-10-29.

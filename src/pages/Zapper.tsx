@@ -3,7 +3,7 @@ import { useSeoMeta } from '@unhead/react';
 
 /**
  * Zapper — the ZAPPER zap-lamp updates & control page (from
- * JaccoElektro/zapper-updates, upstream commit e0129d2, v1.15.1), shown
+ * JaccoElektro/zapper-updates, upstream commit 4d63dd9, v1.15.2), shown
  * inline under the site Layout so the bitpopart.com menu and footer stay
  * visible, like every other page.
  *
