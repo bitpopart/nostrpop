@@ -78,6 +78,7 @@ import Rare from "./pages/Rare";
 import WhatsNew from "./pages/WhatsNew";
 import TCG from "./pages/TCG";
 import BitBot from "./pages/BitBot";
+import BitBotCrowdfunding from "./pages/BitBotCrowdfunding";
 import NotFound from "./pages/NotFound";
 
 export function AppRouter() {
@@ -179,6 +180,8 @@ export function AppRouter() {
         <Route path="/tcg" element={<Layout><TCG /></Layout>} />
         {/* BitBot — pocket bot page (birth date, in-progress), inline under the site menu/footer */}
         <Route path="/bitbot" element={<Layout><BitBot /></Layout>} />
+        {/* BitBot crowdfunding — campaign page, inline under the site menu/footer */}
+        <Route path="/bitbot/crowdfunding" element={<Layout><BitBotCrowdfunding /></Layout>} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="/:slug" element={<Layout><CustomPage /></Layout>} />
         <Route path="*" element={<Layout><NotFound /></Layout>} />
