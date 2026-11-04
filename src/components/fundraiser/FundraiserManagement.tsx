@@ -35,6 +35,27 @@ interface FundraiserFormData {
   deadline: string;
   status: 'active' | 'completed' | 'cancelled';
 }
+interface FundraiserContent {
+  title?: string;
+  description?: string;
+  thumbnail?: string;
+  goal_sats?: number;
+  deadline?: string;
+  status?: 'active' | 'completed' | 'cancelled';
+}
+
+/** Parse a fundraiser event's content JSON safely. Malformed or empty
+ *  content (e.g. kind-38178 project-design events sharing the same kind)
+ *  must never crash the tab or break edits — treat bad content as {}. */
+function parseFundraiserContent(content: string): FundraiserContent {
+  if (!content) return {};
+  try {
+    const parsed = JSON.parse(content);
+    return parsed && typeof parsed === 'object' ? (parsed as FundraiserContent) : {};
+  } catch {
+    return {};
+  }
+}
 
 export function FundraiserManagement() {
   const { nostr } = useNostr();
@@ -63,7 +84,7 @@ export function FundraiserManagement() {
       if (!user?.pubkey) return [];
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(3000)]);
       const events = await nostr.query(
-        [{ kinds: [38178], authors: [user.pubkey], limit: 100 }],
+        [{ kinds: [38178], '#t': ['fundraiser'], authors: [user.pubkey], limit: 100 }],
         { signal }
       );
       return events.sort((a, b) => b.created_at - a.created_at);
@@ -181,7 +202,7 @@ export function FundraiserManagement() {
   };
 
   const handleEdit = (event: NostrEvent) => {
-    const content = JSON.parse(event.content);
+    const content = parseFundraiserContent(event.content);
     const titleTag = event.tags.find(t => t[0] === 'title')?.[1];
     const imageTag = event.tags.find(t => t[0] === 'image')?.[1];
     const goalTag = event.tags.find(t => t[0] === 'goal')?.[1];
@@ -436,7 +457,7 @@ export function FundraiserManagement() {
           ) : (
             <div className="space-y-4">
               {fundraisers.map((event) => {
-                const content = JSON.parse(event.content);
+                const content = parseFundraiserContent(event.content);
                 const title = event.tags.find(t => t[0] === 'title')?.[1] || content.title || 'Untitled';
                 const thumbnail = event.tags.find(t => t[0] === 'image')?.[1] || content.thumbnail;
                 const goalTag = event.tags.find(t => t[0] === 'goal')?.[1];
