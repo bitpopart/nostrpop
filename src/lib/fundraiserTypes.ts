@@ -16,6 +16,8 @@ export interface FundraiserData {
   created_at: string;
   deadline?: string; // Optional deadline date
   status: 'active' | 'completed' | 'cancelled';
+  external_url?: string; // Optional URL to an external fundraising site
+  project_url?: string; // Optional in-site URL (bitpopart.com page) — "More about the project"
 }
 
 /**

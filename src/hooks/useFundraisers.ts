@@ -27,6 +27,8 @@ export function useFundraisers() {
         const thumbnail = event.tags.find(t => t[0] === 'image')?.[1] || content.thumbnail || '';
         const deadline = event.tags.find(t => t[0] === 'deadline')?.[1] || content.deadline;
         const statusTag = event.tags.find(t => t[0] === 'status')?.[1] || content.status || 'active';
+        const externalUrl = event.tags.find(t => t[0] === 'external_url')?.[1] || content.external_url || '';
+        const projectUrl = event.tags.find(t => t[0] === 'project_url')?.[1] || content.project_url || '';
 
         return {
           id: dTag,
@@ -39,6 +41,8 @@ export function useFundraisers() {
           created_at: new Date(event.created_at * 1000).toISOString(),
           deadline,
           status: statusTag as 'active' | 'completed' | 'cancelled',
+          external_url: externalUrl || undefined,
+          project_url: projectUrl || undefined,
         };
       });
 

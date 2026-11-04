@@ -34,6 +34,8 @@ interface FundraiserFormData {
   goal_sats: string;
   deadline: string;
   status: 'active' | 'completed' | 'cancelled';
+  external_url: string;
+  project_url: string;
 }
 interface FundraiserContent {
   title?: string;
@@ -42,6 +44,8 @@ interface FundraiserContent {
   goal_sats?: number;
   deadline?: string;
   status?: 'active' | 'completed' | 'cancelled';
+  external_url?: string;
+  project_url?: string;
 }
 
 /** Parse a fundraiser event's content JSON safely. Malformed or empty
@@ -75,6 +79,8 @@ export function FundraiserManagement() {
     goal_sats: '',
     deadline: '',
     status: 'active',
+    external_url: '',
+    project_url: '',
   });
 
   // Fetch user's fundraisers (kind 38178)
@@ -161,6 +167,12 @@ export function FundraiserManagement() {
     if (formData.deadline) {
       tags.push(['deadline', formData.deadline]);
     }
+    if (formData.external_url.trim()) {
+      tags.push(['external_url', formData.external_url.trim()]);
+    }
+    if (formData.project_url.trim()) {
+      tags.push(['project_url', formData.project_url.trim()]);
+    }
 
     const contentData = {
       title: formData.title,
@@ -169,6 +181,8 @@ export function FundraiserManagement() {
       goal_sats: parseInt(formData.goal_sats),
       deadline: formData.deadline,
       status: formData.status,
+      external_url: formData.external_url.trim() || undefined,
+      project_url: formData.project_url.trim() || undefined,
     };
 
     createEvent(
@@ -189,6 +203,8 @@ export function FundraiserManagement() {
             goal_sats: '',
             deadline: '',
             status: 'active',
+            external_url: '',
+            project_url: '',
           });
           queryClient.invalidateQueries({ queryKey: ['fundraisers'] });
           queryClient.invalidateQueries({ queryKey: ['fundraisers-admin'] });
@@ -208,6 +224,8 @@ export function FundraiserManagement() {
     const goalTag = event.tags.find(t => t[0] === 'goal')?.[1];
     const deadlineTag = event.tags.find(t => t[0] === 'deadline')?.[1];
     const statusTag = event.tags.find(t => t[0] === 'status')?.[1] as 'active' | 'completed' | 'cancelled' || 'active';
+    const externalUrlTag = event.tags.find(t => t[0] === 'external_url')?.[1];
+    const projectUrlTag = event.tags.find(t => t[0] === 'project_url')?.[1];
 
     setFormData({
       title: titleTag || content.title || '',
@@ -216,6 +234,8 @@ export function FundraiserManagement() {
       goal_sats: goalTag || content.goal_sats?.toString() || '',
       deadline: deadlineTag || content.deadline || '',
       status: statusTag,
+      external_url: externalUrlTag || content.external_url || '',
+      project_url: projectUrlTag || content.project_url || '',
     });
     setEditingFundraiser(event);
     setIsCreating(true);
@@ -253,6 +273,8 @@ export function FundraiserManagement() {
       goal_sats: '',
       deadline: '',
       status: 'active',
+      external_url: '',
+      project_url: '',
     });
   };
 
@@ -394,6 +416,35 @@ export function FundraiserManagement() {
                   value={formData.deadline}
                   onChange={(e) => handleInputChange('deadline', e.target.value)}
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="external_url">Fundraising URL — external site (optional)</Label>
+                <Input
+                  id="external_url"
+                  type="url"
+                  placeholder="https://geyser.fund/... or your external fundraising page"
+                  value={formData.external_url}
+                  onChange={(e) => handleInputChange('external_url', e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Button on the card: opens the external fundraising site in a new tab.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="project_url">Project page on bitpopart.com (optional)</Label>
+                <Input
+                  id="project_url"
+                  type="text"
+                  placeholder="e.g. /bitbot/crowdfunding or another bitpopart.com page"
+                  value={formData.project_url}
+                  onChange={(e) => handleInputChange('project_url', e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Button on the card: "More about the project", opens inside the site itself. Use a full page path
+                  (e.g. /projects/my-project) or a full https://bitpopart.com/... URL.
+                </p>
               </div>
 
               <div className="space-y-2">

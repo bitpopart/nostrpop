@@ -17,6 +17,7 @@ import { ShareToNostrButton } from '@/components/ShareToNostrButton';
 import { ClawstrShare } from '@/components/ClawstrShare';
 import { ZapButton } from '@/components/ZapButton';
 import { toast } from 'sonner';
+import { Link } from 'react-router-dom';
 import { 
   Target, 
   Calendar, 
@@ -25,11 +26,27 @@ import {
   Zap,
   Copy,
   CheckCircle2,
+  Info,
+  ExternalLink,
 } from 'lucide-react';
 import { formatSats, calculateProgress, type FundraiserData, type FundraiserContribution } from '@/lib/fundraiserTypes';
 
 interface FundraiserCardProps {
   fundraiser: FundraiserData;
+}
+
+/** Turn an in-site URL into a router path when it points at this site;
+ *  return null when it should be treated as an external link. */
+function toSitePath(url: string): string | null {
+  if (url.startsWith('/')) return url;
+  try {
+    const u = new URL(url);
+    const site = new URL(window.location.origin);
+    if (u.origin === site.origin) return u.pathname + u.search + u.hash;
+    return null;
+  } catch {
+    return null;
+  }
 }
 
 function ContributorRow({ contribution, index }: { contribution: FundraiserContribution; index: number }) {
@@ -132,6 +149,9 @@ export function FundraiserCard({ fundraiser }: FundraiserCardProps) {
     : false;
 
   const canContribute = fundraiser.status === 'active' && !isDeadlinePassed;
+
+  // Normalize the in-site "more about the project" URL for router navigation
+  const projectPath = fundraiser.project_url ? toSitePath(fundraiser.project_url) : null;
 
   return (
     <Card className="overflow-hidden hover:shadow-xl transition-shadow">
@@ -256,6 +276,35 @@ export function FundraiserCard({ fundraiser }: FundraiserCardProps) {
                 <ContributorRow key={index} contribution={contribution} index={index} />
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Project / External URL links */}
+        {(fundraiser.project_url || fundraiser.external_url) && (
+          <div className="flex flex-col sm:flex-row gap-2">
+            {fundraiser.project_url && (projectPath !== null ? (
+              <Button asChild variant="outline" className="flex-1">
+                <Link to={projectPath}>
+                  <Info className="h-4 w-4 mr-2" />
+                  More about the project
+                </Link>
+              </Button>
+            ) : (
+              <Button asChild variant="outline" className="flex-1">
+                <a href={fundraiser.project_url} target="_blank" rel="noopener noreferrer">
+                  <Info className="h-4 w-4 mr-2" />
+                  More about the project
+                </a>
+              </Button>
+            ))}
+            {fundraiser.external_url && (
+              <Button asChild variant="outline" className="flex-1">
+                <a href={fundraiser.external_url} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Fundraising site
+                </a>
+              </Button>
+            )}
           </div>
         )}
 
