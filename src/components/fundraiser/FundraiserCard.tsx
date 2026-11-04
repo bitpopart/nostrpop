@@ -13,6 +13,7 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useFundraiserContributions } from '@/hooks/useFundraisers';
+import { useBtcEurRate, eurToLiveSats } from '@/hooks/usePrintPosters';
 import { ShareToNostrButton } from '@/components/ShareToNostrButton';
 import { ClawstrShare } from '@/components/ClawstrShare';
 import { ZapButton } from '@/components/ZapButton';
@@ -28,8 +29,9 @@ import {
   CheckCircle2,
   Info,
   ExternalLink,
+  Gift,
 } from 'lucide-react';
-import { formatSats, calculateProgress, type FundraiserData, type FundraiserContribution } from '@/lib/fundraiserTypes';
+import { formatSats, calculateProgress, type FundraiserData, type FundraiserContribution, type FundraiserTier } from '@/lib/fundraiserTypes';
 
 interface FundraiserCardProps {
   fundraiser: FundraiserData;
@@ -85,6 +87,10 @@ export function FundraiserCard({ fundraiser }: FundraiserCardProps) {
   const [amount, setAmount] = useState('');
   const [message, setMessage] = useState('');
   const [isCopied, setIsCopied] = useState(false);
+  const [selectedTier, setSelectedTier] = useState<FundraiserTier | null>(null);
+
+  // Live BTC/EUR rate for converting priced tiers (EUR -> sats)
+  const { data: btcRate } = useBtcEurRate();
 
   // Calculate total raised
   const totalRaised = contributions.reduce((sum, c) => sum + c.amount_sats, 0);
@@ -100,6 +106,16 @@ export function FundraiserCard({ fundraiser }: FundraiserCardProps) {
     toast.success('Lightning address copied!');
     setTimeout(() => setIsCopied(false), 2000);
   };
+
+  /** Open the contribute dialog for a tier, pre-filling the sats amount for priced tiers. */
+  const openTierDialog = (tier: FundraiserTier) => {
+    setSelectedTier(tier);
+    setAmount(tier.price_eur ? String(eurToLiveSats(tier.price_eur, btcRate) || '') : '');
+    setMessage('');
+    setIsContributeOpen(true);
+  };
+
+  const tierSats = selectedTier?.price_eur ? eurToLiveSats(selectedTier.price_eur, btcRate) || null : null;
 
   const handleSubmitContribution = () => {
     if (!user) {
@@ -133,6 +149,7 @@ export function FundraiserCard({ fundraiser }: FundraiserCardProps) {
         onSuccess: () => {
           toast.success('Contribution recorded! Please send payment to the Lightning address.');
           setIsContributeOpen(false);
+          setSelectedTier(null);
           setAmount('');
           setMessage('');
         },
@@ -279,6 +296,60 @@ export function FundraiserCard({ fundraiser }: FundraiserCardProps) {
           </div>
         )}
 
+        {/* Support Tiers */}
+        {fundraiser.tiers && fundraiser.tiers.length > 0 && (
+          <div className="space-y-3">
+            <h3 className="font-semibold text-sm flex items-center gap-2">
+              <Gift className="h-4 w-4" />
+              Support Tiers
+            </h3>
+            <div className="space-y-3">
+              {fundraiser.tiers.map((tier) => {
+                const tierSats = tier.price_eur ? eurToLiveSats(tier.price_eur, btcRate) || null : null;
+                return (
+                  <div key={tier.id} className="border rounded-lg p-4 space-y-3 bg-gray-50/50 dark:bg-gray-800/30">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1">
+                        <h4 className="font-semibold">{tier.name}</h4>
+                        {tier.description && (
+                          <p className="text-sm text-muted-foreground mt-1">{tier.description}</p>
+                        )}
+                        {tier.product_url && (
+                          <a
+                            href={tier.product_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-sm text-primary hover:underline mt-1"
+                          >
+                            <ExternalLink className="h-3.5 w-3.5" />
+                            View the product
+                          </a>
+                        )}
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        {tier.price_eur !== undefined ? (
+                          <>
+                            <div className="font-semibold">€{tier.price_eur}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {tierSats ? `≈ ${formatSats(tierSats)} sats` : '… sats'}
+                            </div>
+                          </>
+                        ) : (
+                          <Badge variant="outline">any amount</Badge>
+                        )}
+                      </div>
+                    </div>
+                    <Button variant="outline" size="sm" className="w-full" onClick={() => openTierDialog(tier)}>
+                      <Zap className="h-4 w-4 mr-2" />
+                      {tier.price_eur !== undefined ? 'Contribute for this tier' : 'Support this tier'}
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Project / External URL links */}
         {(fundraiser.project_url || fundraiser.external_url) && (
           <div className="flex flex-col sm:flex-row gap-2">
@@ -309,7 +380,16 @@ export function FundraiserCard({ fundraiser }: FundraiserCardProps) {
         )}
 
         {/* Contribute Button */}
-        <Dialog open={isContributeOpen} onOpenChange={setIsContributeOpen}>
+        <Dialog
+          open={isContributeOpen}
+          onOpenChange={(open) => {
+            setIsContributeOpen(open);
+            if (!open) {
+              setSelectedTier(null);
+              setAmount('');
+            }
+          }}
+        >
           <DialogTrigger asChild>
             <Button 
               className="w-full" 
@@ -330,6 +410,23 @@ export function FundraiserCard({ fundraiser }: FundraiserCardProps) {
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
+              {/* Selected tier */}
+              {selectedTier && (
+                <div className="rounded-lg border border-purple-200 dark:border-purple-800 bg-purple-50/60 dark:bg-purple-900/20 p-3 space-y-1">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="font-semibold text-sm">{selectedTier.name}</span>
+                    {selectedTier.price_eur !== undefined && (
+                      <span className="text-sm font-semibold text-purple-600 dark:text-purple-400 flex-shrink-0">
+                        €{selectedTier.price_eur}
+                        {tierSats ? ` · ${formatSats(tierSats)} sats` : ''}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Pay in sats — the amount below is pre-filled for this tier (you can adjust it).
+                  </p>
+                </div>
+              )}
               {/* Lightning Address */}
               <div className="space-y-2">
                 <Label>Lightning Address</Label>

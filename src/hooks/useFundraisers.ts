@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNostr } from '@nostrify/react';
-import type { FundraiserData } from '@/lib/fundraiserTypes';
+import type { FundraiserData, FundraiserTier } from '@/lib/fundraiserTypes';
 
 /**
  * Hook to fetch all active fundraisers
@@ -29,6 +29,9 @@ export function useFundraisers() {
         const statusTag = event.tags.find(t => t[0] === 'status')?.[1] || content.status || 'active';
         const externalUrl = event.tags.find(t => t[0] === 'external_url')?.[1] || content.external_url || '';
         const projectUrl = event.tags.find(t => t[0] === 'project_url')?.[1] || content.project_url || '';
+        const tiers: FundraiserTier[] | undefined = Array.isArray(content.tiers)
+          ? content.tiers.filter((t: unknown) => !!t && typeof t === 'object' && typeof (t as FundraiserTier).name === 'string')
+          : undefined;
 
         return {
           id: dTag,
@@ -43,6 +46,7 @@ export function useFundraisers() {
           status: statusTag as 'active' | 'completed' | 'cancelled',
           external_url: externalUrl || undefined,
           project_url: projectUrl || undefined,
+          tiers,
         };
       });
 

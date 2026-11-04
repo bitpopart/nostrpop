@@ -18,6 +18,20 @@ export interface FundraiserData {
   status: 'active' | 'completed' | 'cancelled';
   external_url?: string; // Optional URL to an external fundraising site
   project_url?: string; // Optional in-site URL (bitpopart.com page) — "More about the project"
+  tiers?: FundraiserTier[]; // Optional supporter/reward tiers
+}
+
+/**
+ * Fundraiser supporter tier.
+ * A tier is either free-form support ("just send some sats") or a priced
+ * product/reward paid in sats (e.g. "Buy a BitBot — €210, pay in sats").
+ */
+export interface FundraiserTier {
+  id: string; // unique id within the campaign
+  name: string; // e.g. "Just support" or "Buy a BitBot"
+  description?: string; // optional supporting text
+  price_eur?: number; // optional EUR price — converted to sats live on the card
+  product_url?: string; // optional link to the product page (e.g. bitpopart.com/bitbot)
 }
 
 /**

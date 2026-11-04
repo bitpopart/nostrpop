@@ -25,7 +25,7 @@ import {
   Calendar,
 } from 'lucide-react';
 import type { NostrEvent } from '@nostrify/nostrify';
-import { generateFundraiserUUID, formatSats } from '@/lib/fundraiserTypes';
+import { generateFundraiserUUID, formatSats, type FundraiserTier } from '@/lib/fundraiserTypes';
 
 interface FundraiserFormData {
   title: string;
@@ -36,6 +36,7 @@ interface FundraiserFormData {
   status: 'active' | 'completed' | 'cancelled';
   external_url: string;
   project_url: string;
+  tiers: FundraiserTier[];
 }
 interface FundraiserContent {
   title?: string;
@@ -46,6 +47,7 @@ interface FundraiserContent {
   status?: 'active' | 'completed' | 'cancelled';
   external_url?: string;
   project_url?: string;
+  tiers?: FundraiserTier[];
 }
 
 /** Parse a fundraiser event's content JSON safely. Malformed or empty
@@ -81,6 +83,7 @@ export function FundraiserManagement() {
     status: 'active',
     external_url: '',
     project_url: '',
+    tiers: [],
   });
 
   // Fetch user's fundraisers (kind 38178)
@@ -134,6 +137,31 @@ export function FundraiserManagement() {
     }
   };
 
+  const addTier = () => {
+    setFormData(prev => ({
+      ...prev,
+      tiers: [...prev.tiers, { id: generateFundraiserUUID(), name: '', description: '', product_url: '' }],
+    }));
+  };
+
+  const removeTier = (id: string) => {
+    setFormData(prev => ({ ...prev, tiers: prev.tiers.filter(t => t.id !== id) }));
+  };
+
+  const updateTierField = (id: string, field: 'name' | 'description' | 'price_eur' | 'product_url', value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      tiers: prev.tiers.map(t => {
+        if (t.id !== id) return t;
+        if (field === 'price_eur') {
+          const n = parseFloat(value);
+          return { ...t, price_eur: value.trim() === '' || Number.isNaN(n) ? undefined : n };
+        }
+        return { ...t, [field]: value };
+      }),
+    }));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -183,6 +211,15 @@ export function FundraiserManagement() {
       status: formData.status,
       external_url: formData.external_url.trim() || undefined,
       project_url: formData.project_url.trim() || undefined,
+      tiers: formData.tiers
+        .filter(t => t.name.trim())
+        .map(t => ({
+          id: t.id,
+          name: t.name.trim(),
+          description: (t.description || '').trim() || undefined,
+          price_eur: t.price_eur,
+          product_url: (t.product_url || '').trim() || undefined,
+        })),
     };
 
     createEvent(
@@ -205,6 +242,7 @@ export function FundraiserManagement() {
             status: 'active',
             external_url: '',
             project_url: '',
+            tiers: [],
           });
           queryClient.invalidateQueries({ queryKey: ['fundraisers'] });
           queryClient.invalidateQueries({ queryKey: ['fundraisers-admin'] });
@@ -227,6 +265,18 @@ export function FundraiserManagement() {
     const externalUrlTag = event.tags.find(t => t[0] === 'external_url')?.[1];
     const projectUrlTag = event.tags.find(t => t[0] === 'project_url')?.[1];
 
+    // Safely restore tiers saved on earlier edits (malformed entries are dropped)
+    const rawTiers = Array.isArray(content.tiers) ? content.tiers : [];
+    const tiers: FundraiserTier[] = rawTiers
+      .filter((t): t is FundraiserTier => !!t && typeof t === 'object' && typeof (t as FundraiserTier).name === 'string')
+      .map(t => ({
+        id: t.id || generateFundraiserUUID(),
+        name: t.name,
+        description: typeof t.description === 'string' ? t.description : undefined,
+        price_eur: typeof t.price_eur === 'number' && !Number.isNaN(t.price_eur) ? t.price_eur : undefined,
+        product_url: typeof t.product_url === 'string' ? t.product_url : undefined,
+      }));
+
     setFormData({
       title: titleTag || content.title || '',
       description: content.description || '',
@@ -236,6 +286,7 @@ export function FundraiserManagement() {
       status: statusTag,
       external_url: externalUrlTag || content.external_url || '',
       project_url: projectUrlTag || content.project_url || '',
+      tiers,
     });
     setEditingFundraiser(event);
     setIsCreating(true);
@@ -275,6 +326,7 @@ export function FundraiserManagement() {
       status: 'active',
       external_url: '',
       project_url: '',
+      tiers: [],
     });
   };
 
@@ -445,6 +497,71 @@ export function FundraiserManagement() {
                   Button on the card: "More about the project", opens inside the site itself. Use a full page path
                   (e.g. /projects/my-project) or a full https://bitpopart.com/... URL.
                 </p>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <Label>Tiers (optional)</Label>
+                  <p className="text-xs text-muted-foreground -mt-1">
+                    Supporter options shown on the campaign card — e.g. "Just support" (any amount) or
+                    "Buy a BitBot — €210, pay in sats". Priced tiers are converted to sats live on the card.
+                  </p>
+                </div>
+                <div className="space-y-3">
+                  {formData.tiers.map((tier, index) => (
+                    <div key={tier.id} className="border rounded-lg p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">Tier {index + 1}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0"
+                          onClick={() => removeTier(tier.id)}
+                          aria-label={`Remove tier ${index + 1}`}
+                        >
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </div>
+                      <Input
+                        type="text"
+                        placeholder="Tier name * — e.g. Just support"
+                        value={tier.name}
+                        onChange={(e) => updateTierField(tier.id, 'name', e.target.value)}
+                      />
+                      <Input
+                        type="text"
+                        placeholder="Description (optional)"
+                        value={tier.description || ''}
+                        onChange={(e) => updateTierField(tier.id, 'description', e.target.value)}
+                      />
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="Price in EUR (optional) — e.g. 210"
+                          value={tier.price_eur !== undefined ? String(tier.price_eur) : ''}
+                          onChange={(e) => updateTierField(tier.id, 'price_eur', e.target.value)}
+                        />
+                        <Input
+                          type="text"
+                          placeholder="Product link (optional) — e.g. /bitbot"
+                          value={tier.product_url || ''}
+                          onChange={(e) => updateTierField(tier.id, 'product_url', e.target.value)}
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Leave the price empty for a free-form "send some sats" tier. A priced tier is paid in
+                        sats — the card converts the EUR price to sats with the live rate and pre-fills it.
+                      </p>
+                    </div>
+                  ))}
+                </div>
+                <Button type="button" variant="outline" size="sm" onClick={addTier}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Tier
+                </Button>
               </div>
 
               <div className="space-y-2">
