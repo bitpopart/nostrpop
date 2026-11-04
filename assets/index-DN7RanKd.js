@@ -2462,7 +2462,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
 <h2>THE EARTH JOURNEY<i class="dot"></i></h2>
 
 <p>Travel is the point. Set your spot in the app, then press CHECK IN on the map. A new country gives you a country badge. Every BitBot that is alive shows up on the live scoreboard, and the bot with the most points each month wins a gift.</p>
-<div class="shots"><figure class="shot"><img src="/bitbot/crowdfunding-assets/e06be3314b.webp" alt="READY TO CHECK IN" width="240" height="320"><figcaption>READY TO CHECK IN</figcaption></figure></div>
+<div class="shots"><figure class="shot"><img src="/bitbot/crowdfunding-assets/06489f3fde.webp" alt="READY TO CHECK IN" width="240" height="320"><figcaption>READY TO CHECK IN</figcaption></figure></div>
 <table class="facts">
 <tr><th>Task done</th><td class="mono">10 pts</td></tr>
 <tr><th>New country badge</th><td class="mono">50 pts</td></tr>
