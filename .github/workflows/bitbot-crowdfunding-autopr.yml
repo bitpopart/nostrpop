@@ -1,0 +1,68 @@
+name: BitBot crowdfunding auto PR
+
+# Every push to the bitbot-crowdfunding-page branch is built. If the build
+# passes, a pull request to main is opened (or reused) and merged, and the
+# Pages deploy is started. Pushes made with GITHUB_TOKEN do not trigger other
+# workflows, so the deploy is started explicitly.
+
+on:
+  push:
+    branches: ["bitbot-crowdfunding-page"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+concurrency:
+  group: bitbot-crowdfunding-autopr
+  cancel-in-progress: false
+
+jobs:
+  autopr:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      BRANCH: bitbot-crowdfunding-page
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci || npm install
+
+      - name: Build check
+        run: npm run build:ci
+
+      - name: Open or reuse the pull request
+        id: pr
+        run: |
+          set -e
+          git fetch origin main
+          AHEAD=$(git rev-list --count origin/main..HEAD)
+          if [ "$AHEAD" = "0" ]; then
+            echo "Nothing new on $BRANCH, skipping."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          NUM=$(gh pr list --head "$BRANCH" --base main --state open --json number --jq '.[0].number')
+          if [ -z "$NUM" ]; then
+            gh pr create --base main --head "$BRANCH" \
+              --title "BitBot crowdfunding page update" \
+              --body "Automatic pull request for the BitBot crowdfunding page (bitpopart.com/bitbot/crowdfunding)."
+            NUM=$(gh pr list --head "$BRANCH" --base main --state open --json number --jq '.[0].number')
+          fi
+          echo "num=$NUM" >> "$GITHUB_OUTPUT"
+
+      - name: Merge
+        if: steps.pr.outputs.skip != 'true'
+        run: gh pr merge "${{ steps.pr.outputs.num }}" --merge
+
+      - name: Start the Pages deploy
+        if: steps.pr.outputs.skip != 'true'
+        run: gh workflow run deploy.yml --ref main
