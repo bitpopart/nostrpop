@@ -1,6 +1,15 @@
 import type { NostrEvent } from '@nostrify/nostrify';
 
 /**
+ * Where a campaign actually collects donations.
+ * - 'internal': sats are raised here on BitPopArt (goal in sats, progress bar,
+ *   Lightning contribution dialog on the card).
+ * - 'external': the fundraising lives on an external site - the card links out
+ *   (opens in a new tab) and has no internal goal/progress.
+ */
+export type FundingMode = 'internal' | 'external';
+
+/**
  * Fundraiser - Crowdfunding campaign for art projects
  * Kind: 38178 (addressable)
  */
@@ -9,16 +18,33 @@ export interface FundraiserData {
   event?: NostrEvent;
   title: string;
   description: string;
-  goal_sats: number; // Fundraising goal in sats
+  goal_sats: number; // Fundraising goal in sats (0 for external-page campaigns)
   raised_sats?: number; // Calculated from contributions
   thumbnail: string; // Project image
   author_pubkey: string;
   created_at: string;
   deadline?: string; // Optional deadline date
   status: 'active' | 'completed' | 'cancelled';
-  external_url?: string; // Optional URL to an external fundraising site
-  project_url?: string; // Optional in-site URL (bitpopart.com page) — "More about the project"
+  funding_mode?: FundingMode; // Where the fundraising happens (default 'internal')
+  external_url?: string; // URL to an external fundraising page - opens in a new tab
+  project_url?: string; // Optional in-site URL (bitpopart.com page) - "More about the project"
   tiers?: FundraiserTier[]; // Optional supporter/reward tiers
+}
+
+/**
+ * Legacy-aware external-mode detection.
+ * A campaign counts as external when its stored mode says so, or (for
+ * campaigns saved before the mode existed) when it only has an external page
+ * URL and no positive internal sats goal.
+ */
+export function isExternalFundraiser(f: {
+  funding_mode?: FundingMode | string;
+  external_url?: string;
+  goal_sats?: number;
+}): boolean {
+  if (f.funding_mode === 'external') return true;
+  if (f.funding_mode === 'internal') return false;
+  return Boolean(f.external_url) && !(f.goal_sats && f.goal_sats > 0);
 }
 
 /**

@@ -3,6 +3,34 @@ import { useNostr } from '@nostrify/react';
 import type { FundraiserData, FundraiserTier } from '@/lib/fundraiserTypes';
 
 /**
+ * Fundraiser event content (kind 38178). Parsed defensively - malformed or
+ * empty content (e.g. kind-38178 project-design events sharing the kind) must
+ * never crash the public page, so every read goes through a typed default.
+ */
+interface FundraiserContent {
+  title?: string;
+  description?: string;
+  thumbnail?: string;
+  goal_sats?: number;
+  deadline?: string;
+  status?: string;
+  funding_mode?: string;
+  external_url?: string;
+  project_url?: string;
+  tiers?: unknown[];
+}
+
+function parseFundraiserContent(content: string): FundraiserContent {
+  if (!content) return {};
+  try {
+    const parsed = JSON.parse(content);
+    return parsed && typeof parsed === 'object' ? (parsed as FundraiserContent) : {};
+  } catch {
+    return {};
+  }
+}
+
+/**
  * Hook to fetch all active fundraisers
  */
 export function useFundraisers() {
@@ -19,7 +47,7 @@ export function useFundraisers() {
 
       // Transform events to FundraiserData
       const fundraisers: FundraiserData[] = events.map(event => {
-        const content = JSON.parse(event.content);
+        const content = parseFundraiserContent(event.content);
         const dTag = event.tags.find(t => t[0] === 'd')?.[1] || '';
         const title = event.tags.find(t => t[0] === 'title')?.[1] || content.title || 'Untitled';
         const goalTag = event.tags.find(t => t[0] === 'goal')?.[1];
@@ -29,24 +57,26 @@ export function useFundraisers() {
         const statusTag = event.tags.find(t => t[0] === 'status')?.[1] || content.status || 'active';
         const externalUrl = event.tags.find(t => t[0] === 'external_url')?.[1] || content.external_url || '';
         const projectUrl = event.tags.find(t => t[0] === 'project_url')?.[1] || content.project_url || '';
-        const tiers: FundraiserTier[] | undefined = Array.isArray(content.tiers)
-          ? content.tiers.filter((t: unknown) => !!t && typeof t === 'object' && typeof (t as FundraiserTier).name === 'string')
-          : undefined;
+        const fundingModeTag = event.tags.find(t => t[0] === 'funding_mode')?.[1];
+        const fundingMode = fundingModeTag || content.funding_mode;
 
         return {
           id: dTag,
           event,
           title,
-          description: content.description || '',
+          description: typeof content.description === 'string' ? content.description : '',
           goal_sats,
           thumbnail,
           author_pubkey: event.pubkey,
           created_at: new Date(event.created_at * 1000).toISOString(),
-          deadline,
+          deadline: typeof deadline === 'string' ? deadline : undefined,
           status: statusTag as 'active' | 'completed' | 'cancelled',
+          funding_mode: (fundingMode === 'external' || fundingMode === 'internal' ? fundingMode : undefined) as 'internal' | 'external' | undefined,
           external_url: externalUrl || undefined,
           project_url: projectUrl || undefined,
-          tiers,
+          tiers: Array.isArray(content.tiers)
+            ? content.tiers.filter((t): t is FundraiserTier => !!t && typeof t === 'object' && typeof (t as FundraiserTier).name === 'string')
+            : undefined,
         };
       });
 

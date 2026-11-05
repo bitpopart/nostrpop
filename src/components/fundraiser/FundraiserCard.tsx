@@ -31,7 +31,7 @@ import {
   ExternalLink,
   Gift,
 } from 'lucide-react';
-import { formatSats, calculateProgress, type FundraiserData, type FundraiserContribution, type FundraiserTier } from '@/lib/fundraiserTypes';
+import { formatSats, calculateProgress, isExternalFundraiser, type FundraiserData, type FundraiserContribution, type FundraiserTier } from '@/lib/fundraiserTypes';
 
 interface FundraiserCardProps {
   fundraiser: FundraiserData;
@@ -91,6 +91,10 @@ export function FundraiserCard({ fundraiser }: FundraiserCardProps) {
 
   // Live BTC/EUR rate for converting priced tiers (EUR -> sats)
   const { data: btcRate } = useBtcEurRate();
+
+  // Where the campaign collects donations: here (goal/progress + Lightning
+  // dialog) or on an external fundraising page (card links out, new tab).
+  const external = isExternalFundraiser(fundraiser);
 
   // Calculate total raised
   const totalRaised = contributions.reduce((sum, c) => sum + c.amount_sats, 0);
@@ -244,45 +248,63 @@ export function FundraiserCard({ fundraiser }: FundraiserCardProps) {
           {fundraiser.description}
         </CardDescription>
 
-        {/* Progress */}
-        <div className="space-y-2">
-          <div className="flex justify-between items-center text-sm">
-            <span className="font-semibold">{formatSats(totalRaised)} sats raised</span>
-            <span className="text-muted-foreground">of {formatSats(fundraiser.goal_sats)} sats</span>
+        {/* Progress (on-site goal only) */}
+        {!external ? (
+          <div className="space-y-2">
+            <div className="flex justify-between items-center text-sm">
+              <span className="font-semibold">{formatSats(totalRaised)} sats raised</span>
+              <span className="text-muted-foreground">of {formatSats(fundraiser.goal_sats)} sats</span>
+            </div>
+            <Progress value={progress} className="h-3" />
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>{progress}% funded</span>
+              {fundraiser.deadline && (
+                <span className="flex items-center gap-1">
+                  <Calendar className="h-3 w-3" />
+                  {isDeadlinePassed ? 'Ended ' : 'Ends '}
+                  {new Date(fundraiser.deadline).toLocaleDateString()}
+                </span>
+              )}
+            </div>
           </div>
-          <Progress value={progress} className="h-3" />
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>{progress}% funded</span>
-            {fundraiser.deadline && (
-              <span className="flex items-center gap-1">
-                <Calendar className="h-3 w-3" />
-                {isDeadlinePassed ? 'Ended ' : 'Ends '}
-                {new Date(fundraiser.deadline).toLocaleDateString()}
-              </span>
-            )}
+        ) : (
+          <div className="flex items-start gap-2 text-sm text-muted-foreground bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-3">
+            <ExternalLink className="h-4 w-4 mt-0.5 flex-shrink-0 text-purple-600 dark:text-purple-400" />
+            <span>
+              This campaign runs on an external fundraising page.
+              {fundraiser.deadline && (
+                <>
+                  {' '}
+                  {isDeadlinePassed ? 'It ended ' : 'It ends '}
+                  on {new Date(fundraiser.deadline).toLocaleDateString()}.
+                </>
+              )}
+            </span>
           </div>
-        </div>
+        )}
 
         {/* Stats */}
-        <div className="grid grid-cols-2 gap-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg">
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-1 text-purple-600 dark:text-purple-400 mb-1">
-              <Users className="h-4 w-4" />
-              <span className="text-2xl font-bold">{contributorCount}</span>
+        {!external && (
+          <div className="grid grid-cols-2 gap-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg">
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-1 text-purple-600 dark:text-purple-400 mb-1">
+                <Users className="h-4 w-4" />
+                <span className="text-2xl font-bold">{contributorCount}</span>
+              </div>
+              <span className="text-xs text-muted-foreground">Contributors</span>
             </div>
-            <span className="text-xs text-muted-foreground">Contributors</span>
-          </div>
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-1 text-pink-600 dark:text-pink-400 mb-1">
-              <TrendingUp className="h-4 w-4" />
-              <span className="text-2xl font-bold">{progress}%</span>
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-1 text-pink-600 dark:text-pink-400 mb-1">
+                <TrendingUp className="h-4 w-4" />
+                <span className="text-2xl font-bold">{progress}%</span>
+              </div>
+              <span className="text-xs text-muted-foreground">Complete</span>
             </div>
-            <span className="text-xs text-muted-foreground">Complete</span>
           </div>
-        </div>
+        )}
 
         {/* Top Contributors */}
-        {topContributors.length > 0 && (
+        {!external && topContributors.length > 0 && (
           <div className="space-y-3">
             <h3 className="font-semibold text-sm flex items-center gap-2">
               <Target className="h-4 w-4" />
@@ -296,8 +318,8 @@ export function FundraiserCard({ fundraiser }: FundraiserCardProps) {
           </div>
         )}
 
-        {/* Support Tiers */}
-        {fundraiser.tiers && fundraiser.tiers.length > 0 && (
+        {/* Support Tiers (on-site campaigns only) */}
+        {!external && fundraiser.tiers && fundraiser.tiers.length > 0 && (
           <div className="space-y-3">
             <h3 className="font-semibold text-sm flex items-center gap-2">
               <Gift className="h-4 w-4" />
@@ -368,7 +390,7 @@ export function FundraiserCard({ fundraiser }: FundraiserCardProps) {
                 </a>
               </Button>
             ))}
-            {fundraiser.external_url && (
+            {fundraiser.external_url && !external && (
               <Button asChild variant="outline" className="flex-1">
                 <a href={fundraiser.external_url} target="_blank" rel="noopener noreferrer">
                   <ExternalLink className="h-4 w-4 mr-2" />
@@ -379,7 +401,28 @@ export function FundraiserCard({ fundraiser }: FundraiserCardProps) {
           </div>
         )}
 
-        {/* Contribute Button */}
+        {/* Contribute Button / External fundraising page CTA */}
+        {external ? (
+          <Button
+            asChild
+            className={`w-full ${!canContribute ? 'pointer-events-none opacity-50' : ''}`}
+            size="lg"
+          >
+            <a
+              href={fundraiser.external_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => {
+                if (!canContribute) e.preventDefault();
+              }}
+            >
+              <ExternalLink className="h-5 w-5 mr-2" />
+              {!canContribute
+                ? (isDeadlinePassed ? 'Fundraiser Ended' : `${fundraiser.status}`)
+                : 'Go to fundraising page'}
+            </a>
+          </Button>
+        ) : (
         <Dialog
           open={isContributeOpen}
           onOpenChange={(open) => {
@@ -495,6 +538,7 @@ export function FundraiserCard({ fundraiser }: FundraiserCardProps) {
             </div>
           </DialogContent>
         </Dialog>
+        )}
       </CardContent>
     </Card>
   );
