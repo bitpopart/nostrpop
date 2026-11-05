@@ -34,7 +34,6 @@ import {
   PanelTop,
   Sparkles,
   Printer,
-  ChevronLeft,
   ChevronRight,
   Smartphone,
   Monitor,
@@ -60,15 +59,12 @@ import {
   Move,
   Newspaper,
   Share2,
-  Laugh,
   CreditCard,
-  Play,
   Search,
   Hash,
   Users,
 } from 'lucide-react';
 import { ShareToNostrMediaDialog } from '@/components/ShareToNostrMediaDialog';
-import { AnimatedChatSplash } from '@/components/app/AnimatedChatSplash';
 
 const ADMIN_PUBKEY = getAdminPubkeyHex();
 
@@ -105,170 +101,53 @@ interface CarouselItem {
   title: string;
 }
 
-/** Resized, speed-optimized URL for a carousel slide.
- *  Serves a fast WebP thumbnail through the configured image proxy (wsrv.nl)
- *  instead of the full-size original — the single biggest lever for speeding
- *  up the carousel on slow connections. GIFs keep their animation; when the
- *  proxy is off (empty string) the original URL is returned unchanged.
+/** Number of thumbnails shown at the top of the /app home tab. */
+const HOME_THUMB_COUNT = 6;
+/** Width requested from the image proxy for each square thumbnail. */
+const HOME_THUMB_WIDTH = 480;
+
+/** Six square thumbnails at the top of the home tab (replaces the sliding carousel).
+ *  Uses the images uploaded under Admin > Home Carousel (newest first), or the
+ *  wallpaper / GIF / avatar / free-download mix when none are uploaded.
+ *  Always 3 columns x 2 rows (mobile app layout).
  */
-const CAROUSEL_THUMB_WIDTH = 1080;
-
-function carouselSlideSrc(
-  thumbnail: (src: string, width: number, opts?: { animated?: boolean }) => string,
-  item: CarouselItem,
-): string {
-  // Animated GIFs are served from the original URL directly — resizing a large
-  // animation through the proxy can time out and break the slide. Static images
-  // get the fast WebP thumb.
-  if (item.id.startsWith('gif-')) return item.image_url;
-  return thumbnail(item.image_url, CAROUSEL_THUMB_WIDTH);
-}
-
-function ImageCarousel({ items, isLoading }: { items: CarouselItem[]; isLoading: boolean }) {
-  const [index, setIndex] = useState(0);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  // Outgoing slide — kept mounted only to crossfade out. It was already the
-  // active slide a moment ago, so it is in the browser cache and the fade
-  // costs no extra download over the network.
-  const [fadingImage, setFadingImage] = useState<CarouselItem | null>(null);
-  const visibleRef = useRef<CarouselItem | null>(null);
+function ThumbnailStrip({ items, isLoading }: { items: CarouselItem[]; isLoading: boolean }) {
   const thumbnail = useThumbnailUrl();
 
-  const resetTimer = useCallback(() => {
-    if (timerRef.current) clearInterval(timerRef.current);
-    if (items.length > 1) {
-      timerRef.current = setInterval(() => {
-        setIndex(i => (i + 1) % items.length);
-      }, 3500);
-    }
-  }, [items.length]);
-
-  useEffect(() => {
-    resetTimer();
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [resetTimer]);
-
-  // Remember the previously-visible slide so it can crossfade out on change.
-  useEffect(() => {
-    const item = items[index];
-    if (!item) return;
-    if (visibleRef.current && visibleRef.current.id !== item.id) {
-      setFadingImage(visibleRef.current);
-    }
-    visibleRef.current = item;
-  }, [index, items]);
-
-  // Unmount the outgoing slide once its fade-out has finished.
-  useEffect(() => {
-    if (!fadingImage) return;
-    const t = setTimeout(() => setFadingImage(null), 750);
-    return () => clearTimeout(t);
-  }, [fadingImage]);
-
-  const currentItem = items[index];
-  const currentSrc = currentItem ? carouselSlideSrc(thumbnail, currentItem) : '';
-  const nextSrc = items.length > 0
-    ? carouselSlideSrc(thumbnail, items[(index + 1) % items.length])
-    : '';
-
-  // Start the active image download immediately and pre-warm the next slide
-  // so auto-advance / manual nav paints without a network wait.
-  useEffect(() => {
-    const added: HTMLLinkElement[] = [];
-    const addLink = (href: string, rel: string, fetchPriority: 'high' | 'low' | 'auto') => {
-      if (!href) return;
-      if (document.head.querySelector(`link[href="${href}"]`)) return;
-      const link = document.createElement('link');
-      link.rel = rel;
-      link.href = href;
-      link.as = 'image';
-      link.fetchPriority = fetchPriority;
-      document.head.appendChild(link);
-      added.push(link);
-    };
-    addLink(currentSrc, 'preload', 'high');
-    addLink(nextSrc, 'prefetch', 'low');
-    return () => { added.forEach(l => l.remove()); };
-  }, [currentSrc, nextSrc]);
-
-  const prev = () => { setIndex(i => (i - 1 + items.length) % items.length); resetTimer(); };
-  const next = () => { setIndex(i => (i + 1) % items.length); resetTimer(); };
-
   if (isLoading) {
-    return <Skeleton className="w-full aspect-[4/3] rounded-2xl" />;
+    return (
+      <div className="grid grid-cols-3 gap-1.5">
+        {Array.from({ length: HOME_THUMB_COUNT }).map((_, i) => (
+          <Skeleton key={i} className="aspect-square rounded-xl" />
+        ))}
+      </div>
+    );
   }
 
   if (items.length === 0) {
     return (
-      <div className="w-full aspect-[4/3] rounded-2xl bg-gradient-to-br from-orange-100 via-pink-100 to-yellow-100 dark:from-orange-900/20 dark:via-pink-900/20 dark:to-yellow-900/20 flex items-center justify-center">
+      <div className="w-full aspect-[3/1] rounded-2xl bg-gradient-to-br from-orange-100 via-pink-100 to-yellow-100 dark:from-orange-900/20 dark:via-pink-900/20 dark:to-yellow-900/20 flex items-center justify-center">
         <img
           src={`${import.meta.env.BASE_URL || '/'}B-Funny_avatar_orange.svg`}
           alt="BitPopArt"
-          className="h-24 w-24 opacity-60"
+          className="h-16 w-16 opacity-60"
         />
       </div>
     );
   }
 
-  if (!currentItem) {
-    return null;
-  }
-
   return (
-    <div className="relative w-full rounded-2xl overflow-hidden group">
-      {/* The active slide is the in-flow, layout-driving image (natural size).
-          Unlike before, there is no second opacity-0 spacer image fetching the
-          same URL, and non-active slides are not fetched until they are shown —
-          so every slide downloads exactly once and only when needed. */}
-      <img
-        key={currentItem.id}
-        src={currentSrc}
-        alt={currentItem.title}
-        fetchPriority="high"
-        decoding="async"
-        className="w-full h-auto block object-contain"
-      />
-      {/* Outgoing slide fades out over the new one during the crossfade */}
-      {fadingImage && fadingImage.id !== currentItem.id && (
+    <div className="grid grid-cols-3 gap-1.5">
+      {items.slice(0, HOME_THUMB_COUNT).map((item, i) => (
         <img
-          key={`fading-${fadingImage.id}`}
-          src={carouselSlideSrc(thumbnail, fadingImage)}
-          alt=""
-          aria-hidden="true"
-          className="absolute inset-0 w-full h-full object-contain carousel-fade-out pointer-events-none"
+          key={item.id}
+          src={item.id.startsWith('gif-') ? item.image_url : thumbnail(item.image_url, HOME_THUMB_WIDTH)}
+          alt={item.title}
+          loading={i < 3 ? 'eager' : 'lazy'}
+          decoding="async"
+          className="w-full aspect-square object-cover rounded-xl"
         />
-      )}
-
-      {/* Nav buttons */}
-      {items.length > 1 && (
-        <>
-          <button
-            className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/40 hover:bg-black/60 text-white rounded-full flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
-            onClick={prev}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-          <button
-            className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/40 hover:bg-black/60 text-white rounded-full flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
-            onClick={next}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </button>
-        </>
-      )}
-
-      {/* Dots */}
-      {items.length > 1 && (
-        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
-          {items.map((_, i) => (
-            <button
-              key={i}
-              className={`h-1.5 rounded-full transition-all ${i === index ? 'w-5 bg-white' : 'w-1.5 bg-white/50'}`}
-              onClick={() => { setIndex(i); resetTimer(); }}
-            />
-          ))}
-        </div>
-      )}
+      ))}
     </div>
   );
 }
@@ -2343,18 +2222,16 @@ export default function AppPage() {
                 </button>
               </div>
 
-              {/* ── Image Carousel ── */}
-              <ImageCarousel items={allMediaItems} isLoading={allMediaLoading} />
+              {/* ── Six thumbnails ── */}
+              <ThumbnailStrip items={allMediaItems} isLoading={allMediaLoading} />
 
-              {/* ── Category quick-links — 5-col grid, wraps to 2 rows ── */}
-              <div className="grid grid-cols-5 gap-1.5">
+              {/* ── Category quick-links — 4-col grid, 2 rows ── */}
+              <div className="grid grid-cols-4 gap-1.5">
                 {([
                   { label: 'Images',     icon: <Gift className="h-4 w-4" />,         color: 'text-green-700 dark:text-green-400',  bg: 'bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30 border-green-200 dark:border-green-800',   count: freeDownloads.length, loading: freeLoading,                          onDownload: 'free' as MediaTab },
                   { label: 'Wallpapers', icon: <Smartphone className="h-4 w-4" />,   color: 'text-teal-700 dark:text-teal-400',    bg: 'bg-teal-50 dark:bg-teal-900/20 hover:bg-teal-100 dark:hover:bg-teal-900/30 border-teal-200 dark:border-teal-800',       count: wallpapers.length + desktopWalls.length, loading: wpLoading || desktopLoading, onDownload: 'wallpaper' as MediaTab },
-                  { label: 'Memes',      icon: <Laugh className="h-4 w-4" />,        color: 'text-yellow-700 dark:text-yellow-400', bg: 'bg-yellow-50 dark:bg-yellow-900/20 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 border-yellow-200 dark:border-yellow-800', count: memes.length, loading: memesLoading,                            onCreate: 'meme' as const },
                   { label: 'Avatars',    icon: <UserCircle2 className="h-4 w-4" />,  color: 'text-violet-700 dark:text-violet-400', bg: 'bg-violet-50 dark:bg-violet-900/20 hover:bg-violet-100 dark:hover:bg-violet-900/30 border-violet-200 dark:border-violet-800', count: avatars.length, loading: avatarLoading,                         onCreate: 'avatar' as const },
                   { label: 'GIFs',       icon: <Clapperboard className="h-4 w-4" />, color: 'text-amber-700 dark:text-amber-400',  bg: 'bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 border-amber-200 dark:border-amber-800',   count: gifs.length, loading: gifLoading,                                onDownload: 'gif' as MediaTab },
-                  { label: 'Animations', icon: <Play className="h-4 w-4" />,         color: 'text-orange-700 dark:text-orange-400', bg: 'bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30 border-orange-200 dark:border-orange-800', count: animations.length, loading: animLoading,                        onDownload: 'animation' as MediaTab },
                   { label: 'Banners',    icon: <PanelTop className="h-4 w-4" />,     color: 'text-sky-700 dark:text-sky-400',      bg: 'bg-sky-50 dark:bg-sky-900/20 hover:bg-sky-100 dark:hover:bg-sky-900/30 border-sky-200 dark:border-sky-800',             count: banners.length, loading: bannerLoading,                          onDownload: 'banner' as MediaTab },
                   { label: 'Coloring',   icon: <Palette className="h-4 w-4" />,      color: 'text-rose-700 dark:text-rose-400',    bg: 'bg-rose-50 dark:bg-rose-900/20 hover:bg-rose-100 dark:hover:bg-rose-900/30 border-rose-200 dark:border-rose-800',       count: coloringPages.length, loading: coloringLoading,                   onDownload: 'coloring' as MediaTab },
                   { label: 'Cards',      icon: <CreditCard className="h-4 w-4" />,   color: 'text-pink-700 dark:text-pink-400',    bg: 'bg-pink-50 dark:bg-pink-900/20 hover:bg-pink-100 dark:hover:bg-pink-900/30 border-pink-200 dark:border-pink-800',       count: latestCards.length, loading: cardsLoading,                       onCreate: 'card' as const },
@@ -2414,9 +2291,6 @@ export default function AppPage() {
                 })}
               </div>
             </div>
-
-            {/* ── Animated Chat Splash ── */}
-            <AnimatedChatSplash />
 
             {/* ── Hashtag Cloud ── */}
             <AppHashtagCloud
