@@ -2333,6 +2333,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
    <p class="pill">CHARGE IT. PICK IT. PLAY.</p>
    <p class="lead"><b>Meet BitBot: a little pocket-sized companion with big ideas!</b></p>
    <p class="lead2">An open-source pocket bot with one big eye and a touch screen mouth. Bitcoin, Nostr and AI in the palm of your hand. Built for freedom.</p>
+   <p class="heroprice"><span>SALE</span> <b>&euro;210,-</b> <em>Release date not yet known</em></p>
    <div class="cta">
     <button class="btn ink" data-target="support">Back the build</button>
     <button class="btn paper" data-target="meet">Meet him</button>
@@ -2503,6 +2504,11 @@ https://github.com/nodeca/pako/blob/main/LICENSE
  <img class="heart" src="/bitbot/crowdfunding-assets/ce0cb06e2d.svg" alt="" width="110" height="95">
  <h2 class="supp-h">SUPPORT <span>BITBOT</span><i class="dot ink"></i></h2>
  <p class="supp-p">Build the future with us. Help us bring BitBot to life. Support our work, spread the word, share ideas and become part of the journey.</p>
+ <div class="price">
+  <span class="tag solid"><i class="d"></i>Sale</span>
+  <div class="amt">&euro;210,-</div>
+  <p><b>Be the first one to get your hands on a BitBot.</b><br>Release date not yet known.</p>
+ </div>
  <div class="pay">
   <div class="field"><span class="l">&#9889; ZAP</span><code id="ln">bitpopart@walletofsatoshi.com</code><button class="btn yellow sm" data-copy="ln" aria-label="Copy Lightning address">Copy</button></div>
   <div class="field"><span class="l">NOSTR</span><code id="np">npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz</code><button class="btn yellow sm" data-copy="np" aria-label="Copy npub">Copy</button></div>
