@@ -179,7 +179,9 @@ export function AppRouter() {
         {/* The Stack — Just B card game, inline under the site menu/footer */}
         <Route path="/tcg" element={<Layout><TCG /></Layout>} />
         {/* BitBot — pocket bot page (birth date, in-progress), inline under the site menu/footer */}
-        <Route path="/bitbot" element={<Layout><BitBot /></Layout>} />
+        <Route path="/bitbot" element={<Layout><BitBotCrowdfunding /></Layout>} />
+        {/* The original BitBot page (live board, pocket guide) now lives here */}
+        <Route path="/bitbot/guide" element={<Layout><BitBot /></Layout>} />
         {/* BitBot crowdfunding — campaign page, inline under the site menu/footer */}
         <Route path="/bitbot/crowdfunding" element={<Layout><BitBotCrowdfunding /></Layout>} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

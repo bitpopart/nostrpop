@@ -2,7 +2,7 @@ import { useSeoMeta } from '@unhead/react';
 import { useJustBData } from '@/hooks/useJustBData';
 
 /**
- * BitBot — bitpopart.com/bitbot.
+ * BitBot live board and pocket guide — bitpopart.com/bitbot/guide.
  *
  * The site page for the pocket bot (same look & copy as the BitBot section
  * on /b). Everything data-driven reads from the same kind-30078 config the
