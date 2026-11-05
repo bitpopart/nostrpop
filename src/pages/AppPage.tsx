@@ -23,10 +23,17 @@ import { injectMagazineReadOnly, injectDownloadScript, isRemoteHtmlUrl, fetchRem
 import { ZapButton } from '@/components/ZapButton';
 import { getAdminPubkeyHex } from '@/lib/adminUtils';
 import { AvatarGeneratorCanvas } from '@/components/studio/AvatarGeneratorCanvas';
+// The site pages behind the six home thumbnails. They are rendered inside the app's own
+// screen (no site menu or footer); the app only displays them and never changes them.
+import SiteJustB from '@/pages/JustB';
+import SiteTCG from '@/pages/TCG';
+import SiteBitBot from '@/pages/BitBotCrowdfunding';
+import SiteZapper from '@/pages/Zapper';
+import SiteWhatsNew from '@/pages/WhatsNew';
+import SiteRare from '@/pages/Rare';
 import {
   Download,
   Image as ImageIcon,
-  ExternalLink,
   Clapperboard,
   Settings,
   Gift,
@@ -97,14 +104,15 @@ function deriveFilename(url: string, title: string): string {
 
 /** The six fixed thumbnails at the top of the /app home tab, in display order
  *  (3 columns x 2 rows). Images live in public/app-thumbs/. Tapping one opens the
- *  matching bitpopart.com page inside the app (read-only, see SiteViewer). */
-const HOME_THUMBS: { file: string; title: string; url: string }[] = [
-  { file: 'collectibles.jpg',      title: 'Collectibles',    url: 'https://bitpopart.com/b' },
-  { file: 'card-game.jpg',         title: 'Card Game',       url: 'https://bitpopart.com/tcg' },
-  { file: 'pocket-bot.jpg',        title: 'Pocket Bot',      url: 'https://bitpopart.com/bitbot/' },
-  { file: 'zapper.jpg',            title: 'Zapper',          url: 'https://bitpopart.com/zapper' },
-  { file: 'new-releases.jpg',      title: 'New Releases',    url: 'https://bitpopart.com/new' },
-  { file: 'collect-and-trade.jpg', title: 'Collect & Trade', url: 'https://bitpopart.com/rare' },
+ *  matching site page inside the app (collectibles /b, TCG /tcg, BitBot /bitbot,
+ *  Zapper /zapper, new releases /new, collect /rare). */
+const HOME_THUMBS: { file: string; title: string; Page: React.ComponentType }[] = [
+  { file: 'collectibles.jpg',      title: 'Collectibles',    Page: SiteJustB },
+  { file: 'card-game.jpg',         title: 'Card Game',       Page: SiteTCG },
+  { file: 'pocket-bot.jpg',        title: 'Pocket Bot',      Page: SiteBitBot },
+  { file: 'zapper.jpg',            title: 'Zapper',          Page: SiteZapper },
+  { file: 'new-releases.jpg',      title: 'New Releases',    Page: SiteWhatsNew },
+  { file: 'collect-and-trade.jpg', title: 'Collect & Trade', Page: SiteRare },
 ];
 
 function ThumbnailStrip({ onOpen }: { onOpen: (file: string) => void }) {
@@ -134,62 +142,24 @@ function ThumbnailStrip({ onOpen }: { onOpen: (file: string) => void }) {
   );
 }
 
-/** Full-screen, mobile-first viewer that shows a bitpopart.com page inside the app.
- *  The page is only displayed (loaded in a sandboxed frame); this app never changes
- *  anything on the site. Closing is handled by the parent (router Back). */
-function SiteViewer({ title, url, onClose }: { title: string; url: string; onClose: () => void }) {
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
-
+/** A site page shown inside the app's own screen: the app header and bottom bar stay,
+ *  the page fills the width on a phone, and Back (or the phone's Back gesture) returns
+ *  to the home tab. */
+function AppSitePage({ title, onBack, children }: { title: string; onBack: () => void; children: React.ReactNode }) {
   return (
-    <div
-      className="fixed inset-0 z-[60] flex flex-col bg-white dark:bg-gray-950"
-      style={{ height: '100dvh' }}
-      role="dialog"
-      aria-modal="true"
-      aria-label={title}
-    >
-      {/* Top bar — clears the phone's status bar / notch */}
-      <div
-        className="shrink-0 flex items-center gap-2 px-3 pb-2 border-b border-border bg-background/95 backdrop-blur"
-        style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.5rem)' }}
-      >
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
         <button
           type="button"
-          onClick={onClose}
+          onClick={onBack}
           className="flex items-center gap-1.5 min-h-11 px-3 rounded-xl border text-orange-600 bg-orange-50 dark:bg-orange-900/30 border-orange-200 dark:border-orange-800 active:bg-orange-100 transition-all"
         >
           <ArrowLeft className="h-4 w-4 stroke-[1.5]" />
           <span className="text-xs font-bold">Back</span>
         </button>
-        <span className="flex-1 min-w-0 text-sm font-bold truncate">{title}</span>
-        <a
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label={`Open ${title} in the browser`}
-          className="flex items-center justify-center min-h-11 min-w-11 rounded-xl border text-muted-foreground active:bg-muted"
-        >
-          <ExternalLink className="h-4 w-4" />
-        </a>
+        <h2 className="flex-1 min-w-0 text-sm font-bold truncate">{title}</h2>
       </div>
-
-      {/* Page — fills the rest of the screen and scrolls on its own */}
-      <div className="relative flex-1 min-h-0" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
-        {!loaded && <Skeleton className="absolute inset-0 rounded-none" />}
-        <iframe
-          title={title}
-          src={url}
-          onLoad={() => setLoaded(true)}
-          className="absolute inset-0 w-full h-full border-0"
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads"
-        />
-      </div>
+      <div className="-mx-4 overflow-hidden">{children}</div>
     </div>
   );
 }
@@ -2098,9 +2068,16 @@ export default function AppPage() {
   // The open page lives in router history state, so the phone's Back gesture/button closes it.
   const viewerFile = (routeLocation.state as { siteViewer?: string } | null)?.siteViewer;
   const viewerThumb = HOME_THUMBS.find(t => t.file === viewerFile);
-  const openThumb = (file: string) =>
+  const savedScrollRef = useRef(0);
+  const openThumb = (file: string) => {
+    savedScrollRef.current = window.scrollY;
     navigate(`${routeLocation.pathname}${routeLocation.search}`, { state: { siteViewer: file } });
+  };
   const closeViewer = useCallback(() => navigate(-1), [navigate]);
+  // Open a page at its top; come back to where the home tab was.
+  useEffect(() => {
+    window.scrollTo(0, viewerThumb ? 0 : savedScrollRef.current);
+  }, [viewerThumb]);
   const isAdmin = useIsAdmin();
 
   // Magazine: the in-app reader loads the magazine's embedded HTML from its
@@ -2213,6 +2190,16 @@ export default function AppPage() {
   return (
     <div className="pb-24">
       <div className="container mx-auto px-4 py-3 max-w-xl">
+
+        {/* ══ IN-APP SITE PAGE — opened from the six home thumbnails ══ */}
+        {viewerThumb && (
+          <AppSitePage key={viewerThumb.file} title={viewerThumb.title} onBack={closeViewer}>
+            <viewerThumb.Page />
+          </AppSitePage>
+        )}
+
+        {/* App tabs — stay mounted but hidden while a site page is open */}
+        <div className={viewerThumb ? 'hidden' : undefined}>
 
         {/* ── Admin shortcut — only visible to admin ── */}
         {isAdmin && (
@@ -2582,12 +2569,9 @@ export default function AppPage() {
           </div>
         )}
 
-      </div>
+        </div>
 
-      {/* ══ IN-APP SITE VIEWER — opened from the six home thumbnails ══ */}
-      {viewerThumb && (
-        <SiteViewer key={viewerThumb.file} title={viewerThumb.title} url={viewerThumb.url} onClose={closeViewer} />
-      )}
+      </div>
 
       {/* ══ IN-APP MAGAZINE READER — keeps the magazine inside the app's own frames ══ */}
       {magazineOpen && (
