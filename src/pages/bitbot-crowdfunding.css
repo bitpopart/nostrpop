@@ -164,6 +164,10 @@
 .bbcf .gi figcaption span{font:700 12px var(--label);letter-spacing:.12em;text-transform:uppercase;color:#555}
 @media(max-width:700px){.bbcf .gallery{grid-template-columns:1fr 1fr;gap:16px}.bbcf .gi:first-child{grid-column:1/-1;max-width:300px;margin:0 auto}}
 .bbcf .sats{display:inline-block;margin-top:8px;background-color:var(--ink);color:var(--yellow);border-radius:8px;padding:3px 10px;font-size:.92em}
+.bbcf .sale-main{display:flex;flex-direction:column;align-items:center}
+.bbcf .live{font:700 clamp(18px,2.6vw,24px) var(--label);letter-spacing:.06em;text-transform:uppercase;margin-top:8px;color:var(--ink)}
+.bbcf .live:empty{display:none}
+.bbcf .live i{font-style:normal;opacity:.55;margin:0 .35em}
 @media(max-width:860px){
  .bbcf .hero-grid,.bbcf .two{grid-template-columns:1fr}
  .bbcf .hero-r{max-width:420px;margin:0 auto 10px}
