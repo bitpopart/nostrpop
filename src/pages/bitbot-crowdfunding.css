@@ -143,6 +143,15 @@
 .bbcf footer .sign{font:400 26px 'BBCF Bangers',sans-serif;font-style:italic;letter-spacing:.06em;color:var(--ink);margin-bottom:6px}
 .bbcf footer p{font-size:13px;color:#4a4a4a}
 
+.bbcf .price{background-color:var(--paper);border:3px solid var(--ink);border-radius:14px;box-shadow:var(--sticker);max-width:560px;margin:0 auto 28px;padding:22px 26px;text-align:center}
+.bbcf .price .tag{margin-bottom:6px}
+.bbcf .price .tag .d{width:9px;height:9px;border-radius:50%;background-color:var(--orange);display:inline-block}
+.bbcf .price .amt{font:italic 400 clamp(56px,11vw,88px)/1 'BBCF Bangers',Impact,sans-serif;letter-spacing:.02em;color:var(--ink)}
+.bbcf .price p{margin-top:8px;font-size:17px}
+.bbcf .heroprice{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px;margin:16px 0 20px;font-family:'BBCF Barlow Condensed',sans-serif}
+.bbcf .heroprice span{background-color:var(--yellow);border:2px solid var(--ink);border-radius:999px;padding:2px 12px;font-weight:700;letter-spacing:.14em;font-size:15px}
+.bbcf .heroprice b{font:italic 400 38px/1 'BBCF Bangers',Impact,sans-serif;letter-spacing:.02em}
+.bbcf .heroprice em{font-style:normal;font-weight:600;font-size:17px;letter-spacing:.04em}
 @media(max-width:860px){
  .bbcf .hero-grid,.bbcf .two{grid-template-columns:1fr}
  .bbcf .hero-r{max-width:420px;margin:0 auto 10px}
