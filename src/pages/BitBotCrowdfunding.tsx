@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import type { MouseEvent } from 'react';
 import { useSeoMeta } from '@unhead/react';
 import html from './bitbot-crowdfunding.html?raw';
@@ -22,6 +23,45 @@ export default function BitBotCrowdfunding() {
       'Help us bring BitBot to life: open source, built for freedom. Bitcoin, Nostr and AI in your pocket.',
     ogImage: 'https://bitpopart.com/bitbot/logo.webp',
   });
+
+  // Show what EUR 210 is in USD and sats. The BTC price is cached in
+  // localStorage and refreshed at most once an hour, so it is current every day.
+  useEffect(() => {
+    const PRICE_EUR = 210;
+    const KEY = 'bitbot-btc-price';
+    const render = (eur: number, usd: number) => {
+      const sats = Math.round((PRICE_EUR / eur) * 1e8);
+      const dollars = Math.round(PRICE_EUR * (usd / eur));
+      const text = `≈ $${dollars.toLocaleString('en-US')}<i>·</i>≈ ${sats.toLocaleString('en-US')} sats`;
+      document.querySelectorAll<HTMLElement>('.bbcf [data-live]').forEach((el) => {
+        el.innerHTML = text;
+      });
+    };
+    let cached: { eur: number; usd: number; t: number } | null = null;
+    try {
+      cached = JSON.parse(localStorage.getItem(KEY) ?? 'null');
+    } catch {
+      cached = null;
+    }
+    if (cached) render(cached.eur, cached.usd);
+    if (cached && Date.now() - cached.t < 3600_000) return;
+    const ctl = new AbortController();
+    fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=eur,usd', { signal: ctl.signal })
+      .then((r) => r.json())
+      .then((d: { bitcoin?: { eur?: number; usd?: number } }) => {
+        const eur = d.bitcoin?.eur;
+        const usd = d.bitcoin?.usd;
+        if (!eur || !usd) return;
+        render(eur, usd);
+        try {
+          localStorage.setItem(KEY, JSON.stringify({ eur, usd, t: Date.now() }));
+        } catch {
+          /* storage unavailable */
+        }
+      })
+      .catch(() => undefined);
+    return () => ctl.abort();
+  }, []);
 
   const onClick = (e: MouseEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement;
