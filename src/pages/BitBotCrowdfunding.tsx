@@ -4,7 +4,7 @@ import html from './bitbot-crowdfunding.html?raw';
 import './bitbot-crowdfunding.css';
 
 /**
- * BitBot crowdfunding — bitpopart.com/bitbot/crowdfunding.
+ * BitBot crowdfunding — bitpopart.com/bitbot (also /bitbot/crowdfunding).
  *
  * Static campaign page (markup in bitbot-crowdfunding.html, styles scoped to
  * `.bbcf` in bitbot-crowdfunding.css, images/fonts in
