@@ -2177,6 +2177,7 @@ document.addEventListener('click',function(e){
    <p class="lead"><b>Meet BitBot: a little pocket-sized companion with big ideas!</b></p>
    <p class="lead2">An open-source pocket bot with one big eye and a touch screen mouth. Bitcoin, Nostr and AI in the palm of your hand. Built for freedom.</p>
    <div class="cta">
+    <a class="btn yellow" href="https://projects.noderunners.network/projects/bitbot" target="_blank" rel="noopener noreferrer">Support this project</a>
     <button class="btn ink" data-target="support">Back the build</button>
     <button class="btn paper" data-target="meet">Meet him</button>
    </div>
@@ -2364,6 +2365,7 @@ document.addEventListener('click',function(e){
   <div class="live" data-live></div>
   <p><b>Be the first one to get your hands on a BitBot.</b><br>Release date not yet known.<br><b class="sats">Only paid in Sats. We don't accept fiat for this project.</b></p>
  </div>
+ <p class="supp-cta"><a class="btn ink" href="https://projects.noderunners.network/projects/bitbot" target="_blank" rel="noopener noreferrer">Support this project</a></p>
  <div class="pay">
   <div class="field"><span class="l">&#9889; ZAP</span><code id="ln">bitpopart@walletofsatoshi.com</code><button class="btn yellow sm" data-copy="ln" aria-label="Copy Lightning address">Copy</button></div>
   <div class="field"><span class="l">NOSTR</span><code id="np">npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz</code><button class="btn yellow sm" data-copy="np" aria-label="Copy npub">Copy</button></div>
