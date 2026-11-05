@@ -2327,7 +2327,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       `}),e.jsx("section",{className:"bitbot-sec",children:e.jsxs("div",{className:"bitbot-wrap",children:[e.jsx("img",{className:"bitbot-logo",src:"/bitbot/logo.webp",alt:"BitBot"}),e.jsx("div",{className:"bbver",children:r.version}),e.jsx("div",{className:"bbtag",children:r.tagline}),e.jsx("p",{className:"bblead",dangerouslySetInnerHTML:{__html:r.lead}}),e.jsxs("div",{className:"bbbirth",id:"birth",children:[e.jsx("div",{className:"bblabel",children:"BIRTH"}),e.jsx("div",{className:"bbdate",children:n}),e.jsx("div",{className:"bbstatus",children:r.status}),!r.available&&e.jsx("p",{children:r.availability})]}),e.jsxs("div",{className:"bbrow",children:[e.jsxs("div",{className:"bbshots",children:[e.jsx("img",{className:"lead",src:"/bitbot/shot-lead.webp",alt:"BitBot, three-quarter view"}),e.jsx("img",{src:"/bitbot/shot-front.webp",alt:"BitBot, front view with camera and display"})]}),e.jsx("ul",{className:"bbfeat",children:r.features.map((i,o)=>e.jsx("li",{children:i},o))})]}),e.jsxs("div",{className:"bbfree",children:[e.jsxs("div",{className:"big3",children:[r.buyTitle,e.jsx("em",{children:r.buySub})]}),e.jsx("div",{children:r.buyLines.map((i,o)=>e.jsx("p",{dangerouslySetInnerHTML:{__html:i}},o))})]}),e.jsxs("div",{className:"bbcta",children:[r.available&&((s=r.cta)!=null&&s.url)?e.jsx("a",{className:"btn",href:r.cta.url,children:((a=r.cta)==null?void 0:a.label)??"GET A BITBOT"}):e.jsxs("a",{className:"btn",href:"#birth",children:[r.status," — NOT FOR SALE YET"]}),e.jsx("p",{children:r.specNote})]})]})}),e.jsx("section",{className:"bbupdates",children:e.jsxs("div",{className:"bitbot-wrap",children:[e.jsx("h2",{children:"Regular Firmware BitBot Ai Updates."}),e.jsx("img",{className:"bbupdates-img",src:"/bitbot/ai-updates.png",alt:"BitBot Ai updates"})]})})]})}const Qbt=`<section class="salebar"><div class="wrap salebar-in">
  <span class="tag"><i class="d"></i>Sale</span>
  <div class="sale-amt">&euro;210,-</div>
- <p class="sale-txt"><b>Be the first one to get your hands on a BitBot.</b><br>Release date not yet known.</p>
+ <p class="sale-txt"><b>Be the first one to get your hands on a BitBot.</b><br>Release date not yet known.<br><b class="sats">Only paid in Sats. We don't accept fiat for this project.</b></p>
 </div></section>
 <header class="hero">
  <div class="halftone"></div>
@@ -2523,7 +2523,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
  <div class="price">
   <span class="tag solid"><i class="d"></i>Sale</span>
   <div class="amt">&euro;210,-</div>
-  <p><b>Be the first one to get your hands on a BitBot.</b><br>Release date not yet known.</p>
+  <p><b>Be the first one to get your hands on a BitBot.</b><br>Release date not yet known.<br><b class="sats">Only paid in Sats. We don't accept fiat for this project.</b></p>
  </div>
  <div class="pay">
   <div class="field"><span class="l">&#9889; ZAP</span><code id="ln">bitpopart@walletofsatoshi.com</code><button class="btn yellow sm" data-copy="ln" aria-label="Copy Lightning address">Copy</button></div>
