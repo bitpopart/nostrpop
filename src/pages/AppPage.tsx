@@ -12,7 +12,6 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { useThumbnailUrl } from '@/hooks/useThumbnailUrl';
 import { useAppMedia } from '@/hooks/useAppContent';
 import { useCardTemplates } from '@/hooks/useCardTemplates';
 import { useLatestCards } from '@/hooks/useLatestCards';
@@ -95,54 +94,28 @@ function deriveFilename(url: string, title: string): string {
 
 // ── Image Carousel ────────────────────────────────────────
 
-interface CarouselItem {
-  id: string;
-  image_url: string;
-  title: string;
-}
+/** The six fixed thumbnails at the top of the /app home tab, in display order
+ *  (3 columns x 2 rows). Files live in public/app-thumbs/. */
+const HOME_THUMBS: { file: string; title: string }[] = [
+  { file: 'collectibles.jpg',      title: 'Collectibles' },
+  { file: 'card-game.jpg',         title: 'The Ultimate Collectible Card Game' },
+  { file: 'pocket-bot.jpg',        title: 'Pocket Bot by BitPopArt' },
+  { file: 'zapper.jpg',            title: 'Zapper' },
+  { file: 'new-releases.jpg',      title: 'New Releases' },
+  { file: 'collect-and-trade.jpg', title: 'Collect & Trade' },
+];
 
-/** Number of thumbnails shown at the top of the /app home tab. */
-const HOME_THUMB_COUNT = 6;
-/** Width requested from the image proxy for each square thumbnail. */
-const HOME_THUMB_WIDTH = 480;
-
-/** Six square thumbnails at the top of the home tab (replaces the sliding carousel).
- *  Uses the images uploaded under Admin > Home Carousel (newest first), or the
- *  wallpaper / GIF / avatar / free-download mix when none are uploaded.
- *  Always 3 columns x 2 rows (mobile app layout).
- */
-function ThumbnailStrip({ items, isLoading }: { items: CarouselItem[]; isLoading: boolean }) {
-  const thumbnail = useThumbnailUrl();
-
-  if (isLoading) {
-    return (
-      <div className="grid grid-cols-3 gap-1.5">
-        {Array.from({ length: HOME_THUMB_COUNT }).map((_, i) => (
-          <Skeleton key={i} className="aspect-square rounded-xl" />
-        ))}
-      </div>
-    );
-  }
-
-  if (items.length === 0) {
-    return (
-      <div className="w-full aspect-[3/1] rounded-2xl bg-gradient-to-br from-orange-100 via-pink-100 to-yellow-100 dark:from-orange-900/20 dark:via-pink-900/20 dark:to-yellow-900/20 flex items-center justify-center">
-        <img
-          src={`${import.meta.env.BASE_URL || '/'}B-Funny_avatar_orange.svg`}
-          alt="BitPopArt"
-          className="h-16 w-16 opacity-60"
-        />
-      </div>
-    );
-  }
-
+function ThumbnailStrip() {
+  const base = `${import.meta.env.BASE_URL || '/'}app-thumbs/`;
   return (
     <div className="grid grid-cols-3 gap-1.5">
-      {items.slice(0, HOME_THUMB_COUNT).map((item, i) => (
+      {HOME_THUMBS.map((t, i) => (
         <img
-          key={item.id}
-          src={item.id.startsWith('gif-') ? item.image_url : thumbnail(item.image_url, HOME_THUMB_WIDTH)}
-          alt={item.title}
+          key={t.file}
+          src={`${base}${t.file}`}
+          alt={t.title}
+          width={800}
+          height={800}
           loading={i < 3 ? 'eager' : 'lazy'}
           decoding="async"
           className="w-full aspect-square object-cover rounded-xl"
@@ -2089,8 +2062,6 @@ export default function AppPage() {
   const { data: animations = [], isLoading: animLoading } = useAnimations();
   const { data: memes = [], isLoading: memesLoading } = useAppMedia('app-meme');
   const { data: latestCards = [], isLoading: cardsLoading } = useLatestCards(5);
-  // Dedicated carousel images (managed from admin → App → Carousel)
-  const { data: carouselImages = [], isLoading: carouselLoading } = useAppMedia('app-carousel');
   // Magazine — a Nostr custom page whose embedded brand-site HTML IS the magazine.
   const magazinePage = usePage('magazine');
 
@@ -2117,18 +2088,6 @@ export default function AppPage() {
     window.addEventListener('message', handler);
     return () => window.removeEventListener('message', handler);
   }, []);
-
-  // Use dedicated carousel images when available, otherwise fall back to a mix
-  const allMediaItems: CarouselItem[] = carouselImages.length > 0
-    ? carouselImages.map(m => ({ id: `carousel-${m.id}`, image_url: m.image_url, title: m.title })).slice(0, 20)
-    : [
-        ...wallpapers.map(m => ({ id: `wp-${m.id}`, image_url: m.image_url, title: m.title })),
-        ...gifs.map(m => ({ id: `gif-${m.id}`, image_url: m.image_url, title: m.title })),
-        ...avatars.map(m => ({ id: `av-${m.id}`, image_url: m.image_url, title: m.title })),
-        ...freeDownloads.map(m => ({ id: `fr-${m.id}`, image_url: m.image_url, title: m.title })),
-      ].slice(0, 20);
-
-  const allMediaLoading = carouselLoading || (wpLoading && gifLoading && avatarLoading && freeLoading);
 
   // Get items for the current download media tab
   const downloadItems = (() => {
@@ -2223,7 +2182,7 @@ export default function AppPage() {
               </div>
 
               {/* ── Six thumbnails ── */}
-              <ThumbnailStrip items={allMediaItems} isLoading={allMediaLoading} />
+              <ThumbnailStrip />
 
               {/* ── Category quick-links — 4-col grid, 2 rows ── */}
               <div className="grid grid-cols-4 gap-1.5">
