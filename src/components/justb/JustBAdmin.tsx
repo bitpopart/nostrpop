@@ -19,6 +19,7 @@ import {
   MAX_JUSTB_CODES,
   WARN_JUSTB_CODES,
   justbHashCode,
+  extractJustBCodes,
   type JustBData,
   type JustBDrop,
   type JustBPage,
@@ -316,10 +317,7 @@ export function JustBAdmin() {
       toast.info('A save is already publishing — wait a second and try again.');
       return;
     }
-    const raw = codeInput
-      .split('\n')
-      .map((s) => s.trim())
-      .filter(Boolean);
+    const raw = extractJustBCodes(codeInput);
     if (raw.length === 0) {
       toast.error('Enter at least one code — one per line.');
       return;
@@ -739,7 +737,7 @@ export function JustBAdmin() {
             codes for each collectible.
           </p>
           <div className="space-y-1">
-            <Label className="text-xs">Codes to add — one per line</Label>
+            <Label className="text-xs">Codes to add — one per line, or paste rows straight from your sheet</Label>
             <Textarea
               rows={4}
               value={codeInput}

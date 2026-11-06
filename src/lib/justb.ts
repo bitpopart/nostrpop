@@ -450,6 +450,23 @@ export function normalizeJustBCode(code: string): string {
 }
 
 /**
+ * Pull claim codes out of pasted text. Handles one code per line, but also
+ * rows pasted from a spreadsheet (e.g. "3d-b-beautiful<TAB>1<TAB>ZA8F-36F8-FMGE")
+ * and sheet titles: if the text contains codes shaped like XXXX-XXXX-XXXX they
+ * are taken as-is; otherwise each line contributes its last cell.
+ */
+export function extractJustBCodes(text: string): string[] {
+  const shaped = text.match(/\b[A-Za-z0-9]{4}(?:-[A-Za-z0-9]{4}){2,}\b/g);
+  const found = shaped && shaped.length > 0
+    ? shaped
+    : text
+        .split(/\r?\n/)
+        .map((line) => line.split(/[\t,;]/).map((c) => c.trim()).filter(Boolean).pop() ?? '')
+        .filter(Boolean);
+  return Array.from(new Set(found.map((c) => normalizeJustBCode(c))));
+}
+
+/**
  * SHA-256 of a claim code as lowercase hex — the only form ever stored or
  * published. Runs in the browser (Web Crypto); needs a secure context,
  * which bitpopart.com and localhost both are.
