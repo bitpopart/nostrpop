@@ -44,7 +44,6 @@ import {
   Share2
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
 import type { NostrEvent } from '@nostrify/nostrify';
 import ReactMarkdown from 'react-markdown';
 import { nip19 } from 'nostr-tools';
@@ -449,7 +448,7 @@ export function BlogPostManagement() {
     // Prepare content as markdown (NOT JSON!)
     // Combine all markdown blocks with galleries as image links
     let markdownContent = '';
-    contentBlocks.forEach((block, index) => {
+    contentBlocks.forEach((block) => {
       if (block.type === 'markdown' && block.content.trim()) {
         markdownContent += block.content.trim();
         if (block.externalUrl) {

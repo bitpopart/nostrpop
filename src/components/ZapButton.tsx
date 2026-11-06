@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import QRCode from 'qrcode';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -15,8 +15,8 @@ import { useAuthor } from '@/hooks/useAuthor';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { genUserName } from '@/lib/genUserName';
 import {
-  Zap, Loader2, Copy, ExternalLink, CheckCircle2,
-  ChevronDown, ChevronUp, Wallet, Smartphone, Bolt,
+  Zap, Loader2, Copy, CheckCircle2,
+  ChevronDown, ChevronUp, Smartphone,
 } from 'lucide-react';
 import type { NostrEvent } from '@nostrify/nostrify';
 
@@ -117,7 +117,7 @@ interface GuestZapPanelProps {
   onClose: () => void;
 }
 
-function GuestZapPanel({ lightningAddress, recipientName, recipientImage, eventTitle, onClose }: GuestZapPanelProps) {
+function GuestZapPanel({ lightningAddress, recipientName, recipientImage, eventTitle: _eventTitle, onClose: _onClose }: GuestZapPanelProps) {
   const [amount, setAmount] = useState(21);
   const [customAmount, setCustomAmount] = useState('');
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
@@ -143,8 +143,8 @@ function GuestZapPanel({ lightningAddress, recipientName, recipientImage, eventT
         setError('Could not generate invoice. Please try again.');
         return;
       }
-      setInvoice(inv);
-      const qr = await QRCode.toDataURL(`lightning:${inv}`, {
+      setInvoice(inv.pr);
+      const qr = await QRCode.toDataURL(`lightning:${inv.pr}`, {
         width: 260,
         margin: 2,
         color: { dark: '#1a1a1a', light: '#ffffff' },
@@ -322,12 +322,12 @@ export function ZapButton({
   const author = useAuthor(authorPubkey || '');
   const metadata = author.data?.metadata;
 
-  if (!authorPubkey) return null;
-
   const finalLightningAddress = lightningAddress || metadata?.lud16 || metadata?.lud06 || GUEST_LIGHTNING_ADDRESS;
   const guestLightningAddress = GUEST_LIGHTNING_ADDRESS;
 
   const { sendZap, isZapping, canZap } = useZap(finalLightningAddress);
+
+  if (!authorPubkey) return null;
 
   const displayName = metadata?.name || genUserName(authorPubkey);
   const profileImage = metadata?.picture;

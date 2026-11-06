@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Zap, AlertTriangle, CheckCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle } from 'lucide-react';
 
 const LNURL_ENDPOINT = 'https://walletofsatoshi.com/.well-known/lnurlp/bitpopart';
 const SESSION_KEY = 'bpa_lightning_status';

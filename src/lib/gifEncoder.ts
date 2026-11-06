@@ -155,7 +155,7 @@ class ByteWriter {
   }
   toBlob(type: string): Blob {
     this.flush();
-    return new Blob(this.chunks, { type });
+    return new Blob(this.chunks as BlobPart[], { type });
   }
 }
 

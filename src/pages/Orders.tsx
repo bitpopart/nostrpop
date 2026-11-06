@@ -5,7 +5,6 @@ import {
   useOrders,
   useUpdateOrderStatus,
   useDeleteOrder,
-  getStoredOrders,
   type Order,
   type OrderStatus,
 } from '@/hooks/useOrders';
@@ -19,7 +18,6 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Select,
@@ -166,7 +164,7 @@ function OrderPrintTemplate({ order, onClose }: { order: Order; onClose: () => v
         </head>
         <body>
           ${content.innerHTML}
-          <script>window.onload = function(){ window.print(); }<\/script>
+          <script>window.onload = function(){ window.print(); }<\u002Fscript>
         </body>
       </html>
     `);

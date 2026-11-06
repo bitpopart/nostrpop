@@ -4,7 +4,7 @@ import { useSeoMeta } from '@unhead/react';
 import { useNostr } from '@nostrify/react';
 import { useQuery } from '@tanstack/react-query';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -61,7 +61,7 @@ export default function BlogPost() {
   const { articleId } = useParams<{ articleId: string }>();
   const navigate = useNavigate();
   const { nostr } = useNostr();
-  const { user } = useCurrentUser();
+  const { user: _user } = useCurrentUser();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   // Decode the articleId — it may be a plain d-tag or an naddr1... identifier

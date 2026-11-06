@@ -72,13 +72,12 @@ import {
   Bell,
   Bookmark,
   Share,
-  Smartphone,
   Package,
   Gamepad2,
+  Award,
 } from 'lucide-react';
 import type { NostrEvent, NostrMetadata } from '@nostrify/nostrify';
 import type { ArtworkData } from '@/lib/artTypes';
-import { ArtProgressToggle } from '@/components/ArtProgressToggle';
 import { ArtProgressGrid } from '@/components/ArtProgressGrid';
 import type { HomepageButton, GridTile, HomepageView } from '@/hooks/useHomepageSettings';
 import { nip19 } from 'nostr-tools';
@@ -855,8 +854,11 @@ function HomepageSectionsSkeleton() {
 
 
 
+/** Legacy homepage sections that are currently switched off. */
+const LEGACY_HOME_SECTIONS_ENABLED: boolean = false;
+
 const Index = () => {
-  const { getGradientStyle } = useThemeColors();
+  const { getGradientStyle: _getGradientStyle } = useThemeColors();
   const { data: homepageSettings, isLoading: settingsLoading } = useHomepageSettings();
   const author = useAuthor(ADMIN_HEX);
   const metadata: NostrMetadata | undefined = author.data?.metadata;
@@ -887,7 +889,7 @@ const Index = () => {
   const settingsReady = !settingsLoading || !!homepageSettings;
   
   // Hero buttons (top of page) sorted by order
-  const heroButtons = allButtons.filter(b => b.isHero).sort((a, b) => a.order - b.order);
+  const _heroButtons = allButtons.filter(b => b.isHero).sort((a, b) => a.order - b.order);
   
   // Inter-section buttons (after a specific section)
   const getInterButtons = (sectionId: string) =>
@@ -928,8 +930,22 @@ const Index = () => {
   const { data: animations = [] } = useAnimations({ enabled: galleryActive });
 
   // Placeholder data for features not yet implemented
-  const featuredNostrProjects: never[] = [];
-  const customPages: never[] = [];
+  interface FeaturedNostrProjectItem {
+    id: string;
+    title: string;
+    description: string;
+    images: string[];
+    price_sats: number;
+    badge_naddr?: string;
+    badge_image?: string;
+  }
+  interface FeaturedPageItem {
+    id: string;
+    title: string;
+    header_image?: string;
+  }
+  const featuredNostrProjects: FeaturedNostrProjectItem[] = [];
+  const customPages: FeaturedPageItem[] = [];
 
   const _displayName = metadata?.name ?? genUserName(ADMIN_HEX);
 
@@ -2046,7 +2062,7 @@ const Index = () => {
         )}
 
         {/* LEGACY: Featured Nostr Projects Section (keep as fallback) */}
-        {false && featuredNostrProjectsList.length > 0 && isSectionEnabled('nostr-projects') && (
+        {LEGACY_HOME_SECTIONS_ENABLED && featuredNostrProjectsList.length > 0 && isSectionEnabled('nostr-projects') && (
           <div className="mb-16">
             <div className="flex items-center justify-between mb-8">
               <div>
@@ -2114,7 +2130,7 @@ const Index = () => {
         )}
 
         {/* LEGACY: Featured Projects Section (keep as fallback) */}
-        {false && featuredProjects && featuredProjects.length > 0 && isSectionEnabled('projects') && (
+        {LEGACY_HOME_SECTIONS_ENABLED && featuredProjects && featuredProjects.length > 0 && isSectionEnabled('projects') && (
           <div className="mb-16">
             <div className="flex items-center justify-between mb-8">
               <div>
@@ -2195,7 +2211,7 @@ const Index = () => {
         )}
 
         {/* LEGACY: Featured Art Section (keep as fallback) */}
-        {false && !artworksError && featuredArtworksList && featuredArtworksList.length > 0 && isSectionEnabled('art') && (
+        {LEGACY_HOME_SECTIONS_ENABLED && !artworksError && featuredArtworksList && featuredArtworksList.length > 0 && isSectionEnabled('art') && (
           <div className="mb-16">
             <div className="flex items-center justify-between mb-8">
               <div>
@@ -2280,7 +2296,7 @@ const Index = () => {
         )}
 
         {/* LEGACY: Latest Cards Section (keep as fallback) */}
-        {false && isSectionEnabled('cards') && (
+        {LEGACY_HOME_SECTIONS_ENABLED && isSectionEnabled('cards') && (
           <div className="mb-16">
             <div className="flex items-center justify-between mb-8">
               <div>
@@ -2373,7 +2389,7 @@ const Index = () => {
         )}
 
         {/* LEGACY: Custom Pages Section (keep as fallback) */}
-        {false && featuredPagesList.length > 0 && isSectionEnabled('pages') && (
+        {LEGACY_HOME_SECTIONS_ENABLED && featuredPagesList.length > 0 && isSectionEnabled('pages') && (
           <div className="mb-16">
             <div className="flex items-center justify-between mb-8">
               <div>
@@ -2431,7 +2447,7 @@ const Index = () => {
         )}
 
         {/* LEGACY: Latest Updates Section (keep as fallback) */}
-        {false && isSectionEnabled('news') && (
+        {LEGACY_HOME_SECTIONS_ENABLED && isSectionEnabled('news') && (
           <div className="mb-16">
             <div className="flex items-center justify-between mb-8">
               <div>

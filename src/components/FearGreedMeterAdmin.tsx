@@ -13,9 +13,6 @@ import {
   X,
   Save,
   Loader2,
-  TrendingDown,
-  TrendingUp,
-  Minus,
   RefreshCw,
   Eye,
 } from 'lucide-react';

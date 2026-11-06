@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { NPool, NRelay1 } from '@nostrify/nostrify';
+import { NPool, NRelay1, type NostrEvent } from '@nostrify/nostrify';
 import { useCurrentUser } from './useCurrentUser';
 import { useToast } from './useToast';
 import { getAdminNpub, getAdminPubkeyHex } from '@/lib/adminUtils';
@@ -335,8 +335,7 @@ export interface PublishStatus {
  * NRelay1 inside NPool handles NIP-42 AUTH challenges automatically.
  */
 async function publishViaRelays(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  signedEvent: any,
+  signedEvent: NostrEvent,
   relayUrls: string[],
   signer: { signEvent: (e: object) => Promise<typeof signedEvent> },
   timeoutMs = 12000

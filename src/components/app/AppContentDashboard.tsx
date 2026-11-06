@@ -11,7 +11,6 @@ import { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useUploadFile } from '@/hooks/useUploadFile';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -29,11 +28,8 @@ import {
   UserCircle2,
   PanelTop,
   Upload,
-  Plus,
-  Trash2,
   Loader2,
   X,
-  CheckCircle2,
   ArrowRight,
   Smartphone,
   Palette,
@@ -237,7 +233,7 @@ interface SectionPreviewProps {
 function SectionPreview({ section, onManage }: SectionPreviewProps) {
   const { data: items = [], isLoading } = useAppMedia(section.type);
   const { mutate: deleteItem } = useDeleteAppMedia();
-  const { getGradientStyle } = useThemeColors();
+  const { getGradientStyle: _getGradientStyle } = useThemeColors();
 
   const preview = items.slice(0, PREVIEW_LIMIT);
   const Icon = section.icon;

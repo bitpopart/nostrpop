@@ -1,5 +1,5 @@
 import { useNostr } from '@nostrify/react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { getAdminPubkeyHex } from '@/lib/adminUtils';
@@ -92,7 +92,7 @@ export function useStudioLibraries() {
 export function useCreateStudioLibrary() {
   const { mutate: createEvent, isPending } = useNostrPublish();
   const queryClient = useQueryClient();
-  const { user } = useCurrentUser();
+  const { user: _user } = useCurrentUser();
 
   const mutate = (
     library: { id: string; name: string; description?: string; coverImage?: string; images: StudioImage[] },

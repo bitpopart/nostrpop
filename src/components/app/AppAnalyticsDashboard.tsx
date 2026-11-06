@@ -61,6 +61,10 @@ const CATEGORY_ICONS: Record<DownloadCategory, React.ElementType> = {
   banner:     PanelTop,
   animation:  Sparkles,
   free:       Gift,
+  'coloring-page':     ImageIcon,
+  'desktop-wallpaper': ImageIcon,
+  card:       ImageIcon,
+  meme:       Sparkles,
 };
 
 // ── Hero stat card ─────────────────────────────────────────────────────────────

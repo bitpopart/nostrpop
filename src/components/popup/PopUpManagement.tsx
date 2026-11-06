@@ -1,4 +1,4 @@
-import { useMemo, useState, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { useNostr } from '@nostrify/react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -24,10 +24,7 @@ import {
   X,
   Upload,
   CheckCircle2,
-  Globe,
-  FileText,
-  Link as LinkIcon
-} from 'lucide-react';
+  FileText} from 'lucide-react';
 import { format } from 'date-fns';
 import type { NostrEvent } from '@nostrify/nostrify';
 import { POPUP_TYPE_CONFIG, POPUP_STATUS_CONFIG, coordinatesToGeohash, generateUUID, type PopUpType, type PopUpStatus } from '@/lib/popupTypes';
@@ -471,6 +468,7 @@ export function PopUpManagement() {
       image: '',
       galleryImages: [],
       link: '',
+      brandSite: '',
       finished: false,
     });
   };

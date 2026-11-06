@@ -12,7 +12,7 @@
  */
 
 import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -135,7 +135,7 @@ function MessageRow({ msg }: MessageRowProps) {
             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${TYPE_COLORS[msg.type] || 'bg-gray-100 text-gray-700'}`}>
               {TYPE_LABELS[msg.type] || `Type ${msg.type}`}
             </span>
-            <Lock className="h-3 w-3 text-muted-foreground" title="Encrypted message" />
+            <span title="Encrypted message"><Lock className="h-3 w-3 text-muted-foreground" /></span>
           </div>
           {msg.orderId && (
             <p className="text-xs text-muted-foreground mt-0.5 font-mono">

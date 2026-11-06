@@ -89,7 +89,7 @@ export function useZap(lightningAddress?: string) {
       console.log('Generated invoice:', invoice);
 
       // Pay the invoice
-      await payInvoice(invoice);
+      await payInvoice(invoice.pr);
 
       // If we get here, payment was initiated successfully
       toast({

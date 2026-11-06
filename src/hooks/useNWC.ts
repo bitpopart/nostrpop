@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNostr } from '@nostrify/react';
+import type { NostrEvent } from '@nostrify/nostrify';
 import { useCurrentUser } from './useCurrentUser';
 
 interface NWCTransaction {
@@ -117,7 +118,7 @@ export function useNWCTransactions(nwcInfo: NWCInfo | null | undefined, enabled:
         console.log('[NWC] Fetching transactions from wallet:', { walletPubkey, relay });
 
         // Import nostr-tools for NWC communication
-        const { SimplePool, nip04 } = await import('nostr-tools');
+        const { SimplePool, nip04: _nip04 } = await import('nostr-tools');
         
         // Create a connection to the relay
         const pool = new SimplePool();
@@ -155,24 +156,22 @@ export function useNWCTransactions(nwcInfo: NWCInfo | null | undefined, enabled:
         await pool.publish([relay], requestEvent);
 
         // Subscribe to response
-        const responseEvents = await new Promise<any[]>((resolve, reject) => {
+        const responseEvents = await new Promise<NostrEvent[]>((resolve, reject) => {
           const timeout = setTimeout(() => {
             sub.close();
             reject(new Error('NWC request timeout'));
           }, 15000); // 15 second timeout
 
-          const events: any[] = [];
+          const events: NostrEvent[] = [];
 
           const sub = pool.subscribeMany(
             [relay],
-            [
-              {
-                kinds: [23195], // NWC response kind
-                authors: [walletPubkey],
-                '#e': [requestEvent.id],
-                since: Math.floor(Date.now() / 1000) - 60,
-              }
-            ],
+            {
+              kinds: [23195], // NWC response kind
+              authors: [walletPubkey],
+              '#e': [requestEvent.id],
+              since: Math.floor(Date.now() / 1000) - 60,
+            },
             {
               onevent(event) {
                 console.log('[NWC] Received response event:', event);

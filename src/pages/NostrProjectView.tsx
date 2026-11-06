@@ -38,13 +38,13 @@ export default function NostrProjectView() {
     ogType: 'website',
     ogTitle: project ? `${project.title} - BitPopArt Nostr Project` : 'Nostr Project - BitPopArt',
     ogDescription: project?.description || 'Join this collaborative Bitcoin art project on Nostr. Be part of the Bitcoin creative community.',
-    ogImage: project?.image_url || 'https://bitpopart.com/bitpopart-logo.png',
+    ogImage: project?.header_image || project?.images?.[0] || 'https://bitpopart.com/bitpopart-logo.png',
     ogImageAlt: project?.title || 'BitPopArt Nostr Project',
     ogSiteName: 'BitPopArt',
     twitterCard: 'summary_large_image',
     twitterTitle: project ? `${project.title} - BitPopArt Nostr Project` : 'Nostr Project - BitPopArt',
     twitterDescription: project?.description || 'Join this collaborative Bitcoin art project on Nostr.',
-    twitterImage: project?.image_url || 'https://bitpopart.com/bitpopart-logo.png',
+    twitterImage: project?.header_image || project?.images?.[0] || 'https://bitpopart.com/bitpopart-logo.png',
     robots: 'index, follow, max-snippet:-1, max-image-preview:large',
   });
 

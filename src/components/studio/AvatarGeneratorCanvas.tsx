@@ -19,7 +19,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { RelaySelector } from '@/components/RelaySelector';
 import { ZapButton } from '@/components/ZapButton';
 import { useAvatarGeneratorNFTs } from '@/hooks/useAvatarGenerator';
-import type { NFTCharacter, NFTLayerGroup } from '@/hooks/useNFTCharacters';
+import type { NFTCharacter } from '@/hooks/useNFTCharacters';
 import { getAdminPubkeyHex } from '@/lib/adminUtils';
 
 const ADMIN_PUBKEY = getAdminPubkeyHex();
@@ -109,7 +109,7 @@ function SingleCharacterGenerator({ character }: SingleCharacterGeneratorProps) 
   }, [layerGroups]);
 
   // Pick a specific variant for a layer
-  const handlePickVariant = useCallback(async (layerIdx: number, variantIdx: number) => {
+  const _handlePickVariant = useCallback(async (layerIdx: number, variantIdx: number) => {
     const newSel = selections.map((s, i) => i === layerIdx ? variantIdx : s);
     setSelections(newSel);
     setComposited(null);

@@ -6,7 +6,7 @@ import {
   type Order,
   type OrderStatus,
 } from '@/hooks/useOrders';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -50,7 +50,6 @@ import {
   CreditCard,
   Trash2,
   Edit,
-  Eye,
   Filter,
   ChevronDown,
   ChevronUp,

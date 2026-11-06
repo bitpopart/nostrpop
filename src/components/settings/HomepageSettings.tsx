@@ -76,7 +76,6 @@ import {
   ExternalLink,
   Ban,
   LayoutGrid,
-  Link as LinkIcon,
   Upload,
   Loader2,
   X,
@@ -259,7 +258,7 @@ const BUTTON_ICON_OPTIONS: { value: string; label: string; Icon: React.Component
 ];
 
 /** Resolve an icon component by name */
-const BUTTON_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = Object.fromEntries(
+const _BUTTON_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = Object.fromEntries(
   BUTTON_ICON_OPTIONS.filter(o => o.value !== ICON_NONE).map(o => [o.value, o.Icon])
 );
 
@@ -794,7 +793,7 @@ export function HomepageSettings() {
     setGridTiles(prev => prev.filter(t => t.id !== id).map((t, i) => ({ ...t, order: i })));
   };
 
-  const moveGridTile = (id: string, dir: 'up' | 'down') => {
+  const _moveGridTile = (id: string, dir: 'up' | 'down') => {
     isDirty.current = true;
     setGridTiles(prev => {
       const sorted = [...prev].sort((a, b) => a.order - b.order);

@@ -12,16 +12,15 @@ import {
   loadCloudApps, saveCloudApps, makeCloudAppId,
   saveEncryptedAppData, loadEncryptedAppData, loadEncryptedAppDataSync,
   deleteEncryptedAppData,
-  cacheCloudAppHtml, deleteCachedCloudAppHtml, clearAllCloudAppCaches,
+  cacheCloudAppHtml, loadCachedCloudAppHtml, deleteCachedCloudAppHtml, clearAllCloudAppCaches,
   getCloudIDBUsageBytes, migrateCloudDataToIDB,
   loadCloudUsers, saveCloudUsers, createCloudUser,
   formatBytes,
   type CloudApp, type CloudUser,
 } from '@/lib/cloudTypes';
 import {
-  encryptToB64, decryptFromB64,
+  encryptToB64, 
   exportMasterKeyB64, importMasterKeyB64, hasMasterKey,
-  bytesToBase64, base64ToBytes,
 } from '@/lib/cloudCrypto';
 import { useUploadFile } from '@/hooks/useUploadFile';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -457,7 +456,7 @@ function BackupRestore({ apps }: { apps: CloudApp[] }) {
 
 function CloudAppsSection() {
   const { mutateAsync: uploadFile } = useUploadFile();
-  const navigate = useNavigate();
+  const _navigate = useNavigate();
   const [apps, setApps] = useState<CloudApp[]>(() => loadCloudApps());
   const [isCreating, setIsCreating] = useState(false);
   const [editingApp, setEditingApp] = useState<CloudApp | null>(null);

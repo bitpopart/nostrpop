@@ -7,7 +7,11 @@ import { useCurrentUser } from "./useCurrentUser";
 import type { NostrEvent } from "@nostrify/nostrify";
 
 /** Event template accepted by `useNostrPublish`. */
-export type EventTemplate = Omit<NostrEvent, 'id' | 'pubkey' | 'sig'> & {
+export type EventTemplate = Omit<NostrEvent, 'id' | 'pubkey' | 'sig' | 'created_at' | 'tags'> & {
+  /** Event tags. Defaults to none when omitted. */
+  tags?: string[][];
+  /** Unix timestamp in seconds. Defaults to now when omitted. */
+  created_at?: number;
   /**
    * The previous version of the event being replaced (for replaceable/addressable kinds).
    * When provided, `published_at` from the old event is preserved on the new one.

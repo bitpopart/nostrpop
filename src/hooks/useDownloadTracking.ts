@@ -17,7 +17,7 @@
  *   - dateKey   : "YYYY-MM-DD" for daily grouping
  */
 
-export type DownloadCategory = 'wallpaper' | 'gif' | 'avatar' | 'banner' | 'animation' | 'free' | 'coloring-page' | 'desktop-wallpaper';
+export type DownloadCategory = 'wallpaper' | 'gif' | 'avatar' | 'banner' | 'animation' | 'free' | 'coloring-page' | 'desktop-wallpaper' | 'card' | 'meme';
 
 export interface DownloadEvent {
   id: string;
@@ -117,6 +117,10 @@ const CATEGORY_META: Record<DownloadCategory, { label: string; color: string }> 
   banner:    { label: 'Banners',     color: '#0ea5e9' },
   animation: { label: 'Animations',  color: '#f43f5e' },
   free:      { label: 'Free Images', color: '#22c55e' },
+  'coloring-page':     { label: 'Coloring Pages',     color: '#ec4899' },
+  'desktop-wallpaper': { label: 'Desktop Wallpapers', color: '#6366f1' },
+  card:      { label: 'Cards',       color: '#f97316' },
+  meme:      { label: 'Memes',       color: '#eab308' },
 };
 
 const CATEGORIES: DownloadCategory[] = ['wallpaper', 'gif', 'avatar', 'banner', 'animation', 'free'];
@@ -158,7 +162,7 @@ export function buildDailyStats(log: DownloadEvent[], days = 30): DailyCount[] {
     if (!bucket) continue;
     bucket.total++;
     if (ev.category in bucket) {
-      (bucket as Record<string, number>)[ev.category]++;
+      (bucket as unknown as Record<string, number>)[ev.category]++;
     }
   }
 
@@ -193,6 +197,7 @@ export function buildTopItems(log: DownloadEvent[], topN = 20): TopItem[] {
 export function buildCategoryStats(log: DownloadEvent[]): CategoryStat[] {
   const counts: Record<DownloadCategory, number> = {
     wallpaper: 0, gif: 0, avatar: 0, banner: 0, animation: 0, free: 0,
+    'coloring-page': 0, 'desktop-wallpaper': 0, card: 0, meme: 0,
   };
 
   for (const ev of log) {

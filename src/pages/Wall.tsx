@@ -8,7 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { LoginArea } from '@/components/auth/LoginArea';
 import { Link } from 'react-router-dom';
-import { Shield, Plus, Sparkles } from 'lucide-react';
+import { Shield, Sparkles } from 'lucide-react';
 
 interface StreetArtPhoto {
   id: string;

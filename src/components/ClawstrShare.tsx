@@ -18,11 +18,12 @@ import {
   formatPopupForClawstr,
   formatProductForClawstr,
   createCustomClawstrPost,
+  type ClawstrEventTemplate,
 } from '@/lib/clawstr';
 
 interface ClawstrShareProps {
   event: NostrEvent;
-  contentType: 'artwork' | 'project' | 'fundraiser' | 'popup' | 'product' | 'custom';
+  contentType: 'artwork' | 'project' | 'fundraiser' | 'popup' | 'product' | 'custom' | 'card' | 'badge';
   defaultContent?: string;
   trigger?: React.ReactNode;
 }
@@ -65,7 +66,7 @@ export function ClawstrShare({ event, contentType, defaultContent, trigger }: Cl
       return;
     }
 
-    let clawstrEvent: Partial<NostrEvent>;
+    let clawstrEvent: ClawstrEventTemplate;
 
     if (customContent) {
       clawstrEvent = createCustomClawstrPost(

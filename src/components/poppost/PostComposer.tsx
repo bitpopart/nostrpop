@@ -33,7 +33,6 @@ import {
   Zap,
   Repeat2,
   MessageCircle,
-  ExternalLink,
   KeyRound,
   CheckCircle2,
 } from 'lucide-react';
@@ -67,7 +66,7 @@ export function PostComposer({
   onMarkPublished,
   onMarkFailed,
 }: PostComposerProps) {
-  const { nostr } = useNostr();
+  const { nostr: _nostr } = useNostr();
   const { mutateAsync: publishEvent, isPending: isPublishing } = useNostrPublish();
   const { user } = useCurrentUser();
   const author = useAuthor(user?.pubkey ?? '');

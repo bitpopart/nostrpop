@@ -111,7 +111,7 @@ function ProposalEditor({
   window.addEventListener('load',report);
   new MutationObserver(report).observe(document.documentElement,{subtree:true,childList:true,attributes:true});
 })();
-<\/script>`;
+<\u002Fscript>`;
     if (/<\/body>/i.test(html)) return html.replace(/<\/body>/i, script + '</body>');
     if (/<\/html>/i.test(html)) return html.replace(/<\/html>/i, script + '</html>');
     return html + script;

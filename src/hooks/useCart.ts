@@ -65,6 +65,21 @@ function emptyAddress(): CartAddress {
  * Find the shipping region that matches a given country string.
  * Falls back to a catch-all region (empty countries field) if no match.
  */
+/**
+ * Convert product shipping (legacy NIP-15 `{id, cost}` entries or full regions)
+ * into cart shipping regions. Entries without countries act as catch-all regions.
+ */
+export function toCartShipping(
+  shipping?: Array<{ id: string; cost: number; name?: string; countries?: string }>,
+): ShippingRegion[] | undefined {
+  return shipping?.map((s) => ({
+    id: s.id,
+    name: s.name ?? s.id,
+    countries: s.countries ?? '',
+    cost: s.cost,
+  }));
+}
+
 export function findShippingRegion(regions: ShippingRegion[], country: string): ShippingRegion | undefined {
   if (!country.trim()) return undefined;
   const needle = country.trim().toLowerCase();

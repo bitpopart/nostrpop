@@ -297,7 +297,7 @@ function BitPopArtHeader() {
 }
 
 export default function Vlog() {
-  const { user } = useCurrentUser();
+  const { user: _user } = useCurrentUser();
   const isAdmin = useIsAdmin();
   const [activeTab, setActiveTab] = useState('browse');
   const { data: vlogs, isLoading, error } = useVlogs();

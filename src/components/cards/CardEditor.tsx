@@ -305,7 +305,7 @@ export function CardEditor({ onPublished }: CardEditorProps) {
     if (resizing) {
       const { x, y } = getCanvasPos(e);
       const dx = x - resizing.startX;
-      const dy = y - resizing.startY;
+      const _dy = y - resizing.startY;
       const MIN_SIZE = 20;
       setElements(prev => prev.map(el => {
         if (el.id !== resizing.id) return el;
@@ -506,7 +506,7 @@ export function CardEditor({ onPublished }: CardEditorProps) {
       createEvent(
         { kind: ECARD_KIND, content: JSON.stringify(cardContent), tags },
         {
-          onSuccess: (event) => {
+          onSuccess: (_event) => {
             toast({ title: 'Card published! 🎉', description: 'Your card is now live on Nostr.' });
 
             // Also share as kind 1 note

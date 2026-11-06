@@ -18,7 +18,7 @@ import { useOrders, useUpdateOrderStatus, useDeleteOrder, type Order, type Order
 import { useArtworks } from '@/hooks/useArtworks';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -34,7 +34,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import {
-  Palette, ShoppingCart, Package, Truck, CheckCircle2, Clock, XCircle,
+  Palette, ShoppingCart, Truck, CheckCircle2, Clock, XCircle,
   CreditCard, Mail, MapPin, User, RefreshCw, Search, Filter, Trash2,
   Edit, ChevronDown, ChevronUp, AlertCircle, Zap, ExternalLink,
 } from 'lucide-react';
@@ -402,7 +402,7 @@ export function ArtworkSalesManager() {
   const [viewingOrder, setViewingOrder] = useState<Order | null>(null);
 
   // Filter to artwork orders only
-  const artworkOrders = useMemo(() =>
+  const _artworkOrders = useMemo(() =>
     allOrders.filter(o =>
       o.items.some(i =>
         i.product_id?.startsWith('artwork') ||
@@ -444,7 +444,7 @@ export function ArtworkSalesManager() {
   // Stats
   const newSales = salesOrders.filter(o => o.status === 'paid' || o.status === 'pending').length;
   const completedSales = salesOrders.filter(o => o.status === 'completed').length;
-  const totalRevenue = salesOrders
+  const _totalRevenue = salesOrders
     .filter(o => o.status !== 'cancelled')
     .reduce((s, o) => s + (o.currency === 'SAT' ? o.total_price / 100_000_000 : o.total_price), 0);
 

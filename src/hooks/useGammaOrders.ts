@@ -23,7 +23,7 @@ import { useNostr } from '@nostrify/react';
 import { useCurrentUser } from './useCurrentUser';
 import { useToast } from './useToast';
 import { getAdminPubkeyHex } from '@/lib/adminUtils';
-import { storeOrder, getStoredOrders } from './useOrders';
+import { storeOrder } from './useOrders';
 import type { Order } from './useOrders';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────

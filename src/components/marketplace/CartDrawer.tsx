@@ -130,7 +130,7 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
     return regular;
   }, [config]);
 
-  const shippingResolved = !hasPhysical || !countrySelected || shippingCost >= 0;
+  const _shippingResolved = !hasPhysical || !countrySelected || shippingCost >= 0;
 
   // Reset on close — do NOT clear address (user might re-open)
   useEffect(() => {
@@ -383,7 +383,7 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
       <SheetContent side="right" className="w-full sm:max-w-md flex flex-col p-0 gap-0">
         <SheetHeader className="px-4 pt-4 pb-3 border-b">
           <SheetTitle className="flex items-center gap-2">
-            {step !== 'cart' && step !== 'done' && (
+            {step !== 'cart' && (
               <button
                 type="button"
                 onClick={() => {

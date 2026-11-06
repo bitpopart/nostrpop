@@ -12,16 +12,14 @@
  */
 
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Checkbox } from '@/components/ui/checkbox';
 import { useAppMedia } from '@/hooks/useAppContent';
 import { useFreeDownloads } from '@/hooks/useFreeDownloads';
-import { Trash2, Search, Plus } from 'lucide-react';
+import { Trash2, Search } from 'lucide-react';
 import type { DownloadItem } from '@/hooks/useMediaGenerator';
 
 // Map from internal type key → DownloadItem type label

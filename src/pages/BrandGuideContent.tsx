@@ -179,7 +179,7 @@ function CategoryBlock({ title, icon, files }: CategoryProps) {
         <Badge variant="secondary" className="text-[10px] ml-auto">{files.length} files</Badge>
       </div>
       <div className="divide-y divide-border/40 px-1">
-        {files.map(f => <FileRow key={f.path} file={f} />)}
+        {files.map(f => <FileRow key={f.relPath} file={f} />)}
       </div>
     </Card>
   );

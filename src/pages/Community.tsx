@@ -1,6 +1,6 @@
 import { useSeoMeta } from '@unhead/react';
 import { Link } from 'react-router-dom';
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo } from 'react';
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -10,7 +10,6 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   Cell,
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,7 +17,6 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { usePopFans, type ZapperEntry, type ReactorEntry, type LikeEntry } from '@/hooks/usePopFans';
 import { useAuthor } from '@/hooks/useAuthor';
@@ -50,22 +48,14 @@ import {
   Monitor,
   Smartphone,
   Play,
-  Gamepad2,
   Palette,
   ShoppingBag,
   Printer,
   Newspaper,
   FolderKanban,
-  TrendingUp,
   BarChart2,
   Flame,
   Network,
-  ChevronDown,
-  ChevronUp,
-  Mail,
-  Send,
-  CheckCircle2,
-  HelpCircle,
 } from 'lucide-react';
 import type { NostrEvent, NostrMetadata } from '@nostrify/nostrify';
 
@@ -203,7 +193,7 @@ function AllTimeZapperRow({ entry, rank }: { entry: ZapperEntry; rank: number })
 
 // ── Latest top 5 zappers ──────────────────────────────────────────────────────
 
-function LatestZapperRow({ entry, rank }: { entry: ZapperEntry; rank: number }) {
+function LatestZapperRow({ entry, rank: _rank }: { entry: ZapperEntry; rank: number }) {
   const npub = pubkeyToNpub(entry.pubkey);
   return (
     <a

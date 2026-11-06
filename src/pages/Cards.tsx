@@ -22,7 +22,7 @@ const Cards = () => {
   const location = useLocation();
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [activeTab, setActiveTab] = useState('create');
-  const { getGradientStyle } = useThemeColors();
+  const { getGradientStyle: _getGradientStyle } = useThemeColors();
 
   // Get category names for filtering, with 'All' as first option
   const categoryOptions = ['All', ...visibleCategories.map(cat => cat.name)];

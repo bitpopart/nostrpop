@@ -12,6 +12,13 @@ import type { NostrEvent } from '@nostrify/nostrify';
 /**
  * Clawstr subclaws (like subreddits)
  */
+/** A Clawstr post ready to publish. */
+export interface ClawstrEventTemplate {
+  kind: number;
+  content: string;
+  tags: string[][];
+}
+
 export const CLAWSTR_SUBCLAWS = [
   {
     id: 'art',
@@ -90,7 +97,7 @@ export function createClawstrPost(
   content: string,
   subclawUrl: string,
   additionalTags: string[][] = []
-): Partial<NostrEvent> {
+): ClawstrEventTemplate {
   return {
     kind: 1111, // Clawstr post kind
     content,
@@ -107,7 +114,7 @@ export function createClawstrPost(
 export function formatArtworkForClawstr(
   artwork: NostrEvent,
   subclawId: string = 'art'
-): Partial<NostrEvent> {
+): ClawstrEventTemplate {
   const title = artwork.tags.find(([name]) => name === 'title')?.[1] || 'Untitled';
   const summary = artwork.tags.find(([name]) => name === 'summary')?.[1] || '';
   const image = artwork.tags.find(([name]) => name === 'image')?.[1] || '';
@@ -138,7 +145,7 @@ Check it out on BitPopArt ⚡
 export function formatProjectForClawstr(
   project: NostrEvent,
   subclawId: string = 'art'
-): Partial<NostrEvent> {
+): ClawstrEventTemplate {
   const title = project.tags.find(([name]) => name === 'title')?.[1] || 'Untitled';
   const summary = project.tags.find(([name]) => name === 'summary')?.[1] || '';
   
@@ -166,7 +173,7 @@ ${project.content}
 export function formatFundraiserForClawstr(
   fundraiser: NostrEvent,
   subclawId: string = 'bitcoin'
-): Partial<NostrEvent> {
+): ClawstrEventTemplate {
   const title = fundraiser.tags.find(([name]) => name === 'title')?.[1] || 'Untitled';
   const goalTag = fundraiser.tags.find(([name]) => name === 'goal')?.[1];
   const goal = goalTag ? parseInt(goalTag) : 0;
@@ -197,7 +204,7 @@ Support with Bitcoin Lightning ⚡
 export function formatPopupForClawstr(
   popup: NostrEvent,
   subclawId: string = 'art'
-): Partial<NostrEvent> {
+): ClawstrEventTemplate {
   const title = popup.tags.find(([name]) => name === 'title')?.[1] || 'Untitled';
   const location = popup.tags.find(([name]) => name === 'location')?.[1] || '';
   
@@ -225,7 +232,7 @@ ${popup.content}
 export function formatProductForClawstr(
   product: NostrEvent,
   subclawId: string = 'bitcoin'
-): Partial<NostrEvent> {
+): ClawstrEventTemplate {
   const title = product.tags.find(([name]) => name === 'title')?.[1] || 'Untitled';
   const priceTag = product.tags.find(([name]) => name === 'price')?.[1];
   const price = priceTag ? parseInt(priceTag) : 0;
@@ -255,7 +262,7 @@ export function createCustomClawstrPost(
   content: string,
   subclawId: string,
   hashtags: string[] = []
-): Partial<NostrEvent> {
+): ClawstrEventTemplate {
   const subclaw = CLAWSTR_SUBCLAWS.find(s => s.id === subclawId);
   const subclawUrl = subclaw?.url || CLAWSTR_SUBCLAWS[0].url;
   

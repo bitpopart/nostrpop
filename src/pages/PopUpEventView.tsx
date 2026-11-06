@@ -90,7 +90,7 @@ export default function PopUpEventView() {
     title: eventData ? `${eventData.title} - BitPopArt PopUp Event` : 'PopUp Event - BitPopArt',
     description: eventData?.description || 'Discover this BitPopArt pop-up art event. Join Johannes Oppewal for an immersive Bitcoin pop art experience.',
     author: 'Johannes Oppewal (BitPopArt)',
-    ogType: 'event',
+    ogType: 'website',
     ogTitle: eventData ? `${eventData.title} - BitPopArt PopUp Event` : 'PopUp Event - BitPopArt',
     ogDescription: eventData?.description || 'Discover this BitPopArt pop-up art event. Join Johannes Oppewal for an immersive Bitcoin pop art experience.',
     ogImage: eventData?.image || 'https://bitpopart.com/bitpopart-logo.png',

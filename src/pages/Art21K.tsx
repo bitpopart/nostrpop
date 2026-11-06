@@ -13,7 +13,6 @@ import { useNostr } from '@nostrify/react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/useToast';
 import { useUploadFile } from '@/hooks/useUploadFile';
-import { LoginArea } from '@/components/auth/LoginArea';
 import { useArtworks } from '@/hooks/useArtworks';
 import type { ArtworkData } from '@/lib/artTypes';
 import { 
@@ -122,7 +121,7 @@ function Art21K() {
               caption: content.caption,
               timestamp: event.created_at
             };
-          } catch (error) {
+          } catch {
             return null;
           }
         })

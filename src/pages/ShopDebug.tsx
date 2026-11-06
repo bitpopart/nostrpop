@@ -11,7 +11,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Separator } from '@/components/ui/separator';
 import {
   Truck,
   Package,
@@ -19,10 +18,7 @@ import {
   ArrowLeft,
   ShoppingCart,
   Mail,
-  CheckCircle2,
   AlertCircle,
-  DollarSign,
-  Clock,
   RefreshCw,
   Copy,
   CheckCheck,

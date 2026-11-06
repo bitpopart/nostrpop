@@ -30,7 +30,7 @@ import {
 import { formatDistanceToNow } from 'date-fns';
 
 const ADMIN_PUBKEY = getAdminPubkeyHex();
-const ADMIN_NPUB = 'npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz';
+const _ADMIN_NPUB = 'npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz';
 const LIGHTNING_ADDRESS = 'bitpopart@rizful.com';
 
 // ── Always-visible Zap dialog (no self-check) ─────────────
@@ -406,47 +406,6 @@ function AnimationSkeleton() {
       <div className="flex gap-1.5">
         <Skeleton className="h-7 flex-1 rounded-md" />
         <Skeleton className="h-7 w-7 rounded-md" />
-      </div>
-    </div>
-  );
-}
-
-// ── BitPopArt profile banner ───────────────────────────────
-function ProfileBanner() {
-  const author = useAuthor(ADMIN_PUBKEY);
-  const metadata = author.data?.metadata;
-
-  const name = metadata?.name || 'BitPopArt';
-  const about = metadata?.about || '';
-  const picture = metadata?.picture || '';
-  const banner = metadata?.banner || '';
-
-  return (
-    <div className="relative rounded-2xl overflow-hidden shadow-lg mb-8">
-      {/* Banner image */}
-      <div className="h-36 md:h-48 relative">
-        {banner ? (
-          <img src={banner} alt="" className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full bg-gradient-to-br from-amber-500 via-orange-500 to-rose-500" />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-      </div>
-
-      {/* Profile info */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6 text-white">
-        <div className="flex items-end gap-4">
-          <Avatar className="h-16 w-16 md:h-20 md:w-20 border-2 border-white shadow-xl flex-shrink-0">
-            <AvatarImage src={picture} alt={name} />
-            <AvatarFallback className="text-2xl font-bold bg-amber-500 text-white">
-              {name[0]?.toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1 min-w-0">
-            <h1 className="text-2xl md:text-3xl font-bold text-white drop-shadow-md">{name}</h1>
-            {about && <p className="text-sm text-white/80 mt-0.5 line-clamp-2 drop-shadow">{about}</p>}
-          </div>
-        </div>
       </div>
     </div>
   );

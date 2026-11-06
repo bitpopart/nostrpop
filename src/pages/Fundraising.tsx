@@ -9,7 +9,7 @@ import { Target, Sparkles } from 'lucide-react';
 
 export default function Fundraising() {
   const { data: fundraisers = [], isLoading } = useFundraisers();
-  const { getGradientStyle } = useThemeColors();
+  const { getGradientStyle: _getGradientStyle } = useThemeColors();
 
   // Filter active fundraisers
   const activeFundraisers = fundraisers.filter(f => f.status === 'active');

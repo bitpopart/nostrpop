@@ -15,7 +15,6 @@ import Art21K from "./pages/Art21K";
 import Shop from "./pages/Shop";
 import Admin from "./pages/Admin";
 import Feed from "./pages/Feed";
-import Canvas100M from "./pages/Canvas100M";
 import GameCanvas100M from "./pages/GameCanvas100M";
 import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";

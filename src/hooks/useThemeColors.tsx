@@ -144,7 +144,7 @@ export function useThemeColors() {
           background: `linear-gradient(to right, ${colors.headerTextFrom}, ${colors.headerTextVia}, ${colors.headerTextTo})`,
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
-          backgroundClip: 'text' as any,
+          backgroundClip: 'text',
           color: 'transparent',
           display: 'inline-block',
         } as React.CSSProperties;

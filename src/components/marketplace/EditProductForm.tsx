@@ -336,7 +336,7 @@ export function EditProductForm({ product, onSuccess, onCancel }: EditProductFor
       const validSpecs = specs.filter(spec => spec.key.trim() && spec.value.trim());
 
       // Build shipping data: filter regions that have a name set
-      const validShipping = isPhysical
+      const _validShipping = isPhysical
         ? shippingRegions.filter(r => r.name.trim()).map(r => ({
             id: r.id,
             name: r.name.trim(),

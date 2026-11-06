@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { User, Save, Eye, Upload, X, Image as ImageIcon, Loader2, Plus, GripVertical, Trash2 } from 'lucide-react';
+import { User, Save, Eye, Upload, X, Image as ImageIcon, Loader2, Plus, GripVertical, Trash2, ExternalLink } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ReactMarkdown from 'react-markdown';
 

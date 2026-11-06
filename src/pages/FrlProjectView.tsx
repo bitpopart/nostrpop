@@ -13,7 +13,7 @@ const ADMIN_PUBKEY = nip19.decode(ADMIN_NPUB).data as string;
 
 const htmlCache = new Map<string, string>();
 
-const FILE_RE = /\.(pdf|zip|docx?|xlsx?|pptx?|mp4|mp3|png|jpe?g|gif|svg|webp|exe|dmg|apk)(\?|$)/i;
+const _FILE_RE = /\.(pdf|zip|docx?|xlsx?|pptx?|mp4|mp3|png|jpe?g|gif|svg|webp|exe|dmg|apk)(\?|$)/i;
 
 /**
  * Intercepts ALL anchor clicks in the iframe:

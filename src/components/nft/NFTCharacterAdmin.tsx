@@ -7,7 +7,7 @@ import { useNFTCharacters } from '@/hooks/useNFTCharacters';
 import { getAdminPubkeyHex } from '@/lib/adminUtils';
 import { ImageIcon, Layers, ExternalLink, Plus, Images, Shuffle } from 'lucide-react';
 
-const ADMIN_PUBKEY = getAdminPubkeyHex();
+const _ADMIN_PUBKEY = getAdminPubkeyHex();
 
 export function NFTCharacterAdmin() {
   const navigate = useNavigate();

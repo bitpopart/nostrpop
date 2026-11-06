@@ -2,7 +2,6 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useEmojiPacks } from '@/hooks/useEmojiPacks';
 import { useSeoMeta } from '@unhead/react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -48,10 +47,8 @@ import {
   X,
   RotateCcw,
   Type,
-  Trash2,
   PenLine,
   Home,
-  Zap,
   Library,
   LayoutTemplate,
   Sticker,
@@ -190,7 +187,7 @@ interface MediaItem {
 function MediaScrollGrid({
   items,
   isLoading,
-  category,
+  category: _category,
   onGetThis,
 }: {
   items: MediaItem[];
@@ -650,7 +647,7 @@ function MiniCanvas({ onSave, onViewLibraryItem, mode = 'meme' }: {
     setSaved(false);
   };
 
-  const removeSelected = () => {
+  const _removeSelected = () => {
     if (!selRef.current) return;
     removeById(selRef.current);
   };
@@ -1416,7 +1413,7 @@ interface PrintItemCardProps {
 }
 
 function PrintItemCard({ imageDataUrl, title, onClose }: PrintItemCardProps) {
-  const { getGradientStyle } = useThemeColors();
+  const { getGradientStyle: _getGradientStyle } = useThemeColors();
   const [downloading, setDownloading] = useState(false);
   const [printing, setPrinting] = useState(false);
   const [sharing, setSharing] = useState(false);
@@ -2232,12 +2229,8 @@ export default function AppPage() {
                   </div>
                 </div>
                 <button
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm font-semibold transition-all ${
-                    activeTab === 'search'
-                      ? 'bg-orange-500 text-white border-orange-500'
-                      : 'bg-white dark:bg-gray-800 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-700 hover:bg-orange-50'
-                  }`}
-                  onClick={() => setActiveTab(activeTab === 'search' ? 'home' : 'search')}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm font-semibold transition-all bg-white dark:bg-gray-800 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-700 hover:bg-orange-50"
+                  onClick={() => setActiveTab('search')}
                 >
                   <Search className="h-4 w-4" />
                   Search

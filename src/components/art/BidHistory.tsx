@@ -34,7 +34,7 @@ interface BidRowProps {
   confirmations: BidConfirmation[];
 }
 
-function BidRow({ bid, currency, confirmation, rank, isAdmin, artworkEventId, effectiveEnd, confirmations }: BidRowProps) {
+function BidRow({ bid, currency, confirmation, rank, isAdmin, artworkEventId, effectiveEnd, confirmations: _confirmations }: BidRowProps) {
   const author = useAuthor(bid.bidder_pubkey);
   const metadata: NostrMetadata | undefined = author.data?.metadata;
   const displayName = metadata?.name ?? genUserName(bid.bidder_pubkey);

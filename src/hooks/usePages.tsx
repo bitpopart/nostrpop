@@ -16,7 +16,7 @@ function pageBodyKey(slug: string) {
 }
 
 /** Key for per-page brand-site HTML */
-function pageSrcdocKey(slug: string) {
+function _pageSrcdocKey(slug: string) {
   return `bitpopart:page-srcdoc:${slug}`;
 }
 

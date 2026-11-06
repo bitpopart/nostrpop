@@ -18,7 +18,7 @@ import {
   Plus, X, Upload, FileText, Edit, Image as ImageIcon,
   ExternalLink, Trash2, Loader2, Globe, Zap, Coffee,
   MoveUp, MoveDown, Type, Film, UserCircle2, LayoutPanelTop,
-  GalleryHorizontal, Eye, Code2, FileCode,
+  GalleryHorizontal, Eye, FileCode,
 } from 'lucide-react';
 import { generateSlug } from '@/lib/pageTypes';
 import type { PageData } from '@/lib/pageTypes';

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNostr } from '@nostrify/react';
-import { getArtworksByFilter, getArtworkById, type ArtworkData, type ArtworkFilter } from '@/lib/artTypes';
+import { getArtworkById, type ArtworkData, type ArtworkFilter } from '@/lib/artTypes';
 import { useCurrentUser } from './useCurrentUser';
 import { useToast } from './useToast';
 import { isAdminUser } from '@/lib/adminUtils';
@@ -646,7 +646,7 @@ export function useDeleteArtwork() {
         if (checkEvents.length > 0) {
           artworkAddress = `30023:${artistPubkey}:${artworkId}`;
         }
-      } catch (error) {
+      } catch {
         // If check fails, default to new kind
       }
       

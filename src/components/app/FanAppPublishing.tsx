@@ -6,7 +6,6 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
-  Smartphone,
   ExternalLink,
   CheckCircle2,
   Copy,

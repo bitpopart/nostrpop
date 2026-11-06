@@ -76,7 +76,7 @@ interface ZapBidTabProps {
   isLastMinute: boolean;
 }
 
-function ZapBidTab({ artwork, artworkATag, currentHighest, minNextBid, minIncrement, auctionEnded, isLastMinute }: ZapBidTabProps) {
+function ZapBidTab({ artwork, artworkATag, currentHighest: _currentHighest, minNextBid, minIncrement, auctionEnded, isLastMinute }: ZapBidTabProps) {
   const { nostr } = useNostr();
   const [email, setEmail] = useState('');
   const [bidAmount, setBidAmount] = useState(String(minNextBid));
@@ -106,8 +106,9 @@ function ZapBidTab({ artwork, artworkATag, currentHighest, minNextBid, minIncrem
 
     setIsGenerating(true);
     try {
-      const pr = await getZapInvoice(ZAP_BID_AMOUNT);
-      if (!pr) { setIsGenerating(false); return; }
+      const inv = await getZapInvoice(ZAP_BID_AMOUNT);
+      if (!inv) { setIsGenerating(false); return; }
+      const pr = inv.pr;
       setInvoice(pr);
 
       const qr = await QRCode.toDataURL(`lightning:${pr}`, {

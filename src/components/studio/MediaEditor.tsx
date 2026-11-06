@@ -136,7 +136,6 @@ async function extractGifFrames(url: string, canvasW: number, canvasH: number): 
         const res = await fetch(`https://proxy.shakespeare.diy/?url=${encodeURIComponent(url)}`);
         blob = await res.blob();
       }
-      // @ts-expect-error ImageDecoder not yet in TS types
       const decoder = new ImageDecoder({ data: blob.stream(), type: 'image/gif' });
       await decoder.tracks.ready;
       const track = decoder.tracks.selectedTrack;
@@ -151,11 +150,10 @@ async function extractGifFrames(url: string, canvasW: number, canvasH: number): 
 
       for (let i = 0; i < count; i++) {
         const result = await decoder.decode({ frameIndex: i });
-        const bmp = result.image as ImageBitmap;
+        const bmp = result.image;
         ctx.clearRect(0, 0, canvasW, canvasH);
         ctx.drawImage(bmp, 0, 0, canvasW, canvasH);
         frames.push(offscreen.toDataURL());
-        // @ts-expect-error duration in microseconds
         totalDelay += (result.image.duration ?? 100000) / 1000;
         bmp.close();
       }

@@ -18,7 +18,7 @@ import {
 import {
   Plus, Trash2, Copy, Check, RefreshCw, Key, Users,
   FileText, Link2, ToggleLeft, ToggleRight, ExternalLink,
-  Eye, EyeOff, ImagePlus, Globe, Upload, CheckCircle2, AlertCircle,
+  Eye, EyeOff, ImagePlus, Globe, Upload, AlertCircle,
 } from 'lucide-react';
 import { useToast } from '@/hooks/useToast';
 import { DesignSection } from '@/components/portal/DesignSection';
@@ -26,7 +26,6 @@ import { ProposalSection } from '@/components/portal/ProposalSection';
 import { getProposalByPageId } from '@/lib/clientPortal';
 import { useSyncPortalToNostr, ADMIN_PUBKEY } from '@/hooks/usePortalSync';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { useCallback } from 'react';
 
 // ─── Auto-sync hook — called after every admin mutation ───────────────────────
 //
@@ -668,7 +667,7 @@ function NpubTab() {
 
 function NostrSyncBanner() {
   const { user } = useCurrentUser();
-  const { mutate: sync, isPending, isSuccess, isError, error } = useSyncPortalToNostr();
+  const { mutate: sync, isPending, isSuccess, isError, error: _error } = useSyncPortalToNostr();
   const { toast } = useToast();
 
   const isAdmin = user?.pubkey === ADMIN_PUBKEY;

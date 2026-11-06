@@ -20,7 +20,7 @@ function readCategories(): ProductCategory[] {
     const parsed: ProductCategory[] = JSON.parse(stored);
     // Merge in any default categories that are missing (e.g. Buttons, Stickers added later)
     const defaults = getDefaultCategories();
-    let merged = [...parsed];
+    const merged = [...parsed];
     let changed = false;
     for (const def of defaults) {
       if (!merged.find(c => c.id === def.id)) {

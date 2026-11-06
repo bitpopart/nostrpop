@@ -22,12 +22,10 @@ import {
   Paintbrush,
   Zap,
   Download,
-  Share2,
   Users,
   Grid3X3,
   Palette,
   Eye,
-  Undo,
   Check,
   X,
   ZoomIn,
@@ -168,6 +166,9 @@ function Canvas100M() {
     }
   }, [showPaymentDialog]);
 
+  // Latest publish handler (declared later in the component), read via ref to avoid a use-before-define
+  const publishPixelsRef = useRef<() => void>(() => {});
+
   // Start payment detection polling when the payment dialog opens with an invoice
   useEffect(() => {
     if (showPaymentDialog && invoice && invoice.verify_url) {
@@ -177,7 +178,7 @@ function Canvas100M() {
         verifyUrl: invoice.verify_url,
         pollInterval: 2000,
         onPaymentDetected: () => {
-          publishPixelsToNostr();
+          publishPixelsRef.current();
         },
         onPaymentExpired: () => {
           toast({
@@ -193,7 +194,7 @@ function Canvas100M() {
       stopDetection();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showPaymentDialog, invoice?.payment_hash, publishPixelsToNostr]);
+  }, [showPaymentDialog, invoice?.payment_hash]);
 
   // Fetch all painted pixels from Nostr
   const { data: pixels, isLoading: pixelsLoading, refetch: refetchPixels } = useQuery({
@@ -903,7 +904,7 @@ function Canvas100M() {
   };
 
   // Start fresh - clear pending pixels and move to empty area
-  const handleStartFresh = () => {
+  const _handleStartFresh = () => {
     setPendingPixels([]);
     setShowPreview(false);
     setUploadedImage(null);
@@ -1002,6 +1003,8 @@ function Canvas100M() {
       });
     }
   }, [user, pendingPixels, nostr, toast, clearInvoice, refetchPixels]);
+
+  publishPixelsRef.current = publishPixelsToNostr;
 
   // Pay with Alby / WebLN extension
   const handlePayWithAlby = async () => {
@@ -1121,7 +1124,7 @@ function Canvas100M() {
   };
 
   // Share functionality
-  const handleShare = async () => {
+  const _handleShare = async () => {
     const shareText = `I painted on the Nostr 100M Canvas! 🎨 Join me and claim your pixels at nostrpop.art`;
     const shareUrl = window.location.href;
 

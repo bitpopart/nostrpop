@@ -29,13 +29,11 @@ import {
   Loader2,
   Image as ImageIcon,
   Zap,
-  Check,
   GripVertical,
   Star,
 } from 'lucide-react';
 
 import { useCategories } from '@/hooks/useCategories';
-import { useShippingConfig } from '@/hooks/useShippingConfig';
 import { useShopTags } from '@/hooks/useShopTags';
 
 const CURRENCIES = [
@@ -356,7 +354,7 @@ export function CreateProductForm({ onSuccess, onCancel, initialData }: CreatePr
         : undefined;
 
       // Create product content
-      const productContent = {
+      const _productContent = {
         name: data.name,
         description: data.description,
         images: images,

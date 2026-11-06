@@ -7,8 +7,7 @@ import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppMedia, type AppMedia } from '@/hooks/useAppContent';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { useIsAdmin } from '@/hooks/useIsAdmin';
-import { recordDownload } from '@/hooks/useDownloadTracking';
+import { recordDownload, type DownloadCategory } from '@/hooks/useDownloadTracking';
 import { HashtagCloud } from '@/components/HashtagCloud';
 import { Download, Image as ImageIcon, ArrowLeft, Smartphone, Monitor, RefreshCw } from 'lucide-react';
 import { ZapButton } from '@/components/ZapButton';
@@ -22,7 +21,7 @@ type WallpaperTab = 'mobile' | 'desktop';
 function handleDownload(
   url: string,
   filename: string,
-  tracking?: { itemId: string; title: string; category: string },
+  tracking?: { itemId: string; title: string; category: DownloadCategory },
 ) {
   if (tracking) {
     recordDownload({ itemId: tracking.itemId, title: tracking.title, category: tracking.category, imageUrl: url });

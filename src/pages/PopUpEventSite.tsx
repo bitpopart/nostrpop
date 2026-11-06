@@ -102,7 +102,15 @@ export default function PopUpEventSite() {
       const title = event.tags.find(t => t[0] === 'title')?.[1] || 'Untitled';
       const brandSite = event.tags.find(t => t[0] === 'brand-site')?.[1] || event.tags.find(t => t[0] === 'website')?.[1] || '';
 
-      return { id, title, brandSite };
+      let description = '';
+      try {
+        const contentData = JSON.parse(event.content) as { description?: string };
+        description = contentData.description || '';
+      } catch {
+        description = event.content;
+      }
+
+      return { id, title, brandSite, description };
     },
     enabled: !!eventId,
   });

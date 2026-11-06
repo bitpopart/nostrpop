@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useSeoMeta } from '@unhead/react';
 import { useNostr } from '@nostrify/react';
 import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Image as ImageIcon, ExternalLink, Zap, Wallet } from 'lucide-react';
@@ -10,7 +10,6 @@ import { Button } from '@/components/ui/button';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { EcashSupportDialog } from '@/components/EcashSupportDialog';
 import ReactMarkdown from 'react-markdown';
-import { toast } from 'sonner';
 import { nip19 } from 'nostr-tools';
 
 const ADMIN_NPUB = 'npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz'; // BitPopArt admin
@@ -166,7 +165,7 @@ Follow me at BitPopArt:
   };
 
   const headerImage = getHeaderImage();
-  const externalUrl = getExternalUrl();
+  const _externalUrl = getExternalUrl();
   const contentBlocks = getContentBlocks();
 
   return (

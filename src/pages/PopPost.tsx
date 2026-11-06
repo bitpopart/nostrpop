@@ -17,18 +17,11 @@ import {
   Send,
   BarChart3,
   Plus,
-  Zap,
-  Heart,
-  Repeat2,
-  MessageCircle,
   Image as ImageIcon,
   Edit3,
   Trash2,
   CheckCircle2,
   AlertCircle,
-  Loader2,
-  ChevronLeft,
-  ChevronRight,
   Pencil,
   Sparkles,
   Inbox,
@@ -376,7 +369,7 @@ interface PostCardProps {
   onMarkPublished: (id: string, eventId: string) => void;
 }
 
-function PostCard({ post, onEdit, onDelete, onMarkPublished }: PostCardProps) {
+function PostCard({ post, onEdit, onDelete, onMarkPublished: _onMarkPublished }: PostCardProps) {
   const scheduledDate = new Date(post.scheduledAt);
   const isOverdue = post.status === 'scheduled' && scheduledDate < new Date();
   const isPast = post.status === 'published' || post.status === 'failed';

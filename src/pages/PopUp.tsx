@@ -355,7 +355,7 @@ export default function PopUp() {
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
               {pastEvents.map((event) => {
                 const typeConfig = POPUP_TYPE_CONFIG[event.type];
-                const statusConfig = POPUP_STATUS_CONFIG[event.status];
+                const _statusConfig = POPUP_STATUS_CONFIG[event.status];
 
                 return (
                   <Link key={event.id} to={`/popup/${event.id}`}>

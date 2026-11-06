@@ -94,7 +94,7 @@ function FormatIcon({ id }: { id: string }) {
 }
 
 // Sentinel value used when the Avatar Generator mode is active
-const AVATAR_GENERATOR_ID = 'avatar-generator';
+const _AVATAR_GENERATOR_ID = 'avatar-generator';
 
 // ─── Zoom steps ──────────────────────────────────────────────────────────────
 const ZOOM_STEPS = [0.5, 0.75, 1, 1.25, 1.5, 2, 2.5, 3];
@@ -346,7 +346,7 @@ export default function Studio() {
         if (corner === 'se') {
           // Bottom-right: grow/shrink from top-left anchor
           const rawW = resizing.origW + dx;
-          const rawH = resizing.origH + dy;
+          const _rawH = resizing.origH + dy;
           // Keep aspect ratio using the larger delta
           const ratio = resizing.origH / resizing.origW;
           const newWfromW = Math.max(MIN_SIZE, rawW);

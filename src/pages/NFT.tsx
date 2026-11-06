@@ -298,7 +298,7 @@ function GeneratorCard({ character }: GeneratorCardProps) {
         {/* Actions */}
         <div className="flex gap-2">
           <Button
-            onClick={handleGenerate}
+            onClick={() => handleGenerate()}
             disabled={isGenerating}
             className="flex-1 bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white"
             size="sm"

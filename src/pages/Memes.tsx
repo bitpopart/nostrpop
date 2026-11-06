@@ -14,7 +14,7 @@ import { HashtagCloud } from '@/components/HashtagCloud';
 import { RelaySelector } from '@/components/RelaySelector';
 import {
   Download, ArrowLeft, Laugh, LayoutTemplate, UserCircle2,
-  Shapes, Share2, Printer, Library, Wand2,
+  Shapes, Printer, Library, Wand2,
 } from 'lucide-react';
 import { ZapButton } from '@/components/ZapButton';
 import { ShareToNostrMediaDialog } from '@/components/ShareToNostrMediaDialog';

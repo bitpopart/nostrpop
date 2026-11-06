@@ -49,7 +49,7 @@ export default function AppHashtagPage() {
   const allMedia = useMemo(() => [
     ...wallpapers, ...gifs, ...avatars, ...banners,
     ...coloringPages, ...desktopWalls, ...memes,
-    ...freeDownloads.map(m => ({ ...m, hashtags: m.hashtags ?? [] })),
+    ...freeDownloads.map(m => ({ ...m, hashtags: [] as string[] })),
   ], [wallpapers, gifs, avatars, banners, coloringPages, desktopWalls, memes, freeDownloads]);
 
   const results = useMemo(() => {

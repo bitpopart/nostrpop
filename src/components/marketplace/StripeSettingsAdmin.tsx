@@ -26,7 +26,6 @@ import {
   AlertCircle,
   Eye,
   EyeOff,
-  ExternalLink,
   Info,
   Save,
   ListChecks,

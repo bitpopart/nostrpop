@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -20,7 +19,6 @@ import {
   ImagePlus,
   Pencil,
   FolderOpen,
-  X,
   Library,
   ImageIcon,
   Loader2,
@@ -130,7 +128,7 @@ function ImageManager({ library, onClose }: ImageManagerProps) {
       try {
         const [[, url]] = await uploadFile(file);
         newImages.push({ url, name: file.name.replace(/\.[^/.]+$/, '') });
-      } catch (err) {
+      } catch {
         toast({ title: `Failed to upload ${file.name}`, variant: 'destructive' });
       }
     }
@@ -260,7 +258,7 @@ function ImageManager({ library, onClose }: ImageManagerProps) {
 export function StudioLibrariesAdmin() {
   const { toast } = useToast();
   const { data: libraries, isLoading } = useStudioLibraries();
-  const { mutate: deleteLibrary, isPending: isDeleting } = useDeleteStudioLibrary();
+  const { mutate: deleteLibrary, isPending: _isDeleting } = useDeleteStudioLibrary();
 
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [editingLibrary, setEditingLibrary] = useState<StudioLibrary | null>(null);

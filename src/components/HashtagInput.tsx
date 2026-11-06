@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Hash, X, Sparkles } from 'lucide-react';
-import { generateHashtagsFromText, parseUserTags, normaliseTag } from '@/lib/hashtags';
+import { generateHashtagsFromText, parseUserTags } from '@/lib/hashtags';
 
 interface HashtagInputProps {
   /** Currently selected tags (no # prefix) */

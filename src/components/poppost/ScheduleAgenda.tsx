@@ -1,18 +1,15 @@
 import { useState, useMemo } from 'react';
 import type { ScheduledPost } from '@/hooks/useScheduledPosts';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
   ChevronLeft,
   ChevronRight,
   Calendar,
-  Clock,
   Edit3,
   Trash2,
-  Image as ImageIcon,
   Send,
-  Plus,
   KeyRound,
   CheckCircle2,
   AlertTriangle,
@@ -277,7 +274,7 @@ export function ScheduleAgenda({ upcomingPosts, onEdit, onDelete, onPublish }: S
 function MiniPostChip({
   post,
   onEdit,
-  onDelete,
+  onDelete: _onDelete,
   compact = false,
 }: {
   post: ScheduledPost;

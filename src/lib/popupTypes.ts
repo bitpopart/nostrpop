@@ -1,3 +1,5 @@
+import type { NostrEvent } from '@nostrify/nostrify';
+
 export type PopUpType = 'art' | 'shop' | 'event';
 export type PopUpStatus = 'confirmed' | 'option';
 
@@ -16,11 +18,7 @@ export interface PopUpEventData {
   galleryImages?: string[];
   link?: string;
   brandSite?: string;
-  event?: {
-    id: string;
-    kind: number;
-    pubkey: string;
-  };
+  event?: NostrEvent;
   isFinished?: boolean;
 }
 

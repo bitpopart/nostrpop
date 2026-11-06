@@ -18,7 +18,7 @@ import { useAppMedia } from '@/hooks/useAppContent';
 import { useEmojiPacks } from '@/hooks/useEmojiPacks';
 import { GifEncoder } from '@/lib/gifEncoder';
 import {
-  Plus, Trash2, Play, Pause, Loader2,
+  Trash2, Play, Pause, Loader2,
   LayoutTemplate, UserCircle2, Sticker, Type,
   Image as ImageIcon, Download, X, Layers,
   ChevronLeft, ChevronRight, CheckCircle2,
@@ -128,7 +128,6 @@ async function extractGifFrames(url: string): Promise<{ frames: string[]; fps: n
         const res = await fetch(`https://proxy.shakespeare.diy/?url=${encodeURIComponent(url)}`);
         blob = await res.blob();
       }
-      // @ts-expect-error ImageDecoder not yet in TS types
       const decoder = new ImageDecoder({ data: blob.stream(), type: 'image/gif' });
       await decoder.tracks.ready;
       const track = decoder.tracks.selectedTrack;
@@ -143,11 +142,10 @@ async function extractGifFrames(url: string): Promise<{ frames: string[]; fps: n
 
       for (let i = 0; i < count; i++) {
         const result = await decoder.decode({ frameIndex: i });
-        const bmp = result.image as ImageBitmap;
+        const bmp = result.image;
         ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
         ctx.drawImage(bmp, 0, 0, CANVAS_W, CANVAS_H);
         frames.push(offscreen.toDataURL());
-        // @ts-expect-error duration in microseconds
         totalDelay += (result.image.duration ?? 100000) / 1000; // µs → ms
         bmp.close();
       }

@@ -21,7 +21,6 @@ import {
   CheckCircle,
   Loader2,
   Image as ImageIcon,
-  Play,
   VolumeX,
   Volume2,
   Scissors

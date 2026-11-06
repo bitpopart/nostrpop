@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNostr } from '@nostrify/react';
-import { NostrEvent } from '@nostrify/nostrify';
+import { NostrEvent, type NostrFilter } from '@nostrify/nostrify';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -233,7 +233,7 @@ export function ZapAnalytics() {
         ? now - (30 * 24 * 60 * 60)
         : 0;
 
-      const filter: Record<string, unknown> = {
+      const filter: NostrFilter = {
         kinds: [9735],
         '#p': [adminPubkey],
         limit: 1000,
@@ -266,7 +266,7 @@ export function ZapAnalytics() {
               const zapRequest = JSON.parse(descriptionTag[1]);
               senderPubkey = zapRequest.pubkey;
               message = zapRequest.content;
-            } catch (e) {
+            } catch {
               // Invalid JSON in description
             }
           }
@@ -320,7 +320,7 @@ export function ZapAnalytics() {
   // Use the appropriate data source
   const zaps = dataSource === 'nwc' ? nwcZaps : relayZaps;
   const isLoading = dataSource === 'nwc' ? nwcLoading : relayLoading;
-  const error = dataSource === 'nwc' ? nwcError : relayError;
+  const _error = dataSource === 'nwc' ? nwcError : relayError;
 
   // ── Site payments from localStorage orders ──────────────────────────────────
   const sitePayments = useMemo(() => {

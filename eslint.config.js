@@ -8,7 +8,16 @@ import htmlParser from "@html-eslint/parser";
 import customRules from "./eslint-rules/index.js";
 
 export default tseslint.config(
-  { ignores: ["dist"] },
+  {
+    ignores: [
+      "dist",
+      // Self-contained static apps/pages served as-is (inline scripts, no manifest/OG by design)
+      "public/**/*.html",
+      "src/pages/*.html",
+      // Root document needs inline bootstrap scripts (theme/analytics) before the bundle loads
+      "index.html",
+    ],
+  },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],

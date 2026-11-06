@@ -62,7 +62,7 @@ export function ArtworkCleanupTool() {
               created_at: new Date(event.created_at * 1000).toISOString(),
               sale_type: 'not_for_sale' as const,
             } as ArtworkData;
-          } catch (error) {
+          } catch {
             return null;
           }
         })

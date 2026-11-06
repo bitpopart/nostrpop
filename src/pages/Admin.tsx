@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useSeoMeta } from '@unhead/react';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -34,7 +34,6 @@ import { ArtworkSalesManager } from '@/components/art/ArtworkSalesManager';
 import { VirtualGalleryAdmin } from '@/components/art/VirtualGalleryAdmin';
 import { ArtProgressManagement } from '@/components/artprogress/ArtProgressManagement';
 import { WallManagement } from '@/components/wall/WallManagement';
-import { AppContentManagement } from '@/components/app/AppContentManagement';
 import { AppContentDashboard } from '@/components/app/AppContentDashboard';
 import { AppAnalyticsDashboard } from '@/components/app/AppAnalyticsDashboard';
 import { WallpapersAdmin } from '@/components/app/WallpapersAdmin';
@@ -80,9 +79,7 @@ import {
   Share2,
   Mail,
   Target,
-  Settings,
   Zap,
-  Home,
   Award,
   Smartphone,
   Gamepad2,
@@ -92,7 +89,6 @@ import {
   Store,
   Upload,
   ClipboardList,
-  Monitor,
   Printer,
   ImageIcon,
   LayoutTemplate,

@@ -18,31 +18,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 
-interface ShippingRegion {
-  id: string;
-  name: string;
-  countries: string;
-  cost: number;
-}
-
-interface MarketplaceProduct {
-  id: string;
-  event?: unknown; // NostrEvent - optional for sample data
-  name: string;
-  description: string;
-  images: string[];
-  currency: string;
-  price: number;
-  discount?: number; // Discount percentage (0-100)
-  quantity?: number;
-  category: string;
-  type: 'physical' | 'digital';
-  specs?: Array<[string, string]>;
-  shipping?: ShippingRegion[];
-  digital_files?: string[];
-  stall_id: string;
-  created_at: string;
-}
+import type { MarketplaceProduct } from '@/hooks/useMarketplaceProducts';
 
 interface ProductDetailsDialogProps {
   open: boolean;
@@ -239,7 +215,7 @@ export function ProductDetailsDialog({ open, onOpenChange, product }: ProductDet
                     <div className="flex flex-wrap gap-1">
                       {product.shipping!.map((region) => (
                         <span key={region.id} className="text-xs bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full border border-blue-200 dark:border-blue-800">
-                          {region.name || region.id}:&nbsp;
+                          {(region as { name?: string }).name || region.id}:&nbsp;
                           {region.cost === 0
                             ? <span className="text-green-600 font-semibold">Free</span>
                             : formatCurrency(region.cost, product.currency)

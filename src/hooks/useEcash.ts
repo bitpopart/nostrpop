@@ -83,10 +83,10 @@ export function useEcash() {
     const minibitsUrl = `minibits://send?${params.toString()}`;
     
     // eNuts wallet (another popular Cashu wallet)
-    const enutsUrl = `enuts://send?${params.toString()}`;
+    const _enutsUrl = `enuts://send?${params.toString()}`;
     
     // Cashu.me wallet
-    const cashuUrl = `cashu://send?${params.toString()}`;
+    const _cashuUrl = `cashu://send?${params.toString()}`;
     
     try {
       // Create a hidden iframe to attempt opening the app

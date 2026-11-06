@@ -29,6 +29,8 @@ export interface OrderItem {
   currency: string;
   type: ProductType;
   image?: string;
+  /** Set on some older orders, e.g. 'Artwork'. */
+  category?: string;
 }
 
 export type OrderSourcePage = 'shop' | 'cart' | 'downloads' | 'product-page' | 'other';

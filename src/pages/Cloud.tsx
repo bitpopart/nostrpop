@@ -194,7 +194,7 @@ function CloudHeader({
               <span className="text-white font-semibold text-sm truncate max-w-[160px] sm:max-w-xs">
                 {activeApp.title}
               </span>
-              <Lock className="h-3 w-3 text-green-400 shrink-0" title="AES-256-GCM encrypted" />
+              <span title="AES-256-GCM encrypted" className="shrink-0"><Lock className="h-3 w-3 text-green-400" /></span>
             </div>
           </>
         ) : (

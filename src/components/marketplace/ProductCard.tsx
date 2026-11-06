@@ -9,7 +9,7 @@ import { useLivePrice } from '@/hooks/useLivePrice';
 import { useFiatToSats } from '@/hooks/useFiatToSats';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { useCart } from '@/hooks/useCart';
+import { useCart, toCartShipping } from '@/hooks/useCart';
 import { useToast } from '@/hooks/useToast';
 import { SocialShareButtons } from '@/components/SocialShareButtons';
 import { PaymentDialog } from './PaymentDialog';
@@ -26,35 +26,7 @@ import {
   Plus,
   ExternalLink,
 } from 'lucide-react';
-import type { NostrEvent } from '@nostrify/nostrify';
-
-interface ShippingRegion {
-  id: string;
-  name: string;
-  countries: string;
-  cost: number;
-}
-
-interface MarketplaceProduct {
-  id: string;
-  event?: NostrEvent; // NostrEvent - optional for sample data
-  name: string;
-  description: string;
-  images: string[];
-  currency: string;
-  price: number;
-  discount?: number; // Discount percentage (0-100)
-  quantity?: number;
-  category: string;
-  type: 'physical' | 'digital';
-  specs?: Array<[string, string]>;
-  shipping?: ShippingRegion[];
-  digital_files?: string[];
-  product_url?: string; // URL for physical products
-  contact_url?: string; // URL for contacting seller
-  stall_id: string;
-  created_at: string;
-}
+import type { MarketplaceProduct } from '@/hooks/useMarketplaceProducts';
 
 interface ProductCardProps {
   product: MarketplaceProduct;
@@ -93,7 +65,7 @@ export function ProductCard({ product, onViewDetails }: ProductCardProps) {
   const displayPriceInSats = satsConversion ?? livePrice?.priceInSats;
 
   const isOutOfStock = product.quantity !== undefined && product.quantity <= 0;
-  const hasShipping = product.shipping && product.shipping.length > 0;
+  const _hasShipping = product.shipping && product.shipping.length > 0;
   // Free digital products (price 0) — everyone can download the file(s), no payment.
   const isFreeDigital = product.type === 'digital' && product.price <= 0;
   // External-only: product has a contact_url pointing to an external webshop.
@@ -143,7 +115,7 @@ export function ProductCard({ product, onViewDetails }: ProductCardProps) {
       images: product.images,
       type: product.type,
       category: product.category,
-      shipping: product.shipping,
+      shipping: toCartShipping(product.shipping),
     });
     toast({
       title: 'Added to cart 🛒',

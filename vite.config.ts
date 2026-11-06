@@ -22,7 +22,7 @@ function basePathPlugin(base: string) {
 }
 
 // CSP Plugin to handle environment-specific Content Security Policy
-const cspPlugin = () => ({
+const _cspPlugin = () => ({
   name: 'csp-plugin',
   transformIndexHtml: {
     order: 'post' as const,
@@ -50,7 +50,7 @@ const cspPlugin = () => ({
 });
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode, command }) => {
+export default defineConfig(({ mode, command: _command }) => {
   // Use root path for custom domain (bitpopart.com)
   const base = '/';
   

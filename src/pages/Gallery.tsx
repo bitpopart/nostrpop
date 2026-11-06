@@ -89,7 +89,7 @@ export default function Gallery() {
     const dataJson = JSON.stringify(galleryData);
     result = result.replace(
       /<script type="application\/json" id="galleryData">[\s\S]*?<\/script>/,
-      '<script type="application/json" id="galleryData">' + dataJson + '<\/script>'
+      '<script type="application/json" id="galleryData">' + dataJson + '<\u002Fscript>'
     );
     // The built-in iframe ADMIN button/panel is removed for EVERYONE (admin
     // included). Artwork is added/edited through the React upload popup instead.
@@ -97,14 +97,14 @@ export default function Gallery() {
     // no admin UI is reachable or visible inside the 3D gallery.
     result = result.replace(
       '</body>',
-      '<script>(function(){var b=document.getElementById("adminBtn");if(b){b.classList.add("adminLocked");b.style.display="none";}var p=document.getElementById("admin");if(p){p.style.display="none";p.style.pointerEvents="none";}var f=document.getElementById("fileIn");if(f){f.disabled=true;}var j=document.getElementById("jsonIn");if(j){j.disabled=true;}})();<\/script></body>'
+      '<script>(function(){var b=document.getElementById("adminBtn");if(b){b.classList.add("adminLocked");b.style.display="none";}var p=document.getElementById("admin");if(p){p.style.display="none";p.style.pointerEvents="none";}var f=document.getElementById("fileIn");if(f){f.disabled=true;}var j=document.getElementById("jsonIn");if(j){j.disabled=true;}})();<\u002Fscript></body>'
     );
     // Clear stale localStorage overrides from the old admin panel BEFORE the
     // gallery bundle runs, so the Nostr artworks (galleryData) are the single
     // source of truth for the frames.
     result = result.replace(
       '<body>',
-      '<body><script>try{localStorage.removeItem("bitpop_world_gallery_v1")}catch(e){}<\/script>'
+      '<body><script>try{localStorage.removeItem("bitpop_world_gallery_v1")}catch(e){}<\u002Fscript>'
     );
     return result;
   }, [html, galleryData]);

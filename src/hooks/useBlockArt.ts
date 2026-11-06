@@ -1,7 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useNostr } from '@nostrify/react';
 import { useNFTCharacters, type NFTCharacter, type NFTLayerGroup } from './useNFTCharacters';
-import { getAdminPubkeyHex } from '@/lib/adminUtils';
 
 const MEMPOOL_API = 'https://mempool.space/api';
 const CORS_PROXY = 'https://proxy.shakespeare.diy/?url=';

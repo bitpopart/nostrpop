@@ -309,8 +309,9 @@ function PrintPaymentDialog({ open, onOpenChange, poster, format }: PrintPayment
     if (!selectedPrice) return;
     setIsCreatingInvoice(true);
     try {
-      const pr = await getZapInvoice(liveSatsAmount);
-      if (!pr) return;
+      const inv = await getZapInvoice(liveSatsAmount);
+      if (!inv) return;
+      const pr = inv.pr;
       const invoiceData = { pr, amountSats: liveSatsAmount, expiresAt: Date.now() + 15 * 60 * 1000 };
       setInvoice(invoiceData);
       const qr = await QRCode.toDataURL(pr, { width: 256, margin: 2 });

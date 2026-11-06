@@ -12,7 +12,6 @@ import {
   Rss,
   MapPin,
   Award,
-  Trophy,
   Target,
   Download,
   Image as ImageIcon,
@@ -245,7 +244,7 @@ export default function Sitemap() {
         links: footerPages.map(p => ({
           label: p.title,
           path: `/${p.id}`,
-          description: p.subtitle || undefined,
+          description: p.description || undefined,
           icon: <BookOpen className="h-4 w-4" />,
         })),
       }

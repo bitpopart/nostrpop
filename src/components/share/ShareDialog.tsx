@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useToast } from '@/hooks/useToast';
-import { Share2, Send, Mail, Copy, Loader2, Check, ExternalLink, Sparkles } from 'lucide-react';
+import { Share2, Send, Mail, Copy, Loader2, Check, Sparkles } from 'lucide-react';
 import { nip19 } from 'nostr-tools';
 
 interface ShareDialogProps {
