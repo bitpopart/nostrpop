@@ -575,6 +575,12 @@ body.viewing > :not(#viewer){display:none !important}
   table.led td:first-child .lname{color:#fff;white-space:normal}
   table.led td[colspan]{display:block;text-align:center;background-image:none;color:#888}
 }
+
+.navsupport{font-family:'BarlowC',sans-serif;font-weight:700;font-size:13px;letter-spacing:.14em;text-transform:uppercase;text-decoration:none;
+  color:#fff;background:var(--o);border:3px solid #000;border-radius:22px;box-shadow:3px 3px 0 #000;padding:5px 16px;white-space:nowrap;
+  transition:transform .12s,box-shadow .12s}
+.navsupport:hover{transform:translate(-1px,-1px);box-shadow:5px 5px 0 #000}
+@media(max-width:640px){.navsupport{width:100%;text-align:center;order:-1;margin-bottom:2px}.navlogo{display:none}}
 </style>
 </head>
 <body>
@@ -660,6 +666,7 @@ window.JUSTB = {
       <button data-target="mystery">Mystery B</button>
       <button data-target="get">Get one</button>
     </div>
+    <a class="navsupport" href="https://projects.noderunners.network/projects/just-b" target="_blank" rel="noopener noreferrer">Support this project</a>
   </div>
 </nav>
 
