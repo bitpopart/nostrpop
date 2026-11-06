@@ -552,6 +552,29 @@ body.viewing > :not(#viewer){display:none !important}
 .tthumb{flex:none;width:56px;height:76px;border:3px solid #000;border-radius:9px;background-color:var(--c);
   background-image:var(--a);background-repeat:no-repeat;background-position:center;background-size:82%;box-shadow:2px 2px 0 #000}
 @media(max-width:560px){.pdonut{padding:8px 4px 12px}}
+
+/* LEDGER TABLES: stacked cards on phones, no sideways scroll */
+@media(max-width:640px){
+  .tscroll{overflow:visible;border:0;border-radius:0;box-shadow:none;background:none}
+  table.led{min-width:0;width:100%;display:block}
+  table.led thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  table.led tbody{display:block}
+  table.led tr{display:block;border:3px solid #000;border-radius:12px;background-image:var(--t-white);
+    box-shadow:5px 5px 0 var(--o);margin-bottom:16px;overflow:hidden}
+  table.led tr.soon{background-image:var(--t-tint)}
+  table.led tr.soon td{background-image:none}
+  table.led td{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:9px 14px;
+    font-size:15px;text-align:right;border-bottom:2px solid rgba(0,0,0,.09)}
+  table.led td::before{content:attr(data-label);flex:none;font-family:'BarlowC',sans-serif;font-weight:700;
+    font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#888;text-align:left}
+  table.led td:last-child{border-bottom:0}
+  table.led td:first-child,table.led tr.soon td:first-child{display:block;text-align:left;border-bottom:3px solid #000;
+    padding:10px 14px;background-image:var(--t-orange)}
+  table.led td:first-child::before{display:none}
+  table.led td:first-child .lno{color:#ffe2cf}
+  table.led td:first-child .lname{color:#fff;white-space:normal}
+  table.led td[colspan]{display:block;text-align:center;background-image:none;color:#888}
+}
 </style>
 </head>
 <body>
@@ -926,10 +949,10 @@ window.JUSTB = {
       <table class="led">
         <thead><tr><th>Rarity</th><th>Serial on the card</th><th>Copies per design</th><th>Designs now</th><th>In the world</th></tr></thead>
         <tbody>
-          <tr><td><span class="lname" style="font-size:18px">Street</span></td><td>&#8734;</td><td>Unlimited</td><td><span class="lnum">20</span></td><td>Unlimited</td></tr>
-          <tr><td><span class="lname" style="font-size:18px">Rare</span></td><td>0123/1000</td><td>1,000</td><td><span class="lnum">0</span> <span class="tbd">open</span></td><td>1,000 per card</td></tr>
-          <tr><td><span class="lname" style="font-size:18px">Ultra Rare</span></td><td>042/100</td><td>100</td><td><span class="lnum">3</span></td><td>300</td></tr>
-          <tr><td><span class="lname" style="font-size:18px">Mystery Rare</span></td><td>07/21</td><td>21</td><td><span class="lnum">1</span></td><td>21</td></tr>
+          <tr><td><span class="lname" style="font-size:18px">Street</span></td><td data-label="Serial on the card">&#8734;</td><td data-label="Copies per design">Unlimited</td><td data-label="Designs now"><span class="lnum">20</span></td><td data-label="In the world">Unlimited</td></tr>
+          <tr><td><span class="lname" style="font-size:18px">Rare</span></td><td data-label="Serial on the card">0123/1000</td><td data-label="Copies per design">1,000</td><td data-label="Designs now"><span class="lnum">0</span> <span class="tbd">open</span></td><td data-label="In the world">1,000 per card</td></tr>
+          <tr><td><span class="lname" style="font-size:18px">Ultra Rare</span></td><td data-label="Serial on the card">042/100</td><td data-label="Copies per design">100</td><td data-label="Designs now"><span class="lnum">3</span></td><td data-label="In the world">300</td></tr>
+          <tr><td><span class="lname" style="font-size:18px">Mystery Rare</span></td><td data-label="Serial on the card">07/21</td><td data-label="Copies per design">21</td><td data-label="Designs now"><span class="lnum">1</span></td><td data-label="In the world">21</td></tr>
         </tbody>
       </table>
     </div>
@@ -1088,11 +1111,11 @@ window.JUSTB = {
       var x = D.base[j];
       rows += '<tr>'
         + '<td><span class="lno">' + x.no + '</span><span class="lname">' + x.name + '</span></td>'
-        + '<td>' + pill('Street') + '</td>'
-        + '<td><span class="lsupply">&#8734;</span> unlimited</td>'
-        + '<td><span class="lnum">' + nf(x.released) + '</span></td>'
-        + '<td>' + tbd(x.first) + '</td>'
-        + '<td>' + tbd(x.block ? nf(x.block) : null) + '</td>'
+        + '<td data-label="Rarity">' + pill('Street') + '</td>'
+        + '<td data-label="Supply"><span><span class="lsupply">&#8734;</span> unlimited</span></td>'
+        + '<td data-label="Released"><span class="lnum">' + nf(x.released) + '</span></td>'
+        + '<td data-label="First release">' + tbd(x.first) + '</td>'
+        + '<td data-label="Block">' + tbd(x.block ? nf(x.block) : null) + '</td>'
         + '</tr>';
     }
     for (var k = 0; k < D.drops.length; k++) {
@@ -1100,11 +1123,11 @@ window.JUSTB = {
       var soon = y.status === 'soon';
       rows += '<tr' + (soon ? ' class="soon"' : '') + '>'
         + '<td><span class="lno">' + y.no + '</span><span class="lname">' + y.name + '</span></td>'
-        + '<td>' + pill(y.rarity) + '</td>'
-        + '<td><span class="lsupply">' + nf(y.supply) + '</span></td>'
-        + '<td>' + (soon ? '<span class="lsoon">Coming soon</span>' : '<span class="lnum">' + nf(y.released) + '</span>') + '</td>'
-        + '<td>' + tbd(y.first) + '</td>'
-        + '<td>' + tbd(y.block ? nf(y.block) : null) + '</td>'
+        + '<td data-label="Rarity">' + pill(y.rarity) + '</td>'
+        + '<td data-label="Supply"><span class="lsupply">' + nf(y.supply) + '</span></td>'
+        + '<td data-label="Released">' + (soon ? '<span class="lsoon">Coming soon</span>' : '<span class="lnum">' + nf(y.released) + '</span>') + '</td>'
+        + '<td data-label="First release">' + tbd(y.first) + '</td>'
+        + '<td data-label="Block">' + tbd(y.block ? nf(y.block) : null) + '</td>'
         + '</tr>';
     }
     var tb = document.getElementById('ledrows');
