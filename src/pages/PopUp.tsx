@@ -1,6 +1,7 @@
 import { useSeoMeta } from '@unhead/react';
 import { Link } from 'react-router-dom';
 import { useNostr } from '@nostrify/react';
+import { removeDeletedEvents } from '@/lib/popupDeletions';
 import { useQuery } from '@tanstack/react-query';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
@@ -51,7 +52,14 @@ export default function PopUp() {
         ? [{ kinds: [31922], authors: [user.pubkey], '#t': ['bitpopart-popup'], limit: 100 }]
         : [{ kinds: [31922], '#t': ['bitpopart-popup'], limit: 100 }];
 
-      const events = await nostr.query(filters, { signal });
+      const found = await nostr.query(filters, { signal });
+
+      // Hide events the author has deleted (NIP-09)
+      const authors = [...new Set(found.map((e) => e.pubkey))];
+      const deletions = authors.length > 0
+        ? await nostr.query([{ kinds: [5], authors, limit: 300 }], { signal }).catch(() => [])
+        : [];
+      const events = removeDeletedEvents(found, deletions);
       
       // Parse events into PopUpEventData
       const parsedEvents: PopUpEventData[] = events

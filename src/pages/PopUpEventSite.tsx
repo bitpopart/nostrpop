@@ -1,3 +1,4 @@
+import { removeDeletedEvents } from '@/lib/popupDeletions';
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useSeoMeta } from '@unhead/react';
@@ -90,10 +91,15 @@ export default function PopUpEventSite() {
     queryFn: async (c) => {
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(3000)]);
 
-      const events = await nostr.query(
+      const found = await nostr.query(
         [{ kinds: [31922], '#d': [eventId!], '#t': ['bitpopart-popup'], limit: 1 }],
         { signal }
       );
+      // A deleted event must not stay reachable by its direct link (NIP-09)
+      const deletions = found.length > 0
+        ? await nostr.query([{ kinds: [5], authors: [found[0].pubkey], limit: 300 }], { signal }).catch(() => [])
+        : [];
+      const events = removeDeletedEvents(found, deletions);
 
       if (events.length === 0) return null;
 

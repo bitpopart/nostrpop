@@ -1,3 +1,4 @@
+import { removeDeletedEvents } from '@/lib/popupDeletions';
 import { useState, useRef } from 'react';
 import { useNostr } from '@nostrify/react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -87,10 +88,15 @@ export function PopUpManagement() {
     queryFn: async (c) => {
       if (!user?.pubkey) return [];
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(3000)]);
-      const events = await nostr.query(
+      const found = await nostr.query(
         [{ kinds: [31922], authors: [user.pubkey], '#t': ['bitpopart-popup'], limit: 100 }],
         { signal }
       );
+      // Hide events that were deleted (NIP-09); relays do not always drop them
+      const deletions = await nostr
+        .query([{ kinds: [5], authors: [user.pubkey], limit: 300 }], { signal })
+        .catch(() => []);
+      const events = removeDeletedEvents(found, deletions);
       // Separate and sort: active events (soonest first), then past events (most recent first)
       const active: NostrEvent[] = [];
       const past: NostrEvent[] = [];
@@ -440,12 +446,26 @@ export function PopUpManagement() {
         {
           kind: 5,
           content: 'Deleted PopUp event',
-          tags: [['a', `31922:${event.pubkey}:${eventId}`]],
+          // Both the address and the exact event id, plus the kind, so every relay can match it
+          tags: [
+            ['a', `${event.kind}:${event.pubkey}:${eventId}`],
+            ['e', event.id],
+            ['k', String(event.kind)],
+          ],
         },
         {
           onSuccess: () => {
-            toast.success('PopUp event deleted');
+            // Remove it from the lists right away instead of waiting for the relays
+            queryClient.setQueriesData<NostrEvent[]>({ queryKey: ['popup-events'] }, (old) =>
+              Array.isArray(old) ? old.filter((e) => e.id !== event.id) : old,
+            );
             queryClient.invalidateQueries({ queryKey: ['popup-events'] });
+            queryClient.invalidateQueries({ queryKey: ['popup-events-public'] });
+            toast.success('PopUp event deleted');
+          },
+          onError: (error) => {
+            console.error('Delete error:', error);
+            toast.error('Could not delete the PopUp event. Try again.');
           },
         }
       );
