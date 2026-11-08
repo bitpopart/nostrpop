@@ -1,6 +1,0 @@
-import{c as l,u as y,a5 as s}from"./index-DmCJDHKR.js";import{a as m,u as g,b}from"./vendor-query--2w0ie8x.js";import{d as o}from"./vendor-nostr-nrnx7nPQ.js";import"./vendor-react-Boa4e_cT.js";/**
- * @license lucide-react v0.462.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */const k=l("Megaphone",[["path",{d:"m3 11 18-5v12L3 14v-3z",key:"n962bs"}],["path",{d:"M11.6 16.8a3 3 0 1 1-5.8-1.6",key:"1yl0tm"}]]),u="com.bitpopart.art-banner";function A(){const{nostr:e}=o(),n=s();return m({queryKey:["art-banner",n],queryFn:async r=>{const a=AbortSignal.any([r.signal,AbortSignal.timeout(5e3)]),t=await e.query([{kinds:[30078],authors:[n],"#d":[u],limit:1}],{signal:a});if(t.length===0)return null;try{return JSON.parse(t[0].content)}catch{return null}},enabled:!!n,staleTime:6e4})}function M(){const{nostr:e}=o(),{user:n}=y(),r=g(),a=s();return b({mutationFn:async t=>{if(!n)throw new Error("Must be logged in");const i={kind:30078,content:JSON.stringify(t),tags:[["d",u],["t","art-banner"]],created_at:Math.floor(Date.now()/1e3)},c=await n.signer.signEvent(i);return await e.event(c,{signal:AbortSignal.timeout(5e3)}),t},onSuccess:t=>{r.setQueryData(["art-banner",a],t)}})}export{k as M,M as a,A as u};
