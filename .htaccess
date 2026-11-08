@@ -13,6 +13,10 @@ RewriteRule ^ - [L]
 RewriteRule ^ /index.html [L]
 
 <IfModule mod_headers.c>
+  Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
   # The shell must never be cached, so a new deploy shows up right away
   <FilesMatch "^(index\.html|sw\.js|manifest\.webmanifest)$">
     Header set Cache-Control "no-cache, no-store, must-revalidate"
