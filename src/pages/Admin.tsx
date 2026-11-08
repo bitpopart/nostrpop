@@ -23,6 +23,7 @@ import { SocialMediaManagement } from '@/components/social/SocialMediaManagement
 import { NewsletterManager } from '@/components/newsletter/NewsletterManager';
 import { AnalyticsSettings } from '@/components/analytics/AnalyticsSettings';
 import { ZapAnalytics } from '@/components/analytics/ZapAnalytics';
+import { MediaAnalyticsCard } from '@/components/analytics/MediaAnalyticsCard';
 import { SiteSettings } from '@/components/settings/SiteSettings';
 import { HomepageSettings } from '@/components/settings/HomepageSettings';
 import { ZapwallAdmin } from '@/components/zapwall/ZapwallAdmin';
@@ -1228,7 +1229,8 @@ const Admin = () => {
             <NewsletterManager />
           </TabsContent>
 
-          <TabsContent value="analytics">
+          <TabsContent value="analytics" className="space-y-6">
+            <MediaAnalyticsCard />
             <AnalyticsSettings />
           </TabsContent>
 
