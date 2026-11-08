@@ -27,6 +27,9 @@ jobs:
       - name: Install dependencies
         run: npm ci || npm install
 
+      - name: Generate GIF tile previews
+        run: node scripts/gen-tile-previews.mjs
+
       - name: Build
         run: npm run build:ci
 

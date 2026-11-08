@@ -64,6 +64,25 @@ export interface HomepageSettings {
   gridTiles?: GridTile[];
 }
 
+// The last good settings are kept in this browser so the tile grid can draw
+// at once on a repeat visit instead of waiting for the relays every time.
+const SETTINGS_CACHE_KEY = 'homepage-settings-cache-v1';
+function readSettingsCache(): HomepageSettings | undefined {
+  try {
+    const raw = localStorage.getItem(SETTINGS_CACHE_KEY);
+    return raw ? (JSON.parse(raw) as HomepageSettings) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+function writeSettingsCache(settings: HomepageSettings) {
+  try {
+    localStorage.setItem(SETTINGS_CACHE_KEY, JSON.stringify(settings));
+  } catch {
+    // storage full or blocked: the site works without the cache
+  }
+}
+
 const DEFAULT_SECTIONS: HomepageSection[] = [
   {
     id: 'nostr-projects',
@@ -138,7 +157,7 @@ export function useHomepageSettings() {
   const adminPubkey = getAdminPubkeyHex();
   const queryClient = useQueryClient();
 
-  const query = useQuery({
+  const query = useQuery<HomepageSettings>({
     queryKey: ['homepage-settings-public', adminPubkey],
     queryFn: async (c) => {
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(5000)]);
@@ -209,12 +228,14 @@ export function useHomepageSettings() {
               }
             }
 
-            return {
+            const result = {
               sections: merged.sort((a, b) => a.order - b.order),
               buttons: buttons.sort((a, b) => a.order - b.order),
               defaultView,
               gridTiles: (gridTiles || []).sort((a, b) => a.order - b.order),
             } as HomepageSettings;
+            writeSettingsCache(result);
+            return result;
           } catch (e) {
             console.error('[useHomepageSettings] Failed to parse settings from Nostr:', e);
           }
@@ -231,6 +252,7 @@ export function useHomepageSettings() {
       } as HomepageSettings;
     },
     enabled: !!adminPubkey,
+    placeholderData: readSettingsCache,
     // Cache settings so the home page isn't blank on every cold start while
     // the relay responds. Admin edits still appear immediately because the
     // 'homepage-settings-updated' event below invalidates this query.

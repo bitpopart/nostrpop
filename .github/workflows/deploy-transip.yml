@@ -43,6 +43,7 @@ jobs:
         if: steps.gate.outputs.go == 'true'
         run: |
           npm ci || npm install
+          node scripts/gen-tile-previews.mjs
           npm run build:ci
 
       - name: Upload to TransIP

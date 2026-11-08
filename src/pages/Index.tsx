@@ -635,7 +635,7 @@ function useGifTilePreview(imageUrl: string): { resolved: boolean; path: string 
  * The 6s proxy hang guard keeps a stalled proxy from leaving tiles as
  * permanent gray skeletons.
  */
-function PhotoGridTile({ tile }: { tile: GridTile }) {
+function PhotoGridTile({ tile, priority = false }: { tile: GridTile; priority?: boolean }) {
   const thumbnail = useThumbnailUrl();
   const proxiedSrc = thumbnail(tile.imageUrl, 400);
   const isGif = /\.gif(\?|$)/i.test(tile.imageUrl);
@@ -674,7 +674,7 @@ function PhotoGridTile({ tile }: { tile: GridTile }) {
   // worth more than a lighter download that never arrives.
   useEffect(() => {
     if (isGif || loaded || errored || src !== proxiedSrc) return;
-    const timer = setTimeout(() => setSrc(tile.imageUrl), 6000);
+    const timer = setTimeout(() => setSrc(tile.imageUrl), 3500);
     return () => clearTimeout(timer);
   }, [isGif, loaded, errored, src, proxiedSrc, tile.imageUrl]);
 
@@ -706,7 +706,10 @@ function PhotoGridTile({ tile }: { tile: GridTile }) {
         className={`w-full h-full object-cover transition-all duration-300 group-hover:scale-105 ${
           loaded ? 'opacity-100' : 'opacity-0'
         }`}
-        loading="lazy"
+        loading={priority ? 'eager' : 'lazy'}
+        decoding="async"
+        // @ts-expect-error fetchpriority is valid HTML but missing from this React version's types
+        fetchpriority={priority ? 'high' : 'auto'}
         ref={(el) => {
           if (el?.complete && el.naturalWidth > 0 && !loaded) setLoaded(true);
         }}
@@ -781,9 +784,10 @@ function PhotoGrid({ tiles }: { tiles: GridTile[] }) {
 
   return (
     <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-1 sm:gap-1.5">
-      {sorted.map(tile => {
+      {sorted.map((tile, index) => {
         const internalPath = internalPathFor(tile.linkUrl);
-        const inner = <PhotoGridTile tile={tile} />;
+        // The first rows are on screen at once: load them right away
+        const inner = <PhotoGridTile tile={tile} priority={index < 12} />;
 
         return internalPath === null ? (
           <a key={tile.id} href={tile.linkUrl} target="_blank" rel="noopener noreferrer" className="block rounded-sm overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500">
