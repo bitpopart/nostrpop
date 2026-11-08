@@ -4,7 +4,7 @@
   <!-- Homepage -->
   <url>
     <loc>https://bitpopart.com/</loc>
-    <lastmod>2026-06-11</lastmod>
+    <lastmod>2026-11-08</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
     <image:image>
@@ -16,7 +16,7 @@
   <!-- Art Gallery -->
   <url>
     <loc>https://bitpopart.com/art</loc>
-    <lastmod>2026-06-11</lastmod>
+    <lastmod>2026-11-08</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
@@ -24,7 +24,7 @@
   <!-- Shop / Marketplace -->
   <url>
     <loc>https://bitpopart.com/shop</loc>
-    <lastmod>2026-06-11</lastmod>
+    <lastmod>2026-11-08</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
@@ -32,7 +32,7 @@
   <!-- Cards -->
   <url>
     <loc>https://bitpopart.com/cards</loc>
-    <lastmod>2026-06-11</lastmod>
+    <lastmod>2026-11-08</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
@@ -40,7 +40,7 @@
   <!-- Blog -->
   <url>
     <loc>https://bitpopart.com/blog</loc>
-    <lastmod>2026-06-11</lastmod>
+    <lastmod>2026-11-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -48,7 +48,7 @@
   <!-- Artist Page -->
   <url>
     <loc>https://bitpopart.com/artist</loc>
-    <lastmod>2026-06-11</lastmod>
+    <lastmod>2026-11-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -56,7 +56,7 @@
   <!-- PopUp Events -->
   <url>
     <loc>https://bitpopart.com/popup</loc>
-    <lastmod>2026-06-11</lastmod>
+    <lastmod>2026-11-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -64,7 +64,7 @@
   <!-- Projects -->
   <url>
     <loc>https://bitpopart.com/projects</loc>
-    <lastmod>2026-06-11</lastmod>
+    <lastmod>2026-11-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -72,7 +72,7 @@
   <!-- Nostr Projects -->
   <url>
     <loc>https://bitpopart.com/nostr-projects</loc>
-    <lastmod>2026-06-11</lastmod>
+    <lastmod>2026-11-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -80,7 +80,7 @@
   <!-- Badges -->
   <url>
     <loc>https://bitpopart.com/badges</loc>
-    <lastmod>2026-06-11</lastmod>
+    <lastmod>2026-11-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -88,7 +88,7 @@
   <!-- Fundraising -->
   <url>
     <loc>https://bitpopart.com/fundraising</loc>
-    <lastmod>2026-06-11</lastmod>
+    <lastmod>2026-11-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -96,7 +96,7 @@
   <!-- Vlog -->
   <url>
     <loc>https://bitpopart.com/vlog</loc>
-    <lastmod>2026-06-11</lastmod>
+    <lastmod>2026-11-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -104,7 +104,7 @@
   <!-- Wall / Street Art -->
   <url>
     <loc>https://bitpopart.com/wall</loc>
-    <lastmod>2026-06-11</lastmod>
+    <lastmod>2026-11-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -112,7 +112,7 @@
   <!-- Free Downloads Hub -->
   <url>
     <loc>https://bitpopart.com/free</loc>
-    <lastmod>2026-06-11</lastmod>
+    <lastmod>2026-11-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -120,7 +120,7 @@
   <!-- Free Images -->
   <url>
     <loc>https://bitpopart.com/free/images</loc>
-    <lastmod>2026-06-11</lastmod>
+    <lastmod>2026-11-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -128,7 +128,7 @@
   <!-- Wallpapers -->
   <url>
     <loc>https://bitpopart.com/wallpapers</loc>
-    <lastmod>2026-06-11</lastmod>
+    <lastmod>2026-11-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -136,7 +136,7 @@
   <!-- Avatars -->
   <url>
     <loc>https://bitpopart.com/avatars</loc>
-    <lastmod>2026-06-11</lastmod>
+    <lastmod>2026-11-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -144,7 +144,7 @@
   <!-- Header Banners -->
   <url>
     <loc>https://bitpopart.com/banners</loc>
-    <lastmod>2026-06-11</lastmod>
+    <lastmod>2026-11-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -152,7 +152,7 @@
   <!-- Animated GIFs -->
   <url>
     <loc>https://bitpopart.com/gifs</loc>
-    <lastmod>2026-06-11</lastmod>
+    <lastmod>2026-11-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -160,7 +160,7 @@
   <!-- Animations -->
   <url>
     <loc>https://bitpopart.com/animations</loc>
-    <lastmod>2026-06-11</lastmod>
+    <lastmod>2026-11-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -168,7 +168,7 @@
   <!-- Games -->
   <url>
     <loc>https://bitpopart.com/games</loc>
-    <lastmod>2026-06-11</lastmod>
+    <lastmod>2026-11-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -176,7 +176,7 @@
   <!-- 21K Art Experiment -->
   <url>
     <loc>https://bitpopart.com/21k-art</loc>
-    <lastmod>2026-06-11</lastmod>
+    <lastmod>2026-11-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -184,7 +184,7 @@
   <!-- 100M Canvas -->
   <url>
     <loc>https://bitpopart.com/canvas</loc>
-    <lastmod>2026-06-11</lastmod>
+    <lastmod>2026-11-08</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>
   </url>
@@ -192,7 +192,7 @@
   <!-- App -->
   <url>
     <loc>https://bitpopart.com/app</loc>
-    <lastmod>2026-06-11</lastmod>
+    <lastmod>2026-11-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -200,7 +200,7 @@
   <!-- Feed -->
   <url>
     <loc>https://bitpopart.com/feed</loc>
-    <lastmod>2026-06-11</lastmod>
+    <lastmod>2026-11-08</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.5</priority>
   </url>
@@ -208,7 +208,7 @@
   <!-- Zapper -->
   <url>
     <loc>https://bitpopart.com/zapper</loc>
-    <lastmod>2026-10-16</lastmod>
+    <lastmod>2026-11-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -216,7 +216,7 @@
   <!-- Zapwall -->
   <url>
     <loc>https://bitpopart.com/zapwall</loc>
-    <lastmod>2026-10-18</lastmod>
+    <lastmod>2026-11-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -224,7 +224,7 @@
   <!-- Just B Mystery Box -->
   <url>
     <loc>https://bitpopart.com/b</loc>
-    <lastmod>2026-10-18</lastmod>
+    <lastmod>2026-11-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -232,7 +232,7 @@
   <!-- Just B Rarity Ledger -->
   <url>
     <loc>https://bitpopart.com/rare</loc>
-    <lastmod>2026-10-22</lastmod>
+    <lastmod>2026-11-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -240,7 +240,7 @@
   <!-- Just B What's New -->
   <url>
     <loc>https://bitpopart.com/new</loc>
-    <lastmod>2026-10-22</lastmod>
+    <lastmod>2026-11-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -248,8 +248,50 @@
   <!-- The Stack — Just B Card Game -->
   <url>
     <loc>https://bitpopart.com/tcg</loc>
-    <lastmod>2026-10-19</lastmod>
+    <lastmod>2026-11-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
+  <url>
+    <loc>https://bitpopart.com/coloring-pages</loc>
+    <lastmod>2026-11-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <url>
+    <loc>https://bitpopart.com/memes</loc>
+    <lastmod>2026-11-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <url>
+    <loc>https://bitpopart.com/desktop-wallpapers</loc>
+    <lastmod>2026-11-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <url>
+    <loc>https://bitpopart.com/gallery</loc>
+    <lastmod>2026-11-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <url>
+    <loc>https://bitpopart.com/community</loc>
+    <lastmod>2026-11-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <url>
+    <loc>https://bitpopart.com/studio</loc>
+    <lastmod>2026-11-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
 </urlset>
