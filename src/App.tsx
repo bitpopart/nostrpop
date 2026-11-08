@@ -53,6 +53,11 @@ const presetRelays = [
   { url: 'wss://relay.nostr.net', name: 'NostrNet', read: true, write: true },
   // Azzamo main (free) relay: every visitor connects to it when opening the site.
   { url: 'wss://nostr.azzamo.net', name: 'Azzamo', read: true, write: true },
+  { url: 'wss://inbox.azzamo.net', name: 'Azzamo Inbox', read: true, write: true },
+  // Azzamo Premium relays (EU, US, Asia Pacific)
+  { url: 'wss://relay.azzamo.net', name: 'Azzamo EU', read: true, write: true },
+  { url: 'wss://us.azzamo.net', name: 'Azzamo US', read: true, write: true },
+  { url: 'wss://asia.azzamo.net', name: 'Azzamo Asia', read: true, write: true },
   // Gamestr gaming relay — write game scores (kind 30762) here for discovery on gamestr.io
   { url: 'wss://main.relay.gamestr.io', name: 'Gamestr', read: false, write: true },
 ];
