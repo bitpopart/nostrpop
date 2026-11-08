@@ -79,6 +79,7 @@ import TCG from "./pages/TCG";
 import BitBot from "./pages/BitBot";
 import BitBotCrowdfunding from "./pages/BitBotCrowdfunding";
 import NotFound from "./pages/NotFound";
+import { SeoCanonical } from "./components/SeoCanonical";
 
 export function AppRouter() {
   // Use the base URL that Vite injects based on build config
@@ -87,6 +88,7 @@ export function AppRouter() {
   return (
     <BrowserRouter basename={basename}>
       <ScrollToTop />
+      <SeoCanonical />
       <Routes>
         {/* Full-screen admin route — no site Layout */}
         <Route path="/nft-admin" element={<NFTAdmin />} />

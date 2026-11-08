@@ -75,6 +75,7 @@ export default function Zapper() {
 
   return (
     <div className="w-full" style={{ backgroundColor: '#0b0517' }}>
+      <h1 className="sr-only">ZAPPER zap lamps: firmware updates and control</h1>
       <iframe
         ref={frameRef}
         src="/zapper-app/"

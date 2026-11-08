@@ -121,6 +121,7 @@ export default function TCG() {
 
   return (
     <div className="w-full" style={{ backgroundColor: '#0e0a17' }}>
+      <h1 className="sr-only">The Stack, the Just B trading card game</h1>
       <iframe
         ref={frameRef}
         src="/tcg-app/"

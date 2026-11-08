@@ -1823,6 +1823,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20">
       <div className="container mx-auto px-4 py-8">
+      <h1 className="sr-only">BitPopArt: Bitcoin pop art, Just B collectibles and good vibes cards on Nostr</h1>
 
 
         {/* Love PopArt Banner — compact inline category icon nav */}
