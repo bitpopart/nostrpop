@@ -2,7 +2,7 @@ name: Deploy to TransIP hosting
 
 # Builds the site and uploads it to the TransIP web hosting on every push to
 # main. It does nothing until the secrets below exist, so it is safe to leave
-# on. Setup steps: GUIDE/TRANSIP_DEPLOY.md
+# on. Setup steps: docs/TRANSIP_DEPLOY.md
 #   TRANSIP_FTP_HOST   e.g. yourname.transip.me or the FTP host shown in the panel
 #   TRANSIP_FTP_USER   FTP/SFTP user from the TransIP panel
 #   TRANSIP_FTP_PASS   its password
