@@ -1,0 +1,28 @@
+# bitpopart.com on Apache (TransIP web hosting)
+# Every URL that is not a real file is answered with the app shell and a normal
+# 200 status, so Google can index /art, /shop, /b and the other pages.
+Options -MultiViews
+RewriteEngine On
+RewriteCond %{HTTPS} !=on
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
+RewriteRule ^ https://%1%{REQUEST_URI} [L,R=301]
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+RewriteRule ^ /index.html [L]
+
+<IfModule mod_headers.c>
+  # The shell must never be cached, so a new deploy shows up right away
+  <FilesMatch "^(index\.html|sw\.js|manifest\.webmanifest)$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+  </FilesMatch>
+  # Hashed build files can be cached for a year
+  <FilesMatch "\.(js|css|woff2?|svg|png|jpe?g|webp|gif)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+</IfModule>
+
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css application/javascript application/json image/svg+xml
+</IfModule>
