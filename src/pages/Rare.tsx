@@ -82,6 +82,7 @@ export default function Rare() {
 
   return (
     <div className="w-full" style={{ backgroundColor: '#eef0f1' }}>
+      <h1 className="sr-only">Just B rarity ledger: every collectible, print run and block height</h1>
       <iframe
         ref={frameRef}
         src="/justb-app/ledger.html"

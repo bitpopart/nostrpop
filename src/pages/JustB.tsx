@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useSeoMeta } from '@unhead/react';
+import { useHead, useSeoMeta } from '@unhead/react';
+import { Link } from 'react-router-dom';
 import { useJustBDataSource } from '@/hooks/useJustBData';
 import { JUSTB_DATA_SOURCE, type JustBData } from '@/lib/justb';
 
@@ -75,7 +76,30 @@ export default function JustB() {
     ogTitle: 'Just B — Mystery Box | BitPopArt',
     ogDescription:
       'Six regular B\u2019s, an endless run of rare Mystery B\u2019s, and a card game built on 21. Just Bitcoin. Just pop art. Just B.',
-    ogImage: 'https://bitpopart.com/bitpopart-logo.png',
+    ogImage: 'https://bitpopart.com/og-image.png',
+  });
+
+  useHead({
+    script: [
+      {
+        type: 'application/ld+json',
+        innerHTML: JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'CollectionPage',
+          name: 'Just B — Mystery Box',
+          url: 'https://bitpopart.com/b',
+          description:
+            'Just B is the BitPopArt pop art collectible line: six regular B collectibles, rare Mystery B\u2019s, a public rarity ledger and The Stack trading card game.',
+          inLanguage: 'en',
+          creator: { '@type': 'Person', name: 'Johannes Oppewal', url: 'https://bitpopart.com/artist' },
+          publisher: { '@type': 'Organization', name: 'BitPopArt', url: 'https://bitpopart.com/' },
+          hasPart: [
+            { '@type': 'WebPage', name: 'Just B rarity ledger', url: 'https://bitpopart.com/rare' },
+            { '@type': 'WebPage', name: 'The Stack, Just B card game', url: 'https://bitpopart.com/tcg' },
+          ],
+        }),
+      },
+    ],
   });
 
   useEffect(() => {
@@ -124,6 +148,7 @@ export default function JustB() {
 
   return (
     <div className="w-full" style={{ backgroundColor: '#0e0a17' }}>
+      <h1 className="sr-only">Just B, pop art collectibles and Mystery Box by BitPopArt</h1>
       <iframe
         ref={frameRef}
         src="/justb-app/"
@@ -131,6 +156,25 @@ export default function JustB() {
         className="w-full border-0 block"
         style={{ height }}
       />
+      <section className="mx-auto max-w-3xl px-4 py-10 text-sm leading-relaxed text-white/80">
+        <h2 className="mb-3 text-lg font-bold text-white">About Just B</h2>
+        <p className="mb-3">
+          Just B is the pop art collectible line by BitPopArt, made by Johannes Oppewal. It has six regular B
+          collectibles (B-Beautiful, B-Geeky, B-Cool, B-Lightning, B-Coffee and B-Bullish), a never-ending run of
+          rare Mystery B&rsquo;s and a card game built on the number 21.
+        </p>
+        <p className="mb-3">
+          Every numbered item is listed in the public{' '}
+          <Link to="/rare" className="text-orange-400 underline">rarity ledger</Link>. If you own a real one, enter
+          its number and claim code above to verify it and claim your Nostr badge. You can also play{' '}
+          <Link to="/tcg" className="text-orange-400 underline">The Stack</Link>, the Just B trading card game.
+        </p>
+        <p>
+          Just Bitcoin. Just pop art. Just B. More work by BitPopArt is on the{' '}
+          <Link to="/art" className="text-orange-400 underline">art page</Link> and in the{' '}
+          <Link to="/shop" className="text-orange-400 underline">shop</Link>.
+        </p>
+      </section>
     </div>
   );
 }
