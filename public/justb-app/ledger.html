@@ -92,6 +92,7 @@ h2.sec{font-size:32px;border-bottom:3px solid var(--ink);padding-bottom:8px}
 .vres.show{display:flex}
 .vres.bad{color:#c2001f;font-weight:600}
 .vbadge{width:150px;flex:none}
+.vbadge.vcustom{width:auto;max-width:200px;max-height:240px;object-fit:contain}
 .vtxt{flex:1 1 260px;min-width:0;display:flex;flex-direction:column;gap:8px}
 .vtxt h3{font-size:26px}
 .vtxt textarea{width:100%;min-height:92px;font:inherit;font-size:13px;line-height:1.45;padding:10px;border:1px solid #cfd3d6;border-radius:6px;background:var(--soft);color:var(--ink);resize:vertical}
@@ -500,6 +501,34 @@ function publishEvent(ev){
     ws.onerror=()=>{clearTimeout(t);fin(0)};
   }))).then(r=>r.reduce((a,b)=>a+b,0));
 }
+/* Custom badge designs uploaded in /admin -> Just B -> Badges. Read from the same Nostr config event the /b page uses.
+   Items without one keep the default shield drawn by badgeSvg below. */
+const OWNERS=['43baaf0c28e6cfb195b17ee083e19eb3a4afdfac54d9b6baf170270ed193e34c','7d33ba57d8a6e8869a1f1d5215254597594ac0dbfeb01b690def8c461b82db35','2e121d0e7fb05c2035812e5d2dfcf17c856d6b64e7138af459b319d3bf79d76e'];
+const BADGES={};
+function loadBadges(){
+  const urls=['wss://relay.ditto.pub','wss://relay.damus.io','wss://nos.lol','wss://relay.primal.net'];
+  let best=null;
+  return Promise.all(urls.map(u=>new Promise(res=>{
+    let ws;try{ws=new WebSocket(u)}catch(e){return res()}
+    const sid='jb'+Math.random().toString(36).slice(2,8);
+    const t=setTimeout(()=>{try{ws.close()}catch(e){}res()},5000);
+    ws.onopen=()=>ws.send(JSON.stringify(['REQ',sid,{kinds:[30078],authors:OWNERS,'#d':['com.bitpopart.justb'],limit:1}]));
+    ws.onmessage=m=>{try{const a=JSON.parse(m.data);
+      if(a[0]==='EVENT'&&a[1]===sid){const ev=a[2];if(!best||ev.created_at>best.created_at)best=ev}
+      else if(a[0]==='EOSE'&&a[1]===sid){clearTimeout(t);try{ws.close()}catch(e){}res()}}catch(e){}};
+    ws.onerror=()=>{clearTimeout(t);res()};
+  }))).then(()=>{
+    if(!best)return;
+    try{(JSON.parse(best.content).badges||[]).forEach(b=>{
+      if(b&&/^(3d|c)-[a-z0-9-]+$/.test(b.item)&&/^https:\/\//i.test(b.url))BADGES[b.item]=b.url;
+    });}catch(e){}
+  });
+}
+const badgesReady=loadBadges();
+function badgeHtml(it,n,total){
+  const url=BADGES[it.id];
+  return url?`<img class="vbadge vcustom" src="${esc(url)}" alt="Verified badge for ${esc(it.name)} number ${n}">`:badgeSvg(it,n,total);
+}
 function badgeSvg(it,n,total){
   const tc={street:'#5b5b5b',open:'#5b5b5b',rare:'#f97316',ultra:'#e0b53a',mystery:'#0A0A0A'}[tier(it)[0]];
   const ink=tier(it)[0]==='ultra'?'#0A0A0A':'#fff';
@@ -509,7 +538,7 @@ function badgeSvg(it,n,total){
    <text x="75" y="44" text-anchor="middle" font-family="Bangers,Impact,sans-serif" font-size="17" letter-spacing="1.5" fill="${ink}">VERIFIED</text>
    <text x="75" y="84" text-anchor="middle" font-family="Bangers,Impact,sans-serif" font-size="24" textLength="${Math.min(104,it.name.length*11)}" lengthAdjust="spacingAndGlyphs" fill="${ink}">${esc(it.name.toUpperCase())}</text>
    <text x="75" y="116" text-anchor="middle" font-family="JetBrains Mono,monospace" font-weight="700" font-size="22" fill="${ink}">#${n}${total?'/'+total:''}</text>
-   <text x="75" y="140" text-anchor="middle" font-family="Inter,sans-serif" font-weight="800" font-size="9" letter-spacing="1.5" fill="${ink}">BITPOPART · JUST B</text></svg>`;
+   <text x="75" y="131" text-anchor="middle" font-family="Inter,sans-serif" font-weight="800" font-size="6.5" textLength="68" lengthAdjust="spacing" fill="${ink}">BITPOPART · JUST B</text></svg>`;
 }
 function verifyInit(){
   const all=ALL();
@@ -531,13 +560,14 @@ function verifyInit(){
     if(n>it.printed){out.textContent=`Only ${fmt(it.printed)} of this item have been released so far, so #${n} does not exist yet.`;return;}
     if(!(window.crypto&&crypto.subtle)){out.textContent='This browser cannot run the check. Try a recent browser.';return;}
     const p=await proofOf(it.id,n,code);
+    await Promise.race([badgesReady,new Promise(r=>setTimeout(r,3000))]);
     if(CODES[it.id+':'+n]!==p){out.textContent='That number and code do not match. Check for typos. If you are sure they are right, the item may be a copy. Get in touch via bitpopart.com.';return;}
     const total=it.cap||'';
     const info=batchOf(it,n);
     const base=`Claiming my Just B badge for my ${it.name} ${it.kind} #${n}${total?'/'+total:''} verified on the BitPopArt Rarity Ledger. ${info.date?'Printed '+info.date+', block '+fmt(info.block)+'. ':''}Proof ${p}. nostr:${BITPOP_NPUB} #JustB #BitPopArt`;
     const tags=[['p',npubToHex(BITPOP_NPUB)],['a','30009:'+npubToHex(BITPOP_NPUB)+':justb-'+it.id],['t','justb'],['t','bitpopart'],['justb-claim',it.id,String(n),p]];
     out.className='vres show';
-    out.innerHTML=badgeSvg(it,n,total)+`<div class="vtxt"><h3>REAL ONE. VERIFIED.</h3>
+    out.innerHTML=badgeHtml(it,n,total)+`<div class="vtxt"><h3>REAL ONE. VERIFIED.</h3>
       <ol class="steps"><li>Fill in your npub.</li><li>Sign your claim with your Nostr signer. Your signature is the proof that you own it.</li><li>BitPopArt awards you the <b>${esc(it.name)}</b> badge. Accept it in your Nostr profile badges.</li></ol>
       <label class="note" for="vNpub" style="display:block;margin-bottom:4px">Your npub</label>
       <input id="vNpub" class="code" type="text" placeholder="npub1..." autocomplete="off" aria-label="Your npub" style="width:100%">

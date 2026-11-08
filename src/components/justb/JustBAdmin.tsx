@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { ArrowDown, ArrowUp, Bot, Gift, KeyRound, Megaphone, Plus, RotateCcw, Save, ShieldCheck, Trash2, Upload, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, Bot, Gift, KeyRound, Image as ImageIcon, Megaphone, Plus, RotateCcw, Save, ShieldCheck, Trash2, Upload, X } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
+import { useUploadFile } from '@/hooks/useUploadFile';
 import { useJustBData } from '@/hooks/useJustBData';
 import {
   JUSTB_KIND,
@@ -21,6 +22,9 @@ import {
   WARN_JUSTB_CODES,
   justbHashCode,
   extractJustBCodes,
+  justbSlug,
+  MAX_JUSTB_BADGES,
+  type JustBBadge,
   type JustBData,
   type JustBDrop,
   type JustBPage,
@@ -53,6 +57,8 @@ export function JustBAdmin() {
   const [codeInput, setCodeInput] = useState('');
   const [hashing, setHashing] = useState(false);
   const csvRef = useRef<HTMLInputElement>(null);
+  const { mutateAsync: uploadFile } = useUploadFile();
+  const [badgeBusy, setBadgeBusy] = useState<number | null>(null);
 
   useEffect(() => {
     if (loaded && !dirtyRef.current) setConfig(loaded);
@@ -385,6 +391,40 @@ export function JustBAdmin() {
   };
 
   /** Empty the registry and publish immediately (nothing verifies until new codes are added). */
+  const badges = config.badges ?? [];
+  const setBadges = (next: JustBBadge[]) => update({ badges: next });
+  const addBadge = () => {
+    if (badges.length >= MAX_JUSTB_BADGES) return;
+    setBadges([...badges, { item: '', label: '', url: '' }]);
+  };
+  const removeBadge = (i: number) => setBadges(badges.filter((_, k) => k !== i));
+  /** kind: '3d' (collectible) or 'c' (card); the name is slugged exactly like the ledger does. */
+  const setBadgeItem = (i: number, kind: '3d' | 'c', name: string) => {
+    const slug = justbSlug(name);
+    setBadges(badges.map((b, k) => (k === i ? { ...b, item: slug ? `${kind}-${slug}` : '', label: name.trim() ? `${name.trim()} (${kind === 'c' ? 'card' : '3D collectible'})` : '' } : b)));
+  };
+  const uploadBadge = async (i: number, file: File | undefined) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please choose an image (PNG, WebP, SVG or JPG).');
+      return;
+    }
+    setBadgeBusy(i);
+    try {
+      const tags = await uploadFile(file);
+      const url = tags[0]?.[1];
+      if (!url) throw new Error('upload returned no URL');
+      setBadges(badges.map((b, k) => (k === i ? { ...b, url } : b)));
+      toast.success('Badge uploaded. Press Save to publish it.');
+    } catch (e) {
+      toast.error('Upload failed: ' + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setBadgeBusy(null);
+    }
+  };
+  /** Suggestions for the item-name box: the base B's and drops from this config. */
+  const badgeNames = Array.from(new Set([...config.base.map((b) => b.name), ...config.drops.map((d) => d.name)].filter(Boolean)));
+
   const clearCodes = () => {
     if (!user) return;
     const next: JustBData = { ...config, codes: { hashes: [] } };
@@ -551,6 +591,7 @@ export function JustBAdmin() {
           <TabsList className="flex h-auto flex-wrap justify-start gap-1">
             <TabsTrigger value="collection">Collection</TabsTrigger>
             <TabsTrigger value="codes">Claim codes</TabsTrigger>
+            <TabsTrigger value="badges">Badges</TabsTrigger>
             <TabsTrigger value="shops">Shops &amp; links</TabsTrigger>
             <TabsTrigger value="ladder">Rarity ladder</TabsTrigger>
             <TabsTrigger value="news">What&rsquo;s New</TabsTrigger>
@@ -735,6 +776,81 @@ export function JustBAdmin() {
           </p>
         </div>
 
+        </TabsContent>
+        <TabsContent value="badges" className="space-y-6">
+          <div className="space-y-3 rounded-lg border bg-card p-4">
+            <div className="flex items-center justify-between">
+              <h3 className="flex items-center gap-2 text-sm font-semibold">
+                <ImageIcon className="h-4 w-4 text-orange-500" /> Verified badges
+              </h3>
+              <Button variant="secondary" size="sm" onClick={addBadge} disabled={!user || badges.length >= MAX_JUSTB_BADGES}>
+                <Plus className="mr-1 h-3.5 w-3.5" /> Add badge
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              When someone passes <b>VERIFY MY ITEM</b> on the ledger (<code>/rare</code>), they see a
+              &ldquo;REAL ONE. VERIFIED.&rdquo; badge. Items without an entry here show the built-in default
+              shield (tier colour, name and number). Upload your own design (PNG, WebP or SVG, square or
+              portrait works best) and connect it to a collectible or a card. The number is not added to an
+              uploaded image, so put whatever you want to show in the design. Press <b>Save to Just B</b>{' '}
+              after uploading.
+            </p>
+            <datalist id="justb-badge-names">
+              {badgeNames.map((n) => (<option key={n} value={n} />))}
+            </datalist>
+            {badges.length === 0 && (
+              <p className="text-sm text-muted-foreground">No custom badges yet. Every item uses the default design.</p>
+            )}
+            {badges.map((b, i) => {
+              const kind: '3d' | 'c' = b.item.startsWith('c-') ? 'c' : '3d';
+              const shownName = b.label.replace(/ \((card|3D collectible)\)$/, '');
+              return (
+                <div key={i} className="flex flex-wrap items-center gap-3 rounded-md border p-3">
+                  <div className="flex h-24 w-24 flex-none items-center justify-center rounded-md border bg-muted/40">
+                    {b.url ? (
+                      <img src={b.url} alt={`Badge for ${shownName || 'item'}`} className="max-h-full max-w-full object-contain" />
+                    ) : (
+                      <span className="px-1 text-center text-[10px] text-muted-foreground">default design</span>
+                    )}
+                  </div>
+                  <div className="grid min-w-[220px] flex-1 grid-cols-1 gap-3 sm:grid-cols-[180px_1fr]">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Connect to</Label>
+                      <Select value={kind} onValueChange={(v) => setBadgeItem(i, v as '3d' | 'c', shownName)}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="3d">3D collectible</SelectItem>
+                          <SelectItem value="c">Card</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Name (as on the ledger, e.g. B-Beautiful)</Label>
+                      <Input list="justb-badge-names" value={shownName} onChange={(e) => setBadgeItem(i, kind, e.target.value)} placeholder="B-Beautiful" />
+                    </div>
+                    <p className="text-[11px] text-muted-foreground sm:col-span-2">
+                      Ledger item id: <code>{b.item || 'type a name'}</code>
+                    </p>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <input
+                      id={`badge-file-${i}`}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => { void uploadBadge(i, e.target.files?.[0]); e.target.value = ''; }}
+                    />
+                    <Button variant="outline" size="sm" disabled={!user || badgeBusy === i} onClick={() => document.getElementById(`badge-file-${i}`)?.click()}>
+                      <Upload className="mr-1 h-3.5 w-3.5" /> {badgeBusy === i ? 'Uploading…' : b.url ? 'Replace image' : 'Upload image'}
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => removeBadge(i)}>
+                      <Trash2 className="mr-1 h-3.5 w-3.5" /> Remove
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </TabsContent>
         <TabsContent value="shops" className="space-y-6">
         {/* Shops */}

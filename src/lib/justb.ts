@@ -174,6 +174,27 @@ export interface BitBotConfig {
   cta: { label: string; url: string };
 }
 
+/**
+ * A custom "VERIFIED" badge design shown on the ledger's VERIFY MY ITEM check
+ * instead of the built-in default shield. `item` is the ledger item id:
+ * "3d-" + slug(name) for a collectible, "c-" + slug(name) for a card
+ * (slug = lowercase, non-alphanumerics become "-"), e.g. "3d-b-beautiful".
+ */
+export interface JustBBadge {
+  item: string;
+  /** Display label in the admin, e.g. "B-Beautiful (3D collectible)". */
+  label: string;
+  /** Uploaded badge image (https). */
+  url: string;
+}
+
+/** Same slug rule the ledger uses to build item ids. */
+export function justbSlug(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+export const MAX_JUSTB_BADGES = 80;
+
 export interface JustBData {
   /** Shown under the ledger so people know how fresh it is. */
   updated: string;
@@ -194,6 +215,8 @@ export interface JustBData {
   bitbot: BitBotConfig;
   /** Claim-code hash registry for the "VERIFY MY ITEM" check on /b. */
   codes: JustBCodes;
+  /** Custom badge designs for VERIFY MY ITEM, one per collectible or card. */
+  badges: JustBBadge[];
   /** What's New feed (bitpopart.com/new) — new collectibles & cards announcements. */
   news: JustBNewsFeed;
 }
@@ -431,6 +454,7 @@ export const DEFAULT_JUSTB: JustBData = {
   "ledger": { "label": "OPEN THE FULL LEDGER", "url": "/justb-app/ledger.html" },
   "bitbot": DEFAULT_BITBOT,
   "codes": { "hashes": [] },
+  "badges": [],
   "news": DEFAULT_WHATS_NEW
 };
 
@@ -486,6 +510,23 @@ function numOrNull(v: unknown): number | null {
 function num(v: unknown, d = 0): number {
   const n = numOrNull(v);
   return n === null ? d : n;
+}
+
+function sanitizeBadges(raw: unknown): JustBBadge[] {
+  if (!Array.isArray(raw)) return [];
+  const seen = new Set<string>();
+  const out: JustBBadge[] = [];
+  for (const b of raw) {
+    if (out.length >= MAX_JUSTB_BADGES) break;
+    if (!b || typeof b !== 'object') continue;
+    const e = b as Record<string, unknown>;
+    const item = typeof e.item === 'string' ? e.item.trim() : '';
+    const url = typeof e.url === 'string' ? e.url.trim() : '';
+    if (!/^(3d|c)-[a-z0-9-]+$/.test(item) || !/^https:\/\//i.test(url) || seen.has(item)) continue;
+    seen.add(item);
+    out.push({ item, label: typeof e.label === 'string' ? e.label.trim().slice(0, 80) : item, url });
+  }
+  return out;
 }
 
 /**
@@ -594,6 +635,7 @@ export function sanitizeJustB(input: unknown): JustBData | null {
     ledger: page(o.ledger, DEFAULT_JUSTB.ledger.label, DEFAULT_JUSTB.ledger.url),
     bitbot: sanitizeBitBot(o.bitbot),
     codes: { hashes: codesHashes },
+    badges: sanitizeBadges(o.badges),
     news: sanitizeWhatsNew(o.news),
   };
 }
