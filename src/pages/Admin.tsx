@@ -27,6 +27,7 @@ import { SiteSettings } from '@/components/settings/SiteSettings';
 import { HomepageSettings } from '@/components/settings/HomepageSettings';
 import { ZapwallAdmin } from '@/components/zapwall/ZapwallAdmin';
 import { JustBAdmin } from '@/components/justb/JustBAdmin';
+import { RelayKit } from '@/components/admin/RelayKit';
 import { ArtworkOrderManager } from '@/components/art/ArtworkOrderManager';
 import { ArtworkCleanupTool } from '@/components/art/ArtworkCleanupTool';
 import { ArtBannerAdmin } from '@/components/art/ArtBannerAdmin';
@@ -708,6 +709,7 @@ const Admin = () => {
             </TabsTrigger>
             <TabsTrigger value="homepage">Homepage</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
+            <TabsTrigger value="relaykit">RelayKit</TabsTrigger>
             <TabsTrigger value="art-progress">Art Progress</TabsTrigger>
             <TabsTrigger value="blog">News</TabsTrigger>
             <TabsTrigger value="artist">Artist</TabsTrigger>
@@ -1037,6 +1039,10 @@ const Admin = () => {
 
           <TabsContent value="zapwall">
             <ZapwallAdmin />
+          </TabsContent>
+
+          <TabsContent value="relaykit">
+            <RelayKit />
           </TabsContent>
 
           <TabsContent value="justb">
