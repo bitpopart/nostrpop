@@ -1,10 +1,11 @@
-import { ReactNode, Suspense } from 'react';
+import { lazy, ReactNode, Suspense } from 'react';
 import { Navigation } from './Navigation';
 import { Footer } from './Footer';
 import { AuctionBanner } from './art/AuctionBanner';
 import { SiteBannerBar } from './SiteBannerBar';
-import { MediaGeneratorFloat } from './mediagenerator/MediaGeneratorFloat';
-import { FloatingChatButton } from './FloatingChatButton';
+// Floating buttons are not needed for the first paint, so they load afterwards.
+const MediaGeneratorFloat = lazy(() => import('./mediagenerator/MediaGeneratorFloat').then((m) => ({ default: m.MediaGeneratorFloat })));
+const FloatingChatButton = lazy(() => import('./FloatingChatButton').then((m) => ({ default: m.FloatingChatButton })));
 
 interface LayoutProps {
   children: ReactNode;
@@ -31,9 +32,11 @@ export function Layout({ children }: LayoutProps) {
       </main>
       <Footer />
       {/* Media Generator floating action buttons — shown per page config */}
-      <MediaGeneratorFloat />
-      {/* Floating chat button */}
-      <FloatingChatButton />
+      <Suspense fallback={null}>
+        <MediaGeneratorFloat />
+        {/* Floating chat button */}
+        <FloatingChatButton />
+      </Suspense>
     </div>
   );
 }

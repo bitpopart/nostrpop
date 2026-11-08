@@ -1,5 +1,4 @@
 import { ReactNode, useEffect } from 'react';
-import { z } from 'zod';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { AppContext, type AppConfig, type AppContextType, type PresetRelay, type Theme } from '@/contexts/AppContext';
 
@@ -13,14 +12,18 @@ interface AppProviderProps {
   presetRelays?: PresetRelay[];
 }
 
-// Zod schema for AppConfig validation
-const AppConfigSchema = z.object({
-  theme: z.enum(['dark', 'light', 'system']),
-  relayUrl: z.string().url(),
-  // Optional with a default so configs persisted before this field existed
-  // still validate and transparently upgrade to the default proxy.
-  imageProxy: z.string().default('https://wsrv.nl'),
-});
+// Plain validation of the stored config. (zod was dropped here so the large
+// validation library does not have to load before the first page shows.)
+function parseAppConfig(value: unknown): AppConfig {
+  const v = value as Partial<AppConfig> | null;
+  if (!v || typeof v !== 'object') throw new Error('Invalid app config');
+  if (v.theme !== 'dark' && v.theme !== 'light' && v.theme !== 'system') throw new Error('Invalid theme');
+  if (typeof v.relayUrl !== 'string') throw new Error('Invalid relayUrl');
+  new URL(v.relayUrl); // throws on an invalid address
+  // Configs saved before imageProxy existed upgrade to the default proxy.
+  const imageProxy = typeof v.imageProxy === 'string' ? v.imageProxy : 'https://wsrv.nl';
+  return { ...(v as AppConfig), imageProxy };
+}
 
 export function AppProvider(props: AppProviderProps) {
   const {
@@ -37,8 +40,7 @@ export function AppProvider(props: AppProviderProps) {
     {
       serialize: JSON.stringify,
       deserialize: (value: string): AppConfig => {
-        const parsed = JSON.parse(value);
-        return AppConfigSchema.parse(parsed) as AppConfig;
+        return parseAppConfig(JSON.parse(value));
       }
     }
   );

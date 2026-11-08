@@ -75,6 +75,18 @@ export default defineConfig(({ mode, command: _command }) => {
     build: {
       // Make builds succeed even with TypeScript errors
       rollupOptions: {
+        output: {
+          // Long-lived vendor chunks: a code change no longer forces visitors
+          // to download React, the router or the Nostr libraries again.
+          manualChunks(id: string) {
+            if (!id.includes('node_modules')) return undefined;
+            if (/node_modules\/(react|react-dom|scheduler)\//.test(id)) return 'vendor-react';
+            if (id.includes('react-router')) return 'vendor-router';
+            if (/node_modules\/(nostr-tools|@noble|@scure|@nostrify)\//.test(id)) return 'vendor-nostr';
+            if (id.includes('@tanstack')) return 'vendor-query';
+            return undefined;
+          },
+        },
         onwarn(warning, warn) {
           // Suppress all warnings during build
           if (warning.code === 'UNUSED_EXTERNAL_IMPORT') return;
