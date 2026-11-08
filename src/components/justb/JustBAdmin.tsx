@@ -21,7 +21,8 @@ import {
   MAX_JUSTB_CODES,
   WARN_JUSTB_CODES,
   justbHashCode,
-  extractJustBCodes,
+  extractJustBCodeRows,
+  type JustBCodeItem,
   justbSlug,
   MAX_JUSTB_BADGES,
   type JustBBadge,
@@ -319,13 +320,19 @@ export function JustBAdmin() {
   const loadCodeFile = async (file: File | undefined) => {
     if (!file) return;
     try {
-      const found = extractJustBCodes(await file.text());
+      const text = await file.text();
+      const found = extractJustBCodeRows(text);
       if (found.length === 0) {
         toast.error('No codes found in that file.');
         return;
       }
-      setCodeInput((prev) => (prev.trim() ? prev.trim() + '\n' : '') + found.join('\n'));
-      toast.success(`${found.length} code${found.length === 1 ? '' : 's'} read from ${file.name}. Check them, then press Add.`);
+      // Keep the original rows (item, number, code) so the badge link survives.
+      const lines = /[A-Za-z0-9]{4}(?:-[A-Za-z0-9]{4}){2,}/.test(text)
+        ? text.split(/\r?\n/).filter((l) => /[A-Za-z0-9]{4}(?:-[A-Za-z0-9]{4}){2,}/.test(l))
+        : found.map((f) => f.code);
+      setCodeInput((prev) => (prev.trim() ? prev.trim() + '\n' : '') + lines.join('\n'));
+      const withItem = found.filter((f) => f.item).length;
+      toast.success(`${found.length} code${found.length === 1 ? '' : 's'} read from ${file.name}${withItem ? ` (${withItem} with item and number)` : ''}. Check them, then press Add.`);
     } catch (e) {
       toast.error('Could not read the file: ' + (e instanceof Error ? e.message : String(e)));
     } finally {
@@ -343,7 +350,7 @@ export function JustBAdmin() {
       toast.info('A save is already publishing — wait a second and try again.');
       return;
     }
-    const raw = extractJustBCodes(codeInput);
+    const raw = extractJustBCodeRows(codeInput);
     if (raw.length === 0) {
       toast.error('Enter at least one code — one per line.');
       return;
@@ -352,10 +359,14 @@ export function JustBAdmin() {
     try {
       const existing = new Set(config.codes?.hashes ?? []);
       const added: string[] = [];
+      const addedItems: JustBCodeItem[] = [];
       for (const r of raw) {
         if (existing.size + added.length >= MAX_JUSTB_CODES) break;
-        const h = await justbHashCode(r);
-        if (!existing.has(h) && !added.includes(h)) added.push(h);
+        const h = await justbHashCode(r.code);
+        if (!existing.has(h) && !added.includes(h)) {
+          added.push(h);
+          if (r.item && r.n) addedItems.push({ h, item: r.item, n: r.n });
+        }
       }
       if (added.length === 0) {
         toast.info('All codes you entered are already stored (or the registry is at its cap).');
@@ -364,7 +375,10 @@ export function JustBAdmin() {
       }
       const next: JustBData = {
         ...config,
-        codes: { hashes: [...(config.codes?.hashes ?? []), ...added] },
+        codes: {
+          hashes: [...(config.codes?.hashes ?? []), ...added],
+          items: [...(config.codes?.items ?? []), ...addedItems],
+        },
       };
       setConfig(next);
       setCodeInput('');
@@ -384,7 +398,10 @@ export function JustBAdmin() {
     if (!user) return;
     const next: JustBData = {
       ...config,
-      codes: { hashes: (config.codes?.hashes ?? []).filter((x) => x !== h) },
+      codes: {
+        hashes: (config.codes?.hashes ?? []).filter((x) => x !== h),
+        items: (config.codes?.items ?? []).filter((x) => x.h !== h),
+      },
     };
     setConfig(next);
     publish(next, 'Code removed and published — it no longer verifies on /b.');
@@ -427,7 +444,7 @@ export function JustBAdmin() {
 
   const clearCodes = () => {
     if (!user) return;
-    const next: JustBData = { ...config, codes: { hashes: [] } };
+    const next: JustBData = { ...config, codes: { hashes: [], items: [] } };
     setConfig(next);
     publish(next, 'Registry cleared and published — no codes verify on /b right now.');
   };
@@ -712,7 +729,7 @@ export function JustBAdmin() {
             codes for each collectible.
           </p>
           <div className="space-y-1">
-            <Label className="text-xs">Codes to add — one per line, paste rows from your sheet, or upload a .csv</Label>
+            <Label className="text-xs">Codes to add — one per line, or rows like: 3d-b-beautiful, 1, ZA8F-36F8-FMGE (paste or upload a .csv). Rows with the item and number let /b go straight to the badge.</Label>
             <Textarea
               rows={4}
               value={codeInput}

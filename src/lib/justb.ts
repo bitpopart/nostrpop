@@ -40,9 +40,24 @@ export const JUSTB_HASH_RE = /^[0-9a-f]{64}$/;
  * page hashes the visitor's entry and checks membership. Anyone reading the
  * relays sees only hashes and cannot recover the codes.
  */
+export interface JustBCodeItem {
+  /** Hash of the claim code (same value as in `hashes`). */
+  h: string;
+  /** Ledger item id, e.g. "3d-b-beautiful". */
+  item: string;
+  /** Serial number printed on the item. */
+  n: number;
+}
+
 export interface JustBCodes {
   /** Lowercase-hex SHA-256 of each claim code (normalized: trimmed, upper-cased). */
   hashes: string[];
+  /**
+   * Optional: which item and number a code belongs to. Lets /b go straight to
+   * the badge after a valid code, with no second form. Item and number are not
+   * secret; only the code is, and that stays a hash.
+   */
+  items?: JustBCodeItem[];
 }
 
 export interface JustBBaseEntry {
@@ -490,6 +505,45 @@ export function extractJustBCodes(text: string): string[] {
   return Array.from(new Set(found.map((c) => normalizeJustBCode(c))));
 }
 
+export interface JustBCodeRow {
+  code: string;
+  /** Ledger item id when the row says which item it is (e.g. "3d-b-beautiful"). */
+  item?: string;
+  n?: number;
+}
+
+/**
+ * Like extractJustBCodes, but keeps the item and serial number when a row has
+ * them, e.g. "3d-b-beautiful<TAB>1<TAB>ZA8F-36F8-FMGE" or "B-Beautiful,1,ZA8F-...".
+ * A first cell that already looks like an item id ("3d-..." / "c-...") is used
+ * as is; a plain name becomes a 3D collectible id.
+ */
+export function extractJustBCodeRows(text: string): JustBCodeRow[] {
+  const re = /\b[A-Za-z0-9]{4}(?:-[A-Za-z0-9]{4}){2,}\b/;
+  const out = new Map<string, JustBCodeRow>();
+  let any = false;
+  for (const line of text.split(/\r?\n/)) {
+    const m = line.match(re);
+    if (!m) continue;
+    any = true;
+    const code = normalizeJustBCode(m[0]);
+    const cells = line.split(/[\t,;]/).map((c) => c.trim()).filter(Boolean);
+    const num = cells.find((c) => /^\d{1,6}$/.test(c));
+    const name = cells.find((c) => !re.test(c) && !/^\d+$/.test(c));
+    let item: string | undefined;
+    if (name) {
+      const low = name.toLowerCase();
+      const slug = justbSlug(low.replace(/^(3d|c)-/, ''));
+      if (slug) item = /^(3d|c)-/.test(low) ? `${low.startsWith('c-') ? 'c' : '3d'}-${slug}` : `3d-${slug}`;
+    }
+    const n = num ? parseInt(num, 10) : undefined;
+    const prev = out.get(code);
+    out.set(code, prev ?? (item && n ? { code, item, n } : { code }));
+  }
+  if (!any) return extractJustBCodes(text).map((code) => ({ code }));
+  return [...out.values()];
+}
+
 /**
  * SHA-256 of a claim code as lowercase hex — the only form ever stored or
  * published. Runs in the browser (Web Crypto); needs a secure context,
@@ -624,6 +678,22 @@ export function sanitizeJustB(input: unknown): JustBData | null {
     }
   }
 
+  const codesItems: JustBCodeItem[] = [];
+  if (Array.isArray(codesRaw.items)) {
+    const known = new Set(codesHashes);
+    const seenItems = new Set<string>();
+    for (const it of codesRaw.items) {
+      if (!it || typeof it !== 'object') continue;
+      const e = it as Record<string, unknown>;
+      const h = typeof e.h === 'string' ? e.h.trim().toLowerCase() : '';
+      const item = typeof e.item === 'string' ? e.item.trim() : '';
+      const n = typeof e.n === 'number' ? Math.floor(e.n) : NaN;
+      if (!known.has(h) || seenItems.has(h) || !/^(3d|c)-[a-z0-9-]+$/.test(item) || !(n >= 1 && n <= 999999)) continue;
+      seenItems.add(h);
+      codesItems.push({ h, item, n });
+    }
+  }
+
   return {
     updated: str(o.updated),
     base,
@@ -634,7 +704,7 @@ export function sanitizeJustB(input: unknown): JustBData | null {
     online: page(o.online, DEFAULT_JUSTB.online.label, DEFAULT_JUSTB.online.url),
     ledger: page(o.ledger, DEFAULT_JUSTB.ledger.label, DEFAULT_JUSTB.ledger.url),
     bitbot: sanitizeBitBot(o.bitbot),
-    codes: { hashes: codesHashes },
+    codes: { hashes: codesHashes, items: codesItems },
     badges: sanitizeBadges(o.badges),
     news: sanitizeWhatsNew(o.news),
   };
