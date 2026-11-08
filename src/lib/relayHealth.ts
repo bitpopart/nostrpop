@@ -5,6 +5,7 @@ import { JUSTB_KIND, JUSTB_D_TAG } from '@/lib/justb';
 export const BLOSSOM_SERVERS = [
   'https://blossom.primal.net/',
   'https://blossom.azzamo.media/',
+  'https://bitpopart.blossom.band/',
 ];
 
 /** Extra relays the static Just B pages (ledger, verify, claims) talk to on their own. */
