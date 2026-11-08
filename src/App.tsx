@@ -51,6 +51,8 @@ const presetRelays = [
   // the settings event once (Oct 2026) and the site went tile-less as a result.
   { url: 'wss://relay.primal.net', name: 'Primal', read: true, write: true },
   { url: 'wss://relay.nostr.net', name: 'NostrNet', read: true, write: true },
+  // Azzamo main (free) relay: every visitor connects to it when opening the site.
+  { url: 'wss://nostr.azzamo.net', name: 'Azzamo', read: true, write: true },
   // Gamestr gaming relay — write game scores (kind 30762) here for discovery on gamestr.io
   { url: 'wss://main.relay.gamestr.io', name: 'Gamestr', read: false, write: true },
 ];
