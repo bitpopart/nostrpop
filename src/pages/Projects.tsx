@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import type { NostrEvent } from '@nostrify/nostrify';
+import { useThumbnailUrl } from '@/hooks/useThumbnailUrl';
 import { useSeoMeta } from '@unhead/react';
 import { useNostr } from '@nostrify/react';
 import { useQuery } from '@tanstack/react-query';
@@ -53,23 +55,66 @@ function getProjectThumbnail(tags: string[][], content: Record<string, unknown>)
   return candidates.find((value): value is string => typeof value === 'string' && value.length > 0) || '';
 }
 
-function ProjectThumbnailImage({ src, alt, className }: { src: string; alt: string; className: string }) {
-  const [currentSrc, setCurrentSrc] = useState(src);
-  const [failed, setFailed] = useState(false);
+// Last known project lists are kept in this browser, so the cards (and their
+// image requests) can start immediately on a repeat visit while the relays answer.
+function readCache<T>(key: string): T | undefined {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+function writeCache(key: string, value: unknown) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // storage full or blocked: skip caching
+  }
+}
 
-  if (failed) return null;
+function ProjectThumbnailImage({
+  src,
+  alt,
+  className,
+  width = 640,
+  priority = false,
+}: {
+  src: string;
+  alt: string;
+  className: string;
+  /** Pixel width to request from the image proxy (cards are shown at most ~640 px wide). */
+  width?: number;
+  /** Above-the-fold images load right away; the rest load when they scroll near. */
+  priority?: boolean;
+}) {
+  const thumbnail = useThumbnailUrl();
+  // 0 = resized thumbnail, 1 = original file, 2 = CORS proxy, 3 = give up
+  const [stage, setStage] = useState(0);
+
+  // A new source (e.g. the custom thumbnail arriving after the first render) starts over.
+  useEffect(() => setStage(0), [src]);
+
+  if (stage >= 3) return null;
+
+  const current =
+    stage === 0 ? thumbnail(src, width)
+    : stage === 1 ? src
+    : `${CORS_PROXY}${encodeURIComponent(src)}`;
 
   return (
     <img
-      src={currentSrc}
+      src={current}
       alt={alt}
       className={className}
+      loading={priority ? 'eager' : 'lazy'}
+      decoding="async"
+      // @ts-expect-error fetchpriority is valid HTML but missing from React's types in this version
+      fetchpriority={priority ? 'high' : 'auto'}
       onError={() => {
-        if (!currentSrc.startsWith(CORS_PROXY) && /^https?:\/\//i.test(currentSrc)) {
-          setCurrentSrc(`${CORS_PROXY}${encodeURIComponent(currentSrc)}`);
-        } else {
-          setFailed(true);
-        }
+        if (stage === 0 && current !== src) setStage(1);
+        else if (stage <= 1 && /^https?:\/\//i.test(src)) setStage(2);
+        else setStage(3);
       }}
     />
   );
@@ -175,7 +220,7 @@ export default function Projects() {
   const { data: nip58Awards = [] } = useNIP58BadgeAwards(badgeAddrs);
 
   // Fetch built-in project customizations (includes category section thumbnails)
-  const { data: builtInCustomizations = [] } = useQuery({
+  const { data: builtInCustomizations = [] } = useQuery<NostrEvent[]>({
     queryKey: ['builtin-projects'],
     queryFn: async (c) => {
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(3000)]);
@@ -185,12 +230,14 @@ export default function Projects() {
         { signal }
       );
 
+      if (events.length > 0) writeCache('projects-page-builtin-v1', events);
       return events;
     },
+    placeholderData: () => readCache<NostrEvent[]>('projects-page-builtin-v1'),
   });
 
   // Fetch custom projects from Nostr
-  const { data: customProjects = [], isLoading } = useQuery({
+  const { data: customProjects = [], isLoading } = useQuery<ProjectData[]>({
     queryKey: ['projects'],
     queryFn: async (c) => {
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(3000)]);
@@ -260,8 +307,10 @@ export default function Projects() {
         .filter((p): p is ProjectData => p !== null)
         .sort((a, b) => (a.order || 999) - (b.order || 999));
 
+      if (projects.length > 0) writeCache('projects-page-custom-v1', projects);
       return projects;
     },
+    placeholderData: () => readCache<ProjectData[]>('projects-page-custom-v1'),
   });
 
   // Apply custom thumbnails to built-in projects
@@ -343,6 +392,8 @@ export default function Projects() {
                   <ProjectThumbnailImage
                     src={section.thumbnail}
                     alt={section.name}
+                    width={800}
+                    priority
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                   />
                 ) : (
