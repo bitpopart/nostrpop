@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><script>if(/[?&]embed=verify\b/.test(location.search))document.documentElement.classList.add('embed')</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <meta charset="utf-8">
 <title>Just B Rarity Ledger</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -155,6 +155,12 @@ h2.sec{font-size:32px;border-bottom:3px solid var(--ink);padding-bottom:8px}
   .sum div{border-right:0;border-bottom:1px solid var(--line)}
   .merch{grid-template-columns:1fr}
 }
+
+/* ?embed=verify : only the VERIFY MY ITEM form, used inside bitpopart.com/b */
+html.embed body{background:transparent;padding:0}
+html.embed .wrap{gap:0;max-width:none}
+html.embed .wrap>*:not(.verify){display:none!important}
+html.embed .verify{margin:0}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 
@@ -512,6 +518,10 @@ function publishEvent(ev){
    Items without one keep the default shield drawn by badgeSvg below. */
 const OWNERS=['43baaf0c28e6cfb195b17ee083e19eb3a4afdfac54d9b6baf170270ed193e34c','7d33ba57d8a6e8869a1f1d5215254597594ac0dbfeb01b690def8c461b82db35','2e121d0e7fb05c2035812e5d2dfcf17c856d6b64e7138af459b319d3bf79d76e'];
 const BADGES={};
+/* A signer extension may live in the parent page when this form is embedded in /b. */
+function pullSigner(){if(window.nostr)return;try{const w=parent.nostr||top.nostr;if(w)window.nostr=w}catch(e){}}
+/* Claim-code registry from /admin (hashes + which item/number they belong to). Lets codes added in the admin verify here too. */
+const REG={hashes:new Set(),items:[]};
 function loadBadges(){
   const urls=['wss://relay.ditto.pub','wss://relay.damus.io','wss://nos.lol','wss://relay.primal.net'];
   let best=null;
@@ -526,6 +536,7 @@ function loadBadges(){
     ws.onerror=()=>{clearTimeout(t);res()};
   }))).then(()=>{
     if(!best)return;
+    try{const cfg=JSON.parse(best.content);const cd=cfg.codes||{};REG.hashes=new Set(cd.hashes||[]);REG.items=cd.items||[];}catch(e){}
     try{(JSON.parse(best.content).badges||[]).forEach(b=>{
       if(b&&/^(3d|c)-[a-z0-9-]+$/.test(b.item)&&/^https:\/\//i.test(b.url))BADGES[b.item]=b.url;
     });}catch(e){}
@@ -575,7 +586,13 @@ function verifyInit(){
     if(!(window.crypto&&crypto.subtle)){out.textContent='This browser cannot run the check. Try a recent browser.';return;}
     const p=await proofOf(it.id,n,code);
     await Promise.race([badgesReady,new Promise(r=>setTimeout(r,3000))]);
-    if(CODES[it.id+':'+n]!==p){out.textContent='That number and code do not match. Check for typos. If you are sure they are right, the item may be a copy. Get in touch via bitpopart.com.';return;}
+    let known=CODES[it.id+':'+n]===p;
+    if(!known&&REG.items.length){
+      const dashed=code.match(/.{1,4}/g).join('-');
+      const hs=await Promise.all([dashed,code].map(c=>crypto.subtle.digest('SHA-256',new TextEncoder().encode(c)).then(b=>[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join(''))));
+      known=REG.items.some(r=>r.item===it.id&&r.n===n&&hs.includes(r.h)&&REG.hashes.has(r.h));
+    }
+    if(!known){out.textContent='That number and code do not match. Check for typos. If you are sure they are right, the item may be a copy. Get in touch via bitpopart.com.';return;}
     const total=it.cap||'';
     const info=batchOf(it,n);
     const base=`Claiming my Just B badge for my ${it.name} ${it.kind} #${n}${total?'/'+total:''} verified on the BitPopArt Rarity Ledger. ${info.date?'Printed '+info.date+', block '+fmt(info.block)+'. ':''}Proof ${p}. nostr:${BITPOP_NPUB} #JustB #BitPopArt`;
@@ -601,6 +618,7 @@ function verifyInit(){
     $('#vEvCopy').onclick=async()=>{const t=$('#vEv');try{await navigator.clipboard.writeText(t.value);msg('Signed event copied.');}catch(e){t.select();msg('Press copy on your keyboard.');}};
     $('#vSign').onclick=async()=>{
       if(!ownerHex)return;
+      pullSigner();
       if(!window.nostr||!window.nostr.signEvent){msg('No Nostr signer found in this browser. Install a signer extension such as Alby or nos2x, or use Copy note and post it from your Nostr app.');return;}
       $('#vSign').disabled=true;msg('Waiting for your signer...');
       try{
@@ -777,6 +795,11 @@ function marketInit(){
   load();
 }
 summary();render();checker();verifyInit();marketInit();
+if(document.documentElement.classList.contains('embed')){
+  const sendH=()=>{try{parent.postMessage({source:'bitpopart-justb-embed',type:'height',h:Math.ceil(document.querySelector('.verify').getBoundingClientRect().height)},location.origin)}catch(e){}};
+  try{new ResizeObserver(sendH).observe(document.querySelector('.verify'))}catch(e){}
+  window.addEventListener('load',sendH);sendH();
+}
 </script>
 
 </body></html>
