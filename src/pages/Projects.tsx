@@ -92,8 +92,22 @@ function ProjectThumbnailImage({
   // 0 = resized thumbnail, 1 = original file, 2 = CORS proxy, 3 = give up
   const [stage, setStage] = useState(0);
 
+  const [loaded, setLoaded] = useState(false);
+
   // A new source (e.g. the custom thumbnail arriving after the first render) starts over.
-  useEffect(() => setStage(0), [src]);
+  useEffect(() => {
+    setStage(0);
+    setLoaded(false);
+  }, [src]);
+
+  // If the resized version has not arrived after a few seconds (a slow or
+  // stuck image proxy never fires an error), switch to the original file so
+  // the thumbnail is never left blank.
+  useEffect(() => {
+    if (stage !== 0 || loaded) return;
+    const t = setTimeout(() => setStage(1), 4000);
+    return () => clearTimeout(t);
+  }, [stage, loaded, src]);
 
   if (stage >= 3) return null;
 
@@ -109,6 +123,7 @@ function ProjectThumbnailImage({
       className={className}
       loading={priority ? 'eager' : 'lazy'}
       decoding="async"
+      onLoad={() => setLoaded(true)}
       // @ts-expect-error fetchpriority is valid HTML but missing from React's types in this version
       fetchpriority={priority ? 'high' : 'auto'}
       onError={() => {
