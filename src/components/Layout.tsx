@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, Suspense } from 'react';
 import { Navigation } from './Navigation';
 import { Footer } from './Footer';
 import { AuctionBanner } from './art/AuctionBanner';
@@ -19,7 +19,15 @@ export function Layout({ children }: LayoutProps) {
       {/* SiteBannerBar shows the active site banner; hides itself when auction is live */}
       <SiteBannerBar />
       <main className="flex-1">
-        {children}
+        <Suspense
+          fallback={
+            <div className="flex min-h-[60vh] items-center justify-center">
+              <img src="/bitpopart-logo.png" alt="" width={56} height={56} className="animate-pulse rounded-full" />
+            </div>
+          }
+        >
+          {children}
+        </Suspense>
       </main>
       <Footer />
       {/* Media Generator floating action buttons — shown per page config */}

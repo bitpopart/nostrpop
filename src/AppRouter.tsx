@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { ScrollToTop } from "./components/ScrollToTop";
 import { Layout } from "./components/Layout";
@@ -5,81 +6,89 @@ import { LayoutIframe } from "./components/LayoutIframe";
 import { AppLayout } from "./components/AppLayout";
 
 import Index from "./pages/Index";
-import Cards from "./pages/Cards";
-import CreateCard from "./pages/CreateCard";
-import CardView from "./pages/CardView";
-import CardPreview from "./pages/CardPreview";
-import Art from "./pages/Art";
-import ArtworkView from "./pages/ArtworkView";
-import Art21K from "./pages/Art21K";
-import Shop from "./pages/Shop";
-import Admin from "./pages/Admin";
-import Feed from "./pages/Feed";
-import GameCanvas100M from "./pages/GameCanvas100M";
-import Blog from "./pages/Blog";
-import BlogPost from "./pages/BlogPost";
-import PopUp from "./pages/PopUp";
-import PopUpEventView from "./pages/PopUpEventView";
-import PopUpEventSite from "./pages/PopUpEventSite";
-import Artist from "./pages/Artist";
-import Projects from "./pages/Projects";
-import NostrProjects from "./pages/NostrProjects";
-import NostrProjectView from "./pages/NostrProjectView";
-import Badges from "./pages/Badges";
-import Fundraising from "./pages/Fundraising";
-import Vlog from "./pages/Vlog";
-import Wall from "./pages/Wall";
-import CustomPage from "./pages/CustomPage";
-import { CategoryDemo } from "./pages/CategoryDemo";
-import { ProductPage } from "./pages/ProductPage";
-import { DeleteProductPage } from "./pages/DeleteProductPage";
-import OrderConfirmation from "./pages/OrderConfirmation";
-import OrdersPage from "./pages/Orders";
-import ShopDebugPage from "./pages/ShopDebug";
-import FreeDownloads from "./pages/FreeDownloads";
-import FreeGallery from "./pages/FreeGallery";
-import Games from "./pages/Games";
-import GameMoneyPrinter from "./pages/GameMoneyPrinter";
-import GameQuiz21 from "./pages/GameQuiz21";
-import GamesProjectView from "./pages/GamesProjectView";
-import Animations from "./pages/Animations";
-import Wallpapers from "./pages/Wallpapers";
-import Gifs from "./pages/Gifs";
-import Avatars from "./pages/Avatars";
-import Banners from "./pages/Banners";
-import ColoringPages from "./pages/ColoringPages";
-import DesktopWallpapers from "./pages/DesktopWallpapers";
-import Memes from "./pages/Memes";
-import AppPage from "./pages/AppPage";
-import AppHashtagPage from "./pages/AppHashtagPage";
-import PopPost from "./pages/PopPost";
-import Community from "./pages/Community";
-import Studio from "./pages/Studio";
-import Frl from "./pages/Frl";
-import FrlProjectView from "./pages/FrlProjectView";
-import Print from "./pages/Print";
-import NFT from "./pages/NFT";
-import NFTAdmin from "./pages/NFTAdmin";
-import Block from "./pages/Block";
-import BrandPortalPage from "./pages/BrandPortalPage";
-import ClientLogin from "./pages/ClientLogin";
-import ClientPortalPage from "./pages/ClientPortalPage";
-import ProposalPublicPage from "./pages/ProposalPublicPage";
-import Sitemap from "./pages/Sitemap";
-import CloudPage from "./pages/Cloud";
-import CloudAppViewer from "./pages/CloudAppViewer";
-import Gallery from "./pages/Gallery";
-import IconDownloads from "./pages/IconDownloads";
-import Zapper from "./pages/Zapper";
-import ZapWall from "./pages/ZapWall";
-import JustB from "./pages/JustB";
-import Rare from "./pages/Rare";
-import WhatsNew from "./pages/WhatsNew";
-import TCG from "./pages/TCG";
-import BitBot from "./pages/BitBot";
-import BitBotCrowdfunding from "./pages/BitBotCrowdfunding";
-import NotFound from "./pages/NotFound";
+const Cards = lazy(() => import("./pages/Cards"));
+const CreateCard = lazy(() => import("./pages/CreateCard"));
+const CardView = lazy(() => import("./pages/CardView"));
+const CardPreview = lazy(() => import("./pages/CardPreview"));
+const Art = lazy(() => import("./pages/Art"));
+const ArtworkView = lazy(() => import("./pages/ArtworkView"));
+const Art21K = lazy(() => import("./pages/Art21K"));
+const Shop = lazy(() => import("./pages/Shop"));
+const Admin = lazy(() => import("./pages/Admin"));
+const Feed = lazy(() => import("./pages/Feed"));
+const GameCanvas100M = lazy(() => import("./pages/GameCanvas100M"));
+const Blog = lazy(() => import("./pages/Blog"));
+const BlogPost = lazy(() => import("./pages/BlogPost"));
+const PopUp = lazy(() => import("./pages/PopUp"));
+const PopUpEventView = lazy(() => import("./pages/PopUpEventView"));
+const PopUpEventSite = lazy(() => import("./pages/PopUpEventSite"));
+const Artist = lazy(() => import("./pages/Artist"));
+const Projects = lazy(() => import("./pages/Projects"));
+const NostrProjects = lazy(() => import("./pages/NostrProjects"));
+const NostrProjectView = lazy(() => import("./pages/NostrProjectView"));
+const Badges = lazy(() => import("./pages/Badges"));
+const Fundraising = lazy(() => import("./pages/Fundraising"));
+const Vlog = lazy(() => import("./pages/Vlog"));
+const Wall = lazy(() => import("./pages/Wall"));
+const CustomPage = lazy(() => import("./pages/CustomPage"));
+const CategoryDemo = lazy(() => import("./pages/CategoryDemo").then((m) => ({ default: m.CategoryDemo })));
+const ProductPage = lazy(() => import("./pages/ProductPage").then((m) => ({ default: m.ProductPage })));
+const DeleteProductPage = lazy(() => import("./pages/DeleteProductPage").then((m) => ({ default: m.DeleteProductPage })));
+const OrderConfirmation = lazy(() => import("./pages/OrderConfirmation"));
+const OrdersPage = lazy(() => import("./pages/Orders"));
+const ShopDebugPage = lazy(() => import("./pages/ShopDebug"));
+const FreeDownloads = lazy(() => import("./pages/FreeDownloads"));
+const FreeGallery = lazy(() => import("./pages/FreeGallery"));
+const Games = lazy(() => import("./pages/Games"));
+const GameMoneyPrinter = lazy(() => import("./pages/GameMoneyPrinter"));
+const GameQuiz21 = lazy(() => import("./pages/GameQuiz21"));
+const GamesProjectView = lazy(() => import("./pages/GamesProjectView"));
+const Animations = lazy(() => import("./pages/Animations"));
+const Wallpapers = lazy(() => import("./pages/Wallpapers"));
+const Gifs = lazy(() => import("./pages/Gifs"));
+const Avatars = lazy(() => import("./pages/Avatars"));
+const Banners = lazy(() => import("./pages/Banners"));
+const ColoringPages = lazy(() => import("./pages/ColoringPages"));
+const DesktopWallpapers = lazy(() => import("./pages/DesktopWallpapers"));
+const Memes = lazy(() => import("./pages/Memes"));
+const AppPage = lazy(() => import("./pages/AppPage"));
+const AppHashtagPage = lazy(() => import("./pages/AppHashtagPage"));
+const PopPost = lazy(() => import("./pages/PopPost"));
+const Community = lazy(() => import("./pages/Community"));
+const Studio = lazy(() => import("./pages/Studio"));
+const Frl = lazy(() => import("./pages/Frl"));
+const FrlProjectView = lazy(() => import("./pages/FrlProjectView"));
+const Print = lazy(() => import("./pages/Print"));
+const NFT = lazy(() => import("./pages/NFT"));
+const NFTAdmin = lazy(() => import("./pages/NFTAdmin"));
+const Block = lazy(() => import("./pages/Block"));
+const BrandPortalPage = lazy(() => import("./pages/BrandPortalPage"));
+const ClientLogin = lazy(() => import("./pages/ClientLogin"));
+const ClientPortalPage = lazy(() => import("./pages/ClientPortalPage"));
+const ProposalPublicPage = lazy(() => import("./pages/ProposalPublicPage"));
+const Sitemap = lazy(() => import("./pages/Sitemap"));
+const CloudPage = lazy(() => import("./pages/Cloud"));
+const CloudAppViewer = lazy(() => import("./pages/CloudAppViewer"));
+const Gallery = lazy(() => import("./pages/Gallery"));
+const IconDownloads = lazy(() => import("./pages/IconDownloads"));
+const Zapper = lazy(() => import("./pages/Zapper"));
+const ZapWall = lazy(() => import("./pages/ZapWall"));
+const JustB = lazy(() => import("./pages/JustB"));
+const Rare = lazy(() => import("./pages/Rare"));
+const WhatsNew = lazy(() => import("./pages/WhatsNew"));
+const TCG = lazy(() => import("./pages/TCG"));
+const BitBot = lazy(() => import("./pages/BitBot"));
+const BitBotCrowdfunding = lazy(() => import("./pages/BitBotCrowdfunding"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 import { SeoCanonical } from "./components/SeoCanonical";
+
+function PageFallback() {
+  return (
+    <div className="flex min-h-[60vh] items-center justify-center">
+      <img src="/bitpopart-logo.png" alt="" width={56} height={56} className="animate-pulse rounded-full" />
+    </div>
+  );
+}
 
 export function AppRouter() {
   // Use the base URL that Vite injects based on build config
@@ -89,6 +98,7 @@ export function AppRouter() {
     <BrowserRouter basename={basename}>
       <ScrollToTop />
       <SeoCanonical />
+      <Suspense fallback={<PageFallback />}>
       <Routes>
         {/* Full-screen admin route — no site Layout */}
         <Route path="/nft-admin" element={<NFTAdmin />} />
@@ -189,6 +199,7 @@ export function AppRouter() {
         <Route path="/:slug" element={<Layout><CustomPage /></Layout>} />
         <Route path="*" element={<Layout><NotFound /></Layout>} />
       </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }
