@@ -592,6 +592,15 @@ body.viewing > :not(#viewer){display:none !important}
   text-decoration:none;color:#fff;background:var(--o);border:3px solid #000;border-radius:22px;box-shadow:3px 3px 0 #000;padding:6px 18px;transition:transform .12s,box-shadow .12s}
 .claimlink:hover{transform:translate(-1px,-1px);box-shadow:5px 5px 0 #000}
 .claimhint{display:block;margin-top:8px;font-size:13px;opacity:.85}
+
+.vres .cbadge{display:block;width:130px;max-width:70%;height:auto;margin:6px auto 4px;object-fit:contain}
+.claimbox{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.claimbox input{width:100%;box-sizing:border-box;border:2px solid #000;border-radius:8px;padding:8px 10px;font:inherit;font-size:14px}
+.claimbox textarea{width:100%;box-sizing:border-box;min-height:80px;font-size:12px}
+.clrow{display:flex;gap:8px;flex-wrap:wrap}
+.claimbox .claimlink{margin-top:0;cursor:pointer}
+.claimbox .claimlink:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:3px 3px 0 #000}
+.clalt{font-family:'BarlowC',sans-serif;font-weight:700;font-size:15px;letter-spacing:.12em;text-transform:uppercase;color:#fff;background:#0a0a0a;border:3px solid #000;border-radius:22px;padding:6px 16px;cursor:pointer}
 </style>
 </head>
 <body>
@@ -1316,11 +1325,108 @@ function vCheck(){
       return;
     }
     if (hashes.indexOf(h) > -1) {
+      var entry = ((D.codes && D.codes.items) || []).filter(function(x){ return x.h === h; })[0];
+      if (entry) { vClaim(entry, code, D); return; }
       vShow('ok', '<b>VALID</b> &mdash; this code is in the Just B registry. It\'s a genuine collectible.<br><a class="claimlink" href="/rare#verify" target="_top">CLAIM YOUR BADGE &rarr;</a><span class="claimhint">Pick your item, enter its number and the same code on the ledger page, then claim your badge on Nostr.</span>');
     } else {
       vShow('bad', '<b>INVALID</b> &mdash; this code is not in the registry. Double-check the code, or contact the shop you bought it from.');
     }
   }).catch(function(){ vBtn.disabled = false; vShow('note', 'Could not check right now &mdash; try again.'); });
+}
+
+/* ---------- Direct badge claim (after a valid code that knows its item + number) ---------- */
+var BITPOP_NPUB = 'npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz';
+var CL_RELAYS = ['wss://relay.damus.io', 'wss://nos.lol', 'wss://relay.primal.net'];
+var B32 = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
+function b32poly(v){ var G=[0x3b6a57b2,0x26508e6d,0x1ea119fa,0x3d4233dd,0x2a1462b3], c=1; for (var k=0;k<v.length;k++){ var b=c>>25; c=((c&0x1ffffff)<<5)^v[k]; for (var i=0;i<5;i++) if ((b>>i)&1) c^=G[i]; } return c; }
+function b32hrp(h){ var a=[],i; for(i=0;i<h.length;i++) a.push(h.charCodeAt(i)>>5); a.push(0); for(i=0;i<h.length;i++) a.push(h.charCodeAt(i)&31); return a; }
+function convBits(d,f,t,pad){ var a=0,b=0,r=[],m=(1<<t)-1; for (var k=0;k<d.length;k++){ a=(a<<f)|d[k]; b+=f; while(b>=t){ b-=t; r.push((a>>b)&m); } } if(pad){ if(b) r.push((a<<(t-b))&m); } else if (b>=f||((a<<(t-b))&m)) throw new Error('bad padding'); return r; }
+function npubToHex(s){
+  s = String(s).trim().toLowerCase(); var p = s.lastIndexOf('1');
+  if (p<1 || s.slice(0,p)!=='npub') throw new Error('not an npub');
+  var d = s.slice(p+1).split('').map(function(c){ var i=B32.indexOf(c); if(i<0) throw new Error('bad char'); return i; });
+  if (b32poly(b32hrp('npub').concat(d)) !== 1) throw new Error('bad checksum');
+  var bytes = convBits(d.slice(0,-6),5,8,false); if (bytes.length !== 32) throw new Error('bad length');
+  return bytes.map(function(b){ return (b<16?'0':'')+b.toString(16); }).join('');
+}
+function hexToNote(h){
+  var bytes = h.match(/../g).map(function(x){ return parseInt(x,16); }), d = convBits(bytes,8,5,true);
+  var pm = b32poly(b32hrp('note').concat(d,[0,0,0,0,0,0]))^1, chk=[0,1,2,3,4,5].map(function(i){ return (pm>>5*(5-i))&31; });
+  return 'note1' + d.concat(chk).map(function(i){ return B32[i]; }).join('');
+}
+function clPublish(ev){
+  return Promise.all(CL_RELAYS.map(function(u){ return new Promise(function(res){
+    var done=false, ws; function fin(v){ if(!done){ done=true; try{ ws&&ws.close(); }catch(e){} res(v); } }
+    try{ ws = new WebSocket(u); }catch(e){ return res(0); }
+    var t = setTimeout(function(){ fin(0); }, 7000);
+    ws.onopen = function(){ ws.send(JSON.stringify(['EVENT',ev])); };
+    ws.onmessage = function(m){ try{ var a=JSON.parse(m.data); if(a[0]==='OK'&&a[1]===ev.id){ clearTimeout(t); fin(a[2]?1:0); } }catch(e){} };
+    ws.onerror = function(){ clearTimeout(t); fin(0); };
+  }); })).then(function(r){ return r.reduce(function(a,b){ return a+b; },0); });
+}
+function clEsc(t){ return String(t).replace(/[&<>"']/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function clSlug(n){ return String(n).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); }
+function clName(item, D){
+  var all = (D.base||[]).concat(D.drops||[]);
+  for (var i=0;i<all.length;i++) if ('3d-'+clSlug(all[i].name) === item) return all[i].name;
+  return item.replace(/^(3d|c)-/,'').replace(/-/g,' ').toUpperCase();
+}
+function clBadge(item, name, n, D){
+  var b = (D.badges||[]).filter(function(x){ return x.item === item; })[0];
+  if (b && /^https:\/\//i.test(b.url)) return '<img class="cbadge" src="'+clEsc(b.url)+'" alt="Verified badge for '+clEsc(name)+' number '+n+'">';
+  var up = clEsc(name.toUpperCase());
+  return '<svg class="cbadge" viewBox="0 0 150 176" role="img" aria-label="Verified badge for '+clEsc(name)+' number '+n+'">'
+    + '<path d="M75 4 L142 26 V84 C142 126 112 156 75 172 C38 156 8 126 8 84 V26 Z" fill="#fff" stroke="#0A0A0A" stroke-width="5"/>'
+    + '<path d="M75 14 L132 32 V84 C132 119 107 145 75 160 C43 145 18 119 18 84 V32 Z" fill="#5b5b5b"/>'
+    + '<text x="75" y="44" text-anchor="middle" font-family="PainDeMie,Bangers,Impact,sans-serif" font-size="17" letter-spacing="1.5" fill="#fff">VERIFIED</text>'
+    + '<text x="75" y="84" text-anchor="middle" font-family="PainDeMie,Bangers,Impact,sans-serif" font-size="24" textLength="'+Math.min(104,name.length*11)+'" lengthAdjust="spacingAndGlyphs" fill="#fff">'+up+'</text>'
+    + '<text x="75" y="116" text-anchor="middle" font-family="BarlowC,monospace" font-weight="700" font-size="22" fill="#fff">#'+n+'</text>'
+    + '<text x="75" y="131" text-anchor="middle" font-family="InterV,sans-serif" font-weight="800" font-size="6.5" textLength="68" lengthAdjust="spacing" fill="#fff">BITPOPART &middot; JUST B</text></svg>';
+}
+function vClaim(entry, rawCode, D){
+  var item = entry.item, n = entry.n, name = clName(item, D), kind = item.indexOf('c-')===0 ? 'card' : '3D collectible';
+  var code12 = rawCode.toUpperCase().replace(/[^A-Z0-9]/g,'');
+  sha256Hex(item+'|'+n+'|'+code12).then(function(full){
+    var p = full.slice(0,16);
+    var note = 'Claiming my Just B badge for my '+name+' '+kind+' #'+n+' verified on the BitPopArt Rarity Ledger. Proof '+p+'. nostr:'+BITPOP_NPUB+' #JustB #BitPopArt';
+    var tags = [['p',npubToHex(BITPOP_NPUB)],['a','30009:'+npubToHex(BITPOP_NPUB)+':justb-'+item],['t','justb'],['t','bitpopart'],['justb-claim',item,String(n),p]];
+    vShow('ok', clBadge(item,name,n,D)
+      + '<div class="claimbox"><b>REAL ONE. VERIFIED.</b><span class="claimhint">'+clEsc(name)+' #'+n+'. Enter your npub, sign with your Nostr signer and BitPopArt awards you the badge.</span>'
+      + '<input type="text" id="clNpub" placeholder="npub1..." autocomplete="off" spellcheck="false" aria-label="Your npub">'
+      + '<span class="claimhint" id="clNpubMsg"></span>'
+      + '<div class="clrow"><button class="claimlink" type="button" id="clSign" disabled>CLAIM YOUR BADGE</button><button class="clalt" type="button" id="clCopy">COPY NOTE</button></div>'
+      + '<span class="claimhint" id="clMsg" role="status"></span>'
+      + '<textarea id="clEv" readonly hidden aria-label="Signed event"></textarea></div>');
+    var ownerHex = null, $ = function(id){ return document.getElementById(id); };
+    function msg(t){ $('clMsg').textContent = t; }
+    $('clNpub').addEventListener('input', function(){
+      var v = this.value.trim(); ownerHex = null; $('clSign').disabled = true;
+      if (!v) { $('clNpubMsg').textContent = ''; return; }
+      try { ownerHex = npubToHex(v); $('clNpubMsg').textContent = 'Looks good.'; $('clSign').disabled = false; }
+      catch(e){ $('clNpubMsg').textContent = 'That does not look like a valid npub. It starts with npub1.'; }
+    });
+    $('clCopy').addEventListener('click', function(){
+      (navigator.clipboard ? navigator.clipboard.writeText(note) : Promise.reject()).then(function(){ msg('Copied. You can post it from your own Nostr app.'); }, function(){ msg('Could not copy here. Claim with your signer instead.'); });
+    });
+    $('clSign').addEventListener('click', function(){
+      if (!ownerHex) return;
+      var w = window.nostr || (window.parent && window.parent.nostr);
+      if (!w || !w.signEvent) { msg('No Nostr signer found in this browser. Install a signer extension such as Alby or nos2x, or use COPY NOTE and post it from your Nostr app.'); return; }
+      var btn = $('clSign'); btn.disabled = true; msg('Waiting for your signer...');
+      Promise.resolve(w.getPublicKey()).then(function(pk){
+        if (pk !== ownerHex) throw new Error('Your signer is using a different key than the npub you entered');
+        return w.signEvent({kind:1, created_at:Math.floor(Date.now()/1000), tags:tags, content:note});
+      }).then(function(ev){
+        if (!ev || ev.pubkey !== ownerHex || !ev.id || !ev.sig) throw new Error('The signer returned something unexpected');
+        msg('Signed. Sending your claim...');
+        return clPublish(ev).then(function(ok){
+          if (ok > 0) { $('clMsg').innerHTML = 'Posted to '+ok+' relay'+(ok>1?'s':'')+'. Your claim is sent. BitPopArt awards the badge to your npub. <a target="_blank" rel="noopener" href="https://njump.me/'+hexToNote(ev.id)+'">View your note</a>'; }
+          else { var t = $('clEv'); t.hidden = false; t.value = JSON.stringify(ev); msg('Signed, but no relay could be reached from here. Copy the signed event below and post it with your Nostr app.'); }
+          btn.disabled = false;
+        });
+      }).catch(function(e){ msg('Not signed: '+(e && e.message ? e.message : 'cancelled')+'.'); btn.disabled = false; });
+    });
+  });
 }
 if (vBtn) vBtn.addEventListener('click', vCheck);
 if (vInput) vInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') { e.preventDefault(); vCheck(); } });
