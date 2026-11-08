@@ -45,6 +45,16 @@ export default function Rare() {
 
     const onLoad = () => {
       measure();
+      // "/rare#verify" (the CLAIM YOUR BADGE link on /b) jumps straight to VERIFY MY ITEM.
+      if (window.location.hash === '#verify') {
+        setTimeout(() => {
+          const target = frame.contentDocument?.getElementById('vh');
+          if (target) {
+            const top = frame.getBoundingClientRect().top + window.scrollY + target.getBoundingClientRect().top;
+            window.scrollTo({ top: Math.max(0, top - 80), behavior: 'smooth' });
+          }
+        }, 400);
+      }
       const doc = frame.contentDocument;
       if (doc?.body) {
         try {
