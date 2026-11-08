@@ -13,8 +13,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
   Award, ExternalLink, Users, Sparkles, Copy, Check,
-  Send, Edit, Trash2, Plus, Loader2, AlertTriangle, X
+  Send, Edit, Trash2, Plus, Loader2, AlertTriangle, X, KeyRound
 } from 'lucide-react';
+import { BadgeClaim } from '@/components/badges/BadgeClaim';
+import { BadgeClaimsAdmin } from '@/components/badges/BadgeClaimsAdmin';
+import { BadgeCodesDialog } from '@/components/badges/BadgeCodesDialog';
 import { nip19 } from 'nostr-tools';
 import { genUserName } from '@/lib/genUserName';
 import { RelaySelector } from '@/components/RelaySelector';
@@ -284,6 +287,7 @@ function BadgeDetailDialog({
   onClose,
   isAdmin,
   onAward,
+  onCodes,
   onEdit,
   onDelete,
 }: {
@@ -293,6 +297,7 @@ function BadgeDetailDialog({
   onClose: () => void;
   isAdmin: boolean;
   onAward: () => void;
+  onCodes: () => void;
   onEdit: () => void;
   onDelete: () => void;
 }) {
@@ -361,6 +366,10 @@ function BadgeDetailDialog({
                   <Send className="h-3.5 w-3.5" />
                   Award
                 </Button>
+                <Button size="sm" variant="outline" className="gap-1.5 h-8" onClick={() => { onClose(); onCodes(); }}>
+                  <KeyRound className="h-3.5 w-3.5" />
+                  Codes
+                </Button>
                 <Button size="sm" variant="outline" className="gap-1.5 h-8" onClick={() => { onClose(); onEdit(); }}>
                   <Edit className="h-3.5 w-3.5" />
                   Edit
@@ -406,6 +415,7 @@ function BadgeCard({
   onClick,
   isAdmin,
   onAward,
+  onCodes,
   onEdit,
   onDelete,
 }: {
@@ -414,6 +424,7 @@ function BadgeCard({
   onClick: () => void;
   isAdmin: boolean;
   onAward: () => void;
+  onCodes: () => void;
   onEdit: () => void;
   onDelete: () => void;
 }) {
@@ -449,6 +460,15 @@ function BadgeCard({
               title="Award badge"
             >
               <Send className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              size="icon"
+              variant="secondary"
+              className="h-7 w-7 shadow-lg"
+              onClick={(e) => { e.stopPropagation(); onCodes(); }}
+              title="Claim codes"
+            >
+              <KeyRound className="h-3.5 w-3.5" />
             </Button>
             <Button
               size="icon"
@@ -689,11 +709,13 @@ export default function Badges() {
   // Dialog state
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [awardingId, setAwardingId] = useState<string | null>(null);
+  const [codesId, setCodesId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const selectedDef = definitions.find(d => d.id === selectedId) ?? null;
   const awardingDef = definitions.find(d => d.id === awardingId) ?? null;
+  const codesDef = definitions.find(d => d.id === codesId) ?? null;
   const editingDef = definitions.find(d => d.id === editingId) ?? null;
   const deletingDef = definitions.find(d => d.id === deletingId) ?? null;
 
@@ -732,6 +754,12 @@ export default function Badges() {
           </div>
         </div>
 
+        {/* ── Claim your badge (code from BitPopArt) ── */}
+        <BadgeClaim definitions={definitions} />
+
+        {/* ── Owner: claims waiting to be awarded ── */}
+        {isAdmin && <BadgeClaimsAdmin definitions={definitions} awards={awards} />}
+
         {/* ── Badge Grid ── */}
         {isLoading ? (
           <BadgesSkeleton />
@@ -745,6 +773,7 @@ export default function Badges() {
                 onClick={() => setSelectedId(definition.id)}
                 isAdmin={isAdmin}
                 onAward={() => setAwardingId(definition.id)}
+                onCodes={() => setCodesId(definition.id)}
                 onEdit={() => setEditingId(definition.id)}
                 onDelete={() => setDeletingId(definition.id)}
               />
@@ -785,6 +814,7 @@ export default function Badges() {
         onClose={() => setSelectedId(null)}
         isAdmin={isAdmin}
         onAward={() => setAwardingId(selectedId)}
+        onCodes={() => setCodesId(selectedId)}
         onEdit={() => setEditingId(selectedId)}
         onDelete={() => setDeletingId(selectedId)}
       />
@@ -792,6 +822,11 @@ export default function Badges() {
         badge={awardingDef}
         open={!!awardingId}
         onClose={() => setAwardingId(null)}
+      />
+      <BadgeCodesDialog
+        badge={codesDef}
+        open={!!codesId}
+        onClose={() => setCodesId(null)}
       />
       <EditBadgeDialog
         badge={editingDef}
