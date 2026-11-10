@@ -346,6 +346,19 @@ def footer_html():
 <script src="/assets/js/site.js" defer></script>"""
 
 
+LFJ_RE = re.compile(r"Love, Freedom(, | &amp; | &amp;amp; | and | or | & )Joy")
+LFJ_HTML = '<span class="lfj"><span class="l">Love</span>, <span class="f">Freedom</span>\\1<span class="j">Joy</span></span>'
+
+
+def colour_lfj(html):
+    """Wherever the text reads Love, Freedom & Joy: Love pink, Freedom blue, Joy yellow (text nodes only)."""
+    parts = re.split(r"(<script.*?</script>|<style.*?</style>|<[^>]+>)", html, flags=re.S)
+    for i, p in enumerate(parts):
+        if i % 2 == 0:
+            parts[i] = LFJ_RE.sub(LFJ_HTML, p)
+    return "".join(parts)
+
+
 def page(path, title, desc, body, current=None, head_class=None, noindex=False):
     """path: '' for home, 'art' for /art/index.html."""
     url_path = "/" if path == "" else f"/{path}/"
@@ -377,6 +390,8 @@ def page(path, title, desc, body, current=None, head_class=None, noindex=False):
 </body>
 </html>
 """
+    head, sep, rest = html.partition("</head>")
+    html = head + sep + colour_lfj(rest)
     out = "index.html" if path == "" else f"{path}/index.html"
     write(out, html)
     if not noindex:
@@ -457,7 +472,7 @@ def build_pages():
   <div class="container hero-inner">
     <div>
       <span class="kicker">The fan page for pop art lovers</span>
-      <h1><span class="l">Love</span>, <span class="f">Freedom</span> &amp; <span class="j">Joy</span></h1>
+      <h1>Love, Freedom &amp; Joy</h1>
       <p class="lead">POPART.love is the fan page for everyone who loves pop art. Loud, happy, popart, collectible cards, stickers, prints and good vibes you can hold. Three themes, one big heart.</p>
       <p class="lead">POPART.love is part of the studio <a href="https://bitpopart.com" target="_blank" rel="noopener"><strong>bitpopart.com</strong></a>.</p>
       <div class="hero-actions">
