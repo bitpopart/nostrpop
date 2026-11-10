@@ -2,3 +2,4 @@ build.py
 README.md
 CNAME
 .assetsignore
+data/

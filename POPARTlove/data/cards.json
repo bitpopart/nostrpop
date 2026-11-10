@@ -1,0 +1,56 @@
+[
+  {
+    "file": "heart-holder",
+    "name": "Heart Holder",
+    "theme": "love",
+    "series": "Masterpiece",
+    "rarity": "Rare",
+    "run": "Run of 100",
+    "blurb": "A hand holding a big heart."
+  },
+  {
+    "file": "big-heart",
+    "name": "Big Heart",
+    "theme": "love",
+    "series": "Masterpiece",
+    "rarity": "Common",
+    "run": "Open run",
+    "blurb": "The big pink heart that started it all."
+  },
+  {
+    "file": "paper-plane",
+    "name": "Paper Plane",
+    "theme": "freedom",
+    "series": "Signed",
+    "rarity": "Super Rare",
+    "run": "Run of 50",
+    "blurb": "Signed by the artist, with a foil finish."
+  },
+  {
+    "file": "free-bird",
+    "name": "Free Bird",
+    "theme": "freedom",
+    "series": "Masterpiece",
+    "rarity": "Uncommon",
+    "run": "Run of 500",
+    "blurb": "A bird on the wing, no cage in sight."
+  },
+  {
+    "file": "sunny-face",
+    "name": "Sunny Face",
+    "theme": "joy",
+    "series": "Legend",
+    "rarity": "Ultra Rare",
+    "run": "Run of 21",
+    "blurb": "A grinning sun for a grey day."
+  },
+  {
+    "file": "happy-flower",
+    "name": "Happy Flower",
+    "theme": "joy",
+    "series": "Legend",
+    "rarity": "Unique 1/1",
+    "run": "1 of 1",
+    "blurb": "One card, one owner, ever."
+  }
+]

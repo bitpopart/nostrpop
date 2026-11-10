@@ -8,6 +8,7 @@ assets/img/, sitemap.xml and robots.txt. No dependencies beyond Python 3.
 Edit the PAGES / content below, re-run, deploy the folder.
 """
 import math
+import json
 import os
 from html import escape
 
@@ -228,14 +229,11 @@ def card_svg(art_builder, theme, title, series, number):
     return svg_wrap(b, 500, 700, f"{title} - {series}")
 
 
+# Available cards live in data/cards.json (newest first). Each entry points to
+# assets/img/cards/<file>.webp, exported from the Card Maker.
 EXAMPLE_CARDS = [
-    # file, name, theme, series, rarity, run, blurb
-    ("heart-holder", "Heart Holder", "love", "Masterpiece", "Rare", "Run of 100", "A hand holding a big heart."),
-    ("big-heart", "Big Heart", "love", "Masterpiece", "Common", "Open run", "The big pink heart that started it all."),
-    ("paper-plane", "Paper Plane", "freedom", "Signed", "Super Rare", "Run of 50", "Signed by the artist, with a foil finish."),
-    ("free-bird", "Free Bird", "freedom", "Masterpiece", "Uncommon", "Run of 500", "A bird on the wing, no cage in sight."),
-    ("sunny-face", "Sunny Face", "joy", "Legend", "Ultra Rare", "Run of 21", "A grinning sun for a grey day."),
-    ("happy-flower", "Happy Flower", "joy", "Legend", "Unique 1/1", "1 of 1", "One card, one owner, ever."),
+    (c["file"], c["name"], c["theme"], c["series"], c["rarity"], c["run"], c["blurb"])
+    for c in json.load(open(os.path.join(ROOT, "data", "cards.json"), encoding="utf-8"))
 ]
 
 
@@ -495,8 +493,8 @@ def build_pages():
     rarity_rows = "".join(f'<tr><td><span class="dot" style="background:{c}"></span><strong>{n}</strong></td><td>{d}</td></tr>' for c, n, d in rar)
     cards = page_head("Cards", "POPART collectible cards: pop art you can collect, swap and keep. All kinds of art, one big collection.") + f"""
 <section class="section"><div class="container">
-  <p class="notice"><strong>Example cards.</strong> These six cards are made with the POPART Card Maker and use draft art. Final art, numbering and availability will be announced in the news.</p>
-  <h2 style="margin-top:2rem">Example cards</h2>
+  <p class="notice"><strong>New cards land here.</strong> Every card made with the POPART Card Maker and added to the collection shows up below, newest first. Some cards still use draft art.</p>
+  <h2 style="margin-top:2rem">Available cards</h2>
   {tribe_cards()}
 </div></section>
 
