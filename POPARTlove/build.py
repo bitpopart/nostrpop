@@ -307,7 +307,7 @@ def footer_html():
           <img src="/assets/img/logo.svg" alt="" width="52" height="44">
           <span class="brand-word">POPART<b>.love</b></span>
         </a>
-        <p class="tagline" style="margin-top:.8rem">Love, Freedom &amp; Joy. Pop art with thick lines and a big heart.</p>
+        <p class="tagline" style="margin-top:.8rem">The fan page for everyone who loves pop art. Love, Freedom &amp; Joy.</p>
         <div class="theme-dots" aria-hidden="true"><i style="background:var(--love)"></i><i style="background:var(--freedom)"></i><i style="background:var(--joy)"></i></div>
       </div>
       <div>
@@ -544,7 +544,7 @@ def build_pages():
     # ---- Shop
     shop = page_head("Shop", "Everything to collect, protect and show off your POPART cards.") + f"""
 <section class="section"><div class="container">
-  <p class="notice"><strong>Opening soon.</strong> Products, prices and checkout will appear here when the shop opens. Join the newsletter in the footer to hear first.</p>
+  <p class="notice"><strong>Opening soon.</strong> Products, prices and checkout will appear here when the shop opens. You will be able to pay with Bitcoin, of course. Join the newsletter in the footer to hear first.</p>
   <div class="grid g3" style="margin-top:1.6rem">{shop_cards()}</div>
 </div></section>"""
     page("shop", "Shop", "POPART.love shop: collectible pop art cards, sleeves, magnetic cardholders and framed one-of-a-kind cards.", shop, "/shop/")
