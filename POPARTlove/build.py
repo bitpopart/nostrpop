@@ -257,7 +257,6 @@ NAV = [
     ("Artist", "/artist/"),
     ("PopUp", "/popup/"),
     ("Cards", "/cards/"),
-    ("POPPLAY", "/popplay/"),
     ("Stickers", "/stickers/"),
     ("Prints", "/prints/"),
     ("Shop", "/shop/"),
@@ -559,7 +558,7 @@ def build_pages():
   </div>
   <p class="notice" style="margin-top:1.4rem"><strong>Trading still works as before.</strong> Same icon swaps 1 for 1, other icons need several cards. <a href="/cards/">See the cards and the trading rules</a>.</p>
 </div></section>"""
-    page("popplay", "POPPLAY", "How to play POPPLAY: a two minute, two player card game with POPART cards. Rarity, tribe and serial decide each round.", popplay, "/popplay/")
+    page("popplay", "POPPLAY", "How to play POPPLAY: a two minute, two player card game with POPART cards. Rarity, tribe and serial decide each round.", popplay, "/cards/")
 
     # ---- Stickers and Prints
     def soon_card(art):

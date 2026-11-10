@@ -1,6 +1,6 @@
 # POPART.love
 
-Static site for popart.love. Same section structure as bitpopart.com (News, Artist, PopUp, Cards, POPPLAY, Stickers, Prints, Shop), with its own Love / Freedom / Joy pop art look and no Bitcoin, Nostr or AI theming.
+Static site for popart.love. Same section structure as bitpopart.com (News, Artist, PopUp, Cards, Stickers, Prints, Shop), with its own Love / Freedom / Joy pop art look and no Bitcoin, Nostr or AI theming.
 
 ## Folder
 
