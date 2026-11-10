@@ -408,3 +408,7 @@ h1 .lfj { color: var(--ink); }
 .tile .ico.c-orange { background: var(--orange) !important; }
 .tile .ico.c-purple { background: var(--purple) !important; }
 .tile .ico { filter: none !important; }
+
+.card-price { margin: .5rem 0 0; font-size: .95rem; }
+.card-price strong { font-size: 1.15rem; font-family: var(--font-display, inherit); }
+.card-price span { color: var(--muted, #6b6559); font-size: .82rem; }

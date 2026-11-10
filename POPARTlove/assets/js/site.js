@@ -81,6 +81,15 @@ document.addEventListener("click", function (e) {
       else if (s.left !== null && s.left !== undefined) { label = s.left + (run ? " of " + run : "") + " left"; }
       b.textContent = label;
       b.className = "tag stock " + cls;
+      var pe = card.querySelector("[data-price]");
+      if (pe) {
+        var pr = s.price ? String(s.price) : "";
+        if (pr && s.status !== "sold-out") {
+          var n = Number(pr), t = n % 1 === 0 ? String(n) : n.toFixed(2);
+          pe.innerHTML = "<strong>\u20ac" + t + " / $" + t + "</strong> <span>same price in euro and dollar</span>";
+          pe.hidden = false;
+        } else { pe.hidden = true; }
+      }
       var row = card.querySelector(".where-row");
       if (row) {
         var online = row.querySelector('[data-where="online"]');

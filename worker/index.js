@@ -196,7 +196,12 @@ function clean(input) {
       }
     }
     if (!serialListOk(v.sold)) return null;
-    out[k] = { status: v.status, left, online, offline, url: link };
+    let price = "";
+    if (v.price !== undefined && v.price !== null && v.price !== "") {
+      price = String(v.price).trim().replace(",", ".");
+      if (!/^\d{1,5}(\.\d{1,2})?$/.test(price)) return null;
+    }
+    out[k] = { status: v.status, left, online, offline, url: link, price };
     registry[k] = (v.sold || "").trim();
   }
   return { stock: out, registry };
