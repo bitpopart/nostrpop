@@ -55,10 +55,12 @@
 }
 
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; overflow-x: clip; max-width: 100%; }
 
 body {
   margin: 0;
+  overflow-x: clip;
+  max-width: 100vw;
   font-family: var(--font-body);
   color: var(--ink);
   background: var(--bg);
@@ -352,3 +354,36 @@ a.tag.where:hover { background: var(--joy); color: #0d0c0a; }
 .verify-result.bad { background: color-mix(in srgb, var(--red) 14%, var(--panel)); border-color: var(--red); }
 
 .dotted { background: radial-gradient(circle, color-mix(in srgb, var(--sky) 30%, transparent) 2.2px, transparent 2.7px) 0 0 / 20px 20px, var(--panel2); }
+
+/* ---------- PopUp events, stickers and prints lists ---------- */
+.event-grid { display: grid; gap: 1.2rem; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.event-grid > .notice { grid-column: 1 / -1; }
+.event { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; }
+.event img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block; background: var(--panel2); }
+.event.past img { filter: grayscale(.7); opacity: .8; }
+.event-body { padding: 1rem 1.1rem 1.2rem; display: flex; flex-direction: column; gap: .4rem; align-items: flex-start; }
+.event-body > * { margin: 0; }
+.event-when { font-family: var(--font-label); font-weight: 800; letter-spacing: .8px; text-transform: uppercase; font-size: 14px; color: var(--orange); }
+.event-where a { color: var(--ink); }
+.event-desc { color: var(--sub); font-size: .94rem; }
+.event .btn { margin-top: .4rem; }
+.event.past { opacity: .92; }
+
+.ev-form { gap: .8rem; margin-bottom: 1.4rem; align-items: stretch; }
+.ev-grid { display: grid; gap: .7rem; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.ev-field { display: grid; gap: .25rem; font-family: var(--font-label); font-weight: 800; letter-spacing: 1px; text-transform: uppercase; font-size: 12px; color: var(--sub); }
+.ev-field input, .ev-field select, .ev-field textarea { font: 500 14px var(--font-body); text-transform: none; letter-spacing: 0; padding: .6rem 1rem; border: 1.5px solid var(--line); border-radius: 18px; background: var(--panel2); color: var(--ink); width: 100%; }
+.ev-actions { display: flex; gap: .6rem; flex-wrap: wrap; }
+.ev-preview { width: 160px; max-width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 12px; border: 1.5px solid var(--line); }
+.ev-list { display: grid; gap: .6rem; }
+.ev-list h3 { margin: 1rem 0 0; }
+.ev-row { display: flex; align-items: center; gap: .9rem; flex-wrap: wrap; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: .6rem .8rem; }
+.ev-thumb { width: 64px; height: 48px; object-fit: cover; border-radius: 8px; }
+.ev-info { flex: 1 1 14rem; min-width: 0; display: grid; gap: .1rem; font-size: .9rem; color: var(--sub); }
+.ev-info strong { color: var(--ink); font-size: 1rem; }
+.ev-btns { display: flex; gap: .4rem; flex-wrap: wrap; }
+.ev-btns .btn { padding: .4rem .9rem; font-size: 13px; }
+
+.hero, .page-head, .footer { overflow-x: clip; }
+img, svg, video { max-width: 100%; }
+.brand .brand-wordmark { max-width: 48vw; }

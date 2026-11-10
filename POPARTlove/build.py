@@ -625,18 +625,20 @@ def build_pages():
 
     stickers = page_head("Stickers", "Pop art stickers with thick black outlines. Stick them on a laptop, a bike or a notebook.") + f"""
 <section class="section"><div class="container">
-  <p class="notice"><strong>Coming soon.</strong> The stickers below are draft designs with placeholder art. Sizes, prices and ordering will be announced in the news.</p>
+  <p class="notice" data-catalog-notice><strong>Coming soon.</strong> The stickers below are draft designs with placeholder art. Sizes, prices and ordering will be announced in the news.</p>
   <h2 style="margin-top:2rem">Sticker designs</h2>
-  <div class="grid g3">{"".join(soon_card(a) for a in ARTWORKS[:3])}</div>
-</div></section>"""
+  <div class="grid g3" data-kind="stickers">{"".join(soon_card(a) for a in ARTWORKS[:3])}</div>
+</div></section>
+<script src="/assets/js/catalog.js" defer></script>"""
     page("stickers", "Stickers", "POPART.love pop art stickers in the Love, Freedom and Joy themes.", stickers, "/stickers/")
 
     prints = page_head("Prints", "Pop art prints for your wall, in the three themes: Love, Freedom and Joy.") + f"""
 <section class="section"><div class="container">
-  <p class="notice"><strong>Coming soon.</strong> The prints below are draft designs with placeholder art. Sizes, prices and ordering will be announced in the news.</p>
+  <p class="notice" data-catalog-notice><strong>Coming soon.</strong> The prints below are draft designs with placeholder art. Sizes, prices and ordering will be announced in the news.</p>
   <h2 style="margin-top:2rem">Print designs</h2>
-  <div class="grid g3">{"".join(soon_card(a) for a in ARTWORKS[3:])}</div>
-</div></section>"""
+  <div class="grid g3" data-kind="prints">{"".join(soon_card(a) for a in ARTWORKS[3:])}</div>
+</div></section>
+<script src="/assets/js/catalog.js" defer></script>"""
     page("prints", "Prints", "POPART.love pop art prints in the Love, Freedom and Joy themes.", prints, "/prints/")
 
     # ---- Cards
@@ -738,23 +740,31 @@ def build_pages():
     # ---- PopUp
     popup = page_head("PopUp", "Live pop art: markets, exhibitions and pop-up shops.") + """
 <section class="section"><div class="container">
+  <h2>Upcoming events</h2>
+  <div class="event-grid" id="events-upcoming"><p class="notice">No events scheduled yet. Dates and places will be listed here.</p></div>
+  <h2 style="margin-top:2.4rem">Past events</h2>
+  <div class="event-grid" id="events-past"></div>
+</div></section>
+<section class="section"><div class="container">
   <div class="split">
     <div class="panel">
-      <h2>Upcoming</h2>
-      <p>No events scheduled yet. Dates and places will be listed here, with a map link and opening hours.</p>
-      <p class="notice">Want POPART at your market, shop or festival? Use the newsletter below and we will be in touch, or ask at the next event.</p>
+      <h2>Your market, shop or festival?</h2>
+      <p>Want POPART at your market, shop or festival? Use the newsletter below and we will be in touch, or ask at the next event.</p>
     </div>
     <div class="panel pink">
       <h2>What a PopUp looks like</h2>
       <p>Originals on the wall, cards on the table, sleeves and cardholders in reach, and a few cards to swap on the spot.</p>
     </div>
   </div>
-</div></section>"""
+</div></section>
+<script src="/assets/js/events.js" defer></script>"""
     page("popup", "PopUp", "POPART.love pop-up events: markets, exhibitions and pop-up shops with art and collectible cards.", popup, "/popup/")
 
     # ---- Admin (looks like a 404 to everyone; admin.js reveals the editor only for the owner key)
     admin = page_head("Page not found", "That page flew away like a paper plane.") + """
 <section class="section"><div class="container" id="admin-root"><a class="btn" href="/">Back to the home page</a></div></section>
+<script src="/assets/js/events-admin.js" defer></script>
+<script src="/assets/js/catalog-admin.js" defer></script>
 <script src="/assets/js/admin.js" defer></script>"""
     page("admin", "Page not found", "Page not found.", admin, "/admin/", noindex=True)
 

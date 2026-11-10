@@ -1,6 +1,8 @@
 // POPART.love stock API.
 // GET  /api/stock  public: current status and copies left per card.
 // PUT  /api/stock  admin only: needs a NIP-98 signed Nostr event from ADMIN_PUBKEY.
+// GET/PUT /api/events and /api/event-image: PopUp events and their thumbnails (PUT is admin only).
+// GET/PUT /api/catalog?kind=stickers|prints: stickers and prints lists (PUT is admin only).
 // Everything else is served from the static site (assets).
 import { verifyEvent } from "nostr-tools/pure";
 
@@ -60,6 +62,57 @@ async function holderNo(secret, file, serial) {
   const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
   const h = new Uint8Array(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode("holder:" + file + ":" + serial)));
   return String((((h[0] << 24) | (h[1] << 16) | (h[2] << 8) | h[3]) >>> 0) % 100000).padStart(5, "0");
+}
+
+
+// ---- PopUp events -------------------------------------------------------
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+function str(v, max) {
+  if (v === undefined || v === null) return "";
+  if (typeof v !== "string" || v.length > max) return null;
+  return v.trim();
+}
+function httpsUrl(v) {
+  const s = str(v, 300);
+  if (s === null) return null;
+  if (s === "") return "";
+  try {
+    const u = new URL(s);
+    return u.protocol === "https:" ? u.href : null;
+  } catch {
+    return null;
+  }
+}
+function cleanEvents(input) {
+  if (!Array.isArray(input) || input.length > 200) return null;
+  const seen = new Set();
+  const out = [];
+  for (const e of input) {
+    if (!e || typeof e !== "object" || !/^[a-z0-9-]{1,40}$/.test(e.id || "") || seen.has(e.id)) return null;
+    seen.add(e.id);
+    const title = str(e.title, 120), time = str(e.time, 60), location = str(e.location, 160), description = str(e.description, 1200), url = httpsUrl(e.url);
+    if (title === null || !title || time === null || location === null || description === null || url === null) return null;
+    if (typeof e.date !== "string" || !DATE_RE.test(e.date) || Number.isNaN(Date.parse(e.date))) return null;
+    const imv = Number.isInteger(e.imv) && e.imv > 0 ? e.imv : 0;
+    out.push({ id: e.id, title, date: e.date, time, location, description, url, past: e.past === true, image: e.image === true, imv });
+  }
+  return out;
+}
+
+function cleanCatalog(input) {
+  if (!Array.isArray(input) || input.length > 200) return null;
+  const seen = new Set();
+  const out = [];
+  for (const e of input) {
+    if (!e || typeof e !== "object" || !/^[a-z0-9-]{1,40}$/.test(e.id || "") || seen.has(e.id)) return null;
+    seen.add(e.id);
+    const title = str(e.title, 120), price = str(e.price, 40), description = str(e.description, 1200), url = httpsUrl(e.url);
+    if (title === null || !title || price === null || description === null || url === null) return null;
+    if (e.status !== "available" && e.status !== "coming-soon") return null;
+    const imv = Number.isInteger(e.imv) && e.imv > 0 ? e.imv : 0;
+    out.push({ id: e.id, title, price, description, url, status: e.status, image: e.image === true, imv });
+  }
+  return out;
 }
 
 const SERIAL_LIST = /^\s*\d+(\s*-\s*\d+)?(\s*,\s*\d+(\s*-\s*\d+)?)*\s*$/;
@@ -162,6 +215,65 @@ export default {
         valid: true, holderOk, card: hit.card.file, name: hit.card.name, serial: hit.serial, run: hit.run,
         checks: checks[key].n, recorded: serialInList(registry[hit.card.file], hit.serial),
       });
+    }
+    if (url.pathname === "/api/events") {
+      if (request.method === "GET") {
+        return json((await env.CARDS_KV.get("events", "json")) || [], 200, { "cache-control": "public, max-age=30" });
+      }
+      if (request.method !== "PUT") return json({ error: "method not allowed" }, 405, { allow: "GET, PUT" });
+      const body = await request.text();
+      if (!(await isAdmin(request, env, body))) return json({ error: "not allowed" }, 401);
+      let list;
+      try {
+        list = cleanEvents(JSON.parse(body));
+      } catch {
+        list = null;
+      }
+      if (!list) return json({ error: "invalid events" }, 400);
+      const old = (await env.CARDS_KV.get("events", "json")) || [];
+      const keep = new Set(list.filter((e) => e.image).map((e) => e.id));
+      for (const e of old) if (!keep.has(e.id)) await env.CARDS_KV.delete("evimg:" + e.id);
+      await env.CARDS_KV.put("events", JSON.stringify(list));
+      return json({ ok: true, events: list });
+    }
+    if (url.pathname === "/api/catalog") {
+      // stickers and prints lists: GET public, PUT admin
+      const kind = url.searchParams.get("kind") || "";
+      if (kind !== "stickers" && kind !== "prints") return json({ error: "bad kind" }, 400);
+      const key = "catalog:" + kind;
+      if (request.method === "GET") return json((await env.CARDS_KV.get(key, "json")) || [], 200, { "cache-control": "public, max-age=30" });
+      if (request.method !== "PUT") return json({ error: "method not allowed" }, 405, { allow: "GET, PUT" });
+      const body = await request.text();
+      if (!(await isAdmin(request, env, body))) return json({ error: "not allowed" }, 401);
+      let list;
+      try {
+        list = cleanCatalog(JSON.parse(body));
+      } catch {
+        list = null;
+      }
+      if (!list) return json({ error: "invalid items" }, 400);
+      const old = (await env.CARDS_KV.get(key, "json")) || [];
+      const keep = new Set(list.filter((e) => e.image).map((e) => e.id));
+      for (const e of old) if (!keep.has(e.id)) await env.CARDS_KV.delete("evimg:" + e.id);
+      await env.CARDS_KV.put(key, JSON.stringify(list));
+      return json({ ok: true, items: list });
+    }
+    if (url.pathname === "/api/event-image") {
+      // body is the base64 text of a small WebP picture, so the signed payload hash covers it exactly
+      const id = url.searchParams.get("id") || "";
+      if (!/^[a-z0-9-]{1,40}$/.test(id)) return json({ error: "bad id" }, 400);
+      if (request.method === "GET") {
+        const b64 = await env.CARDS_KV.get("evimg:" + id);
+        if (!b64) return new Response("not found", { status: 404 });
+        const bin = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+        return new Response(bin, { headers: { "content-type": "image/webp", "cache-control": "public, max-age=86400" } });
+      }
+      if (request.method !== "PUT") return json({ error: "method not allowed" }, 405, { allow: "GET, PUT" });
+      const body = await request.text();
+      if (!(await isAdmin(request, env, body))) return json({ error: "not allowed" }, 401);
+      if (body.length > 400000 || !/^[A-Za-z0-9+/]+=*$/.test(body)) return json({ error: "bad image" }, 400);
+      await env.CARDS_KV.put("evimg:" + id, body);
+      return json({ ok: true });
     }
     if (url.pathname !== "/api/stock") return env.ASSETS.fetch(request);
 

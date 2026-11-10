@@ -36,9 +36,9 @@
       var rr = await fetch("/api/registry", { headers: { authorization: await authHeader("GET", "/api/registry", "") } });
       if (rr.ok) registry = await rr.json();
     } catch (e) {}
-    document.title = "Card admin | POPART.love";
+    document.title = "Admin | POPART.love";
     var head = document.querySelector(".page-head");
-    if (head) head.innerHTML = '<div class="container"><h1>Card admin</h1><p>Update which cards are available.</p></div>';
+    if (head) head.innerHTML = '<div class="container"><h1>Admin</h1><p>Cards, PopUp events, stickers and prints.</p></div>';
     root.innerHTML = '<div class="section-head"><div><h2>Cards</h2><p>Signed in with your Nostr key.</p></div><button class="btn" type="button" id="admin-save">Save changes</button></div>' +
       '<div class="table-wrap"><table class="simple" id="admin-table"><thead><tr><th>Card</th><th>Status</th><th>Copies left</th><th>Sold where</th><th>Shop link (https)</th><th>Sold serials</th></tr></thead><tbody></tbody></table></div>' +
       '<p class="form-msg" id="admin-save-msg" role="status"></p>';
@@ -59,6 +59,45 @@
       tbody.appendChild(tr);
     });
     var saveMsg = document.getElementById("admin-save-msg");
+    var evBox = document.createElement("div");
+    evBox.style.marginTop = "2.4rem";
+    root.appendChild(evBox);
+    async function signedPut(path, body) {
+      var res = await fetch(path, { method: "PUT", headers: { authorization: await authHeader("PUT", path.split("?")[0], body) }, body: body });
+      if (!res.ok) throw new Error("save failed");
+      return res;
+    }
+    ["stickers", "prints"].forEach(function (kind) {
+      var box = document.createElement("div");
+      box.style.marginTop = "2.4rem";
+      root.appendChild(box);
+      window.PopartCatalogAdmin.mount(box, kind, {
+        load: function () { return fetch("/api/catalog?kind=" + kind).then(function (r) { return r.ok ? r.json() : []; }); },
+        save: async function (list) {
+          var out = [];
+          for (var i = 0; i < list.length; i++) {
+            var it = Object.assign({}, list[i]);
+            if (it._img) { await signedPut("/api/event-image?id=" + encodeURIComponent(it.id), it._img); it.image = true; it.imv = Date.now(); delete it._img; }
+            out.push(it);
+          }
+          var res = await signedPut("/api/catalog?kind=" + kind, JSON.stringify(out));
+          return (await res.json()).items;
+        }
+      });
+    });
+    window.PopartEventsAdmin.mount(evBox, {
+      load: function () { return fetch("/api/events").then(function (r) { return r.ok ? r.json() : []; }); },
+      save: async function (list) {
+        var out = [];
+        for (var i = 0; i < list.length; i++) {
+          var ev = Object.assign({}, list[i]);
+          if (ev._img) { await signedPut("/api/event-image?id=" + encodeURIComponent(ev.id), ev._img); ev.image = true; ev.imv = Date.now(); delete ev._img; }
+          out.push(ev);
+        }
+        var res = await signedPut("/api/events", JSON.stringify(out));
+        return (await res.json()).events;
+      }
+    });
     document.getElementById("admin-save").addEventListener("click", async function () {
       var data = {};
       tbody.querySelectorAll("tr").forEach(function (tr) {
