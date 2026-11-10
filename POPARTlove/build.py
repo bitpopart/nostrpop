@@ -18,7 +18,7 @@ DOMAIN = "https://popart.love"
 TODAY = "2026-11-10"
 
 INK = "#111111"
-LOVE = "#ff2e7e"
+LOVE = "#da3475"
 FREEDOM = "#1e88ff"
 JOY = "#ffd400"
 MINT = "#19c3b1"
@@ -364,7 +364,7 @@ def page(path, title, desc, body, current=None, head_class=None, noindex=False):
 <meta property="og:title" content="{escape(full_title)}">
 <meta property="og:description" content="{escape(desc)}">
 <meta property="og:url" content="{DOMAIN}{url_path}">
-<meta name="theme-color" content="#f97316">
+<meta name="theme-color" content="#e17038">
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
 {FONTS}
 <link rel="stylesheet" href="/assets/css/style.css">

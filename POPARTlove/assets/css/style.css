@@ -17,15 +17,19 @@
   --ink: #0d0c0a;
   --sub: #5f5a52;
   --line: #ddd8cf;
-  --orange: #f97316;
-  --teal: #127a73;
-  --red: #c2001f;
+  --orange: #e17038;
+  --lime: #afcd53;
+  --pink: #da3475;
+  --yellow: #f7dc4a;
+  --purple: #88539c;
+  --teal: #5f7f1a;
+  --red: #da3932;
   --on-accent: #0d0c0a;
 
   /* theme colours (shown as small tags) */
-  --love: #ff2e7e;
-  --freedom: #2b9bd8;
-  --joy: #f5c400;
+  --love: #da3475;
+  --freedom: #88539c;
+  --joy: #f7dc4a;
 
   --radius: 16px;
   --maxw: 1180px;
@@ -43,8 +47,9 @@
   --ink: #f6f4f0;
   --sub: #aaa398;
   --line: #2e2a24;
-  --teal: #4cc1bb;
-  --red: #ff5d73;
+  --teal: #afcd53;
+  --red: #ef5a52;
+  --purple: #b07fc4;
   color-scheme: dark;
 }
 
@@ -87,6 +92,7 @@ p { margin: 0 0 1rem; }
 .skip-link:focus { left: 0; }
 
 /* ---------- Navigation ---------- */
+.nav::after { content: ""; display: block; height: 5px; background: linear-gradient(90deg, #e17038 0 16.66%, #afcd53 0 33.33%, #da3475 0 50%, #da3932 0 66.66%, #f7dc4a 0 83.33%, #88539c 0); }
 .nav { position: sticky; top: 0; z-index: 50; background: var(--panel); border-bottom: 1px solid var(--line); }
 .nav-inner { display: flex; align-items: center; justify-content: space-between; height: 64px; gap: 1rem; }
 .brand { display: flex; align-items: center; gap: .6rem; text-decoration: none; }
