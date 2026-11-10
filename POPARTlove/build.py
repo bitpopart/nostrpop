@@ -517,37 +517,33 @@ def build_pages():
     page("", "", "POPART.love: new pop art in a thick-outline graffiti style. Collectible cards, stickers, prints and a shop. Love, Freedom and Joy.", home)
 
     # ---- Verify
-    cards_json = json.dumps([{k: c[k] for k in ("file", "name", "run", "rarity")} for c in json.load(open(os.path.join(ROOT, "data", "cards.json"), encoding="utf-8"))]).replace("<", "\\u003c")
-    options = "".join(f'<option value="{c["file"]}">{escape(c["name"])} ({escape(c["rarity"])})</option>' for c in json.load(open(os.path.join(ROOT, "data", "cards.json"), encoding="utf-8")))
-    verify = page_head("Verify my card", "Check that the number on your card is real and listed by the artist.") + f"""
+    verify = page_head("Verify my card", "Type the secret code from your card to check that it is a real POPART card.") + f"""
 <section class="section"><div class="container">
   <div class="split wide-left">
     <div class="panel">
-      <h2>Check a serial</h2>
+      <h2>Check a code</h2>
       <form id="verify-form" class="verify-form" novalidate>
-        <label for="v-card">Card</label>
-        <select id="v-card" required><option value="">Choose a card</option>{options}</select>
-        <label for="v-serial">Serial number</label>
-        <input id="v-serial" type="text" inputmode="numeric" autocomplete="off" placeholder="007/050 or 7">
+        <label for="v-code">Card code</label>
+        <input id="v-code" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="14" placeholder="XXXXX-XXXXX">
         <button class="btn" type="submit">Verify my card</button>
       </form>
       <div id="v-result" class="verify-result" role="status" hidden></div>
     </div>
     <div class="prose">
-      <h2>Where to find the serial</h2>
-      <p>Numbered cards print their own copy number at the bottom right of the front, for example <strong>007/050</strong>. Open edition cards have no serial.</p>
+      <h2>Where to find the code</h2>
+      <p>Every numbered card comes with its own secret code, a short mix of letters and numbers like <strong>7K3QM-9X2TA</strong>. It is on the card or the sleeve that came with it. The printed number such as 001/100 is not used here, because anyone can copy a number. The code is unique and only the artist can make it.</p>
       <h2>What the check does</h2>
       <ol>
-        <li>It checks the number fits the print run of that card.</li>
-        <li>It looks the number up in the artist's list of sold cards.</li>
+        <li>It looks the code up in the artist's private list.</li>
+        <li>It tells you which card and which copy number the code belongs to.</li>
+        <li>It counts how many times the code has been checked, so you can spot a code that is being used again and again.</li>
       </ol>
-      <p class="notice">A valid number that is not listed yet may simply not have been recorded. Ask the artist at the <a href="/popup/">next event</a> or through the <a href="/artist/">Artist page</a>.</p>
+      <p class="notice">Not found? Check the letters again (O and 0 or I and 1 are treated the same). Still not found? Ask the artist at the <a href="/popup/">next event</a> or through the <a href="/artist/">Artist page</a>.</p>
     </div>
   </div>
 </div></section>
-<script type="application/json" id="cards-data">{cards_json}</script>
 <script src="/assets/js/verify.js" defer></script>"""
-    page("verify", "Verify my card", "Verify a POPART card: check its serial number against the print run and the artist's list of sold cards.", verify, "/verify/")
+    page("verify", "Verify my card", "Verify a POPART card with the secret code that comes with it.", verify, "/verify/")
 
     # ---- POPPLAY
     popplay = page_head("POPPLAY", "A two minute card game for two collectors. Collecting stays the main thing.") + f"""

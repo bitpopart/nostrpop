@@ -5,6 +5,15 @@
 import { verifyEvent } from "nostr-tools/pure";
 
 const KEY = "stock";
+const attempts = new Map();
+const ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+function makeCode() {
+  const bytes = crypto.getRandomValues(new Uint8Array(10));
+  return [...bytes].map((b) => ALPHABET[b & 31]).join("");
+}
+function normalizeCode(text) {
+  return text.toUpperCase().replace(/[^A-Z0-9]/g, "").replace(/[IL]/g, "1").replace(/O/g, "0");
+}
 const STATUSES = ["available", "sold-out", "coming-soon"];
 const json = (data, status = 200, extra = {}) =>
   new Response(JSON.stringify(data), {
@@ -103,19 +112,68 @@ export default {
       if (!(await isAdmin(request, env, ""))) return json({ error: "not allowed" }, 401);
       return json((await env.CARDS_KV.get("registry", "json")) || {});
     }
-    if (url.pathname === "/api/verify") {
-      // public: is this serial valid for this card, and is it on the artist's sold list?
-      if (request.method !== "GET") return json({ error: "method not allowed" }, 405, { allow: "GET" });
-      const file = url.searchParams.get("card") || "";
-      const serial = Number(url.searchParams.get("serial"));
+    if (url.pathname === "/api/codes") {
+      // admin only: make a fresh set of secret verification codes for one card (replaces older ones)
+      if (request.method !== "POST") return json({ error: "method not allowed" }, 405, { allow: "POST" });
+      const body = await request.text();
+      if (!(await isAdmin(request, env, body))) return json({ error: "not allowed" }, 401);
+      let file;
+      try {
+        file = JSON.parse(body).card;
+      } catch {
+        return json({ error: "bad json" }, 400);
+      }
       const cards = await (await env.ASSETS.fetch(new URL("/assets/cards.json", request.url))).json();
       const card = cards.find((c) => c.file === file);
-      if (!card || !Number.isInteger(serial) || serial < 1) return json({ error: "bad request" }, 400);
-      const run = runOf(card);
-      if (run === null) return json({ card: file, open: true });
-      if (serial > run) return json({ card: file, run, serial, valid: false });
+      const run = card ? runOf(card) : null;
+      if (!card || run === null || run > 1000) return json({ error: "this card has no numbered run" }, 400);
+      const index = (await env.CARDS_KV.get("codes", "json")) || {};
+      for (const h of Object.keys(index)) if (index[h][0] === file) delete index[h];
+      const checks = (await env.CARDS_KV.get("checks", "json")) || {};
+      const issued = [];
+      for (let serial = 1; serial <= run; serial++) {
+        let code, hash;
+        do {
+          code = makeCode();
+          hash = await sha256hex(code);
+        } while (index[hash]);
+        index[hash] = [file, serial];
+        issued.push({ serial, code });
+      }
+      for (const h of Object.keys(checks)) if (!index[h]) delete checks[h];
+      await env.CARDS_KV.put("codes", JSON.stringify(index));
+      await env.CARDS_KV.put("checks", JSON.stringify(checks));
+      return json({ ok: true, card: file, run, codes: issued });
+    }
+    if (url.pathname === "/api/verify") {
+      // public: look a secret code up. Returns the card and copy number it belongs to.
+      if (request.method !== "GET") return json({ error: "method not allowed" }, 405, { allow: "GET" });
+      const ip = request.headers.get("cf-connecting-ip") || "x";
+      const now = Date.now();
+      const slot = attempts.get(ip) || { n: 0, reset: now + 60000 };
+      if (now > slot.reset) { slot.n = 0; slot.reset = now + 60000; }
+      slot.n++;
+      attempts.set(ip, slot);
+      if (attempts.size > 5000) attempts.clear();
+      if (slot.n > 10) return json({ error: "too many tries, wait a minute" }, 429);
+      const code = normalizeCode(url.searchParams.get("code") || "");
+      if (code.length !== 10) return json({ valid: false });
+      const hash = await sha256hex(code);
+      const index = (await env.CARDS_KV.get("codes", "json")) || {};
+      const hit = index[hash];
+      if (!hit) return json({ valid: false });
+      const [file, serial] = hit;
+      const cards = await (await env.ASSETS.fetch(new URL("/assets/cards.json", request.url))).json();
+      const card = cards.find((c) => c.file === file);
+      const checks = (await env.CARDS_KV.get("checks", "json")) || {};
+      const prev = checks[hash] || { n: 0, first: now };
+      checks[hash] = { n: prev.n + 1, first: prev.first };
+      await env.CARDS_KV.put("checks", JSON.stringify(checks));
       const registry = (await env.CARDS_KV.get("registry", "json")) || {};
-      return json({ card: file, run, serial, valid: true, recorded: serialInList(registry[file], serial) });
+      return json({
+        valid: true, card: file, name: card ? card.name : file, serial, run: card ? runOf(card) : null,
+        checks: checks[hash].n, first: prev.first, recorded: serialInList(registry[file], serial),
+      });
     }
     if (url.pathname !== "/api/stock") return env.ASSETS.fetch(request);
 

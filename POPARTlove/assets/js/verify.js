@@ -1,22 +1,21 @@
-/* Verify my card: checks the serial against the print run and the artist's sold list. */
+/* Verify my card: looks the secret card code up in the artist's private list. */
 (function () {
   var form = document.getElementById("verify-form");
   if (!form) return;
-  var data = JSON.parse(document.getElementById("cards-data").textContent);
-  var sel = document.getElementById("v-card");
-  var input = document.getElementById("v-serial");
+  var input = document.getElementById("v-code");
   var out = document.getElementById("v-result");
 
-  function runOf(card) { var m = /\d+/.exec(card.run || ""); return m ? Number(m[0]) : null; }
+  function norm(t) { return t.toUpperCase().replace(/[^A-Z0-9]/g, "").replace(/[IL]/g, "1").replace(/O/g, "0"); }
   function show(kind, title, text, card) {
     out.className = "verify-result " + kind;
     out.innerHTML = "";
     if (card) {
       var img = document.createElement("img");
-      img.src = "/assets/img/cards/" + card.file + ".webp"; img.alt = card.name + " card";
+      img.src = "/assets/img/cards/" + card + ".webp"; img.alt = "";
       img.width = 600; img.height = 840;
       out.appendChild(img);
-    }
+    } else { out.style.gridTemplateColumns = "minmax(0, 1fr)"; }
+    if (card) out.style.gridTemplateColumns = "";
     var box = document.createElement("div");
     var h = document.createElement("h3"); h.textContent = title;
     var p = document.createElement("p"); p.textContent = text;
@@ -25,42 +24,30 @@
     out.hidden = false;
     out.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }
+  input.addEventListener("input", function () {
+    var c = norm(input.value).slice(0, 10);
+    input.value = c.length > 5 ? c.slice(0, 5) + "-" + c.slice(5) : c;
+  });
 
   form.addEventListener("submit", async function (e) {
     e.preventDefault();
-    var card = data.filter(function (c) { return c.file === sel.value; })[0];
-    if (!card) { show("bad", "Pick a card", "Choose the card you want to check.", null); return; }
-    var raw = input.value.trim();
-    var run = runOf(card);
-    if (run === null) {
-      show("info", "No serial on this card", card.name + " is an open edition card. It has no serial number, so there is nothing to verify. Its rarity badge and artist line are the details to look at.", card);
-      return;
-    }
-    var m = /^(\d{1,6})(?:\s*\/\s*(\d{1,6}))?$/.exec(raw);
-    if (!m) { show("bad", "Check the number", "Type the serial as it is printed at the bottom right of the card, for example 007/" + String(run).padStart(3, "0") + " or just 7.", card); return; }
-    var serial = Number(m[1]);
-    if (m[2] && Number(m[2]) !== run) {
-      show("bad", "Not a match", card.name + " has a print run of " + run + ", but the number you typed says " + Number(m[2]) + ". Check that you picked the right card.", card);
-      return;
-    }
-    if (serial < 1 || serial > run) {
-      show("bad", "Not a valid serial", "Serial " + serial + " does not exist for " + card.name + ". This card has " + run + " numbered " + (run === 1 ? "copy" : "copies") + ", from 1 to " + run + ".", card);
-      return;
-    }
-    var label = String(serial).padStart(3, "0") + "/" + String(run).padStart(3, "0");
-    if (run === 1) label = "1/1";
+    var code = norm(input.value);
+    if (code.length !== 10) { show("bad", "Check the code", "The code has 10 letters and numbers, for example 7K3QM-9X2TA.", null); return; }
     try {
-      var res = await fetch("/api/verify?card=" + encodeURIComponent(card.file) + "&serial=" + serial);
+      var res = await fetch("/api/verify?code=" + encodeURIComponent(code));
+      if (res.status === 429) { show("warn", "Slow down", "Too many tries. Wait a minute and try again.", null); return; }
       if (!res.ok) throw new Error("no");
       var r = await res.json();
-      if (r.valid === false) { show("bad", "Not a valid serial", "Serial " + serial + " does not exist for " + card.name + ".", card); return; }
-      if (r.recorded) {
-        show("good", "Verified", card.name + " No. " + label + " is on the artist's list of sold cards.", card);
+      if (!r.valid) { show("bad", "Code not found", "This code is not on the artist's list. Check the letters, or ask the artist if you are unsure about the card.", null); return; }
+      var num = r.run === 1 ? "1/1" : String(r.serial).padStart(3, "0") + (r.run ? "/" + String(r.run).padStart(3, "0") : "");
+      var text = r.name + " No. " + num + " is a real POPART card.";
+      if (r.checks > 1) {
+        show("warn", "Real code, checked before", text + " This code has been checked " + r.checks + " times. If you just bought the card and that surprises you, tell the artist.", r.card);
       } else {
-        show("warn", "Valid number, not listed yet", card.name + " No. " + label + " is a real number in the print run, but it is not on the artist's sold list yet. If you bought it from the artist or at an event, ask for it to be added.", card);
+        show("good", "Verified", text + " This is the first time the code was checked.", r.card);
       }
     } catch (err) {
-      show("warn", "Valid number", card.name + " No. " + label + " is within the print run. The artist's sold list could not be reached right now, so this copy could not be matched against it.", card);
+      show("warn", "Could not check", "The check could not be reached right now. Try again in a moment.", null);
     }
   });
 })();

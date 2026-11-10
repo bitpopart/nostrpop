@@ -46,7 +46,7 @@ This writes the pictures to `assets/img/cards/`, adds the card to `data/cards.js
 
 ## Verify my card
 
-`/verify/` checks a card's serial against its print run and the artist's list of sold serials. The list is kept in Cloudflare KV, edited in `/admin/` (Sold serials column, written like `1-5, 7`), and only ever answered one serial at a time by `/api/verify`.
+`/verify/` checks a secret card code, not the printed number (001/100 can be copied by anyone). In `/admin/` (Secret card codes) you make one random 10-character code per copy of a numbered card; the list is shown once, so copy it and print the codes on the cards or sleeves. Only a SHA-256 hash of each code is kept in Cloudflare KV, so even the database cannot reveal them. `/api/verify?code=` returns the card name and copy number, counts how often the code was checked (to spot reuse), and is limited to 10 tries a minute per visitor. Making new codes for a card replaces its old ones.
 
 ## Edit and rebuild
 
