@@ -340,7 +340,7 @@ def footer_html():
       </div>
     </div>
     <div class="footer-bottom">
-      &copy; 2026 POPART.love &middot; made by Johannes Oppewal &middot; all artwork &copy; the artist
+      &copy; 2026 POPART.love &middot; made by BitPopArt &middot; all artwork &copy;
     </div>
   </div>
 </footer>
