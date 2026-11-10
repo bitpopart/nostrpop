@@ -400,3 +400,11 @@ h1 .lfj { color: var(--ink); }
 
 .c-sky { background: color-mix(in srgb, var(--sky) 45%, var(--panel2)) !important; }
 .tile .ico.c-yellow, .tile .ico.c-pink, .tile .ico.c-lime, .tile .ico.c-sky, .tile .ico.c-red, .tile .ico.c-orange, .tile .ico.c-purple { background-image: none; filter: saturate(1.5); }
+.tile .ico.c-yellow { background: var(--yellow) !important; }
+.tile .ico.c-pink { background: var(--lfj-pink) !important; }
+.tile .ico.c-lime { background: var(--lime) !important; }
+.tile .ico.c-sky { background: var(--lfj-blue) !important; }
+.tile .ico.c-red { background: var(--red) !important; }
+.tile .ico.c-orange { background: var(--orange) !important; }
+.tile .ico.c-purple { background: var(--purple) !important; }
+.tile .ico { filter: none !important; }
