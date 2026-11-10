@@ -337,7 +337,7 @@ def footer_html():
       </div>
     </div>
     <div class="footer-bottom">
-      &copy; 2026 POPART.love &middot; made by Johannes Oppewal, Sneek, Fryslân &middot; all artwork &copy; the artist
+      &copy; 2026 POPART.love &middot; made by Johannes Oppewal &middot; all artwork &copy; the artist
     </div>
   </div>
 </footer>
@@ -546,20 +546,19 @@ def build_pages():
     page("news", "News", "News from the POPART.love studio: new art, new cards and shop updates.", news, "/news/")
 
     # ---- Artist
-    artist = page_head("Artist", "Johannes Oppewal, pop artist from Sneek in Fryslân, the Netherlands.") + f"""
+    artist = page_head("Artist", "Johannes Oppewal, pop artist.") + f"""
 <section class="section"><div class="container">
   <div class="split wide-left">
     <div class="prose">
       <h2>Hi, I am Johannes</h2>
-      <p>I am a designer and artist based in Sneek, in Fryslân. I paint and design in a thick-outline graffiti pop art style: loud colours, black lines, simple shapes.</p>
+      <p>I am a designer and artist. I paint and design in a thick-outline graffiti pop art style: loud colours, black lines, simple shapes.</p>
       <p>POPART.love is where that style meets three plain, good ideas: <strong>Love</strong>, <strong>Freedom</strong> and <strong>Joy</strong>. No complicated story. Just art that is made to be happy.</p>
-      <p>I also run a small print shop in Sneek, which is why I like art you can actually hold: cards, prints and frames.</p>
+      <p>I like art you can actually hold: cards, prints and frames.</p>
       <p><a class="btn" href="/art/">See the art</a></p>
     </div>
     <div class="panel yellow">
       <h3>Quick facts</h3>
       <ul style="padding-left:1.1rem;margin:0">
-        <li>Based in Sneek, Fryslân</li>
         <li>Style: thick-outline graffiti pop art</li>
         <li>Themes: Love, Freedom, Joy</li>
         <li>Also: <a href="https://bitpopart.com" rel="noopener">BitPopArt</a></li>
@@ -567,7 +566,7 @@ def build_pages():
     </div>
   </div>
 </div></section>"""
-    page("artist", "Artist", "Meet Johannes Oppewal, pop artist from Sneek, Fryslân. Thick-outline graffiti pop art about Love, Freedom and Joy.", artist, "/artist/")
+    page("artist", "Artist", "Meet Johannes Oppewal, pop artist. Thick-outline graffiti pop art about Love, Freedom and Joy.", artist, "/artist/")
 
     # ---- PopUp
     popup = page_head("PopUp", "Live pop art: markets, exhibitions and pop-up shops.") + """
