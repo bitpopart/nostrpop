@@ -252,8 +252,6 @@ NAV = [
     ("PopUp", "/popup/"),
     ("Art", "/art/"),
     ("Cards", "/cards/"),
-    ("Projects", "/projects/"),
-    ("Fundraising", "/fundraising/"),
     ("Shop", "/shop/"),
 ]
 
@@ -264,8 +262,6 @@ TILES = [
     ("News", "/news/", "\U0001F4F0", "c-mint"),
     ("Artist", "/artist/", "\U0001F58C️", "c-orange"),
     ("PopUp", "/popup/", "\U0001F4CD", "c-purple"),
-    ("Projects", "/projects/", "\U0001F6E0️", "c-lime"),
-    ("Support", "/fundraising/", "\U0001F49B", "c-red"),
 ]
 
 FONTS = (
@@ -450,10 +446,10 @@ def build_pages():
       <a class="btn yellow" href="/artist/">Meet the artist</a>
     </div>
     <div class="panel yellow">
-      <span class="kicker" style="background:#111">Coming up</span>
-      <h2>Projects in the studio</h2>
-      <p>A card maker, a quick two-player card game, framed one-of-a-kind pieces and more. Follow along as it grows.</p>
-      <a class="btn" href="/projects/">See projects</a>
+      <span class="kicker">Collect</span>
+      <h2>Cards to collect and swap</h2>
+      <p>Pick a tribe, find the rare ones and trade with friends. Flip a card to see its back.</p>
+      <a class="btn" href="/cards/">See the cards</a>
     </div>
   </div>
 </div></section>
@@ -468,7 +464,7 @@ def build_pages():
   <div class="grid g2">{news_cards()}</div>
 </div></section>
 """
-    page("", "", "POPART.love: new pop art in a thick-outline graffiti style. Art, collectible cards, projects and a shop. Love, Freedom and Joy.", home)
+    page("", "", "POPART.love: new pop art in a thick-outline graffiti style. Art, collectible cards and a shop. Love, Freedom and Joy.", home)
 
     # ---- Art
     allart = "".join(art_card(a[0], a[2], a[3], a[4]) for a in ARTWORKS)
@@ -586,40 +582,6 @@ def build_pages():
   </div>
 </div></section>"""
     page("popup", "PopUp", "POPART.love pop-up events: markets, exhibitions and pop-up shops with art and collectible cards.", popup, "/popup/")
-
-    # ---- Projects
-    projects = page_head("Projects", "What is being made in the studio right now.") + """
-<section class="section"><div class="container">
-  <div class="grid g2">
-    <article class="card"><div class="body"><span class="tag love">Cards</span><h3>POPART Cards</h3><p>Collectible pop art cards in three tribes and three series, plus 1/1 Unique cards. <a href="/cards/">More about cards</a>.</p></div></article>
-    <article class="card"><div class="body"><span class="tag joy">Tool</span><h3>POPART Card Maker</h3><p>A simple tool to design cards for the collection, with themes, series, numbering and one standard card back.</p><a class="btn yellow" href="/cards/maker/" style="align-self:flex-start;font-size:1.1rem">Open the Card Maker</a></div></article>
-    <article class="card"><div class="body"><span class="tag freedom">Game</span><h3>POPPLAY</h3><p>A two-player game with the same cards: count 3, 2, 1, POP and the higher card wins.</p><span class="tag soon">In progress</span></div></article>
-    <article class="card"><div class="body"><span class="tag love">Frames</span><h3>Framed 1/1 Unique</h3><p>A small art frame for one-of-a-kind cards, with a certificate card and a mount card.</p><span class="tag soon">Planned</span></div></article>
-    <article class="card"><div class="body"><span class="tag joy">Art</span><h3>New graffiti pop art</h3><p>A growing series of thick-outline paintings about Love, Freedom and Joy.</p><span class="tag soon">Ongoing</span></div></article>
-  </div>
-</div></section>"""
-    page("projects", "Projects", "Projects in the POPART.love studio: collectible cards, card maker, POPPLAY game and framed one-of-a-kind cards.", projects, "/projects/")
-
-    # ---- Fundraising / Support
-    fund = page_head("Fundraising", "Help POPART grow. Every bit of support turns into more art.") + """
-<section class="section"><div class="container">
-  <div class="split">
-    <div class="prose">
-      <h2>Ways to help</h2>
-      <ul>
-        <li><strong>Collect.</strong> Buy cards and art. It is the best way to keep the studio running.</li>
-        <li><strong>Share.</strong> Show a friend a card, post a painting, tell somebody.</li>
-        <li><strong>Subscribe.</strong> The newsletter is free and helps plan what to make next.</li>
-        <li><strong>Invite.</strong> Bring a PopUp to your market or shop.</li>
-      </ul>
-    </div>
-    <div class="panel yellow">
-      <h2>Campaigns</h2>
-      <p>No campaign is running at the moment. When one starts (a print run, a frame series, a new painting) it will be listed here with a goal and a progress bar.</p>
-    </div>
-  </div>
-</div></section>"""
-    page("fundraising", "Fundraising", "Support POPART.love: collect, share, subscribe or bring a pop-up to your event.", fund, "/fundraising/")
 
     # ---- 404
     nf = page_head("Page not found", "That page flew away like a paper plane.") + """

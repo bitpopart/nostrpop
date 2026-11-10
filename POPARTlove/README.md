@@ -1,6 +1,6 @@
 # POPART.love
 
-Static site for popart.love. Same section structure as bitpopart.com (News, Artist, PopUp, Art, Projects, Fundraising, Shop, plus Cards), with its own Love / Freedom / Joy pop art look and no Bitcoin, Nostr or AI theming.
+Static site for popart.love. Same section structure as bitpopart.com (News, Artist, PopUp, Art, Shop, plus Cards), with its own Love / Freedom / Joy pop art look and no Bitcoin, Nostr or AI theming.
 
 ## Folder
 
@@ -11,7 +11,7 @@ POPARTlove/
   assets/js/site.js   theme toggle, mobile menu, newsletter form
   assets/img/         logo, favicon, placeholder artworks (SVG), cards/ (example card WebPs)
   assets/fonts/       self-hosted Bangers, Barlow Condensed, Space Mono, Inter
-  index.html, art/, cards/, shop/, news/, artist/, popup/, projects/, fundraising/, 404.html
+  index.html, art/, cards/, shop/, news/, artist/, popup/, 404.html
 ```
 
 ## Card Maker
@@ -46,5 +46,5 @@ python3 -m http.server 8765   # preview at http://127.0.0.1:8765
 - Replace the placeholder SVG artworks and the example cards in `assets/img/` with the real ones.
 - Set `NEWSLETTER_ENDPOINT` in `assets/js/site.js`. Until then the subscribe button says the newsletter opens soon.
 - Shop items are marked "Coming soon" with no prices. Add products and a checkout when ready.
-- Add a PopUp event list and a fundraising campaign when there is one.
+- Add a PopUp event list when there is one.
 - Site pages use self-hosted fonts. Only the Card Maker page still loads Google Fonts.

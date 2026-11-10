@@ -189,7 +189,7 @@ p { margin: 0 0 1rem; }
 .tiles-wrap { padding-block: 1.6rem .2rem; }
 .tiles { display: grid; grid-template-columns: repeat(2, 1fr); gap: .8rem; }
 @media (min-width: 640px) { .tiles { grid-template-columns: repeat(4, 1fr); } }
-@media (min-width: 1000px) { .tiles { grid-template-columns: repeat(8, 1fr); } }
+@media (min-width: 1000px) { .tiles { grid-template-columns: repeat(6, 1fr); } }
 .tile {
   text-decoration: none; text-align: center; padding: .9rem .4rem .7rem; border: 1px solid var(--line);
   border-radius: 12px; background: var(--panel);
