@@ -318,3 +318,9 @@ table.simple th {
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 
 .tags { display: flex; flex-wrap: wrap; gap: .4rem; }
+
+.tag.stock.ok { border-color: var(--teal); background: color-mix(in srgb, var(--teal) 16%, var(--panel)); color: var(--ink); }
+.tag.stock.out { border-color: var(--red); background: color-mix(in srgb, var(--red) 14%, var(--panel)); color: var(--ink); }
+.tag.stock.soon { color: var(--sub); }
+#admin-table input, #admin-table select { font: inherit; padding: .4rem .7rem; border: 1.5px solid var(--line); border-radius: 999px; background: var(--panel2); color: var(--ink); }
+[hidden] { display: none !important; }

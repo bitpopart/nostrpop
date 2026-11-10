@@ -10,6 +10,7 @@ Edit the PAGES / content below, re-run, deploy the folder.
 import math
 import json
 import os
+import re
 from html import escape
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -232,9 +233,14 @@ def card_svg(art_builder, theme, title, series, number):
 # Available cards live in data/cards.json (newest first). Each entry points to
 # assets/img/cards/<file>.webp, exported from the Card Maker.
 EXAMPLE_CARDS = [
-    (c["file"], c["name"], c["theme"], c["series"], c["rarity"], c["run"], c["blurb"])
+    (c["file"], c["name"], c["theme"], c["series"], c["rarity"], c["run"], c["blurb"], c.get("status", "available"), c.get("left"))
     for c in json.load(open(os.path.join(ROOT, "data", "cards.json"), encoding="utf-8"))
 ]
+
+
+def build_cards_json():
+    src = os.path.join(ROOT, "data", "cards.json")
+    write("assets/cards.json", open(src, encoding="utf-8").read())
 
 
 def build_images():
@@ -340,7 +346,7 @@ def footer_html():
 <script src="/assets/js/site.js" defer></script>"""
 
 
-def page(path, title, desc, body, current=None, head_class=None):
+def page(path, title, desc, body, current=None, head_class=None, noindex=False):
     """path: '' for home, 'art' for /art/index.html."""
     url_path = "/" if path == "" else f"/{path}/"
     full_title = "POPART.love | Love, Freedom & Joy" if path == "" else f"{title} | POPART.love"
@@ -352,6 +358,7 @@ def page(path, title, desc, body, current=None, head_class=None):
 <title>{escape(full_title)}</title>
 <meta name="description" content="{escape(desc)}">
 <link rel="canonical" href="{DOMAIN}{url_path}">
+{'<meta name="robots" content="noindex, nofollow">' if noindex else ""}
 <meta property="og:type" content="website">
 <meta property="og:title" content="{escape(full_title)}">
 <meta property="og:description" content="{escape(desc)}">
@@ -373,7 +380,8 @@ def page(path, title, desc, body, current=None, head_class=None):
 """
     out = "index.html" if path == "" else f"{path}/index.html"
     write(out, html)
-    pages_written.append(url_path)
+    if not noindex:
+        pages_written.append(url_path)
 
 
 def page_head(title, text):
@@ -388,13 +396,29 @@ def art_card(fn, title, theme, blurb):
 </article>"""
 
 
+def stock_label(status, left, runnum):
+    if status == "sold-out":
+        return "Sold out"
+    if status == "coming-soon":
+        return "Coming soon"
+    if left is None:
+        return "Available"
+    return f"{left} of {runnum} left" if runnum else f"{left} left"
+
+
+def stock_class(status):
+    return {"sold-out": "out", "coming-soon": "soon"}.get(status, "ok")
+
+
 def tribe_cards(limit=None):
     cards = EXAMPLE_CARDS[:limit] if limit else EXAMPLE_CARDS
     out = ""
-    for fn, title, theme, series, rarity, run, blurb in cards:
+    for fn, title, theme, series, rarity, run, blurb, status, left in cards:
         name, cls, _ = THEME_ICON[theme]
-        out += f'''<article class="card"><figure class="cardfig"><button class="flip" type="button" aria-pressed="false" aria-label="Flip the {escape(title)} card"><span class="flip-inner"><img class="face front" src="/assets/img/cards/{fn}.webp" alt="POPART {escape(title)} card front, {series} series, {rarity}" width="600" height="840" loading="lazy"><img class="face back" src="/assets/img/cards/{fn}-back.webp" alt="POPART {escape(title)} card back" width="600" height="840" loading="lazy"></span></button><span class="flip-hint">Tap the card to flip</span></figure>
-<div class="body"><div class="tags"><span class="tag {cls}">{name}</span><span class="tag">{rarity}</span></div><h3>{escape(title)}</h3><p>{series} series. {run}. {escape(blurb)}</p></div></article>'''
+        runnum = re.search(r"\d+", run)
+        runnum = runnum.group(0) if runnum else ""
+        out += f'''<article class="card" data-card="{fn}" data-run="{runnum}"><figure class="cardfig"><button class="flip" type="button" aria-pressed="false" aria-label="Flip the {escape(title)} card"><span class="flip-inner"><img class="face front" src="/assets/img/cards/{fn}.webp" alt="POPART {escape(title)} card front, {series} series, {rarity}" width="600" height="840" loading="lazy"><img class="face back" src="/assets/img/cards/{fn}-back.webp" alt="POPART {escape(title)} card back" width="600" height="840" loading="lazy"></span></button><span class="flip-hint">Tap the card to flip</span></figure>
+<div class="body"><div class="tags"><span class="tag {cls}">{name}</span><span class="tag">{rarity}</span><span class="tag stock {stock_class(status)}" data-stock>{stock_label(status, left, runnum)}</span></div><h3>{escape(title)}</h3><p>{series} series. {run}. {escape(blurb)}</p></div></article>'''
     return f'<div class="grid g3">{out}</div>'
 
 
@@ -598,6 +622,24 @@ def build_pages():
 </div></section>"""
     page("popup", "PopUp", "POPART.love pop-up events: markets, exhibitions and pop-up shops with art and collectible cards.", popup, "/popup/")
 
+    # ---- Admin (hidden: no menu link, not in the sitemap, writes need a Nostr signature)
+    admin = page_head("Card admin", "Update which cards are available. Sign in with your Nostr key.") + """
+<section class="section"><div class="container">
+  <div class="panel" id="admin-login">
+    <h2>Sign in</h2>
+    <p>Use your Nostr browser extension. Only the owner key can save changes. Anyone else can open this page but cannot change anything.</p>
+    <button class="btn" type="button" id="admin-signin">Sign in with Nostr</button>
+    <p class="form-msg" id="admin-msg" role="status"></p>
+  </div>
+  <div id="admin-editor" hidden>
+    <div class="section-head"><div><h2>Cards</h2><p id="admin-who"></p></div><button class="btn" type="button" id="admin-save">Save changes</button></div>
+    <div class="table-wrap"><table class="simple" id="admin-table"><thead><tr><th>Card</th><th>Status</th><th>Copies left</th></tr></thead><tbody></tbody></table></div>
+    <p class="form-msg" id="admin-save-msg" role="status"></p>
+  </div>
+</div></section>
+<script src="/assets/js/admin.js" defer></script>"""
+    page("admin", "Card admin", "Card stock admin.", admin, "/admin/", noindex=True)
+
     # ---- 404
     nf = page_head("Page not found", "That page flew away like a paper plane.") + """
 <section class="section"><div class="container"><a class="btn" href="/">Back to the home page</a></div></section>"""
@@ -652,7 +694,7 @@ def build_meta():
         f"  <url><loc>{DOMAIN}{p}</loc><lastmod>{TODAY}</lastmod></url>\n" for p in sorted(set(pages_written))
     )
     write("sitemap.xml", f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{urls}</urlset>\n')
-    write("robots.txt", f"User-agent: *\nAllow: /\n\nSitemap: {DOMAIN}/sitemap.xml\n")
+    write("robots.txt", f"User-agent: *\nAllow: /\nDisallow: /admin/\n\nSitemap: {DOMAIN}/sitemap.xml\n")
     write("CNAME", "popart.love\n")
     write(
         "_headers",
@@ -673,6 +715,7 @@ def build_meta():
 
 if __name__ == "__main__":
     build_images()
+    build_cards_json()
     build_pages()
     build_meta()
     print(f"Built {len(set(pages_written))} pages:")

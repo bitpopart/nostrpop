@@ -6,7 +6,9 @@
     "series": "Masterpiece",
     "rarity": "Rare",
     "run": "Run of 100",
-    "blurb": "A hand holding a big heart."
+    "blurb": "A hand holding a big heart.",
+    "status": "available",
+    "left": null
   },
   {
     "file": "big-heart",
@@ -15,7 +17,9 @@
     "series": "Masterpiece",
     "rarity": "Common",
     "run": "Open run",
-    "blurb": "The big pink heart that started it all."
+    "blurb": "The big pink heart that started it all.",
+    "status": "available",
+    "left": null
   },
   {
     "file": "paper-plane",
@@ -24,7 +28,9 @@
     "series": "Signed",
     "rarity": "Super Rare",
     "run": "Run of 50",
-    "blurb": "Signed by the artist, with a foil finish."
+    "blurb": "Signed by the artist, with a foil finish.",
+    "status": "available",
+    "left": null
   },
   {
     "file": "free-bird",
@@ -33,7 +39,9 @@
     "series": "Masterpiece",
     "rarity": "Uncommon",
     "run": "Run of 500",
-    "blurb": "A bird on the wing, no cage in sight."
+    "blurb": "A bird on the wing, no cage in sight.",
+    "status": "available",
+    "left": null
   },
   {
     "file": "sunny-face",
@@ -42,7 +50,9 @@
     "series": "Legend",
     "rarity": "Ultra Rare",
     "run": "Run of 21",
-    "blurb": "A grinning sun for a grey day."
+    "blurb": "A grinning sun for a grey day.",
+    "status": "available",
+    "left": null
   },
   {
     "file": "happy-flower",
@@ -51,6 +61,8 @@
     "series": "Legend",
     "rarity": "Unique 1/1",
     "run": "1 of 1",
-    "blurb": "One card, one owner, ever."
+    "blurb": "One card, one owner, ever.",
+    "status": "available",
+    "left": null
   }
 ]

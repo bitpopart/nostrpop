@@ -1,9 +1,16 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "popartlove-site",
+  "main": "worker/index.js",
   "compatibility_date": "2026-11-10",
   "assets": {
     "directory": "./POPARTlove",
-    "not_found_handling": "404-page"
+    "binding": "ASSETS",
+    "not_found_handling": "404-page",
+    "run_worker_first": ["/api/*"]
+  },
+  "kv_namespaces": [{ "binding": "CARDS_KV" }],
+  "vars": {
+    "ADMIN_PUBKEY": "43baaf0c28e6cfb195b17ee083e19eb3a4afdfac54d9b6baf170270ed193e34c"
   }
 }

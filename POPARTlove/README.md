@@ -25,6 +25,13 @@ POPARTlove/
 3. Add one entry at the top of `data/cards.json` (file, name, theme, series, rarity, run, blurb).
 4. Run `python3 build.py`, commit and push. The card appears on the Cards page (the first three also show on the home page).
 
+## Card stock and the admin
+
+- Each card in `data/cards.json` has `status` (`available`, `sold-out`, `coming-soon`) and `left` (copies remaining, or `null` when not tracked). These are the defaults baked into the pages.
+- Live stock is kept in Cloudflare KV and served by `worker/index.js` at `/api/stock`. The card pages fetch it on load and override the defaults.
+- `/admin/` (no menu link, not in the sitemap) lets the owner change status and copies left. Saving sends a NIP-98 signed Nostr event; the worker only accepts the key in `ADMIN_PUBKEY` (`wrangler.jsonc`).
+- Deploy with `npx wrangler deploy` (the KV namespace is created on the first deploy).
+
 ## Edit and rebuild
 
 Content lives in `build.py` (page text, `ARTWORKS`, `EXAMPLE_CARDS`, `SHOP_ITEMS`, `NEWS_ITEMS`). After a change:

@@ -91,3 +91,24 @@ document.addEventListener("click", function (e) {
   var on = b.classList.toggle("flipped");
   b.setAttribute("aria-pressed", on ? "true" : "false");
 });
+
+/* Live card stock: the page ships with the saved defaults, the stock API refreshes them */
+(function () {
+  var badges = document.querySelectorAll("[data-card] [data-stock]");
+  if (!badges.length || !window.fetch) return;
+  fetch("/api/stock").then(function (r) { return r.ok ? r.json() : null; }).then(function (stock) {
+    if (!stock) return;
+    badges.forEach(function (b) {
+      var card = b.closest("[data-card]");
+      var s = stock[card.getAttribute("data-card")];
+      if (!s) return;
+      var run = card.getAttribute("data-run");
+      var label = "Available", cls = "ok";
+      if (s.status === "sold-out") { label = "Sold out"; cls = "out"; }
+      else if (s.status === "coming-soon") { label = "Coming soon"; cls = "soon"; }
+      else if (s.left !== null && s.left !== undefined) { label = s.left + (run ? " of " + run : "") + " left"; }
+      b.textContent = label;
+      b.className = "tag stock " + cls;
+    });
+  }).catch(function () {});
+})();
