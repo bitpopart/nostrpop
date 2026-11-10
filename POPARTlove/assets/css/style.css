@@ -200,7 +200,9 @@ h1 .lfj .j { color: var(--yellow); background: none; padding: 0; -webkit-text-st
   border-radius: 12px; background: var(--panel);
 }
 .tile:hover { border-color: var(--orange); }
-.tile .ico { width: 46px; height: 46px; margin: 0 auto .4rem; border-radius: 12px; display: grid; place-items: center; font-size: 1.5rem; line-height: 1; background: var(--panel2); }
+.tile .ico { width: 76px; height: 76px; margin: 0 auto .5rem; border-radius: 50%; border: 3px solid var(--ink); box-shadow: 0 3px 0 var(--ink); display: grid; place-items: center; background: var(--panel2); transition: transform .15s ease; }
+.tile .ico img { width: 66%; height: 66%; display: block; }
+.tile:hover .ico { transform: translateY(-3px) rotate(-6deg); }
 .tile span.lbl { font-family: var(--font-label); font-weight: 700; letter-spacing: .8px; text-transform: uppercase; font-size: 14px; color: var(--sub); }
 .tile:hover span.lbl { color: var(--ink); }
 .c-pink { background: color-mix(in srgb, var(--love) 45%, var(--panel2)) !important; }
@@ -395,3 +397,6 @@ img, svg, video { max-width: 100%; }
 .studio-logo:hover { transform: translateY(-3px) rotate(-1deg); box-shadow: 0 8px 0 var(--ink); }
 .studio-logo img { display: block; width: 100%; height: auto; max-width: 340px; margin: 0 auto; }
 h1 .lfj { color: var(--ink); }
+
+.c-sky { background: color-mix(in srgb, var(--sky) 45%, var(--panel2)) !important; }
+.tile .ico.c-yellow, .tile .ico.c-pink, .tile .ico.c-lime, .tile .ico.c-sky, .tile .ico.c-red, .tile .ico.c-orange, .tile .ico.c-purple { background-image: none; filter: saturate(1.5); }

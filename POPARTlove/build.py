@@ -267,8 +267,8 @@ TILES = [
     ("Cards", "/cards/", "\U0001F0CF", "c-yellow"),
     ("Stickers", "/stickers/", "\u2B50", "c-pink"),
     ("Prints", "/prints/", "\U0001F5BC\uFE0F", "c-lime"),
-    ("Shop", "/shop/", "\U0001F6CD️", "c-blue"),
-    ("News", "/news/", "\U0001F4F0", "c-mint"),
+    ("Shop", "/shop/", "\U0001F6CD️", "c-sky"),
+    ("News", "/news/", "\U0001F4F0", "c-red"),
     ("Studio", "/studio/", "\U0001F58C️", "c-orange"),
     ("PopUp", "/popup/", "\U0001F4CD", "c-purple"),
 ]
@@ -464,7 +464,7 @@ RIBBON = ""
 def build_pages():
     # ---- Home
     tiles = "".join(
-        f'<a class="tile" href="{h}"><div class="ico {c}">{i}</div><span class="lbl">{n}</span></a>'
+        f'<a class="tile" href="{h}"><div class="ico {c}"><img src="/assets/img/icon-{n.lower()}.svg" alt="" width="64" height="64" loading="lazy"></div><span class="lbl">{n}</span></a>'
         for n, h, i, c in TILES
     )
     home = f"""
