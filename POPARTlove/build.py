@@ -698,12 +698,27 @@ def build_pages():
     shop = page_head("Shop", "Everything to collect, protect and show off your POPART cards.") + f"""
 <section class="section"><div class="container">
   <p class="notice"><strong>Cards are sold online and at events.</strong> Use the Online button on a card to buy it in the shop, or find a card at a pop-up event, see <a href="/popup/">PopUp</a> for the next one. You can pay with Bitcoin, of course. Join the newsletter in the footer to hear first.</p>
+  <div class="panel yellow free-promo" style="margin-top:1.4rem">
+    <h2>Free downloads</h2>
+    <p>Wallpapers, coloring pages, printables and more. Free for everyone who loves pop art.</p>
+    <a class="btn yellow" href="/free/">See the free downloads</a>
+  </div>
   <h2 style="margin-top:2rem">All cards</h2>
   {tribe_cards(in_shop=True)}
   <h2 style="margin-top:2.4rem">More for collectors</h2>
   <div class="grid g3">{shop_cards()}</div>
 </div></section>"""
     page("shop", "Shop", "POPART.love shop: collectible pop art cards, sleeves, magnetic cardholders and framed one-of-a-kind cards.", shop, "/shop/")
+
+    # ---- Free downloads (filled from the admin list)
+    free = page_head("Free downloads", "Free pop art for everyone: wallpapers, printables and more. Download, enjoy, share.") + """
+<section class="section"><div class="container">
+  <div class="tags" id="free-filters" role="group" aria-label="Categories"></div>
+  <div class="grid g3" id="free-grid" style="margin-top:1.2rem"><p class="notice" style="grid-column:1/-1"><strong>Coming soon.</strong> Free downloads will land here. Join the newsletter in the footer to hear first.</p></div>
+  <p class="notice" style="margin-top:1.6rem">Free to use for yourself. Please do not sell the files or claim them as your own. Want more? <a href="/shop/">Visit the shop</a>.</p>
+</div></section>
+<script src="/assets/js/free.js" defer></script>"""
+    page("free", "Free downloads", "Free pop art downloads from POPART.love: wallpapers, coloring pages, printables and more.", free, "/free/")
 
     # ---- News
     news = page_head("News", "What is happening in the POPART studio.") + f"""

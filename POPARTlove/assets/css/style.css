@@ -387,3 +387,6 @@ a.tag.where:hover { background: var(--joy); color: #0d0c0a; }
 .hero, .page-head, .footer { overflow-x: clip; }
 img, svg, video { max-width: 100%; }
 .brand .brand-wordmark { max-width: 48vw; }
+.file-fig { display: grid; place-items: center; aspect-ratio: 1; background: color-mix(in srgb, var(--sky) 30%, var(--panel2)); }
+.file-kind { font-family: var(--font-display); font-size: 3rem; letter-spacing: 2px; color: var(--ink); border: 3px solid var(--ink); border-radius: 14px; padding: .3rem 1rem; background: var(--yellow); box-shadow: 0 4px 0 var(--ink); }
+.free-promo { margin-bottom: .4rem; }

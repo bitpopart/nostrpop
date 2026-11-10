@@ -25,12 +25,14 @@
   }
 
   function mount(root, kind, api) {
-    var one = kind === "stickers" ? "sticker" : "print", label = kind === "stickers" ? "Stickers" : "Prints";
+    var free = kind === "free";
+    var one = free ? "download" : kind === "stickers" ? "sticker" : "print", label = free ? "Free downloads" : kind === "stickers" ? "Stickers" : "Prints";
+    var noun = free ? "downloads" : kind;
     var list = [], editing = null, dirty = false, armed = null, pending = null;
     root.innerHTML = "";
     var head = el("div", "section-head");
-    var hd = el("div"); hd.appendChild(el("h2", "", label)); hd.appendChild(el("p", "", "Add " + kind + ". Press Available or Coming soon on an item to switch it."));
-    var saveBtn = el("button", "btn", "Save " + kind); saveBtn.type = "button";
+    var hd = el("div"); hd.appendChild(el("h2", "", label)); hd.appendChild(el("p", "", free ? "Upload free files for the Free downloads page: PDFs, pictures, zip files, music, anything up to 20 MB." : "Add " + kind + ". Press Available or Coming soon on an item to switch it."));
+    var saveBtn = el("button", "btn", "Save " + noun); saveBtn.type = "button";
     head.appendChild(hd); head.appendChild(saveBtn); root.appendChild(head);
     var msg = el("p", "form-msg"); msg.setAttribute("role", "status"); root.appendChild(msg);
 
@@ -42,32 +44,47 @@
     var file = input("file"); file.accept = "image/*";
     var preview = document.createElement("img"); preview.alt = ""; preview.hidden = true; preview.className = "ev-preview";
     var drop = el("button", "btn ghost", "Remove picture"); drop.type = "button"; drop.hidden = true;
+    var cat = input("text", "Wallpapers, Coloring, Cards, Music..."); cat.setAttribute("list", "cat-list");
+    var catList = document.createElement("datalist"); catList.id = "cat-list";
+    ["Wallpapers", "Coloring pages", "Printables", "Cards", "Stickers", "Music", "Other"].forEach(function (n) { var o = document.createElement("option"); o.value = n; catList.appendChild(o); });
+    var dl = input("file"); var dlInfo = el("p", "form-msg");
     var grid = el("div", "ev-grid");
-    [["Name", title], ["Status", status], ["Price", price], ["Link", link]].forEach(function (p) { grid.appendChild(field(p[0], p[1])); });
+    (free ? [["Name", title], ["Category", cat]] : [["Name", title], ["Status", status], ["Price", price], ["Link", link]]).forEach(function (p) { grid.appendChild(field(p[0], p[1])); });
     var h3 = el("h3", "", "Add a " + one);
-    form.appendChild(h3); form.appendChild(grid); form.appendChild(field("Description", desc)); form.appendChild(field("Picture", file)); form.appendChild(preview); form.appendChild(drop);
+    form.appendChild(h3); form.appendChild(grid); form.appendChild(field("Description", desc)); if (free) { form.appendChild(catList); form.appendChild(field("File to download", dl)); form.appendChild(dlInfo); }
+    form.appendChild(field(free ? "Thumbnail picture" : "Picture", file)); form.appendChild(preview); form.appendChild(drop);
     var actions = el("div", "ev-actions");
     var add = el("button", "btn", "Add " + one); add.type = "submit";
     var cancel = el("button", "btn ghost", "Cancel edit"); cancel.type = "button"; cancel.hidden = true;
     actions.appendChild(add); actions.appendChild(cancel); form.appendChild(actions); root.appendChild(form);
     var box = el("div", "ev-list"); root.appendChild(box);
 
-    function mark() { dirty = true; say(msg, "You have unsaved changes. Press Save " + kind + ".", false); }
-    function resetForm() { editing = null; pending = null; form.reset(); preview.hidden = true; drop.hidden = true; cancel.hidden = true; add.textContent = "Add " + one; h3.textContent = "Add a " + one; }
+    function mark() { dirty = true; say(msg, "You have unsaved changes. Press Save " + noun + ".", false); }
+    function resetForm() { editing = null; pending = null; pendingFile = null; dlInfo.textContent = ""; form.reset(); preview.hidden = true; drop.hidden = true; cancel.hidden = true; add.textContent = "Add " + one; h3.textContent = "Add a " + one; }
     function showPreview(src) { preview.hidden = !src; if (src) preview.src = src; drop.hidden = !src; }
     file.addEventListener("change", function () {
       if (!file.files[0]) return;
       shrink(file.files[0]).then(function (b64) { pending = { b64: b64 }; showPreview("data:image/webp;base64," + b64); }).catch(function () { say(msg, "That file is not a picture.", true); });
     });
     drop.addEventListener("click", function () { pending = { clear: true }; file.value = ""; showPreview(""); });
+    var pendingFile = null;
+    function size(n) { return n > 1048576 ? (n / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(n / 1024)) + " KB"; }
+    dl.addEventListener("change", function () {
+      var f = dl.files[0]; if (!f) return;
+      if (f.size > 20 * 1024 * 1024) { dl.value = ""; pendingFile = null; say(dlInfo, "That file is bigger than 20 MB.", true); return; }
+      pendingFile = f; say(dlInfo, f.name + " (" + size(f.size) + ")", false);
+    });
     cancel.addEventListener("click", resetForm);
 
     form.addEventListener("submit", function (e) {
       e.preventDefault();
       if (!title.value.trim()) { say(msg, "Fill in the name.", true); return; }
+      if (free && !pendingFile && !(editing && list.filter(function (x) { return x.id === editing; })[0].file)) { say(msg, "Choose the file people can download.", true); return; }
       if (link.value.trim() && !/^https:\/\//i.test(link.value.trim())) { say(msg, "The link must start with https://", true); return; }
       var it = editing ? list.filter(function (x) { return x.id === editing; })[0] : { id: kind.slice(0, 1) + Date.now().toString(36), image: false, imv: 0 };
-      it.title = title.value.trim(); it.status = status.value; it.price = price.value.trim(); it.url = link.value.trim(); it.description = desc.value.trim();
+      it.title = title.value.trim(); it.description = desc.value.trim();
+      if (free) { it.status = "available"; it.price = ""; it.url = ""; it.category = cat.value.trim(); if (pendingFile) { it._file = pendingFile; it.file = true; it.fname = pendingFile.name; it.size = pendingFile.size; it.ftype = pendingFile.type || ""; } }
+      else { it.status = status.value; it.price = price.value.trim(); it.url = link.value.trim(); }
       if (pending && pending.b64) { it._img = pending.b64; it.image = true; }
       else if (pending && pending.clear) { delete it._img; it.image = false; }
       if (!editing) list.unshift(it);
@@ -77,13 +94,13 @@
     function draw() {
       box.innerHTML = "";
       box.appendChild(el("h3", "", label + " (" + list.length + ")"));
-      if (!list.length) box.appendChild(el("p", "notice", "Nothing here yet. The draft designs show on the page until you add and save your first " + one + "."));
+      if (!list.length) box.appendChild(el("p", "notice", free ? "Nothing here yet. Add your first free download." : "Nothing here yet. The draft designs show on the page until you add and save your first " + one + "."));
       list.forEach(function (it) {
         var row = el("div", "ev-row"), src = imgSrc(it);
         if (src) { var th = document.createElement("img"); th.src = src; th.alt = ""; th.className = "ev-thumb"; row.appendChild(th); }
         var info = el("div", "ev-info");
         info.appendChild(el("strong", "", it.title));
-        info.appendChild(el("span", "", (it.price ? it.price + " \u00b7 " : "") + (it.url ? "has shop link" : "no shop link")));
+        info.appendChild(el("span", "", free ? (it.category || "No category") + " \u00b7 " + (it.fname || "") + (it.size ? " (" + size(it.size) + ")" : "") : (it.price ? it.price + " \u00b7 " : "") + (it.url ? "has shop link" : "no shop link")));
         row.appendChild(info);
         var btns = el("div", "ev-btns");
         var st = el("button", "btn " + (it.status === "available" ? "" : "ghost"), it.status === "available" ? "Available" : "Coming soon"); st.type = "button";
@@ -92,7 +109,7 @@
         var ed = el("button", "btn ghost", "Edit"); ed.type = "button";
         ed.addEventListener("click", function () {
           editing = it.id; pending = null; file.value = "";
-          title.value = it.title; status.value = it.status; price.value = it.price || ""; link.value = it.url || ""; desc.value = it.description || "";
+          title.value = it.title; status.value = it.status; price.value = it.price || ""; link.value = it.url || ""; desc.value = it.description || ""; cat.value = it.category || ""; dl.value = ""; dlInfo.textContent = free && it.fname ? "Current file: " + it.fname + ". Choose a file only to replace it." : "";
           showPreview(imgSrc(it)); cancel.hidden = false; add.textContent = "Update " + one; h3.textContent = "Edit " + one;
           form.scrollIntoView({ behavior: "smooth", block: "center" });
         });
@@ -101,7 +118,7 @@
           if (armed !== it.id) { armed = it.id; draw(); return; }
           armed = null; list = list.filter(function (x) { return x.id !== it.id; }); if (editing === it.id) resetForm(); mark(); draw();
         });
-        btns.appendChild(st); btns.appendChild(ed); btns.appendChild(del); row.appendChild(btns); box.appendChild(row);
+        if (!free) btns.appendChild(st); btns.appendChild(ed); btns.appendChild(del); row.appendChild(btns); box.appendChild(row);
       });
     }
 

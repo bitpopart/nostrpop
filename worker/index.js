@@ -3,6 +3,7 @@
 // PUT  /api/stock  admin only: needs a NIP-98 signed Nostr event from ADMIN_PUBKEY.
 // GET/PUT /api/events and /api/event-image: PopUp events and their thumbnails (PUT is admin only).
 // GET/PUT /api/catalog?kind=stickers|prints: stickers and prints lists (PUT is admin only).
+// GET/PUT /api/file?id=: free download files (PUT is admin only, up to 20 MB). Lists live in /api/catalog?kind=free.
 // Everything else is served from the static site (assets).
 import { verifyEvent } from "nostr-tools/pure";
 
@@ -15,8 +16,8 @@ const json = (data, status = 200, extra = {}) =>
     headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", ...extra },
   });
 
-async function sha256hex(text) {
-  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+async function sha256hex(data) {
+  const buf = await crypto.subtle.digest("SHA-256", typeof data === "string" ? new TextEncoder().encode(data) : data);
   return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
@@ -99,6 +100,7 @@ function cleanEvents(input) {
   return out;
 }
 
+const MAX_FILE = 20 * 1024 * 1024;
 function cleanCatalog(input) {
   if (!Array.isArray(input) || input.length > 200) return null;
   const seen = new Set();
@@ -110,7 +112,10 @@ function cleanCatalog(input) {
     if (title === null || !title || price === null || description === null || url === null) return null;
     if (e.status !== "available" && e.status !== "coming-soon") return null;
     const imv = Number.isInteger(e.imv) && e.imv > 0 ? e.imv : 0;
-    out.push({ id: e.id, title, price, description, url, status: e.status, image: e.image === true, imv });
+    const category = str(e.category, 40), fname = str(e.fname, 120), ftype = str(e.ftype, 100);
+    if (category === null || fname === null || ftype === null) return null;
+    const size = Number.isInteger(e.size) && e.size >= 0 && e.size <= MAX_FILE ? e.size : 0;
+    out.push({ id: e.id, title, price, description, url, status: e.status, image: e.image === true, imv, category, file: e.file === true, fname, ftype, size });
   }
   return out;
 }
@@ -236,10 +241,36 @@ export default {
       await env.CARDS_KV.put("events", JSON.stringify(list));
       return json({ ok: true, events: list });
     }
+    if (url.pathname === "/api/file") {
+      // free downloads: raw bytes, signed by the hash of the bytes
+      const id = url.searchParams.get("id") || "";
+      if (!/^[a-z0-9-]{1,40}$/.test(id)) return json({ error: "bad id" }, 400);
+      if (request.method === "GET") {
+        const items = (await env.CARDS_KV.get("catalog:free", "json")) || [];
+        const item = items.find((e) => e.id === id && e.file);
+        const data = item ? await env.CARDS_KV.get("dl:" + id, "arrayBuffer") : null;
+        if (!data) return new Response("not found", { status: 404 });
+        const name = (item.fname || "download").replace(/[^A-Za-z0-9._ -]/g, "_");
+        return new Response(data, {
+          headers: {
+            "content-type": "application/octet-stream",
+            "content-disposition": `attachment; filename="${name}"`,
+            "x-content-type-options": "nosniff",
+            "cache-control": "public, max-age=3600",
+          },
+        });
+      }
+      if (request.method !== "PUT") return json({ error: "method not allowed" }, 405, { allow: "GET, PUT" });
+      const bytes = await request.arrayBuffer();
+      if (!(await isAdmin(request, env, bytes))) return json({ error: "not allowed" }, 401);
+      if (bytes.byteLength === 0 || bytes.byteLength > MAX_FILE) return json({ error: "file too big (20 MB max)" }, 413);
+      await env.CARDS_KV.put("dl:" + id, bytes);
+      return json({ ok: true, size: bytes.byteLength });
+    }
     if (url.pathname === "/api/catalog") {
       // stickers and prints lists: GET public, PUT admin
       const kind = url.searchParams.get("kind") || "";
-      if (kind !== "stickers" && kind !== "prints") return json({ error: "bad kind" }, 400);
+      if (kind !== "stickers" && kind !== "prints" && kind !== "free") return json({ error: "bad kind" }, 400);
       const key = "catalog:" + kind;
       if (request.method === "GET") return json((await env.CARDS_KV.get(key, "json")) || [], 200, { "cache-control": "public, max-age=30" });
       if (request.method !== "PUT") return json({ error: "method not allowed" }, 405, { allow: "GET, PUT" });
@@ -255,6 +286,8 @@ export default {
       const old = (await env.CARDS_KV.get(key, "json")) || [];
       const keep = new Set(list.filter((e) => e.image).map((e) => e.id));
       for (const e of old) if (!keep.has(e.id)) await env.CARDS_KV.delete("evimg:" + e.id);
+      const keepFiles = new Set(list.filter((e) => e.file).map((e) => e.id));
+      for (const e of old) if (e.file && !keepFiles.has(e.id)) await env.CARDS_KV.delete("dl:" + e.id);
       await env.CARDS_KV.put(key, JSON.stringify(list));
       return json({ ok: true, items: list });
     }

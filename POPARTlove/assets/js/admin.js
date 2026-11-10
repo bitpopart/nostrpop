@@ -7,7 +7,7 @@
 
   function say(el, text, bad) { el.textContent = text; el.style.color = bad ? "var(--red)" : "var(--teal)"; }
   async function sha256hex(text) {
-    var buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+    var buf = await crypto.subtle.digest("SHA-256", typeof text === "string" ? new TextEncoder().encode(text) : text);
     return Array.prototype.map.call(new Uint8Array(buf), function (b) { return b.toString(16).padStart(2, "0"); }).join("");
   }
   async function authHeader(method, path, body) {
@@ -67,7 +67,7 @@
       if (!res.ok) throw new Error("save failed");
       return res;
     }
-    ["stickers", "prints"].forEach(function (kind) {
+    ["stickers", "prints", "free"].forEach(function (kind) {
       var box = document.createElement("div");
       box.style.marginTop = "2.4rem";
       root.appendChild(box);
@@ -78,6 +78,7 @@
           for (var i = 0; i < list.length; i++) {
             var it = Object.assign({}, list[i]);
             if (it._img) { await signedPut("/api/event-image?id=" + encodeURIComponent(it.id), it._img); it.image = true; it.imv = Date.now(); delete it._img; }
+            if (it._file) { await signedPut("/api/file?id=" + encodeURIComponent(it.id), await it._file.arrayBuffer()); delete it._file; }
             out.push(it);
           }
           var res = await signedPut("/api/catalog?kind=" + kind, JSON.stringify(out));

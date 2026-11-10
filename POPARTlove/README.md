@@ -79,3 +79,6 @@ The 5 digit holder number is HMAC-SHA256(`CODE_SECRET`, `holder:<card file>:<ser
 
 ### Admin: PopUp events, stickers and prints
 `/admin/` (Nostr sign-in) also edits the PopUp events list and the Stickers and Prints lists. Each save is a signed request, same as card stock. Events have name, date, time, location, link, description and a thumbnail; an event moves to Past events automatically after its date, or when you press Move to past events (it then stays there). Stickers and prints have name, price, link, picture and an Available / Coming soon switch. Pictures are shrunk in the browser to small WebP files and kept in Cloudflare KV (`/api/event-image`). API: `/api/events`, `/api/catalog?kind=stickers|prints` (GET public, PUT admin). While a list is empty the Stickers and Prints pages keep their draft designs.
+
+### Free downloads
+`/free/` lists free files uploaded in `/admin/` (Free downloads section): name, category, description, optional thumbnail and the file itself (any type, up to 20 MB, kept in Cloudflare KV). Visitors filter by category and press Download (`/api/file?id=`, always sent as a download). Linked from the Shop page. The list is `/api/catalog?kind=free`.
