@@ -10,9 +10,9 @@
 <meta property="og:title" content="POPART.love | Love, Freedom &amp; Joy">
 <meta property="og:description" content="POPART.love: new pop art in a thick-outline graffiti style. Art, collectible cards, projects and a shop. Love, Freedom and Joy.">
 <meta property="og:url" content="https://popart.love/">
-<meta name="theme-color" content="#ffd400">
+<meta name="theme-color" content="#f97316">
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Bangers&family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="preload" href="/assets/fonts/bangers-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/assets/css/style.css">
 <script>try{var t=localStorage.getItem("popart-theme");if(t==="dark"||(!t&&matchMedia("(prefers-color-scheme: dark)").matches))document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
 </head>
@@ -46,10 +46,10 @@
         <a class="btn blue" href="/shop/">Visit the shop</a>
       </div>
     </div>
-    <div class="hero-art"><img src="/assets/img/love-big-heart.svg" alt="Pop art painting of a big pink heart on a yellow starburst" width="400" height="400"></div>
+    <div class="card-fan"><img src="/assets/img/cards/big-heart.webp" alt="Big Heart card" width="600" height="840"><img src="/assets/img/cards/sunny-face.webp" alt="Sunny Face card" width="600" height="840"><img src="/assets/img/cards/paper-plane.webp" alt="Paper Plane card" width="600" height="840"></div>
   </div>
 </section>
-<div class="ribbon" aria-hidden="true"><span>LOVE<b>&#10084;</b>FREEDOM<b>&#9733;</b>JOY<b>&#9728;</b>LOVE<b>&#10084;</b>FREEDOM<b>&#9733;</b>JOY<b>&#9728;</b>LOVE<b>&#10084;</b>FREEDOM<b>&#9733;</b>JOY<b>&#9728;</b>LOVE<b>&#10084;</b>FREEDOM<b>&#9733;</b>JOY<b>&#9728;</b>LOVE<b>&#10084;</b>FREEDOM<b>&#9733;</b>JOY<b>&#9728;</b>LOVE<b>&#10084;</b>FREEDOM<b>&#9733;</b>JOY<b>&#9728;</b></span></div>
+
 <div class="container tiles-wrap"><nav class="tiles" aria-label="Sections"><a class="tile" href="/art/"><div class="ico c-pink">🎨</div><span class="lbl">Art</span></a><a class="tile" href="/cards/"><div class="ico c-yellow">🃏</div><span class="lbl">Cards</span></a><a class="tile" href="/shop/"><div class="ico c-blue">🛍️</div><span class="lbl">Shop</span></a><a class="tile" href="/news/"><div class="ico c-mint">📰</div><span class="lbl">News</span></a><a class="tile" href="/artist/"><div class="ico c-orange">🖌️</div><span class="lbl">Artist</span></a><a class="tile" href="/popup/"><div class="ico c-purple">📍</div><span class="lbl">PopUp</span></a><a class="tile" href="/projects/"><div class="ico c-lime">🛠️</div><span class="lbl">Projects</span></a><a class="tile" href="/fundraising/"><div class="ico c-red">💛</div><span class="lbl">Support</span></a></nav></div>
 
 <section class="section"><div class="container">
@@ -71,12 +71,10 @@
 
 <section class="section"><div class="container">
   <div class="section-head"><div><h2>Cards</h2><p>Collectible POPART cards. Pick a tribe, find the rare ones, trade with friends.</p></div><a class="link-more" href="/cards/">All cards &rarr;</a></div>
-  <div class="grid g3">
-<article class="card"><figure style="background:transparent;border:0;padding:1rem 1rem 0"><img src="/assets/img/card-love.svg" alt="POPART Big Heart trading card, Masterpiece series" width="500" height="700" loading="lazy"></figure>
-<div class="body"><span class="tag love">Love</span><h3>Big Heart</h3><p>Masterpiece series, card 001.</p></div></article><article class="card"><figure style="background:transparent;border:0;padding:1rem 1rem 0"><img src="/assets/img/card-freedom.svg" alt="POPART Paper Plane trading card, Signed series" width="500" height="700" loading="lazy"></figure>
-<div class="body"><span class="tag freedom">Freedom</span><h3>Paper Plane</h3><p>Signed series, card 002.</p></div></article><article class="card"><figure style="background:transparent;border:0;padding:1rem 1rem 0"><img src="/assets/img/card-joy.svg" alt="POPART Sunny Face trading card, Legend series" width="500" height="700" loading="lazy"></figure>
-<div class="body"><span class="tag joy">Joy</span><h3>Sunny Face</h3><p>Legend series, card 003.</p></div></article>
-</div>
+  <div class="grid g3"><article class="card"><figure class="cardfig"><img src="/assets/img/cards/heart-holder.webp" alt="POPART Heart Holder card, Masterpiece series, Rare" width="600" height="840" loading="lazy"></figure>
+<div class="body"><div class="tags"><span class="tag love">Love</span><span class="tag">Rare</span></div><h3>Heart Holder</h3><p>Masterpiece series. Run of 100. A hand holding a big heart.</p></div></article><article class="card"><figure class="cardfig"><img src="/assets/img/cards/big-heart.webp" alt="POPART Big Heart card, Masterpiece series, Common" width="600" height="840" loading="lazy"></figure>
+<div class="body"><div class="tags"><span class="tag love">Love</span><span class="tag">Common</span></div><h3>Big Heart</h3><p>Masterpiece series. Open run. The big pink heart that started it all.</p></div></article><article class="card"><figure class="cardfig"><img src="/assets/img/cards/paper-plane.webp" alt="POPART Paper Plane card, Signed series, Super Rare" width="600" height="840" loading="lazy"></figure>
+<div class="body"><div class="tags"><span class="tag freedom">Freedom</span><span class="tag">Super Rare</span></div><h3>Paper Plane</h3><p>Signed series. Run of 50. Signed by the artist, with a foil finish.</p></div></article></div>
 </div></section>
 
 <section class="section"><div class="container">
@@ -98,9 +96,9 @@
 
 <section class="section"><div class="container">
   <div class="section-head"><div><h2>Shop</h2><p>Cards, sleeves, magnetic cardholders and framed originals.</p></div><a class="link-more" href="/shop/">Open shop &rarr;</a></div>
-  <div class="grid g4"><article class="card"><figure><img src="/assets/img/card-love.svg" alt="POPART cards" width="400" height="400" loading="lazy" style="object-fit:cover;aspect-ratio:1/1;width:100%"></figure>
-<div class="body"><span class="tag soon">Coming soon</span><h3>POPART cards</h3><p>Single collectible cards from the Masterpiece, Signed and Legend series.</p></div></article><article class="card"><figure><img src="/assets/img/card-freedom.svg" alt="Card sleeves" width="400" height="400" loading="lazy" style="object-fit:cover;aspect-ratio:1/1;width:100%"></figure>
-<div class="body"><span class="tag soon">Coming soon</span><h3>Card sleeves</h3><p>Keep your cards clean and sharp.</p></div></article><article class="card"><figure><img src="/assets/img/card-joy.svg" alt="Magnetic cardholders" width="400" height="400" loading="lazy" style="object-fit:cover;aspect-ratio:1/1;width:100%"></figure>
+  <div class="grid g4"><article class="card"><figure class="cardfig"><img src="/assets/img/cards/big-heart.webp" alt="POPART cards" width="600" height="840" loading="lazy"></figure>
+<div class="body"><span class="tag soon">Coming soon</span><h3>POPART cards</h3><p>Single collectible cards from the Masterpiece, Signed and Legend series.</p></div></article><article class="card"><figure class="cardfig"><img src="/assets/img/cards/paper-plane.webp" alt="Card sleeves" width="600" height="840" loading="lazy"></figure>
+<div class="body"><span class="tag soon">Coming soon</span><h3>Card sleeves</h3><p>Keep your cards clean and sharp.</p></div></article><article class="card"><figure class="cardfig"><img src="/assets/img/cards/sunny-face.webp" alt="Magnetic cardholders" width="600" height="840" loading="lazy"></figure>
 <div class="body"><span class="tag soon">Coming soon</span><h3>Magnetic cardholders</h3><p>Show your best card on the wall or the desk.</p></div></article><article class="card"><figure><img src="/assets/img/love-two-hearts.svg" alt="Framed 1/1 Unique" width="400" height="400" loading="lazy" style="object-fit:cover;aspect-ratio:1/1;width:100%"></figure>
 <div class="body"><span class="tag soon">Coming soon</span><h3>Framed 1/1 Unique</h3><p>A one-of-a-kind card in a small art frame, with certificate card and mount card.</p></div></article></div>
 </div></section>

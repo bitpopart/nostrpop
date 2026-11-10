@@ -228,10 +228,14 @@ def card_svg(art_builder, theme, title, series, number):
     return svg_wrap(b, 500, 700, f"{title} - {series}")
 
 
-CARDS = [
-    ("card-love", art_love_1, "love", "Big Heart", "Masterpiece", "001"),
-    ("card-freedom", art_freedom_1, "freedom", "Paper Plane", "Signed", "002"),
-    ("card-joy", art_joy_1, "joy", "Sunny Face", "Legend", "003"),
+EXAMPLE_CARDS = [
+    # file, name, theme, series, rarity, run, blurb
+    ("heart-holder", "Heart Holder", "love", "Masterpiece", "Rare", "Run of 100", "A hand holding a big heart."),
+    ("big-heart", "Big Heart", "love", "Masterpiece", "Common", "Open run", "The big pink heart that started it all."),
+    ("paper-plane", "Paper Plane", "freedom", "Signed", "Super Rare", "Run of 50", "Signed by the artist, with a foil finish."),
+    ("free-bird", "Free Bird", "freedom", "Masterpiece", "Uncommon", "Run of 500", "A bird on the wing, no cage in sight."),
+    ("sunny-face", "Sunny Face", "joy", "Legend", "Ultra Rare", "Run of 21", "A grinning sun for a grey day."),
+    ("happy-flower", "Happy Flower", "joy", "Legend", "Unique 1/1", "1 of 1", "One card, one owner, ever."),
 ]
 
 
@@ -240,8 +244,6 @@ def build_images():
     write("assets/img/favicon.svg", favicon_svg())
     for fn, builder, title, theme, blurb in ARTWORKS:
         write(f"assets/img/{fn}.svg", builder())
-    for fn, builder, theme, title, series, number in CARDS:
-        write(f"assets/img/{fn}.svg", card_svg(builder, theme, title, series, number))
 
 
 # ------------------------------------------------------------------- HTML --
@@ -269,9 +271,7 @@ TILES = [
 ]
 
 FONTS = (
-    '<link rel="preconnect" href="https://fonts.googleapis.com">'
-    '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
-    '<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">'
+    '<link rel="preload" href="/assets/fonts/bangers-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>'
 )
 
 pages_written = []
@@ -360,7 +360,7 @@ def page(path, title, desc, body, current=None, head_class=None):
 <meta property="og:title" content="{escape(full_title)}">
 <meta property="og:description" content="{escape(desc)}">
 <meta property="og:url" content="{DOMAIN}{url_path}">
-<meta name="theme-color" content="#ffd400">
+<meta name="theme-color" content="#f97316">
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
 {FONTS}
 <link rel="stylesheet" href="/assets/css/style.css">
@@ -392,18 +392,17 @@ def art_card(fn, title, theme, blurb):
 </article>"""
 
 
-def tribe_cards():
-    return f"""<div class="grid g3">
-{''.join(f'''<article class="card"><figure style="background:transparent;border:0;padding:1rem 1rem 0"><img src="/assets/img/{fn}.svg" alt="POPART {escape(title)} trading card, {series} series" width="500" height="700" loading="lazy"></figure>
-<div class="body"><span class="tag {THEME_ICON[theme][1]}">{THEME_ICON[theme][0]}</span><h3>{escape(title)}</h3><p>{series} series, card {number}.</p></div></article>''' for fn, _b, theme, title, series, number in CARDS)}
-</div>"""
+def tribe_cards(limit=None):
+    cards = EXAMPLE_CARDS[:limit] if limit else EXAMPLE_CARDS
+    out = ""
+    for fn, title, theme, series, rarity, run, blurb in cards:
+        name, cls, _ = THEME_ICON[theme]
+        out += f'''<article class="card"><figure class="cardfig"><img src="/assets/img/cards/{fn}.webp" alt="POPART {escape(title)} card, {series} series, {rarity}" width="600" height="840" loading="lazy"></figure>
+<div class="body"><div class="tags"><span class="tag {cls}">{name}</span><span class="tag">{rarity}</span></div><h3>{escape(title)}</h3><p>{series} series. {run}. {escape(blurb)}</p></div></article>'''
+    return f'<div class="grid g3">{out}</div>'
 
 
-RIBBON = (
-    '<div class="ribbon" aria-hidden="true"><span>'
-    + "".join(f"LOVE<b>&#10084;</b>FREEDOM<b>&#9733;</b>JOY<b>&#9728;</b>" for _ in range(6))
-    + "</span></div>"
-)
+RIBBON = ""
 
 # ----------------------------------------------------------------- PAGES --
 
@@ -427,7 +426,7 @@ def build_pages():
         <a class="btn blue" href="/shop/">Visit the shop</a>
       </div>
     </div>
-    <div class="hero-art"><img src="/assets/img/love-big-heart.svg" alt="Pop art painting of a big pink heart on a yellow starburst" width="400" height="400"></div>
+    <div class="card-fan"><img src="/assets/img/cards/big-heart.webp" alt="Big Heart card" width="600" height="840"><img src="/assets/img/cards/sunny-face.webp" alt="Sunny Face card" width="600" height="840"><img src="/assets/img/cards/paper-plane.webp" alt="Paper Plane card" width="600" height="840"></div>
   </div>
 </section>
 {RIBBON}
@@ -440,7 +439,7 @@ def build_pages():
 
 <section class="section"><div class="container">
   <div class="section-head"><div><h2>Cards</h2><p>Collectible POPART cards. Pick a tribe, find the rare ones, trade with friends.</p></div><a class="link-more" href="/cards/">All cards &rarr;</a></div>
-  {tribe_cards()}
+  {tribe_cards(3)}
 </div></section>
 
 <section class="section"><div class="container">
@@ -490,11 +489,13 @@ def build_pages():
 
     # ---- Cards
     series_rows = "".join(f"<tr><td><strong>{n}</strong></td><td>{d}</td></tr>" for n, d in SERIES)
-    series_rows += "<tr><td><strong>1/1 Unique</strong></td><td>One card, one owner, ever. Sold with a certificate card and can come in a small art frame.</td></tr>"
+    series_rows += "<tr><td><strong>Unique 1/1</strong></td><td>One card, one owner, ever. Sold with a certificate card and can come in a small art frame.</td></tr>"
+    rar = [("#8a8a8a","Common","Open edition"),("#2bb3a3","Uncommon","Numbered of 500"),("#f97316","Rare","Numbered of 100"),("#a78bfa","Super Rare","Numbered of 50"),("#e0b43a","Ultra Rare","Numbered of 21"),("#0a0a0a","Unique 1/1","One of one")]
+    rarity_rows = "".join(f'<tr><td><span class="dot" style="background:{c}"></span><strong>{n}</strong></td><td>{d}</td></tr>' for c, n, d in rar)
     cards = page_head("Cards", "POPART collectible cards: pop art you can collect, swap and keep. All kinds of art, one big collection.") + f"""
 <section class="section"><div class="container">
-  <p class="notice"><strong>Draft cards.</strong> The three cards below use placeholder art. Final card art, numbering and availability will be announced in the news.</p>
-  <h2 style="margin-top:2rem">The first three</h2>
+  <p class="notice"><strong>Example cards.</strong> These six cards are made with the POPART Card Maker and use draft art. Final art, numbering and availability will be announced in the news.</p>
+  <h2 style="margin-top:2rem">Example cards</h2>
   {tribe_cards()}
 </div></section>
 
@@ -506,8 +507,10 @@ def build_pages():
       <p>The card back is the same for every card, so nobody can see what you hold.</p>
     </div>
     <div>
-      <h2>Rare and unique</h2>
+      <h2>Series</h2>
       <div class="table-wrap"><table class="simple"><thead><tr><th>Series</th><th>What it means</th></tr></thead><tbody>{series_rows}</tbody></table></div>
+      <h2 style="margin-top:1.6rem">Rarity ladder</h2>
+      <div class="table-wrap"><table class="simple"><thead><tr><th>Rarity</th><th>Print run</th></tr></thead><tbody>{rarity_rows}</tbody></table></div>
     </div>
   </div>
 </div></section>
@@ -640,11 +643,17 @@ def build_pages():
 
 
 SHOP_ITEMS = [
-    ("card-love", "POPART cards", "love", "Single collectible cards from the Masterpiece, Signed and Legend series."),
-    ("card-freedom", "Card sleeves", "freedom", "Keep your cards clean and sharp."),
-    ("card-joy", "Magnetic cardholders", "joy", "Show your best card on the wall or the desk."),
+    ("cards/big-heart", "POPART cards", "love", "Single collectible cards from the Masterpiece, Signed and Legend series."),
+    ("cards/paper-plane", "Card sleeves", "freedom", "Keep your cards clean and sharp."),
+    ("cards/sunny-face", "Magnetic cardholders", "joy", "Show your best card on the wall or the desk."),
     ("love-two-hearts", "Framed 1/1 Unique", "love", "A one-of-a-kind card in a small art frame, with certificate card and mount card."),
 ]
+
+
+def shop_fig(fn, title):
+    if fn.startswith("cards/"):
+        return f'<figure class="cardfig"><img src="/assets/img/{fn}.webp" alt="{escape(title)}" width="600" height="840" loading="lazy"></figure>'
+    return f'<figure><img src="/assets/img/{fn}.svg" alt="{escape(title)}" width="400" height="400" loading="lazy" style="object-fit:cover;aspect-ratio:1/1;width:100%"></figure>'
 
 
 def shop_cards(limit=None):
@@ -652,7 +661,7 @@ def shop_cards(limit=None):
     out = ""
     for fn, title, theme, blurb in items:
         cls = THEME_ICON[theme][1]
-        out += f"""<article class="card"><figure><img src="/assets/img/{fn}.svg" alt="{escape(title)}" width="400" height="400" loading="lazy" style="object-fit:cover;aspect-ratio:1/1;width:100%"></figure>
+        out += f"""<article class="card">{shop_fig(fn, title)}
 <div class="body"><span class="tag soon">Coming soon</span><h3>{escape(title)}</h3><p>{escape(blurb)}</p></div></article>"""
     return out
 

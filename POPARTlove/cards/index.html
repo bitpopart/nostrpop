@@ -10,9 +10,9 @@
 <meta property="og:title" content="Cards | POPART.love">
 <meta property="og:description" content="POPART collectible pop art cards. Three tribes (Love, Freedom, Joy), rare series and one-of-a-kind cards.">
 <meta property="og:url" content="https://popart.love/cards/">
-<meta name="theme-color" content="#ffd400">
+<meta name="theme-color" content="#f97316">
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Bangers&family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="preload" href="/assets/fonts/bangers-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/assets/css/style.css">
 <script>try{var t=localStorage.getItem("popart-theme");if(t==="dark"||(!t&&matchMedia("(prefers-color-scheme: dark)").matches))document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
 </head>
@@ -35,14 +35,15 @@
 <main id="main">
 <section class="page-head"><div class="container"><h1>Cards</h1><p>POPART collectible cards: pop art you can collect, swap and keep. All kinds of art, one big collection.</p></div></section>
 <section class="section"><div class="container">
-  <p class="notice"><strong>Draft cards.</strong> The three cards below use placeholder art. Final card art, numbering and availability will be announced in the news.</p>
-  <h2 style="margin-top:2rem">The first three</h2>
-  <div class="grid g3">
-<article class="card"><figure style="background:transparent;border:0;padding:1rem 1rem 0"><img src="/assets/img/card-love.svg" alt="POPART Big Heart trading card, Masterpiece series" width="500" height="700" loading="lazy"></figure>
-<div class="body"><span class="tag love">Love</span><h3>Big Heart</h3><p>Masterpiece series, card 001.</p></div></article><article class="card"><figure style="background:transparent;border:0;padding:1rem 1rem 0"><img src="/assets/img/card-freedom.svg" alt="POPART Paper Plane trading card, Signed series" width="500" height="700" loading="lazy"></figure>
-<div class="body"><span class="tag freedom">Freedom</span><h3>Paper Plane</h3><p>Signed series, card 002.</p></div></article><article class="card"><figure style="background:transparent;border:0;padding:1rem 1rem 0"><img src="/assets/img/card-joy.svg" alt="POPART Sunny Face trading card, Legend series" width="500" height="700" loading="lazy"></figure>
-<div class="body"><span class="tag joy">Joy</span><h3>Sunny Face</h3><p>Legend series, card 003.</p></div></article>
-</div>
+  <p class="notice"><strong>Example cards.</strong> These six cards are made with the POPART Card Maker and use draft art. Final art, numbering and availability will be announced in the news.</p>
+  <h2 style="margin-top:2rem">Example cards</h2>
+  <div class="grid g3"><article class="card"><figure class="cardfig"><img src="/assets/img/cards/heart-holder.webp" alt="POPART Heart Holder card, Masterpiece series, Rare" width="600" height="840" loading="lazy"></figure>
+<div class="body"><div class="tags"><span class="tag love">Love</span><span class="tag">Rare</span></div><h3>Heart Holder</h3><p>Masterpiece series. Run of 100. A hand holding a big heart.</p></div></article><article class="card"><figure class="cardfig"><img src="/assets/img/cards/big-heart.webp" alt="POPART Big Heart card, Masterpiece series, Common" width="600" height="840" loading="lazy"></figure>
+<div class="body"><div class="tags"><span class="tag love">Love</span><span class="tag">Common</span></div><h3>Big Heart</h3><p>Masterpiece series. Open run. The big pink heart that started it all.</p></div></article><article class="card"><figure class="cardfig"><img src="/assets/img/cards/paper-plane.webp" alt="POPART Paper Plane card, Signed series, Super Rare" width="600" height="840" loading="lazy"></figure>
+<div class="body"><div class="tags"><span class="tag freedom">Freedom</span><span class="tag">Super Rare</span></div><h3>Paper Plane</h3><p>Signed series. Run of 50. Signed by the artist, with a foil finish.</p></div></article><article class="card"><figure class="cardfig"><img src="/assets/img/cards/free-bird.webp" alt="POPART Free Bird card, Masterpiece series, Uncommon" width="600" height="840" loading="lazy"></figure>
+<div class="body"><div class="tags"><span class="tag freedom">Freedom</span><span class="tag">Uncommon</span></div><h3>Free Bird</h3><p>Masterpiece series. Run of 500. A bird on the wing, no cage in sight.</p></div></article><article class="card"><figure class="cardfig"><img src="/assets/img/cards/sunny-face.webp" alt="POPART Sunny Face card, Legend series, Ultra Rare" width="600" height="840" loading="lazy"></figure>
+<div class="body"><div class="tags"><span class="tag joy">Joy</span><span class="tag">Ultra Rare</span></div><h3>Sunny Face</h3><p>Legend series. Run of 21. A grinning sun for a grey day.</p></div></article><article class="card"><figure class="cardfig"><img src="/assets/img/cards/happy-flower.webp" alt="POPART Happy Flower card, Legend series, Unique 1/1" width="600" height="840" loading="lazy"></figure>
+<div class="body"><div class="tags"><span class="tag joy">Joy</span><span class="tag">Unique 1/1</span></div><h3>Happy Flower</h3><p>Legend series. 1 of 1. One card, one owner, ever.</p></div></article></div>
 </div></section>
 
 <section class="section"><div class="container">
@@ -53,8 +54,10 @@
       <p>The card back is the same for every card, so nobody can see what you hold.</p>
     </div>
     <div>
-      <h2>Rare and unique</h2>
-      <div class="table-wrap"><table class="simple"><thead><tr><th>Series</th><th>What it means</th></tr></thead><tbody><tr><td><strong>Masterpiece</strong></td><td>The core of the collection. Bold, clean, collectable.</td></tr><tr><td><strong>Signed</strong></td><td>Hand signed by the artist.</td></tr><tr><td><strong>Legend</strong></td><td>Rare. Few exist, everybody wants one.</td></tr><tr><td><strong>1/1 Unique</strong></td><td>One card, one owner, ever. Sold with a certificate card and can come in a small art frame.</td></tr></tbody></table></div>
+      <h2>Series</h2>
+      <div class="table-wrap"><table class="simple"><thead><tr><th>Series</th><th>What it means</th></tr></thead><tbody><tr><td><strong>Masterpiece</strong></td><td>The core of the collection. Bold, clean, collectable.</td></tr><tr><td><strong>Signed</strong></td><td>Hand signed by the artist.</td></tr><tr><td><strong>Legend</strong></td><td>Rare. Few exist, everybody wants one.</td></tr><tr><td><strong>Unique 1/1</strong></td><td>One card, one owner, ever. Sold with a certificate card and can come in a small art frame.</td></tr></tbody></table></div>
+      <h2 style="margin-top:1.6rem">Rarity ladder</h2>
+      <div class="table-wrap"><table class="simple"><thead><tr><th>Rarity</th><th>Print run</th></tr></thead><tbody><tr><td><span class="dot" style="background:#8a8a8a"></span><strong>Common</strong></td><td>Open edition</td></tr><tr><td><span class="dot" style="background:#2bb3a3"></span><strong>Uncommon</strong></td><td>Numbered of 500</td></tr><tr><td><span class="dot" style="background:#f97316"></span><strong>Rare</strong></td><td>Numbered of 100</td></tr><tr><td><span class="dot" style="background:#a78bfa"></span><strong>Super Rare</strong></td><td>Numbered of 50</td></tr><tr><td><span class="dot" style="background:#e0b43a"></span><strong>Ultra Rare</strong></td><td>Numbered of 21</td></tr><tr><td><span class="dot" style="background:#0a0a0a"></span><strong>Unique 1/1</strong></td><td>One of one</td></tr></tbody></table></div>
     </div>
   </div>
 </div></section>
