@@ -51,7 +51,21 @@ function clean(input) {
       left = Number(v.left);
       if (!Number.isInteger(left) || left < 0 || left > 100000) return null;
     }
-    out[k] = { status: v.status, left };
+    const online = v.online === undefined ? true : v.online;
+    const offline = v.offline === undefined ? true : v.offline;
+    if (typeof online !== "boolean" || typeof offline !== "boolean") return null;
+    let link = "";
+    if (v.url !== undefined && v.url !== null && v.url !== "") {
+      if (typeof v.url !== "string" || v.url.length > 300) return null;
+      try {
+        const u = new URL(v.url);
+        if (u.protocol !== "https:") return null;
+        link = u.href;
+      } catch {
+        return null;
+      }
+    }
+    out[k] = { status: v.status, left, online, offline, url: link };
   }
   return out;
 }

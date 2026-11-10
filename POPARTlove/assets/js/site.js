@@ -109,6 +109,17 @@ document.addEventListener("click", function (e) {
       else if (s.left !== null && s.left !== undefined) { label = s.left + (run ? " of " + run : "") + " left"; }
       b.textContent = label;
       b.className = "tag stock " + cls;
+      var row = card.querySelector(".where-row");
+      if (row) {
+        var online = row.querySelector('[data-where="online"]');
+        var offline = row.querySelector('[data-where="offline"]');
+        var out = s.status === "sold-out";
+        if (online) {
+          online.hidden = out || s.online === false;
+          if (s.url) { online.setAttribute("href", s.url); online.setAttribute("target", "_blank"); online.setAttribute("rel", "noopener"); online.lastChild.textContent = " Buy online"; }
+        }
+        if (offline) offline.hidden = out || s.offline === false;
+      }
     });
   }).catch(function () {});
 })();

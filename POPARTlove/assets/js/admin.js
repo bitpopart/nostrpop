@@ -28,25 +28,31 @@
     var head = document.querySelector(".page-head");
     if (head) head.innerHTML = '<div class="container"><h1>Card admin</h1><p>Update which cards are available.</p></div>';
     root.innerHTML = '<div class="section-head"><div><h2>Cards</h2><p>Signed in with your Nostr key.</p></div><button class="btn" type="button" id="admin-save">Save changes</button></div>' +
-      '<div class="table-wrap"><table class="simple" id="admin-table"><thead><tr><th>Card</th><th>Status</th><th>Copies left</th></tr></thead><tbody></tbody></table></div>' +
+      '<div class="table-wrap"><table class="simple" id="admin-table"><thead><tr><th>Card</th><th>Status</th><th>Copies left</th><th>Online</th><th>At events</th><th>Shop link (https)</th></tr></thead><tbody></tbody></table></div>' +
       '<p class="form-msg" id="admin-save-msg" role="status"></p>';
     var tbody = root.querySelector("tbody");
     cards.forEach(function (c) {
       var cur = stock[c.file] || { status: c.status || "available", left: c.left };
       var tr = document.createElement("tr");
       tr.setAttribute("data-card", c.file);
-      tr.innerHTML = '<td><strong></strong></td><td><select aria-label="Status"><option value="available">Available</option><option value="sold-out">Sold out</option><option value="coming-soon">Coming soon</option></select></td><td><input type="number" min="0" step="1" inputmode="numeric" aria-label="Copies left" placeholder="not tracked" style="width:8rem"></td>';
+      tr.innerHTML = '<td><strong></strong></td><td><select aria-label="Status"><option value="available">Available</option><option value="sold-out">Sold out</option><option value="coming-soon">Coming soon</option></select></td><td><input type="number" min="0" step="1" inputmode="numeric" aria-label="Copies left" placeholder="not tracked" style="width:8rem"></td><td><input type="checkbox" class="on" aria-label="Sold online"></td><td><input type="checkbox" class="off" aria-label="Sold at events"></td><td><input type="url" class="url" aria-label="Shop link" placeholder="https://" style="width:16rem"></td>';
       tr.querySelector("strong").textContent = c.name + " (" + c.rarity + ", " + c.run + ")";
       tr.querySelector("select").value = cur.status;
-      tr.querySelector("input").value = cur.left === null || cur.left === undefined ? "" : cur.left;
+      tr.querySelector("input[type=number]").value = cur.left === null || cur.left === undefined ? "" : cur.left;
+      tr.querySelector(".on").checked = cur.online === undefined ? c.online !== false : cur.online;
+      tr.querySelector(".off").checked = cur.offline === undefined ? c.offline !== false : cur.offline;
+      tr.querySelector(".url").value = cur.url === undefined ? (c.url || "") : cur.url;
       tbody.appendChild(tr);
     });
     var saveMsg = document.getElementById("admin-save-msg");
     document.getElementById("admin-save").addEventListener("click", async function () {
       var data = {};
       tbody.querySelectorAll("tr").forEach(function (tr) {
-        var v = tr.querySelector("input").value.trim();
-        data[tr.getAttribute("data-card")] = { status: tr.querySelector("select").value, left: v === "" ? null : Number(v) };
+        var v = tr.querySelector("input[type=number]").value.trim();
+        data[tr.getAttribute("data-card")] = {
+          status: tr.querySelector("select").value, left: v === "" ? null : Number(v),
+          online: tr.querySelector(".on").checked, offline: tr.querySelector(".off").checked, url: tr.querySelector(".url").value.trim()
+        };
       });
       var body = JSON.stringify(data);
       try {
@@ -56,7 +62,7 @@
         });
         var res = await fetch("/api/stock", { method: "PUT", headers: { "content-type": "application/json", authorization: "Nostr " + btoa(JSON.stringify(ev)) }, body: body });
         if (res.ok) say(saveMsg, "Saved. The site shows the new stock within a minute.");
-        else say(saveMsg, "Could not save. Check the numbers and try again.", true);
+        else say(saveMsg, "Could not save. Check the numbers and that the shop link starts with https://.", true);
       } catch (e) { say(saveMsg, "Signing was cancelled or failed.", true); }
     });
   }

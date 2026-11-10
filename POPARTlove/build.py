@@ -233,7 +233,7 @@ def card_svg(art_builder, theme, title, series, number):
 # Available cards live in data/cards.json (newest first). Each entry points to
 # assets/img/cards/<file>.webp, exported from the Card Maker.
 EXAMPLE_CARDS = [
-    (c["file"], c["name"], c["theme"], c["series"], c["rarity"], c["run"], c["blurb"], c.get("status", "available"), c.get("left"))
+    (c["file"], c["name"], c["theme"], c["series"], c["rarity"], c["run"], c["blurb"], c.get("status", "available"), c.get("left"), c.get("online", True), c.get("offline", True), c.get("url", ""))
     for c in json.load(open(os.path.join(ROOT, "data", "cards.json"), encoding="utf-8"))
 ]
 
@@ -410,15 +410,36 @@ def stock_class(status):
     return {"sold-out": "out", "coming-soon": "soon"}.get(status, "ok")
 
 
-def tribe_cards(limit=None):
+ICON_CART = '<svg class="ico-s" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M3 4h2l2.4 10.2a2 2 0 0 0 2 1.5h7.6a2 2 0 0 0 1.9-1.4L21 8H6.2" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="20" r="1.6" fill="currentColor"/><circle cx="17" cy="20" r="1.6" fill="currentColor"/></svg>'
+ICON_PIN = '<svg class="ico-s" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><circle cx="12" cy="9.5" r="2.4" fill="currentColor"/></svg>'
+
+
+def where_html(online, offline, url, status, in_shop=False):
+    """Where a card can be bought: online (external shop link) and/or offline (at a pop-up event)."""
+    if status == "sold-out":
+        return ""
+    # online chip: external shop url when set, else the shop page (plain label on the shop page itself)
+    if url:
+        on = f'<a class="tag where" data-where="online" href="{escape(url)}" target="_blank" rel="noopener">{ICON_CART} Buy online</a>'
+    elif in_shop:
+        on = f'<a class="tag where" data-where="online">{ICON_CART} Online</a>'
+    else:
+        on = f'<a class="tag where" data-where="online" href="/shop/">{ICON_CART} Online</a>'
+    off = f'<a class="tag where" data-where="offline" href="/popup/">{ICON_PIN} At events</a>'
+    on = on.replace('<a ', '<a ', 1) if online else on.replace('class="tag where"', 'class="tag where" hidden', 1)
+    off = off if offline else off.replace('class="tag where"', 'class="tag where" hidden', 1)
+    return f'<div class="tags where-row">{on}{off}</div>'
+
+
+def tribe_cards(limit=None, in_shop=False):
     cards = EXAMPLE_CARDS[:limit] if limit else EXAMPLE_CARDS
     out = ""
-    for fn, title, theme, series, rarity, run, blurb, status, left in cards:
+    for fn, title, theme, series, rarity, run, blurb, status, left, online, offline, url in cards:
         name, cls, _ = THEME_ICON[theme]
         runnum = re.search(r"\d+", run)
         runnum = runnum.group(0) if runnum else ""
         out += f'''<article class="card" data-card="{fn}" data-run="{runnum}"><figure class="cardfig"><button class="flip" type="button" aria-pressed="false" aria-label="Flip the {escape(title)} card"><span class="flip-inner"><img class="face front" src="/assets/img/cards/{fn}.webp" alt="POPART {escape(title)} card front, {series} series, {rarity}" width="600" height="840" loading="lazy"><img class="face back" src="/assets/img/cards/{fn}-back.webp" alt="POPART {escape(title)} card back" width="600" height="840" loading="lazy"></span></button><span class="flip-hint">Tap the card to flip</span></figure>
-<div class="body"><div class="tags"><span class="tag {cls}">{name}</span><span class="tag">{rarity}</span><span class="tag stock {stock_class(status)}" data-stock>{stock_label(status, left, runnum)}</span></div><h3>{escape(title)}</h3><p>{series} series. {run}. {escape(blurb)}</p></div></article>'''
+<div class="body"><div class="tags"><span class="tag {cls}">{name}</span><span class="tag">{rarity}</span><span class="tag stock {stock_class(status)}" data-stock>{stock_label(status, left, runnum)}</span></div>{where_html(online, offline, url, status, in_shop)}<h3>{escape(title)}</h3><p>{series} series. {run}. {escape(blurb)}</p></div></article>'''
     return f'<div class="grid g3">{out}</div>'
 
 
@@ -635,8 +656,11 @@ def build_pages():
     # ---- Shop
     shop = page_head("Shop", "Everything to collect, protect and show off your POPART cards.") + f"""
 <section class="section"><div class="container">
-  <p class="notice"><strong>Opening soon.</strong> Products, prices and checkout will appear here when the shop opens. You will be able to pay with Bitcoin, of course. Join the newsletter in the footer to hear first.</p>
-  <div class="grid g3" style="margin-top:1.6rem">{shop_cards()}</div>
+  <p class="notice"><strong>Cards are sold online and at events.</strong> Use the Online button on a card to buy it in the shop, or find a card at a pop-up event, see <a href="/popup/">PopUp</a> for the next one. You can pay with Bitcoin, of course. Join the newsletter in the footer to hear first.</p>
+  <h2 style="margin-top:2rem">All cards</h2>
+  {tribe_cards(in_shop=True)}
+  <h2 style="margin-top:2.4rem">More for collectors</h2>
+  <div class="grid g3">{shop_cards()}</div>
 </div></section>"""
     page("shop", "Shop", "POPART.love shop: collectible pop art cards, sleeves, magnetic cardholders and framed one-of-a-kind cards.", shop, "/shop/")
 
