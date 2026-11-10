@@ -1,1 +1,50 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img"><title>POPART.love</title><path d="M200 335 C 70 245, 40 140, 112 92 C 158 66, 194 92, 200 124 C 206 92, 242 66, 288 92 C 360 140, 330 245, 200 335 Z" transform="translate(-6 -6) scale(1.03)" fill="#ff2e7e" stroke="#111111" stroke-width="18" stroke-linejoin="round"/><polygon points="369.3,105.7 334.5,116.3 342.1,151.9 310.0,134.7 290.3,165.3 279.7,130.5 244.1,138.1 261.3,106.0 230.7,86.3 265.5,75.7 257.9,40.1 290.0,57.3 309.7,26.7 320.3,61.5 355.9,53.9 338.7,86.0" fill="#ffd400" stroke="#111111" stroke-width="10" stroke-linejoin="round"/><path d="M96 144 C 112 114, 146 110, 162 132" fill="none" stroke="#fff" stroke-width="16" stroke-linecap="round"/></svg>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 224.4 189.12">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: none;
+        stroke-width: 9.5px;
+      }
+
+      .cls-1, .cls-2 {
+        stroke: #000;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .cls-2 {
+        fill: #e62636;
+        stroke-width: 13.12px;
+      }
+    </style>
+  </defs>
+  <path class="cls-2" d="M114.22,71.15s28.83-48.91,63.88-19.19c33.2,28.16-21.35,87.47-64.67,103.19h-.86c-43.32-15.72-101.77-69.33-64.67-103.19,35.62-32.51,66.33,19.19,66.33,19.19Z"/>
+  <g>
+    <g>
+      <line class="cls-1" x1="194.45" y1="33.7" x2="202.31" y2="26.41"/>
+      <line class="cls-1" x1="175.28" y1="24.31" x2="181.74" y2="5.75"/>
+      <line class="cls-1" x1="152.13" y1="21.7" x2="151.54" y2="6.28"/>
+      <line class="cls-1" x1="130.03" y1="29.8" x2="125.13" y2="20.63"/>
+      <line class="cls-1" x1="206.33" y1="51.62" x2="219.65" y2="46.84"/>
+      <line class="cls-1" x1="208.08" y1="70.71" x2="217.04" y2="73.15"/>
+      <line class="cls-1" x1="201.47" y1="92.53" x2="214.09" y2="99.94"/>
+    </g>
+    <line class="cls-1" x1="34.07" y1="33.21" x2="27.1" y2="25.1"/>
+    <line class="cls-1" x1="53.49" y1="23.92" x2="49.22" y2="4.75"/>
+    <line class="cls-1" x1="76.79" y1="20.4" x2="79.16" y2="5.14"/>
+    <line class="cls-1" x1="100.67" y1="31.61" x2="106.6" y2="23.04"/>
+    <line class="cls-1" x1="20.91" y1="48.99" x2="8.23" y2="42.77"/>
+    <line class="cls-1" x1="16.25" y1="67.77" x2="7.07" y2="69.2"/>
+    <line class="cls-1" x1="18.15" y1="90.19" x2="4.75" y2="96.14"/>
+    <line class="cls-1" x1="43.87" y1="131.87" x2="33.94" y2="141.91"/>
+    <line class="cls-1" x1="27.28" y1="112.28" x2="22.15" y2="116.99"/>
+    <line class="cls-1" x1="180.51" y1="130.31" x2="190.78" y2="140.01"/>
+    <line class="cls-1" x1="194.86" y1="113.77" x2="200.36" y2="118.06"/>
+    <line class="cls-1" x1="164.32" y1="149.16" x2="167.57" y2="153.26"/>
+    <line class="cls-1" x1="141.18" y1="166.06" x2="145.27" y2="171.66"/>
+    <line class="cls-1" x1="113.3" y1="173.99" x2="113.08" y2="184.37"/>
+    <line class="cls-1" x1="57.66" y1="155.6" x2="62.12" y2="150.28"/>
+    <line class="cls-1" x1="82.65" y1="171.92" x2="85.43" y2="165.58"/>
+  </g>
+</svg>

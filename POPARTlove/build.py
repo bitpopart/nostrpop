@@ -236,7 +236,7 @@ CARDS = [
 
 
 def build_images():
-    write("assets/img/logo.svg", logo_svg())
+    # assets/img/logo.svg is the uploaded Love icon; do not regenerate it here
     write("assets/img/favicon.svg", favicon_svg())
     for fn, builder, title, theme, blurb in ARTWORKS:
         write(f"assets/img/{fn}.svg", builder())
@@ -288,7 +288,7 @@ def nav_html(current):
 <header class="nav">
   <div class="container nav-inner">
     <a class="brand" href="/" aria-label="POPART.love home">
-      <img src="/assets/img/logo.svg" alt="" width="44" height="44">
+      <img src="/assets/img/logo.svg" alt="" width="52" height="44">
       <span class="brand-word">POPART<b>.love</b></span>
     </a>
     <ul class="nav-links">{items}</ul>
@@ -308,7 +308,7 @@ def footer_html():
     <div class="footer-grid">
       <div>
         <a class="brand" href="/" aria-label="POPART.love home">
-          <img src="/assets/img/logo.svg" alt="" width="44" height="44">
+          <img src="/assets/img/logo.svg" alt="" width="52" height="44">
           <span class="brand-word">POPART<b>.love</b></span>
         </a>
         <p class="tagline" style="margin-top:.8rem">Love, Freedom &amp; Joy. Pop art with thick lines and a big heart.</p>

@@ -87,7 +87,8 @@ p { margin: 0 0 1rem; }
   height: 68px; gap: 1rem;
 }
 .brand { display: flex; align-items: center; gap: .6rem; text-decoration: none; }
-.brand img { width: 44px; height: 44px; }
+.brand img { width: auto; height: 44px; }
+:root[data-theme="dark"] .brand img { filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 1.5px #fff); }
 .brand-word {
   font-family: var(--font-display); font-size: 1.9rem; letter-spacing: .03em; line-height: 1;
 }
