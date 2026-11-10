@@ -19,7 +19,10 @@
     b.appendChild(tags);
     b.appendChild(el("h3", "", it.title));
     if (it.description) b.appendChild(el("p", "", it.description));
-    if (!soon && it.url) { var l = el("a", "btn", "Buy"); l.href = it.url; l.target = "_blank"; l.rel = "noopener"; b.appendChild(l); }
+    if (it.digital && it.file) tags.appendChild(el("span", "tag", "Digital file"));
+    if (!soon && it.url) { var l = el("a", "btn", it.digital === "paid" ? "Buy digital file" : "Buy"); l.href = it.url; l.target = "_blank"; l.rel = "noopener"; b.appendChild(l); }
+    if (it.digital === "free" && it.file) { var d = el("a", "btn yellow", "Download to print"); d.href = it._href || ("/api/file?id=" + encodeURIComponent(it.id)); d.setAttribute("download", it.fname || ""); b.appendChild(d); }
+    if (it.digital === "paid" && it.file) { var h = el("a", "", "Bought it? Enter your download code"); h.href = "/shop/#digital"; b.appendChild(h); }
     a.appendChild(b);
     return a;
   }

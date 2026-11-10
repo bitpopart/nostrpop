@@ -703,11 +703,23 @@ def build_pages():
     <p>Wallpapers, coloring pages, printables and more. Free for everyone who loves pop art.</p>
     <a class="btn yellow" href="/free/">See the free downloads</a>
   </div>
+  <h2 style="margin-top:2rem" id="digital">Digital downloads</h2>
+  <p>Print them at home. Free files download straight away. For paid files, buy with the Buy button and use the download code you get from the artist.</p>
+  <div class="grid g3" id="digital-grid"><p class="notice" style="grid-column:1/-1">Digital sticker and print files will be listed here.</p></div>
+  <div class="panel" style="margin-top:1.2rem">
+    <h3>Bought a digital file? Enter your download code</h3>
+    <form id="dl-form" class="dl-form" novalidate>
+      <input id="dl-code" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="14" placeholder="ABCD-EFGH-JKLM" aria-label="Download code">
+      <button class="btn" type="submit">Download</button>
+    </form>
+    <p class="form-msg" id="dl-result" role="status"></p>
+  </div>
   <h2 style="margin-top:2rem">All cards</h2>
   {tribe_cards(in_shop=True)}
   <h2 style="margin-top:2.4rem">More for collectors</h2>
   <div class="grid g3">{shop_cards()}</div>
-</div></section>"""
+</div></section>
+<script src="/assets/js/dl.js" defer></script>"""
     page("shop", "Shop", "POPART.love shop: collectible pop art cards, sleeves, magnetic cardholders and framed one-of-a-kind cards.", shop, "/shop/")
 
     # ---- Free downloads (filled from the admin list)

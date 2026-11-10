@@ -42,6 +42,17 @@
     <p>Wallpapers, coloring pages, printables and more. Free for everyone who loves pop art.</p>
     <a class="btn yellow" href="/free/">See the free downloads</a>
   </div>
+  <h2 style="margin-top:2rem" id="digital">Digital downloads</h2>
+  <p>Print them at home. Free files download straight away. For paid files, buy with the Buy button and use the download code you get from the artist.</p>
+  <div class="grid g3" id="digital-grid"><p class="notice" style="grid-column:1/-1">Digital sticker and print files will be listed here.</p></div>
+  <div class="panel" style="margin-top:1.2rem">
+    <h3>Bought a digital file? Enter your download code</h3>
+    <form id="dl-form" class="dl-form" novalidate>
+      <input id="dl-code" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="14" placeholder="ABCD-EFGH-JKLM" aria-label="Download code">
+      <button class="btn" type="submit">Download</button>
+    </form>
+    <p class="form-msg" id="dl-result" role="status"></p>
+  </div>
   <h2 style="margin-top:2rem">All cards</h2>
   <div class="grid g3"><article class="card" data-card="heart-holder" data-run="100"><figure class="cardfig"><button class="flip" type="button" aria-pressed="false" aria-label="Flip the Heart Holder card"><span class="flip-inner"><img class="face front" src="/assets/img/cards/heart-holder.webp" alt="POPART Heart Holder card front, Masterpiece series, Rare" width="600" height="840" loading="lazy"><img class="face back" src="/assets/img/cards/heart-holder-back.webp" alt="POPART Heart Holder card back" width="600" height="840" loading="lazy"></span></button><span class="flip-hint">Tap the card to flip</span></figure>
 <div class="body"><div class="tags"><span class="tag love">Love</span><span class="tag">Rare</span><span class="tag stock ok" data-stock>Available</span></div><div class="tags where-row"><a class="tag where" data-where="online"><svg class="ico-s" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M3 4h2l2.4 10.2a2 2 0 0 0 2 1.5h7.6a2 2 0 0 0 1.9-1.4L21 8H6.2" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="20" r="1.6" fill="currentColor"/><circle cx="17" cy="20" r="1.6" fill="currentColor"/></svg> Online</a><a class="tag where" data-where="offline" href="/popup/"><svg class="ico-s" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><circle cx="12" cy="9.5" r="2.4" fill="currentColor"/></svg> At events</a></div><h3>Heart Holder</h3><p>Masterpiece series. Run of 100. A hand holding a big heart.</p></div></article><article class="card" data-card="big-heart" data-run=""><figure class="cardfig"><button class="flip" type="button" aria-pressed="false" aria-label="Flip the Big Heart card"><span class="flip-inner"><img class="face front" src="/assets/img/cards/big-heart.webp" alt="POPART Big Heart card front, Masterpiece series, Common" width="600" height="840" loading="lazy"><img class="face back" src="/assets/img/cards/big-heart-back.webp" alt="POPART Big Heart card back" width="600" height="840" loading="lazy"></span></button><span class="flip-hint">Tap the card to flip</span></figure>
@@ -57,6 +68,7 @@
 <div class="body"><span class="tag soon">Coming soon</span><h3>Magnetic cardholders</h3><p>Show your best card on the wall or the desk.</p></div></article><article class="card"><figure><img src="/assets/img/love-two-hearts.svg" alt="Framed 1/1 Unique" width="400" height="400" loading="lazy" style="object-fit:cover;aspect-ratio:1/1;width:100%"></figure>
 <div class="body"><span class="tag soon">Coming soon</span><h3>Framed 1/1 Unique</h3><p>A one-of-a-kind card in a small art frame, with certificate card and mount card.</p></div></article></div>
 </div></section>
+<script src="/assets/js/dl.js" defer></script>
 </main>
 <footer class="footer">
   <div class="container">

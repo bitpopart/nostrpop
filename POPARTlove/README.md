@@ -82,3 +82,6 @@ The 5 digit holder number is HMAC-SHA256(`CODE_SECRET`, `holder:<card file>:<ser
 
 ### Free downloads
 `/free/` lists free files uploaded in `/admin/` (Free downloads section): name, category, description, optional thumbnail and the file itself (any type, up to 20 MB, kept in Cloudflare KV). Visitors filter by category and press Download (`/api/file?id=`, always sent as a download). Linked from the Shop page. The list is `/api/catalog?kind=free`.
+
+### Digital files for stickers and prints (free or paid)
+In `/admin/`, each sticker or print can carry a digital file (PDF, PNG, zip, up to 20 MB) marked Free download or Paid download. Free files get a "Download to print" button. Paid files are never public: the buyer pays through the item's payment or shop link (any https link: PayPal, Stripe payment link, shop, Lightning page), then you press Download codes on that item, make a code and send it to the buyer. They enter it under Digital downloads on the Shop page (`/shop/#digital`). A code works a set number of times (you choose, default 3) and is checked server side (`/api/download?code=`, 10 tries a minute per visitor). Codes are shown once when made. Delivering codes automatically after payment would need a payment provider webhook, a later step.

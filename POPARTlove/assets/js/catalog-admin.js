@@ -48,10 +48,12 @@
     var catList = document.createElement("datalist"); catList.id = "cat-list";
     ["Wallpapers", "Coloring pages", "Printables", "Cards", "Stickers", "Music", "Other"].forEach(function (n) { var o = document.createElement("option"); o.value = n; catList.appendChild(o); });
     var dl = input("file"); var dlInfo = el("p", "form-msg");
+    var dig = document.createElement("select");
+    [["", "No digital file"], ["free", "Free download"], ["paid", "Paid download (buyer needs a code)"]].forEach(function (o) { var op = document.createElement("option"); op.value = o[0]; op.textContent = o[1]; dig.appendChild(op); });
     var grid = el("div", "ev-grid");
-    (free ? [["Name", title], ["Category", cat]] : [["Name", title], ["Status", status], ["Price", price], ["Link", link]]).forEach(function (p) { grid.appendChild(field(p[0], p[1])); });
+    (free ? [["Name", title], ["Category", cat]] : [["Name", title], ["Status", status], ["Price", price], ["Payment or shop link", link], ["Digital file to print at home", dig]]).forEach(function (p) { grid.appendChild(field(p[0], p[1])); });
     var h3 = el("h3", "", "Add a " + one);
-    form.appendChild(h3); form.appendChild(grid); form.appendChild(field("Description", desc)); if (free) { form.appendChild(catList); form.appendChild(field("File to download", dl)); form.appendChild(dlInfo); }
+    form.appendChild(h3); form.appendChild(grid); form.appendChild(field("Description", desc)); form.appendChild(catList); form.appendChild(field(free ? "File to download" : "Digital file (PDF, PNG, zip) people print at home", dl)); form.appendChild(dlInfo);
     form.appendChild(field(free ? "Thumbnail picture" : "Picture", file)); form.appendChild(preview); form.appendChild(drop);
     var actions = el("div", "ev-actions");
     var add = el("button", "btn", "Add " + one); add.type = "submit";
@@ -79,12 +81,13 @@
     form.addEventListener("submit", function (e) {
       e.preventDefault();
       if (!title.value.trim()) { say(msg, "Fill in the name.", true); return; }
-      if (free && !pendingFile && !(editing && list.filter(function (x) { return x.id === editing; })[0].file)) { say(msg, "Choose the file people can download.", true); return; }
+      if ((free || dig.value) && !pendingFile && !(editing && list.filter(function (x) { return x.id === editing; })[0].file)) { say(msg, "Choose the file people can download.", true); return; }
       if (link.value.trim() && !/^https:\/\//i.test(link.value.trim())) { say(msg, "The link must start with https://", true); return; }
       var it = editing ? list.filter(function (x) { return x.id === editing; })[0] : { id: kind.slice(0, 1) + Date.now().toString(36), image: false, imv: 0 };
       it.title = title.value.trim(); it.description = desc.value.trim();
-      if (free) { it.status = "available"; it.price = ""; it.url = ""; it.category = cat.value.trim(); if (pendingFile) { it._file = pendingFile; it.file = true; it.fname = pendingFile.name; it.size = pendingFile.size; it.ftype = pendingFile.type || ""; } }
-      else { it.status = status.value; it.price = price.value.trim(); it.url = link.value.trim(); }
+      if (free) { it.status = "available"; it.price = ""; it.url = ""; it.category = cat.value.trim(); it.digital = ""; }
+      else { it.status = status.value; it.price = price.value.trim(); it.url = link.value.trim(); it.digital = dig.value; }
+      if (pendingFile) { it._file = pendingFile; it.file = true; it.fname = pendingFile.name; it.size = pendingFile.size; it.ftype = pendingFile.type || ""; }
       if (pending && pending.b64) { it._img = pending.b64; it.image = true; }
       else if (pending && pending.clear) { delete it._img; it.image = false; }
       if (!editing) list.unshift(it);
@@ -100,7 +103,7 @@
         if (src) { var th = document.createElement("img"); th.src = src; th.alt = ""; th.className = "ev-thumb"; row.appendChild(th); }
         var info = el("div", "ev-info");
         info.appendChild(el("strong", "", it.title));
-        info.appendChild(el("span", "", free ? (it.category || "No category") + " \u00b7 " + (it.fname || "") + (it.size ? " (" + size(it.size) + ")" : "") : (it.price ? it.price + " \u00b7 " : "") + (it.url ? "has shop link" : "no shop link")));
+        info.appendChild(el("span", "", free ? (it.category || "No category") + " \u00b7 " + (it.fname || "") + (it.size ? " (" + size(it.size) + ")" : "") : (it.price ? it.price + " \u00b7 " : "") + (it.url ? "has shop link" : "no shop link") + (it.digital === "free" ? " \u00b7 free digital file" : it.digital === "paid" ? " \u00b7 paid digital file" : "")));
         row.appendChild(info);
         var btns = el("div", "ev-btns");
         var st = el("button", "btn " + (it.status === "available" ? "" : "ghost"), it.status === "available" ? "Available" : "Coming soon"); st.type = "button";
@@ -109,7 +112,7 @@
         var ed = el("button", "btn ghost", "Edit"); ed.type = "button";
         ed.addEventListener("click", function () {
           editing = it.id; pending = null; file.value = "";
-          title.value = it.title; status.value = it.status; price.value = it.price || ""; link.value = it.url || ""; desc.value = it.description || ""; cat.value = it.category || ""; dl.value = ""; dlInfo.textContent = free && it.fname ? "Current file: " + it.fname + ". Choose a file only to replace it." : "";
+          title.value = it.title; status.value = it.status; price.value = it.price || ""; link.value = it.url || ""; desc.value = it.description || ""; cat.value = it.category || ""; dig.value = it.digital || ""; dl.value = ""; dlInfo.textContent = it.fname ? "Current file: " + it.fname + ". Choose a file only to replace it." : "";
           showPreview(imgSrc(it)); cancel.hidden = false; add.textContent = "Update " + one; h3.textContent = "Edit " + one;
           form.scrollIntoView({ behavior: "smooth", block: "center" });
         });
@@ -118,7 +121,28 @@
           if (armed !== it.id) { armed = it.id; draw(); return; }
           armed = null; list = list.filter(function (x) { return x.id !== it.id; }); if (editing === it.id) resetForm(); mark(); draw();
         });
-        if (!free) btns.appendChild(st); btns.appendChild(ed); btns.appendChild(del); row.appendChild(btns); box.appendChild(row);
+        if (!free) btns.appendChild(st);
+        btns.appendChild(ed); btns.appendChild(del);
+        if (it.digital === "paid" && api.codes) {
+          var cb = el("button", "btn ghost", "Download codes"); cb.type = "button"; btns.insertBefore(cb, ed);
+          var panel = el("div", "ev-codes"); panel.hidden = true;
+          var n = input("number"); n.value = "1"; n.min = "1"; n.max = "50";
+          var u = input("number"); u.value = "3"; u.min = "1"; u.max = "20";
+          var go = el("button", "btn", "Make codes"); go.type = "button";
+          var out = document.createElement("textarea"); out.rows = 3; out.readOnly = true; out.hidden = true;
+          var cm = el("p", "form-msg");
+          panel.appendChild(field("How many codes", n)); panel.appendChild(field("Downloads per code", u)); panel.appendChild(go); panel.appendChild(cm); panel.appendChild(out);
+          cb.addEventListener("click", function () { panel.hidden = !panel.hidden; });
+          go.addEventListener("click", function () {
+            say(cm, "Making codes...", false);
+            api.codes(it.id, Number(n.value), Number(u.value)).then(function (codes) {
+              out.value = codes.map(function (x) { return x.slice(0, 4) + "-" + x.slice(4, 8) + "-" + x.slice(8); }).join("\n"); out.hidden = false; out.select();
+              say(cm, codes.length + " code(s) made. Copy them now and send one to each buyer. They are not shown again.", false);
+            }).catch(function () { say(cm, "Could not make codes. Save the item with its file first, then try again.", true); });
+          });
+          row.appendChild(btns); row.appendChild(panel); box.appendChild(row); return;
+        }
+        row.appendChild(btns); box.appendChild(row);
       });
     }
 

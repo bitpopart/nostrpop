@@ -72,6 +72,12 @@
       box.style.marginTop = "2.4rem";
       root.appendChild(box);
       window.PopartCatalogAdmin.mount(box, kind, {
+        codes: async function (id, count, uses) {
+          var body = JSON.stringify({ id: id, count: count, uses: uses });
+          var res = await fetch("/api/dl-codes", { method: "POST", headers: { authorization: await authHeader("POST", "/api/dl-codes", body) }, body: body });
+          if (!res.ok) throw new Error("no");
+          return (await res.json()).codes;
+        },
         load: function () { return fetch("/api/catalog?kind=" + kind).then(function (r) { return r.ok ? r.json() : []; }); },
         save: async function (list) {
           var out = [];

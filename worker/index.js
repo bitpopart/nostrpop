@@ -4,6 +4,7 @@
 // GET/PUT /api/events and /api/event-image: PopUp events and their thumbnails (PUT is admin only).
 // GET/PUT /api/catalog?kind=stickers|prints: stickers and prints lists (PUT is admin only).
 // GET/PUT /api/file?id=: free download files (PUT is admin only, up to 20 MB). Lists live in /api/catalog?kind=free.
+// POST /api/dl-codes (admin) and GET /api/download?code= (public): paid digital files with download codes.
 // Everything else is served from the static site (assets).
 import { verifyEvent } from "nostr-tools/pure";
 
@@ -115,9 +116,36 @@ function cleanCatalog(input) {
     const category = str(e.category, 40), fname = str(e.fname, 120), ftype = str(e.ftype, 100);
     if (category === null || fname === null || ftype === null) return null;
     const size = Number.isInteger(e.size) && e.size >= 0 && e.size <= MAX_FILE ? e.size : 0;
-    out.push({ id: e.id, title, price, description, url, status: e.status, image: e.image === true, imv, category, file: e.file === true, fname, ftype, size });
+    const digital = e.digital === "free" || e.digital === "paid" ? e.digital : "";
+    out.push({ id: e.id, title, price, description, url, status: e.status, image: e.image === true, imv, category, file: e.file === true, fname, ftype, size, digital });
   }
   return out;
+}
+
+// find a downloadable item. publicOnly: free-list items and items marked "free" digital; otherwise any with a file
+async function findItem(env, id, publicOnly) {
+  for (const kind of ["free", "stickers", "prints"]) {
+    const items = (await env.CARDS_KV.get("catalog:" + kind, "json")) || [];
+    const item = items.find((e) => e.id === id && e.file);
+    if (item && (!publicOnly || kind === "free" || item.digital === "free")) return item;
+  }
+  return null;
+}
+function fileResponse(data, item, cache) {
+  const name = (item.fname || "download").replace(/[^A-Za-z0-9._ -]/g, "_");
+  return new Response(data, {
+    headers: {
+      "content-type": "application/octet-stream",
+      "content-disposition": `attachment; filename="${name}"`,
+      "x-content-type-options": "nosniff",
+      "access-control-expose-headers": "content-disposition",
+      "cache-control": cache,
+    },
+  });
+}
+function makeDlCode() {
+  const bytes = crypto.getRandomValues(new Uint8Array(12));
+  return [...bytes].map((b) => CODE_ABC[b & 31]).join("");
 }
 
 const SERIAL_LIST = /^\s*\d+(\s*-\s*\d+)?(\s*,\s*\d+(\s*-\s*\d+)?)*\s*$/;
@@ -241,24 +269,63 @@ export default {
       await env.CARDS_KV.put("events", JSON.stringify(list));
       return json({ ok: true, events: list });
     }
+    if (url.pathname === "/api/dl-codes") {
+      // admin only: make download codes for a paid digital file
+      if (request.method !== "POST") return json({ error: "method not allowed" }, 405, { allow: "POST" });
+      const body = await request.text();
+      if (!(await isAdmin(request, env, body))) return json({ error: "not allowed" }, 401);
+      let req;
+      try {
+        req = JSON.parse(body);
+      } catch {
+        return json({ error: "bad json" }, 400);
+      }
+      const count = Number(req.count), uses = Number(req.uses);
+      if (!/^[a-z0-9-]{1,40}$/.test(req.id || "") || !Number.isInteger(count) || count < 1 || count > 50 || !Number.isInteger(uses) || uses < 1 || uses > 20) return json({ error: "bad request" }, 400);
+      if (!(await findItem(env, req.id, false))) return json({ error: "save the item with its file first" }, 400);
+      const book = (await env.CARDS_KV.get("dlcodes", "json")) || {};
+      const codes = [];
+      for (let i = 0; i < count; i++) {
+        const code = makeDlCode();
+        book[await sha256hex(code)] = { id: req.id, uses, used: 0 };
+        codes.push(code);
+      }
+      await env.CARDS_KV.put("dlcodes", JSON.stringify(book));
+      return json({ ok: true, codes });
+    }
+    if (url.pathname === "/api/download") {
+      // public: a download code gives the paid file, a limited number of times
+      if (request.method !== "GET") return json({ error: "method not allowed" }, 405, { allow: "GET" });
+      const ip = request.headers.get("cf-connecting-ip") || "x";
+      const now = Date.now();
+      const slot = attempts.get("d" + ip) || { n: 0, reset: now + 60000 };
+      if (now > slot.reset) { slot.n = 0; slot.reset = now + 60000; }
+      slot.n++;
+      attempts.set("d" + ip, slot);
+      if (slot.n > 10) return json({ error: "too many tries, wait a minute" }, 429);
+      const code = (url.searchParams.get("code") || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+      if (code.length !== 12) return json({ error: "code not found" }, 404);
+      const book = (await env.CARDS_KV.get("dlcodes", "json")) || {};
+      const hash = await sha256hex(code);
+      const rec = book[hash];
+      if (!rec) return json({ error: "code not found" }, 404);
+      if (rec.used >= rec.uses) return json({ error: "this code has been used up" }, 403);
+      const item = await findItem(env, rec.id, false);
+      const data = item ? await env.CARDS_KV.get("dl:" + rec.id, "arrayBuffer") : null;
+      if (!data) return json({ error: "file not available" }, 404);
+      rec.used++;
+      await env.CARDS_KV.put("dlcodes", JSON.stringify(book));
+      return fileResponse(data, item, "no-store");
+    }
     if (url.pathname === "/api/file") {
       // free downloads: raw bytes, signed by the hash of the bytes
       const id = url.searchParams.get("id") || "";
       if (!/^[a-z0-9-]{1,40}$/.test(id)) return json({ error: "bad id" }, 400);
       if (request.method === "GET") {
-        const items = (await env.CARDS_KV.get("catalog:free", "json")) || [];
-        const item = items.find((e) => e.id === id && e.file);
+        const item = await findItem(env, id, true);
         const data = item ? await env.CARDS_KV.get("dl:" + id, "arrayBuffer") : null;
         if (!data) return new Response("not found", { status: 404 });
-        const name = (item.fname || "download").replace(/[^A-Za-z0-9._ -]/g, "_");
-        return new Response(data, {
-          headers: {
-            "content-type": "application/octet-stream",
-            "content-disposition": `attachment; filename="${name}"`,
-            "x-content-type-options": "nosniff",
-            "cache-control": "public, max-age=3600",
-          },
-        });
+        return fileResponse(data, item, "public, max-age=3600");
       }
       if (request.method !== "PUT") return json({ error: "method not allowed" }, 405, { allow: "GET, PUT" });
       const bytes = await request.arrayBuffer();
