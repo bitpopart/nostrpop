@@ -176,7 +176,7 @@ p { margin: 0 0 1rem; }
 .tag.soon { background: var(--panel2); color: var(--sub); }
 
 /* ---------- Hero ---------- */
-.hero { border-bottom: 1px solid var(--line); background: radial-gradient(circle at 8% 15%, color-mix(in srgb, var(--yellow) 38%, transparent) 0 14rem, transparent 14.1rem), radial-gradient(circle at 96% 85%, color-mix(in srgb, var(--pink) 28%, transparent) 0 16rem, transparent 16.1rem), radial-gradient(circle at 60% 0%, color-mix(in srgb, var(--sky) 30%, transparent) 0 12rem, transparent 12.1rem), var(--panel); }
+.hero { border-bottom: 1px solid var(--line); background: var(--panel); }
 .hero-inner { display: grid; gap: 2rem; align-items: center; padding-block: 2.6rem 3rem; }
 @media (min-width: 860px) { .hero-inner { grid-template-columns: 1.1fr .9fr; padding-block: 3.4rem 3.8rem; } }
 .hero h1 .j, .hero h1 .l, .hero h1 .f { color: inherit; }
@@ -251,7 +251,7 @@ p { margin: 0 0 1rem; }
 @media (prefers-reduced-motion: reduce) { .flip-inner { transition: none; } }
 
 /* ---------- Page header ---------- */
-.page-head { border-bottom: 1px solid var(--line); background: linear-gradient(100deg, color-mix(in srgb, var(--yellow) 30%, var(--panel)), color-mix(in srgb, var(--pink) 20%, var(--panel)) 55%, color-mix(in srgb, var(--sky) 28%, var(--panel))); padding: 2.2rem 0 1.8rem; }
+.page-head { border-bottom: 1px solid var(--line); background: var(--panel); padding: 2.2rem 0 1.8rem; }
 .page-head h1 { font-size: clamp(2.2rem, 5vw, 3.4rem); margin-bottom: .3rem; }
 .page-head p { max-width: 44rem; margin: 0; color: var(--sub); font-family: var(--font-label); font-weight: 600; letter-spacing: .8px; text-transform: uppercase; font-size: 14px; }
 
