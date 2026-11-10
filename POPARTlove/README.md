@@ -88,4 +88,4 @@ In `/admin/`, each sticker or print can carry a digital file (PDF, PNG, zip, up 
 
 ## Card prices
 
-In Admin, each card has a Price field (one number, same in euro and dollar). The Cards and Shop pages show it as "EUR 5 / $5, same price in euro and dollar". Leave it empty to hide the price. Sold-out cards hide it.
+In Admin, each card has a Price field (one number, same in euro and dollar). The Cards and Shop pages show one price: euro for visitors in Europe (by browser time zone), dollar for everyone else. Leave it empty to hide the price. Sold-out cards hide it.

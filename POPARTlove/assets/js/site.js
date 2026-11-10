@@ -64,6 +64,14 @@ document.addEventListener("click", function (e) {
   b.setAttribute("aria-pressed", on ? "true" : "false");
 });
 
+/* Price: same number in euro and dollar. Euro for visitors in Europe (by browser time zone), dollar for everyone else. */
+window.popartPrice = function (v) {
+  var tz = "";
+  try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ""; } catch (e) {}
+  var n = Number(v), t = n % 1 === 0 ? String(n) : n.toFixed(2);
+  return (/^(Europe|Atlantic\/(Reykjavik|Canary|Madeira|Faroe|Azores)|Africa\/Ceuta)/.test(tz) ? "\u20ac" : "$") + t;
+};
+
 /* Live card stock: the page ships with the saved defaults, the stock API refreshes them */
 (function () {
   var badges = document.querySelectorAll("[data-card] [data-stock]");
@@ -85,8 +93,7 @@ document.addEventListener("click", function (e) {
       if (pe) {
         var pr = s.price ? String(s.price) : "";
         if (pr && s.status !== "sold-out") {
-          var n = Number(pr), t = n % 1 === 0 ? String(n) : n.toFixed(2);
-          pe.innerHTML = "<strong>\u20ac" + t + " / $" + t + "</strong> <span>same price in euro and dollar</span>";
+          pe.innerHTML = "<strong>" + window.popartPrice(pr) + "</strong>";
           pe.hidden = false;
         } else { pe.hidden = true; }
       }
