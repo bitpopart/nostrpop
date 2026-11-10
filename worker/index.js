@@ -40,9 +40,31 @@ async function isAdmin(request, env, body) {
   }
 }
 
+const SERIAL_LIST = /^\s*\d+(\s*-\s*\d+)?(\s*,\s*\d+(\s*-\s*\d+)?)*\s*$/;
+function serialListOk(str) {
+  if (str === "" || str === undefined || str === null) return true;
+  if (typeof str !== "string" || str.length > 600 || !SERIAL_LIST.test(str)) return false;
+  return str.split(",").every((part) => {
+    const [lo, hi = lo] = part.split("-").map((x) => Number(x.trim()));
+    return lo >= 1 && hi >= lo && hi <= 100000;
+  });
+}
+function serialInList(str, n) {
+  if (!str) return false;
+  return str.split(",").some((part) => {
+    const [lo, hi = lo] = part.split("-").map((x) => Number(x.trim()));
+    return n >= lo && n <= hi;
+  });
+}
+function runOf(card) {
+  const m = /\d+/.exec(card.run || "");
+  return m ? Number(m[0]) : null;
+}
+
 function clean(input) {
   if (!input || typeof input !== "object" || Array.isArray(input)) return null;
   const out = {};
+  const registry = {};
   for (const [k, v] of Object.entries(input)) {
     if (!/^[a-z0-9-]{1,60}$/.test(k) || !v || typeof v !== "object") return null;
     if (!STATUSES.includes(v.status)) return null;
@@ -65,14 +87,36 @@ function clean(input) {
         return null;
       }
     }
+    if (!serialListOk(v.sold)) return null;
     out[k] = { status: v.status, left, online, offline, url: link };
+    registry[k] = (v.sold || "").trim();
   }
-  return out;
+  return { stock: out, registry };
 }
 
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    if (url.pathname === "/api/registry") {
+      // admin only: the list of sold serials per card
+      if (request.method !== "GET") return json({ error: "method not allowed" }, 405, { allow: "GET" });
+      if (!(await isAdmin(request, env, ""))) return json({ error: "not allowed" }, 401);
+      return json((await env.CARDS_KV.get("registry", "json")) || {});
+    }
+    if (url.pathname === "/api/verify") {
+      // public: is this serial valid for this card, and is it on the artist's sold list?
+      if (request.method !== "GET") return json({ error: "method not allowed" }, 405, { allow: "GET" });
+      const file = url.searchParams.get("card") || "";
+      const serial = Number(url.searchParams.get("serial"));
+      const cards = await (await env.ASSETS.fetch(new URL("/assets/cards.json", request.url))).json();
+      const card = cards.find((c) => c.file === file);
+      if (!card || !Number.isInteger(serial) || serial < 1) return json({ error: "bad request" }, 400);
+      const run = runOf(card);
+      if (run === null) return json({ card: file, open: true });
+      if (serial > run) return json({ card: file, run, serial, valid: false });
+      const registry = (await env.CARDS_KV.get("registry", "json")) || {};
+      return json({ card: file, run, serial, valid: true, recorded: serialInList(registry[file], serial) });
+    }
     if (url.pathname !== "/api/stock") return env.ASSETS.fetch(request);
 
     if (request.method === "GET") {
@@ -89,10 +133,11 @@ export default {
       } catch {
         return json({ error: "bad json" }, 400);
       }
-      const stock = clean(parsed);
-      if (!stock) return json({ error: "bad data" }, 400);
-      await env.CARDS_KV.put(KEY, JSON.stringify(stock));
-      return json({ ok: true, stock });
+      const cleaned = clean(parsed);
+      if (!cleaned) return json({ error: "bad data" }, 400);
+      await env.CARDS_KV.put(KEY, JSON.stringify(cleaned.stock));
+      await env.CARDS_KV.put("registry", JSON.stringify(cleaned.registry));
+      return json({ ok: true, stock: cleaned.stock });
     }
     return json({ error: "method not allowed" }, 405, { allow: "GET, PUT" });
   },

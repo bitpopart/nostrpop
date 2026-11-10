@@ -33,6 +33,10 @@ POPARTlove/
 - `/admin/` looks like a 404 page to everyone. The editor only appears when the Nostr extension signs in with the owner key (and an Admin menu link then appears in that browser). Saving sends a NIP-98 signed Nostr event; the worker only accepts the key in `ADMIN_PUBKEY` (`wrangler.jsonc`).
 - Deploy with `npx wrangler deploy` (the KV namespace is created on the first deploy).
 
+## Verify my card
+
+`/verify/` checks a card's serial against its print run and the artist's list of sold serials. The list is kept in Cloudflare KV, edited in `/admin/` (Sold serials column, written like `1-5, 7`), and only ever answered one serial at a time by `/api/verify`.
+
 ## Edit and rebuild
 
 Content lives in `build.py` (page text, `ARTWORKS`, `EXAMPLE_CARDS`, `SHOP_ITEMS`, `NEWS_ITEMS`). After a change:

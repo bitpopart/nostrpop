@@ -257,6 +257,7 @@ NAV = [
     ("Artist", "/artist/"),
     ("PopUp", "/popup/"),
     ("Cards", "/cards/"),
+    ("Verify", "/verify/"),
     ("Stickers", "/stickers/"),
     ("Prints", "/prints/"),
     ("Shop", "/shop/"),
@@ -515,6 +516,39 @@ def build_pages():
 """
     page("", "", "POPART.love: new pop art in a thick-outline graffiti style. Collectible cards, stickers, prints and a shop. Love, Freedom and Joy.", home)
 
+    # ---- Verify
+    cards_json = json.dumps([{k: c[k] for k in ("file", "name", "run", "rarity")} for c in json.load(open(os.path.join(ROOT, "data", "cards.json"), encoding="utf-8"))]).replace("<", "\\u003c")
+    options = "".join(f'<option value="{c["file"]}">{escape(c["name"])} ({escape(c["rarity"])})</option>' for c in json.load(open(os.path.join(ROOT, "data", "cards.json"), encoding="utf-8")))
+    verify = page_head("Verify my card", "Check that the number on your card is real and listed by the artist.") + f"""
+<section class="section"><div class="container">
+  <div class="split wide-left">
+    <div class="panel">
+      <h2>Check a serial</h2>
+      <form id="verify-form" class="verify-form" novalidate>
+        <label for="v-card">Card</label>
+        <select id="v-card" required><option value="">Choose a card</option>{options}</select>
+        <label for="v-serial">Serial number</label>
+        <input id="v-serial" type="text" inputmode="numeric" autocomplete="off" placeholder="007/050 or 7">
+        <button class="btn" type="submit">Verify my card</button>
+      </form>
+      <div id="v-result" class="verify-result" role="status" hidden></div>
+    </div>
+    <div class="prose">
+      <h2>Where to find the serial</h2>
+      <p>Numbered cards print their own copy number at the bottom right of the front, for example <strong>007/050</strong>. Open edition cards have no serial.</p>
+      <h2>What the check does</h2>
+      <ol>
+        <li>It checks the number fits the print run of that card.</li>
+        <li>It looks the number up in the artist's list of sold cards.</li>
+      </ol>
+      <p class="notice">A valid number that is not listed yet may simply not have been recorded. Ask the artist at the <a href="/popup/">next event</a> or through the <a href="/artist/">Artist page</a>.</p>
+    </div>
+  </div>
+</div></section>
+<script type="application/json" id="cards-data">{cards_json}</script>
+<script src="/assets/js/verify.js" defer></script>"""
+    page("verify", "Verify my card", "Verify a POPART card: check its serial number against the print run and the artist's list of sold cards.", verify, "/verify/")
+
     # ---- POPPLAY
     popplay = page_head("POPPLAY", "A two minute card game for two collectors. Collecting stays the main thing.") + f"""
 <section class="section"><div class="container">
@@ -649,6 +683,12 @@ def build_pages():
     <h2>POPPLAY: the 10-second game</h2>
     <p>Two players, one stack each. Count down together, <strong>3, 2, 1, POP</strong>, and put a card on the table. The higher card wins the round. That is the whole game, so it fits in any pocket and any break.</p>
     <a class="btn" href="/popplay/">How to play POPPLAY</a>
+  </div>
+  <div class="panel pink" style="margin-top:1.2rem">
+    <span class="kicker">Collectors</span>
+    <h2>Verify my card</h2>
+    <p>Got a numbered card? Check its serial against the print run and the artist's list of sold cards.</p>
+    <a class="btn" href="/verify/">Verify my card</a>
   </div>
 </div></section>"""
     page("cards", "Cards", "POPART collectible pop art cards. Three tribes (Love, Freedom, Joy), rare series and one-of-a-kind cards.", cards, "/cards/")

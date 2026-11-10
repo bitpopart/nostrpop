@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Verify my card | POPART.love</title>
+<meta name="description" content="Verify a POPART card: check its serial number against the print run and the artist&#x27;s list of sold cards.">
+<link rel="canonical" href="https://popart.love/verify/">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="Verify my card | POPART.love">
+<meta property="og:description" content="Verify a POPART card: check its serial number against the print run and the artist&#x27;s list of sold cards.">
+<meta property="og:url" content="https://popart.love/verify/">
+<meta name="theme-color" content="#f97316">
+<link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+<link rel="preload" href="/assets/fonts/bangers-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/css/style.css">
+<script>try{var t=localStorage.getItem("popart-theme");if(t==="dark"||(!t&&matchMedia("(prefers-color-scheme: dark)").matches))document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="nav">
+  <div class="container nav-inner">
+    <a class="brand" href="/" aria-label="POPART.love home">
+      <img src="/assets/img/logo.svg" alt="" width="52" height="44">
+      <span class="brand-word">POPART<b>.love</b></span>
+    </a>
+    <ul class="nav-links"><li><a href="/news/">News</a></li><li><a href="/artist/">Artist</a></li><li><a href="/popup/">PopUp</a></li><li><a href="/cards/">Cards</a></li><li><a href="/verify/" aria-current="page">Verify</a></li><li><a href="/stickers/">Stickers</a></li><li><a href="/prints/">Prints</a></li><li><a href="/shop/">Shop</a></li></ul>
+    <div class="nav-actions">
+      <button class="icon-btn" id="theme-btn" type="button" aria-label="Switch to dark mode">&#9790;</button>
+      <button class="icon-btn menu-btn" id="menu-btn" type="button" aria-expanded="false" aria-controls="menu-panel" aria-label="Menu">&#9776;</button>
+    </div>
+  </div>
+  <nav class="menu-panel" id="menu-panel" aria-label="Mobile"><ul><li><a href="/news/">News</a></li><li><a href="/artist/">Artist</a></li><li><a href="/popup/">PopUp</a></li><li><a href="/cards/">Cards</a></li><li><a href="/verify/" aria-current="page">Verify</a></li><li><a href="/stickers/">Stickers</a></li><li><a href="/prints/">Prints</a></li><li><a href="/shop/">Shop</a></li></ul></nav>
+</header>
+<main id="main">
+<section class="page-head"><div class="container"><h1>Verify my card</h1><p>Check that the number on your card is real and listed by the artist.</p></div></section>
+<section class="section"><div class="container">
+  <div class="split wide-left">
+    <div class="panel">
+      <h2>Check a serial</h2>
+      <form id="verify-form" class="verify-form" novalidate>
+        <label for="v-card">Card</label>
+        <select id="v-card" required><option value="">Choose a card</option><option value="heart-holder">Heart Holder (Rare)</option><option value="big-heart">Big Heart (Common)</option><option value="paper-plane">Paper Plane (Super Rare)</option><option value="free-bird">Free Bird (Uncommon)</option><option value="sunny-face">Sunny Face (Ultra Rare)</option><option value="happy-flower">Happy Flower (Unique 1/1)</option></select>
+        <label for="v-serial">Serial number</label>
+        <input id="v-serial" type="text" inputmode="numeric" autocomplete="off" placeholder="007/050 or 7">
+        <button class="btn" type="submit">Verify my card</button>
+      </form>
+      <div id="v-result" class="verify-result" role="status" hidden></div>
+    </div>
+    <div class="prose">
+      <h2>Where to find the serial</h2>
+      <p>Numbered cards print their own copy number at the bottom right of the front, for example <strong>007/050</strong>. Open edition cards have no serial.</p>
+      <h2>What the check does</h2>
+      <ol>
+        <li>It checks the number fits the print run of that card.</li>
+        <li>It looks the number up in the artist's list of sold cards.</li>
+      </ol>
+      <p class="notice">A valid number that is not listed yet may simply not have been recorded. Ask the artist at the <a href="/popup/">next event</a> or through the <a href="/artist/">Artist page</a>.</p>
+    </div>
+  </div>
+</div></section>
+<script type="application/json" id="cards-data">[{"file": "heart-holder", "name": "Heart Holder", "run": "Run of 100", "rarity": "Rare"}, {"file": "big-heart", "name": "Big Heart", "run": "Open run", "rarity": "Common"}, {"file": "paper-plane", "name": "Paper Plane", "run": "Run of 50", "rarity": "Super Rare"}, {"file": "free-bird", "name": "Free Bird", "run": "Run of 500", "rarity": "Uncommon"}, {"file": "sunny-face", "name": "Sunny Face", "run": "Run of 21", "rarity": "Ultra Rare"}, {"file": "happy-flower", "name": "Happy Flower", "run": "1 of 1", "rarity": "Unique 1/1"}]</script>
+<script src="/assets/js/verify.js" defer></script>
+</main>
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <a class="brand" href="/" aria-label="POPART.love home">
+          <img src="/assets/img/logo.svg" alt="" width="52" height="44">
+          <span class="brand-word">POPART<b>.love</b></span>
+        </a>
+        <p class="tagline" style="margin-top:.8rem">The fan page for everyone who loves pop art. Love, Freedom &amp; Joy.</p>
+        <div class="theme-dots" aria-hidden="true"><i style="background:var(--love)"></i><i style="background:var(--freedom)"></i><i style="background:var(--joy)"></i></div>
+      </div>
+      <div>
+        <h3>Quick links</h3>
+        <ul><li><a href="/news/">News</a></li><li><a href="/artist/">Artist</a></li><li><a href="/popup/">PopUp</a></li><li><a href="/cards/">Cards</a></li><li><a href="/verify/">Verify</a></li><li><a href="/stickers/">Stickers</a></li><li><a href="/prints/">Prints</a></li><li><a href="/shop/">Shop</a></li></ul>
+      </div>
+      <div>
+        <h3>More</h3>
+        <ul>
+          <li><a href="/sitemap.xml">Sitemap</a></li>
+          <li><a href="https://bitpopart.com" rel="noopener">BitPopArt</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3>Newsletter</h3>
+        <p class="tagline">New art, new cards, new drops. No spam.</p>
+        <form class="newsletter" id="newsletter-form" novalidate>
+          <label for="nl-email" class="sr-only" style="position:absolute;left:-999px">Email address</label>
+          <input id="nl-email" name="email" type="email" placeholder="your@email.com" autocomplete="email" required>
+          <button class="btn" type="submit">Subscribe</button>
+          <p class="form-msg" id="newsletter-msg" role="status" aria-live="polite"></p>
+        </form>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      &copy; 2026 POPART.love &middot; made by Johannes Oppewal &middot; all artwork &copy; the artist
+    </div>
+  </div>
+</footer>
+<script src="/assets/js/site.js" defer></script>
+</body>
+</html>
