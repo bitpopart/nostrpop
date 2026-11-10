@@ -296,7 +296,6 @@ def nav_html(current):
     </a>
     <ul class="nav-links">{items}</ul>
     <div class="nav-actions">
-      <button class="icon-btn" id="theme-btn" type="button" aria-label="Switch to dark mode">&#9790;</button>
       <button class="icon-btn menu-btn" id="menu-btn" type="button" aria-expanded="false" aria-controls="menu-panel" aria-label="Menu">&#9776;</button>
     </div>
   </div>
@@ -368,7 +367,6 @@ def page(path, title, desc, body, current=None, head_class=None, noindex=False):
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
 {FONTS}
 <link rel="stylesheet" href="/assets/css/style.css">
-<script>try{{var t=localStorage.getItem("popart-theme");if(t==="dark"||(!t&&matchMedia("(prefers-color-scheme: dark)").matches))document.documentElement.setAttribute("data-theme","dark")}}catch(e){{}}</script>
 </head>
 <body>
 {nav_html(current if current is not None else url_path)}

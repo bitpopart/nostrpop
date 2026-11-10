@@ -41,18 +41,6 @@
   color-scheme: light;
 }
 
-:root[data-theme="dark"] {
-  --bg: #0d0c0a;
-  --panel: #171512;
-  --panel2: #201d19;
-  --ink: #f6f4f0;
-  --sub: #aaa398;
-  --line: #2e2a24;
-  --teal: #b4e33d;
-  --red: #ff6258;
-  --purple: #b97cf0;
-  color-scheme: dark;
-}
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; overflow-x: clip; max-width: 100%; }
@@ -100,9 +88,7 @@ p { margin: 0 0 1rem; }
 .nav-inner { display: flex; align-items: center; justify-content: space-between; height: 64px; gap: 1rem; }
 .brand { display: flex; align-items: center; gap: .6rem; text-decoration: none; }
 .brand img { width: auto; height: 40px; }
-:root[data-theme="dark"] .brand img { filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 1.5px #fff); }
 .brand .brand-wordmark { height: 30px; width: auto; max-width: 52vw; }
-:root[data-theme="dark"] .brand .brand-wordmark { filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 1.5px #fff); }
 .brand-word { font-family: var(--font-display); font-size: 1.8rem; letter-spacing: 1px; line-height: 1; color: var(--ink); }
 .brand-word b { color: var(--orange); font-weight: 400; }
 
@@ -156,8 +142,6 @@ p { margin: 0 0 1rem; }
 .btn.ghost:hover, .btn.blue:hover, .btn.yellow:hover { filter: none; }
 .btn.blue { background: var(--sky); color: #0d0c0a; }
 .btn.yellow { background: var(--joy); color: #0d0c0a; }
-:root[data-theme="dark"] .btn { border-color: #f6f4f0; box-shadow: 0 3px 0 #f6f4f0; }
-:root[data-theme="dark"] .btn.ghost { color: #f6f4f0; }
 .btn[disabled] { opacity: .45; cursor: not-allowed; }
 
 /* ---------- Labels, tags ---------- */

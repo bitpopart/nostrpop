@@ -1,4 +1,4 @@
-/* POPART.love — tiny site script: theme toggle, mobile menu, newsletter form.
+/* POPART.love — tiny site script: mobile menu, newsletter form.
    No dependencies. */
 
 (function () {
@@ -10,39 +10,11 @@
 
   var root = document.documentElement;
 
-  function readTheme() {
-    try { return localStorage.getItem("popart-theme"); } catch (e) { return null; }
-  }
-  function saveTheme(t) {
-    try { localStorage.setItem("popart-theme", t); } catch (e) { /* ignore */ }
-  }
-
-  function applyTheme(t) {
-    if (t === "dark") root.setAttribute("data-theme", "dark");
-    else root.removeAttribute("data-theme");
-    var btn = document.getElementById("theme-btn");
-    if (btn) {
-      btn.textContent = t === "dark" ? "☀" : "☾";
-      btn.setAttribute("aria-label", t === "dark" ? "Switch to light mode" : "Switch to dark mode");
-    }
-  }
-
-  var initial = readTheme() ||
-    (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-  applyTheme(initial);
+  // One look only: the site is always light.
+  root.removeAttribute("data-theme");
+  try { localStorage.removeItem("popart-theme"); } catch (e) { /* ignore */ }
 
   document.addEventListener("DOMContentLoaded", function () {
-    applyTheme(root.getAttribute("data-theme") === "dark" ? "dark" : "light");
-
-    var themeBtn = document.getElementById("theme-btn");
-    if (themeBtn) {
-      themeBtn.addEventListener("click", function () {
-        var next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
-        applyTheme(next);
-        saveTheme(next);
-      });
-    }
-
     var menuBtn = document.getElementById("menu-btn");
     var panel = document.getElementById("menu-panel");
     if (menuBtn && panel) {
