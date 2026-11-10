@@ -622,23 +622,11 @@ def build_pages():
 </div></section>"""
     page("popup", "PopUp", "POPART.love pop-up events: markets, exhibitions and pop-up shops with art and collectible cards.", popup, "/popup/")
 
-    # ---- Admin (hidden: no menu link, not in the sitemap, writes need a Nostr signature)
-    admin = page_head("Card admin", "Update which cards are available. Sign in with your Nostr key.") + """
-<section class="section"><div class="container">
-  <div class="panel" id="admin-login">
-    <h2>Sign in</h2>
-    <p>Use your Nostr browser extension. Only the owner key can save changes. Anyone else can open this page but cannot change anything.</p>
-    <button class="btn" type="button" id="admin-signin">Sign in with Nostr</button>
-    <p class="form-msg" id="admin-msg" role="status"></p>
-  </div>
-  <div id="admin-editor" hidden>
-    <div class="section-head"><div><h2>Cards</h2><p id="admin-who"></p></div><button class="btn" type="button" id="admin-save">Save changes</button></div>
-    <div class="table-wrap"><table class="simple" id="admin-table"><thead><tr><th>Card</th><th>Status</th><th>Copies left</th></tr></thead><tbody></tbody></table></div>
-    <p class="form-msg" id="admin-save-msg" role="status"></p>
-  </div>
-</div></section>
+    # ---- Admin (looks like a 404 to everyone; admin.js reveals the editor only for the owner key)
+    admin = page_head("Page not found", "That page flew away like a paper plane.") + """
+<section class="section"><div class="container" id="admin-root"><a class="btn" href="/">Back to the home page</a></div></section>
 <script src="/assets/js/admin.js" defer></script>"""
-    page("admin", "Card admin", "Card stock admin.", admin, "/admin/", noindex=True)
+    page("admin", "Page not found", "Page not found.", admin, "/admin/", noindex=True)
 
     # ---- 404
     nf = page_head("Page not found", "That page flew away like a paper plane.") + """

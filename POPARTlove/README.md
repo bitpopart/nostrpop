@@ -29,7 +29,7 @@ POPARTlove/
 
 - Each card in `data/cards.json` has `status` (`available`, `sold-out`, `coming-soon`) and `left` (copies remaining, or `null` when not tracked). These are the defaults baked into the pages.
 - Live stock is kept in Cloudflare KV and served by `worker/index.js` at `/api/stock`. The card pages fetch it on load and override the defaults.
-- `/admin/` (no menu link, not in the sitemap) lets the owner change status and copies left. Saving sends a NIP-98 signed Nostr event; the worker only accepts the key in `ADMIN_PUBKEY` (`wrangler.jsonc`).
+- `/admin/` looks like a 404 page to everyone. The editor only appears when the Nostr extension signs in with the owner key (and an Admin menu link then appears in that browser). Saving sends a NIP-98 signed Nostr event; the worker only accepts the key in `ADMIN_PUBKEY` (`wrangler.jsonc`).
 - Deploy with `npx wrangler deploy` (the KV namespace is created on the first deploy).
 
 ## Edit and rebuild

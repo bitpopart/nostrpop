@@ -112,3 +112,16 @@ document.addEventListener("click", function (e) {
     });
   }).catch(function () {});
 })();
+
+
+/* Owner shortcut: an Admin link appears only after the owner key has signed in on /admin/ in this browser */
+(function () {
+  var on = false;
+  try { on = localStorage.getItem("popart-admin") === "1"; } catch (e) {}
+  if (!on) return;
+  document.querySelectorAll(".nav-links, .menu-panel ul").forEach(function (ul) {
+    var li = document.createElement("li");
+    li.innerHTML = '<a href="/admin/">Admin</a>';
+    ul.appendChild(li);
+  });
+})();

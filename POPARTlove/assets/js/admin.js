@@ -1,24 +1,36 @@
-/* Card admin: sign in with a Nostr extension (NIP-07), save with a signed NIP-98 header. */
+/* Card admin. The page looks like a 404 to everyone. The editor only appears when the
+   Nostr extension signs in with the owner key. Saving is checked again on the server. */
 (function () {
-  var msg = document.getElementById("admin-msg");
-  var saveMsg = document.getElementById("admin-save-msg");
-  var login = document.getElementById("admin-login");
-  var editor = document.getElementById("admin-editor");
-  var tbody = document.querySelector("#admin-table tbody");
+  var OWNER = "43baaf0c28e6cfb195b17ee083e19eb3a4afdfac54d9b6baf170270ed193e34c";
+  var root = document.getElementById("admin-root");
   var cards = [];
 
   function say(el, text, bad) { el.textContent = text; el.style.color = bad ? "var(--red)" : "var(--teal)"; }
-
   async function sha256hex(text) {
     var buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
     return Array.prototype.map.call(new Uint8Array(buf), function (b) { return b.toString(16).padStart(2, "0"); }).join("");
   }
+  function waitForNostr() {
+    return new Promise(function (resolve) {
+      var n = 0;
+      (function check() { if (window.nostr) return resolve(window.nostr); if (++n > 20) return resolve(null); setTimeout(check, 100); })();
+    });
+  }
 
-  async function load() {
-    var results = await Promise.all([fetch("/assets/cards.json").then(function (r) { return r.json(); }), fetch("/api/stock").then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; })]);
+  async function render() {
+    var results = await Promise.all([
+      fetch("/assets/cards.json").then(function (r) { return r.json(); }),
+      fetch("/api/stock").then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; })
+    ]);
     cards = results[0];
     var stock = results[1];
-    tbody.innerHTML = "";
+    document.title = "Card admin | POPART.love";
+    var head = document.querySelector(".page-head");
+    if (head) head.innerHTML = '<div class="container"><h1>Card admin</h1><p>Update which cards are available.</p></div>';
+    root.innerHTML = '<div class="section-head"><div><h2>Cards</h2><p>Signed in with your Nostr key.</p></div><button class="btn" type="button" id="admin-save">Save changes</button></div>' +
+      '<div class="table-wrap"><table class="simple" id="admin-table"><thead><tr><th>Card</th><th>Status</th><th>Copies left</th></tr></thead><tbody></tbody></table></div>' +
+      '<p class="form-msg" id="admin-save-msg" role="status"></p>';
+    var tbody = root.querySelector("tbody");
     cards.forEach(function (c) {
       var cur = stock[c.file] || { status: c.status || "available", left: c.left };
       var tr = document.createElement("tr");
@@ -29,34 +41,32 @@
       tr.querySelector("input").value = cur.left === null || cur.left === undefined ? "" : cur.left;
       tbody.appendChild(tr);
     });
+    var saveMsg = document.getElementById("admin-save-msg");
+    document.getElementById("admin-save").addEventListener("click", async function () {
+      var data = {};
+      tbody.querySelectorAll("tr").forEach(function (tr) {
+        var v = tr.querySelector("input").value.trim();
+        data[tr.getAttribute("data-card")] = { status: tr.querySelector("select").value, left: v === "" ? null : Number(v) };
+      });
+      var body = JSON.stringify(data);
+      try {
+        var ev = await window.nostr.signEvent({
+          kind: 27235, created_at: Math.floor(Date.now() / 1000), content: "",
+          tags: [["u", location.origin + "/api/stock"], ["method", "PUT"], ["payload", await sha256hex(body)]]
+        });
+        var res = await fetch("/api/stock", { method: "PUT", headers: { "content-type": "application/json", authorization: "Nostr " + btoa(JSON.stringify(ev)) }, body: body });
+        if (res.ok) say(saveMsg, "Saved. The site shows the new stock within a minute.");
+        else say(saveMsg, "Could not save. Check the numbers and try again.", true);
+      } catch (e) { say(saveMsg, "Signing was cancelled or failed.", true); }
+    });
   }
 
-  document.getElementById("admin-signin").addEventListener("click", async function () {
-    if (!window.nostr) { say(msg, "No Nostr extension found in this browser. Install one such as Alby or nos2x and try again.", true); return; }
-    try {
-      var pk = await window.nostr.getPublicKey();
-      await load();
-      login.hidden = true;
-      editor.hidden = false;
-      document.getElementById("admin-who").textContent = "Signed in as " + pk.slice(0, 8) + "… Saving only works for the owner key.";
-    } catch (e) { say(msg, "Sign in was cancelled or failed.", true); }
-  });
-
-  document.getElementById("admin-save").addEventListener("click", async function () {
-    var data = {};
-    tbody.querySelectorAll("tr").forEach(function (tr) {
-      var v = tr.querySelector("input").value.trim();
-      data[tr.getAttribute("data-card")] = { status: tr.querySelector("select").value, left: v === "" ? null : Number(v) };
+  waitForNostr().then(function (nostr) {
+    if (!nostr) return;
+    return nostr.getPublicKey().then(function (pk) {
+      if (pk !== OWNER) return;
+      try { localStorage.setItem("popart-admin", "1"); } catch (e) {}
+      return render();
     });
-    var body = JSON.stringify(data);
-    try {
-      var ev = await window.nostr.signEvent({
-        kind: 27235, created_at: Math.floor(Date.now() / 1000), content: "",
-        tags: [["u", location.origin + "/api/stock"], ["method", "PUT"], ["payload", await sha256hex(body)]]
-      });
-      var res = await fetch("/api/stock", { method: "PUT", headers: { "content-type": "application/json", authorization: "Nostr " + btoa(JSON.stringify(ev)) }, body: body });
-      if (res.ok) say(saveMsg, "Saved. The site shows the new stock within a minute.");
-      else say(saveMsg, res.status === 401 ? "This key is not allowed to change the cards." : "Could not save. Check the numbers and try again.", true);
-    } catch (e) { say(saveMsg, "Signing was cancelled or failed.", true); }
-  });
+  }).catch(function () {});
 })();
