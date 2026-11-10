@@ -99,7 +99,7 @@ p { margin: 0 0 1rem; }
 .nav-links a {
   display: block; text-decoration: none; white-space: nowrap;
   font-family: var(--font-label); font-weight: 700; letter-spacing: .8px; text-transform: uppercase; font-size: 14px;
-  padding: .5rem .75rem; border-radius: 8px; color: var(--sub); border: 1.5px solid transparent;
+  padding: .5rem .85rem; border-radius: 999px; color: var(--sub); border: 1.5px solid transparent;
 }
 .nav-links a:hover { color: var(--ink); background: var(--panel2); }
 .nav-links a[aria-current="page"] {
@@ -109,7 +109,7 @@ p { margin: 0 0 1rem; }
 
 .nav-actions { display: flex; align-items: center; gap: .4rem; }
 .icon-btn {
-  width: 38px; height: 38px; border-radius: 8px; border: 1.5px solid var(--line); background: var(--panel2);
+  width: 38px; height: 38px; border-radius: 50%; border: 1.5px solid var(--line); background: var(--panel2);
   color: var(--ink); font-size: 1.05rem; cursor: pointer; display: grid; place-items: center; line-height: 1;
 }
 .icon-btn:hover { border-color: var(--orange); }
@@ -118,7 +118,7 @@ p { margin: 0 0 1rem; }
 .menu-panel.open { display: block; }
 .menu-panel ul { list-style: none; margin: 0; padding: 0; display: grid; gap: .4rem; }
 .menu-panel a {
-  display: block; padding: .7rem 1rem; border-radius: 10px; text-decoration: none;
+  display: block; padding: .7rem 1.2rem; border-radius: 999px; text-decoration: none;
   font-family: var(--font-label); font-weight: 700; letter-spacing: .8px; text-transform: uppercase; font-size: 15px;
   border: 1.5px solid var(--line); background: var(--panel2); color: var(--sub);
 }
@@ -133,14 +133,20 @@ p { margin: 0 0 1rem; }
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: .5rem; text-decoration: none; cursor: pointer;
   font-family: var(--font-label); font-weight: 700; letter-spacing: .8px; text-transform: uppercase; font-size: 14px;
-  border: none; border-radius: 9px; padding: .7rem 1.1rem;
-  background: var(--orange); color: var(--on-accent);
+  border: 2.5px solid var(--ink); border-radius: 999px; padding: .7rem 1.5rem;
+  background: var(--orange); color: #0d0c0a; box-shadow: 0 3px 0 var(--ink);
+  transition: transform .08s, box-shadow .08s;
 }
-.btn:hover { filter: brightness(1.06); }
+.btn:hover { filter: brightness(1.06); transform: translateY(-1px); box-shadow: 0 4px 0 var(--ink); }
+.btn:active { transform: translateY(3px); box-shadow: 0 0 0 var(--ink); }
 .btn.ghost, .btn.blue, .btn.yellow {
-  background: transparent; color: var(--ink); border: 1.5px solid var(--line);
+  background: var(--panel); color: var(--ink); border: 2.5px solid var(--ink);
 }
-.btn.ghost:hover, .btn.blue:hover, .btn.yellow:hover { border-color: var(--orange); filter: none; }
+.btn.ghost:hover, .btn.blue:hover, .btn.yellow:hover { filter: none; }
+.btn.blue { background: color-mix(in srgb, var(--freedom) 35%, var(--panel)); }
+.btn.yellow { background: var(--joy); color: #0d0c0a; }
+:root[data-theme="dark"] .btn { border-color: #f6f4f0; box-shadow: 0 3px 0 #f6f4f0; }
+:root[data-theme="dark"] .btn.ghost, :root[data-theme="dark"] .btn.blue { color: #f6f4f0; }
 .btn[disabled] { opacity: .45; cursor: not-allowed; }
 
 /* ---------- Labels, tags ---------- */
@@ -152,7 +158,7 @@ p { margin: 0 0 1rem; }
 
 .tag {
   align-self: flex-start; display: inline-block; font-family: var(--font-label); font-weight: 700;
-  letter-spacing: .5px; text-transform: uppercase; font-size: 12px; padding: .2rem .55rem; border-radius: 6px;
+  letter-spacing: .5px; text-transform: uppercase; font-size: 12px; padding: .2rem .65rem; border-radius: 999px;
   border: 1.5px solid var(--line); background: var(--panel2); color: var(--sub);
 }
 .tag.love { border-color: var(--love); color: var(--ink); background: color-mix(in srgb, var(--love) 18%, var(--panel)); }
@@ -291,7 +297,7 @@ table.simple th {
 .footer-bottom { border-top: 1px solid var(--line); padding: 1.1rem 0 1.5rem; text-align: center; font-size: .82rem; color: var(--sub); }
 .newsletter { display: grid; gap: .5rem; }
 .newsletter input[type="email"] {
-  font: inherit; font-size: 13.5px; padding: .6rem .75rem; border: 1px solid var(--line); border-radius: 8px;
+  font: inherit; font-size: 13.5px; padding: .6rem 1rem; border: 1.5px solid var(--line); border-radius: 999px;
   background: var(--panel2); color: var(--ink); width: 100%;
 }
 .newsletter .btn { width: 100%; }
