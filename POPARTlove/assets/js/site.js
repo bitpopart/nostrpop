@@ -73,7 +73,7 @@ window.popartPrice = function (v) {
 };
 
 /* Live card stock: the page ships with the saved defaults, the stock API refreshes them */
-(function () {
+window.popartRefreshStock = function () {
   var badges = document.querySelectorAll("[data-card] [data-stock]");
   if (!badges.length || !window.fetch) return;
   fetch("/api/stock").then(function (r) { return r.ok ? r.json() : null; }).then(function (stock) {
@@ -110,7 +110,8 @@ window.popartPrice = function (v) {
       }
     });
   }).catch(function () {});
-})();
+};
+window.popartRefreshStock();
 
 
 /* Owner shortcut: an Admin link appears only after the owner key has signed in on /admin/ in this browser */

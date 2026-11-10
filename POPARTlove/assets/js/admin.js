@@ -29,7 +29,12 @@
       fetch("/assets/cards.json").then(function (r) { return r.json(); }),
       fetch("/api/stock").then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; })
     ]);
-    cards = results[0];
+    var baseCards = results[0];
+    var saved = [];
+    try { var cr = await fetch("/api/cards"); if (cr.ok) saved = await cr.json(); } catch (e) {}
+    var byFile = {}; saved.forEach(function (e) { byFile[e.file] = e; });
+    var baseSet = {}; baseCards.forEach(function (c) { baseSet[c.file] = 1; });
+    cards = saved.filter(function (e) { return !baseSet[e.file]; }).concat(baseCards.map(function (c) { return Object.assign({}, c, byFile[c.file] || {}); })).filter(function (c) { return !c.removed; });
     var stock = results[1];
     var registry = {};
     try {
@@ -51,7 +56,7 @@
       ['Card','Status','Copies left','Price (EUR = USD)','Sold where','Shop link (https)','Sold serials'].forEach(function (l, i) { tr.children[i].setAttribute('data-label', l); });
       var first = tr.children[0];
       first.innerHTML = '<div class="adm-card"><img alt="" width="60" height="84"><strong></strong></div>';
-      first.querySelector("img").src = "/assets/img/cards/" + c.file + ".webp";
+      first.querySelector("img").src = c.front ? "/api/event-image?id=c-" + encodeURIComponent(c.file) + "&v=" + (c.imv || 0) : "/assets/img/cards/" + c.file + ".webp";
       first.querySelector("img").alt = c.name + " card";
       first.querySelector("strong").textContent = c.name + " (" + c.rarity + ", " + c.run + ")";
       tr.querySelector("select").value = cur.status;
@@ -65,6 +70,9 @@
       tbody.appendChild(tr);
     });
     var saveMsg = document.getElementById("admin-save-msg");
+    var cardsBox = document.createElement("div");
+    cardsBox.style.marginTop = "2.4rem";
+    root.appendChild(cardsBox);
     var evBox = document.createElement("div");
     evBox.style.marginTop = "2.4rem";
     root.appendChild(evBox);
@@ -97,6 +105,23 @@
           return (await res.json()).items;
         }
       });
+    });
+    window.PopartCardsAdmin.mount(cardsBox, {
+      base: baseCards,
+      load: function () { return fetch("/api/cards").then(function (r) { return r.ok ? r.json() : []; }); },
+      saved: function () { render(); },
+      save: async function (list) {
+        var out = [];
+        for (var i = 0; i < list.length; i++) {
+          var c = Object.assign({}, list[i]);
+          if (c._front) { await signedPut("/api/event-image?id=c-" + encodeURIComponent(c.file), c._front); c.front = true; c.imv = Date.now(); }
+          if (c._back) { await signedPut("/api/event-image?id=c-" + encodeURIComponent(c.file) + "-back", c._back); c.back = true; c.imv = Date.now(); }
+          delete c._front; delete c._back;
+          out.push(c);
+        }
+        var res = await signedPut("/api/cards", JSON.stringify(out));
+        return (await res.json()).cards;
+      }
     });
     window.PopartEventsAdmin.mount(evBox, {
       load: function () { return fetch("/api/events").then(function (r) { return r.ok ? r.json() : []; }); },

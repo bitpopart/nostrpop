@@ -426,3 +426,5 @@ h1 .lfj { color: var(--ink); }
 @media (max-width: 600px) { #admin-table td:nth-child(6) { grid-column: 1 / -1; } }
 .adm-card { display: flex; align-items: center; gap: .8rem; }
 .adm-card img { width: 60px; height: 84px; object-fit: cover; border-radius: 4px; border: 1.5px solid var(--line); flex: none; background: var(--panel2); }
+.adm-thumb { width: 48px; height: 67px; object-fit: cover; border-radius: 4px; border: 1.5px solid var(--line); flex: none; }
+.adm-prev { width: 90px; border-radius: 6px; border: 1.5px solid var(--line); }

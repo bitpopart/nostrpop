@@ -6,6 +6,7 @@
   var holderIn = document.getElementById("v-holder");
   var out = document.getElementById("v-result");
 
+  function cardOf(r) { return r.image ? { src: r.image } : r.card; }
   function norm(t) { return t.toUpperCase().replace(/[^A-Z0-9]/g, ""); }
   function show(kind, title, text, card) {
     out.className = "verify-result " + kind;
@@ -13,7 +14,7 @@
     out.style.gridTemplateColumns = card ? "" : "minmax(0, 1fr)";
     if (card) {
       var img = document.createElement("img");
-      img.src = "/assets/img/cards/" + card + ".webp"; img.alt = "";
+      img.src = typeof card === "object" && card.src ? card.src : "/assets/img/cards/" + card + ".webp"; img.alt = "";
       img.width = 600; img.height = 840;
       out.appendChild(img);
     }
@@ -43,10 +44,10 @@
       if (!r.valid) { show("bad", "Code not found", "This code is not in the artist's system. Check the letters once more. If it still fails, ask the artist about this card.", null); return; }
       var num = r.run === 1 ? "1/1" : String(r.serial).padStart(3, "0") + "/" + String(r.run).padStart(3, "0");
       var text = r.name + " No. " + num + " is a real POPART card." + (r.recorded ? " It is on the artist's list of sold cards." : " It is not on the artist's sold list yet.");
-      if (r.holderOk === false) { show("bad", "Holder number does not match", "The card code is real, but that holder number does not belong to this copy. The holder number is on the certificate and mount card.", r.card); return; }
+      if (r.holderOk === false) { show("bad", "Holder number does not match", "The card code is real, but that holder number does not belong to this copy. The holder number is on the certificate and mount card.", cardOf(r)); return; }
       if (r.holderOk === true) text += " The holder number matches, so you hold the card and its certificate.";
-      if (r.checks > 1) show("warn", "Real code, checked before", text + " This code has been checked " + r.checks + " times. If you just bought the card and that surprises you, tell the artist.", r.card);
-      else show("good", "Authentic card", text + " This is the first time this code was checked.", r.card);
+      if (r.checks > 1) show("warn", "Real code, checked before", text + " This code has been checked " + r.checks + " times. If you just bought the card and that surprises you, tell the artist.", cardOf(r));
+      else show("good", "Authentic card", text + " This is the first time this code was checked.", cardOf(r));
     } catch (err) {
       show("warn", "Could not check", "The check could not be reached right now. Try again in a moment.", null);
     }

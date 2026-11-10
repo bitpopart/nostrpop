@@ -89,3 +89,7 @@ In `/admin/`, each sticker or print can carry a digital file (PDF, PNG, zip, up 
 ## Card prices
 
 In Admin, each card has a Price field (one number, same in euro and dollar). The Cards and Shop pages show one price: euro for visitors in Europe (by browser time zone), dollar for everyone else. Leave it empty to hide the price. Sold-out cards hide it.
+
+## Add and edit cards in Admin
+
+Under "Edit cards" you can add a card (name, web name, theme, series, rarity, run, description, front and back picture), edit any card, or hide/delete one. New cards appear first on the Cards, Shop and home pages. Use the same web name as the card file from the Card Maker so the verify codes match. Changes are stored in KV (`cardlist`) and the pictures at `/api/event-image?id=c-<web name>`. Hidden cards stay verifiable.

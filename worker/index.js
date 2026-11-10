@@ -169,6 +169,33 @@ function runOf(card) {
   return m ? Number(m[0]) : null;
 }
 
+// ---- Card list edits (add, edit, hide cards from the admin) --------------
+const THEMES = ["love", "freedom", "joy"];
+const SERIES_NAMES = ["Masterpiece", "Signed", "Legend"];
+function cleanCardList(input) {
+  if (!Array.isArray(input) || input.length > 300) return null;
+  const out = [], seen = new Set();
+  for (const e of input) {
+    if (!e || typeof e !== "object") return null;
+    if (typeof e.file !== "string" || !/^[a-z0-9-]{1,32}$/.test(e.file) || seen.has(e.file)) return null;
+    seen.add(e.file);
+    const name = str(e.name, 80), rarity = str(e.rarity, 30), run = str(e.run, 30), blurb = str(e.blurb, 400);
+    if (name === null || !name || rarity === null || !rarity || run === null || !run || blurb === null) return null;
+    if (!THEMES.includes(e.theme) || !SERIES_NAMES.includes(e.series)) return null;
+    const imv = Number.isFinite(e.imv) ? Math.max(0, Math.floor(e.imv)) : 0;
+    out.push({ file: e.file, name, theme: e.theme, series: e.series, rarity, run, blurb, front: e.front === true, back: e.back === true, imv, removed: e.removed === true });
+  }
+  return out;
+}
+async function allCards(env, request) {
+  const base = await (await env.ASSETS.fetch(new URL("/assets/cards.json", request.url))).json();
+  const extra = (await env.CARDS_KV.get("cardlist", "json")) || [];
+  const byFile = new Map(base.map((c) => [c.file, c]));
+  for (const e of extra) byFile.set(e.file, Object.assign({}, byFile.get(e.file) || {}, e));
+  const fresh = extra.filter((e) => !base.some((c) => c.file === e.file));
+  return [...fresh, ...base.map((c) => byFile.get(c.file))];
+}
+
 function clean(input) {
   if (!input || typeof input !== "object" || Array.isArray(input)) return null;
   const out = {};
@@ -230,7 +257,7 @@ export default {
       if (slot.n > 10) return json({ error: "too many tries, wait a minute" }, 429);
       const given = (url.searchParams.get("code") || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
       if (given.length !== 8) return json({ valid: false });
-      const cards = await (await env.ASSETS.fetch(new URL("/assets/cards.json", request.url))).json();
+      const cards = await allCards(env, request);
       let hit = null;
       for (const card of cards) {
         const run = runOf(card);
@@ -250,7 +277,7 @@ export default {
       const holder = (url.searchParams.get("holder") || "").replace(/\D/g, "");
       const holderOk = holder ? holder === (await holderNo(env.CODE_SECRET, hit.card.file, hit.serial)) : undefined;
       return json({
-        valid: true, holderOk, card: hit.card.file, name: hit.card.name, serial: hit.serial, run: hit.run,
+        valid: true, holderOk, card: hit.card.file, name: hit.card.name, image: hit.card.front ? "/api/event-image?id=c-" + hit.card.file + "&v=" + (hit.card.imv || 0) : "", serial: hit.serial, run: hit.run,
         checks: checks[key].n, recorded: serialInList(registry[hit.card.file], hit.serial),
       });
     }
@@ -362,6 +389,29 @@ export default {
       for (const e of old) if (e.file && !keepFiles.has(e.id)) await env.CARDS_KV.delete("dl:" + e.id);
       await env.CARDS_KV.put(key, JSON.stringify(list));
       return json({ ok: true, items: list });
+    }
+    if (url.pathname === "/api/cards") {
+      // card list edits: GET public, PUT admin. Pictures live at /api/event-image?id=c-<file> and c-<file>-back.
+      if (request.method === "GET") return json((await env.CARDS_KV.get("cardlist", "json")) || [], 200, { "cache-control": "public, max-age=30" });
+      if (request.method !== "PUT") return json({ error: "method not allowed" }, 405, { allow: "GET, PUT" });
+      const body = await request.text();
+      if (!(await isAdmin(request, env, body))) return json({ error: "not allowed" }, 401);
+      let list;
+      try {
+        list = cleanCardList(JSON.parse(body));
+      } catch {
+        list = null;
+      }
+      if (!list) return json({ error: "invalid cards" }, 400);
+      const old = (await env.CARDS_KV.get("cardlist", "json")) || [];
+      const now = new Map(list.map((e) => [e.file, e]));
+      for (const e of old) {
+        const n = now.get(e.file);
+        if (!n || !n.front) await env.CARDS_KV.delete("evimg:c-" + e.file);
+        if (!n || !n.back) await env.CARDS_KV.delete("evimg:c-" + e.file + "-back");
+      }
+      await env.CARDS_KV.put("cardlist", JSON.stringify(list));
+      return json({ ok: true, cards: list });
     }
     if (url.pathname === "/api/event-image") {
       // body is the base64 text of a small WebP picture, so the signed payload hash covers it exactly

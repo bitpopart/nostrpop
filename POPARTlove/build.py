@@ -343,7 +343,8 @@ def footer_html():
     </div>
   </div>
 </footer>
-<script src="/assets/js/site.js" defer></script>"""
+<script src="/assets/js/site.js" defer></script>
+<script src="/assets/js/cards.js" defer></script>"""
 
 
 LFJ_RE = re.compile(r"Love, Freedom(, | &amp; | &amp;amp; | and | or | & )Joy")
@@ -454,7 +455,8 @@ def tribe_cards(limit=None, in_shop=False):
         runnum = runnum.group(0) if runnum else ""
         out += f'''<article class="card" data-card="{fn}" data-run="{runnum}"><figure class="cardfig"><button class="flip" type="button" aria-pressed="false" aria-label="Flip the {escape(title)} card"><span class="flip-inner"><img class="face front" src="/assets/img/cards/{fn}.webp" alt="POPART {escape(title)} card front, {series} series, {rarity}" width="600" height="840" loading="lazy"><img class="face back" src="/assets/img/cards/{fn}-back.webp" alt="POPART {escape(title)} card back" width="600" height="840" loading="lazy"></span></button><span class="flip-hint">Tap the card to flip</span></figure>
 <div class="body"><div class="tags"><span class="tag {cls}">{name}</span><span class="tag">{rarity}</span><span class="tag stock {stock_class(status)}" data-stock>{stock_label(status, left, runnum)}</span></div><p class="card-price" data-price hidden></p>{where_html(online, offline, url, status, in_shop)}<h3>{escape(title)}</h3><p>{series} series. {run}. {escape(blurb)}</p></div></article>'''
-    return f'<div class="grid g3">{out}</div>'
+    attrs = (f' data-limit="{limit}"' if limit else "") + (' data-shop="1"' if in_shop else "")
+    return f'<div class="grid g3"{attrs}>{out}</div>'
 
 
 RIBBON = ""
@@ -811,6 +813,7 @@ def build_pages():
     # ---- Admin (looks like a 404 to everyone; admin.js reveals the editor only for the owner key)
     admin = page_head("Page not found", "That page flew away like a paper plane.") + """
 <section class="section"><div class="container" id="admin-root"><a class="btn" href="/">Back to the home page</a></div></section>
+<script src="/assets/js/cards-admin.js" defer></script>
 <script src="/assets/js/events-admin.js" defer></script>
 <script src="/assets/js/catalog-admin.js" defer></script>
 <script src="/assets/js/admin.js" defer></script>"""
