@@ -1,6 +1,6 @@
 # POPART.love
 
-Static site for popart.love. Same section structure as bitpopart.com (News, Artist, PopUp, Cards, Stickers, Prints, Shop), with its own Love / Freedom / Joy pop art look and no Bitcoin, Nostr or AI theming.
+Static site for popart.love. Same section structure as bitpopart.com (News, Artist, PopUp, Cards, POPPLAY, Stickers, Prints, Shop), with its own Love / Freedom / Joy pop art look and no Bitcoin, Nostr or AI theming.
 
 ## Folder
 
@@ -11,7 +11,7 @@ POPARTlove/
   assets/js/site.js   theme toggle, mobile menu, newsletter form
   assets/img/         logo, favicon, placeholder artworks (SVG), cards/ (example card WebPs)
   assets/fonts/       self-hosted Bangers, Barlow Condensed, Space Mono, Inter
-  index.html, cards/, stickers/, prints/, shop/, news/, artist/, popup/, 404.html
+  index.html, cards/, popplay/, stickers/, prints/, shop/, news/, artist/, popup/, 404.html
 ```
 
 ## Card Maker

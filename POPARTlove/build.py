@@ -257,6 +257,7 @@ NAV = [
     ("Artist", "/artist/"),
     ("PopUp", "/popup/"),
     ("Cards", "/cards/"),
+    ("POPPLAY", "/popplay/"),
     ("Stickers", "/stickers/"),
     ("Prints", "/prints/"),
     ("Shop", "/shop/"),
@@ -494,6 +495,72 @@ def build_pages():
 """
     page("", "", "POPART.love: new pop art in a thick-outline graffiti style. Collectible cards, stickers, prints and a shop. Love, Freedom and Joy.", home)
 
+    # ---- POPPLAY
+    popplay = page_head("POPPLAY", "A two minute card game for two collectors. Collecting stays the main thing.") + f"""
+<section class="section"><div class="container">
+  <div class="split wide-left">
+    <div class="prose">
+      <span class="kicker">Bonus game</span>
+      <h2>What is POPPLAY?</h2>
+      <p>A small extra for when two collectors meet. It takes two minutes, with no board and no reading. You only need a stack of cards each. You can play with the cards you have, and if you like, for keeps.</p>
+      <p>Each card carries a rarity, a tribe and a serial number. Those three things decide who wins a round.</p>
+    </div>
+    <div class="panel yellow">
+      <h3>Quick facts</h3>
+      <ul style="padding-left:1.1rem;margin:0">
+        <li>2 players</li>
+        <li>A stack of 5 cards each</li>
+        <li>About 2 minutes</li>
+        <li>Backs face up, nothing to see</li>
+      </ul>
+    </div>
+  </div>
+</div></section>
+
+<section class="section"><div class="container">
+  <h2>How a game goes</h2>
+  <ol class="steps">
+    <li><strong>Take a stack.</strong> Each player holds a stack of 5 cards with the backs facing up. The back shows only the artwork and the name, so nobody knows what is coming. Use cards you can afford to lose if you play for keeps.</li>
+    <li><strong>Count 3, 2, 1, POP.</strong> Both players count out loud and, on POP, flip the top card of their stack face up on the table at the same time. The front shows rarity, tribe and serial.</li>
+    <li><strong>See who wins.</strong> The stronger card wins the round, see the rules below. The winner takes both cards.</li>
+    <li><strong>Repeat.</strong> Play until the stacks are empty. The player with the most cards wins the game. Two players can also play a quick best of 5.</li>
+  </ol>
+</div></section>
+
+<section class="section"><div class="container">
+  <div class="split">
+    <div>
+      <h2>Who wins a round</h2>
+      <p>Check these in order and stop at the first one that decides it.</p>
+      <ol class="steps">
+        <li><strong>Rarity.</strong> The rarer card wins: Common, Uncommon, Rare, Super Rare, Ultra Rare, Unique.</li>
+        <li><strong>Tribe.</strong> Same rarity? Love beats Freedom, Freedom beats Joy, Joy beats Love.</li>
+        <li><strong>Serial.</strong> Same tribe too? The lower serial wins, so 001 beats 100. An open card loses to a numbered one.</li>
+        <li><strong>Still equal?</strong> Both players take their card back and play the round again.</li>
+      </ol>
+    </div>
+    <div>
+      <h2>Example round</h2>
+      <p>Both players flip a card on POP. <strong>Paper Plane</strong> is Super Rare and <strong>Big Heart</strong> is Common, so rarity decides it and the Paper Plane wins.</p>
+      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;margin-top:1rem">
+        <figure class="card cardfig-plain" style="margin:0;padding:1rem;align-items:center"><img src="/assets/img/cards/paper-plane.webp" alt="Paper Plane card, Super Rare" width="600" height="840" loading="lazy" style="width:100%;max-width:200px;border-radius:4.5%"><figcaption class="tag stock ok" style="margin-top:.7rem">Super Rare wins</figcaption></figure>
+        <figure class="card cardfig-plain" style="margin:0;padding:1rem;align-items:center"><img src="/assets/img/cards/big-heart.webp" alt="Big Heart card, Common" width="600" height="840" loading="lazy" style="width:100%;max-width:200px;border-radius:4.5%"><figcaption class="tag" style="margin-top:.7rem">Common</figcaption></figure>
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<section class="section"><div class="container">
+  <h2>Rules and twists</h2>
+  <div class="grid g3">
+    <div class="panel pink"><h3>For fun or for keeps</h3><p><strong>For fun:</strong> everybody gets their own cards back at the end and you only count who won the most rounds.</p><p><strong>For keeps:</strong> the winner of each round really keeps both cards. Agree on this before you start.</p></div>
+    <div class="panel blue"><h3>Playing a Trio</h3><p>Own the same series and the same rarity in all three tribes, Love, Freedom and Joy? Lay all three cards down as one card. A Trio counts as a Unique, so it beats everything except another Trio or a Unique, and then the lower serial wins.</p></div>
+    <div class="panel yellow"><h3>Two extra twists</h3><p><strong>Streak bonus:</strong> win 3 rounds in a row and you also take the top card of your opponent's stack. Then your streak starts again at zero.</p><p><strong>One swap:</strong> once per game, before you count, say SWAP and trade your top card with the next card in your own stack. You cannot see it first. Each player gets one swap.</p></div>
+  </div>
+  <p class="notice" style="margin-top:1.4rem"><strong>Trading still works as before.</strong> Same icon swaps 1 for 1, other icons need several cards. <a href="/cards/">See the cards and the trading rules</a>.</p>
+</div></section>"""
+    page("popplay", "POPPLAY", "How to play POPPLAY: a two minute, two player card game with POPART cards. Rarity, tribe and serial decide each round.", popplay, "/popplay/")
+
     # ---- Stickers and Prints
     def soon_card(art):
         fn, _b, title, theme, blurb = art
@@ -561,6 +628,7 @@ def build_pages():
     <span class="kicker">Bonus</span>
     <h2>POPPLAY: the 10-second game</h2>
     <p>Two players, one stack each. Count down together, <strong>3, 2, 1, POP</strong>, and put a card on the table. The higher card wins the round. That is the whole game, so it fits in any pocket and any break.</p>
+    <a class="btn" href="/popplay/">How to play POPPLAY</a>
   </div>
 </div></section>"""
     page("cards", "Cards", "POPART collectible pop art cards. Three tribes (Love, Freedom, Joy), rare series and one-of-a-kind cards.", cards, "/cards/")
