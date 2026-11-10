@@ -250,14 +250,16 @@ NAV = [
     ("News", "/news/"),
     ("Artist", "/artist/"),
     ("PopUp", "/popup/"),
-    ("Art", "/art/"),
     ("Cards", "/cards/"),
+    ("Stickers", "/stickers/"),
+    ("Prints", "/prints/"),
     ("Shop", "/shop/"),
 ]
 
 TILES = [
-    ("Art", "/art/", "\U0001F3A8", "c-pink"),
     ("Cards", "/cards/", "\U0001F0CF", "c-yellow"),
+    ("Stickers", "/stickers/", "\u2B50", "c-pink"),
+    ("Prints", "/prints/", "\U0001F5BC\uFE0F", "c-lime"),
     ("Shop", "/shop/", "\U0001F6CD️", "c-blue"),
     ("News", "/news/", "\U0001F4F0", "c-mint"),
     ("Artist", "/artist/", "\U0001F58C️", "c-orange"),
@@ -406,7 +408,6 @@ def build_pages():
         f'<a class="tile" href="{h}"><div class="ico {c}">{i}</div><span class="lbl">{n}</span></a>'
         for n, h, i, c in TILES
     )
-    art4 = "".join(art_card(a[0], a[2], a[3], a[4]) for a in ARTWORKS[:4])
     home = f"""
 <section class="hero">
   <div class="container hero-inner">
@@ -416,8 +417,8 @@ def build_pages():
       <p class="lead">POPART.love is the fan page for everyone who loves pop art. Loud, happy, hand-made art, collectible cards and good vibes you can hold. Three themes, one big heart.</p>
       <p class="lead">POPART.love is part of the studio <a href="https://bitpopart.com" target="_blank" rel="noopener"><strong>bitpopart.com</strong></a>.</p>
       <div class="hero-actions">
-        <a class="btn" href="/art/">See the art</a>
-        <a class="btn yellow" href="/cards/">Collect the cards</a>
+        <a class="btn" href="/cards/">Collect the cards</a>
+        <a class="btn yellow" href="/stickers/">See the stickers</a>
         <a class="btn blue" href="/shop/">Visit the shop</a>
       </div>
     </div>
@@ -428,8 +429,11 @@ def build_pages():
 <div class="container tiles-wrap"><nav class="tiles" aria-label="Sections">{tiles}</nav></div>
 
 <section class="section"><div class="container">
-  <div class="section-head"><div><h2>Art</h2><p>Fresh work in the thick-outline graffiti style. Each piece belongs to Love, Freedom or Joy.</p></div><a class="link-more" href="/art/">All art &rarr;</a></div>
-  <div class="grid g4">{art4}</div>
+  <div class="section-head"><div><h2>Stickers and prints</h2><p>Thick-outline pop art you can stick on a laptop or hang on a wall.</p></div></div>
+  <div class="split">
+    <div class="panel pink"><span class="kicker">Stickers</span><h3>Stick it anywhere</h3><p>Bold hearts, planes and suns as stickers.</p><a class="btn" href="/stickers/">See the stickers</a></div>
+    <div class="panel blue"><span class="kicker">Prints</span><h3>Pop art for your wall</h3><p>Art prints in the Love, Freedom and Joy themes.</p><a class="btn" href="/prints/">See the prints</a></div>
+  </div>
 </div></section>
 
 <section class="section"><div class="container">
@@ -464,23 +468,32 @@ def build_pages():
   <div class="grid g2">{news_cards()}</div>
 </div></section>
 """
-    page("", "", "POPART.love: new pop art in a thick-outline graffiti style. Art, collectible cards and a shop. Love, Freedom and Joy.", home)
+    page("", "", "POPART.love: new pop art in a thick-outline graffiti style. Collectible cards, stickers, prints and a shop. Love, Freedom and Joy.", home)
 
-    # ---- Art
-    allart = "".join(art_card(a[0], a[2], a[3], a[4]) for a in ARTWORKS)
-    art = page_head("Art", "Pop art in thick outlines. Every piece belongs to one of three themes: Love, Freedom or Joy.") + f"""
+    # ---- Stickers and Prints
+    def soon_card(art):
+        fn, _b, title, theme, blurb = art
+        name, cls, _ = THEME_ICON[theme]
+        return f"""<article class="card">
+  <figure><img src="/assets/img/{fn}.svg" alt="{escape(title)}" width="400" height="400" loading="lazy"></figure>
+  <div class="body"><div class="tags"><span class="tag {cls}">{name}</span><span class="tag soon">Coming soon</span></div><h3>{escape(title)}</h3><p>{escape(blurb)}</p></div>
+</article>"""
+
+    stickers = page_head("Stickers", "Pop art stickers with thick black outlines. Stick them on a laptop, a bike or a notebook.") + f"""
 <section class="section"><div class="container">
-  <p class="notice"><strong>Placeholder artwork.</strong> These six pieces are stand-ins so the layout can be reviewed. Replace the files in <code>assets/img/</code> and the entries in <code>build.py</code> with the real paintings.</p>
-  <h2 style="margin-top:2rem">Themes</h2>
-  <div class="grid g3" style="margin-bottom:2.4rem">
-    <div class="panel pink"><h3>Love</h3><p>Hearts, hugs and everything warm.</p></div>
-    <div class="panel blue"><h3>Freedom</h3><p>Wings, planes and open space.</p></div>
-    <div class="panel yellow"><h3>Joy</h3><p>Suns, flowers and big smiles.</p></div>
-  </div>
-  <h2>Gallery</h2>
-  <div class="grid g3">{allart}</div>
+  <p class="notice"><strong>Coming soon.</strong> The stickers below are draft designs with placeholder art. Sizes, prices and ordering will be announced in the news.</p>
+  <h2 style="margin-top:2rem">Sticker designs</h2>
+  <div class="grid g3">{"".join(soon_card(a) for a in ARTWORKS[:3])}</div>
 </div></section>"""
-    page("art", "Art", "Pop art gallery in a thick-outline graffiti style. Themes: Love, Freedom and Joy.", art, "/art/")
+    page("stickers", "Stickers", "POPART.love pop art stickers in the Love, Freedom and Joy themes.", stickers, "/stickers/")
+
+    prints = page_head("Prints", "Pop art prints for your wall, in the three themes: Love, Freedom and Joy.") + f"""
+<section class="section"><div class="container">
+  <p class="notice"><strong>Coming soon.</strong> The prints below are draft designs with placeholder art. Sizes, prices and ordering will be announced in the news.</p>
+  <h2 style="margin-top:2rem">Print designs</h2>
+  <div class="grid g3">{"".join(soon_card(a) for a in ARTWORKS[3:])}</div>
+</div></section>"""
+    page("prints", "Prints", "POPART.love pop art prints in the Love, Freedom and Joy themes.", prints, "/prints/")
 
     # ---- Cards
     series_rows = "".join(f"<tr><td><strong>{n}</strong></td><td>{d}</td></tr>" for n, d in SERIES)
@@ -552,14 +565,16 @@ def build_pages():
       <p>I am a designer and artist. I paint and design in a thick-outline graffiti pop art style: loud colours, black lines, simple shapes.</p>
       <p>POPART.love is where that style meets three plain, good ideas: <strong>Love</strong>, <strong>Freedom</strong> and <strong>Joy</strong>. No complicated story. Just art that is made to be happy.</p>
       <p>I like art you can actually hold: cards, prints and frames.</p>
-      <p><a class="btn" href="/art/">See the art</a></p>
+      <p>You can find all my art works at <a href="https://bitpopart.com/art" target="_blank" rel="noopener"><strong>bitpopart.com/art</strong></a>, the home of my studio BitPopArt.</p>
+      <p><a class="btn" href="https://bitpopart.com/art" target="_blank" rel="noopener">See all my art</a></p>
     </div>
     <div class="panel yellow">
       <h3>Quick facts</h3>
       <ul style="padding-left:1.1rem;margin:0">
         <li>Style: thick-outline graffiti pop art</li>
         <li>Themes: Love, Freedom, Joy</li>
-        <li>Also: <a href="https://bitpopart.com" rel="noopener">BitPopArt</a></li>
+        <li>Studio: <a href="https://bitpopart.com" rel="noopener">BitPopArt</a></li>
+        <li>All art works: <a href="https://bitpopart.com/art" rel="noopener">bitpopart.com/art</a></li>
       </ul>
     </div>
   </div>
