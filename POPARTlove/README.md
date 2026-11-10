@@ -25,6 +25,17 @@ POPARTlove/
 3. Add one entry at the top of `data/cards.json` (file, name, theme, series, rarity, run, blurb).
 4. Run `python3 build.py`, commit and push. The card appears on the Cards page (the first three also show on the home page).
 
+## Importing cards from the Card Maker
+
+The Card Maker has a "Send cards to popart.love" panel that saves a site file (`popart-site-cards.json`) with the front and back pictures and the details of each card. Import it with:
+
+```
+python3 import_cards.py popart-site-cards.json
+python3 build.py
+```
+
+This writes the pictures to `assets/img/cards/`, adds the card to `data/cards.json` (or updates it, keeping its status and stock) and the card then shows on the Cards page and in the Verify my card list.
+
 ## Card stock and the admin
 
 - Each card in `data/cards.json` also has `online`, `offline` and `url` (external shop link, https only). Cards show a Buy online chip (to that link) and an At events chip (to the PopUp page). The admin edits all of these.
