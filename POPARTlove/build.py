@@ -524,7 +524,7 @@ def build_pages():
       <h2>Check a card code</h2>
       <form id="verify-form" class="verify-form" novalidate>
         <label for="v-code">Card code</label>
-        <input id="v-code" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="9" placeholder="K7QM-2XP9">
+        <input id="v-code" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="9" placeholder="8BNK-CW4K">
         <label for="v-holder">Holder number (optional)</label>
         <input id="v-holder" type="text" inputmode="numeric" autocomplete="off" maxlength="5" placeholder="5 digits, on the certificate and mount card">
         <button class="btn" type="submit">Verify my card</button>
@@ -533,7 +533,7 @@ def build_pages():
     </div>
     <div class="prose">
       <h2>Where to find the code</h2>
-      <p>Every numbered card has its own card code on the back, bottom right, a mix of letters and numbers like <strong>K7QM-2XP9</strong>. It also sits on the certificate and the mount card. You only need the code. The printed number such as 001/100 is not used, because anyone can copy a number, while a code can only be made by the artist. Open edition cards have no code.</p>
+      <p>Every numbered card has its own card code on the back, bottom right, a mix of letters and numbers like <strong>8BNK-CW4K</strong>. It also sits on the certificate and the mount card. You only need the code. The printed number such as 001/100 is not used, because anyone can copy a number, while a code can only be made by the artist. Open edition cards have no code.</p>
       <h2>What the check does</h2>
       <ol>
         <li>It looks for the code in the artist's private code system.</li>

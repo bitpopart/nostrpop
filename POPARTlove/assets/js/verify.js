@@ -33,7 +33,7 @@
   form.addEventListener("submit", async function (e) {
     e.preventDefault();
     var code = norm(input.value);
-    if (code.length !== 8) { show("bad", "Check the code", "The card code has 8 letters and numbers, for example K7QM-2XP9. You find it on the back of the card, bottom right.", null); return; }
+    if (code.length !== 8) { show("bad", "Check the code", "The card code has 8 letters and numbers, for example 8BNK-CW4K. You find it on the back of the card, bottom right.", null); return; }
     try {
       var res = await fetch("/api/verify?code=" + encodeURIComponent(code) + (holderIn && holderIn.value.trim() ? "&holder=" + encodeURIComponent(holderIn.value.trim()) : ""));
       if (res.status === 429) { show("warn", "Slow down", "Too many tries. Wait a minute and try again.", null); return; }
