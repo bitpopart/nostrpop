@@ -20,8 +20,8 @@ POPARTlove/
 
 ## Adding a new card
 
-1. Make the card in the Card Maker and export the front as an image (WebP, 600x840 works well).
-2. Put it in `assets/img/cards/` (for example `my-card.webp`).
+1. Make the card in the Card Maker and export the front and the back as images (WebP, 600x840 works well).
+2. Put it in `assets/img/cards/` (for example `my-card.webp` and `my-card-back.webp`). Visitors flip the card between front and back.
 3. Add one entry at the top of `data/cards.json` (file, name, theme, series, rarity, run, blurb).
 4. Run `python3 build.py`, commit and push. The card appears on the Cards page (the first three also show on the home page).
 

@@ -82,3 +82,12 @@
     }
   });
 })();
+
+
+/* Flip example cards: click shows the back, click again shows the front */
+document.addEventListener("click", function (e) {
+  var b = e.target.closest && e.target.closest(".flip");
+  if (!b) return;
+  var on = b.classList.toggle("flipped");
+  b.setAttribute("aria-pressed", on ? "true" : "false");
+});

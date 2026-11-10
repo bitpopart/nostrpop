@@ -231,6 +231,15 @@ p { margin: 0 0 1rem; }
 .card figure { margin: 0; background: var(--panel2); border-bottom: 1px solid var(--line); }
 .card figure.cardfig { padding: 1.1rem; display: grid; place-items: center; }
 .card figure.cardfig img { width: min(100%, 260px); height: auto; border-radius: 4.5%; box-shadow: 0 12px 26px rgba(0,0,0,.25); }
+.card figure.cardfig { gap: .7rem; }
+.flip { all: unset; display: block; width: min(100%, 260px); aspect-ratio: 5 / 7; cursor: pointer; perspective: 1000px; border-radius: 4.5%; }
+.flip:focus-visible { outline: 2px solid var(--orange); outline-offset: 4px; }
+.flip-inner { position: relative; display: block; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform .6s cubic-bezier(.3,.7,.2,1); }
+.flip.flipped .flip-inner { transform: rotateY(180deg); }
+.card figure.cardfig .flip .face { position: absolute; inset: 0; width: 100%; height: 100%; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.card figure.cardfig .flip .back { transform: rotateY(180deg); }
+.flip-hint { font-family: var(--font-label); font-weight: 700; letter-spacing: 1px; text-transform: uppercase; font-size: 11px; color: var(--sub); }
+@media (prefers-reduced-motion: reduce) { .flip-inner { transition: none; } }
 
 /* ---------- Page header ---------- */
 .page-head { border-bottom: 1px solid var(--line); background: var(--panel); padding: 2.2rem 0 1.8rem; }
