@@ -417,9 +417,10 @@ def build_pages():
 <section class="hero">
   <div class="container hero-inner">
     <div>
-      <span class="kicker">New pop art. Thick lines.</span>
+      <span class="kicker">The fan page for pop art lovers</span>
       <h1><span class="l">Love</span>, <span class="f">Freedom</span> &amp; <span class="j">Joy</span></h1>
-      <p class="lead">POPART.love is a home for loud, happy, hand-made pop art: paintings, collectible cards and good vibes you can hold. Three themes, one big heart.</p>
+      <p class="lead">POPART.love is the fan page for everyone who loves pop art. Loud, happy, hand-made art, collectible cards and good vibes you can hold. Three themes, one big heart.</p>
+      <p class="lead">POPART.love is part of the studio <a href="https://bitpopart.com" target="_blank" rel="noopener"><strong>bitpopart.com</strong></a>.</p>
       <div class="hero-actions">
         <a class="btn" href="/art/">See the art</a>
         <a class="btn yellow" href="/cards/">Collect the cards</a>
