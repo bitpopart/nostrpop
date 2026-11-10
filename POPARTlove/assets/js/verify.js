@@ -5,6 +5,7 @@
   var data = JSON.parse(document.getElementById("cards-data").textContent);
   var sel = document.getElementById("v-card");
   var input = document.getElementById("v-serial");
+  var codeIn = document.getElementById("v-code");
   var out = document.getElementById("v-result");
 
   function runOf(card) { var m = /\d+/.exec(card.run || ""); return m ? Number(m[0]) : null; }
@@ -50,10 +51,15 @@
     var label = String(serial).padStart(3, "0") + "/" + String(run).padStart(3, "0");
     if (run === 1) label = "1/1";
     try {
-      var res = await fetch("/api/verify?card=" + encodeURIComponent(card.file) + "&serial=" + serial);
+      var res = await fetch("/api/verify?card=" + encodeURIComponent(card.file) + "&serial=" + serial + (codeIn.value.trim() ? "&code=" + encodeURIComponent(codeIn.value.trim()) : ""));
       if (!res.ok) throw new Error("no");
       var r = await res.json();
       if (r.valid === false) { show("bad", "Not a valid serial", "Serial " + serial + " does not exist for " + card.name + ".", card); return; }
+      if (r.codeOk === false) { show("bad", "Code does not match", card.name + " No. " + label + " exists, but the code you typed is not the one made for that copy. Check the code on the certificate and mount card.", card); return; }
+      if (r.codeOk === true) {
+        show("good", "Authentic copy", card.name + " No. " + label + " matches its own code" + (r.recorded ? " and is on the artist's list of sold cards." : ". It is not on the artist's sold list yet."), card);
+        return;
+      }
       if (r.recorded) {
         show("good", "Verified", card.name + " No. " + label + " is on the artist's list of sold cards.", card);
       } else {

@@ -529,6 +529,8 @@ def build_pages():
         <select id="v-card" required><option value="">Choose a card</option>{options}</select>
         <label for="v-serial">Serial number</label>
         <input id="v-serial" type="text" inputmode="numeric" autocomplete="off" placeholder="007/050 or 7">
+        <label for="v-code">Card code (on the certificate and mount card)</label>
+        <input id="v-code" type="text" autocomplete="off" placeholder="K7QM-2XP9" maxlength="12">
         <button class="btn" type="submit">Verify my card</button>
       </form>
       <div id="v-result" class="verify-result" role="status" hidden></div>
@@ -540,6 +542,7 @@ def build_pages():
       <ol>
         <li>It checks the number fits the print run of that card.</li>
         <li>It looks the number up in the artist's list of sold cards.</li>
+        <li>If you type the card code, it checks that the code was made for exactly that copy.</li>
       </ol>
       <p class="notice">A valid number that is not listed yet may simply not have been recorded. Ask the artist at the <a href="/popup/">next event</a> or through the <a href="/artist/">Artist page</a>.</p>
     </div>

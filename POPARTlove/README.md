@@ -71,3 +71,6 @@ python3 -m http.server 8765   # preview at http://127.0.0.1:8765
 - Shop items are marked "Coming soon" with no prices. Add products and a checkout when ready.
 - Add a PopUp event list when there is one.
 - Site pages use self-hosted fonts. Only the Card Maker page still loads Google Fonts.
+
+### Per-copy verify codes
+Each numbered copy can carry its own code, printed on the Card Maker's certificate and mount card (not on the card face). The code is the first 40 bits of HMAC-SHA256(`CODE_SECRET`, `<card file>:<serial>`) written as 8 letters and digits, shown as `K7QM-2XP9`. Set the same secret in the Card Maker (Secret verify key field) and on the site: `wrangler secret put CODE_SECRET`. `/api/verify?card=..&serial=..&code=..` then answers `codeOk`. The card file is the site card id, for example `heart-holder`. Never commit the secret.

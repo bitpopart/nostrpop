@@ -40,6 +40,20 @@ async function isAdmin(request, env, body) {
   }
 }
 
+// Per-copy code: first 40 bits of HMAC-SHA256(CODE_SECRET, "<card>:<serial>") as 8 letters/digits, same as the Card Maker.
+const CODE_ABC = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+async function copyCode(secret, file, serial) {
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const h = new Uint8Array(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(file + ":" + serial)));
+  let bits = 0, acc = 0, out = "";
+  for (let i = 0; i < 5; i++) {
+    acc = (acc << 8) | h[i]; bits += 8;
+    while (bits >= 5) { bits -= 5; out += CODE_ABC[(acc >> bits) & 31]; }
+    acc &= (1 << bits) - 1;
+  }
+  return out;
+}
+
 const SERIAL_LIST = /^\s*\d+(\s*-\s*\d+)?(\s*,\s*\d+(\s*-\s*\d+)?)*\s*$/;
 function serialListOk(str) {
   if (str === "" || str === undefined || str === null) return true;
@@ -115,7 +129,10 @@ export default {
       if (run === null) return json({ card: file, open: true });
       if (serial > run) return json({ card: file, run, serial, valid: false });
       const registry = (await env.CARDS_KV.get("registry", "json")) || {};
-      return json({ card: file, run, serial, valid: true, recorded: serialInList(registry[file], serial) });
+      const res = { card: file, run, serial, valid: true, recorded: serialInList(registry[file], serial) };
+      const given = (url.searchParams.get("code") || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+      if (env.CODE_SECRET && given) res.codeOk = given === (await copyCode(env.CODE_SECRET, file, serial));
+      return json(res);
     }
     if (url.pathname !== "/api/stock") return env.ASSETS.fetch(request);
 
