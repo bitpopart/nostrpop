@@ -74,3 +74,5 @@ python3 -m http.server 8765   # preview at http://127.0.0.1:8765
 
 ### Per-copy verify codes
 Each numbered copy can carry its own code, printed on the back of the card and on the Card Maker certificate and mount card. The code is the first 40 bits of HMAC-SHA256(`CODE_SECRET`, `<card file>:<serial>`) written as 8 letters and digits, shown as `K7QM-2XP9`. Set the same secret in the Card Maker (Secret verify key field) and on the site: `wrangler secret put CODE_SECRET`. `/verify/` asks for the code only (no serial): `/api/verify?code=..` makes the codes of all numbered copies from the secret, finds the match and answers card, copy number, whether it is on the sold list and how many times the code was checked. 10 tries a minute per visitor. Without `CODE_SECRET` it answers 503. The card file is the site card id, for example `heart-holder`. Never commit the secret.
+
+The 5 digit holder number is HMAC-SHA256(`CODE_SECRET`, `holder:<card file>:<serial>`) mod 100000. It is printed only on the certificate and mount card. `/api/verify?code=..&holder=..` adds `holderOk` to the answer.

@@ -42,6 +42,8 @@
       <form id="verify-form" class="verify-form" novalidate>
         <label for="v-code">Card code</label>
         <input id="v-code" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="9" placeholder="K7QM-2XP9">
+        <label for="v-holder">Holder number (optional)</label>
+        <input id="v-holder" type="text" inputmode="numeric" autocomplete="off" maxlength="5" placeholder="5 digits, on the certificate and mount card">
         <button class="btn" type="submit">Verify my card</button>
       </form>
       <div id="v-result" class="verify-result" role="status" hidden></div>
@@ -53,6 +55,7 @@
       <ol>
         <li>It looks for the code in the artist's private code system.</li>
         <li>It tells you which card and which copy number the code belongs to.</li>
+        <li>If you also type the 5 digit holder number from the certificate and mount card, it checks that too. Only the holder of the card has that number.</li>
         <li>It shows if the copy is on the artist's list of sold cards, and how often the code has been checked, so you can spot a code that is used again and again.</li>
       </ol>
       <p class="notice">Not found? Check the letters again. Still not found? Ask the artist at the <a href="/popup/">next event</a> or through the <a href="/artist/">Artist page</a>.</p>

@@ -55,6 +55,13 @@ async function copyCode(secret, file, serial) {
   return out;
 }
 
+// Holder number: 5 digits from HMAC-SHA256(CODE_SECRET, "holder:<card>:<serial>"), printed only on the certificate and mount card.
+async function holderNo(secret, file, serial) {
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const h = new Uint8Array(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode("holder:" + file + ":" + serial)));
+  return String((((h[0] << 24) | (h[1] << 16) | (h[2] << 8) | h[3]) >>> 0) % 100000).padStart(5, "0");
+}
+
 const SERIAL_LIST = /^\s*\d+(\s*-\s*\d+)?(\s*,\s*\d+(\s*-\s*\d+)?)*\s*$/;
 function serialListOk(str) {
   if (str === "" || str === undefined || str === null) return true;
@@ -149,8 +156,10 @@ export default {
       checks[key] = { n: prev.n + 1, first: prev.first };
       await env.CARDS_KV.put("checks", JSON.stringify(checks));
       const registry = (await env.CARDS_KV.get("registry", "json")) || {};
+      const holder = (url.searchParams.get("holder") || "").replace(/\D/g, "");
+      const holderOk = holder ? holder === (await holderNo(env.CODE_SECRET, hit.card.file, hit.serial)) : undefined;
       return json({
-        valid: true, card: hit.card.file, name: hit.card.name, serial: hit.serial, run: hit.run,
+        valid: true, holderOk, card: hit.card.file, name: hit.card.name, serial: hit.serial, run: hit.run,
         checks: checks[key].n, recorded: serialInList(registry[hit.card.file], hit.serial),
       });
     }
