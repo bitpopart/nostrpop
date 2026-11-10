@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://popart.love/</loc><lastmod>2026-11-10</lastmod></url>
-  <url><loc>https://popart.love/artist/</loc><lastmod>2026-11-10</lastmod></url>
   <url><loc>https://popart.love/cards/</loc><lastmod>2026-11-10</lastmod></url>
   <url><loc>https://popart.love/cards/maker/</loc><lastmod>2026-11-10</lastmod></url>
   <url><loc>https://popart.love/free/</loc><lastmod>2026-11-10</lastmod></url>
@@ -11,5 +10,6 @@
   <url><loc>https://popart.love/prints/</loc><lastmod>2026-11-10</lastmod></url>
   <url><loc>https://popart.love/shop/</loc><lastmod>2026-11-10</lastmod></url>
   <url><loc>https://popart.love/stickers/</loc><lastmod>2026-11-10</lastmod></url>
+  <url><loc>https://popart.love/studio/</loc><lastmod>2026-11-10</lastmod></url>
   <url><loc>https://popart.love/verify/</loc><lastmod>2026-11-10</lastmod></url>
 </urlset>

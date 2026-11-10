@@ -254,7 +254,7 @@ def build_images():
 
 NAV = [
     ("News", "/news/"),
-    ("Artist", "/artist/"),
+    ("Studio", "/studio/"),
     ("PopUp", "/popup/"),
     ("Cards", "/cards/"),
     ("Verify", "/verify/"),
@@ -269,7 +269,7 @@ TILES = [
     ("Prints", "/prints/", "\U0001F5BC\uFE0F", "c-lime"),
     ("Shop", "/shop/", "\U0001F6CD️", "c-blue"),
     ("News", "/news/", "\U0001F4F0", "c-mint"),
-    ("Artist", "/artist/", "\U0001F58C️", "c-orange"),
+    ("Studio", "/studio/", "\U0001F58C️", "c-orange"),
     ("PopUp", "/popup/", "\U0001F4CD", "c-purple"),
 ]
 
@@ -493,7 +493,7 @@ def build_pages():
       <span class="kicker">The idea</span>
       <h2>Pop art that feels good</h2>
       <p>Bright colours, bold black outlines and simple, happy subjects. No fine print, no hidden meaning: just art that makes a wall, a shelf or a day a bit better.</p>
-      <a class="btn yellow" href="/artist/">Meet the artist</a>
+      <a class="btn yellow" href="/studio/">Meet the studio</a>
     </div>
     <div class="panel yellow">
       <span class="kicker">Collect</span>
@@ -541,7 +541,7 @@ def build_pages():
         <li>If you also type the 5 digit holder number from the certificate and mount card, it checks that too. Only the holder of the card has that number.</li>
         <li>It shows if the copy is on the artist's list of sold cards, and how often the code has been checked, so you can spot a code that is used again and again.</li>
       </ol>
-      <p class="notice">Not found? Check the letters again. Still not found? Ask the artist at the <a href="/popup/">next event</a> or through the <a href="/artist/">Artist page</a>.</p>
+      <p class="notice">Not found? Check the letters again. Still not found? Ask the artist at the <a href="/popup/">next event</a> or through the <a href="/studio/">Studio page</a>.</p>
     </div>
   </div>
 </div></section>
@@ -739,30 +739,33 @@ def build_pages():
 </div></section>"""
     page("news", "News", "News from the POPART.love studio: new art, new cards and shop updates.", news, "/news/")
 
-    # ---- Artist
-    artist = page_head("Artist", "Johannes Oppewal, pop artist.") + f"""
+    # ---- Studio
+    artist = page_head("Studio", "POPART.love is the fan page of the studio BitPopArt.") + f"""
 <section class="section"><div class="container">
   <div class="split wide-left">
     <div class="prose">
-      <h2>Hi, I am Johannes</h2>
-      <p>I am a designer and artist. I paint and design in a thick-outline graffiti pop art style: loud colours, black lines, simple shapes.</p>
-      <p>POPART.love is where that style meets three plain, good ideas: <strong>Love</strong>, <strong>Freedom</strong> and <strong>Joy</strong>. No complicated story. Just art that is made to be happy.</p>
-      <p>I like art you can actually hold: cards, prints and frames.</p>
-      <p>You can find all my art works at <a href="https://bitpopart.com/art" target="_blank" rel="noopener"><strong>bitpopart.com/art</strong></a>, the home of my studio BitPopArt.</p>
-      <p><a class="btn" href="https://bitpopart.com/art" target="_blank" rel="noopener">See all my art</a></p>
+      <h2>About BitPopArt</h2>
+      <p>BitPopArt is a pop art studio. It designs and makes loud, happy art in a thick-outline graffiti style: bold colours, black lines and simple shapes, built around three plain, good ideas, <strong>Love</strong>, <strong>Freedom</strong> and <strong>Joy</strong>.</p>
+      <p>The studio makes art you can hold and share: collectible cards, stickers, prints and digital files you can print at home, plus small tools and games around the art.</p>
+      <h2>What POPART.love is</h2>
+      <p>POPART.love is the fan page for everyone who loves pop art. It is the home of the POPART collectible cards, the Card Maker, stickers, prints, free downloads and news from the studio, so fans can collect, play, download and stay up to date in one place.</p>
+      <h2>More about the artist</h2>
+      <p>Want to know more about the artist behind the studio? You can find the story, the studio and more at <a href="https://bitpopart.com/artist" target="_blank" rel="noopener"><strong>bitpopart.com/artist</strong></a>, and all art works at <a href="https://bitpopart.com/art" target="_blank" rel="noopener"><strong>bitpopart.com/art</strong></a>.</p>
+      <p><a class="btn" href="https://bitpopart.com/artist" target="_blank" rel="noopener">About the artist</a> <a class="btn yellow" href="https://bitpopart.com/art" target="_blank" rel="noopener">See all art works</a></p>
     </div>
     <div class="panel yellow">
-      <h3>Quick facts</h3>
+      <h3>Studio facts</h3>
       <ul style="padding-left:1.1rem;margin:0">
+        <li>Studio: <a href="https://bitpopart.com" rel="noopener">BitPopArt</a></li>
         <li>Style: thick-outline graffiti pop art</li>
         <li>Themes: Love, Freedom, Joy</li>
-        <li>Studio: <a href="https://bitpopart.com" rel="noopener">BitPopArt</a></li>
+        <li>Artist: <a href="https://bitpopart.com/artist" rel="noopener">bitpopart.com/artist</a></li>
         <li>All art works: <a href="https://bitpopart.com/art" rel="noopener">bitpopart.com/art</a></li>
       </ul>
     </div>
   </div>
 </div></section>"""
-    page("artist", "Artist", "Meet Johannes Oppewal, pop artist. Thick-outline graffiti pop art about Love, Freedom and Joy.", artist, "/artist/")
+    page("studio", "Studio", "BitPopArt studio: the pop art studio behind POPART.love, the fan page for everyone who loves pop art.", artist, "/studio/")
 
     # ---- PopUp
     popup = page_head("PopUp", "Live pop art: markets, exhibitions and pop-up shops.") + """
@@ -849,6 +852,7 @@ def build_meta():
         f"  <url><loc>{DOMAIN}{p}</loc><lastmod>{TODAY}</lastmod></url>\n" for p in sorted(set(pages_written))
     )
     write("sitemap.xml", f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{urls}</urlset>\n')
+    write("_redirects", "/artist/ /studio/ 301\n/artist /studio/ 301\n")
     write("robots.txt", f"User-agent: *\nAllow: /\nDisallow: /admin/\n\nSitemap: {DOMAIN}/sitemap.xml\n")
     write("CNAME", "popart.love\n")
     write(
