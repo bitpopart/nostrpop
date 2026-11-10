@@ -93,3 +93,7 @@ In Admin, each card has a Price field (one number, same in euro and dollar). The
 ## Add and edit cards in Admin
 
 Under "Edit cards" you can add a card (name, web name, theme, series, rarity, run, description, front and back picture), edit any card, or hide/delete one. New cards appear first on the Cards, Shop and home pages. Use the same web name as the card file from the Card Maker so the verify codes match. Changes are stored in KV (`cardlist`) and the pictures at `/api/event-image?id=c-<web name>`. Hidden cards stay verifiable.
+
+## News and quick jump
+
+Admin has a News section: title, date, text and a thumbnail photo. Saved news replaces the starter news on the News page and the home page (newest first). Buttons at the top of Admin jump to each section.

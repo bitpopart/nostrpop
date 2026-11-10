@@ -43,8 +43,8 @@
     } catch (e) {}
     document.title = "Admin | POPART.love";
     var head = document.querySelector(".page-head");
-    if (head) head.innerHTML = '<div class="container"><h1>Admin</h1><p>Cards, PopUp events, stickers and prints.</p></div>';
-    root.innerHTML = '<div class="section-head"><div><h2>Cards</h2><p>Signed in with your Nostr key.</p></div><button class="btn" type="button" id="admin-save">Save changes</button></div>' +
+    if (head) head.innerHTML = '<div class="container"><h1>Admin</h1><p>Cards, news, PopUp events, stickers, prints and free downloads.</p></div>';
+    root.innerHTML = '<nav class="admin-jump" aria-label="Jump to a section"></nav><div class="section-head" id="sec-stock"><div><h2>Cards</h2><p>Signed in with your Nostr key.</p></div><button class="btn" type="button" id="admin-save">Save changes</button></div>' +
       '<div class="table-wrap"><table class="simple" id="admin-table"><thead><tr><th>Card</th><th>Status</th><th>Copies left</th><th>Price (EUR = USD)</th><th>Sold where</th><th>Shop link (https)</th><th>Sold serials</th></tr></thead><tbody></tbody></table></div>' +
       '<p class="form-msg" id="admin-save-msg" role="status"></p>';
     var tbody = root.querySelector("tbody");
@@ -73,6 +73,9 @@
     var cardsBox = document.createElement("div");
     cardsBox.style.marginTop = "2.4rem";
     root.appendChild(cardsBox);
+    var newsBox = document.createElement("div");
+    newsBox.style.marginTop = "2.4rem";
+    root.appendChild(newsBox);
     var evBox = document.createElement("div");
     evBox.style.marginTop = "2.4rem";
     root.appendChild(evBox);
@@ -83,6 +86,7 @@
     }
     ["stickers", "prints", "free"].forEach(function (kind) {
       var box = document.createElement("div");
+      box.setAttribute("data-kind", kind);
       box.style.marginTop = "2.4rem";
       root.appendChild(box);
       window.PopartCatalogAdmin.mount(box, kind, {
@@ -123,6 +127,19 @@
         return (await res.json()).cards;
       }
     });
+    window.PopartNewsAdmin.mount(newsBox, {
+      load: function () { return fetch("/api/news").then(function (r) { return r.ok ? r.json() : []; }); },
+      save: async function (list) {
+        var out = [];
+        for (var i = 0; i < list.length; i++) {
+          var n = Object.assign({}, list[i]);
+          if (n._img) { await signedPut("/api/event-image?id=n-" + encodeURIComponent(n.id), n._img); n.image = true; n.imv = Date.now(); delete n._img; }
+          out.push(n);
+        }
+        var res = await signedPut("/api/news", JSON.stringify(out));
+        return (await res.json()).news;
+      }
+    });
     window.PopartEventsAdmin.mount(evBox, {
       load: function () { return fetch("/api/events").then(function (r) { return r.ok ? r.json() : []; }); },
       save: async function (list) {
@@ -135,6 +152,16 @@
         var res = await signedPut("/api/events", JSON.stringify(out));
         return (await res.json()).events;
       }
+    });
+    var jumps = [["Cards", document.getElementById("sec-stock")], ["Edit cards", cardsBox], ["News", newsBox], ["PopUp", evBox]];
+    [["Stickers", "stickers"], ["Prints", "prints"], ["Free downloads", "free"]].forEach(function (k) { jumps.push([k[0], root.querySelector('[data-kind="' + k[1] + '"]')]); });
+    var jbar = root.querySelector(".admin-jump");
+    jumps.forEach(function (j) {
+      if (!j[1]) return;
+      j[1].style.scrollMarginTop = "8rem";
+      var bt = document.createElement("button"); bt.type = "button"; bt.className = "btn ghost"; bt.textContent = j[0];
+      bt.addEventListener("click", function () { j[1].scrollIntoView({ behavior: "smooth", block: "start" }); });
+      jbar.appendChild(bt);
     });
     document.getElementById("admin-save").addEventListener("click", async function () {
       var data = {};

@@ -344,7 +344,8 @@ def footer_html():
   </div>
 </footer>
 <script src="/assets/js/site.js" defer></script>
-<script src="/assets/js/cards.js" defer></script>"""
+<script src="/assets/js/cards.js" defer></script>
+<script src="/assets/js/news.js" defer></script>"""
 
 
 LFJ_RE = re.compile(r"Love, Freedom(, | &amp; | &amp;amp; | and | or | & )Joy")
@@ -526,7 +527,7 @@ def build_pages():
 
 <section class="section"><div class="container">
   <div class="section-head"><div><h2>News</h2><p>What is new in the studio.</p></div><a class="link-more" href="/news/">All news &rarr;</a></div>
-  <div class="grid g2">{news_cards()}</div>
+  <div class="grid g2" data-news="4">{news_cards()}</div>
 </div></section>
 """
     page("", "", "POPART.love: new pop art in a thick-outline graffiti style. Collectible cards, stickers, prints and a shop. Love, Freedom and Joy.", home)
@@ -750,7 +751,7 @@ def build_pages():
     # ---- News
     news = page_head("News", "What is happening in the POPART studio.") + f"""
 <section class="section"><div class="container">
-  <div class="grid g2">{news_cards()}</div>
+  <div class="grid g2" data-news="0">{news_cards()}</div>
 </div></section>"""
     page("news", "News", "News from the POPART.love studio: new art, new cards and shop updates.", news, "/news/")
 
@@ -814,6 +815,7 @@ def build_pages():
     admin = page_head("Page not found", "That page flew away like a paper plane.") + """
 <section class="section"><div class="container" id="admin-root"><a class="btn" href="/">Back to the home page</a></div></section>
 <script src="/assets/js/cards-admin.js" defer></script>
+<script src="/assets/js/news-admin.js" defer></script>
 <script src="/assets/js/events-admin.js" defer></script>
 <script src="/assets/js/catalog-admin.js" defer></script>
 <script src="/assets/js/admin.js" defer></script>"""

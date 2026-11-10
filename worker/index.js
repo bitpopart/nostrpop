@@ -2,6 +2,8 @@
 // GET  /api/stock  public: current status and copies left per card.
 // PUT  /api/stock  admin only: needs a NIP-98 signed Nostr event from ADMIN_PUBKEY.
 // GET/PUT /api/events and /api/event-image: PopUp events and their thumbnails (PUT is admin only).
+// GET/PUT /api/news: news items (title, date, text, thumbnail at /api/event-image?id=n-<id>; PUT is admin only).
+// GET/PUT /api/cards: added/edited/hidden cards (PUT is admin only).
 // GET/PUT /api/catalog?kind=stickers|prints: stickers and prints lists (PUT is admin only).
 // GET/PUT /api/file?id=: free download files (PUT is admin only, up to 20 MB). Lists live in /api/catalog?kind=free.
 // POST /api/dl-codes (admin) and GET /api/download?code= (public): paid digital files with download codes.
@@ -167,6 +169,21 @@ function serialInList(str, n) {
 function runOf(card) {
   const m = /\d+/.exec(card.run || "");
   return m ? Number(m[0]) : null;
+}
+
+// ---- News items ------------------------------------------------------------
+function cleanNews(input) {
+  if (!Array.isArray(input) || input.length > 200) return null;
+  const out = [], seen = new Set();
+  for (const e of input) {
+    if (!e || typeof e !== "object" || typeof e.id !== "string" || !/^[a-z0-9-]{1,36}$/.test(e.id) || seen.has(e.id)) return null;
+    seen.add(e.id);
+    const title = str(e.title, 140), text = str(e.text, 6000);
+    if (title === null || !title || text === null || typeof e.date !== "string" || !DATE_RE.test(e.date)) return null;
+    const imv = Number.isFinite(e.imv) ? Math.max(0, Math.floor(e.imv)) : 0;
+    out.push({ id: e.id, title, date: e.date, text, image: e.image === true, imv });
+  }
+  return out;
 }
 
 // ---- Card list edits (add, edit, hide cards from the admin) --------------
@@ -389,6 +406,24 @@ export default {
       for (const e of old) if (e.file && !keepFiles.has(e.id)) await env.CARDS_KV.delete("dl:" + e.id);
       await env.CARDS_KV.put(key, JSON.stringify(list));
       return json({ ok: true, items: list });
+    }
+    if (url.pathname === "/api/news") {
+      if (request.method === "GET") return json((await env.CARDS_KV.get("news", "json")) || [], 200, { "cache-control": "public, max-age=30" });
+      if (request.method !== "PUT") return json({ error: "method not allowed" }, 405, { allow: "GET, PUT" });
+      const body = await request.text();
+      if (!(await isAdmin(request, env, body))) return json({ error: "not allowed" }, 401);
+      let list;
+      try {
+        list = cleanNews(JSON.parse(body));
+      } catch {
+        list = null;
+      }
+      if (!list) return json({ error: "invalid news" }, 400);
+      const old = (await env.CARDS_KV.get("news", "json")) || [];
+      const keep = new Set(list.filter((e) => e.image).map((e) => e.id));
+      for (const e of old) if (!keep.has(e.id)) await env.CARDS_KV.delete("evimg:n-" + e.id);
+      await env.CARDS_KV.put("news", JSON.stringify(list));
+      return json({ ok: true, news: list });
     }
     if (url.pathname === "/api/cards") {
       // card list edits: GET public, PUT admin. Pictures live at /api/event-image?id=c-<file> and c-<file>-back.
