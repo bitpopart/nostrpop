@@ -1,0 +1,38 @@
+# POPART.love
+
+Static site for popart.love. Same section structure as bitpopart.com (News, Artist, PopUp, Art, Projects, Fundraising, Shop, plus Cards), with its own Love / Freedom / Joy pop art look and no Bitcoin, Nostr or AI theming.
+
+## Folder
+
+```
+POPARTlove/
+  build.py            generates every page, the SVG art, sitemap, robots, _headers, CNAME
+  assets/css/style.css
+  assets/js/site.js   theme toggle, mobile menu, newsletter form
+  assets/img/         logo, favicon, placeholder artworks and cards (SVG)
+  index.html, art/, cards/, shop/, news/, artist/, popup/, projects/, fundraising/, 404.html
+```
+
+## Edit and rebuild
+
+Content lives in `build.py` (page text, `ARTWORKS`, `CARDS`, `SHOP_ITEMS`, `NEWS_ITEMS`). After a change:
+
+```
+cd POPARTlove
+python3 build.py
+python3 -m http.server 8765   # preview at http://127.0.0.1:8765
+```
+
+## Deploy (Cloudflare Pages)
+
+- Build command: none
+- Output directory: `POPARTlove`
+- Custom domain: `popart.love` (the `CNAME` file is already included)
+
+## To do before launch
+
+- Replace the placeholder SVG artworks and cards in `assets/img/` with the real ones.
+- Set `NEWSLETTER_ENDPOINT` in `assets/js/site.js`. Until then the subscribe button says the newsletter opens soon.
+- Shop items are marked "Coming soon" with no prices. Add products and a checkout when ready.
+- Add a PopUp event list and a fundraising campaign when there is one.
+- Fonts (Bangers, Inter) load from Google Fonts. For a fully self-contained site, download them into `assets/fonts/` and swap the `<link>` in `build.py`.
