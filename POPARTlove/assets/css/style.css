@@ -412,3 +412,15 @@ h1 .lfj { color: var(--ink); }
 .card-price { margin: .5rem 0 0; font-size: .95rem; }
 .card-price strong { font-size: 1.15rem; font-family: var(--font-display, inherit); }
 .card-price span { color: var(--muted, #6b6559); font-size: .82rem; }
+
+/* Admin cards: each card is a block with labelled fields that wrap, so nothing is cut off */
+#admin-table, #admin-table tbody { display: block; width: 100%; }
+#admin-table thead { display: none; }
+#admin-table tr { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: .7rem 1rem; padding: 1rem; border-bottom: 1px solid var(--line); }
+#admin-table tr:last-child { border-bottom: 0; }
+#admin-table td { display: block; padding: 0; border: 0; min-width: 0; }
+#admin-table td:first-child { grid-column: 1 / -1; }
+#admin-table td:nth-child(6) { grid-column: span 2; }
+#admin-table td[data-label]:not(:first-child)::before { content: attr(data-label); display: block; font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted, #6b6559); margin-bottom: .25rem; font-weight: 700; }
+#admin-table input, #admin-table select { width: 100%; max-width: 100%; box-sizing: border-box; }
+@media (max-width: 600px) { #admin-table td:nth-child(6) { grid-column: 1 / -1; } }
