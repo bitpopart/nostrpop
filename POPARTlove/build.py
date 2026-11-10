@@ -513,6 +513,15 @@ def build_pages():
 </div></section>
 
 <section class="section"><div class="container">
+  <div class="panel blue">
+    <span class="kicker">Tool</span>
+    <h2>Make your own POPART card</h2>
+    <p>Pick a series, a rarity and a theme, add your art, and download a print-ready card. Serial numbers, numbered print runs, certificate and mount card included.</p>
+    <a class="btn yellow" href="/cards/maker/">Open the Card Maker</a>
+  </div>
+</div></section>
+
+<section class="section"><div class="container">
   <h2>How trading works</h2>
   <ol class="steps">
     <li><strong>Same tribe, fair swap.</strong> A card trades one-for-one against a card with the same theme sign.</li>
@@ -590,7 +599,7 @@ def build_pages():
 <section class="section"><div class="container">
   <div class="grid g2">
     <article class="card"><div class="body"><span class="tag love">Cards</span><h3>POPART Cards</h3><p>Collectible pop art cards in three tribes and three series, plus 1/1 Unique cards. <a href="/cards/">More about cards</a>.</p></div></article>
-    <article class="card"><div class="body"><span class="tag joy">Tool</span><h3>POPART Card Maker</h3><p>A simple tool to design cards for the collection, with themes, series, numbering and one standard card back.</p><span class="tag soon">In progress</span></div></article>
+    <article class="card"><div class="body"><span class="tag joy">Tool</span><h3>POPART Card Maker</h3><p>A simple tool to design cards for the collection, with themes, series, numbering and one standard card back.</p><a class="btn yellow" href="/cards/maker/" style="align-self:flex-start;font-size:1.1rem">Open the Card Maker</a></div></article>
     <article class="card"><div class="body"><span class="tag freedom">Game</span><h3>POPPLAY</h3><p>A two-player game with the same cards: count 3, 2, 1, POP and the higher card wins.</p><span class="tag soon">In progress</span></div></article>
     <article class="card"><div class="body"><span class="tag love">Frames</span><h3>Framed 1/1 Unique</h3><p>A small art frame for one-of-a-kind cards, with a certificate card and a mount card.</p><span class="tag soon">Planned</span></div></article>
     <article class="card"><div class="body"><span class="tag joy">Art</span><h3>New graffiti pop art</h3><p>A growing series of thick-outline paintings about Love, Freedom and Joy.</p><span class="tag soon">Ongoing</span></div></article>
@@ -662,6 +671,7 @@ def news_cards():
 
 
 def build_meta():
+    pages_written.append("/cards/maker/")  # static page: cards/maker/index.html
     urls = "".join(
         f"  <url><loc>{DOMAIN}{p}</loc><lastmod>{TODAY}</lastmod></url>\n" for p in sorted(set(pages_written))
     )
