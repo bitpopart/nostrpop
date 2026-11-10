@@ -292,7 +292,7 @@ def nav_html(current):
   <div class="container nav-inner">
     <a class="brand" href="/" aria-label="POPART.love home">
       <img src="/assets/img/logo.svg" alt="" width="52" height="44">
-      <span class="brand-word">POPART<b>.love</b></span>
+      <img class="brand-wordmark" src="/assets/img/popart-love.svg" alt="POPART.love" width="256" height="37">
     </a>
     <ul class="nav-links">{items}</ul>
     <div class="nav-actions">

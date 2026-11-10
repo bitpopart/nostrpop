@@ -92,6 +92,8 @@ p { margin: 0 0 1rem; }
 .brand { display: flex; align-items: center; gap: .6rem; text-decoration: none; }
 .brand img { width: auto; height: 40px; }
 :root[data-theme="dark"] .brand img { filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 1.5px #fff); }
+.brand .brand-wordmark { height: 30px; width: auto; max-width: 52vw; }
+:root[data-theme="dark"] .brand .brand-wordmark { filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 1.5px #fff); }
 .brand-word { font-family: var(--font-display); font-size: 1.8rem; letter-spacing: 1px; line-height: 1; color: var(--ink); }
 .brand-word b { color: var(--orange); font-weight: 400; }
 
