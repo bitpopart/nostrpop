@@ -17,20 +17,20 @@
   --ink: #0d0c0a;
   --sub: #5f5a52;
   --line: #ddd8cf;
-  --orange: #e17038;
-  --lime: #afcd53;
-  --pink: #da3475;
-  --yellow: #f7dc4a;
-  --purple: #88539c;
-  --sky: #3fc8ff;
+  --orange: #ff7a14;
+  --lime: #b4e33d;
+  --pink: #ff2f8a;
+  --yellow: #ffe229;
+  --purple: #9c4fd6;
+  --sky: #28c2ff;
   --teal: #5f7f1a;
-  --red: #da3932;
+  --red: #ff3a2d;
   --on-accent: #0d0c0a;
 
   /* theme colours (shown as small tags) */
-  --love: #da3475;
-  --freedom: #88539c;
-  --joy: #f7dc4a;
+  --love: #ff2f8a;
+  --freedom: #9c4fd6;
+  --joy: #ffe229;
 
   --radius: 16px;
   --maxw: 1180px;
@@ -48,9 +48,9 @@
   --ink: #f6f4f0;
   --sub: #aaa398;
   --line: #2e2a24;
-  --teal: #afcd53;
-  --red: #ef5a52;
-  --purple: #b07fc4;
+  --teal: #b4e33d;
+  --red: #ff6258;
+  --purple: #b97cf0;
   color-scheme: dark;
 }
 
@@ -93,7 +93,7 @@ p { margin: 0 0 1rem; }
 .skip-link:focus { left: 0; }
 
 /* ---------- Navigation ---------- */
-.nav::after { content: ""; display: block; height: 5px; background: linear-gradient(90deg, #e17038 0 14.28%, #afcd53 0 28.56%, #da3475 0 42.84%, #da3932 0 57.12%, #f7dc4a 0 71.4%, #3fc8ff 0 85.68%, #88539c 0); }
+.nav::after { content: ""; display: block; height: 8px; background: linear-gradient(90deg, #ff7a14 0 14.28%, #b4e33d 0 28.56%, #ff2f8a 0 42.84%, #ff3a2d 0 57.12%, #ffe229 0 71.4%, #28c2ff 0 85.68%, #9c4fd6 0); }
 .nav { position: sticky; top: 0; z-index: 50; background: var(--panel); border-bottom: 1px solid var(--line); }
 .nav-inner { display: flex; align-items: center; justify-content: space-between; height: 64px; gap: 1rem; }
 .brand { display: flex; align-items: center; gap: .6rem; text-decoration: none; }
@@ -176,7 +176,7 @@ p { margin: 0 0 1rem; }
 .tag.soon { background: var(--panel2); color: var(--sub); }
 
 /* ---------- Hero ---------- */
-.hero { border-bottom: 1px solid var(--line); background: var(--panel); }
+.hero { border-bottom: 1px solid var(--line); background: radial-gradient(circle at 8% 15%, color-mix(in srgb, var(--yellow) 38%, transparent) 0 14rem, transparent 14.1rem), radial-gradient(circle at 96% 85%, color-mix(in srgb, var(--pink) 28%, transparent) 0 16rem, transparent 16.1rem), radial-gradient(circle at 60% 0%, color-mix(in srgb, var(--sky) 30%, transparent) 0 12rem, transparent 12.1rem), var(--panel); }
 .hero-inner { display: grid; gap: 2rem; align-items: center; padding-block: 2.6rem 3rem; }
 @media (min-width: 860px) { .hero-inner { grid-template-columns: 1.1fr .9fr; padding-block: 3.4rem 3.8rem; } }
 .hero h1 .j, .hero h1 .l, .hero h1 .f { color: inherit; }
@@ -207,14 +207,14 @@ p { margin: 0 0 1rem; }
 .tile .ico { width: 46px; height: 46px; margin: 0 auto .4rem; border-radius: 12px; display: grid; place-items: center; font-size: 1.5rem; line-height: 1; background: var(--panel2); }
 .tile span.lbl { font-family: var(--font-label); font-weight: 700; letter-spacing: .8px; text-transform: uppercase; font-size: 14px; color: var(--sub); }
 .tile:hover span.lbl { color: var(--ink); }
-.c-pink { background: color-mix(in srgb, var(--love) 20%, var(--panel2)) !important; }
-.c-blue { background: color-mix(in srgb, var(--freedom) 20%, var(--panel2)) !important; }
-.c-yellow { background: color-mix(in srgb, var(--joy) 24%, var(--panel2)) !important; }
-.c-mint { background: color-mix(in srgb, var(--teal) 20%, var(--panel2)) !important; }
-.c-orange { background: color-mix(in srgb, var(--orange) 20%, var(--panel2)) !important; }
-.c-purple { background: color-mix(in srgb, #8b5cf6 20%, var(--panel2)) !important; }
-.c-red { background: color-mix(in srgb, var(--red) 18%, var(--panel2)) !important; }
-.c-lime { background: color-mix(in srgb, #84cc16 22%, var(--panel2)) !important; }
+.c-pink { background: color-mix(in srgb, var(--love) 45%, var(--panel2)) !important; }
+.c-blue { background: color-mix(in srgb, var(--freedom) 45%, var(--panel2)) !important; }
+.c-yellow { background: color-mix(in srgb, var(--joy) 45%, var(--panel2)) !important; }
+.c-mint { background: color-mix(in srgb, var(--teal) 45%, var(--panel2)) !important; }
+.c-orange { background: color-mix(in srgb, var(--orange) 45%, var(--panel2)) !important; }
+.c-purple { background: color-mix(in srgb, var(--purple) 45%, var(--panel2)) !important; }
+.c-red { background: color-mix(in srgb, var(--red) 45%, var(--panel2)) !important; }
+.c-lime { background: color-mix(in srgb, var(--lime) 45%, var(--panel2)) !important; }
 
 /* ---------- Sections and grids ---------- */
 .section { padding: 2.8rem 0 .6rem; }
@@ -251,7 +251,7 @@ p { margin: 0 0 1rem; }
 @media (prefers-reduced-motion: reduce) { .flip-inner { transition: none; } }
 
 /* ---------- Page header ---------- */
-.page-head { border-bottom: 1px solid var(--line); background: var(--panel); padding: 2.2rem 0 1.8rem; }
+.page-head { border-bottom: 1px solid var(--line); background: linear-gradient(100deg, color-mix(in srgb, var(--yellow) 30%, var(--panel)), color-mix(in srgb, var(--pink) 20%, var(--panel)) 55%, color-mix(in srgb, var(--sky) 28%, var(--panel))); padding: 2.2rem 0 1.8rem; }
 .page-head h1 { font-size: clamp(2.2rem, 5vw, 3.4rem); margin-bottom: .3rem; }
 .page-head p { max-width: 44rem; margin: 0; color: var(--sub); font-family: var(--font-label); font-weight: 600; letter-spacing: .8px; text-transform: uppercase; font-size: 14px; }
 
