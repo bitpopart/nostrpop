@@ -1,21 +1,21 @@
-/* Verify my card: looks the secret card code up in the artist's private list. */
+/* Verify my card: looks the code from the back of the card up. No serial number needed. */
 (function () {
   var form = document.getElementById("verify-form");
   if (!form) return;
   var input = document.getElementById("v-code");
   var out = document.getElementById("v-result");
 
-  function norm(t) { return t.toUpperCase().replace(/[^A-Z0-9]/g, "").replace(/[IL]/g, "1").replace(/O/g, "0"); }
+  function norm(t) { return t.toUpperCase().replace(/[^A-Z0-9]/g, ""); }
   function show(kind, title, text, card) {
     out.className = "verify-result " + kind;
     out.innerHTML = "";
+    out.style.gridTemplateColumns = card ? "" : "minmax(0, 1fr)";
     if (card) {
       var img = document.createElement("img");
       img.src = "/assets/img/cards/" + card + ".webp"; img.alt = "";
       img.width = 600; img.height = 840;
       out.appendChild(img);
-    } else { out.style.gridTemplateColumns = "minmax(0, 1fr)"; }
-    if (card) out.style.gridTemplateColumns = "";
+    }
     var box = document.createElement("div");
     var h = document.createElement("h3"); h.textContent = title;
     var p = document.createElement("p"); p.textContent = text;
@@ -25,27 +25,25 @@
     out.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }
   input.addEventListener("input", function () {
-    var c = norm(input.value).slice(0, 10);
-    input.value = c.length > 5 ? c.slice(0, 5) + "-" + c.slice(5) : c;
+    var c = norm(input.value).slice(0, 8);
+    input.value = c.length > 4 ? c.slice(0, 4) + "-" + c.slice(4) : c;
   });
 
   form.addEventListener("submit", async function (e) {
     e.preventDefault();
     var code = norm(input.value);
-    if (code.length !== 10) { show("bad", "Check the code", "The code has 10 letters and numbers, for example 7K3QM-9X2TA.", null); return; }
+    if (code.length !== 8) { show("bad", "Check the code", "The card code has 8 letters and numbers, for example K7QM-2XP9. You find it on the back of the card, bottom right.", null); return; }
     try {
       var res = await fetch("/api/verify?code=" + encodeURIComponent(code));
       if (res.status === 429) { show("warn", "Slow down", "Too many tries. Wait a minute and try again.", null); return; }
+      if (res.status === 503) { show("warn", "Not ready yet", "Card checking is not switched on yet. Please try again soon.", null); return; }
       if (!res.ok) throw new Error("no");
       var r = await res.json();
-      if (!r.valid) { show("bad", "Code not found", "This code is not on the artist's list. Check the letters, or ask the artist if you are unsure about the card.", null); return; }
-      var num = r.run === 1 ? "1/1" : String(r.serial).padStart(3, "0") + (r.run ? "/" + String(r.run).padStart(3, "0") : "");
-      var text = r.name + " No. " + num + " is a real POPART card.";
-      if (r.checks > 1) {
-        show("warn", "Real code, checked before", text + " This code has been checked " + r.checks + " times. If you just bought the card and that surprises you, tell the artist.", r.card);
-      } else {
-        show("good", "Verified", text + " This is the first time the code was checked.", r.card);
-      }
+      if (!r.valid) { show("bad", "Code not found", "This code is not in the artist's system. Check the letters once more. If it still fails, ask the artist about this card.", null); return; }
+      var num = r.run === 1 ? "1/1" : String(r.serial).padStart(3, "0") + "/" + String(r.run).padStart(3, "0");
+      var text = r.name + " No. " + num + " is a real POPART card." + (r.recorded ? " It is on the artist's list of sold cards." : " It is not on the artist's sold list yet.");
+      if (r.checks > 1) show("warn", "Real code, checked before", text + " This code has been checked " + r.checks + " times. If you just bought the card and that surprises you, tell the artist.", r.card);
+      else show("good", "Authentic card", text + " This is the first time this code was checked.", r.card);
     } catch (err) {
       show("warn", "Could not check", "The check could not be reached right now. Try again in a moment.", null);
     }

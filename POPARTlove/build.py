@@ -517,33 +517,33 @@ def build_pages():
     page("", "", "POPART.love: new pop art in a thick-outline graffiti style. Collectible cards, stickers, prints and a shop. Love, Freedom and Joy.", home)
 
     # ---- Verify
-    verify = page_head("Verify my card", "Type the secret code from your card to check that it is a real POPART card.") + f"""
+    verify = page_head("Verify my card", "Type the code from the back of your card to check that it is a real POPART card.") + f"""
 <section class="section"><div class="container">
   <div class="split wide-left">
     <div class="panel">
-      <h2>Check a code</h2>
+      <h2>Check a card code</h2>
       <form id="verify-form" class="verify-form" novalidate>
         <label for="v-code">Card code</label>
-        <input id="v-code" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="14" placeholder="XXXXX-XXXXX">
+        <input id="v-code" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="9" placeholder="K7QM-2XP9">
         <button class="btn" type="submit">Verify my card</button>
       </form>
       <div id="v-result" class="verify-result" role="status" hidden></div>
     </div>
     <div class="prose">
       <h2>Where to find the code</h2>
-      <p>Every numbered card comes with its own secret code, a short mix of letters and numbers like <strong>7K3QM-9X2TA</strong>. It is on the card or the sleeve that came with it. The printed number such as 001/100 is not used here, because anyone can copy a number. The code is unique and only the artist can make it.</p>
+      <p>Every numbered card has its own card code on the back, bottom right, a mix of letters and numbers like <strong>K7QM-2XP9</strong>. It also sits on the certificate and the mount card. You only need the code. The printed number such as 001/100 is not used, because anyone can copy a number, while a code can only be made by the artist. Open edition cards have no code.</p>
       <h2>What the check does</h2>
       <ol>
-        <li>It looks the code up in the artist's private list.</li>
+        <li>It looks for the code in the artist's private code system.</li>
         <li>It tells you which card and which copy number the code belongs to.</li>
-        <li>It counts how many times the code has been checked, so you can spot a code that is being used again and again.</li>
+        <li>It shows if the copy is on the artist's list of sold cards, and how often the code has been checked, so you can spot a code that is used again and again.</li>
       </ol>
-      <p class="notice">Not found? Check the letters again (O and 0 or I and 1 are treated the same). Still not found? Ask the artist at the <a href="/popup/">next event</a> or through the <a href="/artist/">Artist page</a>.</p>
+      <p class="notice">Not found? Check the letters again. Still not found? Ask the artist at the <a href="/popup/">next event</a> or through the <a href="/artist/">Artist page</a>.</p>
     </div>
   </div>
 </div></section>
 <script src="/assets/js/verify.js" defer></script>"""
-    page("verify", "Verify my card", "Verify a POPART card with the secret code that comes with it.", verify, "/verify/")
+    page("verify", "Verify my card", "Verify a POPART card with the code printed on its back.", verify, "/verify/")
 
     # ---- POPPLAY
     popplay = page_head("POPPLAY", "A two minute card game for two collectors. Collecting stays the main thing.") + f"""

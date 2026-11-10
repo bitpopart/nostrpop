@@ -6,14 +6,6 @@ import { verifyEvent } from "nostr-tools/pure";
 
 const KEY = "stock";
 const attempts = new Map();
-const ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
-function makeCode() {
-  const bytes = crypto.getRandomValues(new Uint8Array(10));
-  return [...bytes].map((b) => ALPHABET[b & 31]).join("");
-}
-function normalizeCode(text) {
-  return text.toUpperCase().replace(/[^A-Z0-9]/g, "").replace(/[IL]/g, "1").replace(/O/g, "0");
-}
 const STATUSES = ["available", "sold-out", "coming-soon"];
 const json = (data, status = 200, extra = {}) =>
   new Response(JSON.stringify(data), {
@@ -47,6 +39,20 @@ async function isAdmin(request, env, body) {
   } catch {
     return false;
   }
+}
+
+// Per-copy code: first 40 bits of HMAC-SHA256(CODE_SECRET, "<card>:<serial>") as 8 letters/digits, same as the Card Maker.
+const CODE_ABC = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+async function copyCode(secret, file, serial) {
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const h = new Uint8Array(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(file + ":" + serial)));
+  let bits = 0, acc = 0, out = "";
+  for (let i = 0; i < 5; i++) {
+    acc = (acc << 8) | h[i]; bits += 8;
+    while (bits >= 5) { bits -= 5; out += CODE_ABC[(acc >> bits) & 31]; }
+    acc &= (1 << bits) - 1;
+  }
+  return out;
 }
 
 const SERIAL_LIST = /^\s*\d+(\s*-\s*\d+)?(\s*,\s*\d+(\s*-\s*\d+)?)*\s*$/;
@@ -112,42 +118,10 @@ export default {
       if (!(await isAdmin(request, env, ""))) return json({ error: "not allowed" }, 401);
       return json((await env.CARDS_KV.get("registry", "json")) || {});
     }
-    if (url.pathname === "/api/codes") {
-      // admin only: make a fresh set of secret verification codes for one card (replaces older ones)
-      if (request.method !== "POST") return json({ error: "method not allowed" }, 405, { allow: "POST" });
-      const body = await request.text();
-      if (!(await isAdmin(request, env, body))) return json({ error: "not allowed" }, 401);
-      let file;
-      try {
-        file = JSON.parse(body).card;
-      } catch {
-        return json({ error: "bad json" }, 400);
-      }
-      const cards = await (await env.ASSETS.fetch(new URL("/assets/cards.json", request.url))).json();
-      const card = cards.find((c) => c.file === file);
-      const run = card ? runOf(card) : null;
-      if (!card || run === null || run > 1000) return json({ error: "this card has no numbered run" }, 400);
-      const index = (await env.CARDS_KV.get("codes", "json")) || {};
-      for (const h of Object.keys(index)) if (index[h][0] === file) delete index[h];
-      const checks = (await env.CARDS_KV.get("checks", "json")) || {};
-      const issued = [];
-      for (let serial = 1; serial <= run; serial++) {
-        let code, hash;
-        do {
-          code = makeCode();
-          hash = await sha256hex(code);
-        } while (index[hash]);
-        index[hash] = [file, serial];
-        issued.push({ serial, code });
-      }
-      for (const h of Object.keys(checks)) if (!index[h]) delete checks[h];
-      await env.CARDS_KV.put("codes", JSON.stringify(index));
-      await env.CARDS_KV.put("checks", JSON.stringify(checks));
-      return json({ ok: true, card: file, run, codes: issued });
-    }
     if (url.pathname === "/api/verify") {
-      // public: look a secret code up. Returns the card and copy number it belongs to.
+      // public: look a card code up on its own. No serial needed, the code identifies card and copy.
       if (request.method !== "GET") return json({ error: "method not allowed" }, 405, { allow: "GET" });
+      if (!env.CODE_SECRET) return json({ error: "codes are not set up yet" }, 503);
       const ip = request.headers.get("cf-connecting-ip") || "x";
       const now = Date.now();
       const slot = attempts.get(ip) || { n: 0, reset: now + 60000 };
@@ -156,23 +130,28 @@ export default {
       attempts.set(ip, slot);
       if (attempts.size > 5000) attempts.clear();
       if (slot.n > 10) return json({ error: "too many tries, wait a minute" }, 429);
-      const code = normalizeCode(url.searchParams.get("code") || "");
-      if (code.length !== 10) return json({ valid: false });
-      const hash = await sha256hex(code);
-      const index = (await env.CARDS_KV.get("codes", "json")) || {};
-      const hit = index[hash];
-      if (!hit) return json({ valid: false });
-      const [file, serial] = hit;
+      const given = (url.searchParams.get("code") || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+      if (given.length !== 8) return json({ valid: false });
       const cards = await (await env.ASSETS.fetch(new URL("/assets/cards.json", request.url))).json();
-      const card = cards.find((c) => c.file === file);
+      let hit = null;
+      for (const card of cards) {
+        const run = runOf(card);
+        if (run === null || run > 1000) continue;
+        for (let serial = 1; serial <= run && !hit; serial++) {
+          if ((await copyCode(env.CODE_SECRET, card.file, serial)) === given) hit = { card, serial, run };
+        }
+        if (hit) break;
+      }
+      if (!hit) return json({ valid: false });
+      const key = given;
       const checks = (await env.CARDS_KV.get("checks", "json")) || {};
-      const prev = checks[hash] || { n: 0, first: now };
-      checks[hash] = { n: prev.n + 1, first: prev.first };
+      const prev = checks[key] || { n: 0, first: now };
+      checks[key] = { n: prev.n + 1, first: prev.first };
       await env.CARDS_KV.put("checks", JSON.stringify(checks));
       const registry = (await env.CARDS_KV.get("registry", "json")) || {};
       return json({
-        valid: true, card: file, name: card ? card.name : file, serial, run: card ? runOf(card) : null,
-        checks: checks[hash].n, first: prev.first, recorded: serialInList(registry[file], serial),
+        valid: true, card: hit.card.file, name: hit.card.name, serial: hit.serial, run: hit.run,
+        checks: checks[key].n, recorded: serialInList(registry[hit.card.file], hit.serial),
       });
     }
     if (url.pathname !== "/api/stock") return env.ASSETS.fetch(request);

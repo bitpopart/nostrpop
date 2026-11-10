@@ -41,9 +41,7 @@
     if (head) head.innerHTML = '<div class="container"><h1>Card admin</h1><p>Update which cards are available.</p></div>';
     root.innerHTML = '<div class="section-head"><div><h2>Cards</h2><p>Signed in with your Nostr key.</p></div><button class="btn" type="button" id="admin-save">Save changes</button></div>' +
       '<div class="table-wrap"><table class="simple" id="admin-table"><thead><tr><th>Card</th><th>Status</th><th>Copies left</th><th>Sold where</th><th>Shop link (https)</th><th>Sold serials</th></tr></thead><tbody></tbody></table></div>' +
-      '<p class="form-msg" id="admin-save-msg" role="status"></p>' +
-      '<div class="section-head" style="margin-top:2rem"><div><h2>Secret card codes</h2><p>Make one unique code for every copy of a numbered card. Print them on the card or sleeve. Making new codes for a card replaces its old ones. Codes are shown only once, so copy the list and keep it safe.</p></div></div>' +
-      '<div class="panel" style="display:grid;gap:.8rem"><label for="code-card">Card</label><select id="code-card"></select><div><button class="btn" type="button" id="code-make">Make codes</button></div><p class="form-msg" id="code-msg" role="status"></p><textarea id="code-out" rows="8" readonly hidden style="width:100%;font-family:monospace;padding:.8rem;border:1.5px solid var(--line);border-radius:16px;background:var(--panel2);color:var(--ink)"></textarea><div><button class="btn" type="button" id="code-copy" hidden>Copy list</button></div></div>';
+      '<p class="form-msg" id="admin-save-msg" role="status"></p>';
     var tbody = root.querySelector("tbody");
     cards.forEach(function (c) {
       var cur = stock[c.file] || { status: c.status || "available", left: c.left };
@@ -60,25 +58,6 @@
       tr.querySelector(".url").value = cur.url === undefined ? (c.url || "") : cur.url;
       tbody.appendChild(tr);
     });
-    var codeSel = document.getElementById("code-card");
-    cards.forEach(function (c) { var m = /\d+/.exec(c.run || ""); if (m && Number(m[0]) <= 1000) { var o = document.createElement("option"); o.value = c.file; o.textContent = c.name + " (" + c.run + ")"; codeSel.appendChild(o); } });
-    var codeMsg = document.getElementById("code-msg"), codeOut = document.getElementById("code-out"), codeCopy = document.getElementById("code-copy"), codeBtn = document.getElementById("code-make"), armed = false;
-    codeSel.addEventListener("change", function () { armed = false; codeBtn.textContent = "Make codes"; });
-    codeBtn.addEventListener("click", async function () {
-      if (!codeSel.value) return;
-      if (!armed) { armed = true; codeBtn.textContent = "Click again to replace any old codes"; say(codeMsg, "Old codes for this card stop working when you make new ones.", false); return; }
-      armed = false; codeBtn.textContent = "Make codes";
-      var body = JSON.stringify({ card: codeSel.value });
-      try {
-        var res = await fetch("/api/codes", { method: "POST", headers: { "content-type": "application/json", authorization: await authHeader("POST", "/api/codes", body) }, body: body });
-        if (!res.ok) { say(codeMsg, "Could not make codes for this card.", true); return; }
-        var r = await res.json();
-        codeOut.value = "copy,code\n" + r.codes.map(function (x) { return x.serial + "/" + r.run + "," + x.code.slice(0, 5) + "-" + x.code.slice(5); }).join("\n");
-        codeOut.hidden = false; codeCopy.hidden = false;
-        say(codeMsg, r.run + " codes made. Copy them now, they are not shown again.");
-      } catch (e) { say(codeMsg, "Signing was cancelled or failed.", true); }
-    });
-    codeCopy.addEventListener("click", function () { codeOut.select(); try { navigator.clipboard.writeText(codeOut.value); say(codeMsg, "Copied."); } catch (e) { document.execCommand("copy"); } });
     var saveMsg = document.getElementById("admin-save-msg");
     document.getElementById("admin-save").addEventListener("click", async function () {
       var data = {};

@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Verify my card | POPART.love</title>
-<meta name="description" content="Verify a POPART card with the secret code that comes with it.">
+<meta name="description" content="Verify a POPART card with the code printed on its back.">
 <link rel="canonical" href="https://popart.love/verify/">
 
 <meta property="og:type" content="website">
 <meta property="og:title" content="Verify my card | POPART.love">
-<meta property="og:description" content="Verify a POPART card with the secret code that comes with it.">
+<meta property="og:description" content="Verify a POPART card with the code printed on its back.">
 <meta property="og:url" content="https://popart.love/verify/">
 <meta name="theme-color" content="#f97316">
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
@@ -34,28 +34,28 @@
   <nav class="menu-panel" id="menu-panel" aria-label="Mobile"><ul><li><a href="/news/">News</a></li><li><a href="/artist/">Artist</a></li><li><a href="/popup/">PopUp</a></li><li><a href="/cards/">Cards</a></li><li><a href="/verify/" aria-current="page">Verify</a></li><li><a href="/stickers/">Stickers</a></li><li><a href="/prints/">Prints</a></li><li><a href="/shop/">Shop</a></li></ul></nav>
 </header>
 <main id="main">
-<section class="page-head"><div class="container"><h1>Verify my card</h1><p>Type the secret code from your card to check that it is a real POPART card.</p></div></section>
+<section class="page-head"><div class="container"><h1>Verify my card</h1><p>Type the code from the back of your card to check that it is a real POPART card.</p></div></section>
 <section class="section"><div class="container">
   <div class="split wide-left">
     <div class="panel">
-      <h2>Check a code</h2>
+      <h2>Check a card code</h2>
       <form id="verify-form" class="verify-form" novalidate>
         <label for="v-code">Card code</label>
-        <input id="v-code" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="14" placeholder="XXXXX-XXXXX">
+        <input id="v-code" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="9" placeholder="K7QM-2XP9">
         <button class="btn" type="submit">Verify my card</button>
       </form>
       <div id="v-result" class="verify-result" role="status" hidden></div>
     </div>
     <div class="prose">
       <h2>Where to find the code</h2>
-      <p>Every numbered card comes with its own secret code, a short mix of letters and numbers like <strong>7K3QM-9X2TA</strong>. It is on the card or the sleeve that came with it. The printed number such as 001/100 is not used here, because anyone can copy a number. The code is unique and only the artist can make it.</p>
+      <p>Every numbered card has its own card code on the back, bottom right, a mix of letters and numbers like <strong>K7QM-2XP9</strong>. It also sits on the certificate and the mount card. You only need the code. The printed number such as 001/100 is not used, because anyone can copy a number, while a code can only be made by the artist. Open edition cards have no code.</p>
       <h2>What the check does</h2>
       <ol>
-        <li>It looks the code up in the artist's private list.</li>
+        <li>It looks for the code in the artist's private code system.</li>
         <li>It tells you which card and which copy number the code belongs to.</li>
-        <li>It counts how many times the code has been checked, so you can spot a code that is being used again and again.</li>
+        <li>It shows if the copy is on the artist's list of sold cards, and how often the code has been checked, so you can spot a code that is used again and again.</li>
       </ol>
-      <p class="notice">Not found? Check the letters again (O and 0 or I and 1 are treated the same). Still not found? Ask the artist at the <a href="/popup/">next event</a> or through the <a href="/artist/">Artist page</a>.</p>
+      <p class="notice">Not found? Check the letters again. Still not found? Ask the artist at the <a href="/popup/">next event</a> or through the <a href="/artist/">Artist page</a>.</p>
     </div>
   </div>
 </div></section>

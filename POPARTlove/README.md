@@ -46,7 +46,7 @@ This writes the pictures to `assets/img/cards/`, adds the card to `data/cards.js
 
 ## Verify my card
 
-`/verify/` checks a secret card code, not the printed number (001/100 can be copied by anyone). In `/admin/` (Secret card codes) you make one random 10-character code per copy of a numbered card; the list is shown once, so copy it and print the codes on the cards or sleeves. Only a SHA-256 hash of each code is kept in Cloudflare KV, so even the database cannot reveal them. `/api/verify?code=` returns the card name and copy number, counts how often the code was checked (to spot reuse), and is limited to 10 tries a minute per visitor. Making new codes for a card replaces its old ones.
+`/verify/` checks the card code from the back of the card (see Per-copy verify codes below), not the printed number. The sold list is kept in Cloudflare KV and edited in `/admin/` (Sold serials column, like `1-5, 7`).
 
 ## Edit and rebuild
 
@@ -71,3 +71,6 @@ python3 -m http.server 8765   # preview at http://127.0.0.1:8765
 - Shop items are marked "Coming soon" with no prices. Add products and a checkout when ready.
 - Add a PopUp event list when there is one.
 - Site pages use self-hosted fonts. Only the Card Maker page still loads Google Fonts.
+
+### Per-copy verify codes
+Each numbered copy can carry its own code, printed on the back of the card and on the Card Maker certificate and mount card. The code is the first 40 bits of HMAC-SHA256(`CODE_SECRET`, `<card file>:<serial>`) written as 8 letters and digits, shown as `K7QM-2XP9`. Set the same secret in the Card Maker (Secret verify key field) and on the site: `wrangler secret put CODE_SECRET`. `/verify/` asks for the code only (no serial): `/api/verify?code=..` makes the codes of all numbered copies from the secret, finds the match and answers card, copy number, whether it is on the sold list and how many times the code was checked. 10 tries a minute per visitor. Without `CODE_SECRET` it answers 503. The card file is the site card id, for example `heart-holder`. Never commit the secret.
