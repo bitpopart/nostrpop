@@ -49,7 +49,11 @@
       tr.setAttribute("data-card", c.file);
       tr.innerHTML = '<td><strong></strong></td><td><select aria-label="Status"><option value="available">Available</option><option value="sold-out">Sold out</option><option value="coming-soon">Coming soon</option></select></td><td><input type="number" min="0" step="1" inputmode="numeric" aria-label="Copies left" placeholder="not tracked" ></td><td><input type="text" class="price" inputmode="decimal" aria-label="Price, same in euro and dollar" placeholder="e.g. 5" ></td><td><select class="where" aria-label="Sold where"><option value="both">Online and at events</option><option value="online">Online only</option><option value="events">At events only</option><option value="none">Not sold now</option></select></td><td><input type="url" class="url" aria-label="Shop link" placeholder="https://" ></td><td><input type="text" class="sold" aria-label="Sold serials" placeholder="1-5, 7" ></td>';
       ['Card','Status','Copies left','Price (EUR = USD)','Sold where','Shop link (https)','Sold serials'].forEach(function (l, i) { tr.children[i].setAttribute('data-label', l); });
-      tr.querySelector("strong").textContent = c.name + " (" + c.rarity + ", " + c.run + ")";
+      var first = tr.children[0];
+      first.innerHTML = '<div class="adm-card"><img alt="" width="60" height="84"><strong></strong></div>';
+      first.querySelector("img").src = "/assets/img/cards/" + c.file + ".webp";
+      first.querySelector("img").alt = c.name + " card";
+      first.querySelector("strong").textContent = c.name + " (" + c.rarity + ", " + c.run + ")";
       tr.querySelector("select").value = cur.status;
       tr.querySelector("input[type=number]").value = cur.left === null || cur.left === undefined ? "" : cur.left;
       var on = cur.online === undefined ? c.online !== false : cur.online;
