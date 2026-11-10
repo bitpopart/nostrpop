@@ -396,3 +396,7 @@ img, svg, video { max-width: 100%; }
 .ev-codes textarea { font-family: var(--font-mono); padding: .6rem; border: 1.5px solid var(--line); border-radius: 12px; background: var(--panel2); color: var(--ink); width: 100%; }
 .dl-form { display: flex; gap: .6rem; flex-wrap: wrap; align-items: center; width: 100%; }
 .dl-form input { flex: 1 1 14rem; font: inherit; padding: .65rem 1rem; border: 1.5px solid var(--line); border-radius: 999px; background: var(--panel2); color: var(--ink); }
+.studio-side { display: grid; gap: 1.2rem; min-width: 0; }
+.studio-logo { display: block; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 1.2rem 1.6rem; transition: transform .15s ease, box-shadow .15s ease; }
+.studio-logo:hover { transform: translateY(-3px) rotate(-1deg); box-shadow: 0 8px 0 var(--ink); }
+.studio-logo img { display: block; width: 100%; height: auto; max-width: 340px; margin: 0 auto; }

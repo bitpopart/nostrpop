@@ -753,6 +753,10 @@ def build_pages():
       <p>Want to know more about the artist behind the studio? You can find the story, the studio and more at <a href="https://bitpopart.com/artist" target="_blank" rel="noopener"><strong>bitpopart.com/artist</strong></a>, and all art works at <a href="https://bitpopart.com/art" target="_blank" rel="noopener"><strong>bitpopart.com/art</strong></a>.</p>
       <p><a class="btn" href="https://bitpopart.com/artist" target="_blank" rel="noopener">About the artist</a> <a class="btn yellow" href="https://bitpopart.com/art" target="_blank" rel="noopener">See all art works</a></p>
     </div>
+    <div class="studio-side">
+    <a class="studio-logo" href="https://www.bitpopart.com" target="_blank" rel="noopener" aria-label="Visit BitPopArt at bitpopart.com (opens in a new window)">
+      <img src="/assets/img/bitpopart-logo.webp" alt="BitPopArt logo" width="900" height="583">
+    </a>
     <div class="panel yellow">
       <h3>Studio facts</h3>
       <ul style="padding-left:1.1rem;margin:0">
@@ -762,6 +766,7 @@ def build_pages():
         <li>Artist: <a href="https://bitpopart.com/artist" rel="noopener">bitpopart.com/artist</a></li>
         <li>All art works: <a href="https://bitpopart.com/art" rel="noopener">bitpopart.com/art</a></li>
       </ul>
+    </div>
     </div>
   </div>
 </div></section>"""
