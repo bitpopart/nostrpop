@@ -503,3 +503,5 @@ h2.fat { font-size: clamp(2rem, 5vw, 3.4rem); margin-bottom: 1.4rem; }
 .hero h1 .lfj .l, .hero h1 .lfj .f, .hero h1 .lfj .j { -webkit-text-stroke-width: 4.5px; }
 .hero h1 .lfj, .page-head h1 .lfj { -webkit-text-stroke-width: 3px; color: #fff; }
 .hero h1 .lfj .l, .hero h1 .lfj .f, .hero h1 .lfj .j, .page-head h1 .lfj .l, .page-head h1 .lfj .f, .page-head h1 .lfj .j { -webkit-text-stroke-width: 4.5px; }
+.vibes > div:nth-child(3) .num { color: var(--yellow); -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill; }
+.vibe.v-orange { color: var(--yellow); -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; text-shadow: 2px 3px 0 rgba(0,0,0,.25); }
