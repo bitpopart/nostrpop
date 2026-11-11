@@ -1,4 +1,4 @@
-"""POPicons (POPART emoji pins): the faces, the pin art and the /popicons/ page body.
+"""POPpins (POPART emoji pins): the faces, the pin art and the /poppins/ page body.
 
 build.py imports this. To add a new pin when it is produced, edit PINS below:
   status "coming-soon" -> shows a Coming soon tag
@@ -74,7 +74,7 @@ def use(n, x, y, size, rot=0):
 def mock_tee():
     pins = use(14, 60, 80, 62, -8) + use(5, 124, 66, 58, 6) + use(1, 96, 128, 56, -4) + use(12, 150, 120, 52, 8)
     return (
-        '<svg class="mock" viewBox="0 0 300 290" role="img" aria-label="T-shirt with POPicons on the chest">'
+        '<svg class="mock" viewBox="0 0 300 290" role="img" aria-label="T-shirt with POPpins on the chest">'
         f'<path d="M92 24 L122 12 Q150 44 178 12 L208 24 L282 74 L250 118 L222 98 V268 H78 V98 L50 118 L18 74Z" '
         f'fill="#ff2f8a" stroke="{INK}" stroke-width="6" stroke-linejoin="round"/>'
         f'<path d="M122 12 Q150 44 178 12" fill="none" stroke="{INK}" stroke-width="6" stroke-linecap="round"/>'
@@ -85,7 +85,7 @@ def mock_tee():
 def mock_bag():
     pins = use(15, 78, 150, 56, -6) + use(2, 134, 138, 54, 6) + use(9, 100, 196, 52, 4) + use(13, 160, 190, 48, -8)
     return (
-        '<svg class="mock" viewBox="0 0 300 290" role="img" aria-label="Tote bag with POPicons">'
+        '<svg class="mock" viewBox="0 0 300 290" role="img" aria-label="Tote bag with POPpins">'
         f'<path d="M100 96 Q100 22 150 22 Q200 22 200 96" fill="none" stroke="{INK}" stroke-width="12" stroke-linecap="round"/>'
         f'<path d="M100 96 Q100 22 150 22 Q200 22 200 96" fill="none" stroke="#28c2ff" stroke-width="5" stroke-linecap="round"/>'
         f'<path d="M58 92 H242 L254 268 H46Z" fill="#28c2ff" stroke="{INK}" stroke-width="6" stroke-linejoin="round"/>'
@@ -95,7 +95,7 @@ def mock_bag():
 
 def mock_cap():
     return (
-        '<svg class="mock" viewBox="0 0 300 290" role="img" aria-label="Jacket with POPicons">'
+        '<svg class="mock" viewBox="0 0 300 290" role="img" aria-label="Jacket with POPpins">'
         f'<path d="M40 70 L110 40 Q150 70 190 40 L260 70 L270 270 H30Z" fill="#ffe229" stroke="{INK}" stroke-width="6" stroke-linejoin="round"/>'
         f'<path d="M110 40 L150 130 L190 40" fill="none" stroke="{INK}" stroke-width="6" stroke-linejoin="round"/>'
         f'<path d="M150 130 V270" stroke="{INK}" stroke-width="5"/>'
@@ -105,9 +105,9 @@ def mock_cap():
 
 
 def back_svg():
-    """The back of a POPicon: flat metal plate with a black rubber clutch on the post."""
+    """The back of a POPpin: flat metal plate with a black rubber clutch on the post."""
     return (
-        '<svg class="pin-back" viewBox="0 0 200 200" role="img" aria-label="Back of a POPicon with a black rubber clutch">'
+        '<svg class="pin-back" viewBox="0 0 200 200" role="img" aria-label="Back of a POPpin with a black rubber clutch">'
         '<defs><radialGradient id="nick" cx="35%" cy="30%" r="80%"><stop offset="0" stop-color="#fafbfc"/><stop offset=".6" stop-color="#c9ced4"/><stop offset="1" stop-color="#9aa1a9"/></radialGradient></defs>'
         f'<circle cx="100" cy="100" r="82" fill="url(#nick)" stroke="{INK}" stroke-width="6"/>'
         f'<circle cx="100" cy="100" r="70" fill="none" stroke="rgba(0,0,0,.12)" stroke-width="2"/>'
@@ -125,7 +125,7 @@ def back_svg():
 def explain_svg():
     lab = 'font-family="Barlow Condensed,Arial Narrow,sans-serif" font-weight="800" font-size="17" letter-spacing="1" text-anchor="middle"'
     return (
-        '<svg class="explain" viewBox="0 0 560 250" role="img" aria-label="How a POPicon is built: the face, a metal post on a flat plate, and a black rubber clutch that locks it">'
+        '<svg class="explain" viewBox="0 0 560 250" role="img" aria-label="How a POPpin is built: the face, a metal post on a flat plate, and a black rubber clutch that locks it">'
         '<defs><linearGradient id="nk" x1="0" x2="1"><stop offset="0" stop-color="#f4f6f8"/><stop offset="1" stop-color="#9aa1a9"/></linearGradient></defs>'
         f'<image href="{pin_src(14)}" x="6" y="52" width="140" height="140"/>'
         # plate + post
@@ -136,7 +136,7 @@ def explain_svg():
         f'<path d="M416 92 Q470 88 474 124 Q470 160 416 156Z" fill="#2a2a2a" stroke="{INK}" stroke-width="4" stroke-linejoin="round"/>'
         f'<ellipse cx="446" cy="108" rx="14" ry="7" fill="#fff" fill-opacity=".2" transform="rotate(-20 446 108)"/>'
         f'<path d="M150 122 H190 M340 122 H364" stroke="{INK}" stroke-width="3" stroke-dasharray="6 6" stroke-linecap="round"/>'
-        f'<text x="76" y="224" {lab}>1. POPicon</text>'
+        f'<text x="76" y="224" {lab}>1. POPpin</text>'
         f'<text x="262" y="224" {lab}>2. Metal post</text>'
         f'<text x="424" y="224" {lab}>3. Rubber clutch</text>'
         '</svg>'
@@ -148,19 +148,19 @@ def page_body():
     return f"""<section class="pins-hero">
   <div class="container">
     <p class="kick">Emoji pins &middot; 3D &middot; Shiny</p>
-    <h1><span>POPicons</span></h1>
-    <p class="pins-lead">POPicons are tiny faces with big moods. Thick outlines, a glossy domed finish and a loud smile, made to clip on your bag, jacket, cap or t-shirt.</p>
+    <h1><span>POPpins</span></h1>
+    <p class="pins-lead">POPpins are tiny faces with big moods. Thick outlines, a glossy domed finish and a loud smile, made to clip on your bag, jacket, cap or t-shirt.</p>
     <div class="hero-pins" aria-hidden="true">{hero_pins()}</div>
     <a class="pins-cta" href="#notify">Get a drop alert &rarr;</a>
   </div>
 </section>
 <section class="section"><div class="container">
-  <p class="notice"><strong>Coming soon.</strong> The first batch is still in the making. Each POPicon shows up below with a Buy button as soon as it is produced.</p>
-  <div class="section-head" style="margin-top:2rem"><h2 class="fat" style="margin:0">Meet the POPicons</h2><p>{n} POPicons so far. More moods are on the way, so check back after every drop.</p></div>
+  <p class="notice"><strong>Coming soon.</strong> The first batch is still in the making. Each POPpin shows up below with a Buy button as soon as it is produced.</p>
+  <div class="section-head" style="margin-top:2rem"><h2 class="fat" style="margin:0">Meet the POPpins</h2><p>{n} POPpins so far. More moods are on the way, so check back after every drop.</p></div>
   <div class="pin-grid">{pin_cards()}</div>
 </div></section>
 <section class="section"><div class="container">
-  <div class="section-head"><h2 class="fat" style="margin:0">Pin POPicons on everything</h2><p>Bag, tee, jacket, cap, lanyard or notebook. Mix a few faces and make your own mood board.</p></div>
+  <div class="section-head"><h2 class="fat" style="margin:0">Pin POPpins on everything</h2><p>Bag, tee, jacket, cap, lanyard or notebook. Mix a few faces and make your own mood board.</p></div>
   <div class="grid g3 mock-grid">
     <figure class="mock-card">{mock_tee()}<figcaption>T-shirt</figcaption></figure>
     <figure class="mock-card">{mock_bag()}<figcaption>Tote bag</figcaption></figure>
@@ -169,7 +169,7 @@ def page_body():
   <p class="notice" style="margin-top:1rem">These mockups show the idea. Real pins can look a little different once produced.</p>
 </div></section>
 <section class="section"><div class="container">
-  <div class="section-head"><h2 class="fat" style="margin:0">What is on the back</h2><p>Every POPicon has a flat metal plate with a post and a black rubber clutch that locks on. Tap the pin to flip it over.</p></div>
+  <div class="section-head"><h2 class="fat" style="margin:0">What is on the back</h2><p>Every POPpin has a flat metal plate with a post and a black rubber clutch that locks on. Tap the pin to flip it over.</p></div>
   <div class="grid g2 back-grid">
     <div class="back-card">
       <div class="flip" id="flip"><div class="flip-inner">
@@ -179,7 +179,7 @@ def page_body():
       <button class="btn yellow" type="button" id="flip-btn" aria-pressed="false">Flip it over</button>
     </div>
     <div class="back-card">{explain_svg()}
-      <p class="back-note">Push the post through your bag, jacket or cap, then press the rubber clutch on from the other side. It grips the post, so the POPicon stays put.</p>
+      <p class="back-note">Push the post through your bag, jacket or cap, then press the rubber clutch on from the other side. It grips the post, so the POPpin stays put.</p>
     </div>
   </div>
 </div></section>

@@ -1,4 +1,6 @@
 /artist/ /studio/ 301
 /artist /studio/ 301
-/pins/ /popicons/ 301
-/pins /popicons/ 301
+/pins/ /poppins/ 301
+/pins /poppins/ 301
+/popicons/ /poppins/ 301
+/popicons /poppins/ 301
