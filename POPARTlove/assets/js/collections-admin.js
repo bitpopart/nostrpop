@@ -93,7 +93,7 @@
       if (pending && pending.b64) { c._img = pending.b64; c.image = true; }
       else if (pending && pending.clear) { delete c._img; c.image = false; }
       if (!editing) list.push(c);
-      reset(); mark(); draw();
+      reset(); mark(); draw(); doSave().catch(function () {});
     });
 
     function draw() {
@@ -119,7 +119,7 @@
         var del = el("button", "btn ghost", armed === c.id ? "Sure? Delete" : "Delete"); del.type = "button";
         del.addEventListener("click", function () {
           if (armed !== c.id) { armed = c.id; draw(); return; }
-          armed = null; list = list.filter(function (x) { return x.id !== c.id; }); if (editing === c.id) reset(); mark(); draw();
+          armed = null; list = list.filter(function (x) { return x.id !== c.id; }); if (editing === c.id) reset(); mark(); draw(); doSave().catch(function () {});
         });
         btns.appendChild(ed); btns.appendChild(del); row.appendChild(btns); box.appendChild(row);
       });
@@ -127,8 +127,8 @@
 
     function doSave() {
       say(msg, "Saving...", false);
-      return api.save(list).then(function (saved) { list = saved; dirty = false; draw(); changed(); say(msg, "Saved. The Cards page shows the collections within a minute."); })
-        .catch(function (e) { say(msg, "Could not save the collections. Try signing again.", true); throw e; });
+      return api.save(list).then(function (saved) { list = saved; dirty = false; draw(); changed(); say(msg, "Saved " + list.length + (list.length === 1 ? " collection." : " collections.") + " The site shows them within a minute."); })
+        .catch(function (e) { var hint = e && /HTTP 40[45]/.test(e.message) ? " This usually means the site's worker on Cloudflare has not been updated to the latest version yet." : ""; say(msg, "Could not save the collections (" + (e && e.message ? e.message : "unknown error") + ")." + hint + " Your changes are still here, press Save collections to try again.", true); throw e; });
     }
     saveBtn.addEventListener("click", function () { doSave().catch(function () {}); });
     window.addEventListener("beforeunload", function (e) { if (dirty) { e.preventDefault(); e.returnValue = ""; } });

@@ -87,7 +87,11 @@
     root.appendChild(evBox);
     async function signedPut(path, body) {
       var res = await fetch(path, { method: "PUT", headers: { authorization: await authHeader("PUT", path.split("?")[0], body) }, body: body });
-      if (!res.ok) throw new Error("save failed");
+      if (!res.ok) {
+        var why = "";
+        try { why = (await res.json()).error || ""; } catch (e) {}
+        throw new Error("HTTP " + res.status + (why ? " " + why : ""));
+      }
       return res;
     }
     ["stickers", "prints", "free"].forEach(function (kind) {
@@ -150,7 +154,14 @@
           out.push(c);
         }
         var res = await signedPut("/api/collections", JSON.stringify(out));
-        return (await res.json()).collections;
+        var saved = (await res.json()).collections;
+        // read it back, so we know the server really kept it
+        try {
+          var back = await (await fresh("/api/collections")).json();
+          var ids = back.map(function (c) { return c.id; });
+          if (saved.some(function (c) { return ids.indexOf(c.id) < 0; })) throw new Error("The server accepted the save but did not return it when read back. Wait a minute and reload to check.");
+        } catch (e) { if (/read back/.test(e.message)) throw e; }
+        return saved;
       }
     });
     function fillCollCells() {
