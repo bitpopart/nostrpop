@@ -498,7 +498,7 @@ h2.fat { font-size: clamp(2rem, 5vw, 3.4rem); margin-bottom: 1.4rem; }
 .btn.pink:hover { filter: none; box-shadow: 0 6px 0 var(--ink); }
 
 /* Drop cap */
-.prose.dropcap > h2:first-child + p::first-letter { float: left; font-family: var(--font-fat); font-size: 3.6em; line-height: .85; padding: .06em .12em 0 0; color: var(--yellow); -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; text-shadow: 3px 3px 0 rgba(0,0,0,.28); }
+.prose.dropcap > h2:first-child + p::first-letter { float: left; font-family: var(--font-fat); font-size: 3.6em; line-height: .85; padding: .06em .12em 0 0; color: var(--orange); -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; text-shadow: 3px 3px 0 rgba(0,0,0,.28); }
 .hero h1 { margin-bottom: 1.1rem; -webkit-text-stroke-width: 4.5px; }
 .hero h1 .lfj .l, .hero h1 .lfj .f, .hero h1 .lfj .j { -webkit-text-stroke-width: 4.5px; }
 .hero h1 .lfj, .page-head h1 .lfj { -webkit-text-stroke-width: 3px; color: #fff; }
