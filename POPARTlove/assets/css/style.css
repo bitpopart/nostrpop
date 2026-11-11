@@ -513,8 +513,8 @@ h2.fat { font-size: clamp(2rem, 5vw, 3.4rem); margin-bottom: 1.4rem; }
 }
 .pins-hero .kick { margin: 0; font-family: var(--font-label); font-weight: 800; letter-spacing: .42em; text-transform: uppercase; font-size: clamp(.8rem, 2.4vw, 1.1rem); }
 .pins-hero h1 {
-  margin: .6rem 0 1rem; font-family: var(--font-fat); text-transform: uppercase; font-weight: 400;
-  color: #fff; font-size: clamp(3rem, 12vw, 7.2rem); line-height: .98;
+  margin: .6rem 0 1rem; font-family: var(--font-fat); text-transform: none; font-weight: 400;
+  color: #fff; font-size: clamp(3rem, 13vw, 8rem); line-height: .98;
   -webkit-text-stroke: clamp(6px, 1.4vw, 12px) var(--ink); paint-order: stroke fill;
   text-shadow: 6px 7px 0 rgba(0,0,0,.28);
 }

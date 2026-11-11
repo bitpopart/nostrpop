@@ -1,4 +1,4 @@
-"""POPART Emoji Pins: the faces, the pin art and the /pins/ page body.
+"""POPicons (POPART emoji pins): the faces, the pin art and the /popicons/ page body.
 
 build.py imports this. To add a new pin when it is produced, edit PINS below:
   status "coming-soon" -> shows a Coming soon tag
@@ -74,7 +74,7 @@ def use(n, x, y, size, rot=0):
 def mock_tee():
     pins = use(14, 60, 80, 62, -8) + use(5, 124, 66, 58, 6) + use(1, 96, 128, 56, -4) + use(12, 150, 120, 52, 8)
     return (
-        '<svg class="mock" viewBox="0 0 300 290" role="img" aria-label="T-shirt with emoji pins on the chest">'
+        '<svg class="mock" viewBox="0 0 300 290" role="img" aria-label="T-shirt with POPicons on the chest">'
         f'<path d="M92 24 L122 12 Q150 44 178 12 L208 24 L282 74 L250 118 L222 98 V268 H78 V98 L50 118 L18 74Z" '
         f'fill="#ff2f8a" stroke="{INK}" stroke-width="6" stroke-linejoin="round"/>'
         f'<path d="M122 12 Q150 44 178 12" fill="none" stroke="{INK}" stroke-width="6" stroke-linecap="round"/>'
@@ -85,7 +85,7 @@ def mock_tee():
 def mock_bag():
     pins = use(15, 78, 150, 56, -6) + use(2, 134, 138, 54, 6) + use(9, 100, 196, 52, 4) + use(13, 160, 190, 48, -8)
     return (
-        '<svg class="mock" viewBox="0 0 300 290" role="img" aria-label="Tote bag with emoji pins">'
+        '<svg class="mock" viewBox="0 0 300 290" role="img" aria-label="Tote bag with POPicons">'
         f'<path d="M100 96 Q100 22 150 22 Q200 22 200 96" fill="none" stroke="{INK}" stroke-width="12" stroke-linecap="round"/>'
         f'<path d="M100 96 Q100 22 150 22 Q200 22 200 96" fill="none" stroke="#28c2ff" stroke-width="5" stroke-linecap="round"/>'
         f'<path d="M58 92 H242 L254 268 H46Z" fill="#28c2ff" stroke="{INK}" stroke-width="6" stroke-linejoin="round"/>'
@@ -95,7 +95,7 @@ def mock_bag():
 
 def mock_cap():
     return (
-        '<svg class="mock" viewBox="0 0 300 290" role="img" aria-label="Jacket with emoji pins">'
+        '<svg class="mock" viewBox="0 0 300 290" role="img" aria-label="Jacket with POPicons">'
         f'<path d="M40 70 L110 40 Q150 70 190 40 L260 70 L270 270 H30Z" fill="#ffe229" stroke="{INK}" stroke-width="6" stroke-linejoin="round"/>'
         f'<path d="M110 40 L150 130 L190 40" fill="none" stroke="{INK}" stroke-width="6" stroke-linejoin="round"/>'
         f'<path d="M150 130 V270" stroke="{INK}" stroke-width="5"/>'
@@ -108,20 +108,20 @@ def page_body():
     n = len(PINS)
     return f"""<section class="pins-hero">
   <div class="container">
-    <p class="kick">3D &middot; Shiny &middot; Wear them anywhere</p>
-    <h1><span>Emoji</span><span>Pins</span></h1>
-    <p class="pins-lead">Tiny faces with big moods. Thick outlines, a glossy domed finish and a loud smile, made to clip on your bag, jacket, cap or t-shirt.</p>
+    <p class="kick">Emoji pins &middot; 3D &middot; Shiny</p>
+    <h1><span>POPicons</span></h1>
+    <p class="pins-lead">POPicons are tiny faces with big moods. Thick outlines, a glossy domed finish and a loud smile, made to clip on your bag, jacket, cap or t-shirt.</p>
     <div class="hero-pins" aria-hidden="true">{hero_pins()}</div>
     <a class="pins-cta" href="#notify">Get a drop alert &rarr;</a>
   </div>
 </section>
 <section class="section"><div class="container">
-  <p class="notice"><strong>Coming soon.</strong> The first batch is still in the making. Each pin shows up below with a Buy button as soon as it is produced.</p>
-  <div class="section-head" style="margin-top:2rem"><h2 class="fat" style="margin:0">Meet the faces</h2><p>{n} faces so far, drawn in the POPART emoji style. More moods are on the way, so check back after every drop.</p></div>
+  <p class="notice"><strong>Coming soon.</strong> The first batch is still in the making. Each POPicon shows up below with a Buy button as soon as it is produced.</p>
+  <div class="section-head" style="margin-top:2rem"><h2 class="fat" style="margin:0">Meet the POPicons</h2><p>{n} POPicons so far. More moods are on the way, so check back after every drop.</p></div>
   <div class="pin-grid">{pin_cards()}</div>
 </div></section>
 <section class="section"><div class="container">
-  <div class="section-head"><h2 class="fat" style="margin:0">Pin them on everything</h2><p>Bag, tee, jacket, cap, lanyard or notebook. Mix a few faces and make your own mood board.</p></div>
+  <div class="section-head"><h2 class="fat" style="margin:0">Pin POPicons on everything</h2><p>Bag, tee, jacket, cap, lanyard or notebook. Mix a few faces and make your own mood board.</p></div>
   <div class="grid g3 mock-grid">
     <figure class="mock-card">{mock_tee()}<figcaption>T-shirt</figcaption></figure>
     <figure class="mock-card">{mock_bag()}<figcaption>Tote bag</figcaption></figure>

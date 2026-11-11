@@ -261,7 +261,7 @@ NAV = [
     ("Cards", "/cards/"),
     ("Verify", "/verify/"),
     ("Stickers", "/stickers/"),
-    ("Pins", "/pins/"),
+    ("POPicons", "/popicons/"),
     ("Prints", "/prints/"),
     ("Shop", "/shop/"),
 ]
@@ -667,7 +667,7 @@ def build_pages():
 <script src="/assets/js/catalog.js" defer></script>"""
     page("stickers", "Stickers", "POPART.love pop art stickers in the Love, Freedom and Joy themes.", stickers, "/stickers/")
 
-    page("pins", "Emoji Pins", "POPART emoji pins: shiny 3D pop art faces with thick outlines, made to pin on a bag, jacket, cap or t-shirt. Coming soon.", pins.page_body(), "/pins/")
+    page("popicons", "POPicons", "POPicons: shiny 3D pop art emoji pins with thick outlines, made to pin on a bag, jacket, cap or t-shirt. Coming soon.", pins.page_body(), "/popicons/")
 
     prints = page_head("Prints", "Pop art prints for your wall, in the three themes: Love, Freedom and Joy.") + f"""
 <section class="section"><div class="container">
@@ -914,7 +914,7 @@ def build_meta():
         f"  <url><loc>{DOMAIN}{p}</loc><lastmod>{TODAY}</lastmod></url>\n" for p in sorted(set(pages_written))
     )
     write("sitemap.xml", f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{urls}</urlset>\n')
-    write("_redirects", "/artist/ /studio/ 301\n/artist /studio/ 301\n")
+    write("_redirects", "/artist/ /studio/ 301\n/artist /studio/ 301\n/pins/ /popicons/ 301\n/pins /popicons/ 301\n")
     write("robots.txt", f"User-agent: *\nAllow: /\nDisallow: /admin/\n\nSitemap: {DOMAIN}/sitemap.xml\n")
     write("CNAME", "popart.love\n")
     write(
