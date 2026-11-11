@@ -345,7 +345,8 @@ def footer_html():
 </footer>
 <script src="/assets/js/site.js" defer></script>
 <script src="/assets/js/cards.js" defer></script>
-<script src="/assets/js/news.js" defer></script>"""
+<script src="/assets/js/news.js" defer></script>
+<script src="/assets/js/collections.js" defer></script>"""
 
 
 LFJ_RE = re.compile(r"Love, Freedom(, | &amp; | &amp;amp; | and | or | & )Joy")
@@ -665,6 +666,7 @@ def build_pages():
     cards = page_head("Cards", "POPART collectible cards: pop art you can collect, swap and keep. All kinds of art, one big collection.") + f"""
 <section class="section"><div class="container">
   <p class="notice"><strong>New cards land here.</strong> Every card made with the POPART Card Maker and added to the collection shows up below, newest first. Some cards still use draft art.</p>
+  <div class="coll" data-collections hidden></div>
   <h2 style="margin-top:2rem">Available cards</h2>
   {tribe_cards()}
 </div></section>
@@ -815,6 +817,7 @@ def build_pages():
     admin = page_head("Page not found", "That page flew away like a paper plane.") + """
 <section class="section"><div class="container" id="admin-root"><a class="btn" href="/">Back to the home page</a></div></section>
 <script src="/assets/js/cards-admin.js" defer></script>
+<script src="/assets/js/collections-admin.js" defer></script>
 <script src="/assets/js/news-admin.js" defer></script>
 <script src="/assets/js/events-admin.js" defer></script>
 <script src="/assets/js/catalog-admin.js" defer></script>

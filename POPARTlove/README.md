@@ -97,3 +97,7 @@ Under "Edit cards" you can add a card (name, web name, theme, series, rarity, ru
 ## News and quick jump
 
 Admin has a News section: title, date, text and a thumbnail photo. Saved news replaces the starter news on the News page and the home page (newest first). Buttons at the top of Admin jump to each section.
+
+## Collections
+
+Admin has a Collections section: name, short line, thumbnail (the first card is used if none) and the cards in it. Each card row in the Cards table also has "Add to collection" checkboxes, and the main Save changes button saves collection changes too. The Cards page shows the collections as tiles; a click shows only the cards in that collection. Stored in KV `collections`, thumbnails at `/api/event-image?id=k-<id>`.

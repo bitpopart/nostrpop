@@ -45,15 +45,15 @@
     var head = document.querySelector(".page-head");
     if (head) head.innerHTML = '<div class="container"><h1>Admin</h1><p>Cards, news, PopUp events, stickers, prints and free downloads.</p></div>';
     root.innerHTML = '<nav class="admin-jump" aria-label="Jump to a section"></nav><div class="section-head" id="sec-stock"><div><h2>Cards</h2><p>Signed in with your Nostr key.</p></div><button class="btn" type="button" id="admin-save">Save changes</button></div>' +
-      '<div class="table-wrap"><table class="simple" id="admin-table"><thead><tr><th>Card</th><th>Status</th><th>Copies left</th><th>Price (EUR = USD)</th><th>Sold where</th><th>Shop link (https)</th><th>Sold serials</th></tr></thead><tbody></tbody></table></div>' +
+      '<div class="table-wrap"><table class="simple" id="admin-table"><thead><tr><th>Card</th><th>Status</th><th>Copies left</th><th>Price (EUR = USD)</th><th>Sold where</th><th>Shop link (https)</th><th>Sold serials</th><th>Collections</th></tr></thead><tbody></tbody></table></div>' +
       '<p class="form-msg" id="admin-save-msg" role="status"></p>';
     var tbody = root.querySelector("tbody");
     cards.forEach(function (c) {
       var cur = stock[c.file] || { status: c.status || "available", left: c.left };
       var tr = document.createElement("tr");
       tr.setAttribute("data-card", c.file);
-      tr.innerHTML = '<td><strong></strong></td><td><select aria-label="Status"><option value="available">Available</option><option value="sold-out">Sold out</option><option value="coming-soon">Coming soon</option></select></td><td><input type="number" min="0" step="1" inputmode="numeric" aria-label="Copies left" placeholder="not tracked" ></td><td><input type="text" class="price" inputmode="decimal" aria-label="Price, same in euro and dollar" placeholder="e.g. 5" ></td><td><select class="where" aria-label="Sold where"><option value="both">Online and at events</option><option value="online">Online only</option><option value="events">At events only</option><option value="none">Not sold now</option></select></td><td><input type="url" class="url" aria-label="Shop link" placeholder="https://" ></td><td><input type="text" class="sold" aria-label="Sold serials" placeholder="1-5, 7" ></td>';
-      ['Card','Status','Copies left','Price (EUR = USD)','Sold where','Shop link (https)','Sold serials'].forEach(function (l, i) { tr.children[i].setAttribute('data-label', l); });
+      tr.innerHTML = '<td><strong></strong></td><td><select aria-label="Status"><option value="available">Available</option><option value="sold-out">Sold out</option><option value="coming-soon">Coming soon</option></select></td><td><input type="number" min="0" step="1" inputmode="numeric" aria-label="Copies left" placeholder="not tracked" ></td><td><input type="text" class="price" inputmode="decimal" aria-label="Price, same in euro and dollar" placeholder="e.g. 5" ></td><td><select class="where" aria-label="Sold where"><option value="both">Online and at events</option><option value="online">Online only</option><option value="events">At events only</option><option value="none">Not sold now</option></select></td><td><input type="url" class="url" aria-label="Shop link" placeholder="https://" ></td><td><input type="text" class="sold" aria-label="Sold serials" placeholder="1-5, 7" ></td><td class="coll-cell"></td>';
+      ['Card','Status','Copies left','Price (EUR = USD)','Sold where','Shop link (https)','Sold serials','Add to collection'].forEach(function (l, i) { tr.children[i].setAttribute('data-label', l); });
       var first = tr.children[0];
       first.innerHTML = '<div class="adm-card"><img alt="" width="60" height="84"><strong></strong></div>';
       first.querySelector("img").src = c.front ? "/api/event-image?id=c-" + encodeURIComponent(c.file) + "&v=" + (c.imv || 0) : "/assets/img/cards/" + c.file + ".webp";
@@ -73,6 +73,9 @@
     var cardsBox = document.createElement("div");
     cardsBox.style.marginTop = "2.4rem";
     root.appendChild(cardsBox);
+    var collBox = document.createElement("div");
+    collBox.style.marginTop = "2.4rem";
+    root.appendChild(collBox);
     var newsBox = document.createElement("div");
     newsBox.style.marginTop = "2.4rem";
     root.appendChild(newsBox);
@@ -127,6 +130,38 @@
         return (await res.json()).cards;
       }
     });
+    function thumbOf(c) { return c.front ? "/api/event-image?id=c-" + encodeURIComponent(c.file) + "&v=" + (c.imv || 0) : "/assets/img/cards/" + c.file + ".webp"; }
+    var coll = window.PopartCollectionsAdmin.mount(collBox, {
+      cards: function () { return cards; },
+      thumbOf: thumbOf,
+      load: function () { return fetch("/api/collections").then(function (r) { return r.ok ? r.json() : []; }); },
+      save: async function (list) {
+        var out = [];
+        for (var i = 0; i < list.length; i++) {
+          var c = Object.assign({}, list[i]);
+          if (c._img) { await signedPut("/api/event-image?id=k-" + encodeURIComponent(c.id), c._img); c.image = true; c.imv = Date.now(); delete c._img; }
+          out.push(c);
+        }
+        var res = await signedPut("/api/collections", JSON.stringify(out));
+        return (await res.json()).collections;
+      }
+    });
+    function fillCollCells() {
+      var all = coll.list();
+      tbody.querySelectorAll("tr").forEach(function (tr) {
+        var cell = tr.querySelector(".coll-cell"), file = tr.getAttribute("data-card");
+        cell.innerHTML = "";
+        if (!all.length) { cell.textContent = "Make a collection below first."; return; }
+        all.forEach(function (c) {
+          var l = document.createElement("label"); l.className = "coll-chip";
+          var cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = coll.has(c.id, file);
+          cb.addEventListener("change", function () { coll.toggle(c.id, file, cb.checked); });
+          l.appendChild(cb); l.appendChild(document.createTextNode(" " + c.name)); cell.appendChild(l);
+        });
+      });
+    }
+    coll.onChange(fillCollCells);
+    fillCollCells();
     window.PopartNewsAdmin.mount(newsBox, {
       load: function () { return fetch("/api/news").then(function (r) { return r.ok ? r.json() : []; }); },
       save: async function (list) {
@@ -153,7 +188,7 @@
         return (await res.json()).events;
       }
     });
-    var jumps = [["Cards", document.getElementById("sec-stock")], ["Edit cards", cardsBox], ["News", newsBox], ["PopUp", evBox]];
+    var jumps = [["Cards", document.getElementById("sec-stock")], ["Edit cards", cardsBox], ["Collections", collBox], ["News", newsBox], ["PopUp", evBox]];
     [["Stickers", "stickers"], ["Prints", "prints"], ["Free downloads", "free"]].forEach(function (k) { jumps.push([k[0], root.querySelector('[data-kind="' + k[1] + '"]')]); });
     var jbar = root.querySelector(".admin-jump");
     jumps.forEach(function (j) {
@@ -175,7 +210,10 @@
       var body = JSON.stringify(data);
       try {
         var res = await fetch("/api/stock", { method: "PUT", headers: { "content-type": "application/json", authorization: await authHeader("PUT", "/api/stock", body) }, body: body });
-        if (res.ok) say(saveMsg, "Saved. The site shows the new stock within a minute.");
+        if (res.ok) {
+          if (coll.isDirty()) { try { await coll.save(); } catch (e) { say(saveMsg, "Stock saved, but the collections could not be saved.", true); return; } }
+          say(saveMsg, "Saved. The site shows the changes within a minute.");
+        }
         else say(saveMsg, "Could not save. Check the numbers and that the shop link starts with https:// and sold serials look like 1-5, 7, and the price is a number like 5 or 7.50.", true);
       } catch (e) { say(saveMsg, "Signing was cancelled or failed.", true); }
     });

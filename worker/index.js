@@ -3,6 +3,7 @@
 // PUT  /api/stock  admin only: needs a NIP-98 signed Nostr event from ADMIN_PUBKEY.
 // GET/PUT /api/events and /api/event-image: PopUp events and their thumbnails (PUT is admin only).
 // GET/PUT /api/news: news items (title, date, text, thumbnail at /api/event-image?id=n-<id>; PUT is admin only).
+// GET/PUT /api/collections: card collections (name, text, thumbnail at /api/event-image?id=k-<id>, card list).
 // GET/PUT /api/cards: added/edited/hidden cards (PUT is admin only).
 // GET/PUT /api/catalog?kind=stickers|prints: stickers and prints lists (PUT is admin only).
 // GET/PUT /api/file?id=: free download files (PUT is admin only, up to 20 MB). Lists live in /api/catalog?kind=free.
@@ -169,6 +170,27 @@ function serialInList(str, n) {
 function runOf(card) {
   const m = /\d+/.exec(card.run || "");
   return m ? Number(m[0]) : null;
+}
+
+// ---- Card collections ------------------------------------------------------
+function cleanCollections(input) {
+  if (!Array.isArray(input) || input.length > 100) return null;
+  const out = [], seen = new Set();
+  for (const e of input) {
+    if (!e || typeof e !== "object" || typeof e.id !== "string" || !/^[a-z0-9-]{1,36}$/.test(e.id) || seen.has(e.id)) return null;
+    seen.add(e.id);
+    const name = str(e.name, 60), text = str(e.text, 300);
+    if (name === null || !name || text === null) return null;
+    if (!Array.isArray(e.cards) || e.cards.length > 400) return null;
+    const cards = [];
+    for (const f of e.cards) {
+      if (typeof f !== "string" || !/^[a-z0-9-]{1,32}$/.test(f)) return null;
+      if (!cards.includes(f)) cards.push(f);
+    }
+    const imv = Number.isFinite(e.imv) ? Math.max(0, Math.floor(e.imv)) : 0;
+    out.push({ id: e.id, name, text, image: e.image === true, imv, cards });
+  }
+  return out;
 }
 
 // ---- News items ------------------------------------------------------------
@@ -406,6 +428,24 @@ export default {
       for (const e of old) if (e.file && !keepFiles.has(e.id)) await env.CARDS_KV.delete("dl:" + e.id);
       await env.CARDS_KV.put(key, JSON.stringify(list));
       return json({ ok: true, items: list });
+    }
+    if (url.pathname === "/api/collections") {
+      if (request.method === "GET") return json((await env.CARDS_KV.get("collections", "json")) || [], 200, { "cache-control": "public, max-age=30" });
+      if (request.method !== "PUT") return json({ error: "method not allowed" }, 405, { allow: "GET, PUT" });
+      const body = await request.text();
+      if (!(await isAdmin(request, env, body))) return json({ error: "not allowed" }, 401);
+      let list;
+      try {
+        list = cleanCollections(JSON.parse(body));
+      } catch {
+        list = null;
+      }
+      if (!list) return json({ error: "invalid collections" }, 400);
+      const old = (await env.CARDS_KV.get("collections", "json")) || [];
+      const keep = new Set(list.filter((e) => e.image).map((e) => e.id));
+      for (const e of old) if (!keep.has(e.id)) await env.CARDS_KV.delete("evimg:k-" + e.id);
+      await env.CARDS_KV.put("collections", JSON.stringify(list));
+      return json({ ok: true, collections: list });
     }
     if (url.pathname === "/api/news") {
       if (request.method === "GET") return json((await env.CARDS_KV.get("news", "json")) || [], 200, { "cache-control": "public, max-age=30" });
