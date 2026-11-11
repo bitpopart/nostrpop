@@ -103,3 +103,7 @@ Admin has a News section: title, date, text and a thumbnail photo. Saved news re
 Admin has a Collections section: name, short line, thumbnail (the first card is used if none) and the cards in it. Each card row in the Cards table also has "Add to collection" checkboxes, and the main Save changes button saves collection changes too. The Cards page shows the collections as tiles; a click shows only the cards in that collection. Stored in KV `collections`, thumbnails at `/api/event-image?id=k-<id>`.
 
 Collections can also hold stickers and prints (tick them in the collection form; they must be saved in Stickers/Prints first). There is a Collections page (/collections/) and a Collections icon on the home page.
+
+## Look and feel
+
+Headlines use the chunky Chango font with a white fill, black outline and hard shadow. Body text uses Comfortaa. Colour bands with dots (home "Three good vibes only", studio call to action) and a drop cap on the Studio text follow the BangPOP style. Fonts are self-hosted in assets/fonts.

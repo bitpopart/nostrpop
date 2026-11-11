@@ -276,6 +276,7 @@ TILES = [
 
 FONTS = (
     '<link rel="preload" href="/assets/fonts/bangers-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>'
+    '<link rel="preload" href="/assets/fonts/chango-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>'
 )
 
 pages_written = []
@@ -491,6 +492,18 @@ def build_pages():
 </section>
 {RIBBON}
 <div class="container tiles-wrap"><nav class="tiles" aria-label="Sections">{tiles}</nav></div>
+
+<section class="band band-sky">
+  <div class="container">
+    <span class="eyebrow">The whole point</span>
+    <h2 class="fat">Three good vibes only</h2>
+    <div class="vibes">
+      <div><span class="num">01</span><h3 class="vibe v-pink">Love</h3><p>Loud color, big grins, zero gloom. Art for people who smile at a bold heart.</p></div>
+      <div><span class="num">02</span><h3 class="vibe v-purple">Freedom</h3><p>No rules for what pop art can be. Collect it, stick it, hang it, play with it.</p></div>
+      <div><span class="num">03</span><h3 class="vibe v-orange">Joy</h3><p>Good vibes first. Every card, sticker and print is made to make you happy.</p></div>
+    </div>
+  </div>
+</section>
 
 <section class="section"><div class="container">
   <div class="section-head"><div><h2>Stickers and prints</h2><p>Thick-outline pop art you can stick on a laptop or hang on a wall.</p></div></div>
@@ -771,7 +784,7 @@ def build_pages():
     artist = page_head("Studio", "POPART.love is the fan page of the studio BitPopArt.") + f"""
 <section class="section"><div class="container">
   <div class="split wide-left">
-    <div class="prose">
+    <div class="prose dropcap">
       <h2>About BitPopArt</h2>
       <p>BitPopArt is a pop art studio. It designs and makes loud, happy art in a thick-outline graffiti style: bold colours, black lines and simple shapes, built around three plain, good ideas, <strong>Love</strong>, <strong>Freedom</strong> and <strong>Joy</strong>.</p>
       <p>The studio makes art you can hold and share: collectible cards, stickers, prints and digital files you can print at home, plus small tools and games around the art.</p>
@@ -797,7 +810,15 @@ def build_pages():
     </div>
     </div>
   </div>
-</div></section>"""
+</div></section>
+<section class="band band-sky band-cta">
+  <div class="container">
+    <span class="eyebrow">Galleries &middot; Spaces &middot; Walls</span>
+    <h2 class="fat">Want POPART on your wall?</h2>
+    <p>Looking to show the art somewhere real? A gallery, a caf&eacute;, a pop-up, a hotel lobby, a good blank wall with potential. Let&rsquo;s put the work up and make it loud.</p>
+    <a class="btn pink" href="https://www.bitpopart.com" target="_blank" rel="noopener">Let&rsquo;s talk &rarr; bitpopart.com</a>
+  </div>
+</section>"""
     page("studio", "Studio", "BitPopArt studio: the pop art studio behind POPART.love, the fan page for everyone who loves pop art.", artist, "/studio/")
 
     # ---- PopUp

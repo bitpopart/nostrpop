@@ -8,6 +8,8 @@
 @font-face { font-family: "Barlow Condensed"; font-weight: 800; font-display: swap; src: url("/assets/fonts/barlow-condensed-latin-800-normal.woff2") format("woff2"); }
 @font-face { font-family: "Space Mono"; font-weight: 400; font-display: swap; src: url("/assets/fonts/space-mono-latin-400-normal.woff2") format("woff2"); }
 @font-face { font-family: "Space Mono"; font-weight: 700; font-display: swap; src: url("/assets/fonts/space-mono-latin-700-normal.woff2") format("woff2"); }
+@font-face { font-family: "Chango"; font-weight: 400; font-display: swap; src: url("/assets/fonts/chango-latin-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "Comfortaa"; font-weight: 300 700; font-display: swap; src: url("/assets/fonts/comfortaa-latin-wght-normal.woff2") format("woff2"); }
 @font-face { font-family: "Inter"; font-weight: 100 900; font-display: swap; src: url("/assets/fonts/inter-latin-wght-normal.woff2") format("woff2"); }
 
 :root {
@@ -39,7 +41,8 @@
   --font-display: "Bangers", Impact, "Arial Black", cursive;
   --font-label: "Barlow Condensed", "Arial Narrow", sans-serif;
   --font-mono: "Space Mono", ui-monospace, monospace;
-  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --font-fat: "Chango", "Bangers", Impact, "Arial Black", sans-serif;
+  --font-body: "Comfortaa", "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   color-scheme: light;
 }
 
@@ -458,3 +461,45 @@ h1 .lfj { color: var(--ink); }
 .coll-item { display: flex; flex-direction: column; gap: .3rem; text-decoration: none; color: inherit; }
 .coll-item img { width: 100%; aspect-ratio: 5 / 7; object-fit: cover; border-radius: 8px; border: 1.5px solid var(--line); background: var(--panel2); }
 .coll-item small { color: var(--sub); }
+
+
+/* ---------- Chunky headline look: fat font, white fill, black outline, hard shadow ---------- */
+.hero h1, .page-head h1, h2.fat {
+  font-family: var(--font-fat); font-weight: 400; letter-spacing: 0; line-height: 1.04; text-transform: uppercase;
+  color: #fff; -webkit-text-stroke: 6px var(--ink); paint-order: stroke fill; text-shadow: 4px 5px 0 rgba(0,0,0,.28);
+  text-wrap: balance; overflow-wrap: anywhere;
+}
+.hero h1 { font-size: clamp(2.2rem, 6vw, 4rem); }
+.page-head h1 { font-size: clamp(2rem, 5.4vw, 3.3rem); }
+h2.fat { font-size: clamp(2rem, 5vw, 3.4rem); margin-bottom: 1.4rem; }
+.hero h1 .lfj .l, .hero h1 .lfj .f, .hero h1 .lfj .j, .page-head h1 .lfj .l, .page-head h1 .lfj .f, .page-head h1 .lfj .j { background: none; padding: 0; -webkit-text-stroke: 6px var(--ink); paint-order: stroke fill; }
+.hero h1 .lfj .l, .page-head h1 .lfj .l { color: var(--lfj-pink); }
+.hero h1 .lfj .f, .page-head h1 .lfj .f { color: var(--lfj-blue); }
+.hero h1 .lfj .j, .page-head h1 .lfj .j { color: var(--yellow); }
+@media (max-width: 520px) { .hero h1, .page-head h1, h2.fat { -webkit-text-stroke-width: 4.5px; text-shadow: 3px 4px 0 rgba(0,0,0,.28); } }
+.kicker, .page-head p { letter-spacing: 3px; }
+.eyebrow { display: block; font-family: var(--font-label); font-weight: 800; letter-spacing: 5px; text-transform: uppercase; font-size: 14px; color: var(--ink); margin-bottom: .5rem; }
+.hero p.lead, .prose p, .card .body p { font-weight: 500; line-height: 1.7; }
+
+/* Colour band with dots */
+.band { padding: 3.2rem 0; border-block: 1px solid var(--line); }
+.band-sky { background: radial-gradient(circle, rgba(0,0,0,.16) 2.4px, transparent 2.9px) 0 0 / 24px 24px, #5ed3e0; }
+.vibes { display: grid; gap: 1.6rem; grid-template-columns: 1fr; }
+@media (min-width: 760px) { .vibes { grid-template-columns: repeat(3, 1fr); gap: 2rem; } }
+.vibes .num { display: block; font-family: var(--font-display); font-style: italic; font-size: 2.6rem; line-height: 1; color: var(--pink); }
+.vibes > div:nth-child(2) .num { color: var(--purple); }
+.vibes > div:nth-child(3) .num { color: var(--orange); }
+.vibe { font-family: var(--font-fat); font-weight: 400; text-transform: uppercase; letter-spacing: 0; font-size: clamp(1.6rem, 3.4vw, 2.3rem); line-height: 1.1; margin: .1rem 0 .6rem; }
+.vibe.v-pink { color: var(--pink); } .vibe.v-purple { color: var(--purple); } .vibe.v-orange { color: var(--orange); }
+.vibes p { margin: 0; font-weight: 500; line-height: 1.7; max-width: 22rem; }
+.band-cta { text-align: center; }
+.band-cta p { max-width: 44rem; margin: 0 auto 1.6rem; font-size: 1.05rem; font-weight: 500; line-height: 1.8; }
+.btn.pink { background: var(--pink); color: #fff; font-family: var(--font-display); font-style: italic; font-size: 22px; letter-spacing: 1px; padding: .8rem 2rem; box-shadow: 0 5px 0 var(--ink); }
+.btn.pink:hover { filter: none; box-shadow: 0 6px 0 var(--ink); }
+
+/* Drop cap */
+.prose.dropcap > h2:first-child + p::first-letter { float: left; font-family: var(--font-fat); font-size: 3.6em; line-height: .85; padding: .06em .12em 0 0; color: var(--yellow); -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; text-shadow: 3px 3px 0 rgba(0,0,0,.28); }
+.hero h1 { margin-bottom: 1.1rem; -webkit-text-stroke-width: 4.5px; }
+.hero h1 .lfj .l, .hero h1 .lfj .f, .hero h1 .lfj .j { -webkit-text-stroke-width: 4.5px; }
+.hero h1 .lfj, .page-head h1 .lfj { -webkit-text-stroke-width: 3px; color: #fff; }
+.hero h1 .lfj .l, .hero h1 .lfj .f, .hero h1 .lfj .j, .page-head h1 .lfj .l, .page-head h1 .lfj .f, .page-head h1 .lfj .j { -webkit-text-stroke-width: 4.5px; }
