@@ -502,6 +502,7 @@ def build_pages():
 <section class="section"><div class="container">
   <div class="section-head"><div><h2>Cards</h2><p>Collectible POPART cards. Pick a tribe, find the rare ones, trade with friends.</p></div><a class="link-more" href="/cards/">All cards &rarr;</a></div>
   {tribe_cards(3)}
+  <div class="coll" data-collections data-home="1" hidden></div>
 </div></section>
 
 <section class="section"><div class="container">

@@ -24,14 +24,17 @@
     });
   }
 
+  // Always read the saved lists fresh in the admin, so a reload never shows an older copy from the browser cache.
+  function fresh(url) { return fetch(url + (url.indexOf("?") > -1 ? "&" : "?") + "_=" + Date.now(), { cache: "no-store" }); }
+
   async function render() {
     var results = await Promise.all([
       fetch("/assets/cards.json").then(function (r) { return r.json(); }),
-      fetch("/api/stock").then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; })
+      fresh("/api/stock").then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; })
     ]);
     var baseCards = results[0];
     var saved = [];
-    try { var cr = await fetch("/api/cards"); if (cr.ok) saved = await cr.json(); } catch (e) {}
+    try { var cr = await fresh("/api/cards"); if (cr.ok) saved = await cr.json(); } catch (e) {}
     var byFile = {}; saved.forEach(function (e) { byFile[e.file] = e; });
     var baseSet = {}; baseCards.forEach(function (c) { baseSet[c.file] = 1; });
     cards = saved.filter(function (e) { return !baseSet[e.file]; }).concat(baseCards.map(function (c) { return Object.assign({}, c, byFile[c.file] || {}); })).filter(function (c) { return !c.removed; });
@@ -99,7 +102,7 @@
           if (!res.ok) throw new Error("no");
           return (await res.json()).codes;
         },
-        load: function () { return fetch("/api/catalog?kind=" + kind).then(function (r) { return r.ok ? r.json() : []; }); },
+        load: function () { return fresh("/api/catalog?kind=" + kind).then(function (r) { return r.ok ? r.json() : []; }); },
         save: async function (list) {
           var out = [];
           for (var i = 0; i < list.length; i++) {
@@ -115,7 +118,7 @@
     });
     window.PopartCardsAdmin.mount(cardsBox, {
       base: baseCards,
-      load: function () { return fetch("/api/cards").then(function (r) { return r.ok ? r.json() : []; }); },
+      load: function () { return fresh("/api/cards").then(function (r) { return r.ok ? r.json() : []; }); },
       saved: function () { render(); },
       save: async function (list) {
         var out = [];
@@ -134,7 +137,7 @@
     var coll = window.PopartCollectionsAdmin.mount(collBox, {
       cards: function () { return cards; },
       thumbOf: thumbOf,
-      load: function () { return fetch("/api/collections").then(function (r) { return r.ok ? r.json() : []; }); },
+      load: function () { return fresh("/api/collections").then(function (r) { return r.ok ? r.json() : []; }); },
       save: async function (list) {
         var out = [];
         for (var i = 0; i < list.length; i++) {
@@ -163,7 +166,7 @@
     coll.onChange(fillCollCells);
     fillCollCells();
     window.PopartNewsAdmin.mount(newsBox, {
-      load: function () { return fetch("/api/news").then(function (r) { return r.ok ? r.json() : []; }); },
+      load: function () { return fresh("/api/news").then(function (r) { return r.ok ? r.json() : []; }); },
       save: async function (list) {
         var out = [];
         for (var i = 0; i < list.length; i++) {
@@ -176,7 +179,7 @@
       }
     });
     window.PopartEventsAdmin.mount(evBox, {
-      load: function () { return fetch("/api/events").then(function (r) { return r.ok ? r.json() : []; }); },
+      load: function () { return fresh("/api/events").then(function (r) { return r.ok ? r.json() : []; }); },
       save: async function (list) {
         var out = [];
         for (var i = 0; i < list.length; i++) {
