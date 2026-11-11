@@ -13,6 +13,8 @@ import os
 import re
 from html import escape
 
+import pins
+
 ROOT = os.path.dirname(os.path.abspath(__file__))
 DOMAIN = "https://popart.love"
 TODAY = "2026-11-10"
@@ -259,6 +261,7 @@ NAV = [
     ("Cards", "/cards/"),
     ("Verify", "/verify/"),
     ("Stickers", "/stickers/"),
+    ("Pins", "/pins/"),
     ("Prints", "/prints/"),
     ("Shop", "/shop/"),
 ]
@@ -663,6 +666,8 @@ def build_pages():
 </div></section>
 <script src="/assets/js/catalog.js" defer></script>"""
     page("stickers", "Stickers", "POPART.love pop art stickers in the Love, Freedom and Joy themes.", stickers, "/stickers/")
+
+    page("pins", "Emoji Pins", "POPART emoji pins: shiny 3D pop art faces with thick outlines, made to pin on a bag, jacket, cap or t-shirt. Coming soon.", pins.page_body(), "/pins/")
 
     prints = page_head("Prints", "Pop art prints for your wall, in the three themes: Love, Freedom and Joy.") + f"""
 <section class="section"><div class="container">
