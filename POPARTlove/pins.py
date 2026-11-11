@@ -104,6 +104,45 @@ def mock_cap():
     )
 
 
+def back_svg():
+    """The back of a POPicon: flat metal plate with a black rubber clutch on the post."""
+    return (
+        '<svg class="pin-back" viewBox="0 0 200 200" role="img" aria-label="Back of a POPicon with a black rubber clutch">'
+        '<defs><radialGradient id="nick" cx="35%" cy="30%" r="80%"><stop offset="0" stop-color="#fafbfc"/><stop offset=".6" stop-color="#c9ced4"/><stop offset="1" stop-color="#9aa1a9"/></radialGradient></defs>'
+        f'<circle cx="100" cy="100" r="82" fill="url(#nick)" stroke="{INK}" stroke-width="6"/>'
+        f'<circle cx="100" cy="100" r="70" fill="none" stroke="rgba(0,0,0,.12)" stroke-width="2"/>'
+        f'<path id="arc" d="M38 118 A66 66 0 0 0 162 118" fill="none"/>'
+        f'<text font-family="Barlow Condensed,Arial Narrow,sans-serif" font-weight="800" font-size="13" letter-spacing="3" fill="#6b7178"><textPath href="#arc" startOffset="50%" text-anchor="middle">POPART.LOVE</textPath></text>'
+        # rubber clutch
+        f'<ellipse cx="100" cy="106" rx="42" ry="40" fill="#1b1b1b" stroke="{INK}" stroke-width="4"/>'
+        f'<path d="M64 98 Q64 62 100 62 Q136 62 136 98 Q136 112 128 118 Q100 104 72 118 Q64 112 64 98Z" fill="#2a2a2a" stroke="{INK}" stroke-width="3" stroke-linejoin="round"/>'
+        f'<ellipse cx="100" cy="112" rx="13" ry="5.5" fill="#050505" transform="rotate(-18 100 112)"/>'
+        f'<ellipse cx="84" cy="82" rx="14" ry="7" fill="#fff" fill-opacity=".22" transform="rotate(-30 84 82)"/>'
+        '</svg>'
+    )
+
+
+def explain_svg():
+    lab = 'font-family="Barlow Condensed,Arial Narrow,sans-serif" font-weight="800" font-size="17" letter-spacing="1" text-anchor="middle"'
+    return (
+        '<svg class="explain" viewBox="0 0 560 250" role="img" aria-label="How a POPicon is built: the face, a metal post on a flat plate, and a black rubber clutch that locks it">'
+        '<defs><linearGradient id="nk" x1="0" x2="1"><stop offset="0" stop-color="#f4f6f8"/><stop offset="1" stop-color="#9aa1a9"/></linearGradient></defs>'
+        f'<image href="{pin_src(14)}" x="6" y="52" width="140" height="140"/>'
+        # plate + post
+        f'<rect x="196" y="60" width="16" height="124" rx="5" fill="url(#nk)" stroke="{INK}" stroke-width="4"/>'
+        f'<path d="M212 122 H330" stroke="{INK}" stroke-width="11" stroke-linecap="round"/><path d="M212 122 H330" stroke="#c9ced4" stroke-width="5" stroke-linecap="round"/>'
+        # clutch
+        f'<path d="M376 82 H408 Q416 82 416 90 V156 Q416 164 408 164 H376 Q368 164 368 156 V90 Q368 82 376 82Z" fill="#1b1b1b" stroke="{INK}" stroke-width="4"/>'
+        f'<path d="M416 92 Q470 88 474 124 Q470 160 416 156Z" fill="#2a2a2a" stroke="{INK}" stroke-width="4" stroke-linejoin="round"/>'
+        f'<ellipse cx="446" cy="108" rx="14" ry="7" fill="#fff" fill-opacity=".2" transform="rotate(-20 446 108)"/>'
+        f'<path d="M150 122 H190 M340 122 H364" stroke="{INK}" stroke-width="3" stroke-dasharray="6 6" stroke-linecap="round"/>'
+        f'<text x="76" y="224" {lab}>1. POPicon</text>'
+        f'<text x="262" y="224" {lab}>2. Metal post</text>'
+        f'<text x="424" y="224" {lab}>3. Rubber clutch</text>'
+        '</svg>'
+    )
+
+
 def page_body():
     n = len(PINS)
     return f"""<section class="pins-hero">
@@ -130,9 +169,29 @@ def page_body():
   <p class="notice" style="margin-top:1rem">These mockups show the idea. Real pins can look a little different once produced.</p>
 </div></section>
 <section class="section"><div class="container">
+  <div class="section-head"><h2 class="fat" style="margin:0">What is on the back</h2><p>Every POPicon has a flat metal plate with a post and a black rubber clutch that locks on. Tap the pin to flip it over.</p></div>
+  <div class="grid g2 back-grid">
+    <div class="back-card">
+      <div class="flip" id="flip"><div class="flip-inner">
+        <div class="flip-face">{pin_img(14, "pin3d big")}</div>
+        <div class="flip-face flip-back">{back_svg()}</div>
+      </div></div>
+      <button class="btn yellow" type="button" id="flip-btn" aria-pressed="false">Flip it over</button>
+    </div>
+    <div class="back-card">{explain_svg()}
+      <p class="back-note">Push the post through your bag, jacket or cap, then press the rubber clutch on from the other side. It grips the post, so the POPicon stays put.</p>
+    </div>
+  </div>
+</div></section>
+<script>
+(function(){{var f=document.getElementById("flip"),b=document.getElementById("flip-btn");if(!f||!b)return;
+function t(){{var on=f.classList.toggle("on");b.setAttribute("aria-pressed",on);b.textContent=on?"Flip it back":"Flip it over";}}
+b.addEventListener("click",t);f.addEventListener("click",t);}})();
+</script>
+<section class="section"><div class="container">
   <div class="grid g3">
     <div class="panel pink"><h3>The look</h3><p>Round, shiny and domed like a little button, with the same thick black outline as the rest of the POPART art.</p></div>
-    <div class="panel blue"><h3>The fit</h3><p>Planned with a metal clasp so they stay put on fabric and bags. Sizes and materials will be shown with each drop.</p></div>
+    <div class="panel blue"><h3>The fit</h3><p>A black rubber clutch back locks onto a metal post, so they stay put on fabric and bags. Sizes and materials will be shown with each drop.</p></div>
     <div class="panel yellow"><h3>The drops</h3><p>Small batches, a few faces at a time. When a batch is ready it is announced in the <a href="/news/">news</a> and added to this page.</p></div>
   </div>
 </div></section>
