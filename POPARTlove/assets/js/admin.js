@@ -134,7 +134,11 @@
       }
     });
     function thumbOf(c) { return c.front ? "/api/event-image?id=c-" + encodeURIComponent(c.file) + "&v=" + (c.imv || 0) : "/assets/img/cards/" + c.file + ".webp"; }
+    var stickerList = [], printList = [];
+    try { var sr = await fresh("/api/catalog?kind=stickers"); if (sr.ok) stickerList = await sr.json(); var pr = await fresh("/api/catalog?kind=prints"); if (pr.ok) printList = await pr.json(); } catch (e) {}
     var coll = window.PopartCollectionsAdmin.mount(collBox, {
+      stickers: function () { return stickerList; },
+      prints: function () { return printList; },
       cards: function () { return cards; },
       thumbOf: thumbOf,
       load: function () { return fresh("/api/collections").then(function (r) { return r.ok ? r.json() : []; }); },

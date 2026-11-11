@@ -267,10 +267,11 @@ TILES = [
     ("Cards", "/cards/", "\U0001F0CF", "c-yellow"),
     ("Stickers", "/stickers/", "\u2B50", "c-pink"),
     ("Prints", "/prints/", "\U0001F5BC\uFE0F", "c-lime"),
+    ("Collections", "/collections/", "\u25A6", "c-purple"),
     ("Shop", "/shop/", "\U0001F6CD️", "c-sky"),
     ("News", "/news/", "\U0001F4F0", "c-red"),
     ("Studio", "/studio/", "\U0001F58C️", "c-orange"),
-    ("PopUp", "/popup/", "\U0001F4CD", "c-purple"),
+    ("PopUp", "/popup/", "\U0001F4CD", "c-yellow"),
 ]
 
 FONTS = (
@@ -750,6 +751,14 @@ def build_pages():
 </div></section>
 <script src="/assets/js/free.js" defer></script>"""
     page("free", "Free downloads", "Free pop art downloads from POPART.love: wallpapers, coloring pages, printables and more.", free, "/free/")
+
+    # ---- Collections
+    colls = page_head("Collections", "Cards, stickers and prints, grouped into collections.") + """
+<section class="section"><div class="container">
+  <div class="coll" data-collections data-page="1" hidden></div>
+  <p class="notice" id="coll-empty">New collections will be listed here soon. In the meantime, see the <a href="/cards/">cards</a>, <a href="/stickers/">stickers</a> and <a href="/prints/">prints</a>.</p>
+</div></section>"""
+    page("collections", "Collections", "Collections of POPART cards, stickers and prints.", colls, "/collections/")
 
     # ---- News
     news = page_head("News", "What is happening in the POPART studio.") + f"""

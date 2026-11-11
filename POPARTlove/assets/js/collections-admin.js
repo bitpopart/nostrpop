@@ -30,7 +30,7 @@
     var list = [], editing = null, dirty = false, armed = null, pending = null, listeners = [];
     root.innerHTML = "";
     var head = el("div", "section-head");
-    var hd = el("div"); hd.appendChild(el("h2", "", "Collections")); hd.appendChild(el("p", "", "Group cards into collections. Fans can open a collection on the Cards page. You can also tick collections on each card in the table above."));
+    var hd = el("div"); hd.appendChild(el("h2", "", "Collections")); hd.appendChild(el("p", "", "Group cards, stickers and prints into collections. Fans can open a collection on the Cards page. You can also tick collections on each card in the table above."));
     var saveBtn = el("button", "btn", "Save collections"); saveBtn.type = "button";
     head.appendChild(hd); head.appendChild(saveBtn); root.appendChild(head);
     var msg = el("p", "form-msg"); msg.setAttribute("role", "status"); root.appendChild(msg);
@@ -43,14 +43,28 @@
     var h3 = el("h3", "", "Add a collection");
     var grid = el("div", "ev-grid"); grid.appendChild(field("Name", name)); grid.appendChild(field("Short line", text));
     var picks = el("div", "coll-picks");
-    var checks = {};
+    var checks = {}, sChecks = {}, pChecks = {};
     api.cards().forEach(function (c) {
       var l = el("label", "coll-pick"); var cb = document.createElement("input"); cb.type = "checkbox"; cb.value = c.file; checks[c.file] = cb;
       var im = document.createElement("img"); im.src = api.thumbOf(c); im.alt = ""; im.width = 30; im.height = 42;
       l.appendChild(cb); l.appendChild(im); l.appendChild(el("span", "", c.name)); picks.appendChild(l);
     });
+    function itemPicks(items, store) {
+      var box = el("div", "coll-picks");
+      items.forEach(function (it) {
+        var l = el("label", "coll-pick"); var cb = document.createElement("input"); cb.type = "checkbox"; cb.value = it.id; store[it.id] = cb;
+        if (it.image) { var im = document.createElement("img"); im.src = "/api/event-image?id=" + encodeURIComponent(it.id) + "&v=" + (it.imv || 0); im.alt = ""; im.width = 30; im.height = 42; l.appendChild(cb); l.appendChild(im); } else l.appendChild(cb);
+        l.appendChild(el("span", "", it.title)); box.appendChild(l);
+      });
+      return box;
+    }
+    var sPicks = itemPicks(api.stickers(), sChecks), pPicks = itemPicks(api.prints(), pChecks);
     form.appendChild(h3); form.appendChild(grid); form.appendChild(field("Thumbnail (optional, the first card is used if empty)", file)); form.appendChild(preview); form.appendChild(drop);
     form.appendChild(el("p", "notice", "Cards in this collection:")); form.appendChild(picks);
+    form.appendChild(el("p", "notice", "Stickers in this collection (saved stickers only):"));
+    if (!api.stickers().length) form.appendChild(el("p", "form-msg", "No saved stickers yet.")); else form.appendChild(sPicks);
+    form.appendChild(el("p", "notice", "Prints in this collection (saved prints only):"));
+    if (!api.prints().length) form.appendChild(el("p", "form-msg", "No saved prints yet.")); else form.appendChild(pPicks);
     var actions = el("div", "ev-actions");
     var add = el("button", "btn", "Add collection"); add.type = "submit";
     var cancel = el("button", "btn ghost", "Cancel edit"); cancel.type = "button"; cancel.hidden = true;
@@ -60,7 +74,7 @@
     function changed() { listeners.forEach(function (f) { f(); }); }
     function mark() { dirty = true; say(msg, "You have unsaved changes. Press Save collections.", false); changed(); }
     function showPreview(src) { preview.hidden = !src; if (src) preview.src = src; drop.hidden = !src; }
-    function reset() { editing = null; pending = null; form.reset(); Object.keys(checks).forEach(function (k) { checks[k].checked = false; }); preview.hidden = true; drop.hidden = true; cancel.hidden = true; add.textContent = "Add collection"; h3.textContent = "Add a collection"; }
+    function reset() { editing = null; pending = null; form.reset(); [checks, sChecks, pChecks].forEach(function (m) { Object.keys(m).forEach(function (k) { m[k].checked = false; }); }); preview.hidden = true; drop.hidden = true; cancel.hidden = true; add.textContent = "Add collection"; h3.textContent = "Add a collection"; }
     file.addEventListener("change", function () {
       if (!file.files[0]) return;
       shrink(file.files[0]).then(function (b) { pending = { b64: b }; showPreview("data:image/webp;base64," + b); }).catch(function () { file.value = ""; say(msg, "That file could not be used as a picture.", true); });
@@ -74,6 +88,8 @@
       var c = editing ? list.filter(function (x) { return x.id === editing; })[0] : { id: "k" + Date.now().toString(36), image: false, imv: 0 };
       c.name = name.value.trim(); c.text = text.value.trim();
       c.cards = Object.keys(checks).filter(function (k) { return checks[k].checked; });
+      c.stickers = Object.keys(sChecks).filter(function (k) { return sChecks[k].checked; });
+      c.prints = Object.keys(pChecks).filter(function (k) { return pChecks[k].checked; });
       if (pending && pending.b64) { c._img = pending.b64; c.image = true; }
       else if (pending && pending.clear) { delete c._img; c.image = false; }
       if (!editing) list.push(c);
@@ -87,13 +103,16 @@
       list.forEach(function (c) {
         var row = el("div", "ev-row"), src = imgSrc(c) || (c.cards[0] ? api.thumbOf({ file: c.cards[0] }) : "");
         if (src) { var th = document.createElement("img"); th.src = src; th.alt = ""; th.className = "adm-thumb"; row.appendChild(th); }
-        var info = el("div", "ev-info"); info.appendChild(el("strong", "", c.name)); info.appendChild(el("span", "", c.cards.length + (c.cards.length === 1 ? " card" : " cards")));
+        var info = el("div", "ev-info"); info.appendChild(el("strong", "", c.name)); var total = c.cards.length + (c.stickers || []).length + (c.prints || []).length;
+        info.appendChild(el("span", "", c.cards.length + (c.cards.length === 1 ? " card" : " cards") + ", " + (c.stickers || []).length + " stickers, " + (c.prints || []).length + " prints"));
         row.appendChild(info);
         var btns = el("div", "ev-btns");
         var ed = el("button", "btn ghost", "Edit"); ed.type = "button";
         ed.addEventListener("click", function () {
           editing = c.id; pending = null; file.value = ""; name.value = c.name; text.value = c.text || "";
           Object.keys(checks).forEach(function (k) { checks[k].checked = c.cards.indexOf(k) > -1; });
+          Object.keys(sChecks).forEach(function (k) { sChecks[k].checked = (c.stickers || []).indexOf(k) > -1; });
+          Object.keys(pChecks).forEach(function (k) { pChecks[k].checked = (c.prints || []).indexOf(k) > -1; });
           showPreview(imgSrc(c)); cancel.hidden = false; add.textContent = "Update collection"; h3.textContent = "Edit " + c.name;
           form.scrollIntoView({ behavior: "smooth", block: "center" });
         });

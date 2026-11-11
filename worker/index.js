@@ -187,8 +187,18 @@ function cleanCollections(input) {
       if (typeof f !== "string" || !/^[a-z0-9-]{1,32}$/.test(f)) return null;
       if (!cards.includes(f)) cards.push(f);
     }
+    const refs = {};
+    for (const k of ["stickers", "prints"]) {
+      const arr = e[k] === undefined ? [] : e[k];
+      if (!Array.isArray(arr) || arr.length > 400) return null;
+      refs[k] = [];
+      for (const f of arr) {
+        if (typeof f !== "string" || !/^[a-z0-9-]{1,40}$/.test(f)) return null;
+        if (!refs[k].includes(f)) refs[k].push(f);
+      }
+    }
     const imv = Number.isFinite(e.imv) ? Math.max(0, Math.floor(e.imv)) : 0;
-    out.push({ id: e.id, name, text, image: e.image === true, imv, cards });
+    out.push({ id: e.id, name, text, image: e.image === true, imv, cards, stickers: refs.stickers, prints: refs.prints });
   }
   return out;
 }
