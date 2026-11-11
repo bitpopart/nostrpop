@@ -12,20 +12,19 @@ INK = "#111111"
 YELLOW = "#ffe229"
 
 # ------------------------------------------------------------------- art --
-# The pins are the real emoji drawings from Johannes's sheet, cut out one by one
-# into assets/img/pins/pin-NNN.webp (NNN = position on the original sheet).
-# The Bitcoin-eyes faces (5, 6, 7) are left out because popart.love is not about Bitcoin.
+# The pins are the vector emojis from Johannes's Emojis.svg, split into one SVG per
+# emoji in assets/img/pins/emoji-NN.svg (NN = reading order on the original sheet).
 import os
 
 PIN_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "img", "pins")
 
 
 def pin_ids():
-    return sorted(int(f[4:7]) for f in os.listdir(PIN_DIR) if f.startswith("pin-") and f.endswith(".webp"))
+    return sorted(int(f[6:8]) for f in os.listdir(PIN_DIR) if f.startswith("emoji-") and f.endswith(".svg"))
 
 
 def pin_src(n):
-    return f"/assets/img/pins/pin-{n:03d}.webp"
+    return f"/assets/img/pins/emoji-{n:02d}.svg"
 
 
 def pin_img(n, cls="pin3d", label=None):
@@ -36,8 +35,12 @@ def pin_img(n, cls="pin3d", label=None):
 
 # ------------------------------------------------------------------- pins --
 # The shop list. Add names or flip a pin to "available" (with a https url) when it is made.
-NAMES = {}  # optional, for example {1: "Deal With It"}
-PINS = [{"id": n, "name": NAMES.get(n, f"Emoji {n:03d}"), "status": "coming-soon", "url": ""} for n in pin_ids()]
+NAMES = {
+    1: "Tongue Out", 2: "Happy", 3: "Happy Tears", 4: "Kiss", 5: "Red Lips", 6: "Yikes", 7: "Hearts", 8: "Cheeky",
+    9: "Fangs", 10: "Vampire", 11: "Wide Eyes", 12: "Zapped", 13: "Blush", 14: "Heart Eyes", 15: "Big Grin", 16: "Cackle",
+    17: "Sneaky", 18: "Googly", 19: "Gritted", 20: "Cheesy", 21: "Sweaty Smile", 22: "Sad", 23: "Nervous",
+}
+PINS = [{"id": n, "name": NAMES.get(n, f"Emoji {n:02d}"), "status": "coming-soon", "url": ""} for n in pin_ids()]
 
 
 def status_html(p):
@@ -59,7 +62,7 @@ def pin_cards():
 
 
 def hero_pins():
-    ids = [1, 21, 112, 103, 35]
+    ids = [14, 1, 15, 12, 5]
     return "".join(pin_img(i, "pin3d hp") for i in ids)
 
 
@@ -69,8 +72,7 @@ def use(n, x, y, size, rot=0):
 
 
 def mock_tee():
-    pins = (use(35, 60, 80, 62, -8) + use(21, 124, 66, 58, 6) + use(11, 96, 128, 56, -4)
-            + use(112, 150, 120, 52, 8))
+    pins = use(14, 60, 80, 62, -8) + use(5, 124, 66, 58, 6) + use(1, 96, 128, 56, -4) + use(12, 150, 120, 52, 8)
     return (
         '<svg class="mock" viewBox="0 0 300 290" role="img" aria-label="T-shirt with emoji pins on the chest">'
         f'<path d="M92 24 L122 12 Q150 44 178 12 L208 24 L282 74 L250 118 L222 98 V268 H78 V98 L50 118 L18 74Z" '
@@ -81,8 +83,7 @@ def mock_tee():
 
 
 def mock_bag():
-    pins = (use(10, 78, 150, 56, -6) + use(28, 134, 138, 54, 6) + use(103, 100, 196, 52, 4)
-            + use(66, 160, 190, 48, -8))
+    pins = use(15, 78, 150, 56, -6) + use(2, 134, 138, 54, 6) + use(9, 100, 196, 52, 4) + use(13, 160, 190, 48, -8)
     return (
         '<svg class="mock" viewBox="0 0 300 290" role="img" aria-label="Tote bag with emoji pins">'
         f'<path d="M100 96 Q100 22 150 22 Q200 22 200 96" fill="none" stroke="{INK}" stroke-width="12" stroke-linecap="round"/>'
@@ -93,13 +94,12 @@ def mock_bag():
 
 
 def mock_cap():
-    pins = use(36, 118, 72, 46, -6) + use(63, 164, 80, 44, 8)
     return (
-        '<svg class="mock" viewBox="0 0 300 290" role="img" aria-label="Denim jacket collar with emoji pins">'
+        '<svg class="mock" viewBox="0 0 300 290" role="img" aria-label="Jacket with emoji pins">'
         f'<path d="M40 70 L110 40 Q150 70 190 40 L260 70 L270 270 H30Z" fill="#ffe229" stroke="{INK}" stroke-width="6" stroke-linejoin="round"/>'
         f'<path d="M110 40 L150 130 L190 40" fill="none" stroke="{INK}" stroke-width="6" stroke-linejoin="round"/>'
         f'<path d="M150 130 V270" stroke="{INK}" stroke-width="5"/>'
-        f'{use(48, 52, 150, 50, -6)}{use(27, 204, 140, 50, 8)}{use(8, 52, 205, 46, 5)}{use(15, 206, 202, 46, -6)}'
+        f'{use(20, 52, 150, 50, -6)}{use(4, 204, 140, 50, 8)}{use(21, 52, 205, 46, 5)}{use(10, 206, 202, 46, -6)}'
         f'</svg>'
     )
 
