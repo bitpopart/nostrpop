@@ -5,11 +5,11 @@
   function field(label, control) { var w = el("label", "ev-field"); w.appendChild(el("span", "", label)); w.appendChild(control); return w; }
   function input(type, ph) { var i = document.createElement("input"); i.type = type; if (ph) i.placeholder = ph; return i; }
   function say(m, text, bad) { m.textContent = text; m.style.color = bad ? "var(--red)" : "var(--teal)"; }
-  function shrink(file) {
+  function shrink(file, max) {
     return new Promise(function (resolve, reject) {
       var url = URL.createObjectURL(file), img = new Image();
       img.onload = function () {
-        var w = Math.min(600, img.naturalWidth), h = Math.round(img.naturalHeight * w / img.naturalWidth);
+        var w = Math.min(max || 600, img.naturalWidth), h = Math.round(img.naturalHeight * w / img.naturalWidth);
         var c = document.createElement("canvas"); c.width = w; c.height = h;
         c.getContext("2d").drawImage(img, 0, 0, w, h);
         URL.revokeObjectURL(url);
@@ -27,7 +27,7 @@
   }
 
   function mount(root, api) {
-    var list = [], editing = null, dirty = false, armed = null, pending = null, listeners = [];
+    var list = [], editing = null, dirty = false, armed = null, pending = null, pendingH = null, listeners = [];
     root.innerHTML = "";
     var head = el("div", "section-head");
     var hd = el("div"); hd.appendChild(el("h2", "", "Collections")); hd.appendChild(el("p", "", "Group cards, stickers and prints into collections. Fans can open a collection on the Cards page. You can also tick collections on each card in the table above."));
@@ -40,8 +40,12 @@
     var file = input("file"); file.accept = "image/*";
     var preview = document.createElement("img"); preview.alt = ""; preview.hidden = true; preview.className = "ev-preview";
     var drop = el("button", "btn ghost", "Remove thumbnail"); drop.type = "button"; drop.hidden = true;
+    var slugIn = input("text", "bangpop"), body = document.createElement("textarea"); body.rows = 6; body.placeholder = "Write about the collection. This shows on its own page.";
+    var hfile = input("file"); hfile.accept = "image/*";
+    var hprev = document.createElement("img"); hprev.alt = ""; hprev.hidden = true; hprev.className = "ev-preview";
+    var hdrop = el("button", "btn ghost", "Remove header picture"); hdrop.type = "button"; hdrop.hidden = true;
     var h3 = el("h3", "", "Add a collection");
-    var grid = el("div", "ev-grid"); grid.appendChild(field("Name", name)); grid.appendChild(field("Short line", text));
+    var grid = el("div", "ev-grid"); grid.appendChild(field("Name", name)); grid.appendChild(field("Short line", text)); grid.appendChild(field("Page address (/collections/...)", slugIn));
     var picks = el("div", "coll-picks");
     var checks = {}, sChecks = {}, pChecks = {};
     api.cards().forEach(function (c) {
@@ -59,7 +63,9 @@
       return box;
     }
     var sPicks = itemPicks(api.stickers(), sChecks), pPicks = itemPicks(api.prints(), pChecks);
-    form.appendChild(h3); form.appendChild(grid); form.appendChild(field("Thumbnail (optional, the first card is used if empty)", file)); form.appendChild(preview); form.appendChild(drop);
+    form.appendChild(h3); form.appendChild(grid); form.appendChild(field("Text about the collection (own page)", body));
+    form.appendChild(field("Header picture for the collection page (wide, optional)", hfile)); form.appendChild(hprev); form.appendChild(hdrop);
+    form.appendChild(field("Thumbnail (optional, the first card is used if empty)", file)); form.appendChild(preview); form.appendChild(drop);
     form.appendChild(el("p", "notice", "Cards in this collection:")); form.appendChild(picks);
     form.appendChild(el("p", "notice", "Stickers in this collection (saved stickers only):"));
     if (!api.stickers().length) form.appendChild(el("p", "form-msg", "No saved stickers yet.")); else form.appendChild(sPicks);
@@ -74,11 +80,17 @@
     function changed() { listeners.forEach(function (f) { f(); }); }
     function mark() { dirty = true; say(msg, "You have unsaved changes. Press Save collections.", false); changed(); }
     function showPreview(src) { preview.hidden = !src; if (src) preview.src = src; drop.hidden = !src; }
-    function reset() { editing = null; pending = null; form.reset(); [checks, sChecks, pChecks].forEach(function (m) { Object.keys(m).forEach(function (k) { m[k].checked = false; }); }); preview.hidden = true; drop.hidden = true; cancel.hidden = true; add.textContent = "Add collection"; h3.textContent = "Add a collection"; }
+    function showHPreview(src) { hprev.hidden = !src; if (src) hprev.src = src; hdrop.hidden = !src; }
+    function reset() { editing = null; pending = null; pendingH = null; showHPreview(""); form.reset(); [checks, sChecks, pChecks].forEach(function (m) { Object.keys(m).forEach(function (k) { m[k].checked = false; }); }); preview.hidden = true; drop.hidden = true; cancel.hidden = true; add.textContent = "Add collection"; h3.textContent = "Add a collection"; }
     file.addEventListener("change", function () {
       if (!file.files[0]) return;
       shrink(file.files[0]).then(function (b) { pending = { b64: b }; showPreview("data:image/webp;base64," + b); }).catch(function () { file.value = ""; say(msg, "That file could not be used as a picture.", true); });
     });
+    hfile.addEventListener("change", function () {
+      if (!hfile.files[0]) return;
+      shrink(hfile.files[0], 1400).then(function (b) { pendingH = { b64: b }; showHPreview("data:image/webp;base64," + b); }).catch(function () { hfile.value = ""; say(msg, "That file could not be used as a picture.", true); });
+    });
+    hdrop.addEventListener("click", function () { pendingH = { clear: true }; hfile.value = ""; showHPreview(""); });
     drop.addEventListener("click", function () { pending = { clear: true }; file.value = ""; showPreview(""); });
     cancel.addEventListener("click", reset);
 
@@ -86,7 +98,12 @@
       e.preventDefault();
       if (!name.value.trim()) { say(msg, "Give the collection a name.", true); return; }
       var c = editing ? list.filter(function (x) { return x.id === editing; })[0] : { id: "k" + Date.now().toString(36), image: false, imv: 0 };
-      c.name = name.value.trim(); c.text = text.value.trim();
+      c.name = name.value.trim(); c.text = text.value.trim(); c.body = body.value.trim();
+      var sg = (slugIn.value.trim() || c.name).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || c.id;
+      if (list.some(function (x) { return x.id !== c.id && (x.slug || x.id) === sg; })) { say(msg, "Another collection already uses the address " + sg + ".", true); return; }
+      c.slug = sg;
+      if (pendingH && pendingH.b64) { c._hdr = pendingH.b64; c.hdr = true; }
+      else if (pendingH && pendingH.clear) { delete c._hdr; c.hdr = false; }
       c.cards = Object.keys(checks).filter(function (k) { return checks[k].checked; });
       c.stickers = Object.keys(sChecks).filter(function (k) { return sChecks[k].checked; });
       c.prints = Object.keys(pChecks).filter(function (k) { return pChecks[k].checked; });
@@ -104,12 +121,13 @@
         var row = el("div", "ev-row"), src = imgSrc(c) || (c.cards[0] ? api.thumbOf({ file: c.cards[0] }) : "");
         if (src) { var th = document.createElement("img"); th.src = src; th.alt = ""; th.className = "adm-thumb"; row.appendChild(th); }
         var info = el("div", "ev-info"); info.appendChild(el("strong", "", c.name)); var total = c.cards.length + (c.stickers || []).length + (c.prints || []).length;
+        var pg = el("a", "", "/collections/" + (c.slug || c.id)); pg.href = "/collections/" + (c.slug || c.id); pg.target = "_blank"; pg.rel = "noopener"; pg.style.fontSize = ".85rem"; info.appendChild(pg);
         info.appendChild(el("span", "", c.cards.length + (c.cards.length === 1 ? " card" : " cards") + ", " + (c.stickers || []).length + " stickers, " + (c.prints || []).length + " prints"));
         row.appendChild(info);
         var btns = el("div", "ev-btns");
         var ed = el("button", "btn ghost", "Edit"); ed.type = "button";
         ed.addEventListener("click", function () {
-          editing = c.id; pending = null; file.value = ""; name.value = c.name; text.value = c.text || "";
+          editing = c.id; pending = null; file.value = ""; name.value = c.name; text.value = c.text || ""; slugIn.value = c.slug || c.id; body.value = c.body || ""; pendingH = null; hfile.value = ""; showHPreview(c._hdr ? "data:image/webp;base64," + c._hdr : (c.hdr ? "/api/event-image?id=h-" + encodeURIComponent(c.id) + "&v=" + (c.himv || 0) : ""));
           Object.keys(checks).forEach(function (k) { checks[k].checked = c.cards.indexOf(k) > -1; });
           Object.keys(sChecks).forEach(function (k) { sChecks[k].checked = (c.stickers || []).indexOf(k) > -1; });
           Object.keys(pChecks).forEach(function (k) { pChecks[k].checked = (c.prints || []).indexOf(k) > -1; });

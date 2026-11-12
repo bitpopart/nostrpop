@@ -175,12 +175,15 @@ function runOf(card) {
 // ---- Card collections ------------------------------------------------------
 function cleanCollections(input) {
   if (!Array.isArray(input) || input.length > 100) return null;
-  const out = [], seen = new Set();
+  const out = [], seen = new Set(), slugs = new Set();
   for (const e of input) {
     if (!e || typeof e !== "object" || typeof e.id !== "string" || !/^[a-z0-9-]{1,36}$/.test(e.id) || seen.has(e.id)) return null;
     seen.add(e.id);
-    const name = str(e.name, 60), text = str(e.text, 300);
-    if (name === null || !name || text === null) return null;
+    const name = str(e.name, 60), text = str(e.text, 300), body = str(e.body === undefined ? "" : e.body, 5000);
+    if (name === null || !name || text === null || body === null) return null;
+    const slug = e.slug === undefined || e.slug === "" ? e.id : e.slug;
+    if (typeof slug !== "string" || !/^[a-z0-9-]{1,40}$/.test(slug) || slugs.has(slug)) return null;
+    slugs.add(slug);
     if (!Array.isArray(e.cards) || e.cards.length > 400) return null;
     const cards = [];
     for (const f of e.cards) {
@@ -198,7 +201,8 @@ function cleanCollections(input) {
       }
     }
     const imv = Number.isFinite(e.imv) ? Math.max(0, Math.floor(e.imv)) : 0;
-    out.push({ id: e.id, name, text, image: e.image === true, imv, cards, stickers: refs.stickers, prints: refs.prints });
+    const himv = Number.isFinite(e.himv) ? Math.max(0, Math.floor(e.himv)) : 0;
+    out.push({ id: e.id, slug, name, text, body, image: e.image === true, imv, hdr: e.hdr === true, himv, cards, stickers: refs.stickers, prints: refs.prints });
   }
   return out;
 }
@@ -286,6 +290,22 @@ function clean(input) {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    const cm = /^\/collections\/([a-z0-9-]{1,40})\/?$/.exec(url.pathname);
+    if (cm && (request.method === "GET" || request.method === "HEAD")) {
+      // every collection has its own address, /collections/<slug>; they all use the same page, filled in by the browser
+      const list = (await env.CARDS_KV.get("collections", "json")) || [];
+      const c = list.find((x) => (x.slug || x.id) === cm[1]);
+      const res = await env.ASSETS.fetch(new Request(new URL("/collections/", request.url), { method: request.method, headers: request.headers }));
+      if (!c) return res;
+      const title = c.name + " | POPART.love";
+      const desc = (c.text || c.body || "A POPART collection.").slice(0, 200);
+      const hr = new HTMLRewriter()
+        .on("title", { element(e) { e.setInnerContent(title); } })
+        .on('meta[name="description"]', { element(e) { e.setAttribute("content", desc); } })
+        .on('meta[property="og:title"]', { element(e) { e.setAttribute("content", title); } })
+        .on('meta[property="og:description"]', { element(e) { e.setAttribute("content", desc); } });
+      return hr.transform(res);
+    }
     if (url.pathname === "/api/registry") {
       // admin only: the list of sold serials per card
       if (request.method !== "GET") return json({ error: "method not allowed" }, 405, { allow: "GET" });
@@ -453,7 +473,11 @@ export default {
       if (!list) return json({ error: "invalid collections" }, 400);
       const old = (await env.CARDS_KV.get("collections", "json")) || [];
       const keep = new Set(list.filter((e) => e.image).map((e) => e.id));
-      for (const e of old) if (!keep.has(e.id)) await env.CARDS_KV.delete("evimg:k-" + e.id);
+      const keepH = new Set(list.filter((e) => e.hdr).map((e) => e.id));
+      for (const e of old) {
+        if (!keep.has(e.id)) await env.CARDS_KV.delete("evimg:k-" + e.id);
+        if (!keepH.has(e.id)) await env.CARDS_KV.delete("evimg:h-" + e.id);
+      }
       await env.CARDS_KV.put("collections", JSON.stringify(list));
       return json({ ok: true, collections: list });
     }

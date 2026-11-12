@@ -151,6 +151,7 @@
         for (var i = 0; i < list.length; i++) {
           var c = Object.assign({}, list[i]);
           if (c._img) { await signedPut("/api/event-image?id=k-" + encodeURIComponent(c.id), c._img); c.image = true; c.imv = Date.now(); delete c._img; }
+          if (c._hdr) { await signedPut("/api/event-image?id=h-" + encodeURIComponent(c.id), c._hdr); c.hdr = true; c.himv = Date.now(); delete c._hdr; }
           out.push(c);
         }
         var res = await signedPut("/api/collections", JSON.stringify(out));

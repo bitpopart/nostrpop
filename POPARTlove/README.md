@@ -107,3 +107,7 @@ Collections can also hold stickers and prints (tick them in the collection form;
 ## Look and feel
 
 Headlines use the chunky Chango font with a white fill, black outline and hard shadow. Body text uses Comfortaa. Colour bands with dots (home "Three good vibes only", studio call to action) and a drop cap on the Studio text follow the BangPOP style. Fonts are self-hosted in assets/fonts.
+
+### Collection pages
+
+Every collection has its own page at `/collections/<address>` (for example `/collections/bangpop`). In the Collections form you set the page address, a header picture (saved as `/api/event-image?id=h-<id>`) and the text about the collection. The address is lowercase letters, numbers and dashes, and must be unique. The worker route `/collections/*` serves the Collections page and sets the page title and share text for that collection, so the worker must be redeployed for these addresses to work.

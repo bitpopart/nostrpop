@@ -12,6 +12,8 @@
   if (!window.fetch) return;
   fetch("/api/collections").then(function (r) { return r.ok ? r.json() : []; }).then(render).catch(function () {});
 
+  var demo = !!window.POPART_DEMO_BASE;
+  function url(c) { return "/collections/" + (c.slug || c.id); }
   function count(c) { return c.cards.length + (c.stickers || []).length + (c.prints || []).length; }
   function thumb(c) {
     if (c._src) return c._src;
@@ -20,8 +22,9 @@
     return a ? "/assets/img/cards/" + a + ".webp" : "";
   }
   function tile(c, mode) {
-    var b = mode === "home" ? el("a", "coll-tile") : el("button", "coll-tile");
-    if (mode === "home") b.href = "/collections/#c-" + c.id; else { b.type = "button"; b.setAttribute("aria-pressed", "false"); }
+    var link = mode === "home" || (mode === "page" && !demo);
+    var b = link ? el("a", "coll-tile") : el("button", "coll-tile");
+    if (link) b.href = url(c); else { b.type = "button"; b.setAttribute("aria-pressed", "false"); }
     b.setAttribute("data-id", c.id);
     var t = thumb(c);
     if (t) { var im = document.createElement("img"); im.src = t; im.alt = ""; im.loading = "lazy"; b.appendChild(im); }
@@ -32,6 +35,7 @@
     return b;
   }
   function hashId(list) { var m = /^#c-([a-z0-9-]+)$/.exec(location.hash); return m && list.some(function (c) { return c.id === m[1]; }) ? m[1] : null; }
+  function pathSlug() { var m = /^\/collections\/([a-z0-9-]+)\/?$/.exec(location.pathname); return m ? m[1] : null; }
 
   function setup(box) {
     var mode = box.getAttribute("data-home") === "1" ? "home" : box.getAttribute("data-page") === "1" ? "page" : "cards";
@@ -49,7 +53,7 @@
       bar.hidden = !sel;
       if (sel) {
         bar.querySelector("span").textContent = "Showing the " + sel.name + " collection (" + sel.cards.length + (sel.cards.length === 1 ? " card)" : " cards)");
-        var more = bar.querySelector("a"); more.hidden = !((sel.stickers || []).length || (sel.prints || []).length); more.href = "/collections/#c-" + sel.id;
+        var more = bar.querySelector("a"); more.hidden = !((sel.stickers || []).length || (sel.prints || []).length); more.href = url(sel);
       }
       press(list);
     }
@@ -72,7 +76,7 @@
       a.appendChild(el("strong", "", title)); if (sub) a.appendChild(el("small", "", sub));
       return a;
     }
-    function showDetail(list) {
+    function showDetail(list, full) {
       if (detail) detail.innerHTML = "";
       var sel = list.filter(function (c) { return c.id === active; })[0];
       press(list);
@@ -80,8 +84,8 @@
       loadExtra().then(function (d) {
         if (!detail || active !== sel.id) return;
         detail.innerHTML = "";
-        var h = el("h2", "", sel.name); detail.appendChild(h);
-        if (sel.text) detail.appendChild(el("p", "", sel.text));
+        if (!full) { detail.appendChild(el("h2", "", sel.name)); if (sel.text) detail.appendChild(el("p", "", sel.text)); }
+        if (sel.body) detail.appendChild(el("p", "coll-body", sel.body));
         var groups = [
           ["Cards", sel.cards.map(function (f) { return d.cards.filter(function (c) { return c.file === f; })[0]; }).filter(Boolean).map(function (c) {
             return itemCard(c._front || (c.front ? "/api/event-image?id=c-" + encodeURIComponent(c.file) + "&v=" + (c.imv || 0) : (c.thumb || "/assets/img/cards/" + c.file + ".webp")), c.name, c.rarity, "/cards/");
@@ -116,6 +120,26 @@
       if (mode === "home") return;
       if (mode === "page") {
         detail = el("div", "coll-detail"); box.appendChild(detail);
+        var slug = demo ? null : pathSlug();
+        if (slug) {
+          var c = list.filter(function (x) { return (x.slug || x.id) === slug; })[0];
+          var ph = document.querySelector(".page-head");
+          var lead = ph && ph.querySelector("p");
+          if (c) {
+            active = c.id; row.hidden = true;
+            var h1 = ph && ph.querySelector("h1"); if (h1) h1.textContent = c.name;
+            if (lead) { lead.textContent = c.text || ""; lead.hidden = !c.text; }
+            document.title = c.name + " | POPART.love";
+            if (c.hdr && ph) { var ban = document.createElement("img"); ban.className = "coll-banner"; ban.alt = ""; ban.src = "/api/event-image?id=h-" + encodeURIComponent(c.id) + "&v=" + (c.himv || 0); ph.parentNode.insertBefore(ban, ph.nextSibling); }
+            showDetail(list, true);
+            var back = el("p", "coll-back"); var a = el("a", "btn ghost", "All collections"); a.href = "/collections/"; back.appendChild(a); box.appendChild(back);
+          } else {
+            row.hidden = true; if (lead) lead.hidden = true;
+            detail.appendChild(el("p", "notice", "This collection was not found. It may have moved."));
+            var back2 = el("p", "coll-back"); var a2 = el("a", "btn", "See all collections"); a2.href = "/collections/"; back2.appendChild(a2); box.appendChild(back2);
+          }
+          return;
+        }
         var id = hashId(list); if (id) { active = id; showDetail(list); }
         return;
       }
