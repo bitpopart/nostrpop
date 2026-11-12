@@ -367,6 +367,20 @@ def colour_lfj(html):
     return "".join(parts)
 
 
+def ld_json(path, full_title, desc, url_path):
+    org = {"@type": "Organization", "@id": DOMAIN + "/#org", "name": "POPART.love", "url": DOMAIN + "/",
+           "logo": DOMAIN + "/assets/img/favicon.svg", "founder": {"@type": "Person", "name": "Johannes Oppewal"}}
+    data = [org]
+    if path == "":
+        data.append({"@type": "WebSite", "url": DOMAIN + "/", "name": "POPART.love", "description": desc, "publisher": {"@id": DOMAIN + "/#org"}})
+    else:
+        data.append({"@type": "WebPage", "url": DOMAIN + url_path, "name": full_title, "description": desc, "isPartOf": {"@type": "WebSite", "url": DOMAIN + "/"}})
+        data.append({"@type": "BreadcrumbList", "itemListElement": [
+            {"@type": "ListItem", "position": 1, "name": "Home", "item": DOMAIN + "/"},
+            {"@type": "ListItem", "position": 2, "name": full_title.replace(" | POPART.love", ""), "item": DOMAIN + url_path}]})
+    return json.dumps({"@context": "https://schema.org", "@graph": data}).replace("</", "<\\/")
+
+
 def page(path, title, desc, body, current=None, head_class=None, noindex=False):
     """path: '' for home, 'art' for /art/index.html."""
     url_path = "/" if path == "" else f"/{path}/"
@@ -384,6 +398,19 @@ def page(path, title, desc, body, current=None, head_class=None, noindex=False):
 <meta property="og:title" content="{escape(full_title)}">
 <meta property="og:description" content="{escape(desc)}">
 <meta property="og:url" content="{DOMAIN}{url_path}">
+<meta property="og:site_name" content="POPART.love">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="{DOMAIN}/assets/img/og-share.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="POPART.love: pop art about Love, Freedom and Joy">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{escape(full_title)}">
+<meta name="twitter:description" content="{escape(desc)}">
+<meta name="twitter:image" content="{DOMAIN}/assets/img/og-share.jpg">
+<meta name="author" content="Johannes Oppewal">
+<link rel="sitemap" type="application/xml" href="/sitemap.xml">
+<script type="application/ld+json">{ld_json(path, full_title, desc, url_path)}</script>
 <meta name="theme-color" content="#ff7a14">
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
 {FONTS}

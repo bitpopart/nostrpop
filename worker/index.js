@@ -299,12 +299,29 @@ export default {
       if (!c) return res;
       const title = c.name + " | POPART.love";
       const desc = (c.text || c.body || "A POPART collection.").slice(0, 200);
+      const pageUrl = "https://popart.love/collections/" + (c.slug || c.id);
+      const img = "https://popart.love" + (c.hdr ? "/api/event-image?id=h-" + c.id + "&v=" + (c.himv || 0) : c.image ? "/api/event-image?id=k-" + c.id + "&v=" + (c.imv || 0) : "/assets/img/og-share.jpg");
       const hr = new HTMLRewriter()
         .on("title", { element(e) { e.setInnerContent(title); } })
         .on('meta[name="description"]', { element(e) { e.setAttribute("content", desc); } })
         .on('meta[property="og:title"]', { element(e) { e.setAttribute("content", title); } })
-        .on('meta[property="og:description"]', { element(e) { e.setAttribute("content", desc); } });
+        .on('meta[property="og:description"]', { element(e) { e.setAttribute("content", desc); } })
+        .on('meta[property="og:url"]', { element(e) { e.setAttribute("content", pageUrl); } })
+        .on('meta[property="og:image"]', { element(e) { e.setAttribute("content", img); } })
+        .on('meta[name="twitter:title"]', { element(e) { e.setAttribute("content", title); } })
+        .on('meta[name="twitter:description"]', { element(e) { e.setAttribute("content", desc); } })
+        .on('meta[name="twitter:image"]', { element(e) { e.setAttribute("content", img); } })
+        .on('link[rel="canonical"]', { element(e) { e.setAttribute("href", pageUrl); } })
+        .on("head", { element(e) { e.append('<script type="application/ld+json">' + JSON.stringify({ "@context": "https://schema.org", "@type": "CollectionPage", name: c.name, description: desc, url: pageUrl, image: img, isPartOf: { "@type": "WebSite", name: "POPART.love", url: "https://popart.love/" } }).replace(/</g, "\\u003c") + "</script>", { html: true }); } });
       return hr.transform(res);
+    }
+    if (url.pathname === "/sitemap.xml" && (request.method === "GET" || request.method === "HEAD")) {
+      // static sitemap plus one line per collection page
+      const res = await env.ASSETS.fetch(request);
+      const list = (await env.CARDS_KV.get("collections", "json")) || [];
+      const add = list.map((x) => "  <url><loc>https://popart.love/collections/" + (x.slug || x.id) + "</loc></url>\n").join("");
+      const xml = (await res.text()).replace("</urlset>", add + "</urlset>");
+      return new Response(xml, { status: res.status, headers: { "content-type": "application/xml; charset=utf-8", "cache-control": "public, max-age=300" } });
     }
     if (url.pathname === "/api/registry") {
       // admin only: the list of sold serials per card

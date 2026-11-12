@@ -7,7 +7,7 @@
     "directory": "./POPARTlove",
     "binding": "ASSETS",
     "not_found_handling": "404-page",
-    "run_worker_first": ["/api/*", "/collections/*"]
+    "run_worker_first": ["/api/*", "/collections/*", "/sitemap.xml"]
   },
   "kv_namespaces": [{ "binding": "CARDS_KV" }],
   "vars": {
