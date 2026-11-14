@@ -676,6 +676,62 @@ def build_pages():
 </div></section>"""
     page("popplay", "POPPLAY", "How to play POPPLAY: a two minute, two player card game with POPART cards. Rarity, tribe and serial decide each round.", popplay, "/cards/")
 
+    # ---- Full collection
+    tiers = [("Common", "Open run", "No limit", "none"), ("Uncommon", "Run of 500", 500, 4500), ("Rare", "Run of 100", 100, 900),
+             ("Super Rare", "Run of 50", 50, 450), ("Ultra Rare", "Run of 21", 21, 189), ("Unique 1/1", "One of one", 1, 9)]
+    rows = "".join(f'<tr><th scope="row" style="text-align:left;padding:.55rem .7rem;border-bottom:2px solid #0a0a0a">{n}</th><td style="padding:.55rem .7rem;border-bottom:2px solid #0a0a0a">{r}</td><td style="padding:.55rem .7rem;border-bottom:2px solid #0a0a0a;text-align:right">{a}</td><td style="padding:.55rem .7rem;border-bottom:2px solid #0a0a0a;text-align:right">{b if isinstance(b, str) else format(b, ",")}</td></tr>' for n, r, a, b in tiers)
+    full = page_head("A full collection", "What every POPART card adds up to, from one card to the whole set.") + f"""
+<section class="section"><div class="container">
+  <div class="split wide-left">
+    <div class="prose">
+      <span class="kicker">The big picture</span>
+      <h2>54 cards make a full collection</h2>
+      <p>POPART cards come in <strong>3 series</strong>, <strong>3 tribes</strong> and <strong>6 tiers</strong>. Own one of every combination and you hold a full collection of <strong>54 cards</strong>.</p>
+      <p>Every card belongs to one series, one tribe and one tier, so you always know where it fits and what is still missing.</p>
+    </div>
+    <div class="panel yellow">
+      <h3>The sum</h3>
+      <p style="font-size:1.4rem;margin:0"><strong>3 x 3 x 6 = 54</strong></p>
+      <ul style="padding-left:1.1rem;margin:.6rem 0 0">
+        <li>Series: Masterpiece, Signed, Legend</li>
+        <li>Tribes: Love, Freedom, Joy</li>
+        <li>Tiers: Common up to Unique 1/1</li>
+      </ul>
+    </div>
+  </div>
+</div></section>
+
+<section class="section"><div class="container">
+  <h2>The six tiers and how many exist</h2>
+  <p>These are the starting runs. Each tier is a number you can see on the card, so rarity is never a guess. The last column counts all copies of that tier across the 3 series and 3 tribes, 9 cards per tier.</p>
+  <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;min-width:480px;background:#fff;border:3px solid #0a0a0a">
+    <thead><tr style="background:#ffe94a"><th scope="col" style="text-align:left;padding:.6rem .7rem;border-bottom:3px solid #0a0a0a">Tier</th><th scope="col" style="text-align:left;padding:.6rem .7rem;border-bottom:3px solid #0a0a0a">Run</th><th scope="col" style="text-align:right;padding:.6rem .7rem;border-bottom:3px solid #0a0a0a">Copies per card</th><th scope="col" style="text-align:right;padding:.6rem .7rem;border-bottom:3px solid #0a0a0a">Copies in all 9 cards</th></tr></thead>
+    <tbody>{rows}</tbody>
+  </table></div>
+  <p class="notice" style="margin-top:1.2rem"><strong>6,048 numbered copies</strong> exist in total, plus the open Commons. Only <strong>9 Unique 1/1 cards</strong> will ever exist, one for every series and tribe.</p>
+</div></section>
+
+<section class="section"><div class="container">
+  <h2>What a collection adds up to</h2>
+  <div class="grid g3">
+    <div class="panel pink"><h3>Passport: 18 slots</h3><p>Your collector passport has one slot for every series and tier, 3 series x 6 tiers. Tick a slot when you own that tier in that series.</p></div>
+    <div class="panel blue"><h3>Trio: 18 possible</h3><p>The same series and the same tier in all three tribes make a Trio. There are 18 of them to complete, and a Trio trades for any one card you like.</p></div>
+    <div class="panel yellow"><h3>Series finisher: 3</h3><p>Fill all 6 tiers of one series in your passport to earn a stamp and ask for the finisher card. Do it three times for all three series.</p></div>
+  </div>
+</div></section>
+
+<section class="section"><div class="container">
+  <h2>Collecting in steps</h2>
+  <ol class="steps">
+    <li><strong>One tribe.</strong> Start with the tribe you love most and gather its tiers in one series.</li>
+    <li><strong>One Trio.</strong> Add the same tier from the other two tribes, then trade the three cards for any card you want.</li>
+    <li><strong>One series.</strong> Fill all 6 tiers of a series in your passport and ask for the finisher card.</li>
+    <li><strong>The full 54.</strong> One of every card, all 3 series, all 3 tribes, all 6 tiers.</li>
+  </ol>
+  <p style="margin-top:1.4rem"><a class="btn" href="/cards/">See the cards</a> <a class="btn" href="/verify/">Verify my card</a> <a class="btn" href="/popplay/">How to play POPPLAY</a></p>
+</div></section>"""
+    page("full-collection", "A full collection", "What a full POPART collection adds up to: 3 series, 3 tribes and 6 tiers make 54 cards, with 18 passport slots, 18 Trios and 9 Unique 1/1 cards.", full, "/cards/")
+
     # ---- Stickers and Prints
     def soon_card(art):
         fn, _b, title, theme, blurb = art
@@ -749,6 +805,7 @@ def build_pages():
     <h2>POPPLAY: the 10-second game</h2>
     <p>Two players, one stack each. Count down together, <strong>3, 2, 1, POP</strong>, and put a card on the table. The higher card wins the round. That is the whole game, so it fits in any pocket and any break.</p>
     <a class="btn" href="/popplay/">How to play POPPLAY</a>
+    <a class="btn" href="/full-collection/">A full collection</a>
   </div>
   <div class="panel pink" style="margin-top:1.2rem">
     <span class="kicker">Collectors</span>

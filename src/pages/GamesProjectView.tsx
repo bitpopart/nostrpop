@@ -16,6 +16,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { getMemoryHtml, loadSiteHtml, readProjectMeta, writeProjectMeta } from '@/lib/siteHtml';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useNostr } from '@nostrify/react';
 import { useQuery } from '@tanstack/react-query';
@@ -29,7 +30,6 @@ import {
 const ADMIN_NPUB = 'npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz';
 const ADMIN_PUBKEY = nip19.decode(ADMIN_NPUB).data as string;
 
-const htmlCache = new Map<string, string>();
 
 /**
  * Injects the Gamestr bridge script into the game HTML.
@@ -125,42 +125,43 @@ export default function GamesProjectView() {
     enabled: !!projectId,
   });
 
-  const brandSiteUrl = project?.tags.find(t => t[0] === 'brand-site')?.[1];
-  const gameName = project?.tags.find(t => t[0] === 'name')?.[1] ?? 'Game';
+  // File address from the last visit lets the download start before the relay answers
+  const cachedMeta = projectId ? readProjectMeta('games', projectId) : undefined;
+  const brandSiteUrl = project?.tags.find(t => t[0] === 'brand-site')?.[1] ?? cachedMeta?.brandSiteUrl;
+  const gameName = project?.tags.find(t => t[0] === 'name')?.[1] ?? cachedMeta?.name ?? 'Game';
+
+  useEffect(() => {
+    if (!project || !projectId) return;
+    const url = project.tags.find(t => t[0] === 'brand-site')?.[1];
+    const name = project.tags.find(t => t[0] === 'name')?.[1];
+    if (url) writeProjectMeta('games', projectId, { brandSiteUrl: url, name });
+  }, [project, projectId]);
   const gameId = projectId ?? 'unknown-game';
 
   // ── Fetch HTML ────────────────────────────────────────────────────────────
   const [fetchedHtml, setFetchedHtml] = useState<string | null>(
-    () => (brandSiteUrl ? htmlCache.get(brandSiteUrl) ?? null : null)
+    () => (brandSiteUrl ? getMemoryHtml(brandSiteUrl) : null)
   );
   const [fetchingHtml, setFetchingHtml] = useState(false);
   const [fetchError, setFetchError] = useState('');
-  const fetchingUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!brandSiteUrl) return;
-    if (htmlCache.has(brandSiteUrl)) { setFetchedHtml(htmlCache.get(brandSiteUrl)!); return; }
-    if (fetchingUrlRef.current === brandSiteUrl) return;
-    fetchingUrlRef.current = brandSiteUrl;
+    let alive = true;
+    const instant = getMemoryHtml(brandSiteUrl);
+    if (instant) { setFetchedHtml(instant); return; }
     setFetchingHtml(true);
     setFetchError('');
-    fetch(brandSiteUrl)
-      .then(r => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.text();
-      })
-      .then(html => {
-        if (html.trim().length === 0) throw new Error('Empty response');
-        htmlCache.set(brandSiteUrl, html);
-        setFetchedHtml(html);
-        setFetchingHtml(false);
-      })
+    loadSiteHtml(brandSiteUrl)
+      .then(html => { if (alive) { setFetchedHtml(html); setFetchingHtml(false); } })
       .catch((err) => {
         console.error('Game HTML fetch failed:', err);
+        if (!alive) return;
         setFetchedHtml(null);
         setFetchError('The game file could not be loaded from its host.');
         setFetchingHtml(false);
       });
+    return () => { alive = false; };
   }, [brandSiteUrl]);
 
   const srcDocHtml = fetchedHtml ? injectGamestrBridge(fetchedHtml) : null;
@@ -198,11 +199,11 @@ export default function GamesProjectView() {
 
   // ── SEO ───────────────────────────────────────────────────────────────────
   useSeoMeta({
-    title: project ? `${gameName} — BitPopArt Games` : 'BitPopArt Games',
+    title: project || cachedMeta ? `${gameName} — BitPopArt Games` : 'BitPopArt Games',
   });
 
   // ── Loading ───────────────────────────────────────────────────────────────
-  if (isLoading || (fetchingHtml && !fetchedHtml)) {
+  if (!fetchedHtml && (isLoading || fetchingHtml)) {
     return (
       <div className="flex-1 flex items-center justify-center bg-white">
         <div className="text-center space-y-2">
@@ -213,7 +214,7 @@ export default function GamesProjectView() {
     );
   }
 
-  if (!project || !brandSiteUrl || fetchError) {
+  if (!brandSiteUrl || fetchError || (!project && !cachedMeta)) {
     return (
       <div className="flex-1 flex items-center justify-center">
         <div className="text-center space-y-4">

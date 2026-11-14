@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { prefetchSiteHtml } from '@/lib/siteHtml';
 import { useNostr } from '@nostrify/react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -165,6 +166,11 @@ export function CategoryProjectsPage({
     },
   });
 
+  const warmProject = (project: ProjectData) => {
+    if (project.coming_soon || !project.brand_site) return;
+    if (project.frl_inline || project.brand_site_inline || category === 'games') prefetchSiteHtml(project.brand_site);
+  };
+
   const handleProjectClick = (project: ProjectData) => {
     if (project.coming_soon) return;
 
@@ -316,6 +322,9 @@ export function CategoryProjectsPage({
                       : 'cursor-pointer hover:shadow-2xl'
                   }`}
                   onClick={() => handleProjectClick(project)}
+                  // Start downloading the project file before the click, so the page opens fast
+                  onMouseEnter={() => warmProject(project)}
+                  onTouchStart={() => warmProject(project)}
                 >
                   {/* Thumbnail */}
                   <div className="relative h-56 overflow-hidden">
