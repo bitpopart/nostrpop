@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="POPtoons are pop art characters by BitPopArt. Meet every character, with its story and its POPART card, at poptoons.fun.">
+<link rel="canonical" href="https://poptoons.fun/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="POPtoons">
+<meta property="og:title" content="POPtoons">
+<meta property="og:description" content="Pop art characters by BitPopArt. Meet every character, with its story and its POPART card.">
+<meta property="og:url" content="https://poptoons.fun/">
+<title>POPtoons</title>
+<style>
+/*FONTS*/
+:root{
+  /* layout idea: yellow halftone hero, then one coloured band per collection with a grid of ink-outlined character cards */
+  --ink:#111111; --paper:#ffffff; --soft:#F4F1EA; --sun:#FFD422; --sun-dot:rgba(232,130,46,.35);
+  --love:#F0364F; --freedom:#2F8FEF; --joy:#FFD422;
+  --display:'Lilita One','Arial Rounded MT Bold','Trebuchet MS',sans-serif;
+  --body:'Poppins','Segoe UI',Helvetica,Arial,sans-serif;
+  --r:16px; --line:3px;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:76px}
+main{overflow-x:clip}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.6}
+img{max-width:100%;display:block}
+a{color:inherit}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--freedom);outline-offset:3px}
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+.pop{font-family:var(--display);font-weight:400;color:#fff;-webkit-text-stroke:var(--sw,4px) var(--ink);paint-order:stroke fill;text-shadow:var(--sh,5px) var(--sh,5px) 0 var(--ink);line-height:1;margin:0;text-wrap:balance}
+.chip{display:inline-flex;align-items:center;font-weight:700;font-size:.72rem;line-height:1;padding:.42em .85em;border:2px solid var(--ink);border-radius:99px;white-space:nowrap}
+.chip.Love{background:var(--love);color:#fff}.chip.Freedom{background:var(--freedom);color:#fff}.chip.Joy{background:var(--joy);color:var(--ink)}
+.dots{display:inline-flex;gap:3px}.dots i{width:10px;height:10px;border-radius:50%;border:2px solid var(--ink);background:#fff}.dots i.on{background:var(--ink)}
+
+/* header */
+header.top{position:sticky;top:0;z-index:20;background:var(--paper);border-bottom:var(--line) solid var(--ink)}
+header.top .wrap{display:flex;align-items:center;gap:18px;height:62px}
+.logo{font-family:var(--display);font-size:1.7rem;text-decoration:none;color:var(--sun);-webkit-text-stroke:2.5px var(--ink);paint-order:stroke fill;text-shadow:3px 3px 0 var(--ink);line-height:1}
+.domain{font-weight:700;font-size:.8rem;border:2px solid var(--ink);border-radius:99px;padding:.2em .8em;background:var(--sun);white-space:nowrap}
+.home{display:inline-block;margin-top:20px;font-family:var(--display);font-size:1.5rem;background:#fff;border:var(--line) solid var(--ink);border-radius:99px;box-shadow:4px 4px 0 var(--ink);padding:.15em .9em}
+nav.main{margin-left:auto;display:flex;gap:6px;flex-wrap:nowrap}
+nav.main a{font-weight:600;font-size:.9rem;text-decoration:none;padding:.35em .8em;border-radius:99px;border:2px solid transparent}
+nav.main a:hover{border-color:var(--ink);background:var(--sun)}
+
+/* hero */
+.hero{background-color:var(--sun);background-image:radial-gradient(var(--sun-dot) 3px,transparent 3.6px);background-size:20px 20px;border-bottom:var(--line) solid var(--ink)}
+.hero .wrap>*,.band .wrap>*,.pmain>*{min-width:0}
+.hero .wrap{display:grid;grid-template-columns:1.1fr .9fr;gap:36px;align-items:center;padding-top:54px;padding-bottom:54px}
+.hero h1{font-size:clamp(3.4rem,10vw,6.6rem);--sw:6px;--sh:7px}
+.tag{display:inline-block;background:var(--ink);color:var(--sun);font-family:var(--display);font-size:clamp(1.1rem,2.6vw,1.6rem);padding:.3em .8em;border-radius:10px;transform:rotate(-3deg);margin:18px 0 20px}
+.hero p{max-width:34em;font-size:1.05rem;margin:0 0 18px;font-weight:500}
+.stats{display:flex;gap:10px;flex-wrap:wrap}
+.stat{background:#fff;border:var(--line) solid var(--ink);border-radius:12px;box-shadow:4px 4px 0 var(--ink);padding:.35em .9em;font-weight:700}
+.stat b{font-family:var(--display);font-weight:400;font-size:1.3rem;margin-right:.3em}
+.stack{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.stack a{background:#fff;border:var(--line) solid var(--ink);border-radius:var(--r);box-shadow:6px 6px 0 var(--ink);aspect-ratio:1;min-width:0;overflow:hidden;padding:12px;transition:transform .15s}
+.stack a:nth-child(odd){transform:rotate(-3deg)}.stack a:nth-child(even){transform:rotate(2.5deg)}
+.stack a:hover{transform:rotate(0) scale(1.05)}
+.stack img{width:100%;height:100%;object-fit:contain}
+
+/* collection index */
+.index{padding:34px 0 8px}
+.index h2,.how h2{font-family:var(--display);font-weight:400;font-size:1.8rem;margin:0 0 14px}
+.cnav{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.cnav a{display:flex;align-items:stretch;text-decoration:none;background:#fff;border:var(--line) solid var(--ink);border-radius:14px;box-shadow:5px 5px 0 var(--ink);overflow:hidden;transition:transform .12s,box-shadow .12s}
+.cnav a:hover{transform:translate(-2px,-2px);box-shadow:7px 7px 0 var(--ink)}
+.cnav .no{font-family:var(--display);font-size:1.5rem;display:grid;place-items:center;min-width:58px;border-right:var(--line) solid var(--ink)}
+.cnav .tx{padding:8px 12px;line-height:1.3}
+.cnav .tx b{font-family:var(--display);font-weight:400;font-size:1.2rem;display:block}
+.cnav .tx span{font-size:.8rem}
+
+/* filter bar */
+.filter{position:sticky;top:62px;z-index:15;background:var(--paper);border-bottom:2px solid var(--ink);margin-top:26px}
+.filter .wrap{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding-top:10px;padding-bottom:10px}
+.filter .lab{font-weight:700;font-size:.85rem}
+.fbtn{border:2px solid var(--ink);background:#fff;border-radius:99px;padding:.3em .95em;font-weight:700;font-size:.82rem}
+.fbtn[aria-pressed="true"]{background:var(--ink);color:#fff}
+.fbtn.Love[aria-pressed="true"]{background:var(--love)}.fbtn.Freedom[aria-pressed="true"]{background:var(--freedom)}.fbtn.Joy[aria-pressed="true"]{background:var(--joy);color:var(--ink)}
+#q{margin-left:auto;border:2px solid var(--ink);border-radius:99px;padding:.4em 1em;font:inherit;font-size:.88rem;min-width:0;width:210px;background:#fff;color:var(--ink)}
+#count{font-size:.82rem;font-weight:600}
+
+/* collection sections */
+section.coll{margin:0 0 10px}
+.band{background-color:var(--c);background-image:radial-gradient(var(--d) 2.8px,transparent 3.3px);background-size:18px 18px;border-top:var(--line) solid var(--ink);border-bottom:var(--line) solid var(--ink);color:var(--t)}
+.band .wrap{display:grid;grid-template-columns:1.25fr 1fr;gap:30px;padding-top:34px;padding-bottom:34px;align-items:start}
+.eyebrow{display:inline-block;background:var(--ink);color:#fff;font-weight:700;font-size:.75rem;padding:.35em .9em;border-radius:99px;margin-bottom:14px}
+.band h2{font-size:clamp(2.6rem,7vw,4.6rem);--sw:5px;--sh:6px}
+.band .tagline{font-weight:600;font-size:1.05rem;margin:16px 0 4px;max-width:30em}
+.band .n{font-weight:700;font-size:.9rem;margin:0}
+.intro{background:#fff;color:var(--ink);border:var(--line) solid var(--ink);border-radius:var(--r);box-shadow:6px 6px 0 var(--ink);padding:16px 20px}
+.intro p{margin:0 0 .7em;font-size:.95rem}.intro p:last-child{margin:0}
+.notes{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px 30px;padding:6px 0 0;font-size:.88rem}
+.notes b{display:block}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));gap:18px;padding:26px 0 22px}
+.card{position:relative;display:flex;flex-direction:column;gap:6px;text-align:left;background:#fff;border:var(--line) solid var(--ink);border-radius:var(--r);box-shadow:5px 5px 0 var(--ink);padding:12px 12px 12px;transition:transform .12s,box-shadow .12s}
+.card:hover{transform:translate(-2px,-2px);box-shadow:8px 8px 0 var(--ink)}
+.card .no{position:absolute;top:8px;right:10px;font-family:var(--display);font-size:.85rem;opacity:.55}
+.card .pic{aspect-ratio:1;overflow:hidden;padding:6px}
+.card .pic img{width:100%;height:100%;object-fit:contain}
+.card b{font-family:var(--display);font-weight:400;font-size:1.35rem;line-height:1.1}
+.card .kind{font-size:.8rem;line-height:1.3;min-height:2.1em}
+.card .meta{display:flex;justify-content:space-between;align-items:center;gap:6px;margin-top:2px}
+.card .tier{font-size:.72rem;font-weight:600}
+.card[hidden]{display:none}
+.empty{padding:26px 0;font-weight:600}
+
+/* how the cards work */
+.how{background:var(--soft);border-top:var(--line) solid var(--ink);padding:38px 0 44px;margin-top:20px}
+.how p{max-width:42em;margin:0 0 20px}
+.keys{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px}
+.key{background:#fff;border:var(--line) solid var(--ink);border-radius:var(--r);box-shadow:5px 5px 0 var(--ink);padding:16px 18px}
+.key h3{font-family:var(--display);font-weight:400;font-size:1.3rem;margin:0 0 10px}
+.key ul{list-style:none;margin:0;padding:0;display:grid;gap:8px;font-weight:500;font-size:.92rem}
+.key li{display:flex;align-items:center;gap:10px}
+footer{border-top:var(--line) solid var(--ink);background:var(--ink);color:#fff;padding:22px 0;font-size:.88rem}
+footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+
+/* detail sheet */
+#sheet{position:fixed;inset:0;z-index:50;background:rgba(17,17,17,.6);display:none;overflow:auto;padding:24px 14px}
+#sheet.open{display:block}
+.panel{max-width:860px;margin:0 auto;background:#fff;border:var(--line) solid var(--ink);border-radius:22px;box-shadow:10px 10px 0 var(--ink);overflow:hidden}
+.ptop{position:relative;background-color:var(--c);background-image:radial-gradient(var(--d) 2.8px,transparent 3.3px);background-size:18px 18px;border-bottom:var(--line) solid var(--ink);padding:18px 22px 26px;color:var(--t)}
+.prow{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:16px}
+.pno{font-family:var(--display);font-size:1.6rem;color:#fff;-webkit-text-stroke:2.5px var(--ink);paint-order:stroke fill;text-shadow:3px 3px 0 var(--ink)}
+.x{border:var(--line) solid var(--ink);background:#fff;color:var(--ink);border-radius:50%;width:42px;height:42px;font-weight:700;font-size:1.1rem;line-height:1;box-shadow:3px 3px 0 var(--ink)}
+.pmain{display:grid;grid-template-columns:minmax(0,300px) 1fr;gap:24px;align-items:center}
+.pimg{background:#fff;border:var(--line) solid var(--ink);border-radius:24px;box-shadow:8px 8px 0 var(--ink);aspect-ratio:1;overflow:hidden;padding:20px}
+.pimg img{width:100%;height:100%;object-fit:contain}
+.burst{width:min(100%,250px);justify-self:center;transform:rotate(-8deg)}
+.burst text{font-family:var(--display);fill:var(--ink)}
+.pbody{padding:22px 26px 26px}
+.pname{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.pname h2{font-size:clamp(2.6rem,8vw,3.8rem);color:var(--c);--sw:4px;--sh:5px}
+.pname span{font-weight:500;font-size:1.1rem}
+.role{font-style:italic;margin:10px 0 14px}
+.story p{margin:0 0 .8em;max-width:62ch}
+.facts{margin:14px 0 20px;display:grid;gap:4px;font-size:.93rem}
+.strip{border:var(--line) solid var(--ink);border-radius:16px;box-shadow:6px 6px 0 var(--ink);overflow:hidden}
+.strip .h{background:var(--ink);color:#fff;font-weight:700;font-size:.72rem;letter-spacing:.04em;padding:.5em 1.2em}
+.strip .c3{display:grid;grid-template-columns:repeat(3,1fr)}
+.strip .c3>div{padding:12px 16px 14px;border-left:2px solid var(--ink)}.strip .c3>div:first-child{border-left:0}
+.strip small{display:block;font-size:.66rem;font-weight:600;color:#555;letter-spacing:.05em;margin-bottom:4px}
+.strip strong{font-family:var(--display);font-weight:400;font-size:1.25rem;display:block;line-height:1.2}
+.pnav{display:flex;justify-content:space-between;gap:10px;margin-top:22px;flex-wrap:wrap}
+.pnav button{border:var(--line) solid var(--ink);background:#fff;border-radius:99px;padding:.45em 1.1em;font-weight:700;font-size:.88rem;box-shadow:3px 3px 0 var(--ink)}
+.pnav button:hover,.x:hover{background:var(--sun)}
+
+@media (max-width:820px){
+  .hero .wrap,.band .wrap{grid-template-columns:1fr}
+  .hero .wrap{padding-top:36px;padding-bottom:40px}
+  nav.main a{padding:.3em .55em;font-size:.82rem}
+  #q{margin-left:0;width:100%}
+  .pmain{grid-template-columns:1fr 1fr;gap:14px}
+}
+@media (max-width:480px){
+  .logo{font-size:1.25rem;-webkit-text-stroke-width:2px}
+  header.top .wrap{gap:6px;padding:0 12px}
+  nav.main{gap:0}
+  nav.main a{padding:.3em .4em;font-size:.76rem}
+  .domain{display:none}
+  .stack{gap:10px}
+  .hero h1{--sw:4px;--sh:5px}
+  .grid{grid-template-columns:repeat(2,1fr);gap:12px}
+  .card b{font-size:1.15rem}
+  .strip .c3{grid-template-columns:1fr}.strip .c3>div{border-left:0;border-top:2px solid var(--ink)}.strip .c3>div:first-child{border-top:0}
+  .pbody{padding:18px 16px 20px}.ptop{padding:14px 14px 20px}
+  .filter{position:static}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="logo" href="#top">POPtoons</a><span class="domain">poptoons.fun</span>
+  <nav class="main" aria-label="Main"><a href="#collections">Collections</a><a href="#characters">Characters</a><a href="#cards">Cards</a></nav>
+</div></header>
+
+<main id="top">
+<div class="hero"><div class="wrap">
+  <div>
+    <h1 class="pop">POPtoons</h1>
+    <div class="tag">CHARACTER GUIDE</div>
+    <p>POPtoons are pop art characters by BitPopArt. Each one has a name, a short story and a card. Characters that belong together form a collection.</p>
+    <div class="stats" id="stats"></div>
+    <div class="home">poptoons.fun</div>
+  </div>
+  <div class="stack" id="stack"></div>
+</div></div>
+
+<div class="index wrap" id="collections">
+  <h2>The collections</h2>
+  <div class="cnav" id="cnav"></div>
+</div>
+
+<div class="filter" id="characters"><div class="wrap">
+  <span class="lab">Tribe</span>
+  <button class="fbtn" data-tribe="" aria-pressed="true">All</button>
+  <button class="fbtn Love" data-tribe="Love" aria-pressed="false">Love</button>
+  <button class="fbtn Freedom" data-tribe="Freedom" aria-pressed="false">Freedom</button>
+  <button class="fbtn Joy" data-tribe="Joy" aria-pressed="false">Joy</button>
+  <span id="count" aria-live="polite"></span>
+  <input id="q" type="search" placeholder="Search a character" aria-label="Search a character">
+</div></div>
+
+<div id="sections"></div>
+
+<div class="how" id="cards"><div class="wrap">
+  <h2>How the cards work</h2>
+  <p>Every character belongs to one series, one tribe and one tier. The tribe sign decides what a card trades against. The tier says how hard it is to find.</p>
+  <div class="keys">
+    <div class="key"><h3>Series</h3><ul><li>Masterpiece</li><li>Signed</li><li>Legend</li></ul></div>
+    <div class="key"><h3>Tribe</h3><ul><li><span class="chip Love">Love</span></li><li><span class="chip Freedom">Freedom</span></li><li><span class="chip Joy">Joy</span></li></ul></div>
+    <div class="key"><h3>Tier</h3><ul id="tierkey"></ul></div>
+  </div>
+</div></div>
+</main>
+
+<footer><div class="wrap"><span><b>poptoons.fun</b> · POPtoons Character Guide</span><span>made by BitPopArt</span></div></footer>
+
+<div id="sheet" role="dialog" aria-modal="true" aria-labelledby="pn"><div class="panel" id="panel"></div></div>
+
+<script>
+const DATA = /*DATA*/;
+const TIERS = ['Common','Uncommon','Rare','Super Rare','Ultra Rare','Unique 1/1'];
+const $ = (s, r=document) => r.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+const dark = h => { const n = parseInt(h.slice(1), 16); return (0.299*(n>>16) + 0.587*((n>>8)&255) + 0.114*(n&255)) < 140; };
+const tone = c => `--c:${c};--t:${dark(c) ? '#fff' : '#111'};--d:${dark(c) ? 'rgba(255,255,255,.22)' : 'rgba(17,17,17,.10)'}`;
+const dots = t => { const n = TIERS.indexOf(t) + 1; return '<span class="dots" aria-hidden="true">' + TIERS.map((_, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('') + '</span>'; };
+const byKey = Object.fromEntries(DATA.characters.map(c => [c.key, c]));
+const collOf = Object.fromEntries(DATA.collections.map(k => [k.key, k]));
+const ordered = DATA.collections.flatMap(k => DATA.characters.filter(c => c.collection === k.key));
+
+// hero
+$('#stats').innerHTML = `<span class="stat"><b>${DATA.characters.length}</b>characters</span><span class="stat"><b>${DATA.collections.length}</b>collections</span><span class="stat"><b>3</b>tribes</span>`;
+$('#stack').innerHTML = DATA.collections.map(k => { const c = ordered.find(x => x.collection === k.key); return `<a href="#${c.key}" aria-label="${esc(c.name)}"><img src="${DATA.images[c.key]}" alt=""></a>`; }).join('');
+$('#tierkey').innerHTML = TIERS.map(t => `<li>${dots(t)} ${t}</li>`).join('');
+
+// collection index
+$('#cnav').innerHTML = DATA.collections.map(k => {
+  const n = ordered.filter(c => c.collection === k.key).length;
+  return `<a href="#${k.key}"><span class="no" style="background:${k.color};color:${dark(k.color) ? '#fff' : '#111'}">${k.no}</span><span class="tx"><b>${esc(k.name)}</b><span>${n} characters</span></span></a>`;
+}).join('');
+
+// sections
+$('#sections').innerHTML = DATA.collections.map(k => {
+  const mem = ordered.filter(c => c.collection === k.key);
+  return `<section class="coll" id="${k.key}">
+    <div class="band" style="${tone(k.color)}"><div class="wrap">
+      <div><span class="eyebrow">Collection ${k.no}</span><h2 class="pop">${esc(k.name)}</h2>
+        <p class="tagline">${esc(k.tagline)}</p><p class="n">${mem.length} characters</p></div>
+      <div class="intro">${k.intro.map(p => `<p>${esc(p)}</p>`).join('')}</div>
+    </div></div>
+    <div class="wrap">
+      <div class="grid">${mem.map(c => `<button class="card" data-key="${c.key}" data-tribe="${c.tribe}" data-text="${esc((c.name + ' ' + c.kind + ' ' + c.sound + ' ' + c.series + ' ' + c.tier).toLowerCase())}">
+        <span class="no">${c.no}</span>
+        <span class="pic"><img src="${DATA.images[c.key]}" alt="${esc(c.name + ' ' + c.kind)}" loading="lazy"></span>
+        <b>${esc(c.name)}</b><span class="kind">${esc(c.kind)}</span>
+        <span class="meta"><span class="chip ${c.tribe}">${c.tribe}</span>${dots(c.tier)}</span>
+        <span class="tier">${c.series} · ${c.tier}</span>
+      </button>`).join('')}</div>
+      <div class="notes">${k.notes.map(([h, t]) => `<p><b>${esc(h)}</b>${esc(t)}</p>`).join('')}</div>
+    </div>
+  </section>`;
+}).join('') + '<p class="empty wrap" id="empty" hidden>No character matches. Try another name or tribe.</p>';
+
+// filter
+let tribe = '';
+function applyFilter(){
+  const q = $('#q').value.trim().toLowerCase(); let shown = 0;
+  document.querySelectorAll('.card').forEach(el => {
+    const ok = (!tribe || el.dataset.tribe === tribe) && (!q || el.dataset.text.includes(q));
+    el.hidden = !ok; if (ok) shown++;
+  });
+  document.querySelectorAll('section.coll').forEach(s => { s.hidden = !s.querySelector('.card:not([hidden])'); });
+  $('#empty').hidden = shown > 0;
+  $('#count').textContent = (tribe || q) ? `${shown} of ${DATA.characters.length} shown` : '';
+}
+document.querySelectorAll('.fbtn').forEach(b => b.addEventListener('click', () => {
+  tribe = b.dataset.tribe;
+  document.querySelectorAll('.fbtn').forEach(x => x.setAttribute('aria-pressed', x === b));
+  applyFilter();
+}));
+$('#q').addEventListener('input', applyFilter);
+
+// detail sheet
+function burst(txt){
+  const pts = []; const n = 12;
+  for (let i = 0; i < n*2; i++){ const a = Math.PI*i/n + .2, r = i % 2 ? .72 : 1; pts.push((130 + Math.cos(a)*120*r).toFixed(1) + ',' + (95 - Math.sin(a)*84*r).toFixed(1)); }
+  const size = txt.length <= 4 ? 44 : txt.length === 5 ? 38 : 30;
+  return `<svg class="burst" viewBox="0 0 270 195" role="img" aria-label="Sound: ${esc(txt)}"><polygon points="${pts.join(' ')}" transform="translate(6,6)" fill="#111"/><polygon points="${pts.join(' ')}" fill="#fff" stroke="#111" stroke-width="5" stroke-linejoin="round"/><text x="130" y="${95 + size*.34}" text-anchor="middle" font-size="${size}">${esc(txt)}</text></svg>`;
+}
+let lastFocus = null, savedY = 0;
+function openChar(key){
+  const c = byKey[key]; if (!c) return;
+  const k = collOf[c.collection]; const i = ordered.indexOf(c);
+  const prev = ordered[(i - 1 + ordered.length) % ordered.length], next = ordered[(i + 1) % ordered.length];
+  $('#panel').innerHTML = `
+    <div class="ptop" style="${tone(c.color)}">
+      <div class="prow"><span class="eyebrow" style="margin:0">POPtoons · ${esc(k.name)}</span><span style="display:flex;align-items:center;gap:14px"><span class="pno">No. ${c.no}</span><button class="x" id="close" aria-label="Close">×</button></span></div>
+      <div class="pmain"><div class="pimg"><img src="${DATA.images[c.key]}" alt="${esc(c.name + ' ' + c.kind)}"></div>${burst(c.sound)}</div>
+    </div>
+    <div class="pbody" style="--c:${c.color}">
+      <div class="pname"><h2 class="pop" id="pn">${esc(c.name)}</h2><span>${esc(c.kind)}</span></div>
+      <p class="role">${esc(c.role)}</p>
+      <div class="story">${c.story.map(p => `<p>${esc(p)}</p>`).join('')}</div>
+      <div class="facts">${c.facts.map(([h, t]) => `<div><b>${esc(h)}:</b> ${esc(t)}</div>`).join('')}</div>
+      <div class="strip"><div class="h">POPART CARD</div><div class="c3">
+        <div><small>SERIES</small><strong>${c.series}</strong></div>
+        <div><small>TRIBE</small><span class="chip ${c.tribe}" style="font-size:.85rem">${c.tribe}</span></div>
+        <div><small>TIER</small><strong>${c.tier}</strong>${dots(c.tier)}</div>
+      </div></div>
+      <div class="pnav"><button data-go="${prev.key}">‹ ${esc(prev.name)}</button><button data-go="${next.key}">${esc(next.name)} ›</button></div>
+    </div>`;
+  const sh = $('#sheet');
+  if (!sh.classList.contains('open')){ lastFocus = document.activeElement; savedY = window.scrollY; }
+  sh.classList.add('open'); sh.scrollTop = 0; document.body.style.overflow = 'hidden';
+  $('#close').focus();
+}
+function closeSheet(){
+  const sh = $('#sheet'); if (!sh.classList.contains('open')) return;
+  sh.classList.remove('open'); document.body.style.overflow = '';
+  if (byKey[location.hash.slice(1)]){ const y = savedY; location.hash = 'characters'; requestAnimationFrame(() => window.scrollTo(0, y)); }
+  if (lastFocus && lastFocus.focus) lastFocus.focus({preventScroll:true});
+}
+function route(){
+  const h = location.hash.slice(1);
+  if (byKey[h]) openChar(h); else if ($('#sheet').classList.contains('open')){ $('#sheet').classList.remove('open'); document.body.style.overflow = ''; }
+}
+document.addEventListener('click', e => {
+  const card = e.target.closest('.card'); if (card){ location.hash = card.dataset.key; return; }
+  const go = e.target.closest('[data-go]'); if (go){ location.hash = go.dataset.go; return; }
+  if (e.target.closest('#close') || e.target.id === 'sheet') closeSheet();
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); });
+window.addEventListener('hashchange', route);
+route();
+</script>
+</body>
+</html>

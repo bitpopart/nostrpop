@@ -14,6 +14,7 @@ export default tseslint.config(
       // Self-contained static apps/pages served as-is (inline scripts, no manifest/OG by design)
       "public/**/*.html",
       "src/pages/*.html",
+      "poptoons/**/*.html",
       // Root document needs inline bootstrap scripts (theme/analytics) before the bundle loads
       "index.html",
     ],

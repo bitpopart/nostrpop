@@ -1,0 +1,97 @@
+{
+  "site": "https://poptoons.fun",
+  "characters": 37,
+  "collections": [
+    {
+      "key": "lovelings",
+      "no": "01",
+      "name": "Lovelings",
+      "tagline": "Round animals with a heart on their face and their tongue out.",
+      "count": 6,
+      "characters": [
+        "Toot",
+        "Mimi",
+        "Blu",
+        "Lil Moo",
+        "Oki",
+        "Pip"
+      ]
+    },
+    {
+      "key": "joylings",
+      "no": "02",
+      "name": "Joylings",
+      "tagline": "The silly ones. Each has one odd thing and sees nothing strange about it.",
+      "count": 7,
+      "characters": [
+        "Cool Moo",
+        "Dax",
+        "Flap",
+        "Wiggle",
+        "Slurp",
+        "Bun",
+        "Twirl"
+      ]
+    },
+    {
+      "key": "monsterlings",
+      "no": "03",
+      "name": "Monsterlings",
+      "tagline": "Small monsters who were meant to be scary. It did not work.",
+      "count": 5,
+      "characters": [
+        "Gem",
+        "Pling",
+        "Jab",
+        "Lumo",
+        "Fang"
+      ]
+    },
+    {
+      "key": "eyepops",
+      "no": "04",
+      "name": "EyePops",
+      "tagline": "Fuzzy creatures with too many eyes, or just one. They see everything.",
+      "count": 3,
+      "characters": [
+        "Zig",
+        "Fizz",
+        "Uno"
+      ]
+    },
+    {
+      "key": "unipops",
+      "no": "05",
+      "name": "UniPops",
+      "tagline": "One horn, one feeling, turned all the way up.",
+      "count": 8,
+      "characters": [
+        "Bo",
+        "Razz",
+        "Tripp",
+        "Shady",
+        "Heli",
+        "Chili",
+        "Giggle",
+        "Smooch"
+      ]
+    },
+    {
+      "key": "poopies",
+      "no": "06",
+      "name": "Poopies",
+      "tagline": "What is left when the day is done. Very relaxed about it.",
+      "count": 8,
+      "characters": [
+        "Plop",
+        "Oops",
+        "Whizz",
+        "Stinker",
+        "Twister",
+        "Burp",
+        "Drool",
+        "Flush"
+      ]
+    }
+  ]
+}

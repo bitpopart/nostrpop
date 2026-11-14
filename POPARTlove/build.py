@@ -9,6 +9,7 @@ Edit the PAGES / content below, re-run, deploy the folder.
 """
 import math
 import json
+import hashlib
 import os
 import re
 from html import escape
@@ -732,27 +733,33 @@ def build_pages():
 </div></section>"""
     page("full-collection", "A full collection", "What a full POPART collection adds up to: 3 series, 3 tribes and 6 tiers make 54 cards, with 18 passport slots, 18 Trios and 9 Unique 1/1 cards.", full, "/cards/")
 
-    # ---- POPtoons
-    toons = [
-        ("Lovelings", "love", "Round, friendly animals.", "Elephant, cat, dog, cow, monkey and frog."),
-        ("Joylings", "joy", "Cheerful characters with a bit of style.", "Cow with pixel sunglasses, dino with a cap, chick, pink cat, long-tongue blue creature, bear with bunny ears and monkey with a propeller cap."),
-        ("Monsterlings", "freedom", "Five small monsters.", "With wings, horns, boxing gloves, a GM bubble and a heart bubble."),
-        ("EyePops", "joy", "Fuzzy creatures with many eyes.", "Zig, Fizz and Uno."),
-        ("UniPops", "freedom", "Neon creatures with one horn.", "Eight of them, all glowing."),
-        ("Poopies", "love", "Eight happy poop characters.", "Because pop art can be silly too."),
-    ]
+    # ---- POPtoons (collections come from data/poptoons.json, written by poptoons/src/build_site.py)
+    toon_data = json.load(open(os.path.join(ROOT, "data", "poptoons.json"), encoding="utf-8"))
+    toon_site = toon_data["site"]
+    toon_host = toon_site.split("//", 1)[1]
+    toon_tags = ["love", "joy", "freedom"]
+
+    def toon_img(name):
+        raw = open(os.path.join(ROOT, "assets", "img", "poptoons", name), "rb").read()
+        return f"/assets/img/poptoons/{name}?v={hashlib.md5(raw).hexdigest()[:8]}"
+
     toon_cards = "".join(
-        f'<article class="card"><div class="body"><span class="tag {t}">Collection</span><h3>{escape(n)}</h3><p><strong>{escape(a)}</strong></p><p>{escape(b)}</p></div></article>'
-        for n, t, a, b in toons
+        f"""<article class="card" id="{c['key']}">
+  <figure><img src="{toon_img(c['key'] + '.webp')}" alt="{escape(c['name'])}: {escape(', '.join(c['characters'][:4]))}" width="800" height="800" loading="lazy"></figure>
+  <div class="body"><span class="tag {toon_tags[i % 3]}">Collection {c['no']}</span><h3>{escape(c['name'])}</h3><p><strong>{escape(c['tagline'])}</strong></p><p>{c['count']} characters: {escape(', '.join(c['characters']))}.</p><p><a href="{toon_site}/#{c['key']}">Meet the {escape(c['name'])} on {toon_host}</a></p></div>
+</article>"""
+        for i, c in enumerate(toon_data["collections"])
     )
     toons_body = page_head("POPtoons", "Characters with a story. Every POPtoon belongs to a POPART card, with one series, one tribe and one tier.") + f"""
 <section class="section"><div class="container">
-  <p class="notice"><strong>New collections are on the way.</strong> The first six are below. Artwork and a story for every character will be added here.</p>
+  <p class="notice"><strong>POPtoons have their own site.</strong> Meet all {toon_data['characters']} characters, each with a story, a sound and a card, on <a href="{toon_site}/">{toon_host}</a>.</p>
+  <p style="margin-top:1.2rem"><a class="btn" href="{toon_site}/">Visit {toon_host}</a></p>
   <h2 style="margin-top:1.6rem">The collections</h2>
   <div class="grid g3">{toon_cards}</div>
   <p style="margin-top:1.6rem"><a class="btn" href="/cards/">See the cards</a> <a class="btn" href="/collections/">All collections</a></p>
 </div></section>"""
-    page("poptoons", "POPtoons", "POPtoons: pop art characters with a story. Meet the Lovelings, Joylings, Monsterlings, EyePops, UniPops and Poopies.", toons_body, "/poptoons/")
+    toon_names = [c["name"] for c in toon_data["collections"]]
+    page("poptoons", "POPtoons", "POPtoons: pop art characters with a story. Meet the " + ", ".join(toon_names[:-1]) + " and " + toon_names[-1] + ".", toons_body, "/poptoons/")
 
     # ---- Stickers and Prints
     def soon_card(art):
@@ -886,8 +893,17 @@ def build_pages():
 <section class="section"><div class="container">
   <div class="coll" data-collections data-page="1" hidden></div>
   <p class="notice" id="coll-empty">New collections will be listed here soon. In the meantime, see the <a href="/cards/">cards</a>, <a href="/stickers/">stickers</a> and <a href="/prints/">prints</a>.</p>
+  <div class="coll" id="poptoons">
+    <h2>POPtoons collections</h2>
+    <p>Characters with a story, grouped into collections. Each POPtoon belongs to a POPART card.</p>
+    <div class="coll-row">""" + "".join(
+        f"""<a class="coll-tile" href="/poptoons/#{c['key']}"><img src="{toon_img(c['key'] + '-thumb.webp')}" alt="" width="256" height="360" loading="lazy"><span class="coll-info"><strong>{escape(c['name'])}</strong><small>{c['count']} characters</small><em>{escape(c['tagline'])}</em></span></a>"""
+        for c in toon_data["collections"]
+    ) + """</div>
+    <p style="margin-top:1.4rem"><a class="btn" href="/poptoons/">All POPtoons</a></p>
+  </div>
 </div></section>"""
-    page("collections", "Collections", "Collections of POPART cards, stickers and prints.", colls, "/collections/")
+    page("collections", "Collections", "Collections of POPART cards, stickers and prints, and the POPtoons character collections.", colls, "/collections/")
 
     # ---- News
     news = page_head("News", "What is happening in the POPART studio.") + f"""
