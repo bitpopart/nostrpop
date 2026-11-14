@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useNostr } from '@nostrify/react';
 import { useQuery } from '@tanstack/react-query';
@@ -7,11 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft } from 'lucide-react';
 import { nip19 } from 'nostr-tools';
+import { getMemoryHtml, loadSiteHtml, readProjectMeta, writeProjectMeta } from '@/lib/siteHtml';
 
 const ADMIN_NPUB = 'npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz';
 const ADMIN_PUBKEY = nip19.decode(ADMIN_NPUB).data as string;
-
-const htmlCache = new Map<string, string>();
 
 const _FILE_RE = /\.(pdf|zip|docx?|xlsx?|pptx?|mp4|mp3|png|jpe?g|gif|svg|webp|exe|dmg|apk)(\?|$)/i;
 
@@ -81,25 +80,38 @@ export default function FrlProjectView() {
     enabled: !!projectId,
   });
 
-  const brandSiteUrl = project?.tags.find(t => t[0] === 'brand-site')?.[1];
-  const projectName = project?.tags.find(t => t[0] === 'name')?.[1] ?? 'Project';
+  // The file address of this project from the last visit, so the download can
+  // start right away instead of waiting for the relay to answer.
+  const cachedMeta = projectId ? readProjectMeta('frl', projectId) : undefined;
+  const brandSiteUrl = project?.tags.find(t => t[0] === 'brand-site')?.[1] ?? cachedMeta?.brandSiteUrl;
+  const projectName = project?.tags.find(t => t[0] === 'name')?.[1] ?? cachedMeta?.name ?? 'Project';
+  const projectDescription = (() => {
+    if (!project) return cachedMeta?.description ?? '';
+    try { return JSON.parse(project.content).description || ''; } catch { return ''; }
+  })();
+
+  // Remember the address for the next visit
+  useEffect(() => {
+    if (!project || !projectId) return;
+    const url = project.tags.find(t => t[0] === 'brand-site')?.[1];
+    if (url) writeProjectMeta('frl', projectId, { brandSiteUrl: url, name: projectName, description: projectDescription });
+  }, [project, projectId, projectName, projectDescription]);
 
   const [fetchedHtml, setFetchedHtml] = useState<string | null>(
-    () => (brandSiteUrl ? htmlCache.get(brandSiteUrl) ?? null : null)
+    () => (brandSiteUrl ? getMemoryHtml(brandSiteUrl) : null)
   );
   const [fetchingHtml, setFetchingHtml] = useState(false);
-  const fetchingUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!brandSiteUrl) return;
-    if (htmlCache.has(brandSiteUrl)) { setFetchedHtml(htmlCache.get(brandSiteUrl)!); return; }
-    if (fetchingUrlRef.current === brandSiteUrl) return;
-    fetchingUrlRef.current = brandSiteUrl;
+    let alive = true;
+    const instant = getMemoryHtml(brandSiteUrl);
+    if (instant) { setFetchedHtml(instant); return; }
     setFetchingHtml(true);
-    fetch(brandSiteUrl)
-      .then(r => r.text())
-      .then(html => { htmlCache.set(brandSiteUrl, html); setFetchedHtml(html); setFetchingHtml(false); })
-      .catch(() => setFetchingHtml(false));
+    loadSiteHtml(brandSiteUrl)
+      .then(html => { if (alive) { setFetchedHtml(html); setFetchingHtml(false); } })
+      .catch(() => { if (alive) setFetchingHtml(false); });
+    return () => { alive = false; };
   }, [brandSiteUrl]);
 
   // Message bridge
@@ -136,11 +148,12 @@ export default function FrlProjectView() {
   }, [navigate]);
 
   useSeoMeta({
-    title: project ? `${projectName} - POPArt.frl` : 'POPArt.frl Project',
-    description: project ? (() => { try { return JSON.parse(project.content).description || ''; } catch { return ''; } })() : '',
+    title: project || cachedMeta ? `${projectName} - POPArt.frl` : 'POPArt.frl Project',
+    description: projectDescription,
   });
 
-  if (isLoading || (fetchingHtml && !fetchedHtml)) {
+  // Show the page as soon as we have the HTML, even while the relay is still answering
+  if (!fetchedHtml && (isLoading || fetchingHtml)) {
     return (
       <div className="flex-1 overflow-auto bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20">
         <div className="container mx-auto px-4 py-12">
@@ -151,7 +164,7 @@ export default function FrlProjectView() {
     );
   }
 
-  if (!project || !brandSiteUrl) {
+  if (!brandSiteUrl) {
     return (
       <div className="flex-1 overflow-auto bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20 flex items-center justify-center">
         <div className="text-center space-y-4">
