@@ -750,9 +750,10 @@ def build_pages():
 </article>"""
         for i, c in enumerate(toon_data["collections"])
     )
-    toons_body = page_head("POPtoons", "Characters with a story. Every POPtoon belongs to a POPART card, with one series, one tribe and one tier.") + f"""
+    toons_head = page_head("POPtoons", "Characters with a story. Every POPtoon belongs to a POPART card, with one series, one tribe and one tier.").replace(
+        "<h1>POPtoons</h1>", f'<h1 style="line-height:0;margin-bottom:.9rem"><img src="{toon_img('logo.svg')}" alt="POPtoons" width="855" height="167" style="width:min(100%,400px);height:auto"></h1>', 1)
+    toons_body = toons_head + f"""
 <section class="section"><div class="container">
-  <p style="margin:0 0 1.2rem"><img src="{toon_img('logo.svg')}" alt="POPtoons" width="855" height="167" style="width:min(100%,420px);height:auto"></p>
   <p class="notice"><strong>POPtoons live on <a href="{toon_site}/" target="_blank" rel="noopener noreferrer">{toon_host}</a>.</strong> Read the story of every character there.</p>
   <p style="margin-top:1.2rem"><a class="btn" href="{toon_site}/" target="_blank" rel="noopener noreferrer">Visit {toon_host}</a></p>
   <h2 style="margin-top:1.6rem">The collections</h2>
