@@ -151,7 +151,8 @@ def coll(key):
 def cover(c):
     c.setFillColor(HexColor('#FFD422')); c.rect(0, 0, W, H, stroke=0, fill=1)
     dots(c, 0, 0, W, H, '#E8822E', step=20, rad=3.2, alpha=0.35)
-    pop_text(c, W / 2, H - 122, 'POPtoons', 86, fill='#FFFFFF', stroke=4.5, shadow=6, align='center')
+    lw = 440; lh = lw * 166.8 / 855
+    c.drawImage(os.path.join(HERE, 'img', 'logo.png'), W / 2 - lw / 2, H - 150, lw, lh, mask='auto')
     c.saveState(); c.translate(W / 2, H - 168); c.rotate(-3)
     tw = pdfmetrics.stringWidth('CHARACTER GUIDE', 'Lilita', 24) + 36
     c.setFillColor(INK); c.roundRect(-tw / 2, -10, tw, 38, 9, stroke=0, fill=1)

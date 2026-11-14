@@ -39,7 +39,8 @@ button{font:inherit;color:inherit;cursor:pointer}
 /* header */
 header.top{position:sticky;top:0;z-index:20;background:var(--paper);border-bottom:var(--line) solid var(--ink)}
 header.top .wrap{display:flex;align-items:center;gap:18px;height:62px}
-.logo{font-family:var(--display);font-size:1.7rem;text-decoration:none;color:var(--sun);-webkit-text-stroke:2.5px var(--ink);paint-order:stroke fill;text-shadow:3px 3px 0 var(--ink);line-height:1}
+.logo{display:block;line-height:0;text-decoration:none}.logo svg{display:block;height:34px;width:auto}
+.logo-h1{margin:0;line-height:0}.logo-h1 svg{display:block;width:min(100%,560px);height:auto;filter:drop-shadow(0 0 0 transparent)}
 .domain{font-weight:700;font-size:.8rem;border:2px solid var(--ink);border-radius:99px;padding:.2em .8em;background:var(--sun);white-space:nowrap}
 .home{display:inline-block;margin-top:20px;font-family:var(--display);font-size:1.5rem;background:#fff;border:var(--line) solid var(--ink);border-radius:99px;box-shadow:4px 4px 0 var(--ink);padding:.15em .9em}
 nav.main{margin-left:auto;display:flex;gap:6px;flex-wrap:nowrap}
@@ -157,7 +158,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
   .pmain{grid-template-columns:1fr 1fr;gap:14px}
 }
 @media (max-width:480px){
-  .logo{font-size:1.25rem;-webkit-text-stroke-width:2px}
+  .logo svg{height:26px}
   header.top .wrap{gap:6px;padding:0 12px}
   nav.main{gap:0}
   nav.main a{padding:.3em .4em;font-size:.76rem}
@@ -175,14 +176,14 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 </head>
 <body>
 <header class="top"><div class="wrap">
-  <a class="logo" href="#top">POPtoons</a><span class="domain">poptoons.fun</span>
+  <a class="logo" href="#top" aria-label="POPtoons home">/*LOGO*/</a><span class="domain">poptoons.fun</span>
   <nav class="main" aria-label="Main"><a href="#collections">Collections</a><a href="#characters">Characters</a><a href="#cards">Cards</a></nav>
 </div></header>
 
 <main id="top">
 <div class="hero"><div class="wrap">
   <div>
-    <h1 class="pop">POPtoons</h1>
+    <h1 class="logo-h1">/*LOGO*/</h1>
     <div class="tag">CHARACTER GUIDE</div>
     <p>POPtoons are pop art characters by BitPopArt. Each one has a name, a short story and a card. Characters that belong together form a collection.</p>
     <div class="stats" id="stats"></div>

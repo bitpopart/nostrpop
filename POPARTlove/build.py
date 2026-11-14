@@ -752,6 +752,7 @@ def build_pages():
     )
     toons_body = page_head("POPtoons", "Characters with a story. Every POPtoon belongs to a POPART card, with one series, one tribe and one tier.") + f"""
 <section class="section"><div class="container">
+  <p style="margin:0 0 1.2rem"><img src="{toon_img('logo.svg')}" alt="POPtoons" width="855" height="167" style="width:min(100%,420px);height:auto"></p>
   <p class="notice"><strong>POPtoons live on <a href="{toon_site}/" target="_blank" rel="noopener noreferrer">{toon_host}</a>.</strong> Read the story of every character there.</p>
   <p style="margin-top:1.2rem"><a class="btn" href="{toon_site}/" target="_blank" rel="noopener noreferrer">Visit {toon_host}</a></p>
   <h2 style="margin-top:1.6rem">The collections</h2>

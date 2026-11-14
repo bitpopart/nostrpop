@@ -12,6 +12,7 @@ writes
 Afterwards run POPARTlove/build.py so popart.love picks up the changes.
 Needs: pillow, fonttools, brotli (pip install pillow fonttools brotli).
 """
+import shutil
 import base64, io, json, os, subprocess, tempfile
 from PIL import Image
 import data
@@ -51,6 +52,7 @@ def members(coll_key):
 
 
 def build_site():
+    shutil.copy(os.path.join(HERE, 'img', 'logo.svg'), os.path.join(HERE, '..', 'logo.svg'))
     fonts = '\n'.join([
         font_face('Lilita One', 'LilitaOne-Regular.ttf'),
         font_face('Poppins', 'Poppins-Regular.ttf', 400),
@@ -66,7 +68,7 @@ def build_site():
         'images': {c['key']: image_uri(c['key']) for c in data.CHARACTERS},
     }
     html = open(os.path.join(HERE, 'site_template.html'), encoding='utf-8').read()
-    html = html.replace('/*FONTS*/', fonts).replace('/*DATA*/', json.dumps(payload, ensure_ascii=False).replace('</', '<\\/'))
+    html = html.replace('/*LOGO*/', open(os.path.join(HERE, 'img', 'logo.inline.svg'), encoding='utf-8').read()).replace('/*FONTS*/', fonts).replace('/*DATA*/', json.dumps(payload, ensure_ascii=False).replace('</', '<\\/'))
     out = os.path.join(SITE, 'index.html')
     open(out, 'w', encoding='utf-8').write(html)
     print('wrote', os.path.relpath(out, os.path.dirname(SITE)), round(os.path.getsize(out) / 1024), 'KB')
@@ -106,6 +108,7 @@ def build_popart():
         thumb_picture(mem[0]['key']).save(os.path.join(img_dir, k['key'] + '-thumb.webp'), 'WEBP', quality=84, method=6)
         rows.append({'key': k['key'], 'no': k['no'], 'name': k['name'], 'tagline': k['tagline'],
                      'count': len(mem), 'characters': [c['name'] for c in mem]})
+    shutil.copy(os.path.join(HERE, 'img', 'logo.svg'), os.path.join(img_dir, 'logo.svg'))
     out = os.path.join(POPART, 'data', 'poptoons.json')
     json.dump({'site': 'https://poptoons.fun', 'characters': len(data.CHARACTERS), 'collections': rows},
               open(out, 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
