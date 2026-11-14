@@ -746,14 +746,14 @@ def build_pages():
     toon_cards = "".join(
         f"""<article class="card" id="{c['key']}">
   <figure><img src="{toon_img(c['key'] + '.webp')}" alt="{escape(c['name'])}: {escape(', '.join(c['characters'][:4]))}" width="800" height="800" loading="lazy"></figure>
-  <div class="body"><span class="tag {toon_tags[i % 3]}">Collection {c['no']}</span><h3>{escape(c['name'])}</h3><p><strong>{escape(c['tagline'])}</strong></p><p><a href="{toon_site}/#{c['key']}">Read more about the {escape(c['name'])} on {toon_host}</a></p></div>
+  <div class="body"><span class="tag {toon_tags[i % 3]}">Collection {c['no']}</span><h3>{escape(c['name'])}</h3><p><strong>{escape(c['tagline'])}</strong></p><p><a href="{toon_site}/#{c['key']}" target="_blank" rel="noopener noreferrer">Read more about the {escape(c['name'])} on {toon_host}</a></p></div>
 </article>"""
         for i, c in enumerate(toon_data["collections"])
     )
     toons_body = page_head("POPtoons", "Characters with a story. Every POPtoon belongs to a POPART card, with one series, one tribe and one tier.") + f"""
 <section class="section"><div class="container">
-  <p class="notice"><strong>POPtoons live on <a href="{toon_site}/">{toon_host}</a>.</strong> Read the story of every character there.</p>
-  <p style="margin-top:1.2rem"><a class="btn" href="{toon_site}/">Visit {toon_host}</a></p>
+  <p class="notice"><strong>POPtoons live on <a href="{toon_site}/" target="_blank" rel="noopener noreferrer">{toon_host}</a>.</strong> Read the story of every character there.</p>
+  <p style="margin-top:1.2rem"><a class="btn" href="{toon_site}/" target="_blank" rel="noopener noreferrer">Visit {toon_host}</a></p>
   <h2 style="margin-top:1.6rem">The collections</h2>
   <div class="grid g3">{toon_cards}</div>
   <p style="margin-top:1.6rem"><a class="btn" href="/cards/">See the cards</a> <a class="btn" href="/collections/">All collections</a></p>
