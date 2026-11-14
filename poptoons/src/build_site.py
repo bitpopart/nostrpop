@@ -53,6 +53,7 @@ def members(coll_key):
 
 def build_site():
     shutil.copy(os.path.join(HERE, 'img', 'logo.svg'), os.path.join(HERE, '..', 'logo.svg'))
+    shutil.copy(os.path.join(HERE, 'img', 'logo-white.svg'), os.path.join(HERE, '..', 'logo-white.svg'))
     fonts = '\n'.join([
         font_face('Lilita One', 'LilitaOne-Regular.ttf'),
         font_face('Poppins', 'Poppins-Regular.ttf', 400),
@@ -68,7 +69,7 @@ def build_site():
         'images': {c['key']: image_uri(c['key']) for c in data.CHARACTERS},
     }
     html = open(os.path.join(HERE, 'site_template.html'), encoding='utf-8').read()
-    html = html.replace('/*LOGO*/', open(os.path.join(HERE, 'img', 'logo.inline.svg'), encoding='utf-8').read()).replace('/*FONTS*/', fonts).replace('/*DATA*/', json.dumps(payload, ensure_ascii=False).replace('</', '<\\/'))
+    html = html.replace('/*LOGO_WHITE*/', open(os.path.join(HERE, 'img', 'logo-white.inline.svg'), encoding='utf-8').read()).replace('/*LOGO*/', open(os.path.join(HERE, 'img', 'logo.inline.svg'), encoding='utf-8').read()).replace('/*FONTS*/', fonts).replace('/*DATA*/', json.dumps(payload, ensure_ascii=False).replace('</', '<\\/'))
     out = os.path.join(SITE, 'index.html')
     open(out, 'w', encoding='utf-8').write(html)
     print('wrote', os.path.relpath(out, os.path.dirname(SITE)), round(os.path.getsize(out) / 1024), 'KB')
