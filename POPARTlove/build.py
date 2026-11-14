@@ -259,7 +259,7 @@ NAV = [
     ("Studio", "/studio/"),
     ("PopUp", "/popup/"),
     ("Cards", "/cards/"),
-    ("Verify", "/verify/"),
+    ("Collections", "/collections/"),
     ("Stickers", "/stickers/"),
     ("POPpins", "/poppins/"),
     ("Prints", "/prints/"),
