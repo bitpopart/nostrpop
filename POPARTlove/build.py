@@ -261,7 +261,6 @@ NAV = [
     ("Cards", "/cards/"),
     ("Collections", "/collections/"),
     ("Stickers", "/stickers/"),
-    ("POPpins", "/poppins/"),
     ("Prints", "/prints/"),
     ("Shop", "/shop/"),
 ]
@@ -750,7 +749,7 @@ def build_pages():
 <script src="/assets/js/catalog.js" defer></script>"""
     page("stickers", "Stickers", "POPART.love pop art stickers in the Love, Freedom and Joy themes.", stickers, "/stickers/")
 
-    page("poppins", "POPpins", "POPpins: shiny 3D pop art emoji pins with thick outlines, made to pin on a bag, jacket, cap or t-shirt. Coming soon.", pins.page_body(), "/poppins/")
+    page("poppins", "POPpins", "POPpins: shiny 3D pop art emoji pins with thick outlines, made to pin on a bag, jacket, cap or t-shirt. Coming soon.", pins.page_body(), "/shop/")
 
     prints = page_head("Prints", "Pop art prints for your wall, in the three themes: Love, Freedom and Joy.") + f"""
 <section class="section"><div class="container">
@@ -824,6 +823,11 @@ def build_pages():
     <h2>Free downloads</h2>
     <p>Wallpapers, coloring pages, printables and more. Free for everyone who loves pop art.</p>
     <a class="btn yellow" href="/free/">See the free downloads</a>
+  </div>
+  <div class="panel pink free-promo" style="margin-top:1.4rem">
+    <h2>POPpins</h2>
+    <p>Shiny 3D pop art emoji pins to wear on a bag, jacket, cap or t-shirt.</p>
+    <a class="btn pink" href="/poppins/">See the POPpins</a>
   </div>
   <h2 style="margin-top:2rem" id="digital">Digital downloads</h2>
   <p>Print them at home. Free files download straight away. For paid files, buy with the Buy button and use the download code you get from the artist.</p>
