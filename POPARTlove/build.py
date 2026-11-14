@@ -260,6 +260,7 @@ NAV = [
     ("PopUp", "/popup/"),
     ("Cards", "/cards/"),
     ("Collections", "/collections/"),
+    ("POPtoons", "/poptoons/"),
     ("Stickers", "/stickers/"),
     ("Prints", "/prints/"),
     ("Shop", "/shop/"),
@@ -730,6 +731,28 @@ def build_pages():
   <p style="margin-top:1.4rem"><a class="btn" href="/cards/">See the cards</a> <a class="btn" href="/verify/">Verify my card</a> <a class="btn" href="/popplay/">How to play POPPLAY</a></p>
 </div></section>"""
     page("full-collection", "A full collection", "What a full POPART collection adds up to: 3 series, 3 tribes and 6 tiers make 54 cards, with 18 passport slots, 18 Trios and 9 Unique 1/1 cards.", full, "/cards/")
+
+    # ---- POPtoons
+    toons = [
+        ("Lovelings", "love", "Round, friendly animals.", "Elephant, cat, dog, cow, monkey and frog."),
+        ("Joylings", "joy", "Cheerful characters with a bit of style.", "Cow with pixel sunglasses, dino with a cap, chick, pink cat, long-tongue blue creature, bear with bunny ears and monkey with a propeller cap."),
+        ("Monsterlings", "freedom", "Five small monsters.", "With wings, horns, boxing gloves, a GM bubble and a heart bubble."),
+        ("EyePops", "joy", "Fuzzy creatures with many eyes.", "Zig, Fizz and Uno."),
+        ("UniPops", "freedom", "Neon creatures with one horn.", "Eight of them, all glowing."),
+        ("Poopies", "love", "Eight happy poop characters.", "Because pop art can be silly too."),
+    ]
+    toon_cards = "".join(
+        f'<article class="card"><div class="body"><span class="tag {t}">Collection</span><h3>{escape(n)}</h3><p><strong>{escape(a)}</strong></p><p>{escape(b)}</p></div></article>'
+        for n, t, a, b in toons
+    )
+    toons_body = page_head("POPtoons", "Characters with a story. Every POPtoon belongs to a POPART card, with one series, one tribe and one tier.") + f"""
+<section class="section"><div class="container">
+  <p class="notice"><strong>New collections are on the way.</strong> The first six are below. Artwork and a story for every character will be added here.</p>
+  <h2 style="margin-top:1.6rem">The collections</h2>
+  <div class="grid g3">{toon_cards}</div>
+  <p style="margin-top:1.6rem"><a class="btn" href="/cards/">See the cards</a> <a class="btn" href="/collections/">All collections</a></p>
+</div></section>"""
+    page("poptoons", "POPtoons", "POPtoons: pop art characters with a story. Meet the Lovelings, Joylings, Monsterlings, EyePops, UniPops and Poopies.", toons_body, "/poptoons/")
 
     # ---- Stickers and Prints
     def soon_card(art):
