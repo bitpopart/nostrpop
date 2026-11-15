@@ -149,6 +149,7 @@ CHARACTERS = [
                   ('Says', '"No rush. Have a sip."'),
                   ('Loves', 'Sitting down, sharing, long mornings'),
                   ('Dislikes', 'Alarm clocks, hurry, warm milk')],
+        'variations': [('Good morning', 'coolmoo-v1'), ('Frog hat', 'coolmoo-v2'), ('Green with envy', 'coolmoo-v3')],
         'series': 'Legend', 'tribe': 'Freedom', 'tier': 'Ultra Rare',
     },
     {
