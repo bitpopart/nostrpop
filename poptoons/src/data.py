@@ -429,6 +429,7 @@ CHARACTERS = [
         ],
         'facts': [('Loves', 'New streets, shop windows, the view from the top deck'),
                   ('Look for', 'Spiky fur and five eyes that never blink')],
+        'variations': [('Good morning', 'fizz-v1'), ('Sending love', 'fizz-v2')],
         'series': 'Masterpiece', 'tribe': 'Freedom', 'tier': 'Common',
     },
     {
