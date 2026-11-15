@@ -58,18 +58,18 @@ COLLECTIONS = [
         ],
     },
     {
-        'key': 'eyepops', 'no': '04', 'name': 'EyePops', 'color': '#12A594',
+        'key': 'peeppops', 'no': '04', 'name': 'PeepPops', 'color': '#12A594',
         'tagline': 'Fuzzy creatures with too many eyes, or just one. They see everything.',
         'intro': [
-            "EyePops pop up wherever there is something worth looking at. A cake, a sunset, a "
+            "PeepPops pop up wherever there is something worth looking at. A cake, a sunset, a "
             "dog on a skateboard, you. They don't want to touch it or take it. They only want "
             "to see it.",
-            "What they like looking at most is people. An EyePop never looks away and never "
+            "What they like looking at most is people. A PeepPop never looks away and never "
             "judges. It just grins, because it likes what it sees.",
         ],
         'badges': [],
         'notes': [
-            ("EyePops Trio", "Zig, Fizz and Uno share the same series and tier across all "
+            ("PeepPops Trio", "Zig, Fizz and Uno share the same series and tier across all "
                              "three tribes. Together they make a Trio."),
             ("How to spot one", "You have the feeling someone is watching you, and it is a "
                                 "nice feeling."),
@@ -368,7 +368,7 @@ CHARACTERS = [
     },
     {
         'key': 'zig', 'no': '19', 'name': 'Zig', 'kind': 'the five-eyed laugher', 'role': 'The one who laughs at five things at once',
-        'collection': 'eyepops', 'color': '#F7F06A', 'sound': 'HAHA',
+        'collection': 'peeppops', 'color': '#F7F06A', 'sound': 'HAHA',
         'story': [
             "Zig has five eyes and each one looks at something different. That means he always "
             "sees at least one funny thing, and usually five.",
@@ -382,7 +382,7 @@ CHARACTERS = [
     },
     {
         'key': 'fizz', 'no': '20', 'name': 'Fizz', 'kind': 'the wide-awake one', 'role': 'The one who has just seen something',
-        'collection': 'eyepops', 'color': '#8FE6F8', 'sound': 'WOW',
+        'collection': 'peeppops', 'color': '#8FE6F8', 'sound': 'WOW',
         'story': [
             "Fizz looks like someone shook him up and took the lid off. All five of his eyes "
             "are wide open, all the time, and his fur stands straight up from the excitement.",
@@ -396,12 +396,12 @@ CHARACTERS = [
     },
     {
         'key': 'uno', 'no': '21', 'name': 'Uno', 'kind': 'the one-eyed one', 'role': 'The one who really looks at you',
-        'collection': 'eyepops', 'color': '#A5F57C', 'sound': 'OOH',
+        'collection': 'peeppops', 'color': '#A5F57C', 'sound': 'OOH',
         'story': [
             "Uno has only one eye, so he can only look at one thing at a time. He doesn't mind. "
             "Whatever he looks at gets all of it.",
             "When Uno looks at you, you feel like the only one in the room. He doesn't check "
-            "who else just walked in. The other EyePops see more. Uno sees better.",
+            "who else just walked in. The other PeepPops see more. Uno sees better.",
         ],
         'facts': [('Loves', 'Long conversations, one biscuit at a time, eye contact'),
                   ('Look for', 'One big orange eye')],
