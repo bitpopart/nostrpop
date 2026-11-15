@@ -178,6 +178,7 @@ CHARACTERS = [
         ],
         'facts': [('Loves', 'Warm windowsills, being ignored for five minutes, then not being ignored'),
                   ('Look for', 'The curl in her tail')],
+        'variations': [('Sending love', 'mimi-v1'), ('Good morning', 'mimi-v2')],
         'series': 'Masterpiece', 'tribe': 'Freedom', 'tier': 'Common',
     },
     {
