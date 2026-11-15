@@ -91,6 +91,12 @@ nav.main a:hover{border-color:var(--ink);background:var(--sun)}
 
 /* collection sections */
 section.coll{margin:0 0 10px}
+.walls{padding:4px 0 18px}.walls h3{font-family:var(--display);font-weight:400;font-size:26px;margin:0 0 12px}
+.wgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+.wall{display:flex;flex-direction:column;gap:6px;text-decoration:none;color:#111;background:#fff;border:3px solid #111;border-radius:16px;padding:10px;box-shadow:0 4px 0 #111}
+.wall img{width:100%;aspect-ratio:9/16;object-fit:cover;border-radius:8px;border:2px solid #111}
+.wall .wfile{display:grid;place-items:center;aspect-ratio:9/16;background:#eee;border-radius:8px;font-weight:700}
+.wall b{font-size:14px;line-height:1.2}.wall span:last-child{font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
 .band{background-color:var(--c);background-image:radial-gradient(var(--d) 2.8px,transparent 3.3px);background-size:18px 18px;border-top:var(--line) solid var(--ink);border-bottom:var(--line) solid var(--ink);color:var(--t)}
 .band .wrap{display:grid;grid-template-columns:1.25fr 1fr;gap:30px;padding-top:34px;padding-bottom:34px;align-items:start}
 .eyebrow{display:inline-block;background:var(--ink);color:#fff;font-weight:700;font-size:.75rem;padding:.35em .9em;border-radius:99px;margin-bottom:14px}
@@ -283,10 +289,31 @@ $('#sections').innerHTML = DATA.collections.map(k => {
         <span class="meta"><span class="chip ${c.tribe}">${c.tribe}</span>${dots(c.tier)}</span>
         <span class="tier">${c.series} · ${c.tier}</span>
       </button>`).join('')}</div>
+      <div class="walls" data-walls="${k.key}" hidden></div>
       <div class="notes">${k.notes.map(([h, t]) => `<p><b>${esc(h)}</b>${esc(t)}</p>`).join('')}</div>
     </div>
   </section>`;
 }).join('') + '<p class="empty wrap" id="empty" hidden>No character matches. Try another name or tribe.</p>';
+
+// wallpapers and other free downloads: they are added to a collection in the popart.love admin and show up here
+(function () {
+  const API = 'https://popart.love';
+  Promise.all([
+    fetch(API + '/api/collections').then(r => r.ok ? r.json() : []),
+    fetch(API + '/api/catalog?kind=free').then(r => r.ok ? r.json() : [])
+  ]).then(([colls, free]) => {
+    colls.forEach(c => {
+      const box = document.querySelector(`[data-walls="${c.slug || c.id}"]`) || document.querySelector(`[data-walls="${c.id}"]`);
+      const items = (c.free || []).map(id => free.find(x => x.id === id)).filter(x => x && x.file);
+      if (!box || !items.length) return;
+      box.innerHTML = '<h3>Wallpapers and free downloads</h3><div class="wgrid">' + items.map(x => {
+        const img = x.image ? `<img src="${API}/api/event-image?id=${encodeURIComponent(x.id)}&v=${x.imv || 0}" alt="${esc(x.title)}" loading="lazy">` : '<span class="wfile">FILE</span>';
+        return `<a class="wall" href="${API}/api/file?id=${encodeURIComponent(x.id)}" download="${esc(x.fname || '')}">${img}<b>${esc(x.title)}</b><span>Download</span></a>`;
+      }).join('') + '</div>';
+      box.hidden = false;
+    });
+  }).catch(() => {});
+})();
 
 // filter
 let tribe = '';

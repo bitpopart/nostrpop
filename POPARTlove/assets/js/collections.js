@@ -14,7 +14,7 @@
 
   var demo = !!window.POPART_DEMO_BASE;
   function url(c) { return "/collections/" + (c.slug || c.id); }
-  function count(c) { return c.cards.length + (c.stickers || []).length + (c.prints || []).length; }
+  function count(c) { return c.cards.length + (c.stickers || []).length + (c.prints || []).length + (c.free || []).length; }
   function thumb(c) {
     if (c._src) return c._src;
     if (c.image) return "/api/event-image?id=k-" + encodeURIComponent(c.id) + "&v=" + (c.imv || 0);
@@ -61,13 +61,13 @@
     // data for the Collections page: cards (built in + admin), stickers, prints
     function loadExtra() {
       if (extra) return extra;
-      if (window.POPART_DEMO_BASE) return (extra = Promise.resolve({ cards: window.POPART_DEMO_BASE, stickers: window.POPART_DEMO_CATALOG_STICKERS || [], prints: window.POPART_DEMO_CATALOG_PRINTS || [] }));
+      if (window.POPART_DEMO_BASE) return (extra = Promise.resolve({ cards: window.POPART_DEMO_BASE, stickers: window.POPART_DEMO_CATALOG_STICKERS || [], prints: window.POPART_DEMO_CATALOG_PRINTS || [], free: window.POPART_DEMO_CATALOG_FREE || [] }));
       function get(u, d) { return fetch(u).then(function (r) { return r.ok ? r.json() : d; }).catch(function () { return d; }); }
-      return (extra = Promise.all([get("/assets/cards.json", []), get("/api/cards", []), get("/api/catalog?kind=stickers", []), get("/api/catalog?kind=prints", [])]).then(function (r) {
+      return (extra = Promise.all([get("/assets/cards.json", []), get("/api/cards", []), get("/api/catalog?kind=stickers", []), get("/api/catalog?kind=prints", []), get("/api/catalog?kind=free", [])]).then(function (r) {
         var map = {}; r[1].forEach(function (e) { map[e.file] = e; });
         var base = {}; r[0].forEach(function (c) { base[c.file] = 1; });
         var cards = r[1].filter(function (e) { return !base[e.file]; }).concat(r[0].map(function (c) { return Object.assign({}, c, map[c.file] || {}); })).filter(function (c) { return !c.removed; });
-        return { cards: cards, stickers: r[2], prints: r[3] };
+        return { cards: cards, stickers: r[2], prints: r[3], free: r[4] };
       }));
     }
     function itemCard(img, title, sub, href) {
@@ -91,7 +91,8 @@
             return itemCard(c._front || (c.front ? "/api/event-image?id=c-" + encodeURIComponent(c.file) + "&v=" + (c.imv || 0) : (c.thumb || "/assets/img/cards/" + c.file + ".webp")), c.name, c.rarity, "/cards/");
           })],
           ["Stickers", (sel.stickers || []).map(function (i) { return d.stickers.filter(function (x) { return x.id === i; })[0]; }).filter(Boolean).map(function (x) { return itemCard(x.image ? (x._src || "/api/event-image?id=" + encodeURIComponent(x.id) + "&v=" + (x.imv || 0)) : "", x.title, x.price, "/stickers/"); })],
-          ["Prints", (sel.prints || []).map(function (i) { return d.prints.filter(function (x) { return x.id === i; })[0]; }).filter(Boolean).map(function (x) { return itemCard(x.image ? (x._src || "/api/event-image?id=" + encodeURIComponent(x.id) + "&v=" + (x.imv || 0)) : "", x.title, x.price, "/prints/"); })]
+          ["Prints", (sel.prints || []).map(function (i) { return d.prints.filter(function (x) { return x.id === i; })[0]; }).filter(Boolean).map(function (x) { return itemCard(x.image ? (x._src || "/api/event-image?id=" + encodeURIComponent(x.id) + "&v=" + (x.imv || 0)) : "", x.title, x.price, "/prints/"); })],
+          ["Free downloads", (sel.free || []).map(function (i) { return (d.free || []).filter(function (x) { return x.id === i; })[0]; }).filter(Boolean).map(function (x) { return itemCard(x.image ? "/api/event-image?id=" + encodeURIComponent(x.id) + "&v=" + (x.imv || 0) : "", x.title, x.category || "Free download", "/api/file?id=" + encodeURIComponent(x.id)); })]
         ];
         var any = false;
         groups.forEach(function (g) {

@@ -14,6 +14,7 @@ import { verifyEvent } from "nostr-tools/pure";
 const KEY = "stock";
 const attempts = new Map();
 const STATUSES = ["available", "sold-out", "coming-soon"];
+const CORS = { "access-control-allow-origin": "*" };
 const json = (data, status = 200, extra = {}) =>
   new Response(JSON.stringify(data), {
     status,
@@ -142,6 +143,7 @@ function fileResponse(data, item, cache) {
       "content-disposition": `attachment; filename="${name}"`,
       "x-content-type-options": "nosniff",
       "access-control-expose-headers": "content-disposition",
+      ...CORS,
       "cache-control": cache,
     },
   });
@@ -191,7 +193,7 @@ function cleanCollections(input) {
       if (!cards.includes(f)) cards.push(f);
     }
     const refs = {};
-    for (const k of ["stickers", "prints"]) {
+    for (const k of ["stickers", "prints", "free"]) {
       const arr = e[k] === undefined ? [] : e[k];
       if (!Array.isArray(arr) || arr.length > 400) return null;
       refs[k] = [];
@@ -202,7 +204,7 @@ function cleanCollections(input) {
     }
     const imv = Number.isFinite(e.imv) ? Math.max(0, Math.floor(e.imv)) : 0;
     const himv = Number.isFinite(e.himv) ? Math.max(0, Math.floor(e.himv)) : 0;
-    out.push({ id: e.id, slug, name, text, body, image: e.image === true, imv, hdr: e.hdr === true, himv, cards, stickers: refs.stickers, prints: refs.prints });
+    out.push({ id: e.id, slug, name, text, body, image: e.image === true, imv, hdr: e.hdr === true, himv, cards, stickers: refs.stickers, prints: refs.prints, free: refs.free });
   }
   return out;
 }
@@ -457,7 +459,7 @@ export default {
       const kind = url.searchParams.get("kind") || "";
       if (kind !== "stickers" && kind !== "prints" && kind !== "free") return json({ error: "bad kind" }, 400);
       const key = "catalog:" + kind;
-      if (request.method === "GET") return json((await env.CARDS_KV.get(key, "json")) || [], 200, { "cache-control": "public, max-age=30" });
+      if (request.method === "GET") return json((await env.CARDS_KV.get(key, "json")) || [], 200, { "cache-control": "public, max-age=30", ...CORS });
       if (request.method !== "PUT") return json({ error: "method not allowed" }, 405, { allow: "GET, PUT" });
       const body = await request.text();
       if (!(await isAdmin(request, env, body))) return json({ error: "not allowed" }, 401);
@@ -477,7 +479,7 @@ export default {
       return json({ ok: true, items: list });
     }
     if (url.pathname === "/api/collections") {
-      if (request.method === "GET") return json((await env.CARDS_KV.get("collections", "json")) || [], 200, { "cache-control": "public, max-age=30" });
+      if (request.method === "GET") return json((await env.CARDS_KV.get("collections", "json")) || [], 200, { "cache-control": "public, max-age=30", ...CORS });
       if (request.method !== "PUT") return json({ error: "method not allowed" }, 405, { allow: "GET, PUT" });
       const body = await request.text();
       if (!(await isAdmin(request, env, body))) return json({ error: "not allowed" }, 401);
@@ -547,7 +549,7 @@ export default {
         const b64 = await env.CARDS_KV.get("evimg:" + id);
         if (!b64) return new Response("not found", { status: 404 });
         const bin = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
-        return new Response(bin, { headers: { "content-type": "image/webp", "cache-control": "public, max-age=86400" } });
+        return new Response(bin, { headers: { "content-type": "image/webp", "cache-control": "public, max-age=86400", ...CORS } });
       }
       if (request.method !== "PUT") return json({ error: "method not allowed" }, 405, { allow: "GET, PUT" });
       const body = await request.text();

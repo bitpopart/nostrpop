@@ -47,7 +47,7 @@
     var h3 = el("h3", "", "Add a collection");
     var grid = el("div", "ev-grid"); grid.appendChild(field("Name", name)); grid.appendChild(field("Short line", text)); grid.appendChild(field("Page address (/collections/...)", slugIn));
     var picks = el("div", "coll-picks");
-    var checks = {}, sChecks = {}, pChecks = {};
+    var checks = {}, sChecks = {}, pChecks = {}, fChecks = {};
     api.cards().forEach(function (c) {
       var l = el("label", "coll-pick"); var cb = document.createElement("input"); cb.type = "checkbox"; cb.value = c.file; checks[c.file] = cb;
       var im = document.createElement("img"); im.src = api.thumbOf(c); im.alt = ""; im.width = 30; im.height = 42;
@@ -62,15 +62,27 @@
       });
       return box;
     }
-    var sPicks = itemPicks(api.stickers(), sChecks), pPicks = itemPicks(api.prints(), pChecks);
+    function freeItems() { return api.free ? api.free() : []; }
+    var sBox = el("div"), pBox = el("div"), fBox = el("div");
+    function buildPicks() {
+      [[sBox, sChecks, api.stickers(), "stickers"], [pBox, pChecks, api.prints(), "prints"], [fBox, fChecks, freeItems(), "free downloads"]].forEach(function (g) {
+        var keep = {}; Object.keys(g[1]).forEach(function (k) { keep[k] = g[1][k].checked; delete g[1][k]; });
+        g[0].innerHTML = "";
+        if (!g[2].length) { g[0].appendChild(el("p", "form-msg", "No saved " + g[3] + " yet.")); return; }
+        g[0].appendChild(itemPicks(g[2], g[1]));
+        Object.keys(keep).forEach(function (k) { if (g[1][k]) g[1][k].checked = keep[k]; });
+      });
+    }
+    buildPicks();
     form.appendChild(h3); form.appendChild(grid); form.appendChild(field("Text about the collection (own page)", body));
     form.appendChild(field("Header picture for the collection page (wide, optional)", hfile)); form.appendChild(hprev); form.appendChild(hdrop);
     form.appendChild(field("Thumbnail (optional, the first card is used if empty)", file)); form.appendChild(preview); form.appendChild(drop);
     form.appendChild(el("p", "notice", "Cards in this collection:")); form.appendChild(picks);
     form.appendChild(el("p", "notice", "Stickers in this collection (saved stickers only):"));
-    if (!api.stickers().length) form.appendChild(el("p", "form-msg", "No saved stickers yet.")); else form.appendChild(sPicks);
+    form.appendChild(sBox);
     form.appendChild(el("p", "notice", "Prints in this collection (saved prints only):"));
-    if (!api.prints().length) form.appendChild(el("p", "form-msg", "No saved prints yet.")); else form.appendChild(pPicks);
+    form.appendChild(pBox);
+    form.appendChild(el("p", "notice", "Free downloads in this collection, such as wallpapers (saved downloads only):")); form.appendChild(fBox);
     var actions = el("div", "ev-actions");
     var add = el("button", "btn", "Add collection"); add.type = "submit";
     var cancel = el("button", "btn ghost", "Cancel edit"); cancel.type = "button"; cancel.hidden = true;
@@ -81,7 +93,7 @@
     function mark() { dirty = true; say(msg, "You have unsaved changes. Press Save collections.", false); changed(); }
     function showPreview(src) { preview.hidden = !src; if (src) preview.src = src; drop.hidden = !src; }
     function showHPreview(src) { hprev.hidden = !src; if (src) hprev.src = src; hdrop.hidden = !src; }
-    function reset() { editing = null; pending = null; pendingH = null; showHPreview(""); form.reset(); [checks, sChecks, pChecks].forEach(function (m) { Object.keys(m).forEach(function (k) { m[k].checked = false; }); }); preview.hidden = true; drop.hidden = true; cancel.hidden = true; add.textContent = "Add collection"; h3.textContent = "Add a collection"; }
+    function reset() { editing = null; pending = null; pendingH = null; showHPreview(""); form.reset(); [checks, sChecks, pChecks, fChecks].forEach(function (m) { Object.keys(m).forEach(function (k) { m[k].checked = false; }); }); preview.hidden = true; drop.hidden = true; cancel.hidden = true; add.textContent = "Add collection"; h3.textContent = "Add a collection"; }
     file.addEventListener("change", function () {
       if (!file.files[0]) return;
       shrink(file.files[0]).then(function (b) { pending = { b64: b }; showPreview("data:image/webp;base64," + b); }).catch(function () { file.value = ""; say(msg, "That file could not be used as a picture.", true); });
@@ -107,6 +119,7 @@
       c.cards = Object.keys(checks).filter(function (k) { return checks[k].checked; });
       c.stickers = Object.keys(sChecks).filter(function (k) { return sChecks[k].checked; });
       c.prints = Object.keys(pChecks).filter(function (k) { return pChecks[k].checked; });
+      c.free = Object.keys(fChecks).filter(function (k) { return fChecks[k].checked; }).concat((c.free || []).filter(function (k) { return !fChecks[k]; }));
       if (pending && pending.b64) { c._img = pending.b64; c.image = true; }
       else if (pending && pending.clear) { delete c._img; c.image = false; }
       if (!editing) list.push(c);
@@ -122,7 +135,7 @@
         if (src) { var th = document.createElement("img"); th.src = src; th.alt = ""; th.className = "adm-thumb"; row.appendChild(th); }
         var info = el("div", "ev-info"); info.appendChild(el("strong", "", c.name)); var total = c.cards.length + (c.stickers || []).length + (c.prints || []).length;
         var pg = el("a", "", "/collections/" + (c.slug || c.id)); pg.href = "/collections/" + (c.slug || c.id); pg.target = "_blank"; pg.rel = "noopener"; pg.style.fontSize = ".85rem"; info.appendChild(pg);
-        info.appendChild(el("span", "", c.cards.length + (c.cards.length === 1 ? " card" : " cards") + ", " + (c.stickers || []).length + " stickers, " + (c.prints || []).length + " prints"));
+        info.appendChild(el("span", "", c.cards.length + (c.cards.length === 1 ? " card" : " cards") + ", " + (c.stickers || []).length + " stickers, " + (c.prints || []).length + " prints, " + (c.free || []).length + " free downloads"));
         row.appendChild(info);
         var btns = el("div", "ev-btns");
         var ed = el("button", "btn ghost", "Edit"); ed.type = "button";
@@ -131,6 +144,7 @@
           Object.keys(checks).forEach(function (k) { checks[k].checked = c.cards.indexOf(k) > -1; });
           Object.keys(sChecks).forEach(function (k) { sChecks[k].checked = (c.stickers || []).indexOf(k) > -1; });
           Object.keys(pChecks).forEach(function (k) { pChecks[k].checked = (c.prints || []).indexOf(k) > -1; });
+          Object.keys(fChecks).forEach(function (k) { fChecks[k].checked = (c.free || []).indexOf(k) > -1; });
           showPreview(imgSrc(c)); cancel.hidden = false; add.textContent = "Update collection"; h3.textContent = "Edit " + c.name;
           form.scrollIntoView({ behavior: "smooth", block: "center" });
         });
@@ -166,7 +180,7 @@
         var added = 0;
         items.forEach(function (it) {
           if (list.some(function (x) { return x.id === it.id || (x.slug || x.id) === it.id; })) return;
-          var c = { id: it.id, slug: it.id, name: it.name, text: it.text || "", body: "", cards: it.cards || [], stickers: [], prints: [], image: !!it.thumb, imv: 0, hdr: !!it.hdr, himv: 0 };
+          var c = { id: it.id, slug: it.id, name: it.name, text: it.text || "", body: "", cards: it.cards || [], stickers: [], prints: [], free: [], image: !!it.thumb, imv: 0, hdr: !!it.hdr, himv: 0 };
           if (it.thumb) c._img = it.thumb; if (it.hdr) c._hdr = it.hdr;
           list.push(c); added++;
         });
@@ -174,6 +188,14 @@
         dirty = true; draw(); changed();
         return doSave().then(function () { return added; });
       },
+      hasRef: function (id, kind, item) { var c = list.filter(function (x) { return x.id === id; })[0]; return !!c && (c[kind] || []).indexOf(item) > -1; },
+      toggleRef: function (id, kind, item, on) {
+        var c = list.filter(function (x) { return x.id === id; })[0]; if (!c) return;
+        var arr = c[kind] = c[kind] || [], i = arr.indexOf(item);
+        if (on && i < 0) arr.push(item); else if (!on && i > -1) arr.splice(i, 1);
+        dirty = true; say(msg, "You have unsaved changes. Press Save collections.", false); draw();
+      },
+      refresh: function () { buildPicks(); },
       onChange: function (f) { listeners.push(f); },
       save: doSave
     };

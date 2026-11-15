@@ -54,6 +54,18 @@
     (free ? [["Name", title], ["Category", cat]] : [["Name", title], ["Status", status], ["Price", price], ["Payment or shop link", link], ["Digital file to print at home", dig]]).forEach(function (p) { grid.appendChild(field(p[0], p[1])); });
     var h3 = el("h3", "", "Add a " + one);
     form.appendChild(h3); form.appendChild(grid); form.appendChild(field("Description", desc)); form.appendChild(catList); form.appendChild(field(free ? "File to download" : "Digital file (PDF, PNG, zip) people print at home", dl)); form.appendChild(dlInfo);
+    var sel = {}, chips = el("div", "coll-form-chips"), chipField = field("Add to collections", chips);
+    function renderChips() {
+      var cc = api.collections ? api.collections() : null; chips.innerHTML = "";
+      if (!cc || !cc.list().length) { chipField.hidden = true; return; }
+      chipField.hidden = false;
+      cc.list().forEach(function (c) {
+        var l = el("label", "coll-chip"), cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = !!sel[c.id];
+        cb.addEventListener("change", function () { sel[c.id] = cb.checked; });
+        l.appendChild(cb); l.appendChild(document.createTextNode(" " + c.name)); chips.appendChild(l);
+      });
+    }
+    form.appendChild(chipField);
     form.appendChild(field(free ? "Thumbnail picture" : "Picture", file)); form.appendChild(preview); form.appendChild(drop);
     var actions = el("div", "ev-actions");
     var add = el("button", "btn", "Add " + one); add.type = "submit";
@@ -62,7 +74,7 @@
     var box = el("div", "ev-list"); root.appendChild(box);
 
     function mark() { dirty = true; say(msg, "You have unsaved changes. Press Save " + noun + ".", false); }
-    function resetForm() { editing = null; pending = null; pendingFile = null; dlInfo.textContent = ""; form.reset(); preview.hidden = true; drop.hidden = true; cancel.hidden = true; add.textContent = "Add " + one; h3.textContent = "Add a " + one; }
+    function resetForm() { editing = null; pending = null; pendingFile = null; dlInfo.textContent = ""; form.reset(); preview.hidden = true; drop.hidden = true; cancel.hidden = true; add.textContent = "Add " + one; h3.textContent = "Add a " + one; sel = {}; renderChips(); }
     function showPreview(src) { preview.hidden = !src; if (src) preview.src = src; drop.hidden = !src; }
     file.addEventListener("change", function () {
       if (!file.files[0]) return;
@@ -91,6 +103,8 @@
       if (pending && pending.b64) { it._img = pending.b64; it.image = true; }
       else if (pending && pending.clear) { delete it._img; it.image = false; }
       if (!editing) list.unshift(it);
+      var cc = api.collections ? api.collections() : null;
+      if (cc) cc.list().forEach(function (c) { var want = !!sel[c.id]; if (cc.hasRef(c.id, kind, it.id) !== want) cc.toggleRef(c.id, kind, it.id, want); });
       resetForm(); mark(); draw();
     });
 
@@ -112,6 +126,7 @@
         var ed = el("button", "btn ghost", "Edit"); ed.type = "button";
         ed.addEventListener("click", function () {
           editing = it.id; pending = null; file.value = "";
+          sel = {}; var cc = api.collections ? api.collections() : null; if (cc) cc.list().forEach(function (k) { sel[k.id] = cc.hasRef(k.id, kind, it.id); }); renderChips();
           title.value = it.title; status.value = it.status; price.value = it.price || ""; link.value = it.url || ""; desc.value = it.description || ""; cat.value = it.category || ""; dig.value = it.digital || ""; dl.value = ""; dlInfo.textContent = it.fname ? "Current file: " + it.fname + ". Choose a file only to replace it." : "";
           showPreview(imgSrc(it)); cancel.hidden = false; add.textContent = "Update " + one; h3.textContent = "Edit " + one;
           form.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -148,11 +163,13 @@
 
     saveBtn.addEventListener("click", function () {
       say(msg, "Saving...", false);
-      api.save(list).then(function (saved) { list = saved; dirty = false; draw(); say(msg, "Saved. The page shows the changes within a minute."); })
+      api.save(list).then(function (saved) { list = saved; dirty = false; draw(); say(msg, "Saved. The page shows the changes within a minute."); if (api.saved) api.saved(saved); })
         .catch(function () { say(msg, "Could not save. Check the link, or try signing again.", true); });
     });
     window.addEventListener("beforeunload", function (e) { if (dirty) { e.preventDefault(); e.returnValue = ""; } });
+    renderChips();
     api.load().then(function (l) { list = l; draw(); }).catch(function () { list = []; draw(); say(msg, "Could not load the list.", true); });
+    return { refresh: renderChips };
   }
   window.PopartCatalogAdmin = { mount: mount };
 })();

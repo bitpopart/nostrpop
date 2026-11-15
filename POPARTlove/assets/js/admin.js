@@ -97,12 +97,18 @@
       }
       return res;
     }
+    var catCtl = {}, freeList = [], stickerList = [], printList = [], coll;
     ["stickers", "prints", "free"].forEach(function (kind) {
       var box = document.createElement("div");
       box.setAttribute("data-kind", kind);
       box.style.marginTop = "2.4rem";
       root.appendChild(box);
-      window.PopartCatalogAdmin.mount(box, kind, {
+      catCtl[kind] = window.PopartCatalogAdmin.mount(box, kind, {
+        collections: function () { return coll; },
+        saved: async function (items) {
+          if (kind === "free") freeList = items; else if (kind === "stickers") stickerList = items; else printList = items;
+          if (coll) { coll.refresh(); try { if (coll.isDirty()) await coll.save(); } catch (e) {} }
+        },
         codes: async function (id, count, uses) {
           var body = JSON.stringify({ id: id, count: count, uses: uses });
           var res = await fetch("/api/dl-codes", { method: "POST", headers: { authorization: await authHeader("POST", "/api/dl-codes", body) }, body: body });
@@ -142,9 +148,9 @@
       }
     });
     function thumbOf(c) { return c.front ? "/api/event-image?id=c-" + encodeURIComponent(c.file) + "&v=" + (c.imv || 0) : "/assets/img/cards/" + c.file + ".webp"; }
-    var stickerList = [], printList = [];
-    try { var sr = await fresh("/api/catalog?kind=stickers"); if (sr.ok) stickerList = await sr.json(); var pr = await fresh("/api/catalog?kind=prints"); if (pr.ok) printList = await pr.json(); } catch (e) {}
-    var coll = window.PopartCollectionsAdmin.mount(collBox, {
+    try { var sr = await fresh("/api/catalog?kind=stickers"); if (sr.ok) stickerList = await sr.json(); var pr = await fresh("/api/catalog?kind=prints"); if (pr.ok) printList = await pr.json(); var fr = await fresh("/api/catalog?kind=free"); if (fr.ok) freeList = await fr.json(); } catch (e) {}
+    coll = window.PopartCollectionsAdmin.mount(collBox, {
+      free: function () { return freeList.filter(function (i) { return i.file; }); },
       stickers: function () { return stickerList; },
       prints: function () { return printList; },
       cards: function () { return cards; },
@@ -205,7 +211,7 @@
       });
     }
     coll.onChange(fillCollCells);
-    coll.onChange(function () { cardsCtl.refresh(); });
+    coll.onChange(function () { cardsCtl.refresh(); Object.keys(catCtl).forEach(function (k) { catCtl[k].refresh(); }); });
     cardsCtl.refresh();
     fillCollCells();
     window.PopartNewsAdmin.mount(newsBox, {

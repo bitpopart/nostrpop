@@ -119,3 +119,7 @@ Every page has a title, description, canonical link, Open Graph and Twitter shar
 ### Import the POPtoons collections
 
 In admin, Collections has an "Import POPtoons collections" button. It adds Lovelings, Joylings, Monsterlings, PeepPops, UniPops, Poopies and POPeyes (name, text, picture, header and any cards linked to a toon in data/cards.json) as normal collections, each with its own page like `/collections/lovelings`. Existing ones are skipped. The list is written by build.py to `assets/poptoons-collections.json`.
+
+### Wallpapers in collections
+
+When you upload a free download (a wallpaper, say) in admin, the form has "Add to collections" checkboxes. Stickers and prints have them too. The collection page on popart.love lists them under "Free downloads". If the collection is a POPtoons one (its page address is the toon collection key, like `lovelings`), poptoons.fun shows the wallpapers under that collection too: its page reads `popart.love/api/collections` and `/api/catalog?kind=free` when it opens. The worker allows that with a public CORS header on those reads, so it must be redeployed.
