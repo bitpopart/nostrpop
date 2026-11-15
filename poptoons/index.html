@@ -337,7 +337,6 @@ function shareBox(c){
     ['Facebook', `https://www.facebook.com/sharer/sharer.php?u=${U}`],
     ['WhatsApp', `https://wa.me/?text=${q(txt + ' ' + u)}`],
     ['Telegram', `https://t.me/share/url?url=${U}&text=${T}`],
-    ['Bluesky', `https://bsky.app/intent/compose?text=${q(txt + ' ' + u)}`],
   ].map(([n, h]) => `<a class="sbtn" href="${h}" target="_blank" rel="noopener noreferrer">${n}</a>`).join('');
   return `<div class="sharerow" data-text="${esc(txt)}" data-url="${esc(u)}"><span class="sh">SHARE ${esc(c.name.toUpperCase())}</span><div class="sbtns"><button type="button" class="sbtn" data-share="native" hidden>Share…</button>${links}<button type="button" class="sbtn" data-share="nostr">Nostr</button><button type="button" class="sbtn" data-share="copy">Copy link</button></div><span class="sstat" role="status" aria-live="polite"></span></div>`;
 }

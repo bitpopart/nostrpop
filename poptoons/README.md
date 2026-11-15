@@ -67,7 +67,7 @@ Flap is the first one, with 2 extra looks next to her original.
 
 ## Sharing
 
-Every character page has a "Share" row (X, Facebook, WhatsApp, Telegram, Bluesky, Nostr, Copy link, and the phone's
+Every character page has a "Share" row (X, Facebook, WhatsApp, Telegram, Nostr, Copy link, and the phone's
 own share sheet where available). It shares `https://poptoons.fun/#<character key>`. Nostr has no web share link, so that
 button copies a ready note text to paste into your Nostr app. Link previews use `poptoons/og.png`, which is made by
 `src/build_site.py`.
