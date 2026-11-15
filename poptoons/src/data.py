@@ -385,6 +385,7 @@ CHARACTERS = [
         ],
         'facts': [('Loves', 'Bedtime, the last page of a story, silence'),
                   ('Look for', 'The glow between his horns')],
+        'variations': [('Good morning', 'lumo-v1'), ('Sending love', 'lumo-v2')],
         'series': 'Legend', 'tribe': 'Love', 'tier': 'Super Rare',
     },
     {
