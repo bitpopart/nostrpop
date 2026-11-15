@@ -370,6 +370,7 @@ CHARACTERS = [
         ],
         'facts': [('Loves', 'Hugs, standing up for others, a good stretch'),
                   ('Look for', 'Red gloves and big antlers')],
+        'variations': [('Good morning', 'jab-v1'), ('Sending love', 'jab-v2')],
         'series': 'Masterpiece', 'tribe': 'Freedom', 'tier': 'Common',
     },
     {
