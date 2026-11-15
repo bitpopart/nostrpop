@@ -355,6 +355,7 @@ CHARACTERS = [
         ],
         'facts': [('Loves', 'Quiet corners, being liked (secretly), soft blankets'),
                   ('Look for', 'The heart above her head')],
+        'variations': [('Good morning', 'pling-v1'), ('No bubble', 'pling-v2')],
         'series': 'Masterpiece', 'tribe': 'Love', 'tier': 'Common',
     },
     {
