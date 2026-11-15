@@ -164,6 +164,7 @@ CHARACTERS = [
         ],
         'facts': [('Loves', 'Old stories, peanuts, people who say thank you'),
                   ('Look for', 'The heart on the tip of her tail')],
+        'variations': [('Sending love', 'toot-v1'), ('Good morning', 'toot-v2')],
         'series': 'Legend', 'tribe': 'Love', 'tier': 'Super Rare',
     },
     {
