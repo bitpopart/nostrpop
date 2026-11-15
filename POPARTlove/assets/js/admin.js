@@ -169,6 +169,27 @@
         return saved;
       }
     });
+    (function () {
+      var wrap = document.createElement("div"); wrap.className = "panel"; wrap.style.marginBottom = "1rem";
+      var p = document.createElement("p"); p.textContent = "The POPtoons collections (Lovelings, Joylings and the others) can be added here with their picture, text and cards. Ones you already have are skipped.";
+      var bt = document.createElement("button"); bt.type = "button"; bt.className = "btn"; bt.textContent = "Import POPtoons collections";
+      var m = document.createElement("p"); m.className = "form-msg"; m.setAttribute("role", "status");
+      function b64(url) {
+        return fetch(url).then(function (r) { if (!r.ok) throw new Error("missing " + url); return r.blob(); }).then(function (bl) {
+          return new Promise(function (ok, no) { var fr = new FileReader(); fr.onload = function () { ok(String(fr.result).split(",")[1]); }; fr.onerror = no; fr.readAsDataURL(bl); });
+        });
+      }
+      bt.addEventListener("click", function () {
+        bt.disabled = true; say(m, "Importing...", false);
+        fetch("/assets/poptoons-collections.json", { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (items) {
+          return Promise.all(items.map(function (it) { return Promise.all([b64(it.thumb), b64(it.hdr)]).then(function (x) { it.thumb = x[0]; it.hdr = x[1]; return it; }); }));
+        }).then(function (items) { return coll.importMany(items); })
+          .then(function (n) { say(m, n ? "Imported " + n + " collections." : "They are all here already.", false); cardsCtl.refresh(); })
+          .catch(function (e) { say(m, "Could not import (" + (e && e.message ? e.message : "error") + ").", true); })
+          .then(function () { bt.disabled = false; });
+      });
+      wrap.appendChild(p); wrap.appendChild(bt); wrap.appendChild(m); collBox.insertBefore(wrap, collBox.children[1] || null);
+    })();
     function fillCollCells() {
       var all = coll.list();
       tbody.querySelectorAll("tr").forEach(function (tr) {

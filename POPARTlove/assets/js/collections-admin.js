@@ -162,6 +162,18 @@
         if (on && i < 0) c.cards.push(file); else if (!on && i > -1) c.cards.splice(i, 1);
         dirty = true; say(msg, "You have unsaved changes. Press Save collections.", false); draw();
       },
+      importMany: function (items) {
+        var added = 0;
+        items.forEach(function (it) {
+          if (list.some(function (x) { return x.id === it.id || (x.slug || x.id) === it.id; })) return;
+          var c = { id: it.id, slug: it.id, name: it.name, text: it.text || "", body: "", cards: it.cards || [], stickers: [], prints: [], image: !!it.thumb, imv: 0, hdr: !!it.hdr, himv: 0 };
+          if (it.thumb) c._img = it.thumb; if (it.hdr) c._hdr = it.hdr;
+          list.push(c); added++;
+        });
+        if (!added) return Promise.resolve(0);
+        dirty = true; draw(); changed();
+        return doSave().then(function () { return added; });
+      },
       onChange: function (f) { listeners.push(f); },
       save: doSave
     };

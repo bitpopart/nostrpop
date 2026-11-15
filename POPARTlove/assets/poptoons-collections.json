@@ -1,0 +1,58 @@
+[
+ {
+  "id": "lovelings",
+  "name": "Lovelings",
+  "text": "Round animals with a heart on their face and their tongue out.",
+  "cards": [],
+  "thumb": "/assets/img/poptoons/lovelings-thumb.webp",
+  "hdr": "/assets/img/poptoons/lovelings.webp"
+ },
+ {
+  "id": "joylings",
+  "name": "Joylings",
+  "text": "The silly ones. Each has one odd thing and sees nothing strange about it.",
+  "cards": [],
+  "thumb": "/assets/img/poptoons/joylings-thumb.webp",
+  "hdr": "/assets/img/poptoons/joylings.webp"
+ },
+ {
+  "id": "monsterlings",
+  "name": "Monsterlings",
+  "text": "Small monsters who were meant to be scary. It did not work.",
+  "cards": [],
+  "thumb": "/assets/img/poptoons/monsterlings-thumb.webp",
+  "hdr": "/assets/img/poptoons/monsterlings.webp"
+ },
+ {
+  "id": "peeppops",
+  "name": "PeepPops",
+  "text": "Fuzzy creatures with too many eyes, or just one. They see everything.",
+  "cards": [],
+  "thumb": "/assets/img/poptoons/peeppops-thumb.webp",
+  "hdr": "/assets/img/poptoons/peeppops.webp"
+ },
+ {
+  "id": "unipops",
+  "name": "UniPops",
+  "text": "One horn, one feeling, turned all the way up.",
+  "cards": [],
+  "thumb": "/assets/img/poptoons/unipops-thumb.webp",
+  "hdr": "/assets/img/poptoons/unipops.webp"
+ },
+ {
+  "id": "poopies",
+  "name": "Poopies",
+  "text": "What is left when the day is done. Very relaxed about it.",
+  "cards": [],
+  "thumb": "/assets/img/poptoons/poopies-thumb.webp",
+  "hdr": "/assets/img/poptoons/poopies.webp"
+ },
+ {
+  "id": "popeyes",
+  "name": "POPeyes",
+  "text": "Little suns with one big eye and white gloves that never stop waving.",
+  "cards": [],
+  "thumb": "/assets/img/poptoons/popeyes-thumb.webp",
+  "hdr": "/assets/img/poptoons/popeyes.webp"
+ }
+]

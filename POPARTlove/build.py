@@ -747,6 +747,14 @@ def build_pages():
     toon_host = toon_site.split("//", 1)[1]
     toon_tags = ["love", "joy", "freedom"]
 
+    # a list the admin page can import as site collections (data/ is not served, so write a copy into assets/)
+    _name_key = {v: k for k, v in _toon_names.items()}
+    write("assets/poptoons-collections.json", json.dumps([
+        {"id": c["key"], "name": c["name"], "text": c["tagline"],
+         "cards": [f for f, t in CARD_TOON.items() if t in [_name_key.get(n) for n in c["characters"]]],
+         "thumb": f"/assets/img/poptoons/{c['key']}-thumb.webp", "hdr": f"/assets/img/poptoons/{c['key']}.webp"}
+        for c in toon_data["collections"]], indent=1))
+
     def toon_img(name):
         raw = open(os.path.join(ROOT, "assets", "img", "poptoons", name), "rb").read()
         return f"/assets/img/poptoons/{name}?v={hashlib.md5(raw).hexdigest()[:8]}"
