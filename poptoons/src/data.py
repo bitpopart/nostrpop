@@ -110,6 +110,22 @@ COLLECTIONS = [
             ("Good to know", "They don't smell. They have checked."),
         ],
     },
+    {
+        'key': 'popeyes', 'no': '07', 'name': 'POPeyes', 'color': '#E5484D',
+        'tagline': 'Little suns with one big eye and white gloves that never stop waving.',
+        'intro': [
+            "POPeyes are tiny suns with a single eye. They turn up on grey days, wave with "
+            "their white gloves and look at the bright side, using the one eye they have.",
+            "A POPeye never really sets. It just looks the other way for a moment and comes "
+            "back when you need it. Every one of them has its own way of saying hello.",
+        ],
+        'badges': [],
+        'notes': [
+            ("POPeyes Trio", "Ogle, Spark and Hiya share the same series and tier across all "
+                             "three tribes. Together they make a Trio."),
+            ("How to spot one", "Rays all around, one eye in the middle and two gloves in the air."),
+        ],
+    },
 ]
 
 CHARACTERS = [
@@ -518,5 +534,26 @@ CHARACTERS = [
         'story': ['Flush wears a crown. Nobody gave it to him and nobody has asked for it back, so he is king.', 'He rules the Poopies kindly and gives one order a day, which is always that everyone should take it easy. The crown sits crooked because he will not sit up straight for anybody. He has never lost at cards.'],
         'facts': [('Loves', 'Thrones of any kind, being announced, a good hand'), ('Look for', 'The crooked crown')],
         'series': 'Legend', 'tribe': 'Joy', 'tier': 'Ultra Rare',
+    },
+    {
+        'key': 'ogle', 'no': '38', 'name': 'Ogle', 'kind': 'the big-eyed one', 'role': 'The one who stares and sticks out his tongue',
+        'collection': 'popeyes', 'color': '#EF4B5B', 'sound': 'BLEH',
+        'story': ["Ogle has the biggest eye of all the POPeyes and he uses every bit of it. He stares at a sandwich, at a cloud, at your shoes, and then he sticks out his tongue to say he approves.", "If Ogle stares at you, don't look away. He isn't being rude. He is counting what he likes about you, and he always runs out of fingers before he runs out of things."],
+        'facts': [('Loves', 'Staring contests, sandwiches, cloud watching'), ('Look for', 'A huge black pupil and a red tongue')],
+        'series': 'Masterpiece', 'tribe': 'Love', 'tier': 'Common',
+    },
+    {
+        'key': 'spark', 'no': '39', 'name': 'Spark', 'kind': 'the magic one', 'role': 'The one with the star wand',
+        'collection': 'popeyes', 'color': '#F8EE55', 'sound': 'ZING',
+        'story': ["Spark found a star wand on a very ordinary Tuesday and has not put it down since. It does no big magic. It turns a bad mood into a small good one, which Spark says is the hardest spell there is.", "The wand goes in his left glove and the right glove is for waving. A wand takes one hand and a hello takes the other."],
+        'facts': [('Loves', 'Tuesdays, glitter, small spells'), ('Look for', 'A yellow face, one little eye and a star on a stick')],
+        'series': 'Masterpiece', 'tribe': 'Joy', 'tier': 'Common',
+    },
+    {
+        'key': 'hiya', 'no': '40', 'name': 'Hiya', 'kind': 'the friendly one', 'role': 'The one who says hi first',
+        'collection': 'popeyes', 'color': '#B9E2F8', 'sound': 'HIYA',
+        'story': ["Hiya puts both gloves in the air before anyone has said a word, because somebody has to go first. He is the colour of the sky just after rain, and that is no accident.", "He doesn't need an answer. The wave is enough. Most days somebody waves back, and then it is a good day for both of you."],
+        'facts': [('Loves', 'Waving, blue skies, meeting new people'), ('Look for', 'A light blue face and both gloves up high')],
+        'series': 'Masterpiece', 'tribe': 'Freedom', 'tier': 'Common',
     },
 ]

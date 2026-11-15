@@ -207,7 +207,7 @@ def cover(c):
     c.roundRect(W / 2 - dw / 2, 50, dw, 30, 15, stroke=1, fill=1)
     c.setFillColor(INK); c.setFont('Lilita', 19); c.drawCentredString(W / 2, 58.5, 'poptoons.fun')
     c.setFont('PopM', 9.5)
-    c.drawCentredString(W / 2, 28, '%d characters · %d collections · Edition 6 · November 2026 · BitPopArt'
+    c.drawCentredString(W / 2, 28, '%d characters · %d collections · Edition 7 · November 2026 · BitPopArt'
                         % (len(CHARACTERS), len(COLLECTIONS)))
 
 def overview(c, page_no):

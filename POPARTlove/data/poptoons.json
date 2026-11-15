@@ -1,6 +1,6 @@
 {
   "site": "https://poptoons.fun",
-  "characters": 37,
+  "characters": 40,
   "collections": [
     {
       "key": "lovelings",
@@ -91,6 +91,18 @@
         "Burp",
         "Drool",
         "Flush"
+      ]
+    },
+    {
+      "key": "popeyes",
+      "no": "07",
+      "name": "POPeyes",
+      "tagline": "Little suns with one big eye and white gloves that never stop waving.",
+      "count": 3,
+      "characters": [
+        "Ogle",
+        "Spark",
+        "Hiya"
       ]
     }
   ]
