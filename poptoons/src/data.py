@@ -399,6 +399,7 @@ CHARACTERS = [
         ],
         'facts': [('Loves', 'Dark corners, jumping out, being taken seriously'),
                   ('Look for', 'Yellow wings and four teeth')],
+        'variations': [('Good morning', 'fang-v1'), ('Sending love', 'fang-v2')],
         'series': 'Masterpiece', 'tribe': 'Freedom', 'tier': 'Uncommon',
     },
     {
