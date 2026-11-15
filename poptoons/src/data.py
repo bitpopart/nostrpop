@@ -571,4 +571,19 @@ CHARACTERS = [
         'facts': [('Loves', 'Waving, blue skies, meeting new people'), ('Look for', 'A light blue face and both gloves up high')],
         'series': 'Masterpiece', 'tribe': 'Freedom', 'tier': 'Common',
     },
+    {
+        'key': 'jay', 'no': '41', 'name': 'Jay', 'kind': 'the bluebird', 'role': 'The one who tells everyone',
+        'collection': 'lovelings', 'color': '#CE1313', 'sound': 'TWEET',
+        'story': [
+            "Jay has no wings to speak of, no tail, and a beak that is mostly a heart. He is "
+            "a bird anyway, and he has never doubted it for a second.",
+            "He can't keep anything to himself. If he finds out that somebody likes somebody, "
+            "or that it is going to be a good day, the whole street hears about it. Nobody "
+            "minds, because it is always good news.",
+        ],
+        'facts': [('Loves', 'Good news, early mornings, telling people first'),
+                  ('Look for', 'The heart-shaped beak')],
+        'variations': [('Sending love', 'jay-v1'), ('Good morning', 'jay-v2')],
+        'series': 'Masterpiece', 'tribe': 'Love', 'tier': 'Common',
+    },
 ]

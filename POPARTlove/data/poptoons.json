@@ -1,6 +1,6 @@
 {
   "site": "https://poptoons.fun",
-  "characters": 40,
+  "characters": 41,
   "toons": {
     "coolmoo": "Cool Moo",
     "toot": "Toot",
@@ -41,7 +41,8 @@
     "flush": "Flush",
     "ogle": "Ogle",
     "spark": "Spark",
-    "hiya": "Hiya"
+    "hiya": "Hiya",
+    "jay": "Jay"
   },
   "collections": [
     {
@@ -49,14 +50,15 @@
       "no": "01",
       "name": "Lovelings",
       "tagline": "Round animals with a heart on their face and their tongue out.",
-      "count": 6,
+      "count": 7,
       "characters": [
         "Toot",
         "Mimi",
         "Blu",
         "Lil Moo",
         "Oki",
-        "Pip"
+        "Pip",
+        "Jay"
       ]
     },
     {
