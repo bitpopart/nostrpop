@@ -318,6 +318,7 @@ CHARACTERS = [
         ],
         'facts': [('Loves', 'Plans, buttons you should not press, the words "what if"'),
                   ('Look for', 'The propeller cap')],
+        'variations': [('Good morning', 'twirl-v1'), ('Pura Vida', 'twirl-v2'), ('No cap', 'twirl-v3')],
         'series': 'Legend', 'tribe': 'Joy', 'tier': 'Super Rare',
     },
     {
