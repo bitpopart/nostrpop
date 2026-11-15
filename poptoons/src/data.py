@@ -273,6 +273,8 @@ CHARACTERS = [
         ],
         'facts': [('Loves', 'Being scratched behind the ear, dogs, her own tail'),
                   ('Look for', 'The wagging tail')],
+        'variations': [('Good morning', 'wiggle-v1'), ('Pura Vida', 'wiggle-v2'), ('Good night', 'wiggle-v3'),
+                       ('Cool orange', 'wiggle-v4'), ('Cap and heart', 'wiggle-v5')],
         'series': 'Masterpiece', 'tribe': 'Love', 'tier': 'Common',
     },
     {
