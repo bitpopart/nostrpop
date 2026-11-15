@@ -76,7 +76,10 @@ def build_site():
             cards_by_toon.setdefault(t, []).append({
                 'file': card['file'], 'name': card['name'], 'tier': card['rarity'], 'series': card['series'],
                 'img': 'data:image/webp;base64,' + base64.b64encode(buf.getvalue()).decode()})
+    variations = {c['key']: [{'name': n, 'img': image_uri(f, 560)} for n, f in c['variations']]
+                  for c in data.CHARACTERS if c.get('variations')}
     payload = {
+        'variations': variations,
         'cards': cards_by_toon,
         'collections': [{k: c[k] for k in ('key', 'no', 'name', 'color', 'tagline', 'intro', 'notes')} for c in data.COLLECTIONS],
         'characters': [{k: c[k] for k in keep} for c in data.CHARACTERS],

@@ -144,6 +144,11 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .strip .h{background:var(--ink);color:#fff;font-weight:700;font-size:.72rem;letter-spacing:.04em;padding:.5em 1.2em}
 .strip .c3{display:grid;grid-template-columns:repeat(3,1fr)}
 .strip .c3>div{padding:12px 16px 14px;border-left:2px solid var(--ink)}.strip .c3>div:first-child{border-left:0}
+.vgal{margin:4px 0 18px}.vh{font-weight:700;font-size:.72rem;letter-spacing:.04em;margin-bottom:8px}
+.vgrid{display:flex;flex-wrap:wrap;gap:10px}
+.vt{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;width:92px;font-size:.68rem;font-weight:600;text-align:center;color:var(--ink)}
+.vt img{width:92px;height:92px;object-fit:contain;background:#fff;border:2px solid var(--ink);border-radius:12px;box-shadow:3px 3px 0 var(--ink);padding:6px;box-sizing:border-box}
+.vt.on img{box-shadow:3px 3px 0 var(--c,var(--ink));border-color:var(--ink);outline:3px solid #FFD422}.vt:focus-visible img{outline:3px solid #2563EB}
 .cardrow{display:flex;flex-wrap:wrap;align-items:center;gap:14px;padding:14px 16px;border-top:2px solid var(--ink);background:#fff7d6}
 .ctoon{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:.72rem;font-weight:600;color:var(--ink);text-decoration:none}.ctoon img{width:84px;height:auto;border-radius:6px;border:2px solid var(--ink);box-shadow:3px 3px 0 var(--ink)}
 .cbtn{margin-left:auto;font-weight:700;font-size:.85rem;color:var(--ink);text-decoration:none;border:2px solid var(--ink);border-radius:999px;padding:.45em 1em;background:#FFD422;box-shadow:3px 3px 0 var(--ink)}.cbtn:hover{transform:translate(1px,1px)}
@@ -299,6 +304,13 @@ function burst(txt){
   return `<svg class="burst" viewBox="0 0 270 195" role="img" aria-label="Sound: ${esc(txt)}"><polygon points="${pts.join(' ')}" transform="translate(6,6)" fill="#111"/><polygon points="${pts.join(' ')}" fill="#fff" stroke="#111" stroke-width="5" stroke-linejoin="round"/><text x="130" y="${95 + size*.34}" text-anchor="middle" font-size="${size}">${esc(txt)}</text></svg>`;
 }
 let lastFocus = null, savedY = 0;
+function galleryBox(c){
+  const vs = DATA.variations[c.key] || [];
+  if (!vs.length) return '';
+  const th = [{name: 'Original', img: DATA.images[c.key]}].concat(vs).map((v, i) =>
+    `<button type="button" class="vt${i ? '' : ' on'}" data-vimg="${i}" aria-label="Show ${esc(c.name)}: ${esc(v.name)}" aria-pressed="${i ? 'false' : 'true'}"><img src="${v.img}" alt="${esc(c.name)}: ${esc(v.name)}" loading="lazy"><span>${esc(v.name)}</span></button>`).join('');
+  return `<div class="vgal"><div class="vh">MORE LOOKS OF ${esc(c.name.toUpperCase())}</div><div class="vgrid">${th}</div></div>`;
+}
 function cardsBox(c){
   const list = DATA.cards[c.key] || [];
   const link = 'https://www.popart.love/cards/';
@@ -320,6 +332,7 @@ function openChar(key){
       <p class="role">${esc(c.role)}</p>
       <div class="story">${c.story.map(p => `<p>${esc(p)}</p>`).join('')}</div>
       <div class="facts">${c.facts.map(([h, t]) => `<div><b>${esc(h)}:</b> ${esc(t)}</div>`).join('')}</div>
+      ${galleryBox(c)}
       <div class="strip"><div class="h">POPART CARD</div><div class="c3">
         <div><small>SERIES</small><strong>${c.series}</strong></div>
         <div><small>TRIBE</small><span class="chip ${c.tribe}" style="font-size:.85rem">${c.tribe}</span></div>
@@ -343,6 +356,12 @@ function route(){
   if (byKey[h]) openChar(h); else if ($('#sheet').classList.contains('open')){ $('#sheet').classList.remove('open'); document.body.style.overflow = ''; }
 }
 document.addEventListener('click', e => {
+  const vt = e.target.closest('[data-vimg]');
+  if (vt){
+    const grid = vt.parentElement; grid.querySelectorAll('.vt').forEach(b => { b.classList.toggle('on', b === vt); b.setAttribute('aria-pressed', b === vt ? 'true' : 'false'); });
+    const big = document.querySelector('#sheet .pimg img'); if (big) big.src = vt.querySelector('img').src;
+    return;
+  }
   const card = e.target.closest('.card'); if (card){ location.hash = card.dataset.key; return; }
   const go = e.target.closest('[data-go]'); if (go){ location.hash = go.dataset.go; return; }
   if (e.target.closest('#close') || e.target.id === 'sheet') closeSheet();

@@ -1,7 +1,7 @@
 """POPtoons data: every collection and character.
 
 This is the one place to edit. Add a collection to COLLECTIONS and its characters to
-CHARACTERS, put each character drawing in img/<key>.png, then run build_site.py (and
+CHARACTERS, put each character drawing in img/<key>.png (optional: more looks as img/<key>-v1.png ... listed under 'variations': [(caption, file key), ...]), then run build_site.py (and
 build_guide.py for the PDF).
 """
 
@@ -257,6 +257,7 @@ CHARACTERS = [
         ],
         'facts': [('Loves', 'Wind, high places (the top of a shoe counts), landing'),
                   ('Look for', 'Wings that never stop')],
+        'variations': [('Wings up', 'flap-v1'), ('Good morning', 'flap-v2'), ('Sending love', 'flap-v3')],
         'series': 'Masterpiece', 'tribe': 'Joy', 'tier': 'Common',
     },
     {
