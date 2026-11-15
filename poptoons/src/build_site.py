@@ -51,7 +51,34 @@ def members(coll_key):
     return [c for c in data.CHARACTERS if c['collection'] == coll_key]
 
 
+def make_og():
+    """1200x630 share picture (poptoons/og.png) used for link previews."""
+    from PIL import ImageDraw
+    W, H = 1200, 630
+    im = Image.new('RGB', (W, H), (255, 212, 34)); d = ImageDraw.Draw(im)
+    for y in range(14, H, 30):
+        for x in range(14 + (15 if (y // 30) % 2 else 0), W, 30):
+            d.ellipse((x - 3, y - 3, x + 3, y + 3), fill=(244, 190, 20))
+    logo = Image.open(os.path.join(HERE, 'img', 'logo-white.png')).convert('RGBA')
+    lw = 760; logo = logo.resize((lw, round(lw * logo.height / logo.width)), Image.LANCZOS)
+    im.paste(logo, ((W - lw) // 2, 70), logo)
+    picks = ['lilmoo', 'bun', 'lumo', 'uno', 'bo', 'plop', 'hiya']
+    tw, gap = 140, 22; x0 = (W - (len(picks) * tw + (len(picks) - 1) * gap)) // 2; y0 = 330
+    for i, k in enumerate(picks):
+        x = x0 + i * (tw + gap)
+        d.rounded_rectangle((x + 6, y0 + 6, x + tw + 6, y0 + tw + 6), radius=22, fill=(17, 17, 17))
+        d.rounded_rectangle((x, y0, x + tw, y0 + tw), radius=22, fill='white', outline=(17, 17, 17), width=4)
+        c = Image.open(os.path.join(HERE, 'img', k + '.png')).convert('RGB'); c.thumbnail((tw - 24, tw - 24), Image.LANCZOS)
+        im.paste(c, (x + (tw - c.width) // 2, y0 + (tw - c.height) // 2))
+    from PIL import ImageFont
+    f = ImageFont.truetype(os.path.join(HERE, 'fonts', 'Poppins-Bold.ttf'), 34)
+    t = 'Characters with a story  ·  poptoons.fun'
+    tb = d.textbbox((0, 0), t, font=f); d.text(((W - tb[2]) // 2, 520), t, font=f, fill=(17, 17, 17))
+    im.save(os.path.join(HERE, '..', 'og.png'), optimize=True)
+
+
 def build_site():
+    make_og()
     shutil.copy(os.path.join(HERE, 'img', 'logo.svg'), os.path.join(HERE, '..', 'logo.svg'))
     shutil.copy(os.path.join(HERE, 'img', 'logo-white.svg'), os.path.join(HERE, '..', 'logo-white.svg'))
     fonts = '\n'.join([
