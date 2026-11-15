@@ -144,11 +144,11 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .strip .h{background:var(--ink);color:#fff;font-weight:700;font-size:.72rem;letter-spacing:.04em;padding:.5em 1.2em}
 .strip .c3{display:grid;grid-template-columns:repeat(3,1fr)}
 .strip .c3>div{padding:12px 16px 14px;border-left:2px solid var(--ink)}.strip .c3>div:first-child{border-left:0}
-.vgal{margin:4px 0 18px}.vh{font-weight:700;font-size:.72rem;letter-spacing:.04em;margin-bottom:8px}
-.vgrid{display:flex;flex-wrap:wrap;gap:10px}
-.vt{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;width:92px;font-size:.68rem;font-weight:600;text-align:center;color:var(--ink)}
-.vt img{width:92px;height:92px;object-fit:contain;background:#fff;border:2px solid var(--ink);border-radius:12px;box-shadow:3px 3px 0 var(--ink);padding:6px;box-sizing:border-box}
-.vt.on img{box-shadow:3px 3px 0 var(--c,var(--ink));border-color:var(--ink);outline:3px solid #FFD422}.vt:focus-visible img{outline:3px solid #2563EB}
+.pmain.hasv{grid-template-columns:auto minmax(0,300px) 1fr}
+.vcol{display:grid;grid-template-rows:repeat(4,64px);grid-auto-flow:column;gap:10px;align-content:center}
+.vt{all:unset;box-sizing:border-box;cursor:pointer;display:block;width:64px;height:64px}
+.vt img{width:64px;height:64px;object-fit:contain;background:#fff;border:3px solid var(--ink);border-radius:12px;box-shadow:3px 3px 0 var(--ink);padding:5px;box-sizing:border-box}
+.vt.on img{outline:3px solid #fff;box-shadow:3px 3px 0 var(--ink)}.vt:focus-visible img{outline:3px solid #2563EB}.vt:hover img{transform:translate(1px,1px)}
 .cardrow{display:flex;flex-wrap:wrap;align-items:center;gap:14px;padding:14px 16px;border-top:2px solid var(--ink);background:#fff7d6}
 .ctoon{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:.72rem;font-weight:600;color:var(--ink);text-decoration:none}.ctoon img{width:84px;height:auto;border-radius:6px;border:2px solid var(--ink);box-shadow:3px 3px 0 var(--ink)}
 .cbtn{margin-left:auto;font-weight:700;font-size:.85rem;color:var(--ink);text-decoration:none;border:2px solid var(--ink);border-radius:999px;padding:.45em 1em;background:#FFD422;box-shadow:3px 3px 0 var(--ink)}.cbtn:hover{transform:translate(1px,1px)}
@@ -163,7 +163,8 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
   .hero .wrap{padding-top:36px;padding-bottom:40px}
   nav.main a{padding:.3em .55em;font-size:.82rem}
   #q{margin-left:0;width:100%}
-  .pmain{grid-template-columns:1fr 1fr;gap:14px}
+  .pmain,.pmain.hasv{grid-template-columns:1fr 1fr;gap:14px}
+  .pmain.hasv .vcol{grid-column:1/-1;grid-row:2;grid-template-rows:none;grid-auto-flow:row;grid-template-columns:repeat(auto-fill,64px);justify-content:start}
 }
 @media (max-width:480px){
   .logo svg{height:26px}
@@ -304,12 +305,12 @@ function burst(txt){
   return `<svg class="burst" viewBox="0 0 270 195" role="img" aria-label="Sound: ${esc(txt)}"><polygon points="${pts.join(' ')}" transform="translate(6,6)" fill="#111"/><polygon points="${pts.join(' ')}" fill="#fff" stroke="#111" stroke-width="5" stroke-linejoin="round"/><text x="130" y="${95 + size*.34}" text-anchor="middle" font-size="${size}">${esc(txt)}</text></svg>`;
 }
 let lastFocus = null, savedY = 0;
-function galleryBox(c){
+function thumbsCol(c){
   const vs = DATA.variations[c.key] || [];
   if (!vs.length) return '';
   const th = [{name: 'Original', img: DATA.images[c.key]}].concat(vs).map((v, i) =>
-    `<button type="button" class="vt${i ? '' : ' on'}" data-vimg="${i}" aria-label="Show ${esc(c.name)}: ${esc(v.name)}" aria-pressed="${i ? 'false' : 'true'}"><img src="${v.img}" alt="${esc(c.name)}: ${esc(v.name)}" loading="lazy"><span>${esc(v.name)}</span></button>`).join('');
-  return `<div class="vgal"><div class="vh">MORE LOOKS OF ${esc(c.name.toUpperCase())}</div><div class="vgrid">${th}</div></div>`;
+    `<button type="button" class="vt${i ? '' : ' on'}" data-vimg="${i}" title="${esc(v.name)}" aria-label="Show ${esc(c.name)}: ${esc(v.name)}" aria-pressed="${i ? 'false' : 'true'}"><img src="${v.img}" alt="${esc(c.name)}: ${esc(v.name)}"></button>`).join('');
+  return `<div class="vcol" role="group" aria-label="More looks of ${esc(c.name)}">${th}</div>`;
 }
 function cardsBox(c){
   const list = DATA.cards[c.key] || [];
@@ -325,14 +326,13 @@ function openChar(key){
   $('#panel').innerHTML = `
     <div class="ptop" style="${tone(c.color)}">
       <div class="prow"><span class="eyebrow" style="margin:0">POPtoons · ${esc(k.name)}</span><span style="display:flex;align-items:center;gap:14px"><span class="pno">No. ${c.no}</span><button class="x" id="close" aria-label="Close">×</button></span></div>
-      <div class="pmain"><div class="pimg"><img src="${DATA.images[c.key]}" alt="${esc(c.name + ' ' + c.kind)}"></div>${burst(c.sound)}</div>
+      <div class="pmain${(DATA.variations[c.key]||[]).length ? ' hasv' : ''}">${thumbsCol(c)}<div class="pimg"><img src="${DATA.images[c.key]}" alt="${esc(c.name + ' ' + c.kind)}"></div>${burst(c.sound)}</div>
     </div>
     <div class="pbody" style="--c:${c.color}">
       <div class="pname"><h2 class="pop" id="pn">${esc(c.name)}</h2><span>${esc(c.kind)}</span></div>
       <p class="role">${esc(c.role)}</p>
       <div class="story">${c.story.map(p => `<p>${esc(p)}</p>`).join('')}</div>
       <div class="facts">${c.facts.map(([h, t]) => `<div><b>${esc(h)}:</b> ${esc(t)}</div>`).join('')}</div>
-      ${galleryBox(c)}
       <div class="strip"><div class="h">POPART CARD</div><div class="c3">
         <div><small>SERIES</small><strong>${c.series}</strong></div>
         <div><small>TRIBE</small><span class="chip ${c.tribe}" style="font-size:.85rem">${c.tribe}</span></div>

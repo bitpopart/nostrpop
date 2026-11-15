@@ -257,7 +257,7 @@ CHARACTERS = [
         ],
         'facts': [('Loves', 'Wind, high places (the top of a shoe counts), landing'),
                   ('Look for', 'Wings that never stop')],
-        'variations': [('Wings up', 'flap-v1'), ('Good morning', 'flap-v2'), ('Sending love', 'flap-v3')],
+        'variations': [('Good morning', 'flap-v1'), ('Sending love', 'flap-v2')],
         'series': 'Masterpiece', 'tribe': 'Joy', 'tier': 'Common',
     },
     {

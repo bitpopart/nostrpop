@@ -59,8 +59,8 @@ Toons without an attached card show a button to all POPART cards.
 To give a toon extra looks, save each one as `poptoons/src/img/<key>-v1.png`, `<key>-v2.png`, ... (drawing on white),
 then add a `variations` list to that character in `src/data.py`:
 
-    'variations': [('Wings up', 'flap-v1'), ('Good morning', 'flap-v2')],
+    'variations': [('Good morning', 'flap-v1'), ('Sending love', 'flap-v2')],
 
 Each item is (caption, image key). The character page on poptoons.fun then shows a "More looks of ..." row
-(click a look to swap the big picture) and the PDF guide shows the same row on that character's page.
-Flap is the first one with 3 extra looks.
+(thumbnails sit next to the big picture, click one to swap it) and the PDF guide shows the same row on that character's page.
+Flap is the first one, with 2 extra looks next to her original.
