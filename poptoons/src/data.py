@@ -414,6 +414,7 @@ CHARACTERS = [
         ],
         'facts': [('Loves', 'People falling asleep on the bus, pigeons, his own jokes'),
                   ('Look for', 'Five sleepy eyes and a very big mouth')],
+        'variations': [('Good morning', 'zig-v1'), ('Sending love', 'zig-v2')],
         'series': 'Masterpiece', 'tribe': 'Joy', 'tier': 'Common',
     },
     {
