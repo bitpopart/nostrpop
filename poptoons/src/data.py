@@ -222,6 +222,7 @@ CHARACTERS = [
         ],
         'facts': [('Loves', 'Bananas, group hugs, the moment just before everyone starts laughing'),
                   ('Look for', 'His long curled tail')],
+        'variations': [('Sending love', 'oki-v1'), ('Good morning', 'oki-v2')],
         'series': 'Masterpiece', 'tribe': 'Joy', 'tier': 'Uncommon',
     },
     {
