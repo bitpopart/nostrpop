@@ -303,6 +303,7 @@ CHARACTERS = [
         ],
         'facts': [('Loves', 'Carrots, honey on carrots, hopping in a group'),
                   ('Look for', 'The pink ears')],
+        'variations': [('Good morning', 'bun-v1'), ('No ears', 'bun-v2'), ('Sending love', 'bun-v3')],
         'series': 'Masterpiece', 'tribe': 'Joy', 'tier': 'Uncommon',
     },
     {
