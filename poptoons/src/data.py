@@ -244,6 +244,8 @@ CHARACTERS = [
         ],
         'facts': [('Loves', 'Whistling, long walks, not looking back'),
                   ('Look for', 'The backwards cap')],
+        'variations': [('Good morning', 'dax-v1'), ('Good night', 'dax-v2'), ('Oops', 'dax-v3'),
+                       ('Bunny hat', 'dax-v4'), ('Smile', 'dax-v5')],
         'series': 'Masterpiece', 'tribe': 'Freedom', 'tier': 'Common',
     },
     {
