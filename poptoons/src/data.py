@@ -193,6 +193,7 @@ CHARACTERS = [
         ],
         'facts': [('Loves', 'The sound of keys, sticks, everybody'),
                   ('Look for', 'Two little teeth')],
+        'variations': [('Sending love', 'blu-v1'), ('Good morning', 'blu-v2')],
         'series': 'Masterpiece', 'tribe': 'Joy', 'tier': 'Common',
     },
     {
