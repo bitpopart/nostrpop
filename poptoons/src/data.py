@@ -208,6 +208,7 @@ CHARACTERS = [
         ],
         'facts': [('Loves', 'Her big sister, daisies, going second so someone else can go first'),
                   ('Look for', 'The heart on her tail')],
+        'variations': [('Sending love', 'lilmoo-v1'), ('Good morning', 'lilmoo-v2')],
         'series': 'Masterpiece', 'tribe': 'Love', 'tier': 'Common',
     },
     {
