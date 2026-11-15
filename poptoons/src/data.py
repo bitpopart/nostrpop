@@ -237,6 +237,7 @@ CHARACTERS = [
         ],
         'facts': [('Loves', 'Rain, puddles, the word "again"'),
                   ('Look for', 'Eyes on top of his head')],
+        'variations': [('Sending love', 'pip-v1'), ('Good morning', 'pip-v2')],
         'series': 'Signed', 'tribe': 'Freedom', 'tier': 'Rare',
     },
     {
