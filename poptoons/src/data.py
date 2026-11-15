@@ -443,6 +443,7 @@ CHARACTERS = [
         ],
         'facts': [('Loves', 'Long conversations, one biscuit at a time, eye contact'),
                   ('Look for', 'One big orange eye')],
+        'variations': [('Good morning', 'uno-v1'), ('Sending love', 'uno-v2')],
         'series': 'Masterpiece', 'tribe': 'Love', 'tier': 'Common',
     },
     {
