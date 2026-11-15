@@ -36,7 +36,7 @@
     var baseFiles = {}; base.forEach(function (c) { baseFiles[c.file] = c; });
     root.innerHTML = "";
     var head = el("div", "section-head");
-    var hd = el("div"); hd.appendChild(el("h2", "", "Edit cards")); hd.appendChild(el("p", "", "Add a new card or change a card's name, text and pictures. Stock, price and shop links are set in the table above."));
+    var hd = el("div"); hd.appendChild(el("h2", "", "Add a card")); hd.appendChild(el("p", "", "Add a new card or change a card's name, text and pictures. Stock, price and shop links are in the table below."));
     var saveBtn = el("button", "btn", "Save cards"); saveBtn.type = "button";
     head.appendChild(hd); head.appendChild(saveBtn); root.appendChild(head);
     var msg = el("p", "form-msg"); msg.setAttribute("role", "status"); root.appendChild(msg);
@@ -56,6 +56,18 @@
     var h3 = el("h3", "", "Add a card");
     var note = el("p", "notice"); note.textContent = "The web name must match the card file name from the Card Maker, because the verify codes use it. You cannot change it later.";
     form.appendChild(h3); form.appendChild(grid); form.appendChild(note); form.appendChild(field("Description", blurb));
+    var sel = {}, chips = el("div", "coll-form-chips"), chipField = field("Add to collections", chips);
+    function renderChips() {
+      var cc = api.collections ? api.collections() : null; chips.innerHTML = "";
+      if (!cc || !cc.list().length) { chipField.hidden = true; return; }
+      chipField.hidden = false;
+      cc.list().forEach(function (c) {
+        var l = el("label", "coll-chip"), cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = !!sel[c.id];
+        cb.addEventListener("change", function () { sel[c.id] = cb.checked; });
+        l.appendChild(cb); l.appendChild(document.createTextNode(" " + c.name)); chips.appendChild(l);
+      });
+    }
+    form.appendChild(chipField);
     form.appendChild(field("Front picture", ff)); form.appendChild(pvF); form.appendChild(field("Back picture (optional)", fb)); form.appendChild(pvB);
     var actions = el("div", "ev-actions");
     var add = el("button", "btn", "Add card"); add.type = "submit";
@@ -64,7 +76,7 @@
     var box = el("div", "ev-list"); root.appendChild(box);
 
     function mark() { dirty = true; say(msg, "You have unsaved changes. Press Save cards.", false); }
-    function reset() { editing = null; pf = pb = null; form.reset(); fileId.disabled = false; pvF.hidden = pvB.hidden = true; cancel.hidden = true; add.textContent = "Add card"; h3.textContent = "Add a card"; }
+    function reset() { editing = null; pf = pb = null; form.reset(); fileId.disabled = false; pvF.hidden = pvB.hidden = true; cancel.hidden = true; add.textContent = "Add card"; h3.textContent = "Add a card"; sel = {}; renderChips(); }
     function pick(inp, pv, which) {
       inp.addEventListener("change", function () {
         if (!inp.files[0]) return;
@@ -99,6 +111,8 @@
       ent.name = name.value.trim(); ent.theme = theme.value; ent.series = series.value; ent.rarity = rarity.value; ent.run = run.value.trim(); ent.blurb = blurb.value.trim(); ent.removed = false;
       if (pf) { ent._front = pf; ent.front = true; }
       if (pb) { ent._back = pb; ent.back = true; }
+      var cc = api.collections ? api.collections() : null;
+      if (cc) cc.list().forEach(function (c) { var want = !!sel[c.id]; if (cc.has(c.id, id) !== want) cc.toggle(c.id, id, want); });
       reset(); mark(); draw();
     });
 
@@ -123,6 +137,7 @@
             editing = c.file; pf = pb = null; ff.value = fb.value = "";
             name.value = c.name; fileId.value = c.file; fileId.disabled = true; theme.value = c.theme; series.value = c.series; rarity.value = c.rarity; run.value = c.run; blurb.value = c.blurb || "";
             pvF.src = src(c, "front"); pvF.hidden = !pvF.src; var bs = src(c, "back"); pvB.src = bs; pvB.hidden = !bs;
+            sel = {}; var cc = api.collections ? api.collections() : null; if (cc) cc.list().forEach(function (k) { sel[k.id] = cc.has(k.id, c.file); }); renderChips();
             cancel.hidden = false; add.textContent = "Update card"; h3.textContent = "Edit " + c.name;
             form.scrollIntoView({ behavior: "smooth", block: "center" });
           });
@@ -145,7 +160,9 @@
         .catch(function () { say(msg, "Could not save. Try signing again.", true); });
     });
     window.addEventListener("beforeunload", function (e) { if (dirty) { e.preventDefault(); e.returnValue = ""; } });
+    renderChips();
     api.load().then(function (l) { extra = l; draw(); }).catch(function () { extra = []; draw(); say(msg, "Could not load the saved changes.", true); });
+    return { refresh: renderChips };
   }
   window.PopartCardsAdmin = { mount: mount };
 })();

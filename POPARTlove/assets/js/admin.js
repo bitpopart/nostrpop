@@ -75,7 +75,10 @@
     var saveMsg = document.getElementById("admin-save-msg");
     var cardsBox = document.createElement("div");
     cardsBox.style.marginTop = "2.4rem";
-    root.appendChild(cardsBox);
+    root.insertBefore(cardsBox, document.getElementById("sec-stock"));
+    var listBox = document.createElement("div");
+    listBox.style.marginTop = "2.4rem";
+    root.appendChild(listBox);
     var collBox = document.createElement("div");
     collBox.style.marginTop = "2.4rem";
     root.appendChild(collBox);
@@ -120,10 +123,11 @@
         }
       });
     });
-    window.PopartCardsAdmin.mount(cardsBox, {
+    var cardsCtl = window.PopartCardsAdmin.mount(cardsBox, {
       base: baseCards,
       load: function () { return fresh("/api/cards").then(function (r) { return r.ok ? r.json() : []; }); },
-      saved: function () { render(); },
+      collections: function () { return coll; },
+      saved: async function () { try { if (coll.isDirty()) await coll.save(); } catch (e) {} render(); },
       save: async function (list) {
         var out = [];
         for (var i = 0; i < list.length; i++) {
@@ -180,6 +184,8 @@
       });
     }
     coll.onChange(fillCollCells);
+    coll.onChange(function () { cardsCtl.refresh(); });
+    cardsCtl.refresh();
     fillCollCells();
     window.PopartNewsAdmin.mount(newsBox, {
       load: function () { return fresh("/api/news").then(function (r) { return r.ok ? r.json() : []; }); },
@@ -207,7 +213,8 @@
         return (await res.json()).events;
       }
     });
-    var jumps = [["Cards", document.getElementById("sec-stock")], ["Edit cards", cardsBox], ["Collections", collBox], ["News", newsBox], ["PopUp", evBox]];
+    listBox.appendChild(cardsBox.querySelector(".ev-list"));
+    var jumps = [["Add card", cardsBox], ["Cards", document.getElementById("sec-stock")], ["Edit cards", listBox], ["Collections", collBox], ["News", newsBox], ["PopUp", evBox]];
     [["Stickers", "stickers"], ["Prints", "prints"], ["Free downloads", "free"]].forEach(function (k) { jumps.push([k[0], root.querySelector('[data-kind="' + k[1] + '"]')]); });
     var jbar = root.querySelector(".admin-jump");
     jumps.forEach(function (j) {

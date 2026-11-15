@@ -577,3 +577,6 @@ span.pin3d::after { content: ""; position: absolute; inset: 0; pointer-events: n
 .coll-body { white-space: pre-line; max-width: 46rem; line-height: 1.8; font-weight: 500; margin: 0 0 1.6rem; }
 .coll-back { margin-top: 2rem; }
 .coll-tile { text-decoration: none; }
+.coll-form-chips { display: flex; flex-wrap: wrap; gap: .4rem 1.2rem; }
+.coll-form-chips .coll-chip { display: inline-flex; align-items: center; gap: .4rem; }
+.coll-form-chips input { width: auto; }
