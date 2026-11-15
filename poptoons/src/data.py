@@ -340,6 +340,7 @@ CHARACTERS = [
         ],
         'facts': [('Loves', 'Sunrise, breakfast, people who answer'),
                   ('Look for', 'The GM bubble and the bolt on his forehead')],
+        'variations': [('Sending love', 'gem-v1'), ('No bubble', 'gem-v2')],
         'series': 'Masterpiece', 'tribe': 'Joy', 'tier': 'Common',
     },
     {
