@@ -53,3 +53,21 @@ To attach a card to a toon, add `"toon": "<character key>"` to the card's entry,
 and push. The card then shows on the toon's page on poptoons.fun (with a "Collect the card" button
 to popart.love/cards/) and on popart.love/cards/ with a "POPtoon: <name>" tag that links back.
 Toons without an attached card show a button to all POPART cards.
+
+## More looks of a character (gallery)
+
+To give a toon extra looks, save each one as `poptoons/src/img/<key>-v1.png`, `<key>-v2.png`, ... (drawing on white),
+then add a `variations` list to that character in `src/data.py`:
+
+    'variations': [('Good morning', 'flap-v1'), ('Sending love', 'flap-v2')],
+
+Each item is (caption, image key). The character page on poptoons.fun then shows a "More looks of ..." row
+(thumbnails sit next to the big picture, click one to swap it) and the PDF guide shows the same row on that character's page.
+Flap is the first one, with 2 extra looks next to her original.
+
+## Sharing
+
+Every character page has a "Share" row (X, Facebook, WhatsApp, Telegram, Nostr, Copy link, and the phone's
+own share sheet where available). It shares `https://poptoons.fun/#<character key>`. Nostr has no web share link, so that
+button copies a ready note text to paste into your Nostr app. Link previews use `poptoons/og.png`, which is made by
+`src/build_site.py`.

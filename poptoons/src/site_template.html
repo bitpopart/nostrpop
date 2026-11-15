@@ -10,6 +10,11 @@
 <meta property="og:title" content="POPtoons">
 <meta property="og:description" content="Pop art characters by BitPopArt. Meet every character, with its story and its POPART card.">
 <meta property="og:url" content="https://poptoons.fun/">
+<meta property="og:image" content="https://poptoons.fun/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://poptoons.fun/og.png">
 <title>POPtoons</title>
 <style>
 /*FONTS*/
@@ -144,6 +149,16 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .strip .h{background:var(--ink);color:#fff;font-weight:700;font-size:.72rem;letter-spacing:.04em;padding:.5em 1.2em}
 .strip .c3{display:grid;grid-template-columns:repeat(3,1fr)}
 .strip .c3>div{padding:12px 16px 14px;border-left:2px solid var(--ink)}.strip .c3>div:first-child{border-left:0}
+.pmain.hasv{grid-template-columns:auto minmax(0,300px) 1fr}
+.vcol{display:grid;grid-template-rows:repeat(4,64px);grid-auto-flow:column;gap:10px;align-content:center}
+.vt{all:unset;box-sizing:border-box;cursor:pointer;display:block;width:64px;height:64px}
+.vt img{width:64px;height:64px;object-fit:contain;background:#fff;border:3px solid var(--ink);border-radius:12px;box-shadow:3px 3px 0 var(--ink);padding:5px;box-sizing:border-box}
+.vt.on img{outline:3px solid #fff;box-shadow:3px 3px 0 var(--ink)}.vt:focus-visible img{outline:3px solid #2563EB}.vt:hover img{transform:translate(1px,1px)}
+.sharerow{margin:18px 0 6px}.sh{display:block;font-weight:700;font-size:.72rem;letter-spacing:.04em;margin-bottom:8px}
+.sbtns{display:flex;flex-wrap:wrap;gap:8px}
+.sbtn{all:unset;box-sizing:border-box;cursor:pointer;font:600 .82rem/1 var(--body,Poppins,sans-serif);color:var(--ink);background:#fff;border:2px solid var(--ink);border-radius:999px;padding:.55em 1em;box-shadow:3px 3px 0 var(--ink)}
+.sbtn:hover{background:#FFD422;transform:translate(1px,1px)}.sbtn:focus-visible{outline:3px solid #2563EB;outline-offset:2px}.sbtn[hidden]{display:none}
+.sstat{display:block;min-height:1.2em;margin-top:8px;font-size:.78rem;font-weight:600;color:#444}
 .cardrow{display:flex;flex-wrap:wrap;align-items:center;gap:14px;padding:14px 16px;border-top:2px solid var(--ink);background:#fff7d6}
 .ctoon{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:.72rem;font-weight:600;color:var(--ink);text-decoration:none}.ctoon img{width:84px;height:auto;border-radius:6px;border:2px solid var(--ink);box-shadow:3px 3px 0 var(--ink)}
 .cbtn{margin-left:auto;font-weight:700;font-size:.85rem;color:var(--ink);text-decoration:none;border:2px solid var(--ink);border-radius:999px;padding:.45em 1em;background:#FFD422;box-shadow:3px 3px 0 var(--ink)}.cbtn:hover{transform:translate(1px,1px)}
@@ -158,7 +173,8 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
   .hero .wrap{padding-top:36px;padding-bottom:40px}
   nav.main a{padding:.3em .55em;font-size:.82rem}
   #q{margin-left:0;width:100%}
-  .pmain{grid-template-columns:1fr 1fr;gap:14px}
+  .pmain,.pmain.hasv{grid-template-columns:1fr 1fr;gap:14px}
+  .pmain.hasv .vcol{grid-column:1/-1;grid-row:2;grid-template-rows:none;grid-auto-flow:row;grid-template-columns:repeat(auto-fill,64px);justify-content:start}
 }
 @media (max-width:480px){
   .logo svg{height:26px}
@@ -299,6 +315,26 @@ function burst(txt){
   return `<svg class="burst" viewBox="0 0 270 195" role="img" aria-label="Sound: ${esc(txt)}"><polygon points="${pts.join(' ')}" transform="translate(6,6)" fill="#111"/><polygon points="${pts.join(' ')}" fill="#fff" stroke="#111" stroke-width="5" stroke-linejoin="round"/><text x="130" y="${95 + size*.34}" text-anchor="middle" font-size="${size}">${esc(txt)}</text></svg>`;
 }
 let lastFocus = null, savedY = 0;
+function thumbsCol(c){
+  const vs = DATA.variations[c.key] || [];
+  if (!vs.length) return '';
+  const th = [{name: 'Original', img: DATA.images[c.key]}].concat(vs).map((v, i) =>
+    `<button type="button" class="vt${i ? '' : ' on'}" data-vimg="${i}" title="${esc(v.name)}" aria-label="Show ${esc(c.name)}: ${esc(v.name)}" aria-pressed="${i ? 'false' : 'true'}"><img src="${v.img}" alt="${esc(c.name)}: ${esc(v.name)}"></button>`).join('');
+  return `<div class="vcol" role="group" aria-label="More looks of ${esc(c.name)}">${th}</div>`;
+}
+function shareBox(c){
+  const u = 'https://poptoons.fun/#' + c.key;
+  const col = (DATA.collections.find(k => k.key === c.collection) || {}).name || 'POPtoons';
+  const txt = `Meet ${c.name}, ${c.kind}. A POPtoon from the ${col} collection by BitPopArt.`;
+  const q = encodeURIComponent, T = q(txt), U = q(u);
+  const links = [
+    ['X', `https://twitter.com/intent/tweet?text=${T}&url=${U}&hashtags=POPtoons`],
+    ['Facebook', `https://www.facebook.com/sharer/sharer.php?u=${U}`],
+    ['WhatsApp', `https://wa.me/?text=${q(txt + ' ' + u)}`],
+    ['Telegram', `https://t.me/share/url?url=${U}&text=${T}`],
+  ].map(([n, h]) => `<a class="sbtn" href="${h}" target="_blank" rel="noopener noreferrer">${n}</a>`).join('');
+  return `<div class="sharerow" data-text="${esc(txt)}" data-url="${esc(u)}"><span class="sh">SHARE ${esc(c.name.toUpperCase())}</span><div class="sbtns"><button type="button" class="sbtn" data-share="native" hidden>Share…</button>${links}<button type="button" class="sbtn" data-share="nostr">Nostr</button><button type="button" class="sbtn" data-share="copy">Copy link</button></div><span class="sstat" role="status" aria-live="polite"></span></div>`;
+}
 function cardsBox(c){
   const list = DATA.cards[c.key] || [];
   const link = 'https://www.popart.love/cards/';
@@ -313,7 +349,7 @@ function openChar(key){
   $('#panel').innerHTML = `
     <div class="ptop" style="${tone(c.color)}">
       <div class="prow"><span class="eyebrow" style="margin:0">POPtoons · ${esc(k.name)}</span><span style="display:flex;align-items:center;gap:14px"><span class="pno">No. ${c.no}</span><button class="x" id="close" aria-label="Close">×</button></span></div>
-      <div class="pmain"><div class="pimg"><img src="${DATA.images[c.key]}" alt="${esc(c.name + ' ' + c.kind)}"></div>${burst(c.sound)}</div>
+      <div class="pmain${(DATA.variations[c.key]||[]).length ? ' hasv' : ''}">${thumbsCol(c)}<div class="pimg"><img src="${DATA.images[c.key]}" alt="${esc(c.name + ' ' + c.kind)}"></div>${burst(c.sound)}</div>
     </div>
     <div class="pbody" style="--c:${c.color}">
       <div class="pname"><h2 class="pop" id="pn">${esc(c.name)}</h2><span>${esc(c.kind)}</span></div>
@@ -325,10 +361,12 @@ function openChar(key){
         <div><small>TRIBE</small><span class="chip ${c.tribe}" style="font-size:.85rem">${c.tribe}</span></div>
         <div><small>TIER</small><strong>${c.tier}</strong>${dots(c.tier)}</div>
       </div>${cardsBox(c)}</div>
+      ${shareBox(c)}
       <div class="pnav"><button data-go="${prev.key}">‹ ${esc(prev.name)}</button><button data-go="${next.key}">${esc(next.name)} ›</button></div>
     </div>`;
   const sh = $('#sheet');
   if (!sh.classList.contains('open')){ lastFocus = document.activeElement; savedY = window.scrollY; }
+  if (navigator.share) document.querySelectorAll('[data-share="native"]').forEach(b => b.hidden = false);
   sh.classList.add('open'); sh.scrollTop = 0; document.body.style.overflow = 'hidden';
   $('#close').focus();
 }
@@ -343,6 +381,22 @@ function route(){
   if (byKey[h]) openChar(h); else if ($('#sheet').classList.contains('open')){ $('#sheet').classList.remove('open'); document.body.style.overflow = ''; }
 }
 document.addEventListener('click', e => {
+  const sb = e.target.closest('[data-share]');
+  if (sb){
+    const row = sb.closest('.sharerow'), st = row.querySelector('.sstat'), url = row.dataset.url, text = row.dataset.text, kind = sb.dataset.share;
+    const done = m => { st.textContent = m; clearTimeout(st._t); st._t = setTimeout(() => st.textContent = '', 3000); };
+    const copy = s => (navigator.clipboard ? navigator.clipboard.writeText(s) : Promise.reject());
+    if (kind === 'native'){ navigator.share({title: 'POPtoons', text, url}).catch(() => {}); }
+    else if (kind === 'copy'){ copy(url).then(() => done('Link copied'), () => done(url)); }
+    else { copy(text + ' ' + url + ' #POPtoons #nostr').then(() => done('Note text copied, paste it in your Nostr app'), () => done(text + ' ' + url)); }
+    return;
+  }
+  const vt = e.target.closest('[data-vimg]');
+  if (vt){
+    const grid = vt.parentElement; grid.querySelectorAll('.vt').forEach(b => { b.classList.toggle('on', b === vt); b.setAttribute('aria-pressed', b === vt ? 'true' : 'false'); });
+    const big = document.querySelector('#sheet .pimg img'); if (big) big.src = vt.querySelector('img').src;
+    return;
+  }
   const card = e.target.closest('.card'); if (card){ location.hash = card.dataset.key; return; }
   const go = e.target.closest('[data-go]'); if (go){ location.hash = go.dataset.go; return; }
   if (e.target.closest('#close') || e.target.id === 'sheet') closeSheet();

@@ -376,6 +376,8 @@ def character_page(c, ch, page_no):
     need = 114  # name block
     need += sum(Paragraph(p, body).wrap(tw, 2000)[1] + 9 for p in ch['story']) + 8
     need += sum(Paragraph(t, fact).wrap(tw, 2000)[1] + 4 for t in fact_txt)
+    vars_ = ch.get('variations') or []
+    need += 98 if vars_ else 0
     strip_top = 52 + 86
     top = max(250, min(400, H - strip_top - 34 - need))
     c.setFillColor(white); c.rect(0, 0, W, H, stroke=0, fill=1)
@@ -409,6 +411,17 @@ def character_page(c, ch, page_no):
     y -= 8
     for t in fact_txt:
         y = para(c, t, M, y, tw, fact) - 4
+
+    # more looks of this toon
+    if vars_:
+        vb = 52 + 86 + 16
+        c.setFillColor(INK); c.setFont('PopB', 9)
+        c.drawString(M, vb + 14 + 64 + 8, 'MORE LOOKS OF %s' % ch['name'].upper())
+        for i, (cap, vkey) in enumerate([('Original', ch['key'])] + list(vars_)):
+            vx = M + i * 84
+            box(c, vx, vb + 14, 64, 64, r=10, lw=2.5, shadow=3)
+            draw_img(c, vkey, vx + 6, vb + 20, 52, 52)
+            c.setFillColor(INK); c.setFont('PopM', 7.5); c.drawCentredString(vx + 32, vb + 3, cap)
 
     # card strip
     sh = 86; sy = 52
