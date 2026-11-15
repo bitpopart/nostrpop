@@ -289,6 +289,7 @@ CHARACTERS = [
         ],
         'facts': [('Loves', "Ice cream, puddles, anything he hasn't tasted yet"),
                   ('Look for', 'The heart above his head')],
+        'variations': [('Good morning', 'slurp-v1'), ('Big love', 'slurp-v2')],
         'series': 'Signed', 'tribe': 'Love', 'tier': 'Rare',
     },
     {
