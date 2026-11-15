@@ -63,7 +63,21 @@ def build_site():
         font_face('Poppins', 'Poppins-Italic.ttf', 400, 'italic'),
     ])
     keep = ('key', 'no', 'name', 'kind', 'role', 'collection', 'color', 'sound', 'story', 'facts', 'series', 'tribe', 'tier')
+    # POPART cards attached to a toon: data/cards.json entries with "toon": "<character key>"
+    cards_by_toon = {}
+    cj = os.path.join(POPART, 'data', 'cards.json')
+    for card in (json.load(open(cj, encoding='utf-8')) if os.path.exists(cj) else []):
+        t = card.get('toon')
+        src = os.path.join(POPART, 'assets', 'img', 'cards', card['file'] + '.webp')
+        if t and os.path.exists(src):
+            im = Image.open(src).convert('RGB')
+            im.thumbnail((240, 336), Image.LANCZOS)
+            buf = io.BytesIO(); im.save(buf, 'WEBP', quality=80)
+            cards_by_toon.setdefault(t, []).append({
+                'file': card['file'], 'name': card['name'], 'tier': card['rarity'], 'series': card['series'],
+                'img': 'data:image/webp;base64,' + base64.b64encode(buf.getvalue()).decode()})
     payload = {
+        'cards': cards_by_toon,
         'collections': [{k: c[k] for k in ('key', 'no', 'name', 'color', 'tagline', 'intro', 'notes')} for c in data.COLLECTIONS],
         'characters': [{k: c[k] for k in keep} for c in data.CHARACTERS],
         'images': {c['key']: image_uri(c['key']) for c in data.CHARACTERS},
@@ -111,7 +125,7 @@ def build_popart():
                      'count': len(mem), 'characters': [c['name'] for c in mem]})
     shutil.copy(os.path.join(HERE, 'img', 'logo.svg'), os.path.join(img_dir, 'logo.svg'))
     out = os.path.join(POPART, 'data', 'poptoons.json')
-    json.dump({'site': 'https://poptoons.fun', 'characters': len(data.CHARACTERS), 'collections': rows},
+    json.dump({'site': 'https://poptoons.fun', 'characters': len(data.CHARACTERS), 'toons': {c['key']: c['name'] for c in data.CHARACTERS}, 'collections': rows},
               open(out, 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
     open(out, 'a').write('\n')
     print('wrote POPARTlove/data/poptoons.json and', len(rows) * 2, 'pictures')

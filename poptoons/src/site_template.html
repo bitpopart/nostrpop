@@ -144,6 +144,9 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .strip .h{background:var(--ink);color:#fff;font-weight:700;font-size:.72rem;letter-spacing:.04em;padding:.5em 1.2em}
 .strip .c3{display:grid;grid-template-columns:repeat(3,1fr)}
 .strip .c3>div{padding:12px 16px 14px;border-left:2px solid var(--ink)}.strip .c3>div:first-child{border-left:0}
+.cardrow{display:flex;flex-wrap:wrap;align-items:center;gap:14px;padding:14px 16px;border-top:2px solid var(--ink);background:#fff7d6}
+.ctoon{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:.72rem;font-weight:600;color:var(--ink);text-decoration:none}.ctoon img{width:84px;height:auto;border-radius:6px;border:2px solid var(--ink);box-shadow:3px 3px 0 var(--ink)}
+.cbtn{margin-left:auto;font-weight:700;font-size:.85rem;color:var(--ink);text-decoration:none;border:2px solid var(--ink);border-radius:999px;padding:.45em 1em;background:#FFD422;box-shadow:3px 3px 0 var(--ink)}.cbtn:hover{transform:translate(1px,1px)}
 .strip small{display:block;font-size:.66rem;font-weight:600;color:#555;letter-spacing:.05em;margin-bottom:4px}
 .strip strong{font-family:var(--display);font-weight:400;font-size:1.25rem;display:block;line-height:1.2}
 .pnav{display:flex;justify-content:space-between;gap:10px;margin-top:22px;flex-wrap:wrap}
@@ -296,6 +299,13 @@ function burst(txt){
   return `<svg class="burst" viewBox="0 0 270 195" role="img" aria-label="Sound: ${esc(txt)}"><polygon points="${pts.join(' ')}" transform="translate(6,6)" fill="#111"/><polygon points="${pts.join(' ')}" fill="#fff" stroke="#111" stroke-width="5" stroke-linejoin="round"/><text x="130" y="${95 + size*.34}" text-anchor="middle" font-size="${size}">${esc(txt)}</text></svg>`;
 }
 let lastFocus = null, savedY = 0;
+function cardsBox(c){
+  const list = DATA.cards[c.key] || [];
+  const link = 'https://www.popart.love/cards/';
+  const thumbs = list.map(x => `<a class="ctoon" href="${link}#${x.file}" target="_blank" rel="noopener noreferrer"><img src="${x.img}" alt="${esc(x.name)} POPART card" width="120" height="168"><span>${esc(x.name)}</span></a>`).join('');
+  const text = list.length ? 'Collect the card' : 'See all POPART cards';
+  return `<div class="cardrow">${thumbs}<a class="cbtn" href="${link}" target="_blank" rel="noopener noreferrer">${text} on popart.love &rsaquo;</a></div>`;
+}
 function openChar(key){
   const c = byKey[key]; if (!c) return;
   const k = collOf[c.collection]; const i = ordered.indexOf(c);
@@ -314,7 +324,7 @@ function openChar(key){
         <div><small>SERIES</small><strong>${c.series}</strong></div>
         <div><small>TRIBE</small><span class="chip ${c.tribe}" style="font-size:.85rem">${c.tribe}</span></div>
         <div><small>TIER</small><strong>${c.tier}</strong>${dots(c.tier)}</div>
-      </div></div>
+      </div>${cardsBox(c)}</div>
       <div class="pnav"><button data-go="${prev.key}">‹ ${esc(prev.name)}</button><button data-go="${next.key}">${esc(next.name)} ›</button></div>
     </div>`;
   const sh = $('#sheet');

@@ -44,3 +44,12 @@ Both read `POPARTlove/data/poptoons.json` and the pictures in `POPARTlove/assets
 - Build command: none
 - Output directory: `poptoons`
 - Custom domain: `poptoons.fun`
+
+## Attaching POPART cards to a toon
+
+Cards are shown on https://www.popart.love/cards/ and come from `POPARTlove/data/cards.json`.
+To attach a card to a toon, add `"toon": "<character key>"` to the card's entry, for example
+`"toon": "ogle"`. Then run `python3 poptoons/src/build_site.py` and `python3 POPARTlove/build.py`
+and push. The card then shows on the toon's page on poptoons.fun (with a "Collect the card" button
+to popart.love/cards/) and on popart.love/cards/ with a "POPtoon: <name>" tag that links back.
+Toons without an attached card show a button to all POPART cards.

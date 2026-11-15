@@ -241,6 +241,12 @@ EXAMPLE_CARDS = [
 ]
 
 
+# A card can belong to a POPtoon: add "toon": "<character key>" to its entry in data/cards.json.
+_cards_raw = json.load(open(os.path.join(ROOT, "data", "cards.json"), encoding="utf-8"))
+_toon_names = json.load(open(os.path.join(ROOT, "data", "poptoons.json"), encoding="utf-8")).get("toons", {}) if os.path.exists(os.path.join(ROOT, "data", "poptoons.json")) else {}
+CARD_TOON = {c["file"]: c["toon"] for c in _cards_raw if c.get("toon") in _toon_names}
+
+
 def build_cards_json():
     src = os.path.join(ROOT, "data", "cards.json")
     write("assets/cards.json", open(src, encoding="utf-8").read())
@@ -488,8 +494,10 @@ def tribe_cards(limit=None, in_shop=False):
         name, cls, _ = THEME_ICON[theme]
         runnum = re.search(r"\d+", run)
         runnum = runnum.group(0) if runnum else ""
-        out += f'''<article class="card" data-card="{fn}" data-run="{runnum}"><figure class="cardfig"><button class="flip" type="button" aria-pressed="false" aria-label="Flip the {escape(title)} card"><span class="flip-inner"><img class="face front" src="/assets/img/cards/{fn}.webp" alt="POPART {escape(title)} card front, {series} series, {rarity}" width="600" height="840" loading="lazy"><img class="face back" src="/assets/img/cards/{fn}-back.webp" alt="POPART {escape(title)} card back" width="600" height="840" loading="lazy"></span></button><span class="flip-hint">Tap the card to flip</span></figure>
-<div class="body"><div class="tags"><span class="tag {cls}">{name}</span><span class="tag">{rarity}</span><span class="tag stock {stock_class(status)}" data-stock>{stock_label(status, left, runnum)}</span></div><p class="card-price" data-price hidden></p>{where_html(online, offline, url, status, in_shop)}<h3>{escape(title)}</h3><p>{series} series. {run}. {escape(blurb)}</p></div></article>'''
+        toon = CARD_TOON.get(fn)
+        toon_tag = f'<a class="tag" href="/poptoons/#{toon}">POPtoon: {escape(_toon_names[toon])}</a>' if toon else ""
+        out += f'''<article class="card" id="{fn}" data-card="{fn}" data-run="{runnum}"><figure class="cardfig"><button class="flip" type="button" aria-pressed="false" aria-label="Flip the {escape(title)} card"><span class="flip-inner"><img class="face front" src="/assets/img/cards/{fn}.webp" alt="POPART {escape(title)} card front, {series} series, {rarity}" width="600" height="840" loading="lazy"><img class="face back" src="/assets/img/cards/{fn}-back.webp" alt="POPART {escape(title)} card back" width="600" height="840" loading="lazy"></span></button><span class="flip-hint">Tap the card to flip</span></figure>
+<div class="body"><div class="tags"><span class="tag {cls}">{name}</span><span class="tag">{rarity}</span>{toon_tag}<span class="tag stock {stock_class(status)}" data-stock>{stock_label(status, left, runnum)}</span></div><p class="card-price" data-price hidden></p>{where_html(online, offline, url, status, in_shop)}<h3>{escape(title)}</h3><p>{series} series. {run}. {escape(blurb)}</p></div></article>'''
     attrs = (f' data-limit="{limit}"' if limit else "") + (' data-shop="1"' if in_shop else "")
     return f'<div class="grid g3"{attrs}>{out}</div>'
 
