@@ -659,6 +659,7 @@ CHARACTERS = [
         'quote': "Is that a spoon? It's the best spoon ever.",
         'story': ['Swoon does not have eyes. He has two black hearts, and they have been there since the first morning. Everything he looks at is the best thing he has ever seen: a puddle, a bus, a really good spoon.', 'He smiles so wide it nearly reaches both ends of him. It is hard to stay in a bad mood near Swoon, and the few people who tried gave up by lunch.'],
         'facts': [('Loves', 'Puddles, buses, a really good spoon'), ('Look for', 'Two black hearts for eyes')],
+        'variations': [('Good morning', 'swoon-v1'), ('Sending love', 'swoon-v2')],
         'series': 'Masterpiece', 'tribe': 'Love', 'tier': 'Common',
     },
     {
