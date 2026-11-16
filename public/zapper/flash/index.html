@@ -4,10 +4,16 @@
 <meta charset="utf-8">
 <title>Zapper via USB</title>
 <meta name="robots" content="noindex">
-<meta http-equiv="refresh" content="0; url=/zapper-app/flash/">
-<script>location.replace('/zapper-app/flash/' + location.search + location.hash);</script>
+<script>
+// The flasher is a full-page app. Inside the auto-height iframe on /zapper it
+// stretches to thousands of pixels and its content ends up out of sight, so
+// always open it as the top-level page (USB access works there too).
+var url = '/zapper-app/flash/' + location.search + location.hash;
+try { (window.top || window).location.replace(url); } catch (e) { location.replace(url); }
+</script>
+<noscript><meta http-equiv="refresh" content="0; url=/zapper-app/flash/"></noscript>
 </head>
 <body style="background:#0b0517;color:#f6f1ff;font-family:sans-serif">
-<p>Opening the Zapper USB flasher… <a style="color:#fbc808" href="/zapper-app/flash/">Click here if nothing happens</a>.</p>
+<p>Opening the Zapper USB flasher… <a style="color:#fbc808" target="_top" href="/zapper-app/flash/">Click here if nothing happens</a>.</p>
 </body>
 </html>
