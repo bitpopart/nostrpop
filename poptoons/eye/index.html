@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>POPtoons Eye</title>
+<meta name="description" content="The POPtoons Eye keychain: a round display with 8 toons to eat, play and sleep with, in a black 3D-printed case. Soon available for €89,-.">
+<link rel="canonical" href="https://poptoons.fun/eye/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="POPtoons Eye">
+<meta property="og:description" content="A round display with 8 toons on your keychain. Soon available for €89,-.">
+<meta property="og:url" content="https://poptoons.fun/eye/">
+<meta property="og:image" content="https://poptoons.fun/eye/promo.png">
+<style>
+@font-face{font-family:'Lilita One';src:url(fonts/LilitaOne-Regular.ttf) format('truetype');font-display:swap}
+@font-face{font-family:'Poppins';font-weight:400;src:url(fonts/Poppins-Regular.ttf) format('truetype');font-display:swap}
+@font-face{font-family:'Poppins';font-weight:700;src:url(fonts/Poppins-Bold.ttf) format('truetype');font-display:swap}
+:root{--ink:#111;--paper:#fff;--soft:#F4F1EA;--sun:#FFD422;--sun-dot:rgba(232,130,46,.35);--love:#F0364F;--freedom:#2F8FEF;--mint:#6EE7A8;--pink:#FF8FC8;--violet:#B79CFF;
+--display:'Lilita One','Arial Rounded MT Bold','Trebuchet MS',sans-serif;--body:'Poppins','Segoe UI',Helvetica,Arial,sans-serif;--r:16px;--line:3px}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.6}
+img{max-width:100%;height:auto;display:block}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--freedom);outline-offset:3px}
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+.top{position:sticky;top:0;z-index:5;background:#fff;border-bottom:var(--line) solid var(--ink)}
+.top .wrap{display:flex;align-items:center;gap:14px;min-height:60px}
+.top .logo img{height:34px;width:auto}
+.top .domain{font-size:.8rem;font-weight:700;background:var(--sun);border:2px solid var(--ink);border-radius:99px;padding:.1em .8em}
+nav.main{margin-left:auto;display:flex;gap:6px}
+nav.main a{font-weight:600;font-size:.9rem;text-decoration:none;padding:.35em .8em;border-radius:99px;border:2px solid transparent}
+nav.main a:hover,nav.main a.on{border-color:var(--ink);background:var(--sun)}
+.pop{font-family:var(--display);font-weight:400;color:#fff;-webkit-text-stroke:4px var(--ink);paint-order:stroke fill;text-shadow:5px 5px 0 var(--ink);line-height:1;margin:0}
+.hero{background:var(--sun);background-image:radial-gradient(circle,var(--sun-dot) 3px,transparent 3.5px);background-size:26px 26px;border-bottom:var(--line) solid var(--ink);padding:44px 0 56px}
+.hero .wrap{display:grid;grid-template-columns:1.05fr .95fr;gap:36px;align-items:center}
+.hero h1{font-size:clamp(64px,11vw,128px)}
+.tag{font-family:var(--display);font-size:clamp(22px,3.4vw,34px);margin:14px 0 18px}
+.badge{display:inline-block;background:#fff;border:var(--line) solid var(--ink);border-radius:99px;box-shadow:5px 5px 0 var(--ink);padding:.3em 1em;font-family:var(--display);font-size:clamp(22px,3.2vw,32px);transform:rotate(-2deg)}
+.hero p{max-width:34em;margin:20px 0 0;font-weight:600}
+.cta{display:inline-block;margin-top:22px;background:var(--love);color:#fff;font-weight:700;text-decoration:none;border:var(--line) solid var(--ink);border-radius:99px;box-shadow:4px 4px 0 var(--ink);padding:.55em 1.3em}
+.cta:hover{transform:translate(1px,1px);box-shadow:3px 3px 0 var(--ink)}
+.shot{border:var(--line) solid var(--ink);border-radius:var(--r);box-shadow:8px 8px 0 var(--ink);overflow:hidden;background:#5CC8FF}
+section{padding:54px 0}
+h2{font-family:var(--display);font-weight:400;font-size:clamp(34px,5vw,52px);margin:0 0 8px}
+.lead{max-width:40em;margin:0 0 26px}
+.chips{display:flex;flex-wrap:wrap;gap:12px}
+.chips span{font-family:var(--display);font-size:1.25rem;padding:.35em 1em;border:var(--line) solid var(--ink);border-radius:99px;box-shadow:4px 4px 0 var(--ink)}
+.band{background:var(--soft);border-top:var(--line) solid var(--ink);border-bottom:var(--line) solid var(--ink)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:center}
+.card{background:#fff;border:var(--line) solid var(--ink);border-radius:var(--r);box-shadow:6px 6px 0 var(--ink);padding:14px}
+.card img{border-radius:10px}
+footer{border-top:var(--line) solid var(--ink);padding:26px 0;font-size:.85rem;font-weight:600}
+footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+@media (max-width:760px){.hero .wrap,.two{grid-template-columns:1fr}.top .domain{display:none}nav.main a{padding:.3em .45em;font-size:.8rem}}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="logo" href="../" aria-label="POPtoons home"><img src="../logo.svg" alt="POPtoons"></a><span class="domain">poptoons.fun</span>
+  <nav class="main" aria-label="Main"><a href="../#collections">Collections</a><a href="../#characters">Characters</a><a href="../#cards">Cards</a><a class="on" href="./" aria-current="page">Eye</a></nav>
+</div></header>
+
+<main>
+<div class="hero"><div class="wrap">
+  <div>
+    <h1 class="pop">EYE</h1>
+    <div class="tag">EnterTOONment that POPs up!</div>
+    <span class="badge">Soon available for &euro;89,-</span>
+    <p>A small round display with 8 toons on your keys. Tap a toon and it does a crazy trick. Feed it, play with it and let it sleep, or it gets bored and angry.</p>
+    <a class="cta" href="preview/">Try the Eye in your browser</a>
+  </div>
+  <div class="shot"><img src="promo.png" width="1080" height="1350" alt="The POPtoons Eye keychain: a round display with the toon Moo, in a black case with a round hanger and key ring"></div>
+</div></div>
+
+<section><div class="wrap">
+  <h2>What it does</h2>
+  <p class="lead">It starts with an eye that wakes up and blinks. Then you choose a toon to keep an eye on.</p>
+  <div class="chips">
+    <span style="background:var(--sun)">8 toons</span>
+    <span style="background:var(--mint)">Eat · Play · Sleep</span>
+    <span style="background:var(--pink)">Crazy tricks</span>
+    <span style="background:#fff">Tap me, they talk back</span>
+    <span style="background:var(--violet)">Quiet time</span>
+  </div>
+</div></section>
+
+<section class="band"><div class="wrap two">
+  <div>
+    <h2>The keychain case</h2>
+    <p class="lead">A black 3D-printed case with a small round hanger. Put your key ring through the hole and the Eye goes wherever your keys go. The USB-C port and the two buttons stay reachable through small openings.</p>
+    <p><b>Soon available for &euro;89,-.</b></p>
+  </div>
+  <div class="card"><img src="case_front.png" width="1500" height="500" alt="The black keychain case from the front, from above and from below" loading="lazy"></div>
+</div></section>
+</main>
+
+<footer><div class="wrap"><span>POPtoons is made by BitPopArt</span><span><a href="../">poptoons.fun</a></span></div></footer>
+</body>
+</html>
