@@ -475,7 +475,8 @@ CHARACTERS = [
         'collection': 'unipops', 'color': '#E23A7E', 'sound': 'YEAH',
         'story': ['Shady never takes the sunglasses off. Her horn picks up cool, and she is certain the glasses are where it is kept.', 'Nobody has seen her eyes in years. The rumour is that behind the glasses she looks exactly as surprised as Bo. Shady has heard the rumour and has no comment.'],
         'facts': [('Loves', 'Arriving late, leaning on things, saying very little'), ('Look for', 'Sunglasses bigger than her face')],
-        'series': 'Legend', 'tribe': 'Freedom', 'tier': 'Super Rare',
+        'variations': [('Good morning', 'shady-v1'), ('Sending love', 'shady-v2')],
+            'series': 'Legend', 'tribe': 'Freedom', 'tier': 'Super Rare',
     },
     {
         'key': 'heli', 'no': '26', 'name': 'Heli', 'kind': 'the hopeful one', 'role': 'The one waiting for take-off',
