@@ -711,6 +711,7 @@ CHARACTERS = [
         'quote': 'I have a moustache. Therefore I am correct.',
         'story': ['Mo has a moustache, which is why everybody calls him Sir, and why he insists on it. It is the finest moustache of any Poopie. He grew it overnight and has never explained how.', 'He speaks slowly, nods a lot and agrees with everything in a very serious voice. Only the little curl at each end gives away that he is having a lovely time.'],
         'facts': [('Loves', 'Tea, tipping hats, being called Sir'), ('Look for', 'A big curly moustache')],
+        'variations': [('Good morning', 'mo-v1'), ('Sending love', 'mo-v2')],
         'series': 'Masterpiece', 'tribe': 'Joy', 'tier': 'Uncommon',
     },
     {
