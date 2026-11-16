@@ -451,7 +451,8 @@ CHARACTERS = [
         'collection': 'unipops', 'color': '#86CBDF', 'sound': 'HUH',
         'story': ["Bo's horn picks up wonder, and nothing else. He looks at everything as if he is seeing it for the first time, because for him it feels that way.", 'He has asked what a door is on four separate days. Nobody minds. Explaining something to Bo makes you look at it properly again, and it usually turns out to be more interesting than you remembered.'],
         'facts': [('Loves', 'Questions, doors, being told the same story again'), ('Look for', 'Big yellow eyes that never blink')],
-        'series': 'Masterpiece', 'tribe': 'Freedom', 'tier': 'Common',
+        'variations': [('Good morning', 'bo-v1'), ('Sending love', 'bo-v2')],
+            'series': 'Masterpiece', 'tribe': 'Freedom', 'tier': 'Common',
     },
     {
         'key': 'razz', 'no': '23', 'name': 'Razz', 'kind': 'the cheeky one', 'role': 'The one who sticks his tongue out',
