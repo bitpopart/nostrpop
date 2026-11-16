@@ -563,6 +563,7 @@ CHARACTERS = [
         'quote': "Bzzz! You didn't see me. Bzzz! Still didn't.",
             'story': ['Whizz found a propeller and worked out how to use it, which is more than can be said for some other POPtoons.', 'He flies low and fast with a serious frown and every tooth showing, which is just how he concentrates. Nobody knows where he will land, including him. If you hear a buzzing sound and everyone around you starts to run, that is Whizz.'],
         'facts': [('Loves', 'Open windows, picnics, a good tailwind'), ('Look for', 'A yellow propeller and a lot of teeth')],
+        'variations': [('Good morning', 'whizz-v1'), ('Sending love', 'whizz-v2')],
         'series': 'Masterpiece', 'tribe': 'Freedom', 'tier': 'Common',
     },
     {
