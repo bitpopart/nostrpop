@@ -720,6 +720,7 @@ CHARACTERS = [
         'quote': 'Darling, you look wonderful. Everything does.',
         'story': ['Pout wears red lips and nothing else, and it is plenty. She blows kisses at the postman, at the weather, and at anyone who holds a door. Glamour, she says, is mostly about walking slowly.', 'She closes her eyes whenever she poses, so she has never seen the results. She assumes they are perfect, and nobody has had the heart to say otherwise.'],
         'facts': [('Loves', 'Mirrors, compliments, a good red'), ('Look for', 'Bright red lips')],
+        'variations': [('Good morning', 'pout-v1'), ('Sending love', 'pout-v2')],
         'series': 'Masterpiece', 'tribe': 'Love', 'tier': 'Uncommon',
     },
 ]
