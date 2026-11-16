@@ -483,7 +483,8 @@ CHARACTERS = [
         'collection': 'unipops', 'color': '#CDEB4B', 'sound': 'WHIRR',
         'story': ['Heli has a propeller on his horn and it has never once lifted him off the ground. He spins it every morning anyway.', "His horn picks up hope. He stands with his arms out, ready, sure that today is the day. It hasn't been yet. He says that only means it is getting closer."],
         'facts': [('Loves', 'Windy days, runways, tomorrow'), ('Look for', 'The propeller on his horn')],
-        'series': 'Masterpiece', 'tribe': 'Freedom', 'tier': 'Uncommon',
+        'variations': [('Good morning', 'heli-v1'), ('Sending love', 'heli-v2')],
+            'series': 'Masterpiece', 'tribe': 'Freedom', 'tier': 'Uncommon',
     },
     {
         'key': 'chili', 'no': '27', 'name': 'Chili', 'kind': 'the cross one', 'role': 'The one who is a bit hot',
