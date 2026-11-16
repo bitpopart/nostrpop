@@ -89,7 +89,7 @@ def build_site():
         font_face('Poppins', 'Poppins-Bold.ttf', 700),
         font_face('Poppins', 'Poppins-Italic.ttf', 400, 'italic'),
     ])
-    keep = ('key', 'no', 'name', 'kind', 'role', 'collection', 'color', 'sound', 'story', 'facts', 'series', 'tribe', 'tier')
+    keep = ('key', 'no', 'name', 'kind', 'role', 'quote', 'collection', 'color', 'sound', 'story', 'facts', 'series', 'tribe', 'tier')
     # POPART cards attached to a toon: data/cards.json entries with "toon": "<character key>"
     cards_by_toon = {}
     cj = os.path.join(POPART, 'data', 'cards.json')

@@ -373,7 +373,7 @@ def character_page(c, ch, page_no):
     fact = ParagraphStyle('f', parent=FACT, fontSize=10.5 if long else 11.5, leading=15 if long else 17)
     tw = W - 2 * M
     fact_txt = ['<font name="PopB">%s:</font> %s' % (hd, txt) for hd, txt in ch['facts']]
-    need = 114  # name block
+    need = 114 + (36 if ch.get('quote') else 0)  # name block
     need += sum(Paragraph(p, body).wrap(tw, 2000)[1] + 9 for p in ch['story']) + 8
     need += sum(Paragraph(t, fact).wrap(tw, 2000)[1] + 4 for t in fact_txt)
     vars_ = ch.get('variations') or []
@@ -405,6 +405,14 @@ def character_page(c, ch, page_no):
     c.setFont('PopI', 11.5); c.drawString(M, y - 30, ch['role'])
 
     y -= 52
+    if ch.get('quote'):
+        q = '\u201c%s\u201d' % ch['quote']
+        qs = 13
+        while pdfmetrics.stringWidth(q, 'PopB', qs) > tw - 30 and qs > 9: qs -= 0.5
+        qw = pdfmetrics.stringWidth(q, 'PopB', qs) + 28
+        box(c, M, y - 24, qw, 30, r=12, lw=2.5, shadow=4)
+        c.setFillColor(INK); c.setFont('PopB', qs); c.drawString(M + 14, y - 14, q)
+        y -= 40
     for p in ch['story']:
         y = para(c, p, M, y, tw, body) - 9
 

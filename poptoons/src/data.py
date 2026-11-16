@@ -132,7 +132,8 @@ CHARACTERS = [
     {
         'key': 'coolmoo', 'no': '01', 'name': 'Cool Moo', 'kind': 'the cow', 'role': 'The chill one',
         'collection': 'joylings', 'color': '#BFE3FF', 'sound': 'NO RUSH',
-        'story': [
+        'quote': "No rush. The grass isn't going anywhere.",
+            'story': [
             "Cool Moo was the only cow in the field who never ran when the farmer came. The "
             "others pushed and shoved to get to the gate first. Cool Moo just sat down in the "
             "grass, stuck her tongue out a little, and waited.",
@@ -155,7 +156,8 @@ CHARACTERS = [
     {
         'key': 'toot', 'no': '02', 'name': 'Toot', 'kind': 'the elephant', 'role': 'The one who remembers',
         'collection': 'lovelings', 'color': '#5FD68A', 'sound': 'TOOT',
-        'story': [
+        'quote': 'I remember your birthday. And your snack order.',
+            'story': [
             "Toot remembers every kind thing anyone has ever said. Not the bad things, those "
             "fall straight out of her big ears.",
             "When you feel useless, she walks up, holds her trunk with both hands so she "
@@ -170,7 +172,8 @@ CHARACTERS = [
     {
         'key': 'mimi', 'no': '03', 'name': 'Mimi', 'kind': 'the cat', 'role': 'The one who pretends not to care',
         'collection': 'lovelings', 'color': '#4353A3', 'sound': 'MIAUW',
-        'story': [
+        'quote': "I wasn't waiting for you. I just happened to be here. For an hour.",
+            'story': [
             "Mimi is yellow because she slept in the sun so long that it stayed in her fur.",
             "She pretends not to care about anyone. Then she sits on your book, your keyboard "
             "or your lap at exactly the moment you were about to worry about something. She "
@@ -184,7 +187,8 @@ CHARACTERS = [
     {
         'key': 'blu', 'no': '04', 'name': 'Blu', 'kind': 'the dog', 'role': 'The one at the door',
         'collection': 'lovelings', 'color': '#B6F24A', 'sound': 'WOOF',
-        'story': [
+        'quote': "You're back! It's been four minutes! Best day ever!",
+            'story': [
             "Blu has two sharp little teeth and has never bitten anything except a sandwich.",
             "He is the first to the door when you come home and he acts as if you were gone for "
             "a year, even if you only took out the bins. Blu can't tell the difference between a "
@@ -199,7 +203,8 @@ CHARACTERS = [
     {
         'key': 'lilmoo', 'no': '05', 'name': 'Lil Moo', 'kind': 'the cow', 'role': 'The one who shares',
         'collection': 'lovelings', 'color': '#F5E64B', 'sound': 'MOO',
-        'story': [
+        'quote': 'Take half. No wait, take the bigger half.',
+            'story': [
             "Lil Moo is Cool Moo's little sister. She has no sunglasses yet and she can't sit "
             "still like her big sister.",
             "She sits with her legs crossed and tries very hard to be calm, but her tail with "
@@ -214,7 +219,8 @@ CHARACTERS = [
     {
         'key': 'oki', 'no': '06', 'name': 'Oki', 'kind': 'the monkey', 'role': 'The joker',
         'collection': 'lovelings', 'color': '#48A5F0', 'sound': 'OOK',
-        'story': [
+        'quote': "Why did the banana go to the doctor? It wasn't peeling well.",
+            'story': [
             "Oki hugs first and asks questions later. His arms are long enough to hug two "
             "people at once, and his tail takes care of a third.",
             "He is also the joker of the group. If the mood drops, he does something stupid on "
@@ -228,7 +234,8 @@ CHARACTERS = [
     {
         'key': 'pip', 'no': '07', 'name': 'Pip', 'kind': 'the frog', 'role': 'The one who goes first',
         'collection': 'lovelings', 'color': '#E8822E', 'sound': 'KWAK',
-        'story': [
+        'quote': 'Last one in is a tadpole!',
+            'story': [
             "Pip is the smallest Loveling and the loudest. His eyes are always wide open "
             "because he doesn't want to miss anything.",
             "He is scared of almost everything, but he jumps anyway, and that makes him the "
@@ -243,7 +250,8 @@ CHARACTERS = [
     {
         'key': 'dax', 'no': '08', 'name': 'Dax', 'kind': 'the dino', 'role': 'The one who never looks back',
         'collection': 'joylings', 'color': '#7FD0D8', 'sound': 'FWEET',
-        'story': [
+        'quote': 'I never look back. Wait, did I forget my hat?',
+            'story': [
             "Nobody ever told Dax that the dinosaurs are gone, so he just kept going. He wears "
             "his cap backwards because he only cares about what is in front of him.",
             "He walks around whistling with one eye closed, and he has walked into a lot of "
@@ -258,7 +266,8 @@ CHARACTERS = [
     {
         'key': 'flap', 'no': '09', 'name': 'Flap', 'kind': 'the chick', 'role': 'The one who flies (almost)',
         'collection': 'joylings', 'color': '#FF8A3D', 'sound': 'PIEP',
-        'story': [
+        'quote': 'Watch me fly! ...Almost.',
+            'story': [
             "Flap can't fly yet. She doesn't know this.",
             "She flaps as hard as she can, gets about two centimetres off the ground, and lands "
             "again, completely sure she just crossed the whole sky. Nobody has the heart to "
@@ -272,7 +281,8 @@ CHARACTERS = [
     {
         'key': 'wiggle', 'no': '10', 'name': 'Wiggle', 'kind': 'the cat', 'role': 'The one who wags',
         'collection': 'joylings', 'color': '#F08CB8', 'sound': 'PRRR',
-        'story': [
+        'quote': 'My tail has opinions, and it loves you.',
+            'story': [
             "Wiggle grew up next to a dog and learned the wrong lesson. She wags her tail when "
             "she is happy, which no cat is supposed to do.",
             "The other cats find it embarrassing. Wiggle keeps her eyes closed and wags anyway, "
@@ -287,7 +297,8 @@ CHARACTERS = [
     {
         'key': 'slurp', 'no': '11', 'name': 'Slurp', 'kind': 'the whatever-he-is', 'role': 'The one who tastes everything',
         'collection': 'joylings', 'color': '#5B95D6', 'sound': 'BLEH',
-        'story': [
+        'quote': "I tried it. I'd try it again. What was it?",
+            'story': [
             "Nobody knows what Slurp is. A crocodile, a dinosaur, a very odd dog. He doesn't "
             "know either and has never asked.",
             "He gets to know the world by licking it: rain, lampposts, your elbow. Every time "
@@ -301,7 +312,8 @@ CHARACTERS = [
     {
         'key': 'bun', 'no': '12', 'name': 'Bun', 'kind': 'the bear', 'role': 'The one who hops',
         'collection': 'joylings', 'color': '#F0A03C', 'sound': 'BOING',
-        'story': [
+        'quote': "Boing! Boing! Sorry, I can't stop.",
+            'story': [
             "Bun woke up one spring, saw the rabbits in the field, and decided he was one of "
             "them. He put on the ears and has been hopping ever since.",
             "The ground shakes a bit when he lands. The rabbits were scared at first. Now they "
@@ -315,7 +327,8 @@ CHARACTERS = [
     {
         'key': 'twirl', 'no': '13', 'name': 'Twirl', 'kind': 'the monkey', 'role': 'The one with the ideas',
         'collection': 'joylings', 'color': '#7CC84A', 'sound': 'WHEEE',
-        'story': [
+        'quote': 'I have an idea! Wait, a better idea! Wait...',
+            'story': [
             "The propeller on Twirl's cap starts spinning every time he gets an idea. Most of "
             "his ideas are bad, and all of them are fun.",
             "When the propeller spins fast enough he lifts a little off the ground, which he "
@@ -330,7 +343,8 @@ CHARACTERS = [
     {
         'key': 'gem', 'no': '14', 'name': 'Gem', 'kind': 'the early monster', 'role': 'The one who says good morning',
         'collection': 'monsterlings', 'color': '#5B3F8F', 'sound': 'GM',
-        'story': [
+        'quote': "Good morning! It's very early! I'm so happy!",
+            'story': [
             "Gem says good morning to everyone, at any hour. At breakfast, at midnight, in the "
             "middle of a sentence. He was sent to scare people awake, but he was so pleased "
             "to see them that he greeted them instead.",
@@ -346,7 +360,8 @@ CHARACTERS = [
     {
         'key': 'pling', 'no': '15', 'name': 'Pling', 'kind': 'the shy monster', 'role': 'The one who gets liked',
         'collection': 'monsterlings', 'color': '#C9316F', 'sound': 'PLING',
-        'story': [
+        'quote': 'You liked my picture? Me? Hello!',
+            'story': [
             "Every time somebody likes Pling, a little heart pops up above her head and makes "
             "a sound. She can't hide it and she can't turn it off.",
             "It makes her so nervous that her tummy starts to tingle, which is why there is a "
@@ -361,7 +376,8 @@ CHARACTERS = [
     {
         'key': 'jab', 'no': '16', 'name': 'Jab', 'kind': 'the boxing monster', 'role': 'The one with the gloves',
         'collection': 'monsterlings', 'color': '#7CC3DB', 'sound': 'BOP',
-        'story': [
+        'quote': "Fist bump? Gently, please. I'm all gloves.",
+            'story': [
             "Jab is the biggest Monsterling and has never been in a fight. He wears the boxing "
             "gloves because his claws are sharp and he likes to hug.",
             "He does throw one punch a day. It is aimed at the air, first thing in the morning, "
@@ -376,7 +392,8 @@ CHARACTERS = [
     {
         'key': 'lumo', 'no': '17', 'name': 'Lumo', 'kind': 'the night light', 'role': 'The one who glows',
         'collection': 'monsterlings', 'color': '#F0962E', 'sound': 'HMM',
-        'story': [
+        'quote': "Don't worry about the dark. I brought a glow.",
+            'story': [
             "Lumo was sent to live in the dark and make it scarier. Instead a light switched "
             "on between his horns, and it has never gone out.",
             "He hardly says a word. He stands in the corner of the room with his hands on his "
@@ -391,7 +408,8 @@ CHARACTERS = [
     {
         'key': 'fang', 'no': '18', 'name': 'Fang', 'kind': 'the little bat monster', 'role': 'The one who tries',
         'collection': 'monsterlings', 'color': '#F5E04A', 'sound': 'BOO',
-        'story': [
+        'quote': 'Boo! Did it work? Tell me it worked.',
+            'story': [
             "Fang is the smallest Monsterling and the only one who still wants to be scary. He "
             "practises every day. He spreads his wings, shows all four teeth and shouts BOO.",
             "So far he has frightened one moth and himself, twice. He counts both. The others "
@@ -405,7 +423,8 @@ CHARACTERS = [
     {
         'key': 'zig', 'no': '19', 'name': 'Zig', 'kind': 'the five-eyed laugher', 'role': 'The one who laughs at five things at once',
         'collection': 'peeppops', 'color': '#F7F06A', 'sound': 'HAHA',
-        'story': [
+        'quote': "Ha ha ha ha ha! That's five funny things at once!",
+            'story': [
             "Zig has five eyes and each one looks at something different. That means he always "
             "sees at least one funny thing, and usually five.",
             "He has never finished a laugh before the next one started. His edges went zigzag "
@@ -420,7 +439,8 @@ CHARACTERS = [
     {
         'key': 'fizz', 'no': '20', 'name': 'Fizz', 'kind': 'the wide-awake one', 'role': 'The one who has just seen something',
         'collection': 'peeppops', 'color': '#8FE6F8', 'sound': 'WOW',
-        'story': [
+        'quote': 'Wow! Did you see that? Neither did I! Wow!',
+            'story': [
             "Fizz looks like someone shook him up and took the lid off. All five of his eyes "
             "are wide open, all the time, and his fur stands straight up from the excitement.",
             "He goes wherever his eyes take him, which is everywhere. He has seen the same "
@@ -435,7 +455,8 @@ CHARACTERS = [
     {
         'key': 'uno', 'no': '21', 'name': 'Uno', 'kind': 'the one-eyed one', 'role': 'The one who really looks at you',
         'collection': 'peeppops', 'color': '#A5F57C', 'sound': 'OOH',
-        'story': [
+        'quote': 'I only have one eye, so I look extra hard.',
+            'story': [
             "Uno has only one eye, so he can only look at one thing at a time. He doesn't mind. "
             "Whatever he looks at gets all of it.",
             "When Uno looks at you, you feel like the only one in the room. He doesn't check "
@@ -449,7 +470,8 @@ CHARACTERS = [
     {
         'key': 'bo', 'no': '22', 'name': 'Bo', 'kind': 'the puzzled one', 'role': 'The one who has no idea',
         'collection': 'unipops', 'color': '#86CBDF', 'sound': 'HUH',
-        'story': ["Bo's horn picks up wonder, and nothing else. He looks at everything as if he is seeing it for the first time, because for him it feels that way.", 'He has asked what a door is on four separate days. Nobody minds. Explaining something to Bo makes you look at it properly again, and it usually turns out to be more interesting than you remembered.'],
+        'quote': 'What is a door? No, really.',
+            'story': ["Bo's horn picks up wonder, and nothing else. He looks at everything as if he is seeing it for the first time, because for him it feels that way.", 'He has asked what a door is on four separate days. Nobody minds. Explaining something to Bo makes you look at it properly again, and it usually turns out to be more interesting than you remembered.'],
         'facts': [('Loves', 'Questions, doors, being told the same story again'), ('Look for', 'Big yellow eyes that never blink')],
         'variations': [('Good morning', 'bo-v1'), ('Sending love', 'bo-v2')],
             'series': 'Masterpiece', 'tribe': 'Freedom', 'tier': 'Common',
@@ -457,7 +479,8 @@ CHARACTERS = [
     {
         'key': 'razz', 'no': '23', 'name': 'Razz', 'kind': 'the cheeky one', 'role': 'The one who sticks his tongue out',
         'collection': 'unipops', 'color': '#8BBF57', 'sound': 'PFFT',
-        'story': ['Razz sticks his tongue out at everything. At rules, at Mondays, at anyone who takes themselves too seriously, and at the mirror, for practice.', "He looks angry but he isn't. His horn picks up cheek, and the frown just comes with it. If Razz sticks his tongue out at you, you are in. He never bothers with people he doesn't like."],
+        'quote': 'Pffft. That one was for Monday.',
+            'story': ['Razz sticks his tongue out at everything. At rules, at Mondays, at anyone who takes themselves too seriously, and at the mirror, for practice.', "He looks angry but he isn't. His horn picks up cheek, and the frown just comes with it. If Razz sticks his tongue out at you, you are in. He never bothers with people he doesn't like."],
         'facts': [('Loves', 'Blowing raspberries, breaking small rules, rain on his tongue'), ('Look for', 'A spiky mane and a very long tongue')],
         'variations': [('Good morning', 'razz-v1'), ('Sending love', 'razz-v2')],
             'series': 'Masterpiece', 'tribe': 'Joy', 'tier': 'Uncommon',
@@ -465,7 +488,8 @@ CHARACTERS = [
     {
         'key': 'tripp', 'no': '24', 'name': 'Tripp', 'kind': 'the curious one', 'role': 'The one with an eye to spare',
         'collection': 'unipops', 'color': '#F9CC45', 'sound': 'PSST',
-        'story': ["Tripp has three eyes, which is one more than he needs. He uses the spare one to look where he isn't supposed to: behind the sofa, inside presents, at the last page of a book.", 'His horn picks up curiosity. He knows every secret in the room and has never told a single one, although his little fangs show when he is trying not to.'],
+        'quote': "I didn't peek. My spare eye did.",
+            'story': ["Tripp has three eyes, which is one more than he needs. He uses the spare one to look where he isn't supposed to: behind the sofa, inside presents, at the last page of a book.", 'His horn picks up curiosity. He knows every secret in the room and has never told a single one, although his little fangs show when he is trying not to.'],
         'facts': [('Loves', 'Keyholes, wrapped presents, the words "don\'t look"'), ('Look for', 'Three eyes in three colours')],
         'variations': [('Good morning', 'tripp-v1'), ('Sending love', 'tripp-v2')],
             'series': 'Signed', 'tribe': 'Joy', 'tier': 'Rare',
@@ -473,7 +497,8 @@ CHARACTERS = [
     {
         'key': 'shady', 'no': '25', 'name': 'Shady', 'kind': 'the cool one', 'role': 'The one behind the glasses',
         'collection': 'unipops', 'color': '#E23A7E', 'sound': 'YEAH',
-        'story': ['Shady never takes the sunglasses off. Her horn picks up cool, and she is certain the glasses are where it is kept.', 'Nobody has seen her eyes in years. The rumour is that behind the glasses she looks exactly as surprised as Bo. Shady has heard the rumour and has no comment.'],
+        'quote': "It's not dark. It's just my look.",
+            'story': ['Shady never takes the sunglasses off. Her horn picks up cool, and she is certain the glasses are where it is kept.', 'Nobody has seen her eyes in years. The rumour is that behind the glasses she looks exactly as surprised as Bo. Shady has heard the rumour and has no comment.'],
         'facts': [('Loves', 'Arriving late, leaning on things, saying very little'), ('Look for', 'Sunglasses bigger than her face')],
         'variations': [('Good morning', 'shady-v1'), ('Sending love', 'shady-v2')],
             'series': 'Legend', 'tribe': 'Freedom', 'tier': 'Super Rare',
@@ -481,7 +506,8 @@ CHARACTERS = [
     {
         'key': 'heli', 'no': '26', 'name': 'Heli', 'kind': 'the hopeful one', 'role': 'The one waiting for take-off',
         'collection': 'unipops', 'color': '#CDEB4B', 'sound': 'WHIRR',
-        'story': ['Heli has a propeller on his horn and it has never once lifted him off the ground. He spins it every morning anyway.', "His horn picks up hope. He stands with his arms out, ready, sure that today is the day. It hasn't been yet. He says that only means it is getting closer."],
+        'quote': "Today's the day. I can feel it. Maybe tomorrow.",
+            'story': ['Heli has a propeller on his horn and it has never once lifted him off the ground. He spins it every morning anyway.', "His horn picks up hope. He stands with his arms out, ready, sure that today is the day. It hasn't been yet. He says that only means it is getting closer."],
         'facts': [('Loves', 'Windy days, runways, tomorrow'), ('Look for', 'The propeller on his horn')],
         'variations': [('Good morning', 'heli-v1'), ('Sending love', 'heli-v2')],
             'series': 'Masterpiece', 'tribe': 'Freedom', 'tier': 'Uncommon',
@@ -489,7 +515,8 @@ CHARACTERS = [
     {
         'key': 'chili', 'no': '27', 'name': 'Chili', 'kind': 'the cross one', 'role': 'The one who is a bit hot',
         'collection': 'unipops', 'color': '#D93022', 'sound': 'GRRR',
-        'story': ['Chili is small and red and always a bit cross. His horn picks up temper, so he gets all of it, for everyone.', 'He is angry on your behalf before you have finished telling him what happened. Someone took your seat, someone forgot your birthday, Chili is already furious. It is the nicest kind of anger to have around.'],
+        'quote': "Who did that to you? I'm already furious.",
+            'story': ['Chili is small and red and always a bit cross. His horn picks up temper, so he gets all of it, for everyone.', 'He is angry on your behalf before you have finished telling him what happened. Someone took your seat, someone forgot your birthday, Chili is already furious. It is the nicest kind of anger to have around.'],
         'facts': [('Loves', 'Fairness, spicy food, being proved right'), ('Look for', 'Red spikes and a small pink tongue')],
         'variations': [('Good morning', 'chili-v1'), ('Sending love', 'chili-v2')],
             'series': 'Masterpiece', 'tribe': 'Love', 'tier': 'Uncommon',
@@ -497,7 +524,8 @@ CHARACTERS = [
     {
         'key': 'giggle', 'no': '28', 'name': 'Giggle', 'kind': 'the happy one', 'role': "The one who can't keep a straight face",
         'collection': 'unipops', 'color': '#77FB4D', 'sound': 'HIHI',
-        'story': ["Giggle's horn picks up fun, and it is stuck on the highest setting. She has three eyes, all pointing in slightly different directions, and a grin that takes up most of her.", 'She laughs at the wrong moments. In the library, in the queue, in the middle of a serious talk. She has been asked to leave many places and has been invited back to all of them.'],
+        'quote': "Sorry! Hehe! It's not funny! Hahaha!",
+            'story': ["Giggle's horn picks up fun, and it is stuck on the highest setting. She has three eyes, all pointing in slightly different directions, and a grin that takes up most of her.", 'She laughs at the wrong moments. In the library, in the queue, in the middle of a serious talk. She has been asked to leave many places and has been invited back to all of them.'],
         'facts': [('Loves', 'Tickles, hiccups, anything that goes wrong in a funny way'), ('Look for', 'A grin wider than her face')],
         'variations': [('Good morning', 'giggle-v1'), ('Sending love', 'giggle-v2')],
             'series': 'Masterpiece', 'tribe': 'Joy', 'tier': 'Common',
@@ -505,7 +533,8 @@ CHARACTERS = [
     {
         'key': 'smooch', 'no': '29', 'name': 'Smooch', 'kind': 'the one in love', 'role': 'The one with the balloon',
         'collection': 'unipops', 'color': '#EE3A8C', 'sound': 'MWAH',
-        'story': ['Smooch is in love. With whom changes every few minutes: the postman, a pigeon, a nice-looking chair. Her horn picks up love and she has no way to turn it down.', 'She carries a heart balloon to give away and has never managed to let go of it. Her eyes turned into hearts some time ago and stayed that way.'],
+        'quote': 'I love you. And you. And that chair.',
+            'story': ['Smooch is in love. With whom changes every few minutes: the postman, a pigeon, a nice-looking chair. Her horn picks up love and she has no way to turn it down.', 'She carries a heart balloon to give away and has never managed to let go of it. Her eyes turned into hearts some time ago and stayed that way.'],
         'facts': [('Loves', 'Everyone, one at a time'), ('Look for', 'Heart eyes and a red balloon')],
         'variations': [('Good morning', 'smooch-v1'), ('Sending love', 'smooch-v2')],
             'series': 'Masterpiece', 'tribe': 'Love', 'tier': 'Common',
@@ -513,84 +542,96 @@ CHARACTERS = [
     {
         'key': 'plop', 'no': '30', 'name': 'Plop', 'kind': 'the original', 'role': 'The one who started it',
         'collection': 'poopies', 'color': '#946B4A', 'sound': 'PLOP',
-        'story': ['Plop is the first Poopie and the calmest thing you will ever meet. He landed, looked around, and decided this was fine.', 'Nothing has bothered him since. Rain, Mondays, being stepped over. He sits where he is and smiles at whoever comes by. Most people smile back before they realise what they are smiling at.'],
+        'quote': 'Everything starts with a plop.',
+            'story': ['Plop is the first Poopie and the calmest thing you will ever meet. He landed, looked around, and decided this was fine.', 'Nothing has bothered him since. Rain, Mondays, being stepped over. He sits where he is and smiles at whoever comes by. Most people smile back before they realise what they are smiling at.'],
         'facts': [('Loves', 'Sitting still, a quiet lawn, being left alone'), ('Look for', 'A small, steady smile')],
         'series': 'Masterpiece', 'tribe': 'Joy', 'tier': 'Common',
     },
     {
         'key': 'oops', 'no': '31', 'name': 'Oops', 'kind': 'the embarrassed one', 'role': "The one who didn't mean to",
         'collection': 'poopies', 'color': '#F4B6CF', 'sound': 'OOPS',
-        'story': ['Oops arrived at the wrong moment, in the wrong place, and has been blushing about it ever since.', 'He says sorry for things that are not his fault, which is most things. The other Poopies keep telling him that everybody has an Oops now and then. He nods, goes pink, and says sorry for making them explain it again.'],
+        'quote': "I didn't mean to. Whatever that was.",
+            'story': ['Oops arrived at the wrong moment, in the wrong place, and has been blushing about it ever since.', 'He says sorry for things that are not his fault, which is most things. The other Poopies keep telling him that everybody has an Oops now and then. He nods, goes pink, and says sorry for making them explain it again.'],
         'facts': [('Loves', 'Being forgiven, closed doors, a bit of privacy'), ('Look for', 'Pink cheeks and a worried mouth')],
         'series': 'Masterpiece', 'tribe': 'Love', 'tier': 'Common',
     },
     {
         'key': 'whizz', 'no': '32', 'name': 'Whizz', 'kind': 'the flying one', 'role': "The one you don't see coming",
         'collection': 'poopies', 'color': '#FBE84C', 'sound': 'BZZZ',
-        'story': ['Whizz found a propeller and worked out how to use it, which is more than can be said for some other POPtoons.', 'He flies low and fast and grins the whole way. Nobody knows where he will land, including him. If you hear a buzzing sound and everyone around you starts to run, that is Whizz.'],
+        'quote': "Bzzz! You didn't see me. Bzzz! Still didn't.",
+            'story': ['Whizz found a propeller and worked out how to use it, which is more than can be said for some other POPtoons.', 'He flies low and fast and grins the whole way. Nobody knows where he will land, including him. If you hear a buzzing sound and everyone around you starts to run, that is Whizz.'],
         'facts': [('Loves', 'Open windows, picnics, a good tailwind'), ('Look for', 'A yellow propeller and a lot of teeth')],
         'series': 'Masterpiece', 'tribe': 'Freedom', 'tier': 'Common',
     },
     {
         'key': 'stinker', 'no': '33', 'name': 'Stinker', 'kind': 'the little devil', 'role': 'The one who did it on purpose',
         'collection': 'poopies', 'color': '#C8232B', 'sound': 'HEHE',
-        'story': ['Stinker looks sweet. He has the same small smile as Plop. Then you notice the horns.', "He is the one who ends up on the bottom of your shoe, on the one day you are wearing the good ones. He doesn't call it mean. He calls it timing."],
+        'quote': "It was me. Hehe. I'd do it again.",
+            'story': ['Stinker looks sweet. He has the same small smile as Plop. Then you notice the horns.', "He is the one who ends up on the bottom of your shoe, on the one day you are wearing the good ones. He doesn't call it mean. He calls it timing."],
         'facts': [('Loves', 'New shoes, white carpets, the look on your face'), ('Look for', 'Two red horns')],
         'series': 'Masterpiece', 'tribe': 'Joy', 'tier': 'Uncommon',
     },
     {
         'key': 'twister', 'no': '34', 'name': 'Twister', 'kind': 'the stormy one', 'role': 'The one with a lot going on',
         'collection': 'poopies', 'color': '#5CC8C0', 'sound': 'WHOOSH',
-        'story': ['Twister has a whirlwind coming out of the top of his head and bits flying everywhere. Down below he is smiling as if nothing is happening.', 'He is what a bad day looks like from the outside. From the inside, he says, it is quite peaceful. He just lets it spin until it is finished.'],
+        'quote': 'Hold on to your hat. And the table.',
+            'story': ['Twister has a whirlwind coming out of the top of his head and bits flying everywhere. Down below he is smiling as if nothing is happening.', 'He is what a bad day looks like from the outside. From the inside, he says, it is quite peaceful. He just lets it spin until it is finished.'],
         'facts': [('Loves', 'Curry night, windy weather, a clear path to the door'), ('Look for', 'The whirlwind on his head')],
         'series': 'Signed', 'tribe': 'Freedom', 'tier': 'Rare',
     },
     {
         'key': 'burp', 'no': '35', 'name': 'Burp', 'kind': 'the hungry one', 'role': 'The one with the big mouth',
         'collection': 'poopies', 'color': '#FF7043', 'sound': 'BURP',
-        'story': ["Burp's mouth is nearly as big as he is, and it is almost always open. He eats everything, comments on everything and has never kept a secret for longer than a minute.", 'His tongue hangs out of the side because there is no room left for it inside. He is very good company at dinner, as long as you were not planning on leftovers.'],
+        'quote': 'Excuse me. And you. And you again.',
+            'story': ["Burp's mouth is nearly as big as he is, and it is almost always open. He eats everything, comments on everything and has never kept a secret for longer than a minute.", 'His tongue hangs out of the side because there is no room left for it inside. He is very good company at dinner, as long as you were not planning on leftovers.'],
         'facts': [('Loves', 'Second helpings, gossip, the last chip'), ('Look for', 'A mouth that does not close')],
         'series': 'Masterpiece', 'tribe': 'Joy', 'tier': 'Common',
     },
     {
         'key': 'drool', 'no': '36', 'name': 'Drool', 'kind': 'the dreamy one', 'role': 'The one who is thinking about lunch',
         'collection': 'poopies', 'color': '#8ED1FF', 'sound': 'DRIP',
-        'story': ['Drool is always thinking about something lovely, and it shows. His tongue hangs all the way down and drips a little.', 'Ask him what he is thinking about and he needs a moment to come back. It is usually food. Sometimes it is a nap. Once it was you, and he was very happy to see you.'],
+        'quote': "I'm not drooling. I'm thinking about lunch.",
+            'story': ['Drool is always thinking about something lovely, and it shows. His tongue hangs all the way down and drips a little.', 'Ask him what he is thinking about and he needs a moment to come back. It is usually food. Sometimes it is a nap. Once it was you, and he was very happy to see you.'],
         'facts': [('Loves', 'Daydreams, the smell of baking, soft places to sit'), ('Look for', 'A long red tongue')],
         'series': 'Masterpiece', 'tribe': 'Love', 'tier': 'Uncommon',
     },
     {
         'key': 'flush', 'no': '37', 'name': 'Flush', 'kind': 'the royal one', 'role': 'The Royal Flush',
         'collection': 'poopies', 'color': '#6A3FB5', 'sound': 'AHEM',
-        'story': ['Flush wears a crown. Nobody gave it to him and nobody has asked for it back, so he is king.', 'He rules the Poopies kindly and gives one order a day, which is always that everyone should take it easy. The crown sits crooked because he will not sit up straight for anybody. He has never lost at cards.'],
+        'quote': 'Ahem. Bow to the throne, or just wave.',
+            'story': ['Flush wears a crown. Nobody gave it to him and nobody has asked for it back, so he is king.', 'He rules the Poopies kindly and gives one order a day, which is always that everyone should take it easy. The crown sits crooked because he will not sit up straight for anybody. He has never lost at cards.'],
         'facts': [('Loves', 'Thrones of any kind, being announced, a good hand'), ('Look for', 'The crooked crown')],
         'series': 'Legend', 'tribe': 'Joy', 'tier': 'Ultra Rare',
     },
     {
         'key': 'ogle', 'no': '38', 'name': 'Ogle', 'kind': 'the big-eyed one', 'role': 'The one who stares and sticks out his tongue',
         'collection': 'popeyes', 'color': '#EF4B5B', 'sound': 'BLEH',
-        'story': ["Ogle has the biggest eye of all the POPeyes and he uses every bit of it. He stares at a sandwich, at a cloud, at your shoes, and then he sticks out his tongue to say he approves.", "If Ogle stares at you, don't look away. He isn't being rude. He is counting what he likes about you, and he always runs out of fingers before he runs out of things."],
+        'quote': "I'm not staring. Bleh. Okay, I'm staring.",
+            'story': ["Ogle has the biggest eye of all the POPeyes and he uses every bit of it. He stares at a sandwich, at a cloud, at your shoes, and then he sticks out his tongue to say he approves.", "If Ogle stares at you, don't look away. He isn't being rude. He is counting what he likes about you, and he always runs out of fingers before he runs out of things."],
         'facts': [('Loves', 'Staring contests, sandwiches, cloud watching'), ('Look for', 'A huge black pupil and a red tongue')],
         'series': 'Masterpiece', 'tribe': 'Love', 'tier': 'Common',
     },
     {
         'key': 'spark', 'no': '39', 'name': 'Spark', 'kind': 'the magic one', 'role': 'The one with the star wand',
         'collection': 'popeyes', 'color': '#F8EE55', 'sound': 'ZING',
-        'story': ["Spark found a star wand on a very ordinary Tuesday and has not put it down since. It does no big magic. It turns a bad mood into a small good one, which Spark says is the hardest spell there is.", "The wand goes in his left glove and the right glove is for waving. A wand takes one hand and a hello takes the other."],
+        'quote': 'Zing! Wish granted. Oh, wrong wish.',
+            'story': ["Spark found a star wand on a very ordinary Tuesday and has not put it down since. It does no big magic. It turns a bad mood into a small good one, which Spark says is the hardest spell there is.", "The wand goes in his left glove and the right glove is for waving. A wand takes one hand and a hello takes the other."],
         'facts': [('Loves', 'Tuesdays, glitter, small spells'), ('Look for', 'A yellow face, one little eye and a star on a stick')],
         'series': 'Masterpiece', 'tribe': 'Joy', 'tier': 'Common',
     },
     {
         'key': 'hiya', 'no': '40', 'name': 'Hiya', 'kind': 'the friendly one', 'role': 'The one who says hi first',
         'collection': 'popeyes', 'color': '#B9E2F8', 'sound': 'HIYA',
-        'story': ["Hiya puts both gloves in the air before anyone has said a word, because somebody has to go first. He is the colour of the sky just after rain, and that is no accident.", "He doesn't need an answer. The wave is enough. Most days somebody waves back, and then it is a good day for both of you."],
+        'quote': 'Hiya! I said it first! I always say it first!',
+            'story': ["Hiya puts both gloves in the air before anyone has said a word, because somebody has to go first. He is the colour of the sky just after rain, and that is no accident.", "He doesn't need an answer. The wave is enough. Most days somebody waves back, and then it is a good day for both of you."],
         'facts': [('Loves', 'Waving, blue skies, meeting new people'), ('Look for', 'A light blue face and both gloves up high')],
         'series': 'Masterpiece', 'tribe': 'Freedom', 'tier': 'Common',
     },
     {
         'key': 'jay', 'no': '41', 'name': 'Jay', 'kind': 'the bluebird', 'role': 'The one who tells everyone',
         'collection': 'lovelings', 'color': '#CE1313', 'sound': 'TWEET',
-        'story': [
+        'quote': 'Guess what! Never mind, you already heard.',
+            'story': [
             "Jay is round, blue and mostly beak, and the beak is a heart. He keeps his wings "
             "folded in close, like someone holding a secret he is about to share.",
             "He can't keep anything to himself. If he finds out that somebody likes somebody, "

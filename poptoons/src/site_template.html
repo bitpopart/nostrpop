@@ -148,7 +148,8 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .pname{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
 .pname h2{font-size:clamp(2.6rem,8vw,3.8rem);color:var(--c);--sw:4px;--sh:5px}
 .pname span{font-weight:500;font-size:1.1rem}
-.role{font-style:italic;margin:10px 0 14px}
+.role{font-style:italic;margin:10px 0 12px}
+.quote{display:inline-block;max-width:38ch;margin:2px 0 18px;padding:.55em 1em;background:#fff;border:var(--line) solid var(--ink);border-radius:18px 18px 18px 4px;box-shadow:4px 4px 0 var(--ink);font-weight:700;line-height:1.35;transform:rotate(-1deg)}
 .story p{margin:0 0 .8em;max-width:62ch}
 .facts{margin:14px 0 20px;display:grid;gap:4px;font-size:.93rem}
 .strip{border:var(--line) solid var(--ink);border-radius:16px;box-shadow:6px 6px 0 var(--ink);overflow:hidden}
@@ -381,6 +382,7 @@ function openChar(key){
     <div class="pbody" style="--c:${c.color}">
       <div class="pname"><h2 class="pop" id="pn">${esc(c.name)}</h2><span>${esc(c.kind)}</span></div>
       <p class="role">${esc(c.role)}</p>
+      ${c.quote ? `<p class="quote">“${esc(c.quote)}”</p>` : ''}
       <div class="story">${c.story.map(p => `<p>${esc(p)}</p>`).join('')}</div>
       <div class="facts">${c.facts.map(([h, t]) => `<div><b>${esc(h)}:</b> ${esc(t)}</div>`).join('')}</div>
       <div class="strip"><div class="h">POPART CARD</div><div class="c3">
