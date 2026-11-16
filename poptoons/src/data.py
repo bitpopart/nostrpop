@@ -572,6 +572,7 @@ CHARACTERS = [
         'quote': "It was me. Hehe. I'd do it again.",
             'story': ['Stinker looks sweet. He has the same small smile as Plop. Then you notice the horns.', "He is the one who ends up on the bottom of your shoe, on the one day you are wearing the good ones. He doesn't call it mean. He calls it timing."],
         'facts': [('Loves', 'New shoes, white carpets, the look on your face'), ('Look for', 'Two red horns')],
+        'variations': [('Good morning', 'stinker-v1'), ('Sending love', 'stinker-v2')],
         'series': 'Masterpiece', 'tribe': 'Joy', 'tier': 'Uncommon',
     },
     {
