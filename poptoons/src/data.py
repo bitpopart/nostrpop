@@ -608,6 +608,7 @@ CHARACTERS = [
         'quote': 'Ahem. Bow to the throne, or just wave.',
             'story': ['Flush wears a crown. Nobody gave it to him and nobody has asked for it back, so he is king.', 'He rules the Poopies kindly and gives one order a day, which is always that everyone should take it easy. The crown sits crooked because he will not sit up straight for anybody. He has never lost at cards.'],
         'facts': [('Loves', 'Thrones of any kind, being announced, a good hand'), ('Look for', 'The crooked crown')],
+        'variations': [('Good morning', 'flush-v1'), ('Sending love', 'flush-v2')],
         'series': 'Legend', 'tribe': 'Joy', 'tier': 'Ultra Rare',
     },
     {
