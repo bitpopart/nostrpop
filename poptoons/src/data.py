@@ -590,6 +590,7 @@ CHARACTERS = [
         'quote': 'Excuse me. And you. And you again.',
             'story': ["Burp's mouth is nearly as big as he is, and it is almost always open. He eats everything, comments on everything and has never kept a secret for longer than a minute.", 'It is so wide that you can see all the way to the back, and nobody has dared to go in. He is very good company at dinner, as long as you were not planning on leftovers.'],
         'facts': [('Loves', 'Second helpings, gossip, the last chip'), ('Look for', 'A mouth that does not close')],
+        'variations': [('Good morning', 'burp-v1'), ('Sending love', 'burp-v2')],
         'series': 'Masterpiece', 'tribe': 'Joy', 'tier': 'Common',
     },
     {
