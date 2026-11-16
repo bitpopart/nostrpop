@@ -491,7 +491,8 @@ CHARACTERS = [
         'collection': 'unipops', 'color': '#D93022', 'sound': 'GRRR',
         'story': ['Chili is small and red and always a bit cross. His horn picks up temper, so he gets all of it, for everyone.', 'He is angry on your behalf before you have finished telling him what happened. Someone took your seat, someone forgot your birthday, Chili is already furious. It is the nicest kind of anger to have around.'],
         'facts': [('Loves', 'Fairness, spicy food, being proved right'), ('Look for', 'Red spikes and a small pink tongue')],
-        'series': 'Masterpiece', 'tribe': 'Love', 'tier': 'Uncommon',
+        'variations': [('Good morning', 'chili-v1'), ('Sending love', 'chili-v2')],
+            'series': 'Masterpiece', 'tribe': 'Love', 'tier': 'Uncommon',
     },
     {
         'key': 'giggle', 'no': '28', 'name': 'Giggle', 'kind': 'the happy one', 'role': "The one who can't keep a straight face",
