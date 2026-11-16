@@ -499,14 +499,16 @@ CHARACTERS = [
         'collection': 'unipops', 'color': '#77FB4D', 'sound': 'HIHI',
         'story': ["Giggle's horn picks up fun, and it is stuck on the highest setting. She has three eyes, all pointing in slightly different directions, and a grin that takes up most of her.", 'She laughs at the wrong moments. In the library, in the queue, in the middle of a serious talk. She has been asked to leave many places and has been invited back to all of them.'],
         'facts': [('Loves', 'Tickles, hiccups, anything that goes wrong in a funny way'), ('Look for', 'A grin wider than her face')],
-        'series': 'Masterpiece', 'tribe': 'Joy', 'tier': 'Common',
+        'variations': [('Good morning', 'giggle-v1'), ('Sending love', 'giggle-v2')],
+            'series': 'Masterpiece', 'tribe': 'Joy', 'tier': 'Common',
     },
     {
         'key': 'smooch', 'no': '29', 'name': 'Smooch', 'kind': 'the one in love', 'role': 'The one with the balloon',
         'collection': 'unipops', 'color': '#EE3A8C', 'sound': 'MWAH',
         'story': ['Smooch is in love. With whom changes every few minutes: the postman, a pigeon, a nice-looking chair. Her horn picks up love and she has no way to turn it down.', 'She carries a heart balloon to give away and has never managed to let go of it. Her eyes turned into hearts some time ago and stayed that way.'],
         'facts': [('Loves', 'Everyone, one at a time'), ('Look for', 'Heart eyes and a red balloon')],
-        'series': 'Masterpiece', 'tribe': 'Love', 'tier': 'Common',
+        'variations': [('Good morning', 'smooch-v1'), ('Sending love', 'smooch-v2')],
+            'series': 'Masterpiece', 'tribe': 'Love', 'tier': 'Common',
     },
     {
         'key': 'plop', 'no': '30', 'name': 'Plop', 'kind': 'the original', 'role': 'The one who started it',
