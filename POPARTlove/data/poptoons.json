@@ -1,6 +1,6 @@
 {
   "site": "https://poptoons.fun",
-  "characters": 41,
+  "characters": 49,
   "toons": {
     "coolmoo": "Cool Moo",
     "toot": "Toot",
@@ -42,7 +42,15 @@
     "ogle": "Ogle",
     "spark": "Spark",
     "hiya": "Hiya",
-    "jay": "Jay"
+    "jay": "Jay",
+    "penny": "Penny",
+    "swoon": "Swoon",
+    "snicker": "Snicker",
+    "chomp": "Chomp",
+    "buck": "Buck",
+    "snag": "Snag",
+    "mo": "Mo",
+    "pout": "Pout"
   },
   "collections": [
     {
@@ -125,7 +133,7 @@
       "no": "06",
       "name": "Poopies",
       "tagline": "What is left when the day is done. Very relaxed about it.",
-      "count": 8,
+      "count": 16,
       "characters": [
         "Plop",
         "Oops",
@@ -134,7 +142,15 @@
         "Twister",
         "Burp",
         "Drool",
-        "Flush"
+        "Flush",
+        "Penny",
+        "Swoon",
+        "Snicker",
+        "Chomp",
+        "Buck",
+        "Snag",
+        "Mo",
+        "Pout"
       ]
     },
     {

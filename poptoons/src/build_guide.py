@@ -338,11 +338,24 @@ def collection_page(c, k, page_no):
     y -= 30
     cols = 3; gap = 14
     cw = (W - 2 * M - (cols - 1) * gap) / cols
-    ch_h = 102 if len(members) <= 6 else 88
+    compact = len(members) > 12
+    ch_h = 50 if compact else (102 if len(members) <= 6 else 88)
+    rgap = 8 if compact else 14
     for i, ch in enumerate(members):
         col = i % cols; row = i // cols
-        x = M + col * (cw + gap); yy = y - (row + 1) * ch_h - row * 14
+        x = M + col * (cw + gap); yy = y - (row + 1) * ch_h - row * rgap
         box(c, x, yy, cw, ch_h, r=12, lw=2.5, shadow=5)
+        if compact:
+            draw_img(c, ch["key"], x + 6, yy + 5, 42, ch_h - 10)
+            avail = cw - 58 - 8
+            fs = 15
+            while pdfmetrics.stringWidth(ch['name'], 'Lilita', fs) > avail: fs -= 0.5
+            c.setFillColor(INK); c.setFont('Lilita', fs); c.drawString(x + 56, yy + ch_h - 17, ch['name'])
+            fk = 8
+            while pdfmetrics.stringWidth(ch['kind'], 'Pop', fk) > avail: fk -= 0.25
+            c.setFont('Pop', fk); c.drawString(x + 56, yy + ch_h - 27, ch['kind'])
+            chip(c, x + 56, yy + 4, ch['tribe'], TRIBE[ch['tribe']], size=7, padx=6, h=13)
+            continue
         draw_img(c, ch["key"], x + 8, yy + 32, 80, ch_h - 40)
         avail = cw - 94 - 8
         fs = 17
@@ -357,7 +370,7 @@ def collection_page(c, k, page_no):
         c.setFont('Pop', 8.5); c.drawString(x + 10, yy + 5, ch['tier'])
         tier_dots(c, x + cw - 78, yy + (15 if ch_h > 95 else 12), ch['tier'], rad=4, gap=11.5)
     rows = math.ceil(len(members) / cols)
-    y -= rows * ch_h + (rows - 1) * 14 + 20
+    y -= rows * ch_h + (rows - 1) * rgap + 20
     # notes
     nw = (W - 2 * M - 14) / 2
     for j, (hd, txt) in enumerate(k.get('notes', [])[:2]):
