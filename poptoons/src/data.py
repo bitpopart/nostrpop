@@ -554,6 +554,7 @@ CHARACTERS = [
         'quote': "I didn't mean to. Whatever that was.",
             'story': ['Oops arrived at the wrong moment, in the wrong place, and has been blushing about it ever since.', 'He says sorry for things that are not his fault, which is most things. The other Poopies keep telling him that everybody has an Oops now and then. He nods, goes pink, and says sorry for making them explain it again.'],
         'facts': [('Loves', 'Being forgiven, closed doors, a bit of privacy'), ('Look for', 'Pink cheeks and a worried mouth')],
+        'variations': [('Good morning', 'oops-v1'), ('Sending love', 'oops-v2')],
         'series': 'Masterpiece', 'tribe': 'Love', 'tier': 'Common',
     },
     {
