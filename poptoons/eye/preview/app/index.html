@@ -29,8 +29,8 @@
   .tag { font-weight:700; margin:12px 0 22px; background:var(--ink); color:#fff;
     padding:6px 14px; border-radius:999px; font-size:14px; }
   .device {
-    position:relative; width:min(86vw, 420px); aspect-ratio:1;
-    border-radius:50%; padding:10.15%;   /* screen window 44.0 mm in a 55.2 mm holder */
+    position:relative; width:min(86vw, 420px); height:min(86vw, 420px); flex:none;
+    border-radius:50%; padding:0;   /* screen window 44.0 mm in a 55.2 mm holder */
     /* black 3D-printed case: fine horizontal layer lines on matte black */
     background:
       radial-gradient(circle at 32% 26%, rgba(255,255,255,.10), transparent 42%),
@@ -49,7 +49,7 @@
     content:""; position:absolute; inset:9.4%; border-radius:50%;
     background:#050505; box-shadow:inset 0 0 0 3px #1a1a1a, 0 0 0 2px #1a1a1a;
   }
-  canvas { position:relative; z-index:1; width:100%; height:100%; display:block; border-radius:50%;
+  canvas { position:absolute; left:10.15%; top:10.15%; z-index:1; width:79.7%; height:79.7%; display:block; border-radius:50%;
     background:#000; touch-action:none; cursor:pointer; }
   .state { margin-top:22px; font-family:Bangers, Impact, sans-serif; font-size:22px; letter-spacing:1.5px; }
   .controls { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-top:14px; }
