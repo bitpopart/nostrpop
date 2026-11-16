@@ -675,6 +675,7 @@ CHARACTERS = [
         'quote': 'I just thought of that joke from Tuesday.',
         'story': ["Snicker has the crookedest teeth of all the Poopies and he is proud of every one. They don't line up and they never will, which is why his grin always looks like it is about to tell you something.", 'He laughs with his eyes shut, usually at a joke he thought of two days ago. Nobody knows what it was. He says you had to be there, and you were.'],
         'facts': [('Loves', 'Old jokes, back rows, crooked teeth'), ('Look for', 'A wonky row of teeth and shut eyes')],
+        'variations': [('Good morning', 'snicker-v1'), ('Sending love', 'snicker-v2')],
         'series': 'Masterpiece', 'tribe': 'Joy', 'tier': 'Common',
     },
     {
