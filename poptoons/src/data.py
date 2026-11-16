@@ -459,7 +459,8 @@ CHARACTERS = [
         'collection': 'unipops', 'color': '#8BBF57', 'sound': 'PFFT',
         'story': ['Razz sticks his tongue out at everything. At rules, at Mondays, at anyone who takes themselves too seriously, and at the mirror, for practice.', "He looks angry but he isn't. His horn picks up cheek, and the frown just comes with it. If Razz sticks his tongue out at you, you are in. He never bothers with people he doesn't like."],
         'facts': [('Loves', 'Blowing raspberries, breaking small rules, rain on his tongue'), ('Look for', 'A spiky mane and a very long tongue')],
-        'series': 'Masterpiece', 'tribe': 'Joy', 'tier': 'Uncommon',
+        'variations': [('Good morning', 'razz-v1'), ('Sending love', 'razz-v2')],
+            'series': 'Masterpiece', 'tribe': 'Joy', 'tier': 'Uncommon',
     },
     {
         'key': 'tripp', 'no': '24', 'name': 'Tripp', 'kind': 'the curious one', 'role': 'The one with an eye to spare',
