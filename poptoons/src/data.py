@@ -545,6 +545,7 @@ CHARACTERS = [
         'quote': 'Everything starts with a plop.',
             'story': ['Plop is the first Poopie and the calmest thing you will ever meet. He landed, looked around, and decided this was fine.', 'Nothing has bothered him since. Rain, Mondays, being stepped over. He sits where he is and smiles at whoever comes by. Most people smile back before they realise what they are smiling at.'],
         'facts': [('Loves', 'Sitting still, a quiet lawn, being left alone'), ('Look for', 'A small, steady smile')],
+        'variations': [('Good morning', 'plop-v1'), ('Sending love', 'plop-v2')],
         'series': 'Masterpiece', 'tribe': 'Joy', 'tier': 'Common',
     },
     {
