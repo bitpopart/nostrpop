@@ -702,6 +702,7 @@ CHARACTERS = [
         'quote': "I've been right behind you the whole time.",
         'story': ['Snag smiles with every one of his tiny pointed teeth and keeps his big round eyes wide open the whole time. It is not a threat. It is just how his face works.', 'He is the best in the world at hide and seek, because nobody believes anyone would hide so close. He sits right behind you, grinning, and waits for you to notice.'],
         'facts': [('Loves', 'Hide and seek, corners, being noticed eventually'), ('Look for', 'Wide eyes and a pointy smile')],
+        'variations': [('Good morning', 'snag-v1'), ('Sending love', 'snag-v2')],
         'series': 'Masterpiece', 'tribe': 'Freedom', 'tier': 'Common',
     },
     {
