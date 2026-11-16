@@ -625,6 +625,7 @@ CHARACTERS = [
         'quote': 'Zing! Wish granted. Oh, wrong wish.',
             'story': ["Spark found a star wand on a very ordinary Tuesday and has not put it down since. It does no big magic. It turns a bad mood into a small good one, which Spark says is the hardest spell there is.", "One glove holds the wand and the other one is for waving. A wand takes one hand and a hello takes the other."],
         'facts': [('Loves', 'Tuesdays, glitter, small spells'), ('Look for', 'A yellow face, one little eye and a star on a stick')],
+        'variations': [('Good morning', 'spark-v1'), ('Sending love', 'spark-v2')],
         'series': 'Masterpiece', 'tribe': 'Joy', 'tier': 'Common',
     },
     {
@@ -633,6 +634,7 @@ CHARACTERS = [
         'quote': 'Hiya! I said it first! I always say it first!',
             'story': ["Hiya puts both gloves in the air before anyone has said a word, because somebody has to go first. He is the colour of the sky just after rain, and that is no accident.", "He doesn't need an answer. The wave is enough. Most days somebody waves back, and then it is a good day for both of you."],
         'facts': [('Loves', 'Waving, blue skies, meeting new people'), ('Look for', 'A light blue face and both gloves up high')],
+        'variations': [('Good morning', 'hiya-v1'), ('Sending love', 'hiya-v2')],
         'series': 'Masterpiece', 'tribe': 'Freedom', 'tier': 'Common',
     },
     {
