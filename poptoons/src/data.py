@@ -682,8 +682,9 @@ CHARACTERS = [
         'key': 'chomp', 'no': '45', 'name': 'Chomp', 'kind': 'the toothy one', 'role': 'The one who bites (nicely)',
         'collection': 'poopies', 'color': '#E8531F', 'sound': 'CHOMP',
         'quote': 'Nom! That was a hug, I swear.',
-        'story': ['Chomp has three small fangs and a big smile, and he is not sure which one is friendlier. He bites everything: carrots, cushions, the corner of a book. It is a hug, he says, just with teeth.', 'He shuts his eyes when he smiles, so he never sees your face when he gets close. Nobody has ever been hurt. Several people have been very slightly nibbled, and were happy about it.'],
-        'facts': [('Loves', 'Carrots, cushions, gentle nibbling'), ('Look for', 'Three little fangs and a closed-eyed smile')],
+        'story': ['Chomp has four small fangs and a big smile, and he is not sure which one is friendlier. He bites everything: carrots, cushions, the corner of a book. It is a hug, he says, just with teeth.', 'He shuts his eyes when he smiles, so he never sees your face when he gets close. Nobody has ever been hurt. Several people have been very slightly nibbled, and were happy about it.'],
+        'facts': [('Loves', 'Carrots, cushions, gentle nibbling'), ('Look for', 'Four little fangs and a closed-eyed smile')],
+        'variations': [('Good morning', 'chomp-v1'), ('Sending love', 'chomp-v2')],
         'series': 'Masterpiece', 'tribe': 'Freedom', 'tier': 'Common',
     },
     {
