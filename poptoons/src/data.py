@@ -599,6 +599,7 @@ CHARACTERS = [
         'quote': "I'm not drooling. I'm thinking about lunch.",
             'story': ['Drool is always thinking about something lovely, and it shows. His tongue hangs all the way down and drips a little.', 'Ask him what he is thinking about and he needs a moment to come back. It is usually food. Sometimes it is a nap. Once it was you, and he was very happy to see you.'],
         'facts': [('Loves', 'Daydreams, the smell of baking, soft places to sit'), ('Look for', 'A long red tongue')],
+        'variations': [('Good morning', 'drool-v1'), ('Sending love', 'drool-v2')],
         'series': 'Masterpiece', 'tribe': 'Love', 'tier': 'Uncommon',
     },
     {
