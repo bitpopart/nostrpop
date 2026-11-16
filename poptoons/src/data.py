@@ -650,6 +650,7 @@ CHARACTERS = [
         'quote': "Heads, I'm lucky. Tails, I'm still lucky.",
         'story': ['Penny found a coin on top of his swirl one morning and has never taken it off. He thinks it is the luckiest thing that has ever happened to a Poopie, and he may well be right, because nobody else has one.', 'He tips it to everyone he meets. He will not spend it. He says a coin is only lucky for as long as you keep it, and he plans to be very lucky for a very long time.'],
         'facts': [('Loves', 'Wishing wells, shiny things, finding stuff'), ('Look for', 'A gold coin on top of his head')],
+        'variations': [('Good morning', 'penny-v1'), ('Sending love', 'penny-v2')],
         'series': 'Masterpiece', 'tribe': 'Freedom', 'tier': 'Uncommon',
     },
     {
