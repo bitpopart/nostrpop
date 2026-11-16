@@ -79,6 +79,7 @@ const WhatsNew = lazy(() => import("./pages/WhatsNew"));
 const TCG = lazy(() => import("./pages/TCG"));
 const BitBot = lazy(() => import("./pages/BitBot"));
 const BitBotCrowdfunding = lazy(() => import("./pages/BitBotCrowdfunding"));
+const MiniBit = lazy(() => import("./pages/MiniBit"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 import { SeoCanonical } from "./components/SeoCanonical";
 
@@ -192,6 +193,7 @@ export function AppRouter() {
         {/* BitBot — pocket bot page (birth date, in-progress), inline under the site menu/footer */}
         <Route path="/bitbot" element={<Layout><BitBotCrowdfunding /></Layout>} />
         {/* The original BitBot page (live board, pocket guide) now lives here */}
+        <Route path="/bitbot/minibit" element={<Layout><MiniBit /></Layout>} />
         <Route path="/bitbot/guide" element={<Layout><BitBot /></Layout>} />
         {/* BitBot crowdfunding — campaign page, inline under the site menu/footer */}
         <Route path="/bitbot/crowdfunding" element={<Layout><BitBotCrowdfunding /></Layout>} />

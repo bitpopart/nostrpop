@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import type { MouseEvent } from 'react';
 import { useSeoMeta } from '@unhead/react';
+import { BotSwitch } from '@/components/BotSwitch';
 import html from './bitbot-crowdfunding.html?raw';
 import './bitbot-crowdfunding.css';
 
@@ -91,5 +92,10 @@ export default function BitBotCrowdfunding() {
   };
 
   // The markup is our own static file, bundled at build time (not user input).
-  return <div className="bbcf" onClick={onClick} dangerouslySetInnerHTML={{ __html: html }} />;
+  return (
+    <>
+      <BotSwitch active="bitbot" />
+      <div className="bbcf" onClick={onClick} dangerouslySetInnerHTML={{ __html: html }} />
+    </>
+  );
 }
