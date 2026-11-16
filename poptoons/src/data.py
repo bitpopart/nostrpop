@@ -581,6 +581,7 @@ CHARACTERS = [
         'quote': 'Hold on to your hat. And the table.',
             'story': ['Twister has a whirlwind coming out of the top of his head and bits flying everywhere. Down below he is smiling as if nothing is happening.', 'He is what a bad day looks like from the outside. From the inside, he says, it is quite peaceful. He just lets it spin until it is finished.'],
         'facts': [('Loves', 'Curry night, windy weather, a clear path to the door'), ('Look for', 'The whirlwind on his head')],
+        'variations': [('Good morning', 'twister-v1'), ('Sending love', 'twister-v2')],
         'series': 'Signed', 'tribe': 'Freedom', 'tier': 'Rare',
     },
     {
