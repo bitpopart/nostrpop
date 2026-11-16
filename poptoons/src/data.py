@@ -467,7 +467,8 @@ CHARACTERS = [
         'collection': 'unipops', 'color': '#F9CC45', 'sound': 'PSST',
         'story': ["Tripp has three eyes, which is one more than he needs. He uses the spare one to look where he isn't supposed to: behind the sofa, inside presents, at the last page of a book.", 'His horn picks up curiosity. He knows every secret in the room and has never told a single one, although his little fangs show when he is trying not to.'],
         'facts': [('Loves', 'Keyholes, wrapped presents, the words "don\'t look"'), ('Look for', 'Three eyes in three colours')],
-        'series': 'Signed', 'tribe': 'Joy', 'tier': 'Rare',
+        'variations': [('Good morning', 'tripp-v1'), ('Sending love', 'tripp-v2')],
+            'series': 'Signed', 'tribe': 'Joy', 'tier': 'Rare',
     },
     {
         'key': 'shady', 'no': '25', 'name': 'Shady', 'kind': 'the cool one', 'role': 'The one behind the glasses',
