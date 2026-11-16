@@ -623,7 +623,7 @@ CHARACTERS = [
         'key': 'spark', 'no': '39', 'name': 'Spark', 'kind': 'the magic one', 'role': 'The one with the star wand',
         'collection': 'popeyes', 'color': '#F8EE55', 'sound': 'ZING',
         'quote': 'Zing! Wish granted. Oh, wrong wish.',
-            'story': ["Spark found a star wand on a very ordinary Tuesday and has not put it down since. It does no big magic. It turns a bad mood into a small good one, which Spark says is the hardest spell there is.", "The wand goes in his left glove and the right glove is for waving. A wand takes one hand and a hello takes the other."],
+            'story': ["Spark found a star wand on a very ordinary Tuesday and has not put it down since. It does no big magic. It turns a bad mood into a small good one, which Spark says is the hardest spell there is.", "One glove holds the wand and the other one is for waving. A wand takes one hand and a hello takes the other."],
         'facts': [('Loves', 'Tuesdays, glitter, small spells'), ('Look for', 'A yellow face, one little eye and a star on a stick')],
         'series': 'Masterpiece', 'tribe': 'Joy', 'tier': 'Common',
     },
