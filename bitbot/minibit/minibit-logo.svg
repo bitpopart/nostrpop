@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-39 -36 78 60" width="780" height="600" role="img" aria-label="MiniBit front view">
+<title>MiniBit front view</title>
+<g fill="#f7931a">
+<path d="M-6.3 -28 A6.3 6.3 0 1 1 6.3 -28 A6.3 6.3 0 1 1 -6.3 -28 Z M-3.8 -24 H3.8 V-19 H-3.8 Z M-2.2 -28 A2.2 2.2 0 1 0 2.2 -28 A2.2 2.2 0 1 0 -2.2 -28 Z"/>
+<rect x="-26.0" y="-22.0" width="52" height="44" rx="9"/>
+</g>
+<g fill="#ffffff"><rect x="-17.7" y="-14.6" width="35.4" height="29.2" rx="3"/></g>
+<g fill="#f7931a">
+<rect x="-9.7" y="-5.75" width="5.8" height="11.5" rx="2.9"/>
+<rect x="3.9" y="-5.75" width="5.8" height="11.5" rx="2.9"/>
+</g>
+<g stroke-linejoin="round">
+<polygon points="32.08,-16.70 23.90,-3.50 28.13,-3.50 26.44,5.30 34.90,-8.34 30.39,-8.34" fill="#ffffff" stroke="#f7931a" stroke-width="3.4" paint-order="stroke"/>
+<polygon points="-32.08,-16.70 -23.90,-3.50 -28.13,-3.50 -26.44,5.30 -34.90,-8.34 -30.39,-8.34" fill="#ffffff" stroke="#f7931a" stroke-width="3.4" paint-order="stroke"/>
+</g>
+</svg>
