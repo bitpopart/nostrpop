@@ -693,6 +693,7 @@ CHARACTERS = [
         'quote': "I wasn't gnawing. I was just thinking about it.",
         'story': ["Buck's two front teeth are the biggest thing about him, and he lets them lead. He walks into every room teeth first, grinning, with his eyes shut in delight.", 'He is always on the verge of gnawing something and mostly decides against it. If a pencil goes missing, ask Buck, and then thank him for being honest.'],
         'facts': [('Loves', 'Pencils, fences, big grins'), ('Look for', 'Two huge front teeth')],
+        'variations': [('Good morning', 'buck-v1'), ('Sending love', 'buck-v2')],
         'series': 'Masterpiece', 'tribe': 'Joy', 'tier': 'Common',
     },
     {
