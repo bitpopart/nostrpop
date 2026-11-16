@@ -617,6 +617,7 @@ CHARACTERS = [
         'quote': "I'm not staring. Bleh. Okay, I'm staring.",
             'story': ["Ogle has the biggest eye of all the POPeyes and he uses every bit of it. He stares at a sandwich, at a cloud, at your shoes, and then he sticks out his tongue to say he approves.", "If Ogle stares at you, don't look away. He isn't being rude. He is counting what he likes about you, and he always runs out of fingers before he runs out of things."],
         'facts': [('Loves', 'Staring contests, sandwiches, cloud watching'), ('Look for', 'A huge black pupil and a red tongue')],
+        'variations': [('Good morning', 'ogle-v1'), ('Sending love', 'ogle-v2')],
         'series': 'Masterpiece', 'tribe': 'Love', 'tier': 'Common',
     },
     {
