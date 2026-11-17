@@ -69,6 +69,7 @@
     }
     form.appendChild(chipField);
     form.appendChild(field("Front picture", ff)); form.appendChild(pvF); form.appendChild(field("Back picture (optional)", fb)); form.appendChild(pvB);
+    var fmsg = el("p", "form-msg"); fmsg.setAttribute("role", "alert"); form.appendChild(fmsg);
     var actions = el("div", "ev-actions");
     var add = el("button", "btn", "Add card"); add.type = "submit";
     var cancel = el("button", "btn ghost", "Cancel edit"); cancel.type = "button"; cancel.hidden = true;
@@ -101,11 +102,13 @@
 
     form.addEventListener("submit", function (e) {
       e.preventDefault();
-      if (!name.value.trim() || !run.value.trim()) { say(msg, "Fill in the name and the run.", true); return; }
+      say(fmsg, "", false);
+      if (!name.value.trim()) { say(fmsg, "Fill in the card name.", true); name.focus(); return; }
+      if (!run.value.trim()) run.value = "Open run";
       var id = editing || (fileId.value.trim() ? slug(fileId.value) : slug(name.value));
-      if (!id) { say(msg, "Give the card a web name.", true); return; }
-      if (!editing && merged().some(function (c) { return c.file === id; })) { say(msg, "A card with the web name " + id + " already exists.", true); return; }
-      if (!editing && !pf) { say(msg, "Choose the front picture.", true); return; }
+      if (!id) { say(fmsg, "Give the card a web name.", true); return; }
+      if (!editing && merged().some(function (c) { return c.file === id; })) { say(fmsg, "A card with the web name " + id + " already exists. Change the web name.", true); return; }
+      if (!editing && !pf) { say(fmsg, "Choose the front picture of the card.", true); return; }
       var cur = editing ? merged().filter(function (c) { return c.file === id; })[0] : { file: id, front: false, back: false, imv: 0 };
       var ent = ensure(cur);
       ent.name = name.value.trim(); ent.theme = theme.value; ent.series = series.value; ent.rarity = rarity.value; ent.run = run.value.trim(); ent.blurb = blurb.value.trim(); ent.removed = false;
@@ -114,6 +117,7 @@
       var cc = api.collections ? api.collections() : null;
       if (cc) cc.list().forEach(function (c) { var want = !!sel[c.id]; if (cc.has(c.id, id) !== want) cc.toggle(c.id, id, want); });
       reset(); mark(); draw();
+      saveBtn.click();
     });
 
     function draw() {
@@ -155,9 +159,10 @@
     }
 
     saveBtn.addEventListener("click", function () {
-      say(msg, "Saving...", false);
-      api.save(extra).then(function (saved) { extra = saved; dirty = false; draw(); say(msg, "Saved. The Cards page shows the changes within a minute."); if (api.saved) api.saved(); })
-        .catch(function () { say(msg, "Could not save. Try signing again.", true); });
+      function note(t, bad) { say(msg, t, bad); say(fmsg, t, bad); }
+      note("Saving...", false);
+      api.save(extra).then(function (saved) { extra = saved; dirty = false; draw(); note("Saved. The Cards page shows the changes within a minute."); if (api.saved) api.saved(); })
+        .catch(function (err) { note("Could not save the card" + (err && err.message ? " (" + err.message + ")" : "") + ". Try signing in again, or check that the worker is deployed.", true); });
     });
     window.addEventListener("beforeunload", function (e) { if (dirty) { e.preventDefault(); e.returnValue = ""; } });
     renderChips();
