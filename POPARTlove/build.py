@@ -266,7 +266,6 @@ NAV = [
     ("Studio", "/studio/"),
     ("PopUp", "/popup/"),
     ("Cards", "/cards/"),
-    ("Eye", "/eye/"),
     ("Collections", "/collections/"),
     ("POPtoons", "/poptoons/"),
     ("Stickers", "/stickers/"),
@@ -994,18 +993,6 @@ def build_pages():
 </div></section>
 <script src="/assets/js/events.js" defer></script>"""
     page("popup", "PopUp", "POPART.love pop-up events: markets, exhibitions and pop-up shops with art and collectible cards.", popup, "/popup/")
-
-    # ---- Eye: the POPtoons Eye display. The app itself is static, in eye/app/ (kept as exported), shown in a frame.
-    eye = page_head("Eye", "The POPtoons Eye display: a round screen that shows your POPtoons, blinks, talks back and hangs on your keys. Try the preview, flash one with USB and grab the 3D case.") + """
-<section class="section"><div class="container">
-  <iframe id="eye-frame" src="/eye/app/" title="POPtoons Eye display: preview, USB flasher and 3D case" allow="serial" loading="lazy" style="width:100%;height:1800px;border:3px solid #111;border-radius:18px;background:#FFCB3D;box-shadow:6px 6px 0 #111"></iframe>
-  <p style="margin-top:1.2rem"><a class="btn" href="/eye/app/" target="_blank" rel="noopener">Open full screen</a> <a class="btn" href="/poptoons/">Meet the POPtoons</a></p>
-</div></section>
-<script>
-(function(){var f=document.getElementById("eye-frame");function fit(){try{var d=f.contentDocument;var h=Math.max(d.documentElement.scrollHeight,d.body.scrollHeight);if(h>200)f.style.height=h+"px";}catch(e){}}
-f.addEventListener("load",function(){fit();try{new ResizeObserver(fit).observe(f.contentDocument.body);}catch(e){}setInterval(fit,1500);});})();
-</script>"""
-    page("eye", "Eye", "The POPtoons Eye display: a round keychain screen with 8 POPtoons that blink and talk back. Live preview, USB flasher and a 3D printable case.", eye, "/eye/")
 
     # ---- Admin (looks like a 404 to everyone; admin.js reveals the editor only for the owner key)
     admin = page_head("Page not found", "That page flew away like a paper plane.") + """
