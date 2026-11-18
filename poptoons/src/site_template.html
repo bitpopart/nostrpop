@@ -142,6 +142,9 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .pmain{display:grid;grid-template-columns:minmax(0,300px) 1fr;gap:24px;align-items:center}
 .pimg{background:#fff;border:var(--line) solid var(--ink);border-radius:24px;box-shadow:8px 8px 0 var(--ink);aspect-ratio:1;overflow:hidden;padding:20px}
 .pimg img{width:100%;height:100%;object-fit:contain}
+.pimg{position:relative}.pimg.tee{padding:0 0 48px}.pimg.tee img{border-radius:20px 20px 0 0;object-position:center top}
+.teebuy{position:absolute;left:10px;right:10px;bottom:8px;text-align:center;white-space:nowrap;background:var(--sun);color:var(--ink);font-weight:700;font-size:.76rem;text-decoration:none;border:var(--line) solid var(--ink);border-radius:99px;box-shadow:3px 3px 0 var(--ink);padding:.35em .8em}
+.teebuy:hover{transform:translate(1px,1px);box-shadow:2px 2px 0 var(--ink)}.teebuy[hidden]{display:none}
 .burst{width:min(100%,250px);justify-self:center;transform:rotate(-8deg)}
 .burst text{font-family:var(--display);fill:var(--ink)}
 .pbody{padding:22px 26px 26px}
@@ -181,6 +184,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
   nav.main a{padding:.3em .55em;font-size:.82rem}
   #q{margin-left:0;width:100%}
   .pmain,.pmain.hasv{grid-template-columns:1fr 1fr;gap:14px}
+  .pimg.tee{padding-bottom:38px}.teebuy{font-size:.62rem;padding:.3em .3em;left:6px;right:6px;bottom:6px}
   .pmain.hasv .vcol{grid-column:1/-1;grid-row:2;grid-template-rows:none;grid-auto-flow:row;grid-template-columns:repeat(auto-fill,64px);justify-content:start}
 }
 @media (max-width:480px){
@@ -345,9 +349,8 @@ function burst(txt){
 let lastFocus = null, savedY = 0;
 function thumbsCol(c){
   const vs = DATA.variations[c.key] || [];
-  if (!vs.length) return '';
-  const th = [{name: 'Original', img: DATA.images[c.key]}].concat(vs).map((v, i) =>
-    `<button type="button" class="vt${i ? '' : ' on'}" data-vimg="${i}" title="${esc(v.name)}" aria-label="Show ${esc(c.name)}: ${esc(v.name)}" aria-pressed="${i ? 'false' : 'true'}"><img src="${v.img}" alt="${esc(c.name)}: ${esc(v.name)}"></button>`).join('');
+  const th = [{name: 'Original', img: DATA.images[c.key]}].concat(vs, [{name: 'T-shirt', img: DATA.tees[c.key], tee: 1}]).map((v, i) =>
+    `<button type="button" class="vt${i ? '' : ' on'}" data-vimg="${i}"${v.tee ? ' data-tee="1"' : ''} title="${esc(v.name)}" aria-label="Show ${esc(c.name)}: ${esc(v.name)}" aria-pressed="${i ? 'false' : 'true'}"><img src="${v.img}" alt="${esc(c.name)}: ${esc(v.name)}"></button>`).join('');
   return `<div class="vcol" role="group" aria-label="More looks of ${esc(c.name)}">${th}</div>`;
 }
 function shareBox(c){
@@ -377,7 +380,7 @@ function openChar(key){
   $('#panel').innerHTML = `
     <div class="ptop" style="${tone(c.color)}">
       <div class="prow"><span class="eyebrow" style="margin:0">POPtoons · ${esc(k.name)}</span><span style="display:flex;align-items:center;gap:14px"><span class="pno">No. ${c.no}</span><button class="x" id="close" aria-label="Close">×</button></span></div>
-      <div class="pmain${(DATA.variations[c.key]||[]).length ? ' hasv' : ''}">${thumbsCol(c)}<div class="pimg"><img src="${DATA.images[c.key]}" alt="${esc(c.name + ' ' + c.kind)}"></div>${burst(c.sound)}</div>
+      <div class="pmain hasv">${thumbsCol(c)}<div class="pimg"><img src="${DATA.images[c.key]}" alt="${esc(c.name + ' ' + c.kind)}"><a class="teebuy" href="https://www.popart.love/shop/#tees" target="_blank" rel="noopener noreferrer" hidden>Buy at popart.love/shop &rsaquo;</a></div>${burst(c.sound)}</div>
     </div>
     <div class="pbody" style="--c:${c.color}">
       <div class="pname"><h2 class="pop" id="pn">${esc(c.name)}</h2><span>${esc(c.kind)}</span></div>
@@ -424,6 +427,7 @@ document.addEventListener('click', e => {
   if (vt){
     const grid = vt.parentElement; grid.querySelectorAll('.vt').forEach(b => { b.classList.toggle('on', b === vt); b.setAttribute('aria-pressed', b === vt ? 'true' : 'false'); });
     const big = document.querySelector('#sheet .pimg img'); if (big) big.src = vt.querySelector('img').src;
+    const pi = document.querySelector('#sheet .pimg'); if (pi){ pi.classList.toggle('tee', !!vt.dataset.tee); const b = pi.querySelector('.teebuy'); if (b) b.hidden = !vt.dataset.tee; }
     return;
   }
   const card = e.target.closest('.card'); if (card){ location.hash = card.dataset.key; return; }

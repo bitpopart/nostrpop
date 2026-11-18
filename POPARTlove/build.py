@@ -906,6 +906,11 @@ def build_pages():
     page("cards", "Cards", "POPART collectible pop art cards. Three tribes (Love, Freedom, Joy), rare series and one-of-a-kind cards.", cards, "/cards/")
 
     # ---- Shop
+    tee_list = json.load(open(os.path.join(ROOT, "data", "poptoons.json"), encoding="utf-8")).get("tees", [])
+    tee_cards = "".join(
+        f'''<article class="card"><figure><a href="https://poptoons.fun/#{t['key']}" target="_blank" rel="noopener noreferrer"><img src="/assets/img/tees/{t['key']}.webp" alt="White T-shirt with {escape(t['name'])} and the line: {escape(t['quote'])}" width="600" height="600" loading="lazy" style="width:100%;height:auto;aspect-ratio:1/1;object-fit:cover"></a></figure>
+<div class="body"><span class="tag soon">Coming soon</span><h3>{escape(t['name'])} Tee</h3><p>&ldquo;{escape(t['quote'])}&rdquo;</p></div></article>'''
+        for t in tee_list)
     shop = page_head("Shop", "Everything to collect, protect and show off your POPART cards.") + f"""
 <section class="section"><div class="container">
   <p class="notice"><strong>Cards are sold online and at events.</strong> Use the Online button on a card to buy it in the shop, or find a card at a pop-up event, see <a href="/popup/">PopUp</a> for the next one. You can pay with Bitcoin, of course. Join the newsletter in the footer to hear first.</p>
@@ -934,9 +939,12 @@ def build_pages():
   {tribe_cards(in_shop=True)}
   <h2 style="margin-top:2.4rem">More for collectors</h2>
   <div class="grid g3">{shop_cards()}</div>
+  <h2 style="margin-top:2.4rem" id="tees">POPtoons Tees</h2>
+  <p>Every POPtoon gets its own white T-shirt, with the toon and its favourite line on the chest. {len(tee_list)} toons, {len(tee_list)} tees. Tap a tee to meet the toon.</p>
+  <div class="grid g4">{tee_cards}</div>
 </div></section>
 <script src="/assets/js/dl.js" defer></script>"""
-    page("shop", "Shop", "POPART.love shop: collectible pop art cards, sleeves, magnetic cardholders and framed one-of-a-kind cards.", shop, "/shop/")
+    page("shop", "Shop", "POPART.love shop: collectible pop art cards, sleeves, magnetic cardholders, framed one-of-a-kind cards and a white T-shirt for every POPtoon.", shop, "/shop/")
 
     # ---- Free downloads (filled from the admin list)
     free = page_head("Free downloads", "Free pop art for everyone: wallpapers, printables and more. Download, enjoy, share.") + """

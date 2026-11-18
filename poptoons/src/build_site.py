@@ -8,6 +8,7 @@ writes
   ../index.html                                  the whole site, one self-contained file
   ../../POPARTlove/data/poptoons.json            collection list used by POPARTlove/build.py
   ../../POPARTlove/assets/img/poptoons/*.webp    collection pictures for popart.love
+  ../../POPARTlove/assets/img/tees/*.webp        T-shirt pictures, made by make_tees.py (run it first)
 
 Afterwards run POPARTlove/build.py so popart.love picks up the changes.
 Needs: pillow, fonttools, brotli (pip install pillow fonttools brotli).
@@ -105,7 +106,12 @@ def build_site():
                 'img': 'data:image/webp;base64,' + base64.b64encode(buf.getvalue()).decode()})
     variations = {c['key']: [{'name': n, 'img': image_uri(f, 560)} for n, f in c['variations']]
                   for c in data.CHARACTERS if c.get('variations')}
+    def tee_uri(key):
+        im = Image.open(os.path.join(HERE, 'img', key + '-tee.png')).convert('RGB'); im.thumbnail((520, 520), Image.LANCZOS)
+        buf = io.BytesIO(); im.save(buf, 'WEBP', quality=80)
+        return 'data:image/webp;base64,' + base64.b64encode(buf.getvalue()).decode()
     payload = {
+        'tees': {c['key']: tee_uri(c['key']) for c in data.CHARACTERS},
         'variations': variations,
         'cards': cards_by_toon,
         'collections': [{k: c[k] for k in ('key', 'no', 'name', 'color', 'tagline', 'intro', 'notes')} for c in data.COLLECTIONS],
@@ -155,7 +161,7 @@ def build_popart():
                      'count': len(mem), 'characters': [c['name'] for c in mem]})
     shutil.copy(os.path.join(HERE, 'img', 'logo.svg'), os.path.join(img_dir, 'logo.svg'))
     out = os.path.join(POPART, 'data', 'poptoons.json')
-    json.dump({'site': 'https://poptoons.fun', 'characters': len(data.CHARACTERS), 'toons': {c['key']: c['name'] for c in data.CHARACTERS}, 'collections': rows},
+    json.dump({'site': 'https://poptoons.fun', 'characters': len(data.CHARACTERS), 'toons': {c['key']: c['name'] for c in data.CHARACTERS}, 'tees': [{'key': c['key'], 'name': c['name'], 'quote': c['quote']} for c in data.CHARACTERS], 'collections': rows},
               open(out, 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
     open(out, 'a').write('\n')
     print('wrote POPARTlove/data/poptoons.json and', len(rows) * 2, 'pictures')

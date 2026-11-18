@@ -52,6 +52,253 @@
     "mo": "Mo",
     "pout": "Pout"
   },
+  "tees": [
+    {
+      "key": "coolmoo",
+      "name": "Cool Moo",
+      "quote": "No rush. The grass isn't going anywhere."
+    },
+    {
+      "key": "toot",
+      "name": "Toot",
+      "quote": "I remember your birthday. And your snack order."
+    },
+    {
+      "key": "mimi",
+      "name": "Mimi",
+      "quote": "I wasn't waiting for you. I just happened to be here. For an hour."
+    },
+    {
+      "key": "blu",
+      "name": "Blu",
+      "quote": "You're back! It's been four minutes! Best day ever!"
+    },
+    {
+      "key": "lilmoo",
+      "name": "Lil Moo",
+      "quote": "Take half. No wait, take the bigger half."
+    },
+    {
+      "key": "oki",
+      "name": "Oki",
+      "quote": "Why did the banana go to the doctor? It wasn't peeling well."
+    },
+    {
+      "key": "pip",
+      "name": "Pip",
+      "quote": "Last one in is a tadpole!"
+    },
+    {
+      "key": "dax",
+      "name": "Dax",
+      "quote": "I never look back. Wait, did I forget my hat?"
+    },
+    {
+      "key": "flap",
+      "name": "Flap",
+      "quote": "Watch me fly! ...Almost."
+    },
+    {
+      "key": "wiggle",
+      "name": "Wiggle",
+      "quote": "My tail has opinions, and it loves you."
+    },
+    {
+      "key": "slurp",
+      "name": "Slurp",
+      "quote": "I tried it. I'd try it again. What was it?"
+    },
+    {
+      "key": "bun",
+      "name": "Bun",
+      "quote": "Boing! Boing! Sorry, I can't stop."
+    },
+    {
+      "key": "twirl",
+      "name": "Twirl",
+      "quote": "I have an idea! Wait, a better idea! Wait..."
+    },
+    {
+      "key": "gem",
+      "name": "Gem",
+      "quote": "Good morning! It's very early! I'm so happy!"
+    },
+    {
+      "key": "pling",
+      "name": "Pling",
+      "quote": "You liked my picture? Me? Hello!"
+    },
+    {
+      "key": "jab",
+      "name": "Jab",
+      "quote": "Fist bump? Gently, please. I'm all gloves."
+    },
+    {
+      "key": "lumo",
+      "name": "Lumo",
+      "quote": "Don't worry about the dark. I brought a glow."
+    },
+    {
+      "key": "fang",
+      "name": "Fang",
+      "quote": "Boo! Did it work? Tell me it worked."
+    },
+    {
+      "key": "zig",
+      "name": "Zig",
+      "quote": "Ha ha ha ha ha! That's five funny things at once!"
+    },
+    {
+      "key": "fizz",
+      "name": "Fizz",
+      "quote": "Wow! Did you see that? Neither did I! Wow!"
+    },
+    {
+      "key": "uno",
+      "name": "Uno",
+      "quote": "I only have one eye, so I look extra hard."
+    },
+    {
+      "key": "bo",
+      "name": "Bo",
+      "quote": "What is a door? No, really."
+    },
+    {
+      "key": "razz",
+      "name": "Razz",
+      "quote": "Pffft. That one was for Monday."
+    },
+    {
+      "key": "tripp",
+      "name": "Tripp",
+      "quote": "I didn't peek. My spare eye did."
+    },
+    {
+      "key": "shady",
+      "name": "Shady",
+      "quote": "It's not dark. It's just my look."
+    },
+    {
+      "key": "heli",
+      "name": "Heli",
+      "quote": "Today's the day. I can feel it. Maybe tomorrow."
+    },
+    {
+      "key": "chili",
+      "name": "Chili",
+      "quote": "Who did that to you? I'm already furious."
+    },
+    {
+      "key": "giggle",
+      "name": "Giggle",
+      "quote": "Sorry! Hehe! It's not funny! Hahaha!"
+    },
+    {
+      "key": "smooch",
+      "name": "Smooch",
+      "quote": "I love you. And you. And that chair."
+    },
+    {
+      "key": "plop",
+      "name": "Plop",
+      "quote": "Everything starts with a plop."
+    },
+    {
+      "key": "oops",
+      "name": "Oops",
+      "quote": "I didn't mean to. Whatever that was."
+    },
+    {
+      "key": "whizz",
+      "name": "Whizz",
+      "quote": "Bzzz! You didn't see me. Bzzz! Still didn't."
+    },
+    {
+      "key": "stinker",
+      "name": "Stinker",
+      "quote": "It was me. Hehe. I'd do it again."
+    },
+    {
+      "key": "twister",
+      "name": "Twister",
+      "quote": "Hold on to your hat. And the table."
+    },
+    {
+      "key": "burp",
+      "name": "Burp",
+      "quote": "Excuse me. And you. And you again."
+    },
+    {
+      "key": "drool",
+      "name": "Drool",
+      "quote": "I'm not drooling. I'm thinking about lunch."
+    },
+    {
+      "key": "flush",
+      "name": "Flush",
+      "quote": "Ahem. Bow to the throne, or just wave."
+    },
+    {
+      "key": "ogle",
+      "name": "Ogle",
+      "quote": "I'm not staring. Bleh. Okay, I'm staring."
+    },
+    {
+      "key": "spark",
+      "name": "Spark",
+      "quote": "Zing! Wish granted. Oh, wrong wish."
+    },
+    {
+      "key": "hiya",
+      "name": "Hiya",
+      "quote": "Hiya! I said it first! I always say it first!"
+    },
+    {
+      "key": "jay",
+      "name": "Jay",
+      "quote": "Guess what! Never mind, you already heard."
+    },
+    {
+      "key": "penny",
+      "name": "Penny",
+      "quote": "Heads, I'm lucky. Tails, I'm still lucky."
+    },
+    {
+      "key": "swoon",
+      "name": "Swoon",
+      "quote": "Is that a spoon? It's the best spoon ever."
+    },
+    {
+      "key": "snicker",
+      "name": "Snicker",
+      "quote": "I just thought of that joke from Tuesday."
+    },
+    {
+      "key": "chomp",
+      "name": "Chomp",
+      "quote": "Nom! That was a hug, I swear."
+    },
+    {
+      "key": "buck",
+      "name": "Buck",
+      "quote": "I wasn't gnawing. I was just thinking about it."
+    },
+    {
+      "key": "snag",
+      "name": "Snag",
+      "quote": "I've been right behind you the whole time."
+    },
+    {
+      "key": "mo",
+      "name": "Mo",
+      "quote": "I have a moustache. Therefore I am correct."
+    },
+    {
+      "key": "pout",
+      "name": "Pout",
+      "quote": "Darling, you look wonderful. Everything does."
+    }
+  ],
   "collections": [
     {
       "key": "lovelings",
