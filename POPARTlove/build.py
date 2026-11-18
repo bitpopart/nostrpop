@@ -487,8 +487,9 @@ def where_html(online, offline, url, status, in_shop=False):
     return f'<div class="tags where-row">{on}{off}</div>'
 
 
-def tribe_cards(limit=None, in_shop=False):
-    cards = EXAMPLE_CARDS[:limit] if limit else EXAMPLE_CARDS
+def tribe_cards(limit=None, in_shop=False, random_pick=False):
+    # random_pick: put every card in the page, cards.js shows `limit` random ones on each visit (without script the first `limit` show)
+    cards = EXAMPLE_CARDS[:limit] if (limit and not random_pick) else EXAMPLE_CARDS
     out = ""
     for fn, title, theme, series, rarity, run, blurb, status, left, online, offline, url in cards:
         name, cls, _ = THEME_ICON[theme]
@@ -498,8 +499,9 @@ def tribe_cards(limit=None, in_shop=False):
         toon_tag = f'<a class="tag" href="/poptoons/#{toon}">POPtoon: {escape(_toon_names[toon])}</a>' if toon else ""
         out += f'''<article class="card" id="{fn}" data-card="{fn}" data-run="{runnum}"><figure class="cardfig"><button class="flip" type="button" aria-pressed="false" aria-label="Flip the {escape(title)} card"><span class="flip-inner"><img class="face front" src="/assets/img/cards/{fn}.webp" alt="POPART {escape(title)} card front, {series} series, {rarity}" width="600" height="840" loading="lazy"><img class="face back" src="/assets/img/cards/{fn}-back.webp" alt="POPART {escape(title)} card back" width="600" height="840" loading="lazy"></span></button><span class="flip-hint">Tap the card to flip</span></figure>
 <div class="body"><div class="tags"><span class="tag {cls}">{name}</span><span class="tag">{rarity}</span>{toon_tag}<span class="tag stock {stock_class(status)}" data-stock>{stock_label(status, left, runnum)}</span></div><p class="card-price" data-price hidden></p>{where_html(online, offline, url, status, in_shop)}<h3>{escape(title)}</h3><p>{series} series. {run}. {escape(blurb)}</p></div></article>'''
-    attrs = (f' data-limit="{limit}"' if limit else "") + (' data-shop="1"' if in_shop else "")
-    return f'<div class="grid g3"{attrs}>{out}</div>'
+    attrs = (f' data-limit="{limit}"' if limit else "") + (' data-shop="1"' if in_shop else "") + (' data-random="1"' if random_pick else "")
+    ns = '<noscript><style>.grid[data-random]{visibility:visible!important}</style></noscript>' if random_pick else ""
+    return f'<div class="grid g3"{attrs}>{out}</div>{ns}'
 
 
 RIBBON = ""
@@ -554,7 +556,7 @@ def build_pages():
 
 <section class="section"><div class="container">
   <div class="section-head"><div><h2>Cards</h2><p>Collectible POPART cards. Pick a tribe, find the rare ones, trade with friends.</p></div><a class="link-more" href="/cards/">All cards &rarr;</a></div>
-  {tribe_cards(3)}
+  {tribe_cards(3, random_pick=True)}
   <div class="coll" data-collections data-home="1" hidden></div>
 </div></section>
 

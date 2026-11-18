@@ -127,3 +127,7 @@ When you upload a free download (a wallpaper, say) in admin, the form has "Add t
 ### Hide or delete a card, admin loading
 
 In the cards list, every card has Edit, Hide and Delete. Hide keeps it for later ("Show again"). Delete asks once more and then removes the card for good: it disappears from the site, from the admin list, from its collections, and its saved pictures are removed. Cards you added yourself have Edit and Delete. The admin page waits up to 20 seconds for the Nostr extension in a browser that has signed in before (4 seconds otherwise), shows "Loading the admin...", retries when you come back to the tab, and offers a Try again button.
+
+### Random cards on the front page
+
+The cards block on the home page shows 3 random cards on every visit, picked from all cards (including ones added in admin, minus hidden or deleted ones). Without JavaScript it shows the first 3. A grid gets this with `data-limit="3" data-random="1"`.

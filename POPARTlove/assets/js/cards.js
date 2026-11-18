@@ -49,7 +49,7 @@
     document.querySelectorAll("article[data-card]").forEach(function (a) { if (seen.indexOf(a.parentNode) < 0) seen.push(a.parentNode); });
     seen.forEach(function (g) {
       grid = g; limit = Number(g.getAttribute("data-limit")) || 0; inShop = g.getAttribute("data-shop") === "1";
-      renderGrid(list);
+      renderGrid(list); finish(g);
     });
     if (window.popartRefreshStock) window.popartRefreshStock();
   }
@@ -61,10 +61,25 @@
       if (a) update(a, c); else fresh.push(c);
     });
     for (var i = fresh.length - 1; i >= 0; i--) grid.insertBefore(build(fresh[i]), grid.firstChild);
-    if (limit) { var all = grid.querySelectorAll("article[data-card]"); for (var j = limit; j < all.length; j++) all[j].parentNode.removeChild(all[j]); }
+  }
+  // show only `limit` cards; with data-random they are picked at random on every visit
+  function finish(g) {
+    var lim = Number(g.getAttribute("data-limit")) || 0;
+    if (lim) {
+      var all = Array.prototype.slice.call(g.querySelectorAll("article[data-card]"));
+      if (g.hasAttribute("data-random")) for (var i = all.length - 1; i > 0; i--) { var k = Math.floor(Math.random() * (i + 1)), t = all[i]; all[i] = all[k]; all[k] = t; }
+      all.forEach(function (a, n) { if (n < lim) g.appendChild(a); else a.parentNode.removeChild(a); });
+    }
+    g.setAttribute("data-ready", "1");
+  }
+  function finishAll() {
+    var seen = [];
+    document.querySelectorAll("article[data-card]").forEach(function (a) { if (seen.indexOf(a.parentNode) < 0) seen.push(a.parentNode); });
+    seen.forEach(finish);
+    if (window.popartRefreshStock) window.popartRefreshStock();
   }
   window.PopartCards = { render: render };
   if (window.POPART_DEMO_CARDS) { render(window.POPART_DEMO_CARDS); return; }
-  if (!window.fetch) return;
-  fetch("/api/cards").then(function (r) { return r.ok ? r.json() : []; }).then(function (l) { if (l && l.length) render(l); }).catch(function () {});
+  if (!window.fetch) { finishAll(); return; }
+  fetch("/api/cards").then(function (r) { return r.ok ? r.json() : []; }).then(function (l) { if (l && l.length) render(l); else finishAll(); }).catch(finishAll);
 })();
