@@ -158,12 +158,9 @@
             cancel.hidden = false; add.textContent = "Update card"; h3.textContent = "Edit " + c.name;
             form.scrollIntoView({ behavior: "smooth", block: "center" });
           });
-          var isBase = !!baseFiles[c.file];
-          if (isBase) {
-            var hide = el("button", "btn ghost", "Hide"); hide.type = "button";
-            hide.addEventListener("click", function () { ensure(c).removed = true; if (editing === c.file) reset(); mark(); draw(); });
-            btns.appendChild(ed); btns.appendChild(hide);
-          } else btns.appendChild(ed);
+          var hide = el("button", "btn ghost", "Hide"); hide.type = "button";
+          hide.addEventListener("click", function () { ensure(c).removed = true; if (editing === c.file) reset(); mark(); draw(); });
+          btns.appendChild(ed); btns.appendChild(hide);
           btns.appendChild(deleteButton(c));
         }
         row.appendChild(btns); box.appendChild(row);
