@@ -75,8 +75,10 @@
       });
     }
     buildPicks();
-    form.appendChild(h3); form.appendChild(grid); form.appendChild(field("Text about the collection (own page)", body));
-    form.appendChild(field("Header picture for the collection page (wide, optional)", hfile)); form.appendChild(hprev); form.appendChild(hdrop);
+    form.appendChild(h3); form.appendChild(grid);
+    var hField = field("Header picture for the collection page (wide, optional)", hfile);
+    form.appendChild(hField); form.appendChild(hprev); form.appendChild(hdrop);
+    form.appendChild(field("Text about the collection (own page)", body));
     form.appendChild(field("Thumbnail (optional, the first card is used if empty)", file)); form.appendChild(preview); form.appendChild(drop);
     form.appendChild(el("p", "notice", "Cards in this collection:")); form.appendChild(picks);
     form.appendChild(el("p", "notice", "Stickers in this collection (saved stickers only):"));
@@ -142,6 +144,8 @@
         row.appendChild(info);
         var btns = el("div", "ev-btns");
         var ed = el("button", "btn ghost", "Edit"); ed.type = "button";
+        var eh = el("button", "btn ghost", "Edit header"); eh.type = "button";
+        eh.addEventListener("click", function () { ed.click(); hField.scrollIntoView({ behavior: "smooth", block: "center" }); });
         ed.addEventListener("click", function () {
           editing = c.id; pending = null; file.value = ""; name.value = c.name; text.value = c.text || ""; slugIn.value = c.slug || c.id; body.value = c.body || ""; pendingH = null; hfile.value = ""; showHPreview(c._hdr ? "data:image/webp;base64," + c._hdr : (c.hdr ? "/api/event-image?id=h-" + encodeURIComponent(c.id) + "&v=" + (c.himv || 0) : ""));
           Object.keys(checks).forEach(function (k) { checks[k].checked = c.cards.indexOf(k) > -1; });
@@ -157,7 +161,7 @@
           if (armed !== c.id) { armed = c.id; draw(); return; }
           armed = null; list = list.filter(function (x) { return x.id !== c.id; }); if (editing === c.id) reset(); mark(); draw(); doSave().catch(function () {});
         });
-        btns.appendChild(ed); btns.appendChild(del); row.appendChild(btns); box.appendChild(row);
+        btns.appendChild(eh); btns.appendChild(ed); btns.appendChild(del); row.appendChild(btns); box.appendChild(row);
       });
     }
 

@@ -88,10 +88,10 @@
         if (!full) { detail.appendChild(el("h2", "", sel.name)); if (sel.text) detail.appendChild(el("p", "", sel.text)); }
         if (sel.body) detail.appendChild(el("p", "coll-body", sel.body));
         var groups = [
-          ["Products", (sel.shop || []).map(function (i) { return (d.shop || []).filter(function (x) { return x.id === i; })[0]; }).filter(Boolean).map(function (x) { return itemCard(x.image ? "/api/event-image?id=" + encodeURIComponent(x.id) + "&v=" + (x.imv || 0) : "", x.title, x.price, x.url || "/shop/", !!x.url); })],
           ["Cards", sel.cards.map(function (f) { return d.cards.filter(function (c) { return c.file === f; })[0]; }).filter(Boolean).map(function (c) {
             return itemCard(c._front || (c.front ? "/api/event-image?id=c-" + encodeURIComponent(c.file) + "&v=" + (c.imv || 0) : (c.thumb || "/assets/img/cards/" + c.file + ".webp")), c.name, c.rarity, "/cards/");
           })],
+          ["Products", (sel.shop || []).map(function (i) { return (d.shop || []).filter(function (x) { return x.id === i; })[0]; }).filter(Boolean).map(function (x) { return itemCard(x.image ? "/api/event-image?id=" + encodeURIComponent(x.id) + "&v=" + (x.imv || 0) : "", x.title, x.price, x.url || "/shop/", !!x.url); })],
           ["Stickers", (sel.stickers || []).map(function (i) { return d.stickers.filter(function (x) { return x.id === i; })[0]; }).filter(Boolean).map(function (x) { return itemCard(x.image ? (x._src || "/api/event-image?id=" + encodeURIComponent(x.id) + "&v=" + (x.imv || 0)) : "", x.title, x.price, "/stickers/"); })],
           ["Prints", (sel.prints || []).map(function (i) { return d.prints.filter(function (x) { return x.id === i; })[0]; }).filter(Boolean).map(function (x) { return itemCard(x.image ? (x._src || "/api/event-image?id=" + encodeURIComponent(x.id) + "&v=" + (x.imv || 0)) : "", x.title, x.price, "/prints/"); })],
           ["Free downloads", (sel.free || []).map(function (i) { return (d.free || []).filter(function (x) { return x.id === i; })[0]; }).filter(Boolean).map(function (x) { return itemCard(x.image ? "/api/event-image?id=" + encodeURIComponent(x.id) + "&v=" + (x.imv || 0) : "", x.title, x.category || "Free download", "/api/file?id=" + encodeURIComponent(x.id)); })]
