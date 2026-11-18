@@ -4,7 +4,7 @@
   if (!grids.length) return;
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text) e.textContent = text; return e; }
 
-  function card(it) {
+  function card(it, kind) {
     var a = el("article", "card");
     if (it.image) {
       var f = el("figure"), img = document.createElement("img");
@@ -20,7 +20,7 @@
     b.appendChild(el("h3", "", it.title));
     if (it.description) b.appendChild(el("p", "", it.description));
     if (it.digital && it.file) tags.appendChild(el("span", "tag", "Digital file"));
-    if (!soon && it.url) { var l = el("a", "btn", it.digital === "paid" ? "Buy digital file" : "Buy"); l.href = it.url; l.target = "_blank"; l.rel = "noopener"; b.appendChild(l); }
+    if (!soon && it.url) { var l = el("a", "btn", it.digital === "paid" ? "Buy digital file" : kind === "shop" ? "View product" : "Buy"); l.href = it.url; l.target = "_blank"; l.rel = "noopener"; b.appendChild(l); }
     if (it.digital === "free" && it.file) { var d = el("a", "btn yellow", "Download to print"); d.href = it._href || ("/api/file?id=" + encodeURIComponent(it.id)); d.setAttribute("download", it.fname || ""); b.appendChild(d); }
     if (it.digital === "paid" && it.file) { var h = el("a", "", "Bought it? Enter your download code"); h.href = "/shop/#digital"; b.appendChild(h); }
     a.appendChild(b);
@@ -29,9 +29,10 @@
   function render(grid, list) {
     if (!list.length) return;
     grid.innerHTML = "";
-    list.forEach(function (it) { grid.appendChild(card(it)); });
+    list.forEach(function (it) { grid.appendChild(card(it, grid.getAttribute("data-kind"))); });
     var n = grid.parentNode.querySelector("[data-catalog-notice]");
     if (n) n.hidden = true;
+    var w = grid.closest("[data-shop-wrap]"); if (w) w.hidden = false;
   }
   window.PopartCatalog = { render: function (kind, list) { grids.forEach(function (g) { if (g.getAttribute("data-kind") === kind) render(g, list); }); } };
   grids.forEach(function (grid) {

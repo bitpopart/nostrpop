@@ -135,3 +135,7 @@ The card fan in the page header also shows 3 random cards and swaps one every 4 
 ### Cache
 
 `/assets/js`, `/assets/css` and fonts are cached for a year. `build.py` adds `?v=<hash of the file>` to every script and stylesheet link in the pages it writes, so a changed file gets a new address and visitors never keep an old copy. `cards.json` and `poptoons-collections.json` are not cached; pictures are cached for a day. If you add a new script, link it as `/assets/js/<name>.js` in build.py and the version is added automatically.
+
+## Shop products
+
+Admin, "Shop products": add products with a link (for example a Redbubble product page), a name, price and picture. Press "Get picture and name from the link" and the worker (`POST /api/product-lookup`, admin only, signed) reads the page's og:image, title, description and price, and the admin stores the picture on the site (same storage as other pictures). If a shop blocks the worker, paste the direct link of a picture, or upload your own. Products live in `/api/catalog?kind=shop`, show on the Shop page under "More from the shop" (hidden while empty), and can be ticked into collections (`shop` list on each collection) where they show under "Products" and link to the shop.

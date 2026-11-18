@@ -924,6 +924,11 @@ def build_pages():
     <p>Shiny 3D pop art emoji pins to wear on a bag, jacket, cap or t-shirt.</p>
     <a class="btn pink" href="/poppins/">See the POPpins</a>
   </div>
+  <div data-shop-wrap hidden>
+    <h2 style="margin-top:2rem" id="products">More from the shop</h2>
+    <p>Prints, tees, stickers and more, made with POPART designs. Tap a product to see it in the shop.</p>
+    <div class="grid g3" data-kind="shop"></div>
+  </div>
   <h2 style="margin-top:2rem" id="digital">Digital downloads</h2>
   <p>Print them at home. Free files download straight away. For paid files, buy with the Buy button and use the download code you get from the artist.</p>
   <div class="grid g3" id="digital-grid"><p class="notice" style="grid-column:1/-1">Digital sticker and print files will be listed here.</p></div>
@@ -943,6 +948,7 @@ def build_pages():
   <p>Every POPtoon gets its own white T-shirt, with the toon and its favourite line on the chest. {len(tee_list)} toons, {len(tee_list)} tees. Tap a tee to meet the toon.</p>
   <div class="grid g4">{tee_cards}</div>
 </div></section>
+<script src="/assets/js/catalog.js" defer></script>
 <script src="/assets/js/dl.js" defer></script>"""
     page("shop", "Shop", "POPART.love shop: collectible pop art cards, sleeves, magnetic cardholders, framed one-of-a-kind cards and a white T-shirt for every POPtoon.", shop, "/shop/")
 

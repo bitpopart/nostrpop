@@ -47,7 +47,7 @@
     var h3 = el("h3", "", "Add a collection");
     var grid = el("div", "ev-grid"); grid.appendChild(field("Name", name)); grid.appendChild(field("Short line", text)); grid.appendChild(field("Page address (/collections/...)", slugIn));
     var picks = el("div", "coll-picks");
-    var checks = {}, sChecks = {}, pChecks = {}, fChecks = {};
+    var checks = {}, sChecks = {}, pChecks = {}, fChecks = {}, mChecks = {};
     api.cards().forEach(function (c) {
       var l = el("label", "coll-pick"); var cb = document.createElement("input"); cb.type = "checkbox"; cb.value = c.file; checks[c.file] = cb;
       var im = document.createElement("img"); im.src = api.thumbOf(c); im.alt = ""; im.width = 30; im.height = 42;
@@ -63,9 +63,10 @@
       return box;
     }
     function freeItems() { return api.free ? api.free() : []; }
-    var sBox = el("div"), pBox = el("div"), fBox = el("div");
+    var sBox = el("div"), pBox = el("div"), fBox = el("div"), mBox = el("div");
+    function shopItems() { return api.shop ? api.shop() : []; }
     function buildPicks() {
-      [[sBox, sChecks, api.stickers(), "stickers"], [pBox, pChecks, api.prints(), "prints"], [fBox, fChecks, freeItems(), "free downloads"]].forEach(function (g) {
+      [[sBox, sChecks, api.stickers(), "stickers"], [pBox, pChecks, api.prints(), "prints"], [fBox, fChecks, freeItems(), "free downloads"], [mBox, mChecks, shopItems(), "shop products"]].forEach(function (g) {
         var keep = {}; Object.keys(g[1]).forEach(function (k) { keep[k] = g[1][k].checked; delete g[1][k]; });
         g[0].innerHTML = "";
         if (!g[2].length) { g[0].appendChild(el("p", "form-msg", "No saved " + g[3] + " yet.")); return; }
@@ -79,6 +80,7 @@
     form.appendChild(field("Thumbnail (optional, the first card is used if empty)", file)); form.appendChild(preview); form.appendChild(drop);
     form.appendChild(el("p", "notice", "Cards in this collection:")); form.appendChild(picks);
     form.appendChild(el("p", "notice", "Stickers in this collection (saved stickers only):"));
+    form.appendChild(el("p", "notice", "Shop products in this collection (saved products only):")); form.appendChild(mBox);
     form.appendChild(sBox);
     form.appendChild(el("p", "notice", "Prints in this collection (saved prints only):"));
     form.appendChild(pBox);
@@ -93,7 +95,7 @@
     function mark() { dirty = true; say(msg, "You have unsaved changes. Press Save collections.", false); changed(); }
     function showPreview(src) { preview.hidden = !src; if (src) preview.src = src; drop.hidden = !src; }
     function showHPreview(src) { hprev.hidden = !src; if (src) hprev.src = src; hdrop.hidden = !src; }
-    function reset() { editing = null; pending = null; pendingH = null; showHPreview(""); form.reset(); [checks, sChecks, pChecks, fChecks].forEach(function (m) { Object.keys(m).forEach(function (k) { m[k].checked = false; }); }); preview.hidden = true; drop.hidden = true; cancel.hidden = true; add.textContent = "Add collection"; h3.textContent = "Add a collection"; }
+    function reset() { editing = null; pending = null; pendingH = null; showHPreview(""); form.reset(); [checks, sChecks, pChecks, fChecks, mChecks].forEach(function (m) { Object.keys(m).forEach(function (k) { m[k].checked = false; }); }); preview.hidden = true; drop.hidden = true; cancel.hidden = true; add.textContent = "Add collection"; h3.textContent = "Add a collection"; }
     file.addEventListener("change", function () {
       if (!file.files[0]) return;
       shrink(file.files[0]).then(function (b) { pending = { b64: b }; showPreview("data:image/webp;base64," + b); }).catch(function () { file.value = ""; say(msg, "That file could not be used as a picture.", true); });
@@ -119,6 +121,7 @@
       c.cards = Object.keys(checks).filter(function (k) { return checks[k].checked; });
       c.stickers = Object.keys(sChecks).filter(function (k) { return sChecks[k].checked; });
       c.prints = Object.keys(pChecks).filter(function (k) { return pChecks[k].checked; });
+      c.shop = Object.keys(mChecks).filter(function (k) { return mChecks[k].checked; }).concat((c.shop || []).filter(function (k) { return !mChecks[k]; }));
       c.free = Object.keys(fChecks).filter(function (k) { return fChecks[k].checked; }).concat((c.free || []).filter(function (k) { return !fChecks[k]; }));
       if (pending && pending.b64) { c._img = pending.b64; c.image = true; }
       else if (pending && pending.clear) { delete c._img; c.image = false; }
@@ -135,7 +138,7 @@
         if (src) { var th = document.createElement("img"); th.src = src; th.alt = ""; th.className = "adm-thumb"; row.appendChild(th); }
         var info = el("div", "ev-info"); info.appendChild(el("strong", "", c.name)); var total = c.cards.length + (c.stickers || []).length + (c.prints || []).length;
         var pg = el("a", "", "/collections/" + (c.slug || c.id)); pg.href = "/collections/" + (c.slug || c.id); pg.target = "_blank"; pg.rel = "noopener"; pg.style.fontSize = ".85rem"; info.appendChild(pg);
-        info.appendChild(el("span", "", c.cards.length + (c.cards.length === 1 ? " card" : " cards") + ", " + (c.stickers || []).length + " stickers, " + (c.prints || []).length + " prints, " + (c.free || []).length + " free downloads"));
+        info.appendChild(el("span", "", c.cards.length + (c.cards.length === 1 ? " card" : " cards") + ", " + (c.stickers || []).length + " stickers, " + (c.prints || []).length + " prints, " + (c.free || []).length + " free downloads, " + (c.shop || []).length + " products"));
         row.appendChild(info);
         var btns = el("div", "ev-btns");
         var ed = el("button", "btn ghost", "Edit"); ed.type = "button";
@@ -145,6 +148,7 @@
           Object.keys(sChecks).forEach(function (k) { sChecks[k].checked = (c.stickers || []).indexOf(k) > -1; });
           Object.keys(pChecks).forEach(function (k) { pChecks[k].checked = (c.prints || []).indexOf(k) > -1; });
           Object.keys(fChecks).forEach(function (k) { fChecks[k].checked = (c.free || []).indexOf(k) > -1; });
+          Object.keys(mChecks).forEach(function (k) { mChecks[k].checked = (c.shop || []).indexOf(k) > -1; });
           showPreview(imgSrc(c)); cancel.hidden = false; add.textContent = "Update collection"; h3.textContent = "Edit " + c.name;
           form.scrollIntoView({ behavior: "smooth", block: "center" });
         });
@@ -180,7 +184,7 @@
         var added = 0;
         items.forEach(function (it) {
           if (list.some(function (x) { return x.id === it.id || (x.slug || x.id) === it.id; })) return;
-          var c = { id: it.id, slug: it.id, name: it.name, text: it.text || "", body: "", cards: it.cards || [], stickers: [], prints: [], free: [], image: !!it.thumb, imv: 0, hdr: !!it.hdr, himv: 0 };
+          var c = { id: it.id, slug: it.id, name: it.name, text: it.text || "", body: "", cards: it.cards || [], stickers: [], prints: [], free: [], shop: [], image: !!it.thumb, imv: 0, hdr: !!it.hdr, himv: 0 };
           if (it.thumb) c._img = it.thumb; if (it.hdr) c._hdr = it.hdr;
           list.push(c); added++;
         });

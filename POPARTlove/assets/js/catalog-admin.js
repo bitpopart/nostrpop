@@ -25,22 +25,22 @@
   }
 
   function mount(root, kind, api) {
-    var free = kind === "free";
-    var one = free ? "download" : kind === "stickers" ? "sticker" : "print", label = free ? "Free downloads" : kind === "stickers" ? "Stickers" : "Prints";
-    var noun = free ? "downloads" : kind;
+    var free = kind === "free", shop = kind === "shop";
+    var one = free ? "download" : shop ? "product" : kind === "stickers" ? "sticker" : "print", label = free ? "Free downloads" : shop ? "Shop products" : kind === "stickers" ? "Stickers" : "Prints";
+    var noun = free ? "downloads" : shop ? "products" : kind;
     var list = [], editing = null, dirty = false, armed = null, pending = null;
     root.innerHTML = "";
     var head = el("div", "section-head");
-    var hd = el("div"); hd.appendChild(el("h2", "", label)); hd.appendChild(el("p", "", free ? "Upload free files for the Free downloads page: PDFs, pictures, zip files, music, anything up to 20 MB." : "Add " + kind + ". Press Available or Coming soon on an item to switch it."));
+    var hd = el("div"); hd.appendChild(el("h2", "", label)); hd.appendChild(el("p", "", free ? "Upload free files for the Free downloads page: PDFs, pictures, zip files, music, anything up to 20 MB." : shop ? "Add products for the Shop page. Paste the product link from Redbubble or any other shop and press Get picture and name, or upload your own picture. Tick collections to show a product on a collection page." : "Add " + kind + ". Press Available or Coming soon on an item to switch it."));
     var saveBtn = el("button", "btn", "Save " + noun); saveBtn.type = "button";
     head.appendChild(hd); head.appendChild(saveBtn); root.appendChild(head);
     var msg = el("p", "form-msg"); msg.setAttribute("role", "status"); root.appendChild(msg);
 
     var form = el("form", "panel ev-form"); form.noValidate = true;
-    var title = input("text", "Name"), price = input("text", "Price, e.g. 4.50 EUR (optional)"), link = input("url", "Shop link https:// (optional)");
+    var title = input("text", "Name"), price = input("text", "Price, e.g. 4.50 EUR (optional)"), link = input("url", shop ? "https://www.redbubble.com/shop/ap/184032134" : "Shop link https:// (optional)");
     var desc = document.createElement("textarea"); desc.rows = 3; desc.placeholder = "A line or two (optional)";
     var status = document.createElement("select");
-    [["coming-soon", "Coming soon"], ["available", "Available"]].forEach(function (o) { var op = document.createElement("option"); op.value = o[0]; op.textContent = o[1]; status.appendChild(op); });
+    (shop ? [["available", "Available"], ["coming-soon", "Coming soon"]] : [["coming-soon", "Coming soon"], ["available", "Available"]]).forEach(function (o) { var op = document.createElement("option"); op.value = o[0]; op.textContent = o[1]; status.appendChild(op); });
     var file = input("file"); file.accept = "image/*";
     var preview = document.createElement("img"); preview.alt = ""; preview.hidden = true; preview.className = "ev-preview";
     var drop = el("button", "btn ghost", "Remove picture"); drop.type = "button"; drop.hidden = true;
@@ -51,9 +51,13 @@
     var dig = document.createElement("select");
     [["", "No digital file"], ["free", "Free download"], ["paid", "Paid download (buyer needs a code)"]].forEach(function (o) { var op = document.createElement("option"); op.value = o[0]; op.textContent = o[1]; dig.appendChild(op); });
     var grid = el("div", "ev-grid");
-    (free ? [["Name", title], ["Category", cat]] : [["Name", title], ["Status", status], ["Price", price], ["Payment or shop link", link], ["Digital file to print at home", dig]]).forEach(function (p) { grid.appendChild(field(p[0], p[1])); });
+    (free ? [["Name", title], ["Category", cat]] : shop ? [["Product link (where people buy it)", link], ["Name", title], ["Status", status], ["Price", price]] : [["Name", title], ["Status", status], ["Price", price], ["Payment or shop link", link], ["Digital file to print at home", dig]]).forEach(function (p) { grid.appendChild(field(p[0], p[1])); });
     var h3 = el("h3", "", "Add a " + one);
-    form.appendChild(h3); form.appendChild(grid); form.appendChild(field("Description", desc)); form.appendChild(catList); form.appendChild(field(free ? "File to download" : "Digital file (PDF, PNG, zip) people print at home", dl)); form.appendChild(dlInfo);
+    form.appendChild(h3); form.appendChild(grid);
+    var pull = el("button", "btn yellow", "Get picture and name from the link"); pull.type = "button"; var pullMsg = el("p", "form-msg"); pullMsg.setAttribute("role", "status");
+    if (shop) { form.appendChild(pull); form.appendChild(pullMsg); }
+    form.appendChild(field("Description", desc));
+    if (!shop) { form.appendChild(catList); form.appendChild(field(free ? "File to download" : "Digital file (PDF, PNG, zip) people print at home", dl)); form.appendChild(dlInfo); }
     var sel = {}, chips = el("div", "coll-form-chips"), chipField = field("Add to collections", chips);
     function renderChips() {
       var cc = api.collections ? api.collections() : null; chips.innerHTML = "";
@@ -66,7 +70,7 @@
       });
     }
     form.appendChild(chipField);
-    form.appendChild(field(free ? "Thumbnail picture" : "Picture", file)); form.appendChild(preview); form.appendChild(drop);
+    form.appendChild(field(free ? "Thumbnail picture" : shop ? "Or upload your own picture (replaces the pulled one)" : "Picture", file)); form.appendChild(preview); form.appendChild(drop);
     var actions = el("div", "ev-actions");
     var add = el("button", "btn", "Add " + one); add.type = "submit";
     var cancel = el("button", "btn ghost", "Cancel edit"); cancel.type = "button"; cancel.hidden = true;
@@ -89,20 +93,39 @@
       pendingFile = f; say(dlInfo, f.name + " (" + size(f.size) + ")", false);
     });
     cancel.addEventListener("click", resetForm);
+    function b64Blob(b64, type) { var bin = atob(b64), n = bin.length, u = new Uint8Array(n); for (var i = 0; i < n; i++) u[i] = bin.charCodeAt(i); return new Blob([u], { type: type || "image/jpeg" }); }
+    pull.addEventListener("click", function () {
+      var u = link.value.trim();
+      if (!/^https:\/\//i.test(u)) { say(pullMsg, "Paste the product link first. It must start with https://", true); return; }
+      pull.disabled = true; say(pullMsg, "Reading the page...", false);
+      api.lookup(u).then(function (r) {
+        if (r.title && !title.value.trim()) title.value = r.title;
+        if (r.price && !price.value.trim()) price.value = r.price;
+        if (r.description && !desc.value.trim()) desc.value = r.description;
+        if (!r.image) { say(pullMsg, r.error || "No picture found. Upload one yourself.", true); return; }
+        return shrink(b64Blob(r.image, r.imageType)).then(function (b) {
+          pending = { b64: b }; file.value = ""; showPreview("data:image/webp;base64," + b);
+          say(pullMsg, "Got the picture" + (r.title ? " and the name" : "") + ". Check them, then press " + (editing ? "Update " : "Add ") + one + ".", false);
+        });
+      }).catch(function (e) { say(pullMsg, (e && e.message && e.message !== "bad image" ? e.message : "Could not read that link.") + " Upload the picture yourself.", true); })
+        .then(function () { pull.disabled = false; });
+    });
 
     form.addEventListener("submit", function (e) {
       e.preventDefault();
       if (!title.value.trim()) { say(msg, "Fill in the name.", true); return; }
       if ((free || dig.value) && !pendingFile && !(editing && list.filter(function (x) { return x.id === editing; })[0].file)) { say(msg, "Choose the file people can download.", true); return; }
+      if (shop && !link.value.trim() && !(pending && pending.b64) && !(editing && list.filter(function (x) { return x.id === editing; })[0].image)) { say(msg, "Add a product link or upload a picture.", true); return; }
       if (link.value.trim() && !/^https:\/\//i.test(link.value.trim())) { say(msg, "The link must start with https://", true); return; }
-      var it = editing ? list.filter(function (x) { return x.id === editing; })[0] : { id: kind.slice(0, 1) + Date.now().toString(36), image: false, imv: 0 };
+      var it = editing ? list.filter(function (x) { return x.id === editing; })[0] : { id: (shop ? "m" : kind.slice(0, 1)) + Date.now().toString(36), image: false, imv: 0 };
       it.title = title.value.trim(); it.description = desc.value.trim();
       if (free) { it.status = "available"; it.price = ""; it.url = ""; it.category = cat.value.trim(); it.digital = ""; }
+      else if (shop) { it.status = status.value; it.price = price.value.trim(); it.url = link.value.trim(); it.digital = ""; }
       else { it.status = status.value; it.price = price.value.trim(); it.url = link.value.trim(); it.digital = dig.value; }
       if (pendingFile) { it._file = pendingFile; it.file = true; it.fname = pendingFile.name; it.size = pendingFile.size; it.ftype = pendingFile.type || ""; }
       if (pending && pending.b64) { it._img = pending.b64; it.image = true; }
       else if (pending && pending.clear) { delete it._img; it.image = false; }
-      if (!editing) list.unshift(it);
+      if (!editing) { if (shop && !it.status) it.status = "available"; list.unshift(it); }
       var cc = api.collections ? api.collections() : null;
       if (cc) cc.list().forEach(function (c) { var want = !!sel[c.id]; if (cc.hasRef(c.id, kind, it.id) !== want) cc.toggleRef(c.id, kind, it.id, want); });
       resetForm(); mark(); draw();

@@ -5,8 +5,9 @@
 // GET/PUT /api/news: news items (title, date, text, thumbnail at /api/event-image?id=n-<id>; PUT is admin only).
 // GET/PUT /api/collections: card collections (name, text, thumbnail at /api/event-image?id=k-<id>, card list).
 // GET/PUT /api/cards: added/edited/hidden cards (PUT is admin only).
-// GET/PUT /api/catalog?kind=stickers|prints: stickers and prints lists (PUT is admin only).
+// GET/PUT /api/catalog?kind=stickers|prints|free|shop: stickers and prints lists (PUT is admin only).
 // GET/PUT /api/file?id=: free download files (PUT is admin only, up to 20 MB). Lists live in /api/catalog?kind=free.
+// POST /api/product-lookup (admin): reads a shop product link and returns name, price and picture (base64).
 // POST /api/dl-codes (admin) and GET /api/download?code= (public): paid digital files with download codes.
 // Everything else is served from the static site (assets).
 import { verifyEvent } from "nostr-tools/pure";
@@ -193,7 +194,7 @@ function cleanCollections(input) {
       if (!cards.includes(f)) cards.push(f);
     }
     const refs = {};
-    for (const k of ["stickers", "prints", "free"]) {
+    for (const k of ["stickers", "prints", "free", "shop"]) {
       const arr = e[k] === undefined ? [] : e[k];
       if (!Array.isArray(arr) || arr.length > 400) return null;
       refs[k] = [];
@@ -204,7 +205,7 @@ function cleanCollections(input) {
     }
     const imv = Number.isFinite(e.imv) ? Math.max(0, Math.floor(e.imv)) : 0;
     const himv = Number.isFinite(e.himv) ? Math.max(0, Math.floor(e.himv)) : 0;
-    out.push({ id: e.id, slug, name, text, body, image: e.image === true, imv, hdr: e.hdr === true, himv, cards, stickers: refs.stickers, prints: refs.prints, free: refs.free });
+    out.push({ id: e.id, slug, name, text, body, image: e.image === true, imv, hdr: e.hdr === true, himv, cards, stickers: refs.stickers, prints: refs.prints, free: refs.free, shop: refs.shop });
   }
   return out;
 }
@@ -222,6 +223,103 @@ function cleanNews(input) {
     out.push({ id: e.id, title, date: e.date, text, image: e.image === true, imv });
   }
   return out;
+}
+
+
+// ---- Shop products: read a product page (admin only) -----------------------
+function decodeEntities(t) {
+  return String(t || "").replace(/&(#x[0-9a-f]+|#\d+|amp|lt|gt|quot|apos|#39);/gi, (m, g) => {
+    const k = g.toLowerCase();
+    if (k === "amp") return "&";
+    if (k === "lt") return "<";
+    if (k === "gt") return ">";
+    if (k === "quot") return '"';
+    if (k === "apos" || k === "#39") return "'";
+    const n = k[1] === "x" ? parseInt(k.slice(2), 16) : parseInt(k.slice(1), 10);
+    return Number.isFinite(n) && n > 0 && n < 0x110000 ? String.fromCodePoint(n) : m;
+  });
+}
+function metaOf(html, names) {
+  for (const tag of html.match(/<meta\b[^>]*>/gi) || []) {
+    const key = /(?:property|name|itemprop)\s*=\s*["']([^"']+)["']/i.exec(tag);
+    const val = /content\s*=\s*(?:"([^"]*)"|'([^']*)')/i.exec(tag);
+    if (key && val && names.includes(key[1].toLowerCase())) return decodeEntities(val[1] ?? val[2]).trim();
+  }
+  return "";
+}
+function publicHttps(raw, base) {
+  let u;
+  try { u = new URL(raw, base); } catch { return null; }
+  if (u.protocol !== "https:" || u.username || u.password || u.port) return null;
+  const h = u.hostname.toLowerCase();
+  if (!h.includes(".") || h.endsWith(".local") || h.endsWith(".internal") || /^[\d.]+$/.test(h) || h.includes(":") || h.startsWith("[")) return null;
+  return u;
+}
+async function readLimited(res, max) {
+  const reader = res.body.getReader();
+  const parts = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.length;
+    if (total > max) { try { await reader.cancel(); } catch {} break; }
+    parts.push(value);
+  }
+  const out = new Uint8Array(Math.min(total, max));
+  let at = 0;
+  for (const p of parts) { const room = out.length - at; if (room <= 0) break; out.set(p.subarray(0, room), at); at += Math.min(p.length, room); }
+  return out;
+}
+function toBase64(bytes) {
+  let bin = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
+const FETCH_HEADERS = {
+  "user-agent": "Mozilla/5.0 (compatible; POPARTloveBot/1.0; +https://www.popart.love)",
+  accept: "text/html,application/xhtml+xml,image/*;q=0.8,*/*;q=0.5",
+  "accept-language": "en",
+};
+async function lookupProduct(rawUrl) {
+  const first = publicHttps(rawUrl);
+  if (!first) return { error: "Use a full https:// link to the product." };
+  let res;
+  try {
+    res = await fetch(first.href, { headers: FETCH_HEADERS, redirect: "follow", signal: AbortSignal.timeout(9000) });
+  } catch {
+    return { error: "Could not reach that page. Upload the picture yourself instead." };
+  }
+  if (!res.ok) return { error: "That shop did not let us read the page (error " + res.status + "). Upload the picture yourself, or paste the direct link of the picture." };
+  const type = (res.headers.get("content-type") || "").toLowerCase();
+  let title = "", description = "", price = "", imageUrl = null;
+  if (type.startsWith("image/")) {
+    imageUrl = first;
+  } else {
+    const html = new TextDecoder().decode(await readLimited(res, 1500000));
+    title = metaOf(html, ["og:title", "twitter:title"]) || decodeEntities((/<title[^>]*>([^<]*)<\/title>/i.exec(html) || [])[1] || "").trim();
+    description = metaOf(html, ["og:description", "twitter:description", "description"]);
+    const amount = metaOf(html, ["product:price:amount", "og:price:amount", "price"]);
+    const cur = metaOf(html, ["product:price:currency", "og:price:currency", "pricecurrency"]);
+    if (amount && /^[\d.,]{1,12}$/.test(amount)) price = (cur ? cur + " " : "") + amount;
+    const found = metaOf(html, ["og:image:secure_url", "og:image", "twitter:image", "twitter:image:src", "image"]);
+    if (!found) {
+      const ld = /"image"\s*:\s*\[?\s*"([^"]+)"/i.exec(html);
+      if (ld) imageUrl = publicHttps(ld[1].replace(/\\\//g, "/"), first.href);
+    } else imageUrl = publicHttps(found, first.href);
+  }
+  const out = { title: title.slice(0, 120), description: description.slice(0, 600), price: price.slice(0, 40) };
+  if (!imageUrl) return { ...out, error: "No picture found on that page. Upload one yourself." };
+  try {
+    const ir = await fetch(imageUrl.href, { headers: { ...FETCH_HEADERS, referer: first.origin + "/" }, redirect: "follow", signal: AbortSignal.timeout(9000) });
+    const it = (ir.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
+    if (!ir.ok || !it.startsWith("image/")) return { ...out, error: "Found the page but not the picture. Upload one yourself." };
+    const bytes = await readLimited(ir, 4000001);
+    if (bytes.length > 4000000) return { ...out, error: "The picture is too big. Upload a smaller one." };
+    return { ...out, image: toBase64(bytes), imageType: it };
+  } catch {
+    return { ...out, error: "Found the page but could not load the picture. Upload one yourself." };
+  }
 }
 
 // ---- Card list edits (add, edit, hide cards from the admin) --------------
@@ -457,7 +555,7 @@ export default {
     if (url.pathname === "/api/catalog") {
       // stickers and prints lists: GET public, PUT admin
       const kind = url.searchParams.get("kind") || "";
-      if (kind !== "stickers" && kind !== "prints" && kind !== "free") return json({ error: "bad kind" }, 400);
+      if (kind !== "stickers" && kind !== "prints" && kind !== "free" && kind !== "shop") return json({ error: "bad kind" }, 400);
       const key = "catalog:" + kind;
       if (request.method === "GET") return json((await env.CARDS_KV.get(key, "json")) || [], 200, { "cache-control": "public, max-age=30", ...CORS });
       if (request.method !== "PUT") return json({ error: "method not allowed" }, 405, { allow: "GET, PUT" });
@@ -477,6 +575,14 @@ export default {
       for (const e of old) if (e.file && !keepFiles.has(e.id)) await env.CARDS_KV.delete("dl:" + e.id);
       await env.CARDS_KV.put(key, JSON.stringify(list));
       return json({ ok: true, items: list });
+    }
+    if (url.pathname === "/api/product-lookup") {
+      if (request.method !== "POST") return json({ error: "method not allowed" }, 405, { allow: "POST" });
+      const body = await request.text();
+      if (!(await isAdmin(request, env, body))) return json({ error: "not allowed" }, 401);
+      let target = "";
+      try { target = String(JSON.parse(body).url || ""); } catch {}
+      return json(await lookupProduct(target), 200, { "cache-control": "no-store" });
     }
     if (url.pathname === "/api/collections") {
       if (request.method === "GET") return json((await env.CARDS_KV.get("collections", "json")) || [], 200, { "cache-control": "public, max-age=30", ...CORS });

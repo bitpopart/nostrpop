@@ -47,7 +47,7 @@
     } catch (e) {}
     document.title = "Admin | POPART.love";
     var head = document.querySelector(".page-head");
-    if (head) head.innerHTML = '<div class="container"><h1>Admin</h1><p>Cards, news, PopUp events, stickers, prints and free downloads.</p></div>';
+    if (head) head.innerHTML = '<div class="container"><h1>Admin</h1><p>Cards, shop products, news, PopUp events, stickers, prints and free downloads.</p></div>';
     root.innerHTML = '<nav class="admin-jump" aria-label="Jump to a section"></nav><div class="section-head" id="sec-stock"><div><h2>Cards</h2><p>Signed in with your Nostr key.</p></div><button class="btn" type="button" id="admin-save">Save changes</button></div>' +
       '<div class="table-wrap"><table class="simple" id="admin-table"><thead><tr><th>Card</th><th>Status</th><th>Copies left</th><th>Price (EUR = USD)</th><th>Sold where</th><th>Shop link (https)</th><th>Sold serials</th><th>Collections</th></tr></thead><tbody></tbody></table></div>' +
       '<p class="form-msg" id="admin-save-msg" role="status"></p>';
@@ -98,8 +98,8 @@
       }
       return res;
     }
-    var catCtl = {}, freeList = [], stickerList = [], printList = [], coll;
-    ["stickers", "prints", "free"].forEach(function (kind) {
+    var catCtl = {}, freeList = [], stickerList = [], printList = [], shopList = [], coll;
+    ["shop", "stickers", "prints", "free"].forEach(function (kind) {
       var box = document.createElement("div");
       box.setAttribute("data-kind", kind);
       box.style.marginTop = "2.4rem";
@@ -107,8 +107,14 @@
       catCtl[kind] = window.PopartCatalogAdmin.mount(box, kind, {
         collections: function () { return coll; },
         saved: async function (items) {
-          if (kind === "free") freeList = items; else if (kind === "stickers") stickerList = items; else printList = items;
+          if (kind === "free") freeList = items; else if (kind === "shop") shopList = items; else if (kind === "stickers") stickerList = items; else printList = items;
           if (coll) { coll.refresh(); try { if (coll.isDirty()) await coll.save(); } catch (e) {} }
+        },
+        lookup: async function (link) {
+          var body = JSON.stringify({ url: link });
+          var res = await fetch("/api/product-lookup", { method: "POST", headers: { authorization: await authHeader("POST", "/api/product-lookup", body) }, body: body });
+          if (!res.ok) throw new Error(res.status === 404 || res.status === 405 ? "The site's worker on Cloudflare has not been updated yet." : "Could not read that link.");
+          return res.json();
         },
         codes: async function (id, count, uses) {
           var body = JSON.stringify({ id: id, count: count, uses: uses });
@@ -149,9 +155,10 @@
       }
     });
     function thumbOf(c) { return c.front ? "/api/event-image?id=c-" + encodeURIComponent(c.file) + "&v=" + (c.imv || 0) : "/assets/img/cards/" + c.file + ".webp"; }
-    try { var sr = await fresh("/api/catalog?kind=stickers"); if (sr.ok) stickerList = await sr.json(); var pr = await fresh("/api/catalog?kind=prints"); if (pr.ok) printList = await pr.json(); var fr = await fresh("/api/catalog?kind=free"); if (fr.ok) freeList = await fr.json(); } catch (e) {}
+    try { var sr = await fresh("/api/catalog?kind=stickers"); if (sr.ok) stickerList = await sr.json(); var pr = await fresh("/api/catalog?kind=prints"); if (pr.ok) printList = await pr.json(); var fr = await fresh("/api/catalog?kind=free"); if (fr.ok) freeList = await fr.json(); var mr = await fresh("/api/catalog?kind=shop"); if (mr.ok) shopList = await mr.json(); } catch (e) {}
     coll = window.PopartCollectionsAdmin.mount(collBox, {
       free: function () { return freeList.filter(function (i) { return i.file; }); },
+      shop: function () { return shopList; },
       stickers: function () { return stickerList; },
       prints: function () { return printList; },
       cards: function () { return cards; },
@@ -243,7 +250,7 @@
     });
     listBox.appendChild(cardsBox.querySelector(".ev-list"));
     var jumps = [["Add card", cardsBox], ["Cards", document.getElementById("sec-stock")], ["Edit cards", listBox], ["Collections", collBox], ["News", newsBox], ["PopUp", evBox]];
-    [["Stickers", "stickers"], ["Prints", "prints"], ["Free downloads", "free"]].forEach(function (k) { jumps.push([k[0], root.querySelector('[data-kind="' + k[1] + '"]')]); });
+    [["Shop products", "shop"], ["Stickers", "stickers"], ["Prints", "prints"], ["Free downloads", "free"]].forEach(function (k) { jumps.push([k[0], root.querySelector('[data-kind="' + k[1] + '"]')]); });
     var jbar = root.querySelector(".admin-jump");
     jumps.forEach(function (j) {
       if (!j[1]) return;
