@@ -69,18 +69,27 @@ def tee(c):
     th = lh * len(lines)
     bx0, bx1, by0 = 184 * S, 416 * S, 152 * S
     by1 = by0 + th + 24 * S
-    tail = [(bx0 + 52 * S, by1 - 3 * S), (bx0 + 100 * S, by1 - 3 * S), (bx0 + 66 * S, by1 + 30 * S)]
+    tail = [(bx0 + 50 * S, by1 - 8 * S), (bx0 + 96 * S, by1 - 8 * S), (bx0 + 62 * S, by1 + 30 * S)]
     # the toon first, so the balloon can sit a bit over it
     art = Image.open(os.path.join(HERE, 'img', c['key'] + '.png')).convert('RGB')
     top = by1 // S - 18
     art.thumbnail((272 * S, (548 - 10 - top) * S), Image.LANCZOS)
     im.paste(art, (300 * S - art.width // 2, top * S + ((548 - 10 - top) * S - art.height) // 2))
-    r = 26 * S
-    d.rounded_rectangle((bx0 + 5 * S, by0 + 5 * S, bx1 + 5 * S, by1 + 5 * S), radius=r, fill=INK)
-    d.polygon([(x + 5 * S, y + 5 * S) for x, y in tail], fill=INK)
-    d.polygon(tail, fill=(255, 255, 255)); d.line(tail + [tail[0]], fill=INK, width=5 * S, joint='curve')
-    d.rounded_rectangle((bx0, by0, bx1, by1), radius=r, fill=(255, 255, 255), outline=INK, width=5 * S)
-    d.line((tail[0][0] + 4 * S, by1 - 1 * S, tail[1][0] - 4 * S, by1 - 1 * S), fill=(255, 255, 255), width=8 * S)
+    # the balloon is one shape (box + tail) with one continuous outline and a hard shadow
+    import numpy as np
+    from scipy import ndimage as ndi
+    mk = Image.new('L', im.size, 0); md = ImageDraw.Draw(mk)
+    md.rounded_rectangle((bx0, by0, bx1, by1), radius=26 * S, fill=255)
+    md.polygon(tail, fill=255)
+    inside = np.array(mk) > 127
+    grown = ndi.distance_transform_edt(~inside) <= 5 * S
+    shadow = np.roll(np.roll(grown, 6 * S, axis=0), 6 * S, axis=1)
+    arr = np.array(im)
+    arr[shadow] = INK
+    arr[grown] = INK
+    arr[inside] = (255, 255, 255)
+    im = Image.fromarray(arr)
+    d = ImageDraw.Draw(im)
     y = by0 + 12 * S
     for ln in lines:
         tw = d.textlength(ln, font=font)
