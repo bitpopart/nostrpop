@@ -28,7 +28,24 @@ MINT = "#19c3b1"
 
 # ---------------------------------------------------------------- SVG art --
 
+_ASSET_V = {}
+
+
+def _versioned(m):
+    # /assets/css|js files are cached for a year, so give each a version from its content: a changed file gets a new address
+    name = m.group(2)
+    if name not in _ASSET_V:
+        try:
+            with open(os.path.join(ROOT, name.lstrip("/")), "rb") as fh:
+                _ASSET_V[name] = hashlib.md5(fh.read()).hexdigest()[:8]
+        except OSError:
+            _ASSET_V[name] = ""
+    return f"{m.group(1)}{name}?v={_ASSET_V[name]}{m.group(3)}" if _ASSET_V[name] else m.group(0)
+
+
 def write(path, content):
+    if path.endswith(".html"):
+        content = re.sub(r'((?:src|href)=")(/assets/(?:css|js)/[A-Za-z0-9_.-]+\.(?:css|js))(")', _versioned, content)
     full = os.path.join(ROOT, path)
     os.makedirs(os.path.dirname(full), exist_ok=True)
     with open(full, "w", encoding="utf-8") as fh:

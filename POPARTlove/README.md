@@ -131,3 +131,7 @@ In the cards list, every card has Edit, Hide and Delete. Hide keeps it for later
 ### Random cards on the front page
 
 The card fan in the page header also shows 3 random cards and swaps one every 4 seconds (nothing is shown if no card is left). The cards block on the home page shows 3 random cards on every visit, picked from all cards (including ones added in admin, minus hidden or deleted ones). Without JavaScript it shows the first 3. A grid gets this with `data-limit="3" data-random="1"`.
+
+### Cache
+
+`/assets/js`, `/assets/css` and fonts are cached for a year. `build.py` adds `?v=<hash of the file>` to every script and stylesheet link in the pages it writes, so a changed file gets a new address and visitors never keep an old copy. `cards.json` and `poptoons-collections.json` are not cached; pictures are cached for a day. If you add a new script, link it as `/assets/js/<name>.js` in build.py and the version is added automatically.
