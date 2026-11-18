@@ -583,3 +583,5 @@ span.pin3d::after { content: ""; position: absolute; inset: 0; pointer-events: n
 
 .grid[data-random]:not([data-ready]) { visibility: hidden; }
 .grid[data-random]:not([data-ready]) > article:nth-child(n+4) { display: none; }
+.card-fan:not([data-ready]) img { opacity: 0; }
+.card-fan img { transition: opacity .25s; }

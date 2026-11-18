@@ -78,7 +78,30 @@
     seen.forEach(finish);
     if (window.popartRefreshStock) window.popartRefreshStock();
   }
+  // the card fan in the home page header: 3 random cards, from the built-in list plus the ones saved in admin
+  function heroFan() {
+    var fan = document.querySelector(".card-fan");
+    if (!fan) return;
+    var pics = fan.querySelectorAll("img");
+    function done() { fan.setAttribute("data-ready", "1"); }
+    if (window.POPART_DEMO_CARDS) { done(); return; }
+    Promise.all([
+      fetch("/assets/cards.json").then(function (r) { return r.ok ? r.json() : []; }).catch(function () { return []; }),
+      fetch("/api/cards").then(function (r) { return r.ok ? r.json() : []; }).catch(function () { return []; })
+    ]).then(function (r) {
+      var saved = {}; r[1].forEach(function (e) { saved[e.file] = e; });
+      var base = {}; r[0].forEach(function (c) { base[c.file] = 1; });
+      var all = r[1].filter(function (e) { return !base[e.file]; }).concat(r[0].map(function (c) { return Object.assign({}, c, saved[c.file] || {}); })).filter(function (c) { return !c.removed; });
+      for (var i = all.length - 1; i > 0; i--) { var k = Math.floor(Math.random() * (i + 1)), t = all[i]; all[i] = all[k]; all[k] = t; }
+      Array.prototype.forEach.call(pics, function (img, n) {
+        var c = all[n];
+        if (!c) { img.hidden = true; return; }
+        img.src = imgs(c).front; img.alt = "POPART " + c.name + " card";
+      });
+    }).catch(function () {}).then(done);
+  }
   window.PopartCards = { render: render };
+  if (window.fetch) heroFan();
   if (window.POPART_DEMO_CARDS) { render(window.POPART_DEMO_CARDS); return; }
   if (!window.fetch) { finishAll(); return; }
   fetch("/api/cards").then(function (r) { return r.ok ? r.json() : []; }).then(function (l) { if (l && l.length) render(l); else finishAll(); }).catch(finishAll);
