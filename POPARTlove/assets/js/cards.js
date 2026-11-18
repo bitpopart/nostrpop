@@ -78,27 +78,41 @@
     seen.forEach(finish);
     if (window.popartRefreshStock) window.popartRefreshStock();
   }
-  // the card fan in the home page header: 3 random cards, from the built-in list plus the ones saved in admin
+  // the card fan in the home page header: 3 random cards, swapped for new ones every few seconds.
+  // The pool is the built-in list plus the cards saved in admin, minus hidden and deleted ones.
   function heroFan() {
-    var fan = document.querySelector(".card-fan");
+    var fan = document.querySelector(".card-fan[data-fan]");
     if (!fan) return;
-    var pics = fan.querySelectorAll("img");
-    function done() { fan.setAttribute("data-ready", "1"); }
-    if (window.POPART_DEMO_CARDS) { done(); return; }
+    var pics = Array.prototype.slice.call(fan.querySelectorAll("img"));
+    function shuffle(a) { for (var i = a.length - 1; i > 0; i--) { var k = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[k]; a[k] = t; } return a; }
+    function setPic(img, c, instant) {
+      function apply() { img.src = imgs(c).front; img.alt = "POPART " + c.name + " card"; img.hidden = false; img.style.opacity = ""; }
+      if (instant) { apply(); return; }
+      img.style.opacity = "0"; setTimeout(apply, 300);
+    }
     Promise.all([
       fetch("/assets/cards.json").then(function (r) { return r.ok ? r.json() : []; }).catch(function () { return []; }),
       fetch("/api/cards").then(function (r) { return r.ok ? r.json() : []; }).catch(function () { return []; })
     ]).then(function (r) {
       var saved = {}; r[1].forEach(function (e) { saved[e.file] = e; });
       var base = {}; r[0].forEach(function (c) { base[c.file] = 1; });
-      var all = r[1].filter(function (e) { return !base[e.file]; }).concat(r[0].map(function (c) { return Object.assign({}, c, saved[c.file] || {}); })).filter(function (c) { return !c.removed; });
-      for (var i = all.length - 1; i > 0; i--) { var k = Math.floor(Math.random() * (i + 1)), t = all[i]; all[i] = all[k]; all[k] = t; }
-      Array.prototype.forEach.call(pics, function (img, n) {
-        var c = all[n];
-        if (!c) { img.hidden = true; return; }
-        img.src = imgs(c).front; img.alt = "POPART " + c.name + " card";
-      });
-    }).catch(function () {}).then(done);
+      var pool = r[1].filter(function (e) { return !base[e.file] && !e.removed; }).concat(r[0].map(function (c) { return Object.assign({}, c, saved[c.file] || {}); }).filter(function (c) { return !c.removed; }));
+      if (!pool.length) { fan.hidden = true; return; }
+      var cur = shuffle(pool.slice()).slice(0, 3);
+      pics.forEach(function (img, n) { if (cur[n]) setPic(img, cur[n], true); else img.hidden = true; });
+      fan.setAttribute("data-ready", "1");
+      if (pool.length <= 3 || (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches)) return;
+      // every 4 seconds one card of the fan is replaced by a card that is not in the fan, so it keeps changing
+      var next = 0;
+      setInterval(function () {
+        if (document.hidden) return;
+        var shown = cur.map(function (c) { return c.file; });
+        var rest = pool.filter(function (c) { return shown.indexOf(c.file) < 0; });
+        if (!rest.length) return;
+        var c = rest[Math.floor(Math.random() * rest.length)];
+        cur[next] = c; setPic(pics[next], c, false); next = (next + 1) % 3;
+      }, 4000);
+    }).catch(function () { fan.hidden = true; });
   }
   window.PopartCards = { render: render };
   if (window.fetch) heroFan();

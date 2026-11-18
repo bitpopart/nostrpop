@@ -528,7 +528,7 @@ def build_pages():
         <a class="btn blue" href="/shop/">Visit the shop</a>
       </div>
     </div>
-    <noscript><style>.card-fan img{{opacity:1!important}}</style></noscript><div class="card-fan"><img src="/assets/img/cards/big-heart.webp" alt="Big Heart card" width="600" height="840"><img src="/assets/img/cards/sunny-face.webp" alt="Sunny Face card" width="600" height="840"><img src="/assets/img/cards/paper-plane.webp" alt="Paper Plane card" width="600" height="840"></div>
+    <noscript><style>.card-fan[data-fan]{{display:none}}</style></noscript><div class="card-fan" data-fan><img alt="" width="600" height="840" hidden><img alt="" width="600" height="840" hidden><img alt="" width="600" height="840" hidden></div><noscript><div class="card-fan"><img src="/assets/img/cards/big-heart.webp" alt="Big Heart card" width="600" height="840"><img src="/assets/img/cards/sunny-face.webp" alt="Sunny Face card" width="600" height="840"><img src="/assets/img/cards/paper-plane.webp" alt="Paper Plane card" width="600" height="840"></div></noscript>
   </div>
 </section>
 {RIBBON}
