@@ -487,6 +487,28 @@ def where_html(online, offline, url, status, in_shop=False):
     return f'<div class="tags where-row">{on}{off}</div>'
 
 
+ROUND_JS = r'''<script>
+// the example round uses two random cards with different rarity (the higher rarity wins)
+(function(){
+  var ORDER=["Common","Uncommon","Rare","Super Rare","Ultra Rare","Unique 1/1"];
+  var a=document.getElementById("round-a"),b=document.getElementById("round-b"),t=document.getElementById("round-text");
+  if(!a||!b||!t||!window.fetch)return;
+  function front(c){return c.front?"/api/event-image?id=c-"+encodeURIComponent(c.file)+"&v="+(c.imv||0):"/assets/img/cards/"+c.file+".webp";}
+  function esc(x){return String(x).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+  Promise.all([fetch("/assets/cards.json").then(function(r){return r.ok?r.json():[]}).catch(function(){return[]}),fetch("/api/cards").then(function(r){return r.ok?r.json():[]}).catch(function(){return[]})]).then(function(r){
+    var saved={};r[1].forEach(function(e){saved[e.file]=e;});var base={};r[0].forEach(function(c){base[c.file]=1;});
+    var pool=r[1].filter(function(e){return!base[e.file]&&!e.removed;}).concat(r[0].map(function(c){return Object.assign({},c,saved[c.file]||{});}).filter(function(c){return!c.removed;})).filter(function(c){return ORDER.indexOf(c.rarity)>-1;});
+    var pairs=[];for(var i=0;i<pool.length;i++)for(var j=0;j<pool.length;j++)if(ORDER.indexOf(pool[i].rarity)>ORDER.indexOf(pool[j].rarity))pairs.push([pool[i],pool[j]]);
+    if(!pairs.length)return;
+    var p=pairs[Math.floor(Math.random()*pairs.length)],hi=p[0],lo=p[1],flip=Math.random()<.5,x=flip?lo:hi,y=flip?hi:lo;
+    a.src=front(x);a.alt=x.name+" card, "+x.rarity;b.src=front(y);b.alt=y.name+" card, "+y.rarity;
+    var ca=document.getElementById("round-ca"),cb=document.getElementById("round-cb");if(ca){ca.textContent=x===hi?x.rarity+" wins":x.rarity;ca.className=x===hi?"tag stock ok":"tag";}if(cb){cb.textContent=y===hi?y.rarity+" wins":y.rarity;cb.className=y===hi?"tag stock ok":"tag";}
+    t.innerHTML="Both players flip a card on POP. <strong>"+esc(x.name)+"</strong> is "+esc(x.rarity)+" and <strong>"+esc(y.name)+"</strong> is "+esc(y.rarity)+", so rarity decides it and "+esc(hi.name)+" wins.";
+  }).catch(function(){});
+})();
+</script>'''
+
+
 def tribe_cards(limit=None, in_shop=False, random_pick=False):
     # random_pick: put every card in the page, cards.js shows `limit` random ones on each visit (without script the first `limit` show)
     cards = EXAMPLE_CARDS[:limit] if (limit and not random_pick) else EXAMPLE_CARDS
@@ -667,12 +689,13 @@ def build_pages():
     </div>
     <div>
       <h2>Example round</h2>
-      <p>Both players flip a card on POP. <strong>Paper Plane</strong> is Super Rare and <strong>Big Heart</strong> is Common, so rarity decides it and the Paper Plane wins.</p>
+      <p id="round-text">Both players flip a card on POP. <strong>Paper Plane</strong> is Super Rare and <strong>Big Heart</strong> is Common, so rarity decides it and the Paper Plane wins.</p>
       <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;margin-top:1rem">
-        <figure class="card cardfig-plain" style="margin:0;padding:1rem;align-items:center"><img src="/assets/img/cards/paper-plane.webp" alt="Paper Plane card, Super Rare" width="600" height="840" loading="lazy" style="width:100%;max-width:200px;border-radius:4.5%"><figcaption class="tag stock ok" style="margin-top:.7rem">Super Rare wins</figcaption></figure>
-        <figure class="card cardfig-plain" style="margin:0;padding:1rem;align-items:center"><img src="/assets/img/cards/big-heart.webp" alt="Big Heart card, Common" width="600" height="840" loading="lazy" style="width:100%;max-width:200px;border-radius:4.5%"><figcaption class="tag" style="margin-top:.7rem">Common</figcaption></figure>
+        <figure class="card cardfig-plain" style="margin:0;padding:1rem;align-items:center"><img id="round-a" src="/assets/img/cards/paper-plane.webp" alt="Paper Plane card, Super Rare" width="600" height="840" loading="lazy" style="width:100%;max-width:200px;border-radius:4.5%"><figcaption id="round-ca" class="tag stock ok" style="margin-top:.7rem">Super Rare wins</figcaption></figure>
+        <figure class="card cardfig-plain" style="margin:0;padding:1rem;align-items:center"><img id="round-b" src="/assets/img/cards/big-heart.webp" alt="Big Heart card, Common" width="600" height="840" loading="lazy" style="width:100%;max-width:200px;border-radius:4.5%"><figcaption id="round-cb" class="tag" style="margin-top:.7rem">Common</figcaption></figure>
       </div>
     </div>
+{ROUND_JS}
   </div>
 </div></section>
 
