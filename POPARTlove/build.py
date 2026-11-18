@@ -353,7 +353,7 @@ def footer_html():
         <h3>More</h3>
         <ul>
           <li><a href="/sitemap.xml">Sitemap</a></li>
-          <li><a href="https://bitpopart.com" rel="noopener">BitPopArt</a></li>
+          <li><a href="https://bitpopart.com" target="_blank" rel="noopener">BitPopArt</a></li>
         </ul>
       </div>
       <div>
@@ -1001,11 +1001,11 @@ def build_pages():
     <div class="panel yellow">
       <h3>Studio facts</h3>
       <ul style="padding-left:1.1rem;margin:0">
-        <li>Studio: <a href="https://bitpopart.com" rel="noopener">BitPopArt</a></li>
+        <li>Studio: <a href="https://bitpopart.com" target="_blank" rel="noopener">BitPopArt</a></li>
         <li>Style: thick-outline graffiti pop art</li>
         <li>Themes: Love, Freedom, Joy</li>
-        <li>Artist: <a href="https://bitpopart.com/artist" rel="noopener">bitpopart.com/artist</a></li>
-        <li>All art works: <a href="https://bitpopart.com/art" rel="noopener">bitpopart.com/art</a></li>
+        <li>Artist: <a href="https://bitpopart.com/artist" target="_blank" rel="noopener">bitpopart.com/artist</a></li>
+        <li>All art works: <a href="https://bitpopart.com/art" target="_blank" rel="noopener">bitpopart.com/art</a></li>
       </ul>
     </div>
     </div>
