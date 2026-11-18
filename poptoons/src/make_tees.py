@@ -58,23 +58,34 @@ def tee(c):
     # collar: the neck opening, seen from the front
     d.pieslice((232 * S, 50 * S, 368 * S, 138 * S), 0, 180, fill=(226, 226, 226), outline=INK, width=6 * S)
     d.arc((243 * S, 58 * S, 357 * S, 126 * S), 10, 170, fill=INK, width=3 * S)
-    # the toon
-    art = Image.open(os.path.join(HERE, 'img', c['key'] + '.png')).convert('RGB')
-    bw, bh = 236, 236
-    art.thumbnail((bw * S, bh * S), Image.LANCZOS)
-    im.paste(art, (300 * S - art.width // 2, 182 * S))
-    # the quote
-    f_big = lambda n: ImageFont.truetype(os.path.join(HERE, 'fonts', 'LilitaOne-Regular.ttf'), n * S)
+    # the quote in a pop art balloon, a bit above the toon
+    font_for = lambda n: ImageFont.truetype(os.path.join(HERE, 'fonts', 'LilitaOne-Regular.ttf'), n * S)
     q = c['quote']
-    for size in (26, 24, 22, 20, 18):
-        font = f_big(size)
-        lines = wrap(d, '“' + q + '”', font, 244 * S)
-        if len(lines) * size * 1.12 <= 118: break
-    y = 432 * S
+    for size in (25, 23, 21, 19, 17):
+        font = font_for(size)
+        lines = wrap(d, q, font, 208 * S)
+        if len(lines) * size * 1.12 <= 100: break
+    lh = round(size * 1.12 * S)
+    th = lh * len(lines)
+    bx0, bx1, by0 = 176 * S, 424 * S, 154 * S
+    by1 = by0 + th + 30 * S
+    tail = [(bx0 + 52 * S, by1 - 3 * S), (bx0 + 100 * S, by1 - 3 * S), (bx0 + 66 * S, by1 + 30 * S)]
+    r = 26 * S
+    d.rounded_rectangle((bx0 + 5 * S, by0 + 5 * S, bx1 + 5 * S, by1 + 5 * S), radius=r, fill=INK)
+    d.polygon([(x + 5 * S, y + 5 * S) for x, y in tail], fill=INK)
+    d.polygon(tail, fill=(255, 255, 255)); d.line(tail + [tail[0]], fill=INK, width=5 * S, joint='curve')
+    d.rounded_rectangle((bx0, by0, bx1, by1), radius=r, fill=(255, 255, 255), outline=INK, width=5 * S)
+    d.line((tail[0][0] + 4 * S, by1 - 1 * S, tail[1][0] - 4 * S, by1 - 1 * S), fill=(255, 255, 255), width=8 * S)
+    y = by0 + 15 * S
     for ln in lines:
         tw = d.textlength(ln, font=font)
-        d.text((300 * S - tw / 2, y), ln, font=font, fill=INK)
-        y += round(size * 1.12 * S)
+        d.text(((bx0 + bx1) / 2 - tw / 2, y - 3 * S), ln, font=font, fill=INK)
+        y += lh
+    # the toon
+    art = Image.open(os.path.join(HERE, 'img', c['key'] + '.png')).convert('RGB')
+    top = by1 // S + 36
+    art.thumbnail((250 * S, (548 - 10 - top) * S), Image.LANCZOS)
+    im.paste(art, (300 * S - art.width // 2, top * S + ((548 - 10 - top) * S - art.height) // 2))
     return im.resize((W, W), Image.LANCZOS)
 
 
