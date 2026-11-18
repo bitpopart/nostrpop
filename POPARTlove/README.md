@@ -123,3 +123,7 @@ In admin, Collections has an "Import POPtoons collections" button. It adds Lovel
 ### Wallpapers in collections
 
 When you upload a free download (a wallpaper, say) in admin, the form has "Add to collections" checkboxes. Stickers and prints have them too. The collection page on popart.love lists them under "Free downloads". If the collection is a POPtoons one (its page address is the toon collection key, like `lovelings`), poptoons.fun shows the wallpapers under that collection too: its page reads `popart.love/api/collections` and `/api/catalog?kind=free` when it opens. The worker allows that with a public CORS header on those reads, so it must be redeployed.
+
+### Hide or delete a card, admin loading
+
+In the cards list, a built-in card has Edit, Hide and Delete. Hide keeps it for later ("Show again"). Delete asks once more and then removes the card for good: it disappears from the site, from the admin list, from its collections, and its saved pictures are removed. Cards you added yourself have Edit and Delete. The admin page waits up to 20 seconds for the Nostr extension in a browser that has signed in before (4 seconds otherwise), shows "Loading the admin...", retries when you come back to the tab, and offers a Try again button.

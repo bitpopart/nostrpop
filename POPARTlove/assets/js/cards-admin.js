@@ -92,7 +92,7 @@
       var map = {}; extra.forEach(function (e) { map[e.file] = e; });
       var out = extra.filter(function (e) { return !baseFiles[e.file]; });
       base.forEach(function (c) { out.push(Object.assign({}, c, map[c.file] || {})); });
-      return out;
+      return out.filter(function (c) { return !c.deleted; });
     }
     function ensure(c) {
       var e = extra.filter(function (x) { return x.file === c.file; })[0];
@@ -120,6 +120,19 @@
       saveBtn.click();
     });
 
+    function deleteButton(c) {
+      var del = el("button", "btn ghost", armed === c.file ? "Sure? Delete for good" : "Delete"); del.type = "button";
+      del.addEventListener("click", function () {
+        if (armed !== c.file) { armed = c.file; draw(); return; }
+        armed = null;
+        if (baseFiles[c.file]) { var e = ensure(c); e.removed = true; e.deleted = true; e.front = false; e.back = false; }
+        else extra = extra.filter(function (x) { return x.file !== c.file; });
+        var cc = api.collections ? api.collections() : null;
+        if (cc) cc.list().forEach(function (k) { if (cc.has(k.id, c.file)) cc.toggle(k.id, c.file, false); });
+        if (editing === c.file) reset(); mark(); draw();
+      });
+      return del;
+    }
     function draw() {
       box.innerHTML = "";
       var list = merged();
@@ -134,7 +147,7 @@
         if (c.removed) {
           var rs = el("button", "btn ghost", "Show again"); rs.type = "button";
           rs.addEventListener("click", function () { ensure(c).removed = false; mark(); draw(); });
-          btns.appendChild(rs);
+          btns.appendChild(rs); btns.appendChild(deleteButton(c));
         } else {
           var ed = el("button", "btn ghost", "Edit"); ed.type = "button";
           ed.addEventListener("click", function () {
@@ -145,14 +158,13 @@
             cancel.hidden = false; add.textContent = "Update card"; h3.textContent = "Edit " + c.name;
             form.scrollIntoView({ behavior: "smooth", block: "center" });
           });
-          var del = el("button", "btn ghost", armed === c.file ? "Sure? " + (baseFiles[c.file] ? "Hide" : "Delete") : (baseFiles[c.file] ? "Hide" : "Delete")); del.type = "button";
-          del.addEventListener("click", function () {
-            if (armed !== c.file) { armed = c.file; draw(); return; }
-            armed = null;
-            if (baseFiles[c.file]) ensure(c).removed = true; else extra = extra.filter(function (x) { return x.file !== c.file; });
-            if (editing === c.file) reset(); mark(); draw();
-          });
-          btns.appendChild(ed); btns.appendChild(del);
+          var isBase = !!baseFiles[c.file];
+          if (isBase) {
+            var hide = el("button", "btn ghost", "Hide"); hide.type = "button";
+            hide.addEventListener("click", function () { ensure(c).removed = true; if (editing === c.file) reset(); mark(); draw(); });
+            btns.appendChild(ed); btns.appendChild(hide);
+          } else btns.appendChild(ed);
+          btns.appendChild(deleteButton(c));
         }
         row.appendChild(btns); box.appendChild(row);
       });

@@ -238,7 +238,7 @@ function cleanCardList(input) {
     if (name === null || !name || rarity === null || !rarity || run === null || !run || blurb === null) return null;
     if (!THEMES.includes(e.theme) || !SERIES_NAMES.includes(e.series)) return null;
     const imv = Number.isFinite(e.imv) ? Math.max(0, Math.floor(e.imv)) : 0;
-    out.push({ file: e.file, name, theme: e.theme, series: e.series, rarity, run, blurb, front: e.front === true, back: e.back === true, imv, removed: e.removed === true });
+    out.push({ file: e.file, name, theme: e.theme, series: e.series, rarity, run, blurb, front: e.front === true && e.deleted !== true, back: e.back === true && e.deleted !== true, imv, removed: e.removed === true || e.deleted === true, deleted: e.deleted === true });
   }
   return out;
 }

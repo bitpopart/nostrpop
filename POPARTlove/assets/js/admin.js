@@ -17,10 +17,11 @@
     });
     return "Nostr " + btoa(JSON.stringify(ev));
   }
-  function waitForNostr() {
+  // The Nostr extension can be slow to appear, so wait longer when this browser has signed in here before.
+  function waitForNostr(ms) {
     return new Promise(function (resolve) {
-      var n = 0;
-      (function check() { if (window.nostr) return resolve(window.nostr); if (++n > 20) return resolve(null); setTimeout(check, 100); })();
+      var end = Date.now() + ms;
+      (function check() { if (window.nostr) return resolve(window.nostr); if (Date.now() > end) return resolve(null); setTimeout(check, 100); })();
     });
   }
 
@@ -272,12 +273,33 @@
     });
   }
 
-  waitForNostr().then(function (nostr) {
-    if (!nostr) return;
-    return nostr.getPublicKey().then(function (pk) {
-      if (pk !== OWNER) return;
-      try { localStorage.setItem("popart-admin", "1"); } catch (e) {}
-      return render();
-    });
-  }).catch(function () {});
-})();
+  var started = false, known = false;
+  try { known = localStorage.getItem("popart-admin") === "1"; } catch (e) {}
+  function status(text, retry) {
+    // only shown in a browser that has signed in here before, so the page still looks like a 404 to everyone else
+    if (!known || started) return;
+    root.innerHTML = "";
+    var p = document.createElement("p"); p.className = "form-msg"; p.textContent = text; p.style.margin = "2rem"; root.appendChild(p);
+    if (retry) { var b = document.createElement("button"); b.className = "btn"; b.type = "button"; b.textContent = "Try again"; b.style.margin = "0 2rem"; b.addEventListener("click", start); root.appendChild(b); }
+  }
+  function start() {
+    if (started) return;
+    status("Loading the admin...", false);
+    waitForNostr(known ? 20000 : 4000).then(function (nostr) {
+      if (started) return;
+      if (!nostr) { status("Your Nostr extension is not ready yet. Unlock it, then press Try again.", true); return; }
+      return nostr.getPublicKey().then(function (pk) {
+        if (started) return;
+        if (pk !== OWNER) { root.innerHTML = ""; return; }
+        started = true;
+        try { localStorage.setItem("popart-admin", "1"); } catch (e) {}
+        root.innerHTML = "";
+        return render().catch(function () { started = false; status("The admin could not load. Check your connection.", true); });
+      });
+    }).catch(function () { status("The extension did not answer. Unlock it, then press Try again.", true); });
+  }
+  start();
+  // if the extension shows up late or is unlocked later, try again when the tab gets attention
+  window.addEventListener("focus", function () { if (!started) start(); });
+  document.addEventListener("visibilitychange", function () { if (!document.hidden && !started) start(); });
+  })();
