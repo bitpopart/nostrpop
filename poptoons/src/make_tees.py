@@ -71,7 +71,7 @@ def tee(c):
     by1 = by0 + th + 24 * S
     tail = [(bx0 + 50 * S, by1 - 8 * S), (bx0 + 96 * S, by1 - 8 * S), (bx0 + 62 * S, by1 + 30 * S)]
     # the toon first, so the balloon can sit a bit over it
-    art = Image.open(os.path.join(HERE, 'img', c['key'] + '.png')).convert('RGB')
+    art = Image.open(os.path.join(HERE, 'img', c['key'] + ('-v2' if c['key'] in ('gem', 'pling') else '') + '.png')).convert('RGB')  # gem and pling: the no-bubble look, the quote balloon replaces their own bubble
     top = by1 // S - 18
     art.thumbnail((272 * S, (548 - 10 - top) * S), Image.LANCZOS)
     im.paste(art, (300 * S - art.width // 2, top * S + ((548 - 10 - top) * S - art.height) // 2))
