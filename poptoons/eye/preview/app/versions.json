@@ -1,5 +1,16 @@
 [
   {
+    "version": "0.2.2",
+    "date": "2026-11-23",
+    "notes": {
+      "en": "New SOUND on/off row in settings (mute), whoosh when a toon hops, does a trick, poofs or shakes. Not yet tested on a real board."
+    },
+    "app": "fw/0.2.2/app.bin",
+    "appSha256": "27073b8fc58463c2cc508b1d99432762e06cf4f1da76276c40922711dc0e7d04",
+    "full": "fw/0.2.2/full.bin",
+    "fullSha256": "1f4d743487f2c7c9d22e047fdae97587b07ebc5306295c630ed330a597849525"
+  },
+  {
     "version": "0.2.1",
     "date": "2026-11-23",
     "notes": {
