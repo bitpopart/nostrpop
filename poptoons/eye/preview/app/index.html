@@ -335,6 +335,7 @@
       s.connect(f); f.connect(g); g.connect(a.destination); s.start(t);
     }
     return {
+      land: function(){ if (SETS.sound && !isQuiet()) peep(420, 140, 0.09, 0.42); },
       shake: function(){ if (SETS.sound && !isQuiet()) for (var k = 0; k < 8; k++) (function(k){ setTimeout(function(){ peep(k % 2 ? 380 : 560, k % 2 ? 300 : 440, 0.04, 0.26); }, k*45); })(k); },
       whoosh: function(){ if (SETS.sound && !isQuiet()) whoosh(); },
       toggle: function(){ on = !on; return on; },
@@ -590,7 +591,7 @@
     ntDraw('H1', '#5a5a5a', 233 - ntW('H1')/2, 392, 1); ntDraw('H2', '#5a5a5a', 233 - ntW('H2')/2, 410, 1);
   }
   function toonEnter(now, greet, forcePeek){
-    newBg(now); TR.at = -1; TR.confAt = -1; nvReset();
+    SND.land(); newBg(now); TR.at = -1; TR.confAt = -1; nvReset();
     T.enterAt = now; T.hopAt = -1; T.shakeAt = -1; T.outAt = -1;
     T.peek = forcePeek !== undefined ? forcePeek : Math.random() < 0.5; T.dir = [[-215,0],[215,0],[0,220],[-165,150],[165,150]][Math.floor(Math.random()*5)];
     T.enterDur = T.peek ? PEEK_T : 0.55;
@@ -695,7 +696,7 @@
     }
     if (T.hopAt >= 0){
       var hp = (now - T.hopAt)/T.hopDur;
-      if (hp >= 1) T.hopAt = -1;
+      if (hp >= 1){ T.hopAt = -1; SND.land(); }
       else {
         dy = -T.hopH*4*hp*(1 - hp); var air = Math.sin(Math.PI*hp); sy *= 1 + 0.08*air; sx *= 1 - 0.05*air;
         if (hp > 0.85){ var q = (hp - 0.85)/0.15, l = Math.sin(Math.PI*q); sy *= 1 - 0.14*l; sx *= 1 + 0.10*l; }   // landing squash
@@ -705,7 +706,7 @@
     if (TR.at >= 0){
       if (T.outAt >= 0 || T.shakeAt >= 0 || T.leaveAt >= 0 || te < T.enterDur) TR.at = -1;
       else { var tpp = (now - TR.at)/TR.dur;
-        if (tpp >= 1){ if (TR.k <= 2 || TR.k === 7 || TR.k === 8) TR.confAt = now; TR.at = -1; } else applyTrick(tpp, PT); }
+        if (tpp >= 1){ if (TR.k <= 2 || TR.k === 7 || TR.k === 8) TR.confAt = now; TR.at = -1; SND.land(); } else applyTrick(tpp, PT); }
     }
     sx = PT.sx; sy = PT.sy; dx = PT.dx; dy = PT.dy; rot = PT.rot; pv = PT.pv;
     if (T.shakeAt >= 0){

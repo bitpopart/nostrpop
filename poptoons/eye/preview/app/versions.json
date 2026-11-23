@@ -1,5 +1,16 @@
 [
   {
+    "version": "0.2.5",
+    "date": "2026-11-23",
+    "notes": {
+      "en": "Soft thump when a toon lands (after a hop or trick, or when a new toon pops in). Not yet tested on a real board."
+    },
+    "app": "fw/0.2.5/app.bin",
+    "appSha256": "c031a40895571ff3bc93f3ea50cb0318ac83525ec2bfc4598a867c5f392a80f6",
+    "full": "fw/0.2.5/full.bin",
+    "fullSha256": "a5e2b774e9eb39199f770399a9251699916f7eeb2fe57d1fdb004a803b3ae89b"
+  },
+  {
     "version": "0.2.4",
     "date": "2026-11-23",
     "notes": {
