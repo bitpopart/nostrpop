@@ -1,5 +1,16 @@
 [
   {
+    "version": "0.2.6",
+    "date": "2026-11-23",
+    "notes": {
+      "en": "Fix: short sounds (tap on the eye, blink) were cut off because the amplifier woke up too slowly. Amplifier now stays on, short sounds a bit longer and louder, chime at power on. Not yet tested on a real board."
+    },
+    "app": "fw/0.2.6/app.bin",
+    "appSha256": "1e9df9deff6d449413e3a9c808edeb8873850ab68f9139fee4d70fc88437f404",
+    "full": "fw/0.2.6/full.bin",
+    "fullSha256": "dbffefcce90c682ad8313b21298af3b756c2a4c1bd1577b919a37d66a43dab90"
+  },
+  {
     "version": "0.2.5",
     "date": "2026-11-23",
     "notes": {
