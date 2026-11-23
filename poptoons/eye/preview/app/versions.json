@@ -1,5 +1,16 @@
 [
   {
+    "version": "0.2.4",
+    "date": "2026-11-23",
+    "notes": {
+      "en": "Shaking a toon now has its own rattle sound. Not yet tested on a real board."
+    },
+    "app": "fw/0.2.4/app.bin",
+    "appSha256": "cd0efdbf0858f1d11377b4bb1dfafbbcdf7744ff188e199ffafebd02f3d450ed",
+    "full": "fw/0.2.4/full.bin",
+    "fullSha256": "4d5ad448442f8fe58f9764ba948d0ab0be070acafc776363580f396bd278f60f"
+  },
+  {
     "version": "0.2.3",
     "date": "2026-11-23",
     "notes": {

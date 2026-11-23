@@ -335,6 +335,7 @@
       s.connect(f); f.connect(g); g.connect(a.destination); s.start(t);
     }
     return {
+      shake: function(){ if (SETS.sound && !isQuiet()) for (var k = 0; k < 8; k++) (function(k){ setTimeout(function(){ peep(k % 2 ? 380 : 560, k % 2 ? 300 : 440, 0.04, 0.26); }, k*45); })(k); },
       whoosh: function(){ if (SETS.sound && !isQuiet()) whoosh(); },
       toggle: function(){ on = !on; return on; },
       tap: function(){ lastTap = performance.now(); if (SETS.sound && !isQuiet()) peep(650, 1250, 0.10, 0.30); },
@@ -609,7 +610,7 @@
     else { T.bub = 'heart'; T.bubAt = now + lead; T.bubDur = 1.5; }
   }
   function toonNext(now){ if (T.outAt < 0){ SND.whoosh(); nvReset(); T.hopAt = -1; T.shakeAt = -1; T.outAt = now; T.bub = null; T.sayAt = -1; TR.at = -1; } }
-  function toonShake(now){ if (T.shakeAt < 0 && T.outAt < 0){ SND.whoosh(); nvReset(); T.shakeAt = now; T.bub = null; T.sayAt = -1; TR.at = -1; } }
+  function toonShake(now){ if (T.shakeAt < 0 && T.outAt < 0){ SND.shake(); nvReset(); T.shakeAt = now; T.bub = null; T.sayAt = -1; TR.at = -1; } }
 
 
   // ---- tricks: spin, flip, dance, jelly, run, peek-a-boo, turntable, rocket, triple jump, shiver, look around (same as the firmware)
