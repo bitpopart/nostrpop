@@ -326,7 +326,8 @@
     return {
       toggle: function(){ on = !on; return on; },
       tap: function(){ lastTap = performance.now(); if (on && !isQuiet()) peep(650, 1250, 0.10, 0.30); },
-      blink: function(){ if (on && !isQuiet() && performance.now() - lastTap > 250) peep(1900, 1500, 0.04, 0.10); }
+      blink: function(){ if (on && !isQuiet() && performance.now() - lastTap > 250) peep(1900, 1500, 0.04, 0.10); },
+      text: function(){ if (on && !isQuiet()){ peep(500, 1000, 0.07, 0.28); setTimeout(function(){ peep(1000, 1600, 0.09, 0.28); }, 70); } }   // a text bubble pops up: pa-ping
     };
   })();
 
@@ -753,6 +754,7 @@
       var bt = now - T.bubAt, b = d[T.bub === 'say' ? 'say' : T.bub], bim = IMGS[d.key + '_' + T.bub];
       if (bt > T.bubDur + 0.2) T.bub = null;
       else if (bt >= 0 && bim.complete){
+        if ((T.bub === 'gm' || T.bub === 'say') && T.bubSnd !== T.bubAt){ T.bubSnd = T.bubAt; SND.text(); }
         var bs = bt < 0.25 ? easeOutBack(bt/0.25) : (bt > T.bubDur ? 1 - (bt - T.bubDur)/0.2 : 1);
         var cx = AX + d.ax - d.w/2 + P.dx + (b.dx||0) + b.w/2, cy = AY + d.ay - d.h + P.dy + (b.dy||0) + b.h/2;
         if (T.bub === 'say'){ cx = AX; cy = 66 + b.h/2; }                      // fixed spot at the top, does not hop

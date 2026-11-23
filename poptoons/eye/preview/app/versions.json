@@ -1,5 +1,16 @@
 [
   {
+    "version": "0.2.1",
+    "date": "2026-11-23",
+    "notes": {
+      "en": "Sounds: peep on tap, tiny blip on eye blink, pa-ping when a text bubble pops up (silent in quiet time). Not yet tested on a real board."
+    },
+    "app": "fw/0.2.1/app.bin",
+    "appSha256": "f9e362cab33dc1ece5ad18fcbcc5c62a8880a27a89cea5f15278f70bbdf288db",
+    "full": "fw/0.2.1/full.bin",
+    "fullSha256": "249490a6f3481c6aa71168cb59289da86d9e1f6523f7cb2ebb8009553cdc8776"
+  },
+  {
     "version": "0.2.0",
     "date": "2026-11-23",
     "notes": {
