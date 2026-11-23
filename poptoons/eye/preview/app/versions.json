@@ -1,14 +1,14 @@
 [
   {
-    "version": "0.0.1-test",
+    "version": "0.1.1",
     "date": "2026-11-23",
     "notes": {
-      "en": "Screen test only: shows a green screen with POPtoons test OK. Not the real app."
+      "en": "Touch fixed (a resting finger now counts as pressed, so choosing a toon and tapping work), smoother animation (two cores draw in parallel, faster code). Not yet tested on a real board."
     },
-    "app": "fw/0.0.1-test/app.bin",
-    "appSha256": "16fe1991d829d0708a52a1344a81a66fa528a04cdda9cb937fe832ae4c21920e",
-    "full": "fw/0.0.1-test/full.bin",
-    "fullSha256": "3eef4dad90468fe783d9b344c28fa27be4b28c3e216f59800e7454f334126ea0"
+    "app": "fw/0.1.1/app.bin",
+    "appSha256": "8f875787e77a147762b46cbcefce9446081826d167518df51bee2d6e417d2862",
+    "full": "fw/0.1.1/full.bin",
+    "fullSha256": "0f91bfca9cf3ccaa3b53041732a4aa2d2ff12a6f8e53709d57f52c3a7151cb85"
   },
   {
     "version": "0.1.0",
