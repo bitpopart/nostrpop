@@ -1,5 +1,16 @@
 [
   {
+    "version": "0.2.3",
+    "date": "2026-11-23",
+    "notes": {
+      "en": "The whoosh is now a short swipe sound. Not yet tested on a real board."
+    },
+    "app": "fw/0.2.3/app.bin",
+    "appSha256": "b7dd2badcd757f250d53b18e96f8fd19d854428264606e0e97494b41a7820227",
+    "full": "fw/0.2.3/full.bin",
+    "fullSha256": "4f456e40c347876c7fae358e1c001ca4e111bf2fef104c39a135a0d7e9ae4fbd"
+  },
+  {
     "version": "0.2.2",
     "date": "2026-11-23",
     "notes": {

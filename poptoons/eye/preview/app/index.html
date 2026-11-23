@@ -325,13 +325,13 @@
     }
     function whoosh(){
       var a = ctx(); if (!a || a.state !== 'running') return;
-      var n = Math.floor(a.sampleRate*0.28), b = a.createBuffer(1, n, a.sampleRate), d = b.getChannelData(0);
+      var n = Math.floor(a.sampleRate*0.2), b = a.createBuffer(1, n, a.sampleRate), d = b.getChannelData(0);
       for (var i = 0; i < n; i++) d[i] = Math.random()*2 - 1;
       var s = a.createBufferSource(); s.buffer = b;
-      var f = a.createBiquadFilter(); f.type = 'lowpass'; f.Q.value = 0.7;
+      var f = a.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = 1.4;
       var t = a.currentTime, g = a.createGain();
-      f.frequency.setValueAtTime(300, t); f.frequency.exponentialRampToValueAtTime(2600, t + 0.12); f.frequency.exponentialRampToValueAtTime(300, t + 0.28);
-      g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.35, t + 0.1); g.gain.linearRampToValueAtTime(0.0001, t + 0.28);
+      f.frequency.setValueAtTime(700, t); f.frequency.exponentialRampToValueAtTime(4200, t + 0.18);
+      g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.5, t + 0.04); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.19);
       s.connect(f); f.connect(g); g.connect(a.destination); s.start(t);
     }
     return {
