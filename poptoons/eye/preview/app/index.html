@@ -148,6 +148,7 @@
   <div class="controls">
     <button id="replay">Replay start</button>
     <button id="blink">Blink</button>
+    <button id="snd">Sound: On</button>
     <button id="shake">Shake it</button>
     <button id="ignore">Ignore it</button>
     <button id="bg">Screen: Black</button>
@@ -303,7 +304,33 @@
     if (p < 0.38){ var c = p/0.38; return 1 - c*c*c; }        // lid drops fast
     var r = (p - 0.38)/0.62; return 1 - Math.pow(1 - r, 2);   // and rises a little slower
   }
-  function doBlink(now){ if (blinkStart < 0) blinkStart = now; }
+  // ---- sounds (same as the firmware): a rising peep on every tap, a tiny blip when the eye blinks. Quiet time = silent.
+  var SND = (function(){
+    var ac = null, on = true, lastTap = -1;
+    function ctx(){
+      if (!ac){ try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){} }
+      if (ac && ac.state === 'suspended'){ try { ac.resume(); } catch(e){} }
+      return ac;
+    }
+    function peep(f0, f1, dur, vol){
+      var a = ctx(); if (!a || a.state !== 'running') return;
+      var t = a.currentTime, g = a.createGain();
+      g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      g.connect(a.destination);
+      [[1, 1], [2, 0.22]].forEach(function(h){                       // the tone plus a quieter octave: a bright little peep
+        var o = a.createOscillator(), hg = a.createGain();
+        o.type = 'sine'; o.frequency.setValueAtTime(f0 * h[0], t); o.frequency.exponentialRampToValueAtTime(f1 * h[0], t + dur);
+        hg.gain.value = h[1]; o.connect(hg); hg.connect(g); o.start(t); o.stop(t + dur + 0.02);
+      });
+    }
+    return {
+      toggle: function(){ on = !on; return on; },
+      tap: function(){ lastTap = performance.now(); if (on && !isQuiet()) peep(650, 1250, 0.10, 0.30); },
+      blink: function(){ if (on && !isQuiet() && performance.now() - lastTap > 250) peep(1900, 1500, 0.04, 0.10); }
+    };
+  })();
+
+  function doBlink(now){ if (blinkStart < 0){ blinkStart = now; SND.blink(); } }
 
   function idle(now){
     if (!pointer.down && now > pointer.release && now > nextWander){
@@ -903,6 +930,7 @@
     target.x = clamp(x/ES*0.3, -20, 20); target.y = clamp(y/ES*0.3, -24, 24);
   }
   cv.addEventListener('pointerdown', function(e){
+    SND.tap();
     pointer.down = true; pointer.t0 = performance.now(); pointer.x0 = e.clientX; pointer.y0 = e.clientY; pointer.moved = 0; holdFired = false;
     try { cv.setPointerCapture(e.pointerId); } catch(_){}
     redDown = false; if (scene === 'set' || scene === 'pick'){ var qr = canvasXY(e); redDown = redHit(qr.x, qr.y); }
@@ -967,6 +995,7 @@
   });
   document.getElementById('replay').addEventListener('click', restart);
   document.getElementById('blink').addEventListener('click', function(){ if (awake) doBlink(performance.now()/1000); });
+  document.getElementById('snd').addEventListener('click', function(){ this.textContent = 'Sound: ' + (SND.toggle() ? 'On' : 'Off'); });
   document.getElementById('bg').addEventListener('click', function(){
     mode = mode === 'yellow' ? 'black' : 'yellow';
     this.textContent = 'Screen: ' + (mode === 'yellow' ? 'Yellow' : 'Black');

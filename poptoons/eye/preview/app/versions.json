@@ -1,5 +1,16 @@
 [
   {
+    "version": "0.2.0",
+    "date": "2026-11-23",
+    "notes": {
+      "en": "Sounds: a peep on every tap and a tiny blip when the eye blinks (silent in quiet time). Not yet tested on a real board."
+    },
+    "app": "fw/0.2.0/app.bin",
+    "appSha256": "df88c9349a7dd867ff36a4b08d2da8bf88599391ad356acac0329702a7e0dc0a",
+    "full": "fw/0.2.0/full.bin",
+    "fullSha256": "d8a0e6d59b7b1982f328e642e0536f6b66d7e67a8e93a4e73f6b442ae7742419"
+  },
+  {
     "version": "0.1.1",
     "date": "2026-11-23",
     "notes": {
