@@ -1,1 +1,11 @@
-[]
+[
+  {
+    "version": "0.1.0",
+    "date": "2026-11-23",
+    "notes": {"en": "First version. Eye, toon picker, 8 toons, touch, shake, settings eye. Not yet tested on a real board."},
+    "app": "fw/0.1.0/app.bin",
+    "appSha256": "a800822ef379bdc6ad8720e804d9ee07b39c05dde959f76d1d2df1b41606da1c",
+    "full": "fw/0.1.0/full.bin",
+    "fullSha256": "703ecad4aeff66172a03db057242d05bc4f70487d6d527b8bfd3ae1666754922"
+  }
+]
