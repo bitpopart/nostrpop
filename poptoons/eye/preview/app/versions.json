@@ -1,5 +1,16 @@
 [
   {
+    "version": "0.2.7",
+    "date": "2026-11-23",
+    "notes": {
+      "en": "Sound volume setting: Off, Low, Mid, High (Mid is the old level, High is louder). Not yet tested on a real board."
+    },
+    "app": "fw/0.2.7/app.bin",
+    "appSha256": "178bbc3c679ec9e52c5fb619d4888de99d6bc9f2d8fb388ccd9b3a21fb36009d",
+    "full": "fw/0.2.7/full.bin",
+    "fullSha256": "9c3d5695d8505c88f59183b6381e763fe57aacfc23a42ffafe2d1cdaeb3ba20f"
+  },
+  {
     "version": "0.2.6",
     "date": "2026-11-23",
     "notes": {
