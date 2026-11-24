@@ -53,6 +53,9 @@
     background:#000; touch-action:none; cursor:pointer; }
   .state { margin-top:22px; font-family:Bangers, Impact, sans-serif; font-size:22px; letter-spacing:1.5px; }
   .controls { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-top:14px; }
+  .colls { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin:12px auto 0; max-width:560px; }
+  .colls button { padding:7px 12px; font-size:14px; }
+  .colls button.on { background:var(--ink,#111); color:#fff; }
   button {
     font-family:Bangers, Impact, sans-serif; font-size:20px; letter-spacing:1px;
     padding:10px 18px; border:3px solid var(--ink); border-radius:14px;
@@ -144,6 +147,8 @@
 
   <div class="device"><div class="hanger"></div><div class="ring"></div><canvas id="c" width="932" height="932" aria-label="Round display preview showing the POPtoons eye"></canvas></div>
 
+  <div class="colls" id="colls" role="tablist" aria-label="Collection"></div>
+  <div class="hint" id="collnote" style="margin:4px 0 8px"></div>
   <div class="state" id="state">BOOT</div>
   <div class="controls">
     <button id="replay">Replay start</button>
@@ -400,7 +405,7 @@
   Object.keys(ASSETS).forEach(function(k){
     var im = new Image(); im.src = 'data:image/png;base64,' + ASSETS[k]; IMGS[k] = im;
   });
-  var TOONS = [
+  var TOONS_ALL = [
     {name:'Fizz', set:'PeepPops', key:'fizz', w:235, h:307, ax:0, ay:0, say:{w:289,h:94}, gm:{w:88,h:96,dx:-7.2,dy:-35.3}, heart:{w:83,h:79,dx:119.0,dy:-29.8}},
     {name:'Uno', set:'PeepPops', key:'uno', w:223, h:306, ax:0, ay:0, say:{w:289,h:94}, gm:{w:88,h:96,dx:-16.2,dy:-26.4}, heart:{w:91,h:87,dx:95.6,dy:-11.5}},
     {name:'Zig', set:'PeepPops', key:'zig', w:234, h:300, ax:-16, ay:8, say:{w:277,h:120}, gm:{w:88,h:96,dx:212.1,dy:-52.7}, heart:{w:84,h:78,dx:-6.0,dy:14.9}},
@@ -410,6 +415,8 @@
     {name:'Mimi', set:'Lovelings', key:'mimi', w:291, h:304, ax:0, ay:0, say:{w:292,h:120}, gm:{w:109,h:100,dx:203.8,dy:19.8}, heart:{w:101,h:94,dx:-28.8,dy:15.9}},
     {name:'Moo', set:'Joylings', key:'moo', w:297, h:271, ax:0, ay:24, say:{w:286,h:94}, gm:{w:149,h:173,dx:130.1,dy:-135.3}, heart:{w:124,h:119,dx:225.0,dy:-41.9}}
   ];
+  var TOONS = TOONS_ALL.slice();                 // the toons of the chosen collection (the flashed firmware holds only these)
+
   var AX = 233, AY = 396;                         // feet anchor on the screen
   var scene = 'eye', autoToon = true, awakeAt = 0, revealAt = -1, closeAt = 0, holdFired = false;
   var T = {idx:0, enterAt:0, hopAt:-1, hopH:46, hopDur:.55, bub:null, bubAt:0, bubDur:0, sayAt:-1, tapN:0, shakeAt:-1, outAt:-1, nextHop:0, lastTap:-10, leaveAt:-1, lastPlay:0, mood:0, peek:false, dir:[215,0], enterDur:0.55};
@@ -942,6 +949,25 @@
   }
 
   function restart(){ start = performance.now()/1000; awake = false; blinkStart = -1; blinkQueue = []; scene = 'eye'; autoToon = true; revealAt = -1; T.idx = dayNo % TOONS.length; }
+  // ---- collections: choose which collection the device is flashed with, the preview then shows only its toons
+  var COLLS = [['all', 'All toons']];
+  TOONS_ALL.forEach(function(t){ if (!COLLS.some(function(c){ return c[0] === t.set; })) COLLS.push([t.set, t.set]); });
+  var collNow = 'all';
+  try { var cs = localStorage.getItem('poptoons_coll'); if (cs && COLLS.some(function(c){ return c[0] === cs; })) collNow = cs; } catch(_){}
+  function setCollection(key, keepScene){
+    collNow = key; try { localStorage.setItem('poptoons_coll', key); } catch(_){}
+    TOONS.length = 0; TOONS_ALL.forEach(function(t){ if (key === 'all' || t.set === key) TOONS.push(t); });
+    NEED.length = 0; TOONS.forEach(function(){ NEED.push([0.85, 0.8, 0.9]); });
+    Array.prototype.forEach.call(document.querySelectorAll('#colls button'), function(b){ b.classList.toggle('on', b.getAttribute('data-k') === key); b.setAttribute('aria-selected', b.getAttribute('data-k') === key); });
+    document.getElementById('collnote').textContent = (key === 'all' ? 'All collections' : key) + ': ' + TOONS.map(function(t){ return t.name; }).join(', ') + '. On the device the flasher installs just these.';
+    T.idx = dayNo % TOONS.length; document.getElementById('today').textContent = "Today's toon: " + TOONS[T.idx].name + " (" + TOONS[T.idx].set + ")";
+    if (!keepScene) restart();
+  }
+  (function(){
+    var box = document.getElementById('colls');
+    COLLS.forEach(function(c){ var b = document.createElement('button'); b.textContent = c[1]; b.setAttribute('data-k', c[0]); b.setAttribute('role', 'tab'); b.addEventListener('click', function(){ setCollection(c[0]); }); box.appendChild(b); });
+    setCollection(collNow, true);
+  })();
 
   function toLook(e){
     var r = cv.getBoundingClientRect();
