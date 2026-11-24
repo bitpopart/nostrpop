@@ -56,6 +56,10 @@
   <div class="card">
     <h2>2. Version</h2>
     <select id="ver"></select>
+    <div id="collwrap" hidden>
+      <p class="small" style="margin:14px 0 6px"><b>Collection</b> - flash one collection only, or all toons.</p>
+      <select id="coll"></select>
+    </div>
     <p class="small" id="notes"></p>
   </div>
 
@@ -90,16 +94,30 @@ $('nosupport').hidden = supported;
 document.querySelectorAll('#mode label').forEach(l => l.addEventListener('click', () => {
   document.querySelectorAll('#mode label').forEach(x => x.classList.remove('on')); l.classList.add('on'); }));
 
+// the chosen version, with the chosen collection's files filled in (older versions have no collections)
+function cur(){
+  const v = list[$('ver').selectedIndex]; if (!v) return null;
+  if (!v.variants) return v;
+  const c = v.variants[$('coll').value] || v.variants[Object.keys(v.variants)[0]];
+  return Object.assign({}, v, c);
+}
+function fillColl(){
+  const v = list[$('ver').selectedIndex], keep = $('coll').value;
+  $('collwrap').hidden = !(v && v.variants);
+  if (!v || !v.variants) return;
+  $('coll').innerHTML = Object.keys(v.variants).map(k => `<option value="${esc(k)}">${esc(v.variants[k].name || k)}</option>`).join('');
+  if (v.variants[keep]) $('coll').value = keep;
+}
 function showNotes(){
   const v = list[$('ver').selectedIndex]; if (!v) { $('notes').textContent = ''; return; }
   $('notes').textContent = (v.notes && (v.notes.en || v.notes)) || '';
 }
-$('ver').addEventListener('change', showNotes);
+$('ver').addEventListener('change', () => { fillColl(); showNotes(); });
 
 fetch('../versions.json', {cache:'no-store'}).then(r => r.json()).then(l => { list = Array.isArray(l) ? l : []; }).catch(() => { list = []; }).then(() => {
   $('nover').hidden = list.length > 0;
   $('ver').innerHTML = list.map((v, i) => `<option>${esc(v.version)} (${esc(v.date)})${i === 0 ? ' - newest' : ''}</option>`).join('');
-  showNotes();
+  fillColl(); showNotes();
   $('go').disabled = !supported || !list.length;
 });
 
@@ -128,7 +146,7 @@ $('go').addEventListener('click', async () => {
   if (busy) return; busy = true; $('go').disabled = true; progress(0); $('log').textContent = '';
   let transport = null;
   try {
-    const v = list[$('ver').selectedIndex], fresh = mode() === 'new';
+    const v = cur(), fresh = mode() === 'new';
     status('Downloading and checking the firmware...');
     const bin = fresh ? await fetchBin(v.full, v.fullSha256) : await fetchBin(v.app, v.appSha256);
     log('Firmware: ' + (fresh ? v.full : v.app) + ' (' + bin.length + ' bytes), ' + await checkSignature(bin, fresh ? v.fullSig : v.appSig));

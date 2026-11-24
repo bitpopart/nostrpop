@@ -1,5 +1,63 @@
 [
   {
+    "version": "0.4.0",
+    "date": "2026-11-24",
+    "notes": {
+      "en": "Choose a collection to flash: only its toons are installed (smaller and faster), or All toons. Buck (Poopies) has an animated body. Not yet tested on a real board."
+    },
+    "variants": {
+      "all": {
+        "name": "All toons",
+        "app": "fw/0.4.0/all/app.bin",
+        "appSha256": "3c6464c5182731630b0f4491f25cf57132b01e4bd47234e1243d6e7978441acd",
+        "full": "fw/0.4.0/all/full.bin",
+        "fullSha256": "7ee57a81f885f72001b61426f4bdd32b99ef381eb18219e82a55bef11412a8b8"
+      },
+      "peeppops": {
+        "name": "PeepPops (Fizz, Uno, Zig)",
+        "app": "fw/0.4.0/peeppops/app.bin",
+        "appSha256": "65dfc0e00b33ab4d8ed5edfc7377db80eef8d54369724a10ecc0115b4de23744",
+        "full": "fw/0.4.0/peeppops/full.bin",
+        "fullSha256": "0bbf81fda3fd0624f635e6476fb01c091056d41c27f94347cce8db0a007a7096"
+      },
+      "poopies": {
+        "name": "Poopies (Buck)",
+        "app": "fw/0.4.0/poopies/app.bin",
+        "appSha256": "e6dbc3726df424abd33ea2e70c75f4fbdf055686f08b48487deb8ef399e5eb3b",
+        "full": "fw/0.4.0/poopies/full.bin",
+        "fullSha256": "d66ab5080794b297e4c0feb4187e6380849e5eeb9e2e133dac312c1f661f85d1"
+      },
+      "unipops": {
+        "name": "UniPops (Heli)",
+        "app": "fw/0.4.0/unipops/app.bin",
+        "appSha256": "aad4f38c0f8ee95e8426646d3e3d1090ed74a504b9590aee3110afaf9621b8ab",
+        "full": "fw/0.4.0/unipops/full.bin",
+        "fullSha256": "d6c39b53668f7df1028288d7474bc72b3cd81267a34afbfd255eec1dedf35f1e"
+      },
+      "monsterlings": {
+        "name": "Monsterlings (Pling)",
+        "app": "fw/0.4.0/monsterlings/app.bin",
+        "appSha256": "fa1bbd3a3be2109f4f384b290dcd12ddc2488b30c88a9a0b67180b7f93e46bbf",
+        "full": "fw/0.4.0/monsterlings/full.bin",
+        "fullSha256": "f1c69848be8096fa41035151772ebdc129b6cd2f523b9e219146ec90ab2a3666"
+      },
+      "lovelings": {
+        "name": "Lovelings (Mimi)",
+        "app": "fw/0.4.0/lovelings/app.bin",
+        "appSha256": "84be4bbe237d195693612167ea61c8b879a53e91cc8104dcb6750a453d56ac59",
+        "full": "fw/0.4.0/lovelings/full.bin",
+        "fullSha256": "fd2b4d2b1a82806fbceacb80833832da8f1925fa455528f77a75d8aa756cd92e"
+      },
+      "joylings": {
+        "name": "Joylings (Moo)",
+        "app": "fw/0.4.0/joylings/app.bin",
+        "appSha256": "762a8eca9458489a7eac38e36c577000ba2eff2c8bedecf6d25a412f0fabf18f",
+        "full": "fw/0.4.0/joylings/full.bin",
+        "fullSha256": "c322dccba550edb4c557e527ed3659fc6539103be145948578749329ab24f117"
+      }
+    }
+  },
+  {
     "version": "0.3.0",
     "date": "2026-11-24",
     "notes": {
