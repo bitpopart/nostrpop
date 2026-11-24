@@ -1,5 +1,63 @@
 [
   {
+    "version": "0.5.2",
+    "date": "2026-11-24",
+    "notes": {
+      "en": "Poopies: new video animations for Buck (front teeth) and Burp. The crooked-teeth video now belongs to Snicker. Not yet tested on a real board."
+    },
+    "variants": {
+      "all": {
+        "name": "All toons",
+        "app": "fw/0.5.2/all/app.bin",
+        "appSha256": "10116a1e159d4bfd6f75e22e0161b4a9cdfa4d76710133e54d1ac0c472830919",
+        "full": "fw/0.5.2/all/full.bin",
+        "fullSha256": "0a61a16501ca58841d70e8591cf0bd3ab7d9ae9eb001b751f3ca27706c2231dc"
+      },
+      "peeppops": {
+        "name": "PeepPops (Fizz, Uno, Zig)",
+        "app": "fw/0.5.2/peeppops/app.bin",
+        "appSha256": "c37145a6edf5f049912e21052103d12d401c0058e5da41aed907af27762e4647",
+        "full": "fw/0.5.2/peeppops/full.bin",
+        "fullSha256": "ea341b79d7af80279338b4978bece15da2a4fc0f0d73809437d21a6c00a23d19"
+      },
+      "poopies": {
+        "name": "Poopies (Buck, Burp, Snicker)",
+        "app": "fw/0.5.2/poopies/app.bin",
+        "appSha256": "2042faf63057a4359f5860fca540629ec2da55e0cb5eee2211529ad83aec0c6a",
+        "full": "fw/0.5.2/poopies/full.bin",
+        "fullSha256": "19c0e80fe61ae64f41b7139f88cf3d5e9752e0875c09c4398e4cfb0068f8eac1"
+      },
+      "unipops": {
+        "name": "UniPops (Heli, Bloop)",
+        "app": "fw/0.5.2/unipops/app.bin",
+        "appSha256": "e0ddddb4eb83f5852cf1eee9a0cd9707d6eacd5aaac57a7344b9741dbe3c95a1",
+        "full": "fw/0.5.2/unipops/full.bin",
+        "fullSha256": "924351b96b5beef8c7af097af87710fe098413f0df11eb0e1567c1f9f4cd2677"
+      },
+      "monsterlings": {
+        "name": "Monsterlings (Pling)",
+        "app": "fw/0.5.2/monsterlings/app.bin",
+        "appSha256": "31b96eec6a167f262ba0a15e30167ed6d82d274311aaac20bdbd0ec44b6c4473",
+        "full": "fw/0.5.2/monsterlings/full.bin",
+        "fullSha256": "2310765d21a06632ead7319c593b5bd29b04410c961287131148018e503294f6"
+      },
+      "lovelings": {
+        "name": "Lovelings (Mimi)",
+        "app": "fw/0.5.2/lovelings/app.bin",
+        "appSha256": "f93f4293a7060cabcca944a9ecb24427583efe038ae728b3ab686156f052de89",
+        "full": "fw/0.5.2/lovelings/full.bin",
+        "fullSha256": "e34a492435df2bcc9cb3386b01c3656ebab954a3c8a5b809643abdefdd1c0851"
+      },
+      "joylings": {
+        "name": "Joylings (Moo)",
+        "app": "fw/0.5.2/joylings/app.bin",
+        "appSha256": "44e37c55c3a7a6dbdb34ff553f70555ed857d0be417de613d4f455003779ee4e",
+        "full": "fw/0.5.2/joylings/full.bin",
+        "fullSha256": "b46d5d10b8260dea9de9217009e652c3b65dbc07590844edd71b1a979b4740c2"
+      }
+    }
+  },
+  {
     "version": "0.5.1",
     "date": "2026-11-24",
     "notes": {
