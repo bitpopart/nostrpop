@@ -1,5 +1,63 @@
 [
   {
+    "version": "0.4.1",
+    "date": "2026-11-24",
+    "notes": {
+      "en": "Picture turned 45 degrees clockwise on the panel (USB down, buttons up); touch follows. Collections as in 0.4.0. Not yet tested on a real board, the frame rate with the turning is unmeasured."
+    },
+    "variants": {
+      "all": {
+        "name": "All toons",
+        "app": "fw/0.4.1/all/app.bin",
+        "appSha256": "0161aef34d4378eade9f1d6d24898ece26bcf621832de35b571edecb609d653c",
+        "full": "fw/0.4.1/all/full.bin",
+        "fullSha256": "db742b1dcb9ce356f349b12e10d817755c4d84610ccf11bafb6c18d8022916d0"
+      },
+      "peeppops": {
+        "name": "PeepPops (Fizz, Uno, Zig)",
+        "app": "fw/0.4.1/peeppops/app.bin",
+        "appSha256": "562be4f99124325ea288c505e9da146d810cb71a34e44a69cd9b04ca390cc6c6",
+        "full": "fw/0.4.1/peeppops/full.bin",
+        "fullSha256": "4c1b29b5b8140cbb7d5cd0e1eb6af0820fefc7fd4b1b45c78f2313aa8e04f4c6"
+      },
+      "poopies": {
+        "name": "Poopies (Buck)",
+        "app": "fw/0.4.1/poopies/app.bin",
+        "appSha256": "ebf4a76f5a7a151c181b29d24eda1388f90a4b0e6b7dbd29222dbd7ec400b3d4",
+        "full": "fw/0.4.1/poopies/full.bin",
+        "fullSha256": "b0aa8b18292d23f72d4651b07c8321fa2acc4204e0bcfb42d63b169078514814"
+      },
+      "unipops": {
+        "name": "UniPops (Heli)",
+        "app": "fw/0.4.1/unipops/app.bin",
+        "appSha256": "c3231eec21d614ae29edb8c023c7084fc7bf7efeb43457fc0228248ce1a31ff2",
+        "full": "fw/0.4.1/unipops/full.bin",
+        "fullSha256": "7cea0b28538b421235976bbe6048d9d0f300ee437f0d45ba14743657c8697d7d"
+      },
+      "monsterlings": {
+        "name": "Monsterlings (Pling)",
+        "app": "fw/0.4.1/monsterlings/app.bin",
+        "appSha256": "7ac47f61b17f62555bfdc1018ce4c31112c5269b2cd52d464dfbd4f291cdd9cd",
+        "full": "fw/0.4.1/monsterlings/full.bin",
+        "fullSha256": "fb08e3f0cbcea47a2c8529c873b0e7c51a54eaead0cf0d95f911fd8f37d0aa8a"
+      },
+      "lovelings": {
+        "name": "Lovelings (Mimi)",
+        "app": "fw/0.4.1/lovelings/app.bin",
+        "appSha256": "055d1a832b6c0d355518724aefb06245075336f65fa134acbb446ece8989ffec",
+        "full": "fw/0.4.1/lovelings/full.bin",
+        "fullSha256": "888b198cf2a14548af4c2e3480c6b58a1d9674ca97bc0da3c4d7190def1989b6"
+      },
+      "joylings": {
+        "name": "Joylings (Moo)",
+        "app": "fw/0.4.1/joylings/app.bin",
+        "appSha256": "ea595359cfd9c027a2bcf073d9e3474609e011b0084d15e07a099f1b27c6d0f9",
+        "full": "fw/0.4.1/joylings/full.bin",
+        "fullSha256": "ca0296fa630d91cee403a8962cbc1f121b75d4fab7e2f685628c13bae86418f7"
+      }
+    }
+  },
+  {
     "version": "0.4.0",
     "date": "2026-11-24",
     "notes": {
