@@ -1,5 +1,63 @@
 [
   {
+    "version": "0.4.2",
+    "date": "2026-11-24",
+    "notes": {
+      "en": "Picture turned 90 degrees clockwise on the panel; touch follows. Collections as in 0.4.0. Not yet tested on a real board."
+    },
+    "variants": {
+      "all": {
+        "name": "All toons",
+        "app": "fw/0.4.2/all/app.bin",
+        "appSha256": "a36b92809f23a74946f8474f01e83f09b96c8103ce85f657145394df521d688a",
+        "full": "fw/0.4.2/all/full.bin",
+        "fullSha256": "f3c4ab640c0d101d7ee40912e8064a2b522a562b930fe2db29b9132bc4a92f7b"
+      },
+      "peeppops": {
+        "name": "PeepPops (Fizz, Uno, Zig)",
+        "app": "fw/0.4.2/peeppops/app.bin",
+        "appSha256": "5af6df2e8c373a5487af1734624b76a97e5ae966c8f0efff5031203da8d758d5",
+        "full": "fw/0.4.2/peeppops/full.bin",
+        "fullSha256": "8fda371c706858ec541db0d10a4abd964cb22cbc11a344dbf17b68718b14c1e8"
+      },
+      "poopies": {
+        "name": "Poopies (Buck)",
+        "app": "fw/0.4.2/poopies/app.bin",
+        "appSha256": "e40afb3af815e29d1abf7dd98b6ce00355e7057180d9f561b419ee08aa40409b",
+        "full": "fw/0.4.2/poopies/full.bin",
+        "fullSha256": "0c4c0e3603091b319bd38a18e7ffc803dacbc4c0598b1b1e2843ad4d9337e38b"
+      },
+      "unipops": {
+        "name": "UniPops (Heli)",
+        "app": "fw/0.4.2/unipops/app.bin",
+        "appSha256": "658b8c202b2e99cb42179140b6adea295081c9e73d4f3503fd91a4df8cbbb793",
+        "full": "fw/0.4.2/unipops/full.bin",
+        "fullSha256": "bf840fdc709bffb0acbec9679e9b251227b1d7a9d202cbb95e0ce39977dde95c"
+      },
+      "monsterlings": {
+        "name": "Monsterlings (Pling)",
+        "app": "fw/0.4.2/monsterlings/app.bin",
+        "appSha256": "29f42a66d499e62dd60d0727b9e4ef39519c3925fde6dae00c1566c4b36274a6",
+        "full": "fw/0.4.2/monsterlings/full.bin",
+        "fullSha256": "2bdc3a9e5116d2d7556a0087254d3fd4ce637d69cb06565c5d3b01c3f17cadd0"
+      },
+      "lovelings": {
+        "name": "Lovelings (Mimi)",
+        "app": "fw/0.4.2/lovelings/app.bin",
+        "appSha256": "f5b988e99ca237040b4938a53526dd5b47cab0fddfe99c801234d95e6d623568",
+        "full": "fw/0.4.2/lovelings/full.bin",
+        "fullSha256": "a81c90700425a1c100c8bc34c7316a171f45bc23aba089295634eb218939c0ed"
+      },
+      "joylings": {
+        "name": "Joylings (Moo)",
+        "app": "fw/0.4.2/joylings/app.bin",
+        "appSha256": "31f0dcad38e2f79c4624f4e0fbc418ddbab5907c10d477050a63c213869d0f21",
+        "full": "fw/0.4.2/joylings/full.bin",
+        "fullSha256": "12db1866c8e7eaf8d98e028bd470fec0af24f54e38e3031bf1cf45b172e79eac"
+      }
+    }
+  },
+  {
     "version": "0.4.1",
     "date": "2026-11-24",
     "notes": {
