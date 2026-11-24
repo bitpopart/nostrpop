@@ -1,5 +1,63 @@
 [
   {
+    "version": "0.5.9",
+    "date": "2026-11-24",
+    "notes": {
+      "en": "New toon Razz (UniPops) with art, speech bubble and video animation. Toon limit raised to 20. Not yet tested on a real board."
+    },
+    "variants": {
+      "all": {
+        "name": "All toons",
+        "app": "fw/0.5.9/all/app.bin",
+        "appSha256": "bf2f178d1da98062b5aa002c883984a6be03046cdae78caab9ebe9bc4ebe8961",
+        "full": "fw/0.5.9/all/full.bin",
+        "fullSha256": "1404ecb29631833b19f772b912965de950754201b0b1c2c5ea5885dfdcf5a7d3"
+      },
+      "peeppops": {
+        "name": "PeepPops (Fizz, Uno, Zig)",
+        "app": "fw/0.5.9/peeppops/app.bin",
+        "appSha256": "ccc427450c92f0da6b3280922712e0a12c4df93e3874130985f519cfb58b982d",
+        "full": "fw/0.5.9/peeppops/full.bin",
+        "fullSha256": "84d16317b263c3a32c7478bacdc19f74d6ebbf77046afb52000ed76d3f704d37"
+      },
+      "poopies": {
+        "name": "Poopies (Buck, Burp, Snicker, Chomp, Drool)",
+        "app": "fw/0.5.9/poopies/app.bin",
+        "appSha256": "649a5ad9e140eff0dd8ef9cfc83f43e46e5f66d5c01da20373a82f7f3ca33903",
+        "full": "fw/0.5.9/poopies/full.bin",
+        "fullSha256": "e1b25a4d1fc8f1a16d7b7efce6a0e7fa2b0cce29cca0773bacc96d4b614575b8"
+      },
+      "unipops": {
+        "name": "UniPops (Heli, Bloop, Chili, Giggle, Smooch, Razz)",
+        "app": "fw/0.5.9/unipops/app.bin",
+        "appSha256": "429e179104a6eca4ab6b1e337550443df543185734c198e4fc190809e01169c0",
+        "full": "fw/0.5.9/unipops/full.bin",
+        "fullSha256": "beba0c3193f27c7d7bcfb049aa39db96373f2cf1f01b1b4476cb055071a890ff"
+      },
+      "monsterlings": {
+        "name": "Monsterlings (Pling)",
+        "app": "fw/0.5.9/monsterlings/app.bin",
+        "appSha256": "84ad7a3f2e222c700c17f0ed92354b7588d65b5dfd7b731b78679444570a3ba2",
+        "full": "fw/0.5.9/monsterlings/full.bin",
+        "fullSha256": "ae0d7888ee1ecc955f6c8a4203c70a4ddc28d01207077aa1e4608e7f02966f6b"
+      },
+      "lovelings": {
+        "name": "Lovelings (Mimi)",
+        "app": "fw/0.5.9/lovelings/app.bin",
+        "appSha256": "a9d5bf428a875095dcd8630d480c94e0b91699f1cb471e79b959f7e7e4f2a985",
+        "full": "fw/0.5.9/lovelings/full.bin",
+        "fullSha256": "7b13143b1c555b6f62bf3c8f2364bcb9fc72dca23680a2f7deb9a4130d991f63"
+      },
+      "joylings": {
+        "name": "Joylings (Moo)",
+        "app": "fw/0.5.9/joylings/app.bin",
+        "appSha256": "7d331c8f1604b0ff3acc860d17c851f1a7e353e11090996d02401b356e0776f9",
+        "full": "fw/0.5.9/joylings/full.bin",
+        "fullSha256": "ccb144859c2082ca19d2f694da20bbdf4552acc0d1eab0f3f9ecf4b94306c2db"
+      }
+    }
+  },
+  {
     "version": "0.5.8",
     "date": "2026-11-24",
     "notes": {
