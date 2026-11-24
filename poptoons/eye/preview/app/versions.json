@@ -1,5 +1,63 @@
 [
   {
+    "version": "0.5.1",
+    "date": "2026-11-24",
+    "notes": {
+      "en": "New Poopies: Burp and Snicker join Buck, each with its own speech bubble. Not yet tested on a real board."
+    },
+    "variants": {
+      "all": {
+        "name": "All toons",
+        "app": "fw/0.5.1/all/app.bin",
+        "appSha256": "dbc31d30dc33dcbaf44a6e8e259e49678c08fb3090fad059ec97460e0a192428",
+        "full": "fw/0.5.1/all/full.bin",
+        "fullSha256": "3988794d2ab97ab64fb5e09807b8b2dfc114b40720d7cd62596022f5dfefedd0"
+      },
+      "peeppops": {
+        "name": "PeepPops (Fizz, Uno, Zig)",
+        "app": "fw/0.5.1/peeppops/app.bin",
+        "appSha256": "cb42d5fe26659ffe123878d84a062c9a0b33bfe614c61e869df540277bda53aa",
+        "full": "fw/0.5.1/peeppops/full.bin",
+        "fullSha256": "d51cbd09da6f3b82fecbaa67795defa18ff4943c9ed705965da105f6cdaae652"
+      },
+      "poopies": {
+        "name": "Poopies (Buck, Burp, Snicker)",
+        "app": "fw/0.5.1/poopies/app.bin",
+        "appSha256": "d8bada0a2e06acdeb6a0bf0a8cef22790e9a38db885ff8e15932133abad07436",
+        "full": "fw/0.5.1/poopies/full.bin",
+        "fullSha256": "947792d05e69adeb688305c23434b07327ca10ffadc6f9053f11c03be0a18400"
+      },
+      "unipops": {
+        "name": "UniPops (Heli, Bloop)",
+        "app": "fw/0.5.1/unipops/app.bin",
+        "appSha256": "00644a263ccd2d7f722f19172fad8bd0a06ad04ecbf825d2d74af00189a2c70b",
+        "full": "fw/0.5.1/unipops/full.bin",
+        "fullSha256": "8f183dd653ddbb8acb4248759b55cd39e25292b3907f210879171a8638eec4b9"
+      },
+      "monsterlings": {
+        "name": "Monsterlings (Pling)",
+        "app": "fw/0.5.1/monsterlings/app.bin",
+        "appSha256": "6f94c3374418da9d22fc850b9cb3e87e60dd63b629dee8f68dc99181c2d3fbe0",
+        "full": "fw/0.5.1/monsterlings/full.bin",
+        "fullSha256": "cd7d68c5cbca9374b1cbf4b3649e2cdf0f9b579b19f3b22a0bec282617900559"
+      },
+      "lovelings": {
+        "name": "Lovelings (Mimi)",
+        "app": "fw/0.5.1/lovelings/app.bin",
+        "appSha256": "6e7adbe126f94627ad7b123bfd14bcf3d42cfe0d0dbab4d499bdc20a37136a07",
+        "full": "fw/0.5.1/lovelings/full.bin",
+        "fullSha256": "62100170707d8bfa11f424d03d01e6717d9d51657740ed9824707db04f96c2b3"
+      },
+      "joylings": {
+        "name": "Joylings (Moo)",
+        "app": "fw/0.5.1/joylings/app.bin",
+        "appSha256": "02764e70c8cfce84deb1abca1708b595dce26cfebe372086c2399b1d33747473",
+        "full": "fw/0.5.1/joylings/full.bin",
+        "fullSha256": "350bd43135ecb4f164da7c68ebb3c25a27de01def21303d0765b2ba52e5c79ea"
+      }
+    }
+  },
+  {
     "version": "0.5.0",
     "date": "2026-11-24",
     "notes": {
