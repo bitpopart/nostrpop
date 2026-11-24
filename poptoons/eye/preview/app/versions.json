@@ -1,5 +1,63 @@
 [
   {
+    "version": "0.5.8",
+    "date": "2026-11-24",
+    "notes": {
+      "en": "Giggle and Smooch: removed the white patches that showed in some animation frames. Not yet tested on a real board."
+    },
+    "variants": {
+      "all": {
+        "name": "All toons",
+        "app": "fw/0.5.8/all/app.bin",
+        "appSha256": "84fa004b2cb007755d930fa09e3293deacbbb6ed87997d26c25a532d0858021e",
+        "full": "fw/0.5.8/all/full.bin",
+        "fullSha256": "fe654f8db756a5505f49f0f38e6c376f7a9e9e023f2ceaa75831a4d3779f3c15"
+      },
+      "peeppops": {
+        "name": "PeepPops (Fizz, Uno, Zig)",
+        "app": "fw/0.5.8/peeppops/app.bin",
+        "appSha256": "fe446e9136231a106555297e7ca426e6604813cab91607c9e981fc3c0c962bba",
+        "full": "fw/0.5.8/peeppops/full.bin",
+        "fullSha256": "814a24d9f77753b23c4c9901d828931003235fb417856d98b0b0a449ebf52191"
+      },
+      "poopies": {
+        "name": "Poopies (Buck, Burp, Snicker, Chomp, Drool)",
+        "app": "fw/0.5.8/poopies/app.bin",
+        "appSha256": "d699b529daa9f11d077771029c39a69bb302a58d2021aea7a7e65300f734414c",
+        "full": "fw/0.5.8/poopies/full.bin",
+        "fullSha256": "df09fa471f5900e346ef7acd18149b897c634fb21e877edf3061e1e16641b6b1"
+      },
+      "unipops": {
+        "name": "UniPops (Heli, Bloop, Chili, Giggle, Smooch)",
+        "app": "fw/0.5.8/unipops/app.bin",
+        "appSha256": "d152415807b18cea6ff781c0e9d7075a91d44c6fd19ca052096c7f8c9589aaf2",
+        "full": "fw/0.5.8/unipops/full.bin",
+        "fullSha256": "424a171ec8b5510867ec97cc27e5f0ca16254119742fd4b6f8a59e464e2722f2"
+      },
+      "monsterlings": {
+        "name": "Monsterlings (Pling)",
+        "app": "fw/0.5.8/monsterlings/app.bin",
+        "appSha256": "0162faaf7e8e27e94b3e1e567e8b61574b14c2afd77b8722d4fb67c186a8ad2c",
+        "full": "fw/0.5.8/monsterlings/full.bin",
+        "fullSha256": "b4c2e7b7614eb383fe6c76fd5ba0aa4d41248a13c2f46a60d09d9beaea4c5807"
+      },
+      "lovelings": {
+        "name": "Lovelings (Mimi)",
+        "app": "fw/0.5.8/lovelings/app.bin",
+        "appSha256": "8f9edfba0207c9f1ce798f37736781487b3430db06f0e31ecd5908eed0b4521a",
+        "full": "fw/0.5.8/lovelings/full.bin",
+        "fullSha256": "3edc7153f97517622cfd3446448e49014f9942638b5870581d2fb578fe7a05c9"
+      },
+      "joylings": {
+        "name": "Joylings (Moo)",
+        "app": "fw/0.5.8/joylings/app.bin",
+        "appSha256": "8d7e179093b0342723482e3f417b33f7a8bbc24d57795a2bbedbc74fe0722ba2",
+        "full": "fw/0.5.8/joylings/full.bin",
+        "fullSha256": "dcb337e618dba9493d8f2db795fbef7a0b56ef5a074d05cfdd0a4a826aaaa7c9"
+      }
+    }
+  },
+  {
     "version": "0.5.7",
     "date": "2026-11-24",
     "notes": {
