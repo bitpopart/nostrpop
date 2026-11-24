@@ -1,5 +1,63 @@
 [
   {
+    "version": "0.5.3",
+    "date": "2026-11-24",
+    "notes": {
+      "en": "New Poopies toon: Chomp, with a video animation. The app area is now 8 MB so the All build fits: if you flash All, use New device (full image) once. Collection builds can still be updated as before. Not yet tested on a real board."
+    },
+    "variants": {
+      "all": {
+        "name": "All toons",
+        "app": "fw/0.5.3/all/app.bin",
+        "appSha256": "978d2853b0431e2e49ab0e5370e2831415b2a3a2865c20fb3d0fe96a2c361de8",
+        "full": "fw/0.5.3/all/full.bin",
+        "fullSha256": "ddca60775e618a12a3e069a6f27c28ccae0d08c83af135c38372eb20d61ef528"
+      },
+      "peeppops": {
+        "name": "PeepPops (Fizz, Uno, Zig)",
+        "app": "fw/0.5.3/peeppops/app.bin",
+        "appSha256": "b492020f03e1a1bfff76370a92835c106df13ae8eee6b532a221c6f2933a445c",
+        "full": "fw/0.5.3/peeppops/full.bin",
+        "fullSha256": "59d4bc6e56c5b09b15e2b70f5aac68fd5ba41edae8c89027810684f03f09b2cf"
+      },
+      "poopies": {
+        "name": "Poopies (Buck, Burp, Snicker, Chomp)",
+        "app": "fw/0.5.3/poopies/app.bin",
+        "appSha256": "90e72f155af136ba6a6759635a5e4e23c7024072f71e4cd356c9a1bdf0a1022c",
+        "full": "fw/0.5.3/poopies/full.bin",
+        "fullSha256": "fc5ace233ccaa5e6c8e15b56351519672a8d5c8b066589be52fa8336362a2774"
+      },
+      "unipops": {
+        "name": "UniPops (Heli, Bloop)",
+        "app": "fw/0.5.3/unipops/app.bin",
+        "appSha256": "b3ee3339ff1847f4b551d3fd7aa49420220a7dac607692748065ad28e98225ab",
+        "full": "fw/0.5.3/unipops/full.bin",
+        "fullSha256": "9d2b1634996899281cbb2df4ac1c18d8d1bd7573b47ff6259dda111837185592"
+      },
+      "monsterlings": {
+        "name": "Monsterlings (Pling)",
+        "app": "fw/0.5.3/monsterlings/app.bin",
+        "appSha256": "d9fc2f5e1106489e2bb24b019a26a9997ac49fe60448476f72c8fcf15bd9ddc0",
+        "full": "fw/0.5.3/monsterlings/full.bin",
+        "fullSha256": "73b5654b5f663c5083cb16731ba6cd5bbbf98d11d001720734997826507b6687"
+      },
+      "lovelings": {
+        "name": "Lovelings (Mimi)",
+        "app": "fw/0.5.3/lovelings/app.bin",
+        "appSha256": "3e0e956ce105b7d1fe62f1f9aa03eaf1b02e75b2dacaa7018c64911215a2c03d",
+        "full": "fw/0.5.3/lovelings/full.bin",
+        "fullSha256": "72de0e23ba8af99768c435aee4a13af6b20b9a852195a6cb1afd99a095ae991d"
+      },
+      "joylings": {
+        "name": "Joylings (Moo)",
+        "app": "fw/0.5.3/joylings/app.bin",
+        "appSha256": "68b7dcfa2fad1bcb6be5dac469e6e32492c175401744e8ab199007ad213a7517",
+        "full": "fw/0.5.3/joylings/full.bin",
+        "fullSha256": "b462f161da65449c91be3cd00da39452dc81693003aa9e47ee56ba7b03ff360a"
+      }
+    }
+  },
+  {
     "version": "0.5.2",
     "date": "2026-11-24",
     "notes": {
