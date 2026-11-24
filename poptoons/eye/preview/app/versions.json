@@ -1,5 +1,16 @@
 [
   {
+    "version": "0.3.0",
+    "date": "2026-11-24",
+    "notes": {
+      "en": "Buck (Poopies) now has an animated body: a squishing, hopping smile loop, 15 small frames. Not yet tested on a real board."
+    },
+    "app": "fw/0.3.0/app.bin",
+    "appSha256": "274726a77137113834ffcecdaf4e901b5d997c6f0ff58e23bdce755689247dfc",
+    "full": "fw/0.3.0/full.bin",
+    "fullSha256": "b721dba39aae62bcae0e66023cbb509dbbbdaa1c81ce71e776a0b3797ae4272d"
+  },
+  {
     "version": "0.2.7",
     "date": "2026-11-23",
     "notes": {
