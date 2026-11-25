@@ -1935,7 +1935,12 @@
   var T_POP = 0.45, T_OPEN = 0.4;
   function tLoad(){ return (BAT.p >= 0 && !BAT.c) ? 0.7 : 2.0; }          // on battery the eye opens faster (less time with the screen on)
 
-  function frame(ms){
+  var frameErr = '';
+  function frame(ms){                       // a crash in one frame must never freeze the screen: show the error and keep going
+    try { frameInner(ms); frameErr = ''; }
+    catch (err){ var m = 'ERROR: ' + (err && err.message ? err.message : err); if (m !== frameErr){ frameErr = m; try { console.error(err); } catch(_){} } stateEl.textContent = m; ctx.globalAlpha = 1; requestAnimationFrame(frame); }
+  }
+  function frameInner(ms){
     var now = ms/1000, t = now - start;
     ctx.setTransform(2,0,0,2,0,0);
     var label;
