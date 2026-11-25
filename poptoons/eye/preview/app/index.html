@@ -2118,7 +2118,7 @@
     if (scene !== 'toon') return;
     var now = performance.now()/1000; T.lastPlay = now - (T.mood === 1 ? 45.5 : 20.5);   // preview helper: skip the waiting
   });
-  document.getElementById('replay').addEventListener('click', function(){ restart(true); });
+  document.getElementById('replay').addEventListener('click', function(){ restart(); });
   document.getElementById('blink').addEventListener('click', function(){ if (awake) doBlink(performance.now()/1000); });
   document.getElementById('snd').addEventListener('click', function(){ SETS.sound = (SETS.sound + 1) % 4; saveSets(); });
   document.getElementById('wifib').addEventListener('click', function(){ wifiI = (wifiI + 1) % WIFI_STATES.length; WIFI = WIFI_STATES[wifiI]; wifiSyncAt = -1; updWifi(); });
@@ -2131,7 +2131,7 @@
 
   applyBright();
   var begun = false;
-  function begin(){ if (begun) return; begun = true; restart(true); requestAnimationFrame(frame); }
+  function begin(){ if (begun) return; begun = true; restart(); requestAnimationFrame(frame); }
   try { document.fonts.load('84px Bangers').then(begin, begin); } catch(_){ begin(); }
   setTimeout(begin, 1500);
 })();
