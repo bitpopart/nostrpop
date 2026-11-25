@@ -1375,7 +1375,7 @@
     TR.confAt = now; T.lastPlay = now;
   }
   function careStep(dt, dr){
-    for (var t = 0; t < CARE.length; t++){
+    for (var t = 0; t < CARE.length && t < NEED.length; t++){
       var c = CARE[t], nd = NEED[t];
       if (c.wait > 0){ c.wait -= dr; if (c.wait <= 0){ c.wait = 0; if (c.poop < 3) c.poop++; } }
       var av = (nd[0] + nd[1] + nd[2])/3, neglect = c.poop > 0 || nd[0] <= 0 || nd[1] <= 0 || nd[2] <= 0;
@@ -2025,7 +2025,7 @@
   function setCollection(key, keepScene){
     collNow = key; try { localStorage.setItem('poptoons_coll', key); } catch(_){}
     TOONS.length = 0; TOONS_ALL.forEach(function(t){ if (key === 'all' || t.set === key) TOONS.push(t); });
-    NEED.length = 0; TOONS.forEach(function(){ NEED.push([0.85, 0.8, 0.9]); });
+    NEED.length = 0; TOONS.forEach(function(){ NEED.push([0.85, 0.8, 0.9]); }); CARE.length = 0; TOONS.forEach(function(){ CARE.push({poop:0, wait:0, sickT:0, sick:false, care:0.85}); });
     Array.prototype.forEach.call(document.querySelectorAll('#colls button'), function(b){ b.classList.toggle('on', b.getAttribute('data-k') === key); b.setAttribute('aria-selected', b.getAttribute('data-k') === key); });
     document.getElementById('collnote').textContent = (key === 'all' ? 'All collections' : key) + ': ' + TOONS.map(function(t){ return t.name; }).join(', ') + '. On the device the flasher installs just these.';
     T.idx = dayNo % TOONS.length; document.getElementById('today').textContent = "Today's toon: " + TOONS[T.idx].name + " (" + TOONS[T.idx].set + ")";
