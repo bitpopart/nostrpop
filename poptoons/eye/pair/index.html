@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pair POPtoons Eye</title>
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --yellow:#FFCB3D; --dot:#F5A623; --ink:#111; --red:#ff4d4d; }
+  * { box-sizing:border-box; }
+  body { margin:0; min-height:100vh; color:var(--ink); font-family:Inter, system-ui, sans-serif; background-color:var(--yellow);
+    background-image:radial-gradient(var(--dot) 22%, transparent 23%); background-size:26px 26px; display:flex; flex-direction:column; align-items:center; padding:24px 16px 48px; }
+  h1 { font-family:Bangers, Impact, sans-serif; font-weight:400; font-size:clamp(38px,10vw,60px); letter-spacing:2px; margin:0; color:#fff; -webkit-text-stroke:3px var(--ink);
+    paint-order:stroke fill; text-shadow:5px 5px 0 var(--ink); text-align:center; line-height:1; }
+  .tag { font-weight:700; margin:12px 0 18px; background:var(--ink); color:#fff; padding:6px 14px; border-radius:999px; font-size:14px; }
+  a.back { font-family:Bangers, Impact, sans-serif; font-size:18px; letter-spacing:1px; color:var(--ink); text-decoration:none; background:#fff; border:3px solid var(--ink); border-radius:12px; padding:6px 14px; box-shadow:3px 3px 0 var(--ink); margin-bottom:18px; }
+  .card { width:100%; max-width:640px; background:#fff; border:3px solid var(--ink); border-radius:18px; box-shadow:6px 6px 0 var(--ink); padding:18px 20px; margin-bottom:18px; }
+  .card h2 { font-family:Bangers, Impact, sans-serif; font-weight:400; font-size:28px; letter-spacing:1px; margin:0 0 10px; }
+  .choice { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .choice label { display:block; border:3px solid var(--ink); border-radius:14px; padding:12px 14px; cursor:pointer; background:#fff; }
+  .choice input { display:none; }
+  .choice label.on { background:#FFE680; box-shadow:4px 4px 0 var(--red); }
+  .choice b { font-family:Bangers, Impact, sans-serif; font-weight:400; font-size:22px; letter-spacing:1px; display:block; }
+  .choice span { font-size:13px; font-weight:500; line-height:1.4; display:block; margin-top:2px; }
+  select { width:100%; font:600 15px Inter, sans-serif; padding:10px 12px; border:3px solid var(--ink); border-radius:12px; background:#fff; }
+  button.go { font-family:Bangers, Impact, sans-serif; font-size:26px; letter-spacing:1px; padding:12px 26px; border:3px solid var(--ink); border-radius:14px; background:var(--red); color:#fff;
+    -webkit-text-stroke:1px var(--ink); paint-order:stroke fill; box-shadow:5px 5px 0 var(--ink); cursor:pointer; width:100%; }
+  button.go:active { transform:translate(3px,3px); box-shadow:2px 2px 0 var(--ink); }
+  button.go:disabled { background:#ddd; color:#888; -webkit-text-stroke:0; cursor:not-allowed; box-shadow:3px 3px 0 var(--ink); }
+  .bar { height:26px; border:3px solid var(--ink); border-radius:999px; background:#fff; overflow:hidden; margin-top:14px; }
+  .bar i { display:block; height:100%; width:0; background:repeating-linear-gradient(45deg, var(--red) 0 12px, #ff8a8a 12px 24px); transition:width .15s; }
+  #status { font-weight:700; margin-top:10px; font-size:14px; min-height:20px; }
+  #log { margin-top:10px; background:#111; color:#9ef0a8; font:12px/1.5 ui-monospace, monospace; border-radius:12px; padding:10px 12px; max-height:180px; overflow:auto; white-space:pre-wrap; display:none; }
+  .warn { background:#fff; border:3px dashed var(--ink); border-radius:14px; padding:12px 16px; font-weight:600; font-size:14px; margin-bottom:18px; max-width:640px; width:100%; }
+  .warn.bad { background:#ffe3e3; }
+  .small { font-size:13px; font-weight:500; line-height:1.5; margin:8px 0 0; }
+  @media(max-width:560px){ .choice { grid-template-columns:1fr; } }
+
+  .row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:9px 0; border-top:2px dashed #ddd; }
+  .row:first-of-type { border-top:0; }
+  .row b { font-family:Bangers, Impact, sans-serif; font-weight:400; font-size:21px; letter-spacing:1px; }
+  .row select { width:auto; min-width:120px; padding:8px 10px; }
+  .big { font-family:Bangers, Impact, sans-serif; font-size:44px; letter-spacing:1px; line-height:1; }
+  .batt { display:flex; align-items:center; gap:14px; }
+  .bi { width:84px; height:38px; border:4px solid var(--ink); border-radius:6px; position:relative; background:#fff; }
+  .bi::after { content:""; position:absolute; right:-10px; top:9px; width:6px; height:14px; background:var(--ink); border-radius:0 3px 3px 0; }
+  .bi i { position:absolute; left:3px; top:3px; bottom:3px; width:0; background:#14a05a; }
+  .ok { color:#0a7a3c; } .bad2 { color:#c4122a; }
+  button.sec { font-family:Bangers, Impact, sans-serif; font-size:18px; letter-spacing:1px; padding:7px 14px; border:3px solid var(--ink); border-radius:12px; background:#fff; box-shadow:3px 3px 0 var(--ink); cursor:pointer; }
+  button.sec:active { transform:translate(2px,2px); box-shadow:1px 1px 0 var(--ink); }
+</style>
+</head>
+<body>
+  <a class="back" href="../">&larr; POPtoons Eye</a>
+  <h1>Pair</h1>
+  <div class="tag">Set the clock, change settings, see the battery</div>
+
+  <div class="warn bad" id="nosupport" hidden>Pairing needs Web Bluetooth. Open this page in Chrome or Edge on a Mac, Windows PC or Android phone (Safari, Firefox and iPhones cannot do this). If you opened it inside a preview frame, open it on its own page.</div>
+
+  <div class="card" id="cardConnect">
+    <h2>1. Connect</h2>
+    <p class="small" style="margin:0 0 12px">Hold <b>PWR</b> on the device. It shows <b>READY TO PAIR</b>. (Already running? Tap the red eye on the toon menu to open settings, the device is visible again while that screen is open.) Tap the button, pick <b>POPtoons Eye</b> and press Pair.</p>
+    <button class="go" id="go">Connect to POPtoons Eye</button>
+    <div id="status"></div>
+  </div>
+
+  <div id="panel" hidden>
+    <div class="card">
+      <h2>Device</h2>
+      <div class="row"><b>Firmware</b><span id="fw">-</span></div>
+      <div class="row"><b>Clock</b><span><span id="clk">-</span> <button class="sec" id="setclk">Set again</button></span></div>
+      <p class="small">The clock is set from this computer or phone each time you connect. Quiet time only works once the clock is set.</p>
+    </div>
+
+    <div class="card">
+      <h2>Battery</h2>
+      <div class="batt"><div class="bi"><i id="bfill"></i></div><div><div class="big" id="bpct">-</div><div class="small" id="bmsg" style="margin:2px 0 0"></div></div></div>
+    </div>
+
+    <div class="card">
+      <h2>Settings</h2>
+      <div class="row"><b>Quiet time</b><select id="s0"><option value="1">On</option><option value="0">Off</option></select></div>
+      <div class="row"><b>From</b><select id="s1"></select></div>
+      <div class="row"><b>To</b><select id="s2"></select></div>
+      <div class="row"><b>Talking</b><select id="s3"><option value="1">On</option><option value="0">Off</option></select></div>
+      <div class="row"><b>Brightness</b><select id="s4"><option value="0">Low</option><option value="1">Mid</option><option value="2">High</option></select></div>
+      <div class="row"><b>Eye sleeps</b><select id="s5"><option value="0">1 min</option><option value="1">3 min</option><option value="2">10 min</option><option value="3">Never</option></select></div>
+      <div class="row"><b>Needs</b><select id="s6"><option value="0">Slow</option><option value="1">Normal</option><option value="2">Fast</option></select></div>
+      <div class="row"><b>Sound</b><select id="s7"><option value="0">Off</option><option value="1">Low</option><option value="2">Mid</option><option value="3">High</option></select></div>
+      <p class="small">Changes go to the device right away.</p>
+    </div>
+    <button class="sec" id="bye" style="margin-bottom:18px">Disconnect</button>
+  </div>
+
+<script>
+(function(){
+  var SVC = 'a8f30000-2c4e-4c6f-9a3b-504f50746f6e';
+  var UU = { time:'a8f30001-2c4e-4c6f-9a3b-504f50746f6e', set:'a8f30002-2c4e-4c6f-9a3b-504f50746f6e', bat:'a8f30003-2c4e-4c6f-9a3b-504f50746f6e', info:'a8f30004-2c4e-4c6f-9a3b-504f50746f6e' };
+  var $ = function(id){ return document.getElementById(id); };
+  var dev = null, ch = {}, queue = Promise.resolve();
+  if (!navigator.bluetooth) { $('nosupport').hidden = false; $('go').disabled = true; }
+  var i, h1 = $('s1'), h2 = $('s2');
+  for (i = 0; i < 24; i++){ var t = (i < 10 ? '0' : '') + i + ':00'; h1.add(new Option(t, i)); h2.add(new Option(t, i)); }
+  function status(msg, bad){ var s = $('status'); s.textContent = msg; s.className = bad ? 'bad2' : ''; }
+  function pad(n){ return (n < 10 ? '0' : '') + n; }
+  function setClock(){
+    var d = new Date();
+    var b = new Uint8Array([d.getFullYear() & 255, d.getFullYear() >> 8, d.getMonth() + 1, d.getDate(), d.getHours(), d.getMinutes(), d.getSeconds()]);
+    return ch.time.writeValueWithResponse(b).then(function(){ $('clk').textContent = 'set to ' + pad(d.getHours()) + ':' + pad(d.getMinutes()); });
+  }
+  function showSettings(dv){ for (var k = 0; k < 8; k++) $('s' + k).value = String(dv.getUint8(k)); }
+  function showBat(dv){
+    var pct = dv.getInt8(0), chg = dv.getUint8(1), mv = dv.getUint16(2, true), pmu = dv.getUint8(4);
+    var fill = $('bfill'), msg = $('bmsg');
+    if (!pmu){ $('bpct').textContent = '-'; fill.style.width = '0'; msg.textContent = 'The device does not see its power chip.'; return; }
+    if (pct < 0){ $('bpct').textContent = '-'; fill.style.width = '0'; msg.textContent = 'No battery read (' + mv + ' mV). Check the battery plug and its + and - side.'; return; }
+    $('bpct').textContent = pct + '%';
+    fill.style.width = Math.max(0, Math.min(100, pct)) * 0.74 + '%';
+    fill.style.background = chg ? '#14a05a' : pct <= 15 ? '#e4182c' : pct <= 30 ? '#ff961e' : '#14a05a';
+    msg.textContent = (chg ? 'Charging' : 'On battery') + ' - ' + (mv / 1000).toFixed(2) + ' V';
+  }
+  function sendSettings(){
+    var b = new Uint8Array(8); for (var k = 0; k < 8; k++) b[k] = parseInt($('s' + k).value, 10);
+    queue = queue.then(function(){ return ch.set.writeValueWithResponse(b); }).catch(function(e){ status('Could not send: ' + e.message, true); });
+  }
+  for (i = 0; i < 8; i++) $('s' + i).addEventListener('change', sendSettings);
+  function onDisc(){ $('panel').hidden = true; $('go').textContent = 'Connect to POPtoons Eye'; $('go').disabled = false; status('Disconnected. Hold PWR on the device (or open its settings screen) and connect again.'); }
+  $('go').addEventListener('click', function(){
+    $('go').disabled = true; status('Choose POPtoons Eye in the list...');
+    navigator.bluetooth.requestDevice({ filters: [{ services: [SVC] }] }).then(function(d){
+      dev = d; dev.addEventListener('gattserverdisconnected', onDisc); status('Connecting...');
+      return dev.gatt.connect();
+    }).then(function(srv){ return srv.getPrimaryService(SVC); }).then(function(svc){
+      return Promise.all(Object.keys(UU).map(function(k){ return svc.getCharacteristic(UU[k]).then(function(c){ ch[k] = c; }); }));
+    }).then(function(){ return ch.info.readValue(); }).then(function(v){ $('fw').textContent = new TextDecoder().decode(v);
+      return setClock();
+    }).then(function(){ return ch.set.readValue(); }).then(function(v){ showSettings(v);
+      return ch.bat.startNotifications();
+    }).then(function(){ ch.bat.addEventListener('characteristicvaluechanged', function(e){ showBat(e.target.value); }); return ch.bat.readValue(); }).then(function(v){ showBat(v);
+      $('panel').hidden = false; $('go').textContent = 'Connected'; status('Paired. The device says PAIRED!', false);
+    }).catch(function(e){ $('go').disabled = false; status(e && e.name === 'NotFoundError' ? 'No device chosen.' : 'Could not connect: ' + (e && e.message ? e.message : e), true); });
+  });
+  $('setclk').addEventListener('click', function(){ setClock().catch(function(e){ status('Could not set the clock: ' + e.message, true); }); });
+  $('bye').addEventListener('click', function(){ if (dev && dev.gatt.connected) dev.gatt.disconnect(); });
+})();
+</script>
+</body>
+</html>

@@ -1,5 +1,63 @@
 [
   {
+    "version": "0.5.20",
+    "date": "2026-11-25",
+    "notes": {
+      "en": "Bluetooth pairing: after power-up the display shows READY TO PAIR. Open poptoons.fun/eye/pair in Chrome to set the clock, change settings and see the battery. Not yet tested on a real board."
+    },
+    "variants": {
+      "all": {
+        "name": "All toons",
+        "app": "fw/0.5.20/all/app.bin",
+        "appSha256": "cd176f01e6e5e83f084d761dfcaec98969eec89310632a4ece878026fef28d8c",
+        "full": "fw/0.5.20/all/full.bin",
+        "fullSha256": "d8ebe006c7b2eed9b0698f0bb2b88536b7cea2a0217a9a90000671e87182905e"
+      },
+      "peeppops": {
+        "name": "PeepPops (Fizz, Uno, Zig)",
+        "app": "fw/0.5.20/peeppops/app.bin",
+        "appSha256": "c393bb110786ee42eaea125bd7dfd8fb50a2b62ae14dbf3ad5111e4d23c497d8",
+        "full": "fw/0.5.20/peeppops/full.bin",
+        "fullSha256": "c5ef2e2be749447dfa3818f3040e3aa6b6992dfe1b739d61d6ce99f47dce0a47"
+      },
+      "poopies": {
+        "name": "Poopies (Buck, Burp, Snicker, Chomp, Drool)",
+        "app": "fw/0.5.20/poopies/app.bin",
+        "appSha256": "112af00ce63eac2932fe68ff2c8454a15f5e9a94b4ddd9a3da17c4c78fe0398c",
+        "full": "fw/0.5.20/poopies/full.bin",
+        "fullSha256": "41035f066ff10549d92d591dad35982d049cc83ace0501132a3e3c335a7cacf6"
+      },
+      "unipops": {
+        "name": "UniPops (Heli, Bloop, Chili, Giggle, Smooch, Razz)",
+        "app": "fw/0.5.20/unipops/app.bin",
+        "appSha256": "7c02c4a96972301f3f549a4996eb223dc9d0d8adc3da6456aad249b359df884d",
+        "full": "fw/0.5.20/unipops/full.bin",
+        "fullSha256": "9a677d2a2d5388e5d1c8d5e59d3318ba357bdc156c8f0fa917b3f17d0b0dcdd7"
+      },
+      "monsterlings": {
+        "name": "Monsterlings (Pling, Fang, Gem, Jab, Lumo)",
+        "app": "fw/0.5.20/monsterlings/app.bin",
+        "appSha256": "fb8b9473fe3e4d326af98d68c6b0e09958ed3862fe54b89e91823d424decd1e1",
+        "full": "fw/0.5.20/monsterlings/full.bin",
+        "fullSha256": "dc6a50c489a79a1a370ae72701b87b1e938376f193d22d25c614e4232f782921"
+      },
+      "lovelings": {
+        "name": "Lovelings (Mimi)",
+        "app": "fw/0.5.20/lovelings/app.bin",
+        "appSha256": "65784d51e311dfc0f4778ff4651749065906aff67167b276fe843463a20b6db4",
+        "full": "fw/0.5.20/lovelings/full.bin",
+        "fullSha256": "633e1ab877e74654085cec557b381925c8efa291d690c3d7428decb87c20ac0b"
+      },
+      "joylings": {
+        "name": "Joylings (Moo)",
+        "app": "fw/0.5.20/joylings/app.bin",
+        "appSha256": "34f107c389bbf55399c0c8cbbea06e054c303bc68f3fe4653efb3e2849b466d5",
+        "full": "fw/0.5.20/joylings/full.bin",
+        "fullSha256": "1e23fb1854b23852a1c15166af0f18cf943dc55aa5b2f5da742da585b187e866"
+      }
+    }
+  },
+  {
     "version": "0.5.19",
     "date": "2026-11-25",
     "notes": {
