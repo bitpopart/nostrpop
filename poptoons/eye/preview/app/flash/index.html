@@ -105,8 +105,10 @@ function fillColl(){
   const v = list[$('ver').selectedIndex], keep = $('coll').value;
   $('collwrap').hidden = !(v && v.variants);
   if (!v || !v.variants) return;
-  $('coll').innerHTML = Object.keys(v.variants).map(k => `<option value="${esc(k)}">${esc(v.variants[k].name || k)}</option>`).join('');
-  if (v.variants[keep]) $('coll').value = keep;
+  const keys = Object.keys(v.variants).sort((a, b) => (a === 'all') - (b === 'all'));   // collections first, "All toons" last
+  $('coll').innerHTML = keys.map(k => `<option value="${esc(k)}">${esc(v.variants[k].name || k)}</option>`).join('');
+  const pick = v.variants[keep] ? keep : (v.variants.poopies ? 'poopies' : keys[0]);       // default: Poopies
+  $('coll').value = pick;
 }
 function showNotes(){
   const v = list[$('ver').selectedIndex]; if (!v) { $('notes').textContent = ''; return; }
