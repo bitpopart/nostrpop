@@ -1,5 +1,63 @@
 [
   {
+    "version": "0.5.23",
+    "date": "2026-11-25",
+    "notes": {
+      "en": "New zzz button on the toon menu: it says good night, switches the screen off and puts the device into light sleep to save battery. Tap the screen or press BOOT to wake it. Not yet tested on a real board."
+    },
+    "variants": {
+      "all": {
+        "name": "All toons",
+        "app": "fw/0.5.23/all/app.bin",
+        "appSha256": "0a1e5d6b982b7e87d9e6a02f08ad31363a0750974b64e37f6f1c6264b401e0c8",
+        "full": "fw/0.5.23/all/full.bin",
+        "fullSha256": "65555bc8ac0ed34f61eabd4f77e0ffb2a2033602d2d8fbe015cd837c5b3fe5d1"
+      },
+      "peeppops": {
+        "name": "PeepPops (Fizz, Uno, Zig)",
+        "app": "fw/0.5.23/peeppops/app.bin",
+        "appSha256": "8480c05dd100528c6b857e96ac69f8529bcd0f76c93a75dae4b42de5dc057607",
+        "full": "fw/0.5.23/peeppops/full.bin",
+        "fullSha256": "765a89a66ab94b0ef4ccb3765152c3d1d4abd0796dc62f5e05b7f30ebcc33e76"
+      },
+      "poopies": {
+        "name": "Poopies (Buck, Burp, Snicker, Chomp, Drool)",
+        "app": "fw/0.5.23/poopies/app.bin",
+        "appSha256": "e3e28f1e43e65fae0d8224abadf2f5defe8895baeff3539f0d18984ae83ebc6c",
+        "full": "fw/0.5.23/poopies/full.bin",
+        "fullSha256": "ea7eacc7df269c9340a114186258593328a3cef58d3c3940c1b2beed19228658"
+      },
+      "unipops": {
+        "name": "UniPops (Heli, Bloop, Chili, Giggle, Smooch, Razz)",
+        "app": "fw/0.5.23/unipops/app.bin",
+        "appSha256": "2d7901ed1a42e86b7a0a02739d9a5297bc461170f17861db4d15e2269f29f282",
+        "full": "fw/0.5.23/unipops/full.bin",
+        "fullSha256": "398cb50da794fc43f751a30151e5128e8a4fbf4640992619b06000762ddf374e"
+      },
+      "monsterlings": {
+        "name": "Monsterlings (Pling, Fang, Gem, Jab, Lumo)",
+        "app": "fw/0.5.23/monsterlings/app.bin",
+        "appSha256": "d63a24562f17adb39ac9eddd7eea12c3587b0f1bb1a38b53f3560e2ded2f728a",
+        "full": "fw/0.5.23/monsterlings/full.bin",
+        "fullSha256": "cf9c6099357481cdd45acc4977cc34812276619b7a8358dd04e19836970299c4"
+      },
+      "lovelings": {
+        "name": "Lovelings (Mimi)",
+        "app": "fw/0.5.23/lovelings/app.bin",
+        "appSha256": "11d029e04e31fed57f8dd8404b0cb923f4f0e40eeff045bfad121f75834de67b",
+        "full": "fw/0.5.23/lovelings/full.bin",
+        "fullSha256": "849b9120dc4f761cd6e8de51c4ea5417ae43645716db0873e916f641291bf2ad"
+      },
+      "joylings": {
+        "name": "Joylings (Moo)",
+        "app": "fw/0.5.23/joylings/app.bin",
+        "appSha256": "68402d57f3f159d793b78fb6d7cd58bd84a0f619cd3426f3ddf150b490d9c790",
+        "full": "fw/0.5.23/joylings/full.bin",
+        "fullSha256": "1df67b560bbf623e6c706574ffda391d74d2546384e69441491fd26fba5b5d9d"
+      }
+    }
+  },
+  {
     "version": "0.5.22",
     "date": "2026-11-25",
     "notes": {
