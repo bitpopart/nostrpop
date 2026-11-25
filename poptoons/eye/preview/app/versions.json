@@ -1,5 +1,63 @@
 [
   {
+    "version": "0.5.18",
+    "date": "2026-11-25",
+    "notes": {
+      "en": "Battery status: charge percentage and charging bolt on the settings page, a small battery on the toon menu, and a blinking red battery when it is low. Reads the AXP2101 power chip and sets the charge current to 150 mA for the 310 mAh battery. Not yet tested on a real board."
+    },
+    "variants": {
+      "all": {
+        "name": "All toons",
+        "app": "fw/0.5.18/all/app.bin",
+        "appSha256": "dfd8d8b88db192541ef27370707b0a41fa46556a9c256d1ee0b7cddd62890735",
+        "full": "fw/0.5.18/all/full.bin",
+        "fullSha256": "b1c3cdf264879bac742dfe3301b62fc3c8521599cc5ab41587e29398fd033498"
+      },
+      "peeppops": {
+        "name": "PeepPops (Fizz, Uno, Zig)",
+        "app": "fw/0.5.18/peeppops/app.bin",
+        "appSha256": "be56be7ee924d9c42b64dfa1a8704d91c896510d67cd1913da4b79f64fb403bf",
+        "full": "fw/0.5.18/peeppops/full.bin",
+        "fullSha256": "f95e887614b428a48125e2f4415fc168012d0d427420c535d1c72223340ce8dd"
+      },
+      "poopies": {
+        "name": "Poopies (Buck, Burp, Snicker, Chomp, Drool)",
+        "app": "fw/0.5.18/poopies/app.bin",
+        "appSha256": "3e046b367df80d91f64a37f7228a93e5eb4cd3b15fdac38e4a45d2753229b236",
+        "full": "fw/0.5.18/poopies/full.bin",
+        "fullSha256": "de7cf3abb6c5ca68447b5abf3e5bfdfbe90d60102a8686ba5097b4f49b5cf974"
+      },
+      "unipops": {
+        "name": "UniPops (Heli, Bloop, Chili, Giggle, Smooch, Razz)",
+        "app": "fw/0.5.18/unipops/app.bin",
+        "appSha256": "d905307873d11f5fb3247228d902aa319e314dfc0f23dc3e98de1958d1d5c6c5",
+        "full": "fw/0.5.18/unipops/full.bin",
+        "fullSha256": "59310b1526a3bb93d1545fd2c914c473aaa3f6bdd7f801fec5713f3cca34cdfc"
+      },
+      "monsterlings": {
+        "name": "Monsterlings (Pling, Fang, Gem, Jab, Lumo)",
+        "app": "fw/0.5.18/monsterlings/app.bin",
+        "appSha256": "1661dc35963843c515fa8fa67ff0b4acdc3d88c7b4d49dcf1add421d16813830",
+        "full": "fw/0.5.18/monsterlings/full.bin",
+        "fullSha256": "e316405f62494ebf6a7f636017e55aba2575a4dbdac508e1e73aaf6cde50ec80"
+      },
+      "lovelings": {
+        "name": "Lovelings (Mimi)",
+        "app": "fw/0.5.18/lovelings/app.bin",
+        "appSha256": "a6970b354f8ab3af73b1429cdf9835ee314956caf2ad1f04dfe2c0aa9d210fc6",
+        "full": "fw/0.5.18/lovelings/full.bin",
+        "fullSha256": "280640c9901267170d18684df1a183e35c2f0cca777faa75189a2ad254b1a4b2"
+      },
+      "joylings": {
+        "name": "Joylings (Moo)",
+        "app": "fw/0.5.18/joylings/app.bin",
+        "appSha256": "47e73ae11875f126d3d9818afd8a4ebbf7258d420e45672ee9bd72c6b271b98a",
+        "full": "fw/0.5.18/joylings/full.bin",
+        "fullSha256": "4f561d6817f6a4c0f94b013c1c1d0fdf34d0e89f048a6ac2d324e527739ccdac"
+      }
+    }
+  },
+  {
     "version": "0.5.17",
     "date": "2026-11-25",
     "notes": {
