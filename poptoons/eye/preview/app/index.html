@@ -1890,7 +1890,7 @@
     if (scene === 'pick'){
       if (pointer.down && !holdFired && !redDown && now*1000 - pointer.t0 > 900 && pointer.moved < 14 && pickNearest(PK.tx, PK.ty) < 0){ holdFired = true; backToEye(now); }
       else {
-        drawPick(now); redEye(now, anyNeedLow()); ntDraw('WF_ICON_S', wifiCol(now), 176 - ntW('WF_ICON_S')/2, 38 - ntH('WF_ICON_S')/2, 1); ntDraw('ZZ_ICON_S', '#6e64eb', 320 - ntW('ZZ_ICON_S')/2, 42 - ntH('ZZ_ICON_S')/2, 1); if (BAT.p >= 0) drawBattery(262, 36, 0.85, BAT.p, BAT.c);
+        drawPick(now); redEye(now, anyNeedLow()); ntDraw('WF_ICON_S', wifiCol(now), 176 - ntW('WF_ICON_S')/2, 38 - ntH('WF_ICON_S')/2, 1); ntDraw('ZZ_ICON_S', '#6e64eb', 320 - ntW('ZZ_ICON_S')/2, 42 - ntH('ZZ_ICON_S')/2, 1); if (BAT.p >= 0) drawBattery(215, 444, 1.0, BAT.p, BAT.c);
         if (stateEl.textContent !== 'PICK') stateEl.textContent = 'PICK';
         requestAnimationFrame(frame); return;
       }
@@ -1983,7 +1983,7 @@
     SND.tap();
     if (scene === 'pair') pairSkip = true;
     if (scene === 'rest'){ scene = 'pick'; pickBegin(performance.now()/1000); return; }
-    if (scene === 'dark'){ backToEye(performance.now()/1000); return; }
+    if (scene === 'dark'){ backToEye(performance.now()/1000); autoToon = true; return; }
     pointer.down = true; pointer.t0 = performance.now(); pointer.x0 = e.clientX; pointer.y0 = e.clientY; pointer.moved = 0; holdFired = false;
     try { cv.setPointerCapture(e.pointerId); } catch(_){}
     redDown = false; wifiDown = false; restDown = false; if (scene === 'set' || scene === 'pick' || scene === 'wifi'){ var qr = canvasXY(e); wifiDown = scene === 'pick' && wifiHit(qr.x, qr.y); restDown = scene === 'pick' && !wifiDown && restHit(qr.x, qr.y); redDown = !wifiDown && !restDown && redHit(qr.x, qr.y); }
