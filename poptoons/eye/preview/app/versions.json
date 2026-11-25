@@ -1,5 +1,63 @@
 [
   {
+    "version": "0.5.10",
+    "date": "2026-11-25",
+    "notes": {
+      "en": "Fixed: sounds, speech bubbles and hearts were switched off because the clock took the build time as the time of day (quiet time). Quiet time now stays off until the real time is known. Eye opening and turning the picture are faster (less tearing). Not yet tested on a real board."
+    },
+    "variants": {
+      "all": {
+        "name": "All toons",
+        "app": "fw/0.5.10/all/app.bin",
+        "appSha256": "bf9db0230b6e56039453db48a6ba26f9683ab4b1af7ecbb38115006e95690223",
+        "full": "fw/0.5.10/all/full.bin",
+        "fullSha256": "cdbf8dbb306f3166736782d9fffe74f47eea29175a4e2ca995378d88dd46490d"
+      },
+      "peeppops": {
+        "name": "PeepPops (Fizz, Uno, Zig)",
+        "app": "fw/0.5.10/peeppops/app.bin",
+        "appSha256": "10056374494ec887cb986fc0f9c8d44e02d6379850cd349d4c8c80827636dcaf",
+        "full": "fw/0.5.10/peeppops/full.bin",
+        "fullSha256": "85c3a6d951b95e9bee9c2c13fc91f4f70193fb87e3f4c9609d63864691acf506"
+      },
+      "poopies": {
+        "name": "Poopies (Buck, Burp, Snicker, Chomp, Drool)",
+        "app": "fw/0.5.10/poopies/app.bin",
+        "appSha256": "98d47d171956f242bd50b369b0057e45197605fb89e0660a4a631ff721e159ec",
+        "full": "fw/0.5.10/poopies/full.bin",
+        "fullSha256": "ef990195b7bb73bc36b3676ed5198ca720883c168b42787075622c2827f8c852"
+      },
+      "unipops": {
+        "name": "UniPops (Heli, Bloop, Chili, Giggle, Smooch, Razz)",
+        "app": "fw/0.5.10/unipops/app.bin",
+        "appSha256": "cc1bd8f62760fa7bcf6e17a7020f6f1a6fdb577a32470d07911dbfce9488c324",
+        "full": "fw/0.5.10/unipops/full.bin",
+        "fullSha256": "d37988aa726fee02961cf35ec2ed8f369f6c1bebb4bdb4aad9169b33551ba094"
+      },
+      "monsterlings": {
+        "name": "Monsterlings (Pling)",
+        "app": "fw/0.5.10/monsterlings/app.bin",
+        "appSha256": "fb04ff69b3b493c476f7b5579554261bbdb5ea301af2ad17ed8fea3d1dbedd8a",
+        "full": "fw/0.5.10/monsterlings/full.bin",
+        "fullSha256": "e7b1e4cdb23c54212145bd1b43fcb2965be07dce4ebbb69869982a703ff00f31"
+      },
+      "lovelings": {
+        "name": "Lovelings (Mimi)",
+        "app": "fw/0.5.10/lovelings/app.bin",
+        "appSha256": "dbc4854d15fe35739572b7c563d59f0f4d9b2190c55397ad85981569b4cde9c3",
+        "full": "fw/0.5.10/lovelings/full.bin",
+        "fullSha256": "7e12fae189359e377e2f7219e0b1fdcb72a7abdc1e2bfcd73317fddf2abd5746"
+      },
+      "joylings": {
+        "name": "Joylings (Moo)",
+        "app": "fw/0.5.10/joylings/app.bin",
+        "appSha256": "cf9ab7535a114c441cd104a4d5a650a3ccfb26f917ed847ae2f499cb775c8284",
+        "full": "fw/0.5.10/joylings/full.bin",
+        "fullSha256": "5d986ad81d7eb729a148dbf3d6cb8a2c4c0423f9b52ad878d2d64d0c5ba3463c"
+      }
+    }
+  },
+  {
     "version": "0.5.9",
     "date": "2026-11-24",
     "notes": {
