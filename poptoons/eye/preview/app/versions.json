@@ -1,5 +1,63 @@
 [
   {
+    "version": "0.5.19",
+    "date": "2026-11-25",
+    "notes": {
+      "en": "Battery check: the Battery row on the settings page is always there. If no battery is read it says NO BATTERY (or NO POWER CHIP) and shows what the power chip reports. Not yet tested on a real board."
+    },
+    "variants": {
+      "all": {
+        "name": "All toons",
+        "app": "fw/0.5.19/all/app.bin",
+        "appSha256": "6582a1dc33dbf5993974dfd1aeb976b4fc99c64f89e85b191db123d8bf058555",
+        "full": "fw/0.5.19/all/full.bin",
+        "fullSha256": "5bad2822c86b35f2838fca3e24c4b34586a1c8351f2f9328e2cc4ceb1985b808"
+      },
+      "peeppops": {
+        "name": "PeepPops (Fizz, Uno, Zig)",
+        "app": "fw/0.5.19/peeppops/app.bin",
+        "appSha256": "ba69c3da2b3977557d8c4ec53d697cce0f5eefb450c4dad3cf8eebc5c8a57882",
+        "full": "fw/0.5.19/peeppops/full.bin",
+        "fullSha256": "716730a42e9ab9ac92d18d45413fa1fe93a7eb64a3a65f826751d1a3a0774fd7"
+      },
+      "poopies": {
+        "name": "Poopies (Buck, Burp, Snicker, Chomp, Drool)",
+        "app": "fw/0.5.19/poopies/app.bin",
+        "appSha256": "85d95512d20a61f6351cddc3bc3dbf75676c2f6d251793abdf2bc0254a6d0f4f",
+        "full": "fw/0.5.19/poopies/full.bin",
+        "fullSha256": "73ee5836f6de9ee6f8c15120b113d03e662a694d01cd69934d956927afedcef6"
+      },
+      "unipops": {
+        "name": "UniPops (Heli, Bloop, Chili, Giggle, Smooch, Razz)",
+        "app": "fw/0.5.19/unipops/app.bin",
+        "appSha256": "e2fe3139bb1b716ddd05836992b4097ebb1cce737d533f2b0be819101287469e",
+        "full": "fw/0.5.19/unipops/full.bin",
+        "fullSha256": "e7095bcda3d2d4f49e52596d7ac1dd8b2b2dd98929eed33344aa33ea15cd02fd"
+      },
+      "monsterlings": {
+        "name": "Monsterlings (Pling, Fang, Gem, Jab, Lumo)",
+        "app": "fw/0.5.19/monsterlings/app.bin",
+        "appSha256": "b2d327515dc8212ce8c63f46a3cda295dc5195490d838a410dfc0be45630804b",
+        "full": "fw/0.5.19/monsterlings/full.bin",
+        "fullSha256": "654f88da13f92ce534fb26ad1917a6c828533ce1c5a46c54ca83638229a32b5f"
+      },
+      "lovelings": {
+        "name": "Lovelings (Mimi)",
+        "app": "fw/0.5.19/lovelings/app.bin",
+        "appSha256": "87c2ff47ca6c9ac84c3ad524d0e881e003ba66173c92e3689842742991987ef0",
+        "full": "fw/0.5.19/lovelings/full.bin",
+        "fullSha256": "52861d420982c4b87e042d2630341267a47cb683c3156ce9e5061a0efc2e1a1f"
+      },
+      "joylings": {
+        "name": "Joylings (Moo)",
+        "app": "fw/0.5.19/joylings/app.bin",
+        "appSha256": "999b4d3cea41b5d98a79e1cc28e91ce332e72bcd61f8bd2cd02429c567e5b7d6",
+        "full": "fw/0.5.19/joylings/full.bin",
+        "fullSha256": "5d1020aea957f983a84243216457f226e95a1dd1cf5edac99857ee524f4bb5e4"
+      }
+    }
+  },
+  {
     "version": "0.5.18",
     "date": "2026-11-25",
     "notes": {
