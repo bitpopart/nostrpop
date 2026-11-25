@@ -23,6 +23,7 @@
   .choice b { font-family:Bangers, Impact, sans-serif; font-weight:400; font-size:22px; letter-spacing:1px; display:block; }
   .choice span { font-size:13px; font-weight:500; line-height:1.4; display:block; margin-top:2px; }
   select { width:100%; font:600 15px Inter, sans-serif; padding:10px 12px; border:3px solid var(--ink); border-radius:12px; background:#fff; }
+  input[type=text], input[type=password] { width:100%; font:600 15px Inter, sans-serif; padding:9px 12px; border:3px solid var(--ink); border-radius:12px; background:#fff; }
   button.go { font-family:Bangers, Impact, sans-serif; font-size:26px; letter-spacing:1px; padding:12px 26px; border:3px solid var(--ink); border-radius:14px; background:var(--red); color:#fff;
     -webkit-text-stroke:1px var(--ink); paint-order:stroke fill; box-shadow:5px 5px 0 var(--ink); cursor:pointer; width:100%; }
   button.go:active { transform:translate(3px,3px); box-shadow:2px 2px 0 var(--ink); }
@@ -72,6 +73,16 @@
       <p class="small">The clock is set from this computer or phone each time you connect. Quiet time only works once the clock is set.</p>
     </div>
 
+    <div class="card" id="wifiCard" hidden>
+      <h2>WiFi</h2>
+      <p class="small" style="margin-top:0">The device uses WiFi only for a moment, to set its own clock from the internet. Then WiFi goes off again. Use a 2.4 GHz network.</p>
+      <div class="row"><b>Network</b><input id="wssid" type="text" maxlength="32" autocomplete="off" placeholder="WiFi name" style="max-width:220px"></div>
+      <div class="row"><b>Password</b><input id="wpass" type="password" maxlength="64" autocomplete="off" placeholder="WiFi password" style="max-width:220px"></div>
+      <div class="row"><b>Status</b><span id="wstat">-</span></div>
+      <div class="row" style="justify-content:flex-start"><button class="sec" id="wgo">Connect WiFi</button></div>
+      <p class="small">The name and password are sent over Bluetooth and kept on the device only. The time zone comes from this computer or phone.</p>
+    </div>
+
     <div class="card">
       <h2>Battery</h2>
       <div class="batt"><div class="bi"><i id="bfill"></i></div><div><div class="big" id="bpct">-</div><div class="small" id="bmsg" style="margin:2px 0 0"></div></div></div>
@@ -96,8 +107,9 @@
 (function(){
   var SVC = 'a8f30000-2c4e-4c6f-9a3b-504f50746f6e';
   var UU = { time:'a8f30001-2c4e-4c6f-9a3b-504f50746f6e', set:'a8f30002-2c4e-4c6f-9a3b-504f50746f6e', bat:'a8f30003-2c4e-4c6f-9a3b-504f50746f6e', info:'a8f30004-2c4e-4c6f-9a3b-504f50746f6e' };
+  var UOPT = { wifi:'a8f30005-2c4e-4c6f-9a3b-504f50746f6e', tz:'a8f30006-2c4e-4c6f-9a3b-504f50746f6e', wst:'a8f30007-2c4e-4c6f-9a3b-504f50746f6e' };   // newer firmware only (0.5.21)
   var $ = function(id){ return document.getElementById(id); };
-  var dev = null, ch = {}, queue = Promise.resolve();
+  var dev = null, ch = {}, queue = Promise.resolve(), svcRef = null;
   if (!navigator.bluetooth) { $('nosupport').hidden = false; $('go').disabled = true; }
   var i, h1 = $('s1'), h2 = $('s2');
   for (i = 0; i < 24; i++){ var t = (i < 10 ? '0' : '') + i + ':00'; h1.add(new Option(t, i)); h2.add(new Option(t, i)); }
@@ -119,24 +131,60 @@
     fill.style.background = chg ? '#14a05a' : pct <= 15 ? '#e4182c' : pct <= 30 ? '#ff961e' : '#14a05a';
     msg.textContent = (chg ? 'Charging' : 'On battery') + ' - ' + (mv / 1000).toFixed(2) + ' V';
   }
+  function posixTz(){                         // a POSIX time zone text for the device, worked out from this computer
+    var y = new Date().getFullYear(), a = new Date(y, 0, 1).getTimezoneOffset(), b = new Date(y, 6, 1).getTimezoneOffset();
+    var std = Math.max(a, b), dst = Math.min(a, b), name = '', rule = '';
+    try { name = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch(e){}
+    function off(m){ var sg = m >= 0 ? '' : '-', v = Math.abs(m), h = Math.floor(v / 60), mm = v % 60; return sg + h + (mm ? ':' + pad(mm) : ''); }
+    var out = 'LCL' + off(std);
+    if (a !== b){
+      var sh = -std / 60;                     // hours east of UTC in winter
+      if (/^Europe\//.test(name) && sh === Math.floor(sh)) rule = ',M3.5.0/' + (1 + sh) + ',M10.5.0/' + (2 + sh);
+      else if (/^America\//.test(name)) rule = ',M3.2.0/2,M11.1.0/2';
+      if (rule) out += 'DST' + off(dst) + rule;
+    }
+    return out;
+  }
+  var WST = ['not set up', 'connecting...', 'connected, clock set', 'could not connect'];
+  function showWifi(dv){
+    var st = dv.getUint8(0), has = dv.getUint8(1), n = ''; for (var k = 2; k < dv.byteLength; k++) n += String.fromCharCode(dv.getUint8(k));
+    $('wstat').textContent = (WST[st] || '-') + (has && n ? ' (' + n + ')' : ''); $('wstat').className = st === 2 ? 'ok' : st === 3 ? 'bad2' : '';
+    $('wgo').disabled = st === 1; if (has && n && !$('wssid').value) $('wssid').value = n;
+  }
+  function sendWifi(){
+    var s = $('wssid').value, p = $('wpass').value, enc = new TextEncoder(), sb = enc.encode(s), pb = enc.encode(p);
+    if (!sb.length) { status('Type the WiFi name first.', true); return; }
+    if (sb.length > 32 || pb.length > 64) { status('The WiFi name or password is too long.', true); return; }
+    var b = new Uint8Array(2 + sb.length + pb.length); b[0] = sb.length; b.set(sb, 1); b[1 + sb.length] = pb.length; b.set(pb, 2 + sb.length);
+    status('Sending the WiFi details...');
+    queue = queue.then(function(){ return ch.tz.writeValueWithResponse(enc.encode(posixTz())); })
+      .then(function(){ return ch.wifi.writeValueWithResponse(b); })
+      .then(function(){ status('Sent. The device is connecting to WiFi now.'); })
+      .catch(function(e){ status('Could not send the WiFi details: ' + e.message, true); });
+  }
+  $('wgo').addEventListener('click', sendWifi);
   function sendSettings(){
     var b = new Uint8Array(8); for (var k = 0; k < 8; k++) b[k] = parseInt($('s' + k).value, 10);
     queue = queue.then(function(){ return ch.set.writeValueWithResponse(b); }).catch(function(e){ status('Could not send: ' + e.message, true); });
   }
   for (i = 0; i < 8; i++) $('s' + i).addEventListener('change', sendSettings);
-  function onDisc(){ $('panel').hidden = true; $('go').textContent = 'Connect to POPtoons Eye'; $('go').disabled = false; status('Disconnected. Hold PWR on the device (or open its settings screen) and connect again.'); }
+  function onDisc(){ $('panel').hidden = true; ch = {}; $('go').textContent = 'Connect to POPtoons Eye'; $('go').disabled = false; status('Disconnected. Hold PWR on the device (or open its settings screen) and connect again.'); }
   $('go').addEventListener('click', function(){
     $('go').disabled = true; status('Choose POPtoons Eye in the list...');
     navigator.bluetooth.requestDevice({ filters: [{ services: [SVC] }] }).then(function(d){
       dev = d; dev.addEventListener('gattserverdisconnected', onDisc); status('Connecting...');
       return dev.gatt.connect();
-    }).then(function(srv){ return srv.getPrimaryService(SVC); }).then(function(svc){
+    }).then(function(srv){ return srv.getPrimaryService(SVC); }).then(function(svc){ svcRef = svc;
       return Promise.all(Object.keys(UU).map(function(k){ return svc.getCharacteristic(UU[k]).then(function(c){ ch[k] = c; }); }));
-    }).then(function(){ return ch.info.readValue(); }).then(function(v){ $('fw').textContent = new TextDecoder().decode(v);
+    }).then(function(){ return Promise.all(Object.keys(UOPT).map(function(k){ return svcRef.getCharacteristic(UOPT[k]).then(function(c){ ch[k] = c; }).catch(function(){}); })); })
+    .then(function(){ return ch.info.readValue(); }).then(function(v){ $('fw').textContent = new TextDecoder().decode(v);
       return setClock();
     }).then(function(){ return ch.set.readValue(); }).then(function(v){ showSettings(v);
       return ch.bat.startNotifications();
     }).then(function(){ ch.bat.addEventListener('characteristicvaluechanged', function(e){ showBat(e.target.value); }); return ch.bat.readValue(); }).then(function(v){ showBat(v);
+      if (ch.wifi && ch.tz && ch.wst){ $('wifiCard').hidden = false; ch.wst.addEventListener('characteristicvaluechanged', function(e){ showWifi(e.target.value); }); return ch.wst.startNotifications().then(function(){ return ch.wst.readValue(); }).then(function(v){ showWifi(v); }); }
+      $('wifiCard').hidden = true;
+    }).then(function(){
       $('panel').hidden = false; $('go').textContent = 'Connected'; status('Paired. The device says PAIRED!', false);
     }).catch(function(e){ $('go').disabled = false; status(e && e.name === 'NotFoundError' ? 'No device chosen.' : 'Could not connect: ' + (e && e.message ? e.message : e), true); });
   });
