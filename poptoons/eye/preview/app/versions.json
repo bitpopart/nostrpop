@@ -1,5 +1,63 @@
 [
   {
+    "version": "0.5.24",
+    "date": "2026-11-25",
+    "notes": {
+      "en": "On battery the eye opens faster (shorter loading part of the start) to save battery. On USB or charging nothing changes. Not yet tested on a real board."
+    },
+    "variants": {
+      "all": {
+        "name": "All toons",
+        "app": "fw/0.5.24/all/app.bin",
+        "appSha256": "c90cdcf75d935454c8c8bea7d8644d6a2742c847a8892fc23e47e1e1643cab07",
+        "full": "fw/0.5.24/all/full.bin",
+        "fullSha256": "9b76b54e033c9e7388dfd2e2243b10e660bb93d39d79ecd80a2c1a98732aa97f"
+      },
+      "peeppops": {
+        "name": "PeepPops (Fizz, Uno, Zig)",
+        "app": "fw/0.5.24/peeppops/app.bin",
+        "appSha256": "2b6d9a17e848335878dae695675a08b023ea665a7cdc237bc8fc40dcb3fb290b",
+        "full": "fw/0.5.24/peeppops/full.bin",
+        "fullSha256": "d9be4f60927af472e43501bcf98b64fd3f2dca9b89e6c9eeb8691a629c8d4307"
+      },
+      "poopies": {
+        "name": "Poopies (Buck, Burp, Snicker, Chomp, Drool)",
+        "app": "fw/0.5.24/poopies/app.bin",
+        "appSha256": "db99784ed40c11985fa9c7647954b6079bbaef078842bf7caa7b759891b66e7c",
+        "full": "fw/0.5.24/poopies/full.bin",
+        "fullSha256": "ade76f668cce022aa8556149d7656250870db5e6edba730edcb1871eca7aacf4"
+      },
+      "unipops": {
+        "name": "UniPops (Heli, Bloop, Chili, Giggle, Smooch, Razz)",
+        "app": "fw/0.5.24/unipops/app.bin",
+        "appSha256": "e9317aae56e6055de830b245f401858795ca576235db0a4213cf9642195e8e01",
+        "full": "fw/0.5.24/unipops/full.bin",
+        "fullSha256": "8563962e816d78fa366b63c956d2aed166bfc5173bf40bfde8908f9056d2e42f"
+      },
+      "monsterlings": {
+        "name": "Monsterlings (Pling, Fang, Gem, Jab, Lumo)",
+        "app": "fw/0.5.24/monsterlings/app.bin",
+        "appSha256": "bd7b82149bb5a1c82842084e5f5f4981d814014832173a90ff3aae7f73dca784",
+        "full": "fw/0.5.24/monsterlings/full.bin",
+        "fullSha256": "b92e5dd683206138b87652150836712f0e984f7d04a6aacb3a314bb62c76cf0d"
+      },
+      "lovelings": {
+        "name": "Lovelings (Mimi)",
+        "app": "fw/0.5.24/lovelings/app.bin",
+        "appSha256": "3de48aca2d913a66371063e593c1172f0785215ac6c50c372ff632f5cd6ba81c",
+        "full": "fw/0.5.24/lovelings/full.bin",
+        "fullSha256": "0542e28ae821bf7d9b620797ec121e423609a4228d1c6becc3320b7fa8ba57e2"
+      },
+      "joylings": {
+        "name": "Joylings (Moo)",
+        "app": "fw/0.5.24/joylings/app.bin",
+        "appSha256": "034c37d8251127cb073af078a8c3c8b0cbbc249d35b591fd0b56b5475a0852c6",
+        "full": "fw/0.5.24/joylings/full.bin",
+        "fullSha256": "1b8ece7ac42b94c6ed5328b918a2d943ef3f0939c4de7ab897ee813552198196"
+      }
+    }
+  },
+  {
     "version": "0.5.23",
     "date": "2026-11-25",
     "notes": {
