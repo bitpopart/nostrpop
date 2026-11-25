@@ -72,6 +72,7 @@ const CloudAppViewer = lazy(() => import("./pages/CloudAppViewer"));
 const Gallery = lazy(() => import("./pages/Gallery"));
 const IconDownloads = lazy(() => import("./pages/IconDownloads"));
 const Zapper = lazy(() => import("./pages/Zapper"));
+const Tribe = lazy(() => import("./pages/Tribe"));
 const ZapWall = lazy(() => import("./pages/ZapWall"));
 const JustB = lazy(() => import("./pages/JustB"));
 const Rare = lazy(() => import("./pages/Rare"));
@@ -180,6 +181,8 @@ export function AppRouter() {
         <Route path="/gallery" element={<LayoutIframe><Gallery /></LayoutIframe>} />
         {/* Zapper — ZAPPER zap lamps updates & control, inline under the site menu/footer */}
         <Route path="/zapper" element={<Layout><Zapper /></Layout>} />
+        {/* TriBe — black and white brand page with USB device flasher, inline under the site menu/footer */}
+        <Route path="/tribe" element={<Layout><Tribe /></Layout>} />
         {/* Zapwall — Stream Road live channels & zap walls, inline under the site menu/footer */}
         <Route path="/zapwall" element={<Layout><ZapWall /></Layout>} />
         {/* Just B — Mystery Box, inline under the site menu/footer */}

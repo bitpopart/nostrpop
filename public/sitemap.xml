@@ -205,6 +205,14 @@
     <priority>0.5</priority>
   </url>
 
+  <!-- TriBe -->
+  <url>
+    <loc>https://bitpopart.com/tribe</loc>
+    <lastmod>2026-11-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
   <!-- Zapper -->
   <url>
     <loc>https://bitpopart.com/zapper</loc>
