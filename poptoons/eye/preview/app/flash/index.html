@@ -76,7 +76,7 @@
 import { ESPLoader, Transport } from './esptool.js';
 
 const $ = id => document.getElementById(id);
-const OFFSET_APP = 0x10000;        // app0 of the 8 MB app area partition scheme
+const OFFSET_APP = 0x10000;        // app0 of the 12 MB app area partition scheme
 const OFFSET_FULL = 0x0;           // merged image: bootloader + partitions + boot_app0 + app
 let list = [], busy = false;
 
