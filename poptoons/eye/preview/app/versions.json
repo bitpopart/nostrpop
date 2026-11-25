@@ -1,5 +1,63 @@
 [
   {
+    "version": "0.5.27",
+    "date": "2026-11-25",
+    "notes": {
+      "en": "New care for every toon: after eating it poops (tap the poop to clean it up). If you neglect it, it gets sad and sick (tap the pill to give medicine). Three hearts under the toon show its care level. Not yet tested on a real board."
+    },
+    "variants": {
+      "all": {
+        "name": "All toons",
+        "app": "fw/0.5.27/all/app.bin",
+        "appSha256": "aaa9001f329b3baec390c0b7d5d6bf1e4e0d628dae25272dfb99001588140ebe",
+        "full": "fw/0.5.27/all/full.bin",
+        "fullSha256": "0b8c2976caffb0800281cc595309403d27c6f00141ba16486f5e9222afa6e950"
+      },
+      "peeppops": {
+        "name": "PeepPops (Fizz, Uno, Zig)",
+        "app": "fw/0.5.27/peeppops/app.bin",
+        "appSha256": "48318d59d15c9f07d58f97783ebf670f0729111fc1096a9d350612d28488a494",
+        "full": "fw/0.5.27/peeppops/full.bin",
+        "fullSha256": "8dc9b6894f4e2a10b810513ec89b77e3ce86fc8efd4b32f69a99a1d1ca0fd109"
+      },
+      "poopies": {
+        "name": "Poopies (Buck, Burp, Snicker, Chomp, Drool)",
+        "app": "fw/0.5.27/poopies/app.bin",
+        "appSha256": "dd1a8e71af00016f55ae319514ac43869fec0290655c657db6fb8fd4fda0126d",
+        "full": "fw/0.5.27/poopies/full.bin",
+        "fullSha256": "421a07b42a3515ef91cfb45ee420bdc8e2cabea863b0a47088426560998ea4e5"
+      },
+      "unipops": {
+        "name": "UniPops (Heli, Bloop, Chili, Giggle, Smooch, Razz)",
+        "app": "fw/0.5.27/unipops/app.bin",
+        "appSha256": "6059fdc55cbf94a97fbd199e25b25829b6e859655844929d6e4715fec31abf91",
+        "full": "fw/0.5.27/unipops/full.bin",
+        "fullSha256": "21013a68ff6aa1679ef47519a02a33d882fed2d4c1491316da0e5ce33f851402"
+      },
+      "monsterlings": {
+        "name": "Monsterlings (Pling, Fang, Gem, Jab, Lumo)",
+        "app": "fw/0.5.27/monsterlings/app.bin",
+        "appSha256": "d5020b0b53bfc7a43b28ddf747b98b7be439a5dd424a9fd7c30e7e028089d52e",
+        "full": "fw/0.5.27/monsterlings/full.bin",
+        "fullSha256": "82f5cb821ba8cc1b457f670216ad52e3819605c56d1e1f041ab26a520b2bcc7f"
+      },
+      "lovelings": {
+        "name": "Lovelings (Mimi)",
+        "app": "fw/0.5.27/lovelings/app.bin",
+        "appSha256": "a00da80028acab58785083651798605aa3e8c5e4ee596bc17a07043e70d137a6",
+        "full": "fw/0.5.27/lovelings/full.bin",
+        "fullSha256": "24e2365ed55b20f964095e10a3f6f9e86f21018e822dc3fe126f4f04b2e2b94a"
+      },
+      "joylings": {
+        "name": "Joylings (Moo)",
+        "app": "fw/0.5.27/joylings/app.bin",
+        "appSha256": "9ccf382b8364a1ad96aa3b7b8e5e241e20b2fe7e1e6fb71ab7e27ff1d9a3b05a",
+        "full": "fw/0.5.27/joylings/full.bin",
+        "fullSha256": "f051232eb9c7cd52bc430b0e0fa2676c3033f8664470da1881b9c99f69ef8532"
+      }
+    }
+  },
+  {
     "version": "0.5.26",
     "date": "2026-11-25",
     "notes": {

@@ -1358,7 +1358,63 @@
   var DOT_X = 438, DOT_Y = 233, NV_BX = [150, 233, 316], NV_BY = [335, 372, 335], NV_BR = 40, NV_K = 0.46, NV_FEET = 292;
   var EAT_SECS = 480, PLAY_SECS = 360, SLEEP_SECS = 600;          // how long a full need lasts (change to taste)
   var NEED = TOONS.map(function(){ return [0.85, 0.8, 0.9]; });
-  var NV = {open:false, p:0, act:0, actAt:0, dur:1, gain:false, last:0, disp:[0.8, 0.8, 0.8], dotsDown:false, minN:1, minK:0, mood5:0, advK:0, needMood:0, food:null};
+  // ---- care: poop after eating (tap it to clean), sick from neglect (tap the pill), and the three hearts under the toon (same as the firmware)
+  var SICK_SECS = 240, POOP_X = 290, POOP_DX = 34, CARE_Y = 396, PILL_X = 150, HEART_Y = 436;
+  var CARE = TOONS.map(function(){ return {poop:0, wait:0, sickT:0, sick:false, care:0.85}; });
+  function careHit(x, y){
+    if (NV.open || NV.p > 0.01 || NV.act || T.leaveAt >= 0 || T.outAt >= 0 || T.shakeAt >= 0) return 0;
+    var c = CARE[T.idx], dx = x - PILL_X, dy = y - CARE_Y;
+    if (c.sick && dx*dx + dy*dy < 42*42) return 2;
+    if (c.poop > 0 && x > POOP_X - 30 && x < POOP_X + POOP_DX*2 + 30 && Math.abs(y - CARE_Y) < 34) return 1;
+    return 0;
+  }
+  function careTap(now, x, y){
+    var h = careHit(x, y), c = CARE[T.idx]; if (!h) return;
+    if (h === 2){ c.sick = false; c.sickT = 0; c.care = clamp(c.care + 0.15, 0, 1); }
+    else { c.poop = 0; c.wait = 0; c.care = clamp(c.care + 0.05, 0, 1); }
+    TR.confAt = now; T.lastPlay = now;
+  }
+  function careStep(dt, dr){
+    for (var t = 0; t < CARE.length; t++){
+      var c = CARE[t], nd = NEED[t];
+      if (c.wait > 0){ c.wait -= dr; if (c.wait <= 0){ c.wait = 0; if (c.poop < 3) c.poop++; } }
+      var av = (nd[0] + nd[1] + nd[2])/3, neglect = c.poop > 0 || nd[0] <= 0 || nd[1] <= 0 || nd[2] <= 0;
+      c.sickT = clamp(c.sickT + dr*(neglect ? (c.poop > 1 ? 2 : 1) : -2)/SICK_SECS, 0, 1); if (c.sickT >= 1) c.sick = true;
+      var tg = clamp(av - 0.12*c.poop - (c.sick ? 0.35 : 0), 0, 1); c.care += (tg - c.care)*(1 - Math.exp(-dt/40));
+    }
+  }
+  function heartPath(cx, cy, k){
+    ctx.beginPath();
+    for (var i = 0; i <= 40; i++){ var a = i/40*Math.PI*2, hx = 16*Math.pow(Math.sin(a), 3), hy = 13*Math.cos(a) - 5*Math.cos(2*a) - 2*Math.cos(3*a) - Math.cos(4*a);
+      var x = cx + hx/16*1.2*k, y = cy - (hy - 2.5)/16*1.2*k; if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); }
+    ctx.closePath();
+  }
+  function drawHeart(cx, cy, k, col, fr){
+    heartPath(cx, cy, k*1.18); ctx.fillStyle = '#111'; ctx.fill();
+    heartPath(cx, cy, k); ctx.fillStyle = '#e2e2e2'; ctx.fill();
+    if (fr > 0.01){ ctx.save(); heartPath(cx, cy, k); ctx.clip(); ctx.fillStyle = col; ctx.fillRect(cx - 1.2*k, cy - 1.5*k, 2.4*k*fr, 3*k); ctx.restore(); }
+  }
+  function drawPoop(cx, cy, s){
+    oval(cx, cy + 5*s, 17.5*s, 10.5*s, '#111', 1); oval(cx, cy - 4*s, 13*s, 8.5*s, '#111', 1); oval(cx + s, cy - 12*s, 8.5*s, 7.5*s, '#111', 1);
+    oval(cx, cy + 5*s, 15.5*s, 8.5*s, '#965c2a', 1); oval(cx, cy - 4*s, 11*s, 6.5*s, '#a06430', 1); oval(cx + s, cy - 12*s, 6.5*s, 5.5*s, '#ac6e37', 1);
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(cx - 4.5*s, cy - 3*s, 3*s, 0, 7); ctx.fill(); ctx.beginPath(); ctx.arc(cx + 4.5*s, cy - 3*s, 3*s, 0, 7); ctx.fill();
+    ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(cx - 4*s, cy - 2.6*s, 1.5*s, 0, 7); ctx.fill(); ctx.beginPath(); ctx.arc(cx + 5*s, cy - 2.6*s, 1.5*s, 0, 7); ctx.fill();
+  }
+  function drawPill(cx, cy, s){
+    ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(cx - 11*s, cy, 14.5*s, 0, 7); ctx.fill(); ctx.beginPath(); ctx.arc(cx + 11*s, cy, 14.5*s, 0, 7); ctx.fill(); ctx.fillRect(cx - 11*s, cy - 14.5*s, 22*s, 29*s);
+    ctx.fillStyle = '#eb283c'; ctx.beginPath(); ctx.arc(cx - 11*s, cy, 11.5*s, 0, 7); ctx.fill(); ctx.fillRect(cx - 11*s, cy - 11.5*s, 11*s, 23*s);
+    ctx.fillStyle = '#fafafa'; ctx.beginPath(); ctx.arc(cx + 11*s, cy, 11.5*s, 0, 7); ctx.fill(); ctx.fillRect(cx, cy - 11.5*s, 11*s, 23*s);
+    ctx.fillStyle = '#111'; ctx.fillRect(cx - 1.2*s, cy - 14.5*s, 2.4*s, 29*s);
+  }
+  function careDraw(now){
+    if (NV.p > 0.01 || T.leaveAt >= 0 || T.outAt >= 0 || T.shakeAt >= 0) return;
+    var c = CARE[T.idx];
+    for (var i = 0; i < c.poop; i++) drawPoop(POOP_X + POOP_DX*i, CARE_Y, 0.95);
+    if (c.sick) drawPill(PILL_X, CARE_Y, 0.95*(1 + 0.07*Math.sin(now*6)));
+    var cv = c.care*3;
+    for (var h = 0; h < 3; h++) drawHeart(233 + (h - 1)*36, HEART_Y, 11, c.sick ? '#78be50' : '#eb283c', clamp(cv - h, 0, 1));
+  }
+  var NV = {open:false, p:0, act:0, actAt:0, dur:1, gain:false, last:0, disp:[0.8, 0.8, 0.8], dotsDown:false, careDown:false, minN:1, minK:0, mood5:0, advK:0, needMood:0, food:null};
   var NV_WORD = ['HAPPY', 'HUNGRY', 'BORED', 'SLEEPY', 'GRUMPY'], NV_COL = ['#14a05a', '#eb641e', '#4664eb', '#825ad2', '#e4182c'];
   function dotsHit(x, y){ return Math.abs(x - DOT_X) < 30 && Math.abs(y - DOT_Y) < 46; }
   function nvReset(){ NV.open = false; NV.act = 0; }
@@ -1374,10 +1430,11 @@
   function nvStep(now){
     var dt = clamp(now - NV.last, 0, 0.1); NV.last = now; var dr = dt*[0.5, 1, 2][SETS.needs];
     for (var t = 0; t < NEED.length; t++){ NEED[t][0] -= dr/EAT_SECS; NEED[t][1] -= dr/PLAY_SECS; NEED[t][2] -= dr/SLEEP_SECS; for (var k = 0; k < 3; k++) if (NEED[t][k] < 0) NEED[t][k] = 0; }
+    careStep(dt, dr);
     var nd = NEED[T.idx], ap = 0;
     if (NV.act){
       ap = (now - NV.actAt)/NV.dur;
-      if (NV.act === 1 && ap > 0.4 && !NV.gain){ NV.gain = true; nd[0] = clamp(nd[0] + 0.55, 0, 1); }
+      if (NV.act === 1 && ap > 0.4 && !NV.gain){ NV.gain = true; nd[0] = clamp(nd[0] + 0.55, 0, 1); var cc = CARE[T.idx]; if (cc.wait <= 0 && cc.poop < 3) cc.wait = 25 + Math.random()*20; }
       if (NV.act === 2 && ap > 0.55 && !NV.gain){ NV.gain = true; nd[1] = clamp(nd[1] + 0.55, 0, 1); TR.confAt = now; }
       if (NV.act === 3) nd[2] = clamp(nd[2] + dt*0.8/NV.dur, 0, 1);
       if (ap >= 1){ NV.act = 0; ap = 0; }
@@ -1385,7 +1442,7 @@
     for (var j = 0; j < 3; j++) NV.disp[j] += (nd[j] - NV.disp[j])*(1 - Math.exp(-dt*6));
     NV.p += ((NV.open ? 1 : 0) - NV.p)*(1 - Math.exp(-dt*10)); if (NV.open && NV.p > 0.995) NV.p = 1; if (!NV.open && NV.p < 0.01) NV.p = 0;
     var mn = 1, mk = 0; for (var q = 0; q < 3; q++) if (nd[q] < mn){ mn = nd[q]; mk = q; }
-    NV.minN = mn; NV.minK = mk; NV.needMood = mn < 0.15 ? 2 : (mn < 0.35 ? 1 : 0);
+    NV.minN = mn; NV.minK = mk; NV.needMood = mn < 0.15 ? 2 : (mn < 0.35 ? 1 : 0); if (CARE[T.idx].sick && NV.needMood < 1) NV.needMood = 1;
     var m5 = 0; if (mn <= 0.45) m5 = mk + 1; if (mn < 0.15) m5 = 4; NV.mood5 = m5; NV.advK = m5 === 0 ? 0 : mk + 1;
     NV.ap = ap;
   }
@@ -1764,6 +1821,7 @@
         for (var qi = 0; qi < 4; qi++){ var am = Math.PI/4 + Math.PI/2*qi; ctx.beginPath(); ctx.arc(mx, my, 25*ms, am - 0.55, am + 0.55); ctx.stroke(); }
       }
     }
+    careDraw(now);
     nvDraw(now, d);
     if (NV.open || isQuiet() || (!SETS.talk && (T.bub === 'gm' || T.bub === 'say'))) T.bub = null;
     if (T.sayAt >= 0 && !T.bub && !NV.open && !isQuiet() && SETS.talk && now >= T.sayAt && T.outAt < 0 && T.shakeAt < 0 && T.leaveAt < 0){ T.bub = 'say'; T.bubAt = now; T.bubDur = 4.6; T.sayAt = -1; }
@@ -1900,7 +1958,7 @@
     if (scene === 'wifi'){ drawWifi(now); if (stateEl.textContent !== 'WIFI') stateEl.textContent = 'WIFI'; requestAnimationFrame(frame); return; }
     if (scene === 'set'){ drawSet(now); if (stateEl.textContent !== 'SETTINGS') stateEl.textContent = 'SETTINGS'; requestAnimationFrame(frame); return; }
     if (scene === 'toon'){
-      if (pointer.down && !holdFired && !sad.eyeDown && !NV.dotsDown && !NV.open && now*1000 - pointer.t0 > 900 && pointer.moved < 14){ holdFired = true; backToEye(now); }
+      if (pointer.down && !holdFired && !sad.eyeDown && !NV.dotsDown && !NV.careDown && !NV.open && now*1000 - pointer.t0 > 900 && pointer.moved < 14){ holdFired = true; backToEye(now); }
       else {
         drawToon(now);
         if (BAT.p >= 0 && BAT.p <= 15 && !BAT.c && (now % 2) < 1.2) drawBattery(268, 36, 0.85, BAT.p, false);     // low battery: a little red battery blinks at the top
@@ -1989,7 +2047,7 @@
     redDown = false; wifiDown = false; restDown = false; if (scene === 'set' || scene === 'pick' || scene === 'wifi'){ var qr = canvasXY(e); wifiDown = scene === 'pick' && wifiHit(qr.x, qr.y); restDown = scene === 'pick' && !wifiDown && restHit(qr.x, qr.y); redDown = !wifiDown && !restDown && redHit(qr.x, qr.y); }
     if (awake && scene === 'eye' && !redDown) toLook(e);
     pickPoint(e, true);
-    if (scene === 'toon'){ var q0 = canvasXY(e); sad.fx = q0.x; sad.fy = q0.y; sad.down = true; sad.eyeDown = eyeHit(q0.x, q0.y); NV.dotsDown = !sad.eyeDown && dotsHit(q0.x, q0.y); sad.on = sad.eyeDown && !NV.open; }
+    if (scene === 'toon'){ var q0 = canvasXY(e); sad.fx = q0.x; sad.fy = q0.y; sad.down = true; sad.eyeDown = eyeHit(q0.x, q0.y); NV.dotsDown = !sad.eyeDown && dotsHit(q0.x, q0.y); NV.careDown = !sad.eyeDown && !NV.dotsDown && careHit(q0.x, q0.y) > 0; sad.on = sad.eyeDown && !NV.open; }
   });
   function canvasXY(e){ var r = cv.getBoundingClientRect(); return {x:(e.clientX - r.left)/r.width*S, y:(e.clientY - r.top)/r.height*S}; }
   function pickPoint(e, down){
@@ -2019,8 +2077,9 @@
       var q2 = canvasXY(e), onEye = sad.eyeDown && eyeHit(q2.x, q2.y);
       if (onEye && T.leaveAt < 0){ if (NV.open) NV.open = false; else T.leaveAt = now/1000; }      // lift on the little eye: close the needs screen, or back to the menu
       else if (NV.dotsDown && dotsHit(q2.x, q2.y) && !NV.open) nvToggle(now/1000);                // the three dots: mood and needs
-      else if (tap && !holdFired && !sad.eyeDown && !NV.dotsDown){ if (NV.open) nvTap(now/1000, q2.x, q2.y); else toonTap(now/1000); }
-      sad.down = false; sad.eyeDown = false; NV.dotsDown = false; sad.on = !NV.open && e.pointerType === 'mouse' && eyeHit(q2.x, q2.y) && !onEye;
+      else if (NV.careDown && careHit(q2.x, q2.y)) careTap(now/1000, q2.x, q2.y);                // poop: clean it, pill: medicine
+      else if (tap && !holdFired && !sad.eyeDown && !NV.dotsDown && !NV.careDown){ if (NV.open) nvTap(now/1000, q2.x, q2.y); else toonTap(now/1000); }
+      sad.down = false; sad.eyeDown = false; NV.dotsDown = false; NV.careDown = false; sad.on = !NV.open && e.pointerType === 'mouse' && eyeHit(q2.x, q2.y) && !onEye;
     }
     else if (scene === 'set'){
       var q3 = canvasXY(e);
