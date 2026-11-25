@@ -1,5 +1,63 @@
 [
   {
+    "version": "0.5.22",
+    "date": "2026-11-25",
+    "notes": {
+      "en": "Zig has new art and a new laughing animation. Not yet tested on a real board."
+    },
+    "variants": {
+      "all": {
+        "name": "All toons",
+        "app": "fw/0.5.22/all/app.bin",
+        "appSha256": "35a9f2eacb3b18f77db645eef5efc63d060b96a414b868998a7398b5b0775b43",
+        "full": "fw/0.5.22/all/full.bin",
+        "fullSha256": "7b1a478b294bc9dfea2594800c026530d685432e6f326a1e7c7103dc6176bdc7"
+      },
+      "peeppops": {
+        "name": "PeepPops (Fizz, Uno, Zig)",
+        "app": "fw/0.5.22/peeppops/app.bin",
+        "appSha256": "11dea5002f7d696b556d2d2d0c2c08378f1aa1ad948b6758a0484c5de1cb3320",
+        "full": "fw/0.5.22/peeppops/full.bin",
+        "fullSha256": "34bc3aa221f03a3ee3fd67fba8187857e3ac32bace767134a0ea08ef24bbb7a1"
+      },
+      "poopies": {
+        "name": "Poopies (Buck, Burp, Snicker, Chomp, Drool)",
+        "app": "fw/0.5.22/poopies/app.bin",
+        "appSha256": "1e9db047ae0370194c5c74c0b746519db0ebfd4dbbbfaf0360d86868d8b5889c",
+        "full": "fw/0.5.22/poopies/full.bin",
+        "fullSha256": "b0ab3ce904572b4a0985e50b1461e40fd7046be8b9fe8b7138c7fac7be9968af"
+      },
+      "unipops": {
+        "name": "UniPops (Heli, Bloop, Chili, Giggle, Smooch, Razz)",
+        "app": "fw/0.5.22/unipops/app.bin",
+        "appSha256": "823252b8253313723bff55bf2d6f7c7f7b6e564ee177b3de6e5b586aa309be52",
+        "full": "fw/0.5.22/unipops/full.bin",
+        "fullSha256": "ace845e41b9aef0c2417cffb3eac44755132aef7d3649f8d5fa08b3fef4ab391"
+      },
+      "monsterlings": {
+        "name": "Monsterlings (Pling, Fang, Gem, Jab, Lumo)",
+        "app": "fw/0.5.22/monsterlings/app.bin",
+        "appSha256": "dbef1477703e53525370b76d493942260d65e5cc7a161a68c5599efc2eff3d5b",
+        "full": "fw/0.5.22/monsterlings/full.bin",
+        "fullSha256": "ec0fb831a9afaf8fed3de4b8c6cb11bc28e85999ae36c1fd0c699d3a5a5701b9"
+      },
+      "lovelings": {
+        "name": "Lovelings (Mimi)",
+        "app": "fw/0.5.22/lovelings/app.bin",
+        "appSha256": "5b4369f7d9fb800c832383f181bef9174f0838eda37fd2994f9225b99ca5843a",
+        "full": "fw/0.5.22/lovelings/full.bin",
+        "fullSha256": "7b1bc45557ce9c19670abdd87ab701fe947e16c1e4273d5661b55667d9e6f479"
+      },
+      "joylings": {
+        "name": "Joylings (Moo)",
+        "app": "fw/0.5.22/joylings/app.bin",
+        "appSha256": "f56db2fcd3e0a999d2787bc32a8d1feb6bf18932dfc3592fe463a8b4b7787a86",
+        "full": "fw/0.5.22/joylings/full.bin",
+        "fullSha256": "0ee8321555abc9e9818515557ebfcbb87e7851e09b61940514cb2df3b3a6f1c3"
+      }
+    }
+  },
+  {
     "version": "0.5.21",
     "date": "2026-11-25",
     "notes": {
