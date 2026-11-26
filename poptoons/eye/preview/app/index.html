@@ -2179,10 +2179,10 @@
   function drawToon(now){
     ctx.fillStyle = bgNow(now); ctx.fillRect(0, 0, S, S);        // a different colour behind every toon        // the white of the eye is the toon's stage
     nvStep(now);
-    var d = TOONS[T.idx], im = d.an ? IMGS[d.key + '_an' + (Math.floor(now*d.fps) % d.an)] : IMGS[d.key + '_body'], P = toonPose(now);     // Buck has an animated body (squish and hop loop)
+    var d = TOONS[T.idx], im = d.an ? IMGS[d.key + '_an' + (NV.act === 3 ? 0 : Math.floor(now*d.fps) % d.an)] : IMGS[d.key + '_body'], P = toonPose(now);     // Buck has an animated body (squish and hop loop)
     if (NV.open) sad.on = false;
     if (NV.act === 1 && NV.ap > 0.35 && NV.ap < 0.9){ var ch = Math.sin((NV.ap - 0.35)*Math.PI*2*3.2); P.sy *= 1 + 0.09*ch; P.sx *= 1 - 0.07*ch; }
-    if (NV.act === 3){ P.sy *= 1 + 0.03*Math.sin(now*1.8) - 0.04; P.dx *= 0.3; }
+    if (NV.act === 3){ P.sy *= 1 + 0.03*Math.sin(now*1.8) - 0.04; P.dx = 0; P.dy = 0; P.rot = 0; }
     var sdt = clamp(now - sad.last, 0, 0.1); sad.last = now; sad.a += ((sad.on ? 1 : 0) - sad.a)*(1 - Math.exp(-sdt*9));
     if (sad.a > 0.01){ P.sy *= 1 - 0.06*sad.a; P.dx += 4*sad.a*Math.sin(now*1.6); }
     if (T.leaveAt >= 0){ var lq = (now - T.leaveAt)/0.22; if (lq >= 1){ T.leaveAt = -1; scene = 'pick'; pickBegin(now); return; } var ls = 1 - lq*lq; P.sx *= ls; P.sy *= ls; }

@@ -1,5 +1,63 @@
 [
  {
+  "version": "0.5.35",
+  "date": "2026-11-26",
+  "notes": {
+   "en": "When a toon goes to sleep (Sleep on the needs screen) it now stays still in its rest pose with only slow breathing, no hopping or animation. Not yet tested on a real board."
+  },
+  "variants": {
+   "all": {
+    "name": "All toons",
+    "app": "fw/0.5.35/all/app.bin",
+    "appSha256": "c2aa2c8e1a18d572d235d102d26bd8b031d724817d325fc799a4f228af3efbbb",
+    "full": "fw/0.5.35/all/full.bin",
+    "fullSha256": "a013eee01cf6f48c416a061a0789f0a8f8c63a01f03c9ab538ef0b5530b9483d"
+   },
+   "peeppops": {
+    "name": "PeepPops (Fizz, Uno, Zig)",
+    "app": "fw/0.5.35/peeppops/app.bin",
+    "appSha256": "a7f00266b6c80d753e0f1113d920dd58eaa1b8d3e85bb91b86032b5f0f38475c",
+    "full": "fw/0.5.35/peeppops/full.bin",
+    "fullSha256": "c9148320e5b969e2ba90365d557046fb219b2d1a93a4c4f3b2050ce40c1edde5"
+   },
+   "poopies": {
+    "name": "Poopies (Buck, Burp, Snicker, Chomp, Drool)",
+    "app": "fw/0.5.35/poopies/app.bin",
+    "appSha256": "a606e34f9eb42e4bccc2e01d327762543ff7dffa0185648b703871744ef7eea7",
+    "full": "fw/0.5.35/poopies/full.bin",
+    "fullSha256": "57015cf9792d64a607de90d61661713c570bf768e77a5a00731f2ba796be2858"
+   },
+   "unipops": {
+    "name": "UniPops (Heli, Bloop, Chili, Giggle, Smooch, Razz)",
+    "app": "fw/0.5.35/unipops/app.bin",
+    "appSha256": "92c1752f26f4e9e63e8c9a56f6036024cd113a9dd7265fd7ba43ad6f4dfe8f8d",
+    "full": "fw/0.5.35/unipops/full.bin",
+    "fullSha256": "931f4a50f54634e82bc6025331a9d29127c1f8e8e6c8f7f11edaa775762b9dee"
+   },
+   "monsterlings": {
+    "name": "Monsterlings (Pling, Fang, Gem, Jab, Lumo)",
+    "app": "fw/0.5.35/monsterlings/app.bin",
+    "appSha256": "dedc0be6715bc4e272dfc1f0c4c747a26f24fd38f60bed195b5ed2eca5016b11",
+    "full": "fw/0.5.35/monsterlings/full.bin",
+    "fullSha256": "02fcae933e21bebe0117b4d6133265abe7cb541ca6e3d9cc7b9399334d20eb12"
+   },
+   "lovelings": {
+    "name": "Lovelings (Mimi)",
+    "app": "fw/0.5.35/lovelings/app.bin",
+    "appSha256": "cdb9616577d86562f4131bc2631d290a11fcfb03b1c28b4abe874698696b29bb",
+    "full": "fw/0.5.35/lovelings/full.bin",
+    "fullSha256": "c9f7b58c14a5423f867a09baa0bb3f0104aef8991783e52b18e057023c780275"
+   },
+   "joylings": {
+    "name": "Joylings (Moo, Bun, Dax, Flap, Slurp, Twirl, Wiggle)",
+    "app": "fw/0.5.35/joylings/app.bin",
+    "appSha256": "ad1b3d9b03a03f0972c08e47b474f828be864d152e61bb5a7b2e918b0b2031f0",
+    "full": "fw/0.5.35/joylings/full.bin",
+    "fullSha256": "202fb05dd7bdc77b01074268e60df09d48203b28d500423a3721cc92e8a6a4f5"
+   }
+  }
+ },
+ {
   "version": "0.5.34",
   "date": "2026-11-26",
   "notes": {
