@@ -1,5 +1,63 @@
 [
  {
+  "version": "0.5.38",
+  "date": "2026-11-26",
+  "notes": {
+   "en": "Heli (UniPops) has new art and is now animated from your video. The white edge behind some UniPops animations (Giggle, Bloop, Chili) is removed, and the swirl lines around Giggle are gone. Not yet tested on a real board."
+  },
+  "variants": {
+   "all": {
+    "name": "All toons",
+    "app": "fw/0.5.38/all/app.bin",
+    "appSha256": "d32248275553e4bdf064405c574892389e70a98cad6c0fc476d45c4a8fee9be8",
+    "full": "fw/0.5.38/all/full.bin",
+    "fullSha256": "071d8876c74e6e94e1e49f65bb5c24014179cfd89e33b02490278e97509b3c35"
+   },
+   "peeppops": {
+    "name": "PeepPops (Fizz, Uno, Zig)",
+    "app": "fw/0.5.38/peeppops/app.bin",
+    "appSha256": "9d08e18fe4e71432cd982e1f2a59a87730d35fdedfa12cf4f7a1f0aaa64d78ea",
+    "full": "fw/0.5.38/peeppops/full.bin",
+    "fullSha256": "8957e5a0b5716a4848cc8177265bd2d0241dcef0dc87d5ee145964c6a9741306"
+   },
+   "poopies": {
+    "name": "Poopies (Buck, Burp, Snicker, Chomp, Drool)",
+    "app": "fw/0.5.38/poopies/app.bin",
+    "appSha256": "b54b2dffcdac2c300933de1710fc67514946052780d7c6f6259f4869e0e091ab",
+    "full": "fw/0.5.38/poopies/full.bin",
+    "fullSha256": "1cd7a23b62315b69dc5431e00dd706baecf6713959073078833a18bdbf8578f1"
+   },
+   "unipops": {
+    "name": "UniPops (Heli, Bloop, Chili, Giggle, Smooch, Razz)",
+    "app": "fw/0.5.38/unipops/app.bin",
+    "appSha256": "ad63910861e57023613df71dd1c58d77303e139ff4980ac7d757e79dd411809c",
+    "full": "fw/0.5.38/unipops/full.bin",
+    "fullSha256": "4ca71f778b5426a979b0f60999c05d2e6601bacca36bb5c3914e58df4c66437a"
+   },
+   "monsterlings": {
+    "name": "Monsterlings (Pling, Fang, Gem, Jab, Lumo)",
+    "app": "fw/0.5.38/monsterlings/app.bin",
+    "appSha256": "9a7ef760c56201646def6ee5f5c9b3d4c01f14f694feb5cc9aabb20900c938db",
+    "full": "fw/0.5.38/monsterlings/full.bin",
+    "fullSha256": "a9a870c9911ae518a4f379932486359bce312f199f0b11ac7f136c17f9d43f03"
+   },
+   "lovelings": {
+    "name": "Lovelings (Mimi)",
+    "app": "fw/0.5.38/lovelings/app.bin",
+    "appSha256": "9d7aa31862be3710f814df931437b5cd8459e89855cedadae09f91ff6624c0c0",
+    "full": "fw/0.5.38/lovelings/full.bin",
+    "fullSha256": "29018d80713f86390bb36def0371ce9c0f799bf90e8c66ac074e96046cc24b29"
+   },
+   "joylings": {
+    "name": "Joylings (Moo, Bun, Dax, Flap, Slurp, Twirl, Wiggle)",
+    "app": "fw/0.5.38/joylings/app.bin",
+    "appSha256": "3d4db619553688cd4a7d5779d7f51d14a6bb8a804f2427a25b10c32882874198",
+    "full": "fw/0.5.38/joylings/full.bin",
+    "fullSha256": "72458a5f7f69830073a2bfc317c69d3ffb6456825bd9a571575a74afffccb400"
+   }
+  }
+ },
+ {
   "version": "0.5.37",
   "date": "2026-11-26",
   "notes": {
