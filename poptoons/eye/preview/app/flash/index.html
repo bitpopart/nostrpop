@@ -35,6 +35,10 @@
   .warn.bad { background:#ffe3e3; }
   .small { font-size:13px; font-weight:500; line-height:1.5; margin:8px 0 0; }
   @media(max-width:560px){ .choice { grid-template-columns:1fr; } }
+.toons{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:10px}
+.toons button{border:3px solid #111;border-radius:14px;background:#fff;padding:6px 4px 8px;cursor:pointer;font:inherit;font-weight:700}
+.toons button img{display:block;width:72px;height:72px;margin:0 auto 4px;object-fit:contain}
+.toons button.on{background:#ffd422;box-shadow:3px 3px 0 #111}
 </style>
 </head>
 <body>
@@ -59,6 +63,12 @@
     <div id="collwrap" hidden>
       <p class="small" style="margin:14px 0 6px"><b>Collection</b> - flash one collection only, or all toons.</p>
       <select id="coll"></select>
+    </div>
+    <div id="toonwrap" hidden>
+      <p class="small" style="margin:14px 0 6px"><b>Category</b></p>
+      <select id="cat"></select>
+      <p class="small" style="margin:14px 0 6px"><b>Toon</b> - one toon per device.</p>
+      <div id="toons" class="toons"></div>
     </div>
     <p class="small" id="notes"></p>
   </div>
@@ -98,12 +108,28 @@ document.querySelectorAll('#mode label').forEach(l => l.addEventListener('click'
 function cur(){
   const v = list[$('ver').selectedIndex]; if (!v) return null;
   if (!v.variants) return v;
+  if (isToonVer(v)) return Object.assign({}, v, v.variants[toonKey] || {});
   const c = v.variants[$('coll').value] || v.variants[Object.keys(v.variants)[0]];
   return Object.assign({}, v, c);
 }
+let toonKey = '';
+function isToonVer(v){ return !!(v && v.variants && Object.values(v.variants).some(x => x.set)); }   // newer versions: one firmware per toon
+function fillToons(){
+  const v = list[$('ver').selectedIndex], cat = $('cat').value;
+  const ks = Object.keys(v.variants).filter(k => v.variants[k].set === cat);
+  if (!ks.includes(toonKey)) toonKey = ks[0];
+  $('toons').innerHTML = ks.map(k => `<button type="button" data-k="${esc(k)}" class="${k === toonKey ? 'on' : ''}"><img src="../${esc(v.variants[k].thumb || '')}" alt="">${esc(v.variants[k].name)}</button>`).join('');
+  $('toons').querySelectorAll('button').forEach(b => b.addEventListener('click', () => { toonKey = b.dataset.k; fillToons(); }));
+}
 function fillColl(){
   const v = list[$('ver').selectedIndex], keep = $('coll').value;
-  $('collwrap').hidden = !(v && v.variants);
+  const tv = isToonVer(v);
+  $('toonwrap').hidden = !tv; $('collwrap').hidden = !(v && v.variants) || tv;
+  if (tv){
+    const cats = []; Object.values(v.variants).forEach(x => { if (!cats.includes(x.set)) cats.push(x.set); });
+    const old = $('cat').value; $('cat').innerHTML = cats.map(c => `<option>${esc(c)}</option>`).join(''); if (cats.includes(old)) $('cat').value = old; else if (toonKey && v.variants[toonKey]) $('cat').value = v.variants[toonKey].set;
+    fillToons(); return;
+  }
   if (!v || !v.variants) return;
   const keys = Object.keys(v.variants).sort((a, b) => (a === 'all') - (b === 'all'));   // collections first, "All toons" last
   $('coll').innerHTML = keys.map(k => `<option value="${esc(k)}">${esc(v.variants[k].name || k)}</option>`).join('');
@@ -115,6 +141,7 @@ function showNotes(){
   $('notes').textContent = (v.notes && (v.notes.en || v.notes)) || '';
 }
 $('ver').addEventListener('change', () => { fillColl(); showNotes(); });
+$('cat').addEventListener('change', () => { fillToons(); });
 
 fetch('../versions.json', {cache:'no-store'}).then(r => r.json()).then(l => { list = Array.isArray(l) ? l : []; }).catch(() => { list = []; }).then(() => {
   $('nover').hidden = list.length > 0;
