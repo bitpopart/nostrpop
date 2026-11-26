@@ -1,5 +1,63 @@
 [
   {
+    "version": "0.5.31",
+    "date": "2026-11-26",
+    "notes": {
+      "en": "New setting CALLS (off, low, mid, high): how often the sleeping toon wakes up to ask for a play, food or a clean-up. Mid is every 5 to 15 minutes, high every 1.5 to 4 minutes. It repeats at the same pace when you do not answer, instead of getting slower. Not yet tested on a real board."
+    },
+    "variants": {
+      "all": {
+        "name": "All toons",
+        "app": "fw/0.5.31/all/app.bin",
+        "appSha256": "1eb24239ef3a01bf3a2be2f9b89dfd4243d6e7725b3162fcfe8d224451ba3010",
+        "full": "fw/0.5.31/all/full.bin",
+        "fullSha256": "0fd7af94fb725086af7e97ac1fd12c766ef7964f2ba5f0d7c3d194adf57cdcb9"
+      },
+      "peeppops": {
+        "name": "PeepPops (Fizz, Uno, Zig)",
+        "app": "fw/0.5.31/peeppops/app.bin",
+        "appSha256": "581b92e86f76c104d5ee926cd4652d73714ce49108fc11d916c12697445c950e",
+        "full": "fw/0.5.31/peeppops/full.bin",
+        "fullSha256": "8b092dd1bf3b746fa2f925ef7c0cd419821529fbd65642a8b53cc7d9a97e0d07"
+      },
+      "poopies": {
+        "name": "Poopies (Buck, Burp, Snicker, Chomp, Drool)",
+        "app": "fw/0.5.31/poopies/app.bin",
+        "appSha256": "e4ea9bfe7035131c5e84eb27f3f2e28395143f609c88f6d03feaba614ce36757",
+        "full": "fw/0.5.31/poopies/full.bin",
+        "fullSha256": "1f626ba891e3e2b1de23616ac48c303da9119bb9a3bd8f6bfa204b818cd8a7ff"
+      },
+      "unipops": {
+        "name": "UniPops (Heli, Bloop, Chili, Giggle, Smooch, Razz)",
+        "app": "fw/0.5.31/unipops/app.bin",
+        "appSha256": "bdd88178da07d2854c2b1fe311570bfd5fcc33691196fa456443fc3ec86e24f1",
+        "full": "fw/0.5.31/unipops/full.bin",
+        "fullSha256": "0ae142755687123133a11e263a09dfc40c5deb0be235ce4f853b54355c99bc1f"
+      },
+      "monsterlings": {
+        "name": "Monsterlings (Pling, Fang, Gem, Jab, Lumo)",
+        "app": "fw/0.5.31/monsterlings/app.bin",
+        "appSha256": "78d064b80bfbcff4891c457f9b7b61921bcd7cbca5ddd672ff7fa4193dec22ef",
+        "full": "fw/0.5.31/monsterlings/full.bin",
+        "fullSha256": "27b61410ffd1a7f4a39536551de5b4d372081c4c57f3cfcd1ac066d62fedcc43"
+      },
+      "lovelings": {
+        "name": "Lovelings (Mimi)",
+        "app": "fw/0.5.31/lovelings/app.bin",
+        "appSha256": "7b29a12ee209aa7adc98b7c8effbfbe4585f7bb463f5c41528f55a052e68302f",
+        "full": "fw/0.5.31/lovelings/full.bin",
+        "fullSha256": "ba068f8230a16c2c660ebccb7a3dab4c2cb88aad04e0d4e89d63ab4dd50fbc26"
+      },
+      "joylings": {
+        "name": "Joylings (Moo)",
+        "app": "fw/0.5.31/joylings/app.bin",
+        "appSha256": "e12e53dce33ca7f33a529b6845e5a759b54aeaac0821bfedde86966ac04028ce",
+        "full": "fw/0.5.31/joylings/full.bin",
+        "fullSha256": "bd87ad4ed83d81175642cb507a1ca7be330c51f727ea2b590d81fe9783883b05"
+      }
+    }
+  },
+  {
     "version": "0.5.30",
     "date": "2026-11-26",
     "notes": {
