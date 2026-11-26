@@ -1,271 +1,271 @@
 [
  {
-  "version": "0.6.0",
+  "version": "0.6.1",
   "date": "2026-11-26",
   "notes": {
-   "en": "One toon per device: pick a category and a toon in the flasher (with thumbnails) and the device holds just that toon. When the eyes open you see the toon with three eyes around it: Age (when it was born, in days), Facts (fun facts, tap for the next one) and Care (eat, play, sleep). Not yet tested on a real board."
+   "en": "One toon per device: pick a category and a toon in the flasher (with thumbnails) and the device holds just that toon. When the eyes open you see the toon with three eyes around it: Age (when it was born, in days), Facts (fun facts, tap for the next one) and Care (eat, play, sleep). The panels use the poptoons.fun look: white cards with a black outline and shadow, a collection-colored label pill and Poppins text. Not yet tested on a real board."
   },
   "variants": {
    "fizz": {
     "name": "Fizz",
     "set": "PeepPops",
     "thumb": "thumbs/fizz.png",
-    "app": "fw/0.6.0/fizz/app.bin",
-    "appSha256": "0c901989458f2e53e65560afdf8a22951f3985ae903c2e817591a9f21cb8a455",
-    "full": "fw/0.6.0/fizz/full.bin",
-    "fullSha256": "260e5f4cf12c4c60ed904077d0ddcd98d2f5584af4bceafc691b25c51a5614b4"
+    "app": "fw/0.6.1/fizz/app.bin",
+    "appSha256": "7150f46fd0e0ce61fbd2c1e879a1a2cb9840f26d4a0a137109c7f983e21e6aa7",
+    "full": "fw/0.6.1/fizz/full.bin",
+    "fullSha256": "a16f611d57303425b7ec0c3cfade873f5a19a30ae7f5dd2aa442a0743eead1bc"
    },
    "uno": {
     "name": "Uno",
     "set": "PeepPops",
     "thumb": "thumbs/uno.png",
-    "app": "fw/0.6.0/uno/app.bin",
-    "appSha256": "a32ba4ba196d2563a831efa814bf2193d95046f5decd858fd6df8bf2cf41626c",
-    "full": "fw/0.6.0/uno/full.bin",
-    "fullSha256": "757830f8aeb121c297330dc86de332720495d133b9a448ee4ca4e33ecccdeda3"
+    "app": "fw/0.6.1/uno/app.bin",
+    "appSha256": "50ed5175dc975d2722e60d041910314bb8c54dd6debdf9dc25d7e618d14d70b3",
+    "full": "fw/0.6.1/uno/full.bin",
+    "fullSha256": "9bd2995913bf2dfd828739d559ec287a259ac11f1f80e2b10979b4da2d66ce4d"
    },
    "zig": {
     "name": "Zig",
     "set": "PeepPops",
     "thumb": "thumbs/zig.png",
-    "app": "fw/0.6.0/zig/app.bin",
-    "appSha256": "2cb83fe7670491e9655d3a43220f335d5fe3890f93a6a3da74864fa06643904a",
-    "full": "fw/0.6.0/zig/full.bin",
-    "fullSha256": "4cc2a335c9c4519dfdc341fe62ade0adce71ee7992415d02cd878ab6d34dfb63"
+    "app": "fw/0.6.1/zig/app.bin",
+    "appSha256": "6510c51b786d30d435c28d4f2d9fadc1b57d3abc0c2525a0d851a66b6e69cc1a",
+    "full": "fw/0.6.1/zig/full.bin",
+    "fullSha256": "da6c10ea0e8af127c999dffc0b5c5a57da1761926ae39b4f2bf0739f055b6d80"
    },
    "buck": {
     "name": "Buck",
     "set": "Poopies",
     "thumb": "thumbs/buck.png",
-    "app": "fw/0.6.0/buck/app.bin",
-    "appSha256": "42067b177c94a55b0b9c3485ada08836d13986d7a92c2300a60a0f32cb8f7db2",
-    "full": "fw/0.6.0/buck/full.bin",
-    "fullSha256": "4681cc1ac5a1fd8497ad2b435350faa18c5d0765e3d27bfbfcec2d62a55cc828"
+    "app": "fw/0.6.1/buck/app.bin",
+    "appSha256": "2da19db7a53becb57c9953660e85ac07f7b4ab9b3ea08e9942e9d7da0c3af0f1",
+    "full": "fw/0.6.1/buck/full.bin",
+    "fullSha256": "24dba69734ad69d877e9ad8a1fad8cc6a92f4611f3c81851ecbc064896c42b27"
    },
    "burp": {
     "name": "Burp",
     "set": "Poopies",
     "thumb": "thumbs/burp.png",
-    "app": "fw/0.6.0/burp/app.bin",
-    "appSha256": "6cd8c314fefc9a636bed857c1c66bff854e081e4474d9e9fec0fa0a3de3cd2a8",
-    "full": "fw/0.6.0/burp/full.bin",
-    "fullSha256": "e94534b4d6800d13d0d3d699f16ceae13430bef590e1d022bd25d49f647cef1e"
+    "app": "fw/0.6.1/burp/app.bin",
+    "appSha256": "5a43d4a50ac05e68ac1815027b06b348439e6f441b44df3e854b00a3a3ce21a6",
+    "full": "fw/0.6.1/burp/full.bin",
+    "fullSha256": "6d93e9373597fe700d21944e2d3629f5dda58c3b6d5d3c791c3b20a8121d4119"
    },
    "snicker": {
     "name": "Snicker",
     "set": "Poopies",
     "thumb": "thumbs/snicker.png",
-    "app": "fw/0.6.0/snicker/app.bin",
-    "appSha256": "2430ddc72155459db53124bdfd81ff388cae67d3c18bfa446f7fd2748b03415c",
-    "full": "fw/0.6.0/snicker/full.bin",
-    "fullSha256": "3417b49f20848860699fc8699a938bbe5a8cc69c1eb99f6efd56283eacf2ecd0"
+    "app": "fw/0.6.1/snicker/app.bin",
+    "appSha256": "0ec076210dc52c6ec0d5ac9cf8991dfba1c66046d02321051f0933ffae07137b",
+    "full": "fw/0.6.1/snicker/full.bin",
+    "fullSha256": "d747483cf04cedf7e827f086f4e608176fa79cd3b08dd688a58c696e245af3a7"
    },
    "chomp": {
     "name": "Chomp",
     "set": "Poopies",
     "thumb": "thumbs/chomp.png",
-    "app": "fw/0.6.0/chomp/app.bin",
-    "appSha256": "f2ce39310127ded5da81156610600e478022a53753f2d98cc8852c3056139479",
-    "full": "fw/0.6.0/chomp/full.bin",
-    "fullSha256": "14cfdc7642932e673387bae2bd3c6860c0c7cb12f934cd86107ad96bcce301aa"
+    "app": "fw/0.6.1/chomp/app.bin",
+    "appSha256": "2768b68207d0603a9b9e3c1911d85422e84666d01dc12119988e35460a86b76c",
+    "full": "fw/0.6.1/chomp/full.bin",
+    "fullSha256": "ed027dfb69c5710c08f73206871e05f0afcc2d11eb6d2af3e7e5dceec68683c7"
    },
    "drool": {
     "name": "Drool",
     "set": "Poopies",
     "thumb": "thumbs/drool.png",
-    "app": "fw/0.6.0/drool/app.bin",
-    "appSha256": "df1cb4027775be360ee9183af46b23b4d07402984725c85808ca93fd9a1facb5",
-    "full": "fw/0.6.0/drool/full.bin",
-    "fullSha256": "62165f6bffdebe0ea2149c81ccd7e00ef738eaa80aeaaaafaa6caffb4ba6839c"
+    "app": "fw/0.6.1/drool/app.bin",
+    "appSha256": "e3d18d86ba8662a6235c785e8602453c65a18de2a54bc398cba43a963601b988",
+    "full": "fw/0.6.1/drool/full.bin",
+    "fullSha256": "af1560fcae5a51b4c8624a68cfb95acc87091bbb8907edd98668ae3acd9da7e1"
    },
    "heli": {
     "name": "Heli",
     "set": "UniPops",
     "thumb": "thumbs/heli.png",
-    "app": "fw/0.6.0/heli/app.bin",
-    "appSha256": "b303602ef91b101374e756abe6f86a32d13df3f29bb4007e19d3d11628353d02",
-    "full": "fw/0.6.0/heli/full.bin",
-    "fullSha256": "77a2ff7613a3fb37f4789f3130849b0c9cd4c019c6d37f617c2122b2625e1dd3"
+    "app": "fw/0.6.1/heli/app.bin",
+    "appSha256": "6923230f0d3a4da028cfd4503315d9dd211ed55d7349542947d91e94a613150d",
+    "full": "fw/0.6.1/heli/full.bin",
+    "fullSha256": "f9ecba4accd3902ffee953bf9977755e07b28135820693d9b0f6197f6b9153cf"
    },
    "bloop": {
     "name": "Bloop",
     "set": "UniPops",
     "thumb": "thumbs/bloop.png",
-    "app": "fw/0.6.0/bloop/app.bin",
-    "appSha256": "441199626759923cbaf74144ffac12b69945ebe5dcbd29bff88e3743ddfe6b04",
-    "full": "fw/0.6.0/bloop/full.bin",
-    "fullSha256": "36bd1e1865276dadcddd3a64e38361bac93d2bfdb7f7e473cb2cdbe2adf62836"
+    "app": "fw/0.6.1/bloop/app.bin",
+    "appSha256": "e3e9edf7e067a8368c20320209860fa58e2833947ef1ff04328ad5c0148a8af1",
+    "full": "fw/0.6.1/bloop/full.bin",
+    "fullSha256": "8acf6ab1777b9d0c0e6de5c0fe8aee26a1e6db65d0c4bf25f0d1a0ecbb54e2d3"
    },
    "chili": {
     "name": "Chili",
     "set": "UniPops",
     "thumb": "thumbs/chili.png",
-    "app": "fw/0.6.0/chili/app.bin",
-    "appSha256": "766a422b173aa83c5d9a5fa8702565c2c98c163c58ccdd9eb4c2c3ddad5647bb",
-    "full": "fw/0.6.0/chili/full.bin",
-    "fullSha256": "5364697c4d66101d40e8bfb2232ca20ff6efee374bc61682b06cc490171bf799"
+    "app": "fw/0.6.1/chili/app.bin",
+    "appSha256": "7d8ead1977f3b6e9b8d12de7ff333f0cb48679d061f9713d659186f62ffdf817",
+    "full": "fw/0.6.1/chili/full.bin",
+    "fullSha256": "8774475db87fafff81a362ef9baf6ab42e62c0bfa150e98f1738272d0afd8f76"
    },
    "giggle": {
     "name": "Giggle",
     "set": "UniPops",
     "thumb": "thumbs/giggle.png",
-    "app": "fw/0.6.0/giggle/app.bin",
-    "appSha256": "dc70a723cedec49b90c3c8ad0beee9bff4173eac1392cc41c64081d2f1d9efa8",
-    "full": "fw/0.6.0/giggle/full.bin",
-    "fullSha256": "c1e1d6d2c32fca4a423724204103f546f8a7337501805dc07c2da48bba829c79"
+    "app": "fw/0.6.1/giggle/app.bin",
+    "appSha256": "de5aca738ae7001bbdccdca1d492b609ab89f7ff0e7ce0b8943f24efd8e8bd28",
+    "full": "fw/0.6.1/giggle/full.bin",
+    "fullSha256": "af89b4998b9f96bcbfdfad6e42d6d7cc09fcb67de45f5d430476420acacf5ed8"
    },
    "smooch": {
     "name": "Smooch",
     "set": "UniPops",
     "thumb": "thumbs/smooch.png",
-    "app": "fw/0.6.0/smooch/app.bin",
-    "appSha256": "7b248e60165fd996cf2f3ba5ad371290a9df3ec9ab8a218acb699d42c8d92848",
-    "full": "fw/0.6.0/smooch/full.bin",
-    "fullSha256": "91c4812e66a0e21cbcc93e4fb9518a04c17672c55b3754b9094215e32f85a0a5"
+    "app": "fw/0.6.1/smooch/app.bin",
+    "appSha256": "d78982b5f56a9ef7d7644eff2c0fa941f68bf01c66a6b4208a4d8a138ed1ea21",
+    "full": "fw/0.6.1/smooch/full.bin",
+    "fullSha256": "d3db18b1d34678b25ee65e02413848fc27a65e2ac4427300f9d44144fb27b8b1"
    },
    "razz": {
     "name": "Razz",
     "set": "UniPops",
     "thumb": "thumbs/razz.png",
-    "app": "fw/0.6.0/razz/app.bin",
-    "appSha256": "d66c99b373e221b90306a1168dfe25f30d9965d5e5c485cb2ec86acb550c6dee",
-    "full": "fw/0.6.0/razz/full.bin",
-    "fullSha256": "cc4a7708ea31ac011ca77fa608ad4316dbf772c9b001c6be83ebf36dfaf05559"
+    "app": "fw/0.6.1/razz/app.bin",
+    "appSha256": "d09a529de83b7053578d4b5990ed852c0842669a6ca1f1ac9000bc54aabbaf4b",
+    "full": "fw/0.6.1/razz/full.bin",
+    "fullSha256": "c3d44f3d5ff63f33cc1c981e450f29ebeb31db6ee9d8b1234c5af05d7f0a6c35"
    },
    "pling": {
     "name": "Pling",
     "set": "Monsterlings",
     "thumb": "thumbs/pling.png",
-    "app": "fw/0.6.0/pling/app.bin",
-    "appSha256": "e5edb93a038b4554c0b12409884182585897ba8ee540d544285ba02bada6b35f",
-    "full": "fw/0.6.0/pling/full.bin",
-    "fullSha256": "a4a73d8ea724f79e19d61fe6c423584d3e900ac1bc0a564f3917e9d7d3e6dea5"
+    "app": "fw/0.6.1/pling/app.bin",
+    "appSha256": "87d0d8a67e72e7f7dcf8b0cfd05a33248c1e833de8080ea64293dbf43ddcfe2d",
+    "full": "fw/0.6.1/pling/full.bin",
+    "fullSha256": "1b0981642fdb9d53d29c2d824e631136bf3a38bd0704027477a4741c09e4b515"
    },
    "fang": {
     "name": "Fang",
     "set": "Monsterlings",
     "thumb": "thumbs/fang.png",
-    "app": "fw/0.6.0/fang/app.bin",
-    "appSha256": "95f8c7d59b382b328dec0dfa44aa0e8901814304ae7cd5b07059ef2493ced645",
-    "full": "fw/0.6.0/fang/full.bin",
-    "fullSha256": "cbb09ddf15ffab82c2809c5d149ba976704ac2579f8bf9e3924790e33dd67c23"
+    "app": "fw/0.6.1/fang/app.bin",
+    "appSha256": "26619289926c85cf70579f789857f93479b659c61984852ab603901a657c3417",
+    "full": "fw/0.6.1/fang/full.bin",
+    "fullSha256": "0cac248966eab0a5a262864b47847c114231e18a5a12efc43f74536f714fe537"
    },
    "gem": {
     "name": "Gem",
     "set": "Monsterlings",
     "thumb": "thumbs/gem.png",
-    "app": "fw/0.6.0/gem/app.bin",
-    "appSha256": "e0006bc88e09d74896bbaa334f4b5a3aae7edcb1d544fb3e7e7f7134f9f3e9e8",
-    "full": "fw/0.6.0/gem/full.bin",
-    "fullSha256": "54f106c18b36a11d8e61a9c19dbe068b215cc213adb3e43b9c073d68a58c2a8a"
+    "app": "fw/0.6.1/gem/app.bin",
+    "appSha256": "2a6c857135c68548a2566e00d5aa236ac1fa0765f3d549fa6f6ef613e52d9f41",
+    "full": "fw/0.6.1/gem/full.bin",
+    "fullSha256": "7c4f293763335246d17837d1f536b9fbc2ec1731b980ad418acf2860205e8067"
    },
    "jab": {
     "name": "Jab",
     "set": "Monsterlings",
     "thumb": "thumbs/jab.png",
-    "app": "fw/0.6.0/jab/app.bin",
-    "appSha256": "0c7e2af4c27b7c388d84062caadb37e33d8a2aaa0e22b3e6ff39c5b2f3df64c9",
-    "full": "fw/0.6.0/jab/full.bin",
-    "fullSha256": "bab2e9a404de6b84c9a4b525eee9bed0cda61dbd6de5962185cf6a930c05d55c"
+    "app": "fw/0.6.1/jab/app.bin",
+    "appSha256": "cdb4bc7fb8e092df38d3c77f7c5acced743d0e2247b7a18f72e9442d884a464f",
+    "full": "fw/0.6.1/jab/full.bin",
+    "fullSha256": "0b7a75640fa353c5889b7b2ced1a269964f78d3a713146f6f95e9ebfb58805d4"
    },
    "lumo": {
     "name": "Lumo",
     "set": "Monsterlings",
     "thumb": "thumbs/lumo.png",
-    "app": "fw/0.6.0/lumo/app.bin",
-    "appSha256": "325555930a5c145f56335af78668102102fa6e73606897446e7264a1216e7d7a",
-    "full": "fw/0.6.0/lumo/full.bin",
-    "fullSha256": "a739167a17b1671076e601a9ebe7a69a761c445c8e74a3e61f913cb0e694ce0b"
+    "app": "fw/0.6.1/lumo/app.bin",
+    "appSha256": "acf949fea6aaee84672a0b4027020143cd14d63201a9f90c2faff80ef755736e",
+    "full": "fw/0.6.1/lumo/full.bin",
+    "fullSha256": "b38eea622ef9de111cfe0817a30d2930d5a854399418a7f6ce83791d65eae545"
    },
    "mimi": {
     "name": "Mimi",
     "set": "Lovelings",
     "thumb": "thumbs/mimi.png",
-    "app": "fw/0.6.0/mimi/app.bin",
-    "appSha256": "79bfbebcc1e0927efa978fa7acc553808638f853710f9c59dbddb86fb6752d90",
-    "full": "fw/0.6.0/mimi/full.bin",
-    "fullSha256": "0fb36e123b96991c51d1bd0ba1afb777e5b622d6936afae2472983c8b8b12b87"
+    "app": "fw/0.6.1/mimi/app.bin",
+    "appSha256": "5936eb8822aff79f15e8d47f72b222e501170f286410c394fe88d62721c018d9",
+    "full": "fw/0.6.1/mimi/full.bin",
+    "fullSha256": "6f3805ea141e8d98154b9e32a96844f74e0076fd9307f97bf3f6d77aaf43077f"
    },
    "jay": {
     "name": "Jay",
     "set": "Lovelings",
     "thumb": "thumbs/jay.png",
-    "app": "fw/0.6.0/jay/app.bin",
-    "appSha256": "1ef4e04f8b551c9ce9d280899e0b9572fcea6b21f09ebb7ae70b888374feb2ed",
-    "full": "fw/0.6.0/jay/full.bin",
-    "fullSha256": "6db0905657ca93dbccdbae534511bd6f0daea2a81ceb27603b8beb1e532a7a3c"
+    "app": "fw/0.6.1/jay/app.bin",
+    "appSha256": "381a2d374c04ebb03e0a8f2f16139b0f4ee92cdd4b575e80c7fa7cc021175ebf",
+    "full": "fw/0.6.1/jay/full.bin",
+    "fullSha256": "44f2e1497514befa1ceb73271180e122254e9f49d6b6cd6613f0126797abea28"
    },
    "blu": {
     "name": "Blu",
     "set": "Lovelings",
     "thumb": "thumbs/blu.png",
-    "app": "fw/0.6.0/blu/app.bin",
-    "appSha256": "61681a5a2913b58bd99b75b6333477224ebb88af16f9883814bf2b45251f7e7f",
-    "full": "fw/0.6.0/blu/full.bin",
-    "fullSha256": "150d74558c8b365e8e92955341324a7f17fcd7c5caba5fde513e70af8161e0d3"
+    "app": "fw/0.6.1/blu/app.bin",
+    "appSha256": "f6aeb789a8c2233f254aa04d164eb93ddc604c33fac4c260c86e779fbdbb5f43",
+    "full": "fw/0.6.1/blu/full.bin",
+    "fullSha256": "ca2111b1296e8bce88455d20da8bd8e42c3a0332fe227c19e292ac5def36c8b6"
    },
    "bun": {
     "name": "Bun",
     "set": "Joylings",
     "thumb": "thumbs/bun.png",
-    "app": "fw/0.6.0/bun/app.bin",
-    "appSha256": "93c87740193fae94bb73874204f9ff6af8c4c49b6d67d2b0266dc1dbe756bd5c",
-    "full": "fw/0.6.0/bun/full.bin",
-    "fullSha256": "eb471759b37068dbed71f9196214d2f0aca177ce369edc0ae5f79c781458cb0c"
+    "app": "fw/0.6.1/bun/app.bin",
+    "appSha256": "217f742225ecd8f92de20c1820ddcefcc9f61a955f4ae9596ec430470eb16f45",
+    "full": "fw/0.6.1/bun/full.bin",
+    "fullSha256": "ab5f5de1bb17246cd4152a3ba9e3b210c6593b8b3867ff8ce950740b1f0606ec"
    },
    "dax": {
     "name": "Dax",
     "set": "Joylings",
     "thumb": "thumbs/dax.png",
-    "app": "fw/0.6.0/dax/app.bin",
-    "appSha256": "a3b4c97f477f3ac3a21648c68bb8b1bab47aa2af237883e229edf60bba33569c",
-    "full": "fw/0.6.0/dax/full.bin",
-    "fullSha256": "acff9bf013cd41514a60adac56b511c5e6080fed3dcf4e49d306aa80ab267ac6"
+    "app": "fw/0.6.1/dax/app.bin",
+    "appSha256": "f51efdf9f232597e0013f7adb75203ec3a758b26019c9664e652bdc0c5b7f9d6",
+    "full": "fw/0.6.1/dax/full.bin",
+    "fullSha256": "42ace7021ef69474d85ca9b19ae40de606e2108c176bc74fc826bb448a44d4af"
    },
    "flap": {
     "name": "Flap",
     "set": "Joylings",
     "thumb": "thumbs/flap.png",
-    "app": "fw/0.6.0/flap/app.bin",
-    "appSha256": "43dce3cd241969893725730127c5fc44769c1dded030c756db8965b0ad83aa07",
-    "full": "fw/0.6.0/flap/full.bin",
-    "fullSha256": "9ff46b1eacc88cdc19217a088bce27ec3333b76122abd12b7e212d4bbb6e7aff"
+    "app": "fw/0.6.1/flap/app.bin",
+    "appSha256": "3bada7912f54d9b2db1b4bfe128f34dc86ee32e8578a322e25a302bfba112970",
+    "full": "fw/0.6.1/flap/full.bin",
+    "fullSha256": "ebad1a8d7c67f70eb4e093e7cc2347e46934ff4b6d0cb9359a36a89b41caf77d"
    },
    "slurp": {
     "name": "Slurp",
     "set": "Joylings",
     "thumb": "thumbs/slurp.png",
-    "app": "fw/0.6.0/slurp/app.bin",
-    "appSha256": "7be230c1be54e5aefd60e5b1e4b1a3969fda94260790623746b2c32dff988bf8",
-    "full": "fw/0.6.0/slurp/full.bin",
-    "fullSha256": "c9e8334958463dfcb110531c7a339a4763b052d88205cc35bcb63dd092f52d69"
+    "app": "fw/0.6.1/slurp/app.bin",
+    "appSha256": "9411da8b5cf1d22fd79c90ee3681460690d5aeacfd4f02d0c8e1a8d0242a8b3e",
+    "full": "fw/0.6.1/slurp/full.bin",
+    "fullSha256": "f7105795907c8586ae15547c09891dfd2296ab02aa5d0b80271cc71ca794b239"
    },
    "twirl": {
     "name": "Twirl",
     "set": "Joylings",
     "thumb": "thumbs/twirl.png",
-    "app": "fw/0.6.0/twirl/app.bin",
-    "appSha256": "27e9c265a3d290bcf6fb7a97a3e08c4b76b3095bd9fc85c695bbfd1a457fed9b",
-    "full": "fw/0.6.0/twirl/full.bin",
-    "fullSha256": "97d3941543612bb7f6e20e4beaa5ee65ea850b2fd91a2b60d0e1ba0393f0cfdb"
+    "app": "fw/0.6.1/twirl/app.bin",
+    "appSha256": "c8876a315f99caa772acce9152d02f9e135453fcd78297e659d9f2bc456e4b3c",
+    "full": "fw/0.6.1/twirl/full.bin",
+    "fullSha256": "8a867ba45e51c603e7152e6f8019e0452ddb86cdc4ba50d50a1625fcd525dda7"
    },
    "wiggle": {
     "name": "Wiggle",
     "set": "Joylings",
     "thumb": "thumbs/wiggle.png",
-    "app": "fw/0.6.0/wiggle/app.bin",
-    "appSha256": "56f62c512966e5eb7906fb6a4f2e2dcaead74871a186528d71279ebf6455e24c",
-    "full": "fw/0.6.0/wiggle/full.bin",
-    "fullSha256": "da31b2fc92ab48a943f8b615a1183115c823a7f3f5af52ac93cf9da19564bf8e"
+    "app": "fw/0.6.1/wiggle/app.bin",
+    "appSha256": "98892ee4e64d4c24d31f0076e0ce42f1c78c0ce761ccacb8415ec046143bd77b",
+    "full": "fw/0.6.1/wiggle/full.bin",
+    "fullSha256": "6c7445ae1ce073c407c63ebf940082b6adf352c19d2d3187f614dae3e31824bb"
    },
    "moo": {
     "name": "Moo",
     "set": "Joylings",
     "thumb": "thumbs/moo.png",
-    "app": "fw/0.6.0/moo/app.bin",
-    "appSha256": "282636fe34217fc6fe8171ad899c225599f5c8a6ede68c28fcdf6e482241ee75",
-    "full": "fw/0.6.0/moo/full.bin",
-    "fullSha256": "e5feb2cfdc641adb9d07ec973523ad08c051c718911ec80e4b0130c07c2f3c18"
+    "app": "fw/0.6.1/moo/app.bin",
+    "appSha256": "b7193ca07411ddf7d2b9e8278cd68e808fb868cd6b5dd0a85d7159b8fc841208",
+    "full": "fw/0.6.1/moo/full.bin",
+    "fullSha256": "e59c2f6e1d4cf1d9d91a8ad58425817cc1813d1cefd608c6ec58bfde4c4dd693"
    }
   }
  },
