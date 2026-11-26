@@ -1,5 +1,63 @@
 [
  {
+  "version": "0.5.34",
+  "date": "2026-11-26",
+  "notes": {
+   "en": "The name of the toon now shows just under the eye, so you always know which toon you are playing with. A sad wah-wah sound plays when a toon turns sick (and green). Not yet tested on a real board."
+  },
+  "variants": {
+   "all": {
+    "name": "All toons",
+    "app": "fw/0.5.34/all/app.bin",
+    "appSha256": "9173cf323f9a716b2e2b2c7ac5214057fea8c47f6b11e174127856f2b44e8a4d",
+    "full": "fw/0.5.34/all/full.bin",
+    "fullSha256": "28be77e8a8aaed4d20729156b1939b36c5f66844770cc03e9f0d89cb8693912b"
+   },
+   "peeppops": {
+    "name": "PeepPops (Fizz, Uno, Zig)",
+    "app": "fw/0.5.34/peeppops/app.bin",
+    "appSha256": "44c157a7ab293928c5f53203fa49a7004153a5a019d684525d413c72dbf6f6a9",
+    "full": "fw/0.5.34/peeppops/full.bin",
+    "fullSha256": "60fda48262b90517a631aaaf1d7fa06cbaec27e183293518ca3f0df8c4553145"
+   },
+   "poopies": {
+    "name": "Poopies (Buck, Burp, Snicker, Chomp, Drool)",
+    "app": "fw/0.5.34/poopies/app.bin",
+    "appSha256": "74938e6bd394c6983bf11cef0117d7e5e3135635c2b7bae9a2ff34630c4f90f1",
+    "full": "fw/0.5.34/poopies/full.bin",
+    "fullSha256": "8bf740f20597657755273dd711ba712a30b6a465c6026d0a69f648103b195ee5"
+   },
+   "unipops": {
+    "name": "UniPops (Heli, Bloop, Chili, Giggle, Smooch, Razz)",
+    "app": "fw/0.5.34/unipops/app.bin",
+    "appSha256": "bea74f4c8944d0d3619ae266e7dc69ab2391ef7166dbfe0cc0eac0cc8e839409",
+    "full": "fw/0.5.34/unipops/full.bin",
+    "fullSha256": "9d51a4e3e9777b26096b7b367ee0a477ff019ba99f901fa875835ecbe4e2501f"
+   },
+   "monsterlings": {
+    "name": "Monsterlings (Pling, Fang, Gem, Jab, Lumo)",
+    "app": "fw/0.5.34/monsterlings/app.bin",
+    "appSha256": "4337f629968ceebf0407869123eacf681327793e8cbcdb6f5a88af4c61288530",
+    "full": "fw/0.5.34/monsterlings/full.bin",
+    "fullSha256": "c1dd352a3bd353da737d457e48f287fb99716ac2eb418f1e6869a6b60061301a"
+   },
+   "lovelings": {
+    "name": "Lovelings (Mimi)",
+    "app": "fw/0.5.34/lovelings/app.bin",
+    "appSha256": "859dbe80a631e03249835110fa925cc869012fe847ae82b37531734f551ee734",
+    "full": "fw/0.5.34/lovelings/full.bin",
+    "fullSha256": "a4e56c98db48b334c784f38d8f2847d597e4283251c4cd26380dd614f7e74320"
+   },
+   "joylings": {
+    "name": "Joylings (Moo, Bun, Dax, Flap, Slurp, Twirl, Wiggle)",
+    "app": "fw/0.5.34/joylings/app.bin",
+    "appSha256": "ec08085f9025612119c15a5218d77f76bdb095530a6a6c98da6aa0c00060d3b4",
+    "full": "fw/0.5.34/joylings/full.bin",
+    "fullSha256": "90060339307b26c9e08e85e4a377f611c3ed84ecb66e3b1acd987adafc66e8f0"
+   }
+  }
+ },
+ {
   "version": "0.5.33",
   "date": "2026-11-26",
   "notes": {
