@@ -1,5 +1,63 @@
 [
  {
+  "version": "0.5.37",
+  "date": "2026-11-26",
+  "notes": {
+   "en": "In the toon menu (the little eyes), a toon that needs you now shows a badge on its eye: a green cross when it is sick, a red exclamation mark when it wants something (food, play, sleep or a clean-up). Not yet tested on a real board."
+  },
+  "variants": {
+   "all": {
+    "name": "All toons",
+    "app": "fw/0.5.37/all/app.bin",
+    "appSha256": "328e7ee0dd57a2f938cd8e2a8f3b1aa022891ac71f6fb5df98853d4d17ed0001",
+    "full": "fw/0.5.37/all/full.bin",
+    "fullSha256": "aa44a638c5b50bdbe29e6298a64f841387bc08abe79423da2892f847ff8b3cce"
+   },
+   "peeppops": {
+    "name": "PeepPops (Fizz, Uno, Zig)",
+    "app": "fw/0.5.37/peeppops/app.bin",
+    "appSha256": "4eaedb92055920dd27792f1a76c3f972924f5165679a491571b7cc26872a0578",
+    "full": "fw/0.5.37/peeppops/full.bin",
+    "fullSha256": "a9d80e212a38ca28d3da50fec3e17d214a7a2f0aa4ea63d2586baac15a1e757c"
+   },
+   "poopies": {
+    "name": "Poopies (Buck, Burp, Snicker, Chomp, Drool)",
+    "app": "fw/0.5.37/poopies/app.bin",
+    "appSha256": "95df58a9db668b206e41a46356ac65176f8b70bac6b2c228a92165635db69e31",
+    "full": "fw/0.5.37/poopies/full.bin",
+    "fullSha256": "560862f1700363495b0b65b8bae158235cf1c61c35f106bb72a93dc387b499d6"
+   },
+   "unipops": {
+    "name": "UniPops (Heli, Bloop, Chili, Giggle, Smooch, Razz)",
+    "app": "fw/0.5.37/unipops/app.bin",
+    "appSha256": "bc00dff1b97d9a3545520ffcd43e1b1c056ef27383e84adc5b7975cc75042771",
+    "full": "fw/0.5.37/unipops/full.bin",
+    "fullSha256": "cb6bee4e77040da0a5d9679e541a81db7d449656e163c651db8834ead7acbbfb"
+   },
+   "monsterlings": {
+    "name": "Monsterlings (Pling, Fang, Gem, Jab, Lumo)",
+    "app": "fw/0.5.37/monsterlings/app.bin",
+    "appSha256": "6c8d522bb1fe2c43626667266d49e035da21ffacec1bf18bb3d1826c88f57196",
+    "full": "fw/0.5.37/monsterlings/full.bin",
+    "fullSha256": "84fae5dbebec0994ccdd8930982d4cede3bfa1e7f45e7b78822741432acd192e"
+   },
+   "lovelings": {
+    "name": "Lovelings (Mimi)",
+    "app": "fw/0.5.37/lovelings/app.bin",
+    "appSha256": "4c9a39134d50cf0430842cc8e04408acef24b578ea9be27fc9b1cb9012bf193f",
+    "full": "fw/0.5.37/lovelings/full.bin",
+    "fullSha256": "35008c2c6bac85b9b144ad55dc06e9fc9a4ab0180631b8305f711380e1ff39ee"
+   },
+   "joylings": {
+    "name": "Joylings (Moo, Bun, Dax, Flap, Slurp, Twirl, Wiggle)",
+    "app": "fw/0.5.37/joylings/app.bin",
+    "appSha256": "a3064e23a1be7ce22906d32d465a60fb5523c90b6207062d3525f2c570c74fce",
+    "full": "fw/0.5.37/joylings/full.bin",
+    "fullSha256": "ddffd0635966254ad39e8c6563665583ddd25b5e5191dc0161f90d9008d23f96"
+   }
+  }
+ },
+ {
   "version": "0.5.36",
   "date": "2026-11-26",
   "notes": {

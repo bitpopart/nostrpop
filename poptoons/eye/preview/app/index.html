@@ -2391,6 +2391,13 @@
         var rx = 20*EF*it.es, ry = 23*EF*it.es*it.bl, cx = it.x + it.lx*it.es, cy = it.y + it.ly*it.es;
         oval(cx, cy, rx, ry, '#000', ea);
         if (it.bl > 0.5) oval(cx - 0.62*rx, cy - 0.16*ry, 0.42*rx, 0.46*ry, '#fff', ea);
+        var cr = CARE[it.i], nd = NEED[it.i], skB = cr.sick, atB = cr.poop > 0 || nd[0] < 0.3 || nd[1] < 0.3 || nd[2] < 0.3;
+        if ((skB || atB) && ea > 0.6 && it.es > 0.6){            // this toon needs you: a badge on its eye (green cross = sick, red ! = wants something)
+          var pu = 1 + 0.12*Math.sin(now*6), bx = cx + rx*0.8, by = cy - ry*0.95, br = 10.5*pu;
+          oval(bx, by, br + 2.5, br + 2.5, '#111', 1);
+          if (skB){ oval(bx, by, br, br, '#78c846', 1); ctx.fillStyle = '#fff'; ctx.fillRect(bx - 6, by - 1.8, 12, 3.6); ctx.fillRect(bx - 1.8, by - 6, 3.6, 12); }
+          else { oval(bx, by, br, br, '#e4182c', 1); ctx.fillStyle = '#fff'; ctx.fillRect(bx - 1.7, by - 6.5, 3.4, 8.5); oval(bx, by + 5.2, 2, 2, '#fff', 1); }
+        }
       }
       var im = IMGS[d.key + '_body'];
       if (ta > 0.02 && im.complete){
