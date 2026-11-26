@@ -1,5 +1,63 @@
 [
  {
+  "version": "0.5.36",
+  "date": "2026-11-26",
+  "notes": {
+   "en": "Three new ways to play. Tickle: rub your finger over the toon and it giggles and wiggles (too much and it gets dizzy). Peek-a-boo: now and then a tap makes the toon hide, tap again to make it pop out with a boo. Catch game: Play on the needs screen starts a 20 second game, tilt the device (or drag your finger) to catch the falling hearts and coins. Not yet tested on a real board. If the toon runs the wrong way when you tilt, tell me and I will flip it."
+  },
+  "variants": {
+   "all": {
+    "name": "All toons",
+    "app": "fw/0.5.36/all/app.bin",
+    "appSha256": "baa0b5dc53e4437f51cbb889667d0b960e3dafb924f5d42d2df9d78122ba04ed",
+    "full": "fw/0.5.36/all/full.bin",
+    "fullSha256": "a490086692b03724b4663946a6d171bd2541837a12a67f1f98f1420c0b013671"
+   },
+   "peeppops": {
+    "name": "PeepPops (Fizz, Uno, Zig)",
+    "app": "fw/0.5.36/peeppops/app.bin",
+    "appSha256": "3efc4963824b19105360dddde0c5a89b97a6ce75a0dfe4c4d7ccb9436522e5b0",
+    "full": "fw/0.5.36/peeppops/full.bin",
+    "fullSha256": "c934d83411a25d3cf1a96dec0e3ec60a13770fb1c6a342c5bb58e3ae5f41ce58"
+   },
+   "poopies": {
+    "name": "Poopies (Buck, Burp, Snicker, Chomp, Drool)",
+    "app": "fw/0.5.36/poopies/app.bin",
+    "appSha256": "ac65dddd2e51b659b80eb7b2789d8f6dc6ccc4fba0e71b746ecb6615ab3baca7",
+    "full": "fw/0.5.36/poopies/full.bin",
+    "fullSha256": "ea8dd46b9eabadff4b33ab10756bd94dd009f71ed8d15aff3d756b810d3e5755"
+   },
+   "unipops": {
+    "name": "UniPops (Heli, Bloop, Chili, Giggle, Smooch, Razz)",
+    "app": "fw/0.5.36/unipops/app.bin",
+    "appSha256": "6c7656312d7c8225a05b044818de7dfbf67bc41a616f497a934b8a44ce148f0c",
+    "full": "fw/0.5.36/unipops/full.bin",
+    "fullSha256": "00469d52c1878b45c5958bbd51919f0e71c7228b5a728d605de079553dd1d7a1"
+   },
+   "monsterlings": {
+    "name": "Monsterlings (Pling, Fang, Gem, Jab, Lumo)",
+    "app": "fw/0.5.36/monsterlings/app.bin",
+    "appSha256": "8556f8b8fc19db315fe7ad86c2215740bef506062a84dfde49c3b2a8dbe79140",
+    "full": "fw/0.5.36/monsterlings/full.bin",
+    "fullSha256": "da9bef1de15cb366b68c9c130fd13e3e9346fb55c7c8936c2eb7f2ccb4bdf6e5"
+   },
+   "lovelings": {
+    "name": "Lovelings (Mimi)",
+    "app": "fw/0.5.36/lovelings/app.bin",
+    "appSha256": "0746a320b49fe588da1e968c53fb0638d9d933e0d33990eb173f32f5211bb2c4",
+    "full": "fw/0.5.36/lovelings/full.bin",
+    "fullSha256": "fc9113e59d656c4711885bb05e5ec88379535cef41c31832d132a51dcb4e46b4"
+   },
+   "joylings": {
+    "name": "Joylings (Moo, Bun, Dax, Flap, Slurp, Twirl, Wiggle)",
+    "app": "fw/0.5.36/joylings/app.bin",
+    "appSha256": "184721a72cded8986a1d95a87524f2325d6e81e3f5325d91b03edc3c9580137b",
+    "full": "fw/0.5.36/joylings/full.bin",
+    "fullSha256": "3ec3365192e12a0ec06ac701262fb81443d0b5bc602dbcd5a237c3941adb3801"
+   }
+  }
+ },
+ {
   "version": "0.5.35",
   "date": "2026-11-26",
   "notes": {

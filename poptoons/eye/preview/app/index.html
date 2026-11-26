@@ -345,6 +345,10 @@
       land: function(){ if (SETS.sound && !isQuiet()) peep(420, 140, 0.09, 0.42); },
       shake: function(){ if (SETS.sound && !isQuiet()) for (var k = 0; k < 8; k++) (function(k){ setTimeout(function(){ peep(k % 2 ? 380 : 560, k % 2 ? 300 : 440, 0.04, 0.26); }, k*45); })(k); },
       whoosh: function(){ if (SETS.sound && !isQuiet()) whoosh(); },
+      giggle: function(){ if (SETS.sound && !isQuiet()) for (var k = 0; k < 4; k++) (function(k){ setTimeout(function(){ peep(900 + 90*k, 1500 + 90*k, 0.05, 0.28); }, k*70); })(k); },
+      boo: function(){ if (SETS.sound && !isQuiet()){ peep(300, 650, 0.07, 0.4); setTimeout(function(){ peep(800, 1900, 0.12, 0.34); }, 70); } },
+      catchUp: function(){ if (SETS.sound && !isQuiet()) peep(1100, 1750, 0.08, 0.3); },
+      chime: function(){ if (SETS.sound && !isQuiet()){ peep(500, 1000, 0.07, 0.28); setTimeout(function(){ peep(1000, 1600, 0.09, 0.28); }, 70); } },
       sick: function(){ if (SETS.sound && !isQuiet()) [[520,400,0.11,0],[440,330,0.11,0.135],[380,190,0.2,0.27]].forEach(function(n){ setTimeout(function(){ peep(n[0], n[1], n[2], 0.34); }, n[3]*1000); }); },
       toggle: function(){ on = !on; return on; },
       tap: function(){ lastTap = performance.now(); if (SETS.sound && !isQuiet()) peep(650, 1250, 0.10, 0.30); },
@@ -1730,7 +1734,7 @@
   var SICK_SECS = 240, POOP_X = 290, POOP_DX = 34, CARE_Y = 396, PILL_X = 150, HEART_Y = 436;
   var CARE = TOONS.map(function(){ return {poop:0, wait:0, sickT:0, sick:false, care:0.85}; });
   function careHit(x, y){
-    if (NV.open || NV.p > 0.01 || NV.act || T.leaveAt >= 0 || T.outAt >= 0 || T.shakeAt >= 0) return 0;
+    if (PL.pk || PL.gm || NV.open || NV.p > 0.01 || NV.act || T.leaveAt >= 0 || T.outAt >= 0 || T.shakeAt >= 0) return 0;
     var c = CARE[T.idx], dx = x - PILL_X, dy = y - CARE_Y;
     if (c.sick && dx*dx + dy*dy < 42*42) return 2;
     if (c.poop > 0 && x > POOP_X - 30 && x < POOP_X + POOP_DX*2 + 30 && Math.abs(y - CARE_Y) < 34) return 1;
@@ -1803,9 +1807,65 @@
   var NV = {open:false, p:0, act:0, actAt:0, dur:1, gain:false, last:0, disp:[0.8, 0.8, 0.8], dotsDown:false, careDown:false, minN:1, minK:0, mood5:0, advK:0, needMood:0, food:null};
   var NV_WORD = ['HAPPY', 'HUNGRY', 'BORED', 'SLEEPY', 'GRUMPY'], NV_COL = ['#14a05a', '#eb641e', '#4664eb', '#825ad2', '#e4182c'];
   function dotsHit(x, y){ return Math.abs(x - DOT_X) < 30 && Math.abs(y - DOT_Y) < 46; }
-  function nvReset(){ NV.open = false; NV.act = 0; }
-  function nvToggle(now){ if (T.outAt >= 0 || T.leaveAt >= 0 || T.shakeAt >= 0 || now - T.enterAt < 0.4 || NV.act) return; NV.open = !NV.open; sad.on = false; }
+  // ---- play: tickle (rub the toon), peek-a-boo (tap sometimes: it hides, tap again to make it pop out) and the catch game (Play on the needs screen)
+  var PL = {pk:0, pkAt:0, gm:0, gmAt:0, gmX:233, gmScore:0, gmSpawn:0, gmBump:-10, items:[{on:false},{on:false},{on:false}], tk:0, rubPath:0, rubOn:false, rubLx:0, rubLy:0, rubT:0, rubTotal:0, dizzy:-1, tkNext:0, lastHeart:-10, last:0, tilt:0, keyL:false, keyR:false}, GAME_T = 20;
+  function plReset(){ PL.pk = 0; PL.gm = 0; PL.tk = 0; PL.rubOn = false; PL.rubPath = 0; PL.rubTotal = 0; PL.dizzy = -1; PL.items.forEach(function(i){ i.on = false; }); }
+  function plToonHit(x, y){ var d = TOONS[T.idx], cx = AX + d.ax, fy = AY + d.ay; return Math.abs(x - cx) < d.w*0.5 && y < fy && y > fy - d.h; }
+  function plStartPeek(now){ PL.pk = 1; PL.pkAt = now; SND.whoosh(); T.bub = null; T.sayAt = -1; T.lastPlay = now; TR.at = -1; T.hopAt = -1; }
+  function plPop(now){ PL.pk = 3; PL.pkAt = now; SND.boo(); TR.confAt = now; NEED[T.idx][1] = clamp(NEED[T.idx][1] + 0.2, 0, 1); T.lastPlay = now; T.bub = 'heart'; T.bubAt = now + 0.25; T.bubDur = 1.5; }
+  function plStartGame(now){ NV.open = false; sad.on = false; PL.gm = 1; PL.gmAt = now; PL.gmScore = 0; PL.gmX = AX + TOONS[T.idx].ax; PL.gmSpawn = now + 0.8; PL.gmBump = -10; PL.items.forEach(function(i){ i.on = false; }); T.lastPlay = now; T.bub = null; T.sayAt = -1; TR.at = -1; T.hopAt = -1; SND.whoosh(); }
+  window.addEventListener('keydown', function(e){ if (e.key === 'ArrowLeft') PL.keyL = true; if (e.key === 'ArrowRight') PL.keyR = true; });
+  window.addEventListener('keyup', function(e){ if (e.key === 'ArrowLeft') PL.keyL = false; if (e.key === 'ArrowRight') PL.keyR = false; });
+  function plStep(now, te, P){
+    var pdt = clamp(now - PL.last, 0, 0.1); PL.last = now; var d = TOONS[T.idx];
+    if (te < T.enterDur || T.outAt >= 0 || T.shakeAt >= 0 || T.leaveAt >= 0){ PL.pk = 0; PL.gm = 0; PL.tk = 0; }
+    var down = sad.down && pointer.down && !sad.eyeDown && !NV.dotsDown && !NV.careDown;
+    // tickle
+    var can = !NV.open && !NV.act && !PL.gm && !PL.pk && T.outAt < 0 && T.leaveAt < 0 && T.shakeAt < 0 && te > T.enterDur && TR.at < 0 && T.hopAt < 0 && now >= PL.dizzy;
+    if (down && can && plToonHit(sad.fx, sad.fy) && sad.fy > 90){ if (PL.rubOn) PL.rubPath += Math.hypot(sad.fx - PL.rubLx, sad.fy - PL.rubLy); PL.rubOn = true; PL.rubLx = sad.fx; PL.rubLy = sad.fy; } else PL.rubOn = false;
+    PL.rubPath = clamp(PL.rubPath - pdt*60, 0, 160);
+    PL.tk += (((PL.rubOn && PL.rubPath > 70) ? 1 : 0) - PL.tk)*(1 - Math.exp(-pdt*8));
+    if (PL.tk > 0.5){
+      PL.rubTotal += pdt; NEED[T.idx][1] = clamp(NEED[T.idx][1] + pdt*0.05, 0, 1); T.lastPlay = now;
+      if (now >= PL.tkNext){ PL.tkNext = now + 0.3; SND.giggle(); }
+      if (!T.bub && now - PL.lastHeart > 1.8){ PL.lastHeart = now; T.bub = 'heart'; T.bubAt = now; T.bubDur = 1.2; }
+      if (PL.rubTotal > 5){ PL.dizzy = now + 2.2; PL.rubTotal = 0; PL.tk = 0; PL.rubOn = false; PL.rubPath = 0; }
+    } else if (!PL.rubOn) PL.rubTotal = Math.max(0, PL.rubTotal - pdt*2);
+    if (PL.tk > 0.02){ var a = PL.tk; P.dx += 5*a*Math.sin(now*45); P.sy *= 1 + 0.05*a*Math.sin(now*32); P.sx *= 1 - 0.03*a*Math.sin(now*32); P.rot += 0.03*a*Math.sin(now*22); }
+    if (now < PL.dizzy){ var q = (PL.dizzy - now)/2.2; P.dx += 10*q*Math.sin(now*3.5); P.rot += 0.14*q*Math.sin(now*7); P.sx *= 1 + 0.04*q*Math.sin(now*9); }
+    // peek-a-boo
+    if (PL.pk){
+      var h = d.h, t = now - PL.pkAt; T.bub = PL.pk === 3 ? T.bub : null; T.sayAt = -1;
+      if (PL.pk === 1){ var p = clamp(t/0.4, 0, 1); P.dy += h*1.05*p*p*(3 - 2*p); if (t >= 0.4){ PL.pk = 2; PL.pkAt = now; } }
+      else if (PL.pk === 2){ var p2 = clamp((t - 0.9)/0.35, 0, 1), e2 = p2*p2*(3 - 2*p2); P.dy += h*(1.05 - 0.22*e2) + (t > 1.25 ? 4*Math.sin(t*5) : 0); if (t > 5) plPop(now); }
+      else { var p3 = clamp(t/0.5, 0, 1); P.dy += h*0.83*(1 - p3*p3) - 46*4*p3*(1 - p3); P.sy *= 1 + 0.1*Math.sin(Math.PI*p3); if (t >= 0.5){ PL.pk = 0; SND.land(); } }
+    }
+    // catch game
+    if (PL.gm){
+      var tg = now - PL.gmAt, feet = AY + d.ay, cx0 = AX + d.ax; T.bub = null; T.sayAt = -1; T.lastPlay = now; T.mood = 0;
+      var px = PL.gmX, tilt = (PL.keyR ? 0.7 : 0) - (PL.keyL ? 0.7 : 0);
+      if (down) PL.gmX += (sad.fx - PL.gmX)*(1 - Math.exp(-pdt*14)); else PL.gmX += tilt*460*pdt;
+      PL.gmX = clamp(PL.gmX, 80, 386);
+      P.rot += clamp((PL.gmX - px)/(pdt > 0.001 ? pdt : 0.016)/2500, -0.18, 0.18);
+      P.dx += PL.gmX - cx0;
+      if (tg < GAME_T - 1.2 && now >= PL.gmSpawn){
+        for (var i = 0; i < 3; i++) if (!PL.items[i].on){ PL.items[i] = {on:true, x:70 + Math.random()*326, y:140, vy:150 + 5*tg + Math.random()*40, t:Math.random() < 0.25 ? 2 : 1}; break; }
+        PL.gmSpawn = now + 0.45 + Math.random()*0.4;
+      }
+      PL.items.forEach(function(it){
+        if (!it.on) return;
+        it.y += it.vy*pdt;
+        if (it.y > feet - d.h*0.78 && it.y < feet + 6 && Math.abs(it.x - PL.gmX) < d.w*0.4){ it.on = false; PL.gmScore += it.t; PL.gmBump = now; SND.catchUp(); NEED[T.idx][1] = clamp(NEED[T.idx][1] + 0.04*it.t, 0, 1); }
+        else if (it.y > feet + 30) it.on = false;
+      });
+      if (now - PL.gmBump < 0.18){ var b = Math.sin(Math.PI*(now - PL.gmBump)/0.18); P.sy *= 1 + 0.08*b; P.sx *= 1 - 0.05*b; }
+      if (tg >= GAME_T){ PL.gm = 0; if (PL.gmScore > 0){ TR.confAt = now; NEED[T.idx][1] = clamp(NEED[T.idx][1] + 0.05*PL.gmScore, 0, 1); T.bub = 'heart'; T.bubAt = now + 0.2; T.bubDur = 1.5; } T.lastPlay = now; SND.chime(); }
+    }
+  }
+  function nvReset(){ NV.open = false; NV.act = 0; plReset(); }
+  function nvToggle(now){ if (PL.pk || PL.gm || T.outAt >= 0 || T.leaveAt >= 0 || T.shakeAt >= 0 || now - T.enterAt < 0.4 || NV.act) return; NV.open = !NV.open; sad.on = false; }
   function nvStartAct(now, a){
+    if (a === 2){ plStartGame(now); return; }                 // Play = the catch game
     NV.act = a; NV.actAt = now; NV.dur = a === 1 ? 1.6 : (a === 2 ? 1.9 : 3.8); NV.gain = false; T.lastPlay = now;
     if (a === 2){ startTrick(now, -1); TR.dur = 1.5; }
   }
@@ -2048,9 +2108,11 @@
   }
   function toonTap(now){
     var dbl = now - T.lastTap < 0.4; T.lastTap = dbl ? -10 : now;
-    if (T.shakeAt >= 0 || T.outAt >= 0) return;
+    if (T.shakeAt >= 0 || T.outAt >= 0 || PL.gm) return;
+    if (PL.pk){ T.lastTap = -10; if (PL.pk === 2 && now - PL.pkAt > 1.25) plPop(now); return; }      // peek-a-boo: a tap makes it pop out
     if (dbl){ toonNext(now); return; }                      // double tap = new toon
     if (now - T.enterAt < T.enterDur) return;
+    if (!isQuiet() && T.mood !== 2 && T.tapN > 0 && Math.random() < 0.2){ plStartPeek(now); return; }     // now and then: peek-a-boo
     var lead = 0.12;
     if (isQuiet()){ T.hopAt = now; T.hopH = 12; T.hopDur = 0.4; lead = 0; }                       // quiet time: only a tiny hop
     else if (T.mood === 2){ T.hopAt = now; SND.whoosh(); T.hopH = 70; T.hopDur = 0.7; } else { startTrick(now); lead = TR.dur*0.85; }     // every tap is a new trick
@@ -2138,7 +2200,7 @@
         var ph2 = now % 2.4;
         if (ph2 < 0.55){ var yy = Math.sin(Math.PI*ph2/0.55); dx += 9*Math.sin(now*52)*yy; sy *= 1 - 0.05*yy; sx *= 1 + 0.04*yy; }
       }
-      if (T.mood === 0 && !isQuiet() && T.hopAt < 0 && T.shakeAt < 0 && T.outAt < 0 && now > T.nextHop){
+      if (T.mood === 0 && !PL.gm && !PL.pk && PL.tk < 0.05 && !isQuiet() && T.hopAt < 0 && T.shakeAt < 0 && T.outAt < 0 && now > T.nextHop){
         if (TR.at < 0 && Math.random() < 0.8){ var lp = T.lastPlay; startTrick(now); T.lastPlay = lp; }      // mostly a trick, sometimes a small hop
         else { T.hopAt = now; SND.whoosh(); T.hopH = 18; T.hopDur = 0.45; }
         T.nextHop = now + rnd(5, 9);
@@ -2163,6 +2225,7 @@
       var ts = now - T.shakeAt;
       if (ts < 0.7) dx = 16*Math.sin(ts*38)*(1 - ts/0.7); else { T.shakeAt = -1; T.outAt = now; }
     }
+    { var PP = {sx:sx, sy:sy, dx:dx, dy:dy, rot:rot, pv:pv}; plStep(now, te, PP); sx = PP.sx; sy = PP.sy; dx = PP.dx; dy = PP.dy; rot = PP.rot; }
     if (T.outAt >= 0){
       var to = (now - T.outAt)/0.22;
       if (to >= 1){ T.outAt = -1; T.idx = (T.idx + (TOONS.length > 1 ? 1 + Math.floor(Math.random()*(TOONS.length - 1)) : 0)) % TOONS.length; toonEnter(now, true); }
@@ -2194,6 +2257,16 @@
       ctx.drawImage(im, -d.w/2, -d.h, d.w, d.h); ctx.filter = 'none'; ctx.restore();
     }
     drawConfetti(now, d);
+    if (PL.gm){                                                // catch game: things fall from the top, the time bar and the score hearts
+      PL.items.forEach(function(it){
+        if (!it.on) return;
+        if (it.t === 1) drawHeart(it.x, it.y, 12.5, '#eb283c', 1);
+        else { oval(it.x, it.y, 17, 17, '#111', 1); oval(it.x, it.y, 14, 14, '#ff8c1a', 1); oval(it.x - 4, it.y - 5, 4, 4, '#ffd9a0', 1); }
+      });
+      var gp = clamp((now - PL.gmAt)/GAME_T, 0, 1);
+      ctx.fillStyle = '#111'; ctx.fillRect(133, 104, 200, 10); ctx.fillStyle = '#ffd422'; ctx.fillRect(136, 107, 194*(1 - gp), 4);
+      for (var gk = 0; gk < 10; gk++) drawHeart(165 + gk*15, 132, 5.2, '#eb283c', gk < PL.gmScore ? 1 : 0);
+    }
     if (NV.p < 0.05 && Math.abs(P.sx) > 0.01){                // the toon's name, just under the eye
       ctx.save(); ctx.globalAlpha = Math.min(1, Math.abs(P.sx)); ctx.font = '30px "Lilita One","Arial Rounded MT Bold",Impact,sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.lineJoin = 'round';
       ctx.lineWidth = 7; ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.strokeText(d.name, 233, 82); ctx.fillStyle = '#111'; ctx.fillText(d.name, 233, 82); ctx.restore();
@@ -2370,7 +2443,7 @@
     if (scene === 'wifi'){ drawWifi(now); if (stateEl.textContent !== 'WIFI') stateEl.textContent = 'WIFI'; requestAnimationFrame(frame); return; }
     if (scene === 'set'){ drawSet(now); if (stateEl.textContent !== 'SETTINGS') stateEl.textContent = 'SETTINGS'; requestAnimationFrame(frame); return; }
     if (scene === 'toon'){
-      if (pointer.down && !holdFired && !sad.eyeDown && !NV.dotsDown && !NV.careDown && !NV.open && now*1000 - pointer.t0 > 900 && pointer.moved < 14){ holdFired = true; backToEye(now); }
+      if (pointer.down && !holdFired && !sad.eyeDown && !NV.dotsDown && !NV.careDown && !NV.open && !PL.gm && now*1000 - pointer.t0 > 900 && pointer.moved < 14){ holdFired = true; backToEye(now); }
       else {
         drawToon(now);
         if (BAT.p >= 0 && BAT.p <= 15 && !BAT.c && (now % 2) < 1.2) drawBattery(268, 36, 0.85, BAT.p, false);     // low battery: a little red battery blinks at the top
