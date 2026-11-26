@@ -156,6 +156,7 @@
     <button id="snd">Sound: On</button>
     <button id="bat">Battery: 78%</button>
     <button id="wifib">WiFi: not set</button>
+    <button id="callb">Toon calls</button>
     <button id="shake">Shake it</button>
     <button id="ignore">Ignore it</button>
     <button id="bg">Screen: Black</button>
@@ -1406,6 +1407,23 @@
     ctx.fillStyle = '#fafafa'; ctx.beginPath(); ctx.arc(cx + 11*s, cy, 11.5*s, 0, 7); ctx.fill(); ctx.fillRect(cx, cy - 11.5*s, 11*s, 23*s);
     ctx.fillStyle = '#111'; ctx.fillRect(cx - 1.2*s, cy - 14.5*s, 2.4*s, 29*s);
   }
+  // ---- the toon wakes up by itself when it wants something: while the screen is off (rest) and the needs are low, every 10 to 30 minutes it calls for 25 seconds
+  var CALL = {on:false, end:0, peep:0, wait:0, un:0, last:0};
+  function callAttention(){ var c = CARE[T.idx], nd = NEED[T.idx]; return c.poop > 0 || c.sick || nd[0] < 0.3 || nd[1] < 0.3 || nd[2] < 0.3; }
+  function callGap(){ return (600 + Math.random()*1200)*(1 + CALL.un); }
+  function callStart(now){ scene = 'eye'; awake = false; start = now; blinkStart = -1; blinkQueue = []; autoToon = false; revealAt = -1; pairAt = -1; CALL.on = true; CALL.end = now + 25; CALL.peep = now + 2.5; }
+  function callStep(now){
+    var dt = clamp(now - CALL.last, 0, 1); CALL.last = now;
+    if (scene !== 'toon'){ var d = dt*0.25*[0.5, 1, 2][SETS.needs | 0]; for (var t = 0; t < NEED.length; t++){ var nd = NEED[t]; nd[0] -= d/EAT_SECS; nd[1] -= d/PLAY_SECS; nd[2] -= d/SLEEP_SECS; for (var k = 0; k < 3; k++) if (nd[k] < 0) nd[k] = 0; } }   // not watched: the needs run four times slower
+    if (CALL.on){
+      if (scene !== 'eye') CALL.on = false;
+      else if (now >= CALL.end){ CALL.on = false; CALL.un++; CALL.wait = callGap(); scene = 'dark'; }
+      else if (now >= CALL.peep){ CALL.peep = now + 5; blinkStart = now; if (!isQuiet()) SND.tap(); }
+    } else if (scene === 'dark'){
+      if (CALL.wait <= 0) CALL.wait = callGap();
+      CALL.wait -= dt; if (CALL.wait <= 0){ CALL.wait = callGap(); if (CALL.un < 3 && !isQuiet() && callAttention()) callStart(now); }
+    }
+  }
   function careDraw(now){
     if (NV.p > 0.01 || T.leaveAt >= 0 || T.outAt >= 0 || T.shakeAt >= 0) return;
     var c = CARE[T.idx];
@@ -1942,6 +1960,7 @@
   }
   function frameInner(ms){
     var now = ms/1000, t = now - start;
+    callStep(now);
     ctx.setTransform(2,0,0,2,0,0);
     var label;
     if (scene === 'pair'){
@@ -2043,7 +2062,8 @@
     target.x = clamp(x/ES*0.3, -20, 20); target.y = clamp(y/ES*0.3, -24, 24);
   }
   cv.addEventListener('pointerdown', function(e){
-    SND.tap();
+    SND.tap(); CALL.un = 0;
+    if (CALL.on && scene === 'eye'){ CALL.on = false; scene = 'toon'; toonEnter(performance.now()/1000, true); return; }
     if (scene === 'pair') pairSkip = true;
     if (scene === 'rest'){ scene = 'pick'; pickBegin(performance.now()/1000); return; }
     if (scene === 'dark'){ backToEye(performance.now()/1000); autoToon = true; return; }
@@ -2121,6 +2141,7 @@
   document.getElementById('replay').addEventListener('click', function(){ restart(); });
   document.getElementById('blink').addEventListener('click', function(){ if (awake) doBlink(performance.now()/1000); });
   document.getElementById('snd').addEventListener('click', function(){ SETS.sound = (SETS.sound + 1) % 4; saveSets(); });
+  document.getElementById('callb').addEventListener('click', function(){ if (scene === 'toon') return; callStart(performance.now()/1000); });
   document.getElementById('wifib').addEventListener('click', function(){ wifiI = (wifiI + 1) % WIFI_STATES.length; WIFI = WIFI_STATES[wifiI]; wifiSyncAt = -1; updWifi(); });
   document.getElementById('bat').addEventListener('click', function(){ batI = (batI + 1) % BAT_STATES.length; BAT = BAT_STATES[batI]; updBat(); });
   updSnd(); updBat();
