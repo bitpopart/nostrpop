@@ -1,5 +1,63 @@
 [
  {
+  "version": "0.5.41",
+  "date": "2026-11-26",
+  "notes": {
+   "en": "New toon: Jay joins the Lovelings, with an animation (blue bird with a heart beak and a long tongue), his speech bubble and his name label. Not yet tested on a real board."
+  },
+  "variants": {
+   "all": {
+    "name": "All toons",
+    "app": "fw/0.5.41/all/app.bin",
+    "appSha256": "e1c26267bf5371c4594a5f549232cd69f948c59e173cf6087fe7588ee1d0855c",
+    "full": "fw/0.5.41/all/full.bin",
+    "fullSha256": "b48708d658bc467dadc2a21ad13a199897a7365f4bc6267663777d861b0b5277"
+   },
+   "peeppops": {
+    "name": "PeepPops (Fizz, Uno, Zig)",
+    "app": "fw/0.5.41/peeppops/app.bin",
+    "appSha256": "35138a869ce1bf759054bb01d8b4adfec9317b927cc9526ce7d87554eeff15b9",
+    "full": "fw/0.5.41/peeppops/full.bin",
+    "fullSha256": "2d4e6b0fa431599a91e91f4d6c1f1d5184ab4694fdb8859ddf66e8d810df7b8e"
+   },
+   "poopies": {
+    "name": "Poopies (Buck, Burp, Snicker, Chomp, Drool)",
+    "app": "fw/0.5.41/poopies/app.bin",
+    "appSha256": "e2f1ffa9fe80514b2c54b24235c62d4862403ffcb5ee5dec9224898f9a719ede",
+    "full": "fw/0.5.41/poopies/full.bin",
+    "fullSha256": "b4a80da58fbef6329825fab91ed2c0b4e13c2bc3664b2dd3ab0125ce593e3a80"
+   },
+   "unipops": {
+    "name": "UniPops (Heli, Bloop, Chili, Giggle, Smooch, Razz)",
+    "app": "fw/0.5.41/unipops/app.bin",
+    "appSha256": "476ce66f3821085deda89da68d163fc37c2fdb8916361e3090e905ddfd06d448",
+    "full": "fw/0.5.41/unipops/full.bin",
+    "fullSha256": "170645b4fa61335256c1fb50203f7559e5465f3ceaba6efdc00b32a8ee77ba2b"
+   },
+   "monsterlings": {
+    "name": "Monsterlings (Pling, Fang, Gem, Jab, Lumo)",
+    "app": "fw/0.5.41/monsterlings/app.bin",
+    "appSha256": "542107d8d6153324fe98e9fb796e0aebf189b5c87f759babf841b79e17c51088",
+    "full": "fw/0.5.41/monsterlings/full.bin",
+    "fullSha256": "4e45b1736afbfa29eef74a942b54b65336475dd28c9aa0ed22f07e663d6f25d3"
+   },
+   "lovelings": {
+    "name": "Lovelings (Mimi, Jay)",
+    "app": "fw/0.5.41/lovelings/app.bin",
+    "appSha256": "31671d514d973a0a10ee4f94ec8293ae6ffbd5f6e8ba566d26a225ea587e20b6",
+    "full": "fw/0.5.41/lovelings/full.bin",
+    "fullSha256": "e158cca0f94c5fa982670087c42e58904d74bf5fe3f35280db5c0b1e3730d6a7"
+   },
+   "joylings": {
+    "name": "Joylings (Moo, Bun, Dax, Flap, Slurp, Twirl, Wiggle)",
+    "app": "fw/0.5.41/joylings/app.bin",
+    "appSha256": "d4efc6dbe1f0accc05c7b0d8ba12b442f450b8550fa331f90bdcb93392c1abc9",
+    "full": "fw/0.5.41/joylings/full.bin",
+    "fullSha256": "0fa43b3c47c7e74bb967734ed1a7050085597b863bdbc31234c47f199b4563c8"
+   }
+  }
+ },
+ {
   "version": "0.5.40",
   "date": "2026-11-26",
   "notes": {
