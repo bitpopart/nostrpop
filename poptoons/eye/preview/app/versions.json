@@ -1,5 +1,63 @@
 [
  {
+  "version": "0.5.33",
+  "date": "2026-11-26",
+  "notes": {
+   "en": "A toon that is ignored for 10 minutes, or is sick, now looks sick: green, slumped and wobbly, with green puffs above its head. Bored and angry still come first after 20 and 45 seconds. Also fixes the version number shown by the device. Not yet tested on a real board."
+  },
+  "variants": {
+   "all": {
+    "name": "All toons",
+    "app": "fw/0.5.33/all/app.bin",
+    "appSha256": "f803ed409c634b0f066744e2994cd31a22f293bd422bd9013c69d1a263eba848",
+    "full": "fw/0.5.33/all/full.bin",
+    "fullSha256": "06e1d5c5165672c7d68cdd336f3ae7c669cabc7a26c6a784fe5729a2dceb5af6"
+   },
+   "peeppops": {
+    "name": "PeepPops (Fizz, Uno, Zig)",
+    "app": "fw/0.5.33/peeppops/app.bin",
+    "appSha256": "531f729a0e53b21ed446415ccae775787145e709290c3cbce4b426caa96852c4",
+    "full": "fw/0.5.33/peeppops/full.bin",
+    "fullSha256": "5d6b86c74049ba117e6a83fdafb2c4ec7ea0e0f437131d051ac38497279c5c5d"
+   },
+   "poopies": {
+    "name": "Poopies (Buck, Burp, Snicker, Chomp, Drool)",
+    "app": "fw/0.5.33/poopies/app.bin",
+    "appSha256": "4b0e2c23333b1001e18914b92691f926cbba02f24d9b499747aea30ee47c517b",
+    "full": "fw/0.5.33/poopies/full.bin",
+    "fullSha256": "c628aadaff96f05e05c27f01846917812556c9761d0fa0bb9cd890bf6d5d2040"
+   },
+   "unipops": {
+    "name": "UniPops (Heli, Bloop, Chili, Giggle, Smooch, Razz)",
+    "app": "fw/0.5.33/unipops/app.bin",
+    "appSha256": "dd77f13a2124838d7cdeb857c8a8372e7fe09baa6ebf893cc03eceaeb1e2f1ec",
+    "full": "fw/0.5.33/unipops/full.bin",
+    "fullSha256": "4cf7ba044e60d8efb54c97c831766e64eb391f67b10c3dc3af4d737078488d56"
+   },
+   "monsterlings": {
+    "name": "Monsterlings (Pling, Fang, Gem, Jab, Lumo)",
+    "app": "fw/0.5.33/monsterlings/app.bin",
+    "appSha256": "81f0cf3ec2ab4c602a6456dd3710597502b07acf4fcd33654de931c6d06faff9",
+    "full": "fw/0.5.33/monsterlings/full.bin",
+    "fullSha256": "e6a830b3661b92df9690ab07bb05f7724a7e1c674d17d31a0056cfbf335cbc22"
+   },
+   "lovelings": {
+    "name": "Lovelings (Mimi)",
+    "app": "fw/0.5.33/lovelings/app.bin",
+    "appSha256": "4788fe2b334cef64b54b4ad2ab32d7fd3ff8743fca2f93bd115761c72c4b701a",
+    "full": "fw/0.5.33/lovelings/full.bin",
+    "fullSha256": "e097fe39f8643b2e5a266b648134968324084a03de4f001fbc43cd64707f2c29"
+   },
+   "joylings": {
+    "name": "Joylings (Moo, Bun, Dax, Flap, Slurp, Twirl, Wiggle)",
+    "app": "fw/0.5.33/joylings/app.bin",
+    "appSha256": "8339660e6ce4d6e7dd1f610b8d29e0d5f90a2cc2056bc57373a84f2fa79d1ed5",
+    "full": "fw/0.5.33/joylings/full.bin",
+    "fullSha256": "e2865e6f4cd22884973966e6a404338051c475fcdbd3658ce54e616017c5d5ac"
+   }
+  }
+ },
+ {
   "version": "0.5.32",
   "date": "2026-11-26",
   "notes": {
