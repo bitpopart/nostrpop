@@ -1601,7 +1601,7 @@
     var h = new Date().getHours();
     return SETS.qFrom < SETS.qTo ? (h >= SETS.qFrom && h < SETS.qTo) : (h >= SETS.qFrom || h < SETS.qTo);
   }
-  var SET_Y0 = 102, SET_H = 30, redDown = false, wifiDown = false;
+  var SET_Y0 = 102, SET_H = 27, redDown = false, wifiDown = false;
   function redHit(x, y){ return Math.hypot(x - 233, y - 36) < 46; }
   function wrapI(v, lo, hi){ return v < lo ? hi : (v > hi ? lo : v); }
   function setChange(row, d){
@@ -1630,7 +1630,7 @@
     redEye(now, false);
     ntDraw('TITLE', '#111111', 233 - ntW('TITLE')/2, 58, 1);
     var LAB = ['L_QUIET', 'L_FROM', 'L_TO', 'L_TALK', 'L_BRIGHT', 'L_SLEEP', 'L_NEEDS', 'L_SOUND'];
-    for (var r = 0; r < 9; r++){
+    for (var r = 0; r < 10; r++){
       var top = SET_Y0 + r*SET_H, cy = top + SET_H/2;
       if (r % 2 === 0){ ctx.fillStyle = 'rgba(0,0,0,0.063)'; ctx.fillRect(40, top + 2, 386, SET_H - 4); }
       if (r === 8){
@@ -1640,6 +1640,7 @@
         ntDraw('GT', '#e4182c', 384 - ntW('GT')/2, cy - ntH('GT')/2 - 2, 1);
         continue;
       }
+      if (r === 9){ drawSmall('RESTART TO PAIR', 64, cy - 9, '#111111'); ntDraw('GT', '#e4182c', 384 - ntW('GT')/2, cy - ntH('GT')/2 - 2, 1); continue; }
       ntDraw(LAB[r], '#111111', 64, cy - ntH(LAB[r])/2, 1);
       ntDraw('LT', '#e4182c', 262 - ntW('LT')/2, cy - ntH('LT')/2 - 2, 1); ntDraw('GT', '#e4182c', 384 - ntW('GT')/2, cy - ntH('GT')/2 - 2, 1);
       var vk = null, col = '#111111';
@@ -1653,7 +1654,7 @@
       else { vk = ['V_OFF', 'V_LOW', 'V_MID', 'V_HIGH'][SETS.sound]; if (SETS.sound === 0) col = '#e4182c'; }
       if (vk) ntDraw(vk, col, 323 - ntW(vk)/2, cy - ntH(vk)/2, 1);
     }
-    var bt = SET_Y0 + 9*SET_H, bcy = bt + SET_H/2;                // a battery row at the bottom (not a setting)
+    var bt = SET_Y0 + 10*SET_H, bcy = bt + SET_H/2;                // a battery row at the bottom (not a setting)
     ntDraw('TB_L_BATT', '#111111', 64, bcy - ntH('TB_L_BATT')/2, 1);
     if (BAT.p >= 0){
       drawBattery(232, bcy, 1.05, BAT.p, BAT.c);
@@ -2109,7 +2110,7 @@
     else if (scene === 'set'){
       var q3 = canvasXY(e);
       if (redDown && redHit(q3.x, q3.y)){ scene = 'pick'; pickBegin(now/1000); }               // back to the toon menu
-      else if (tap){ var row = Math.floor((q3.y - SET_Y0)/SET_H); if (row === 8) scene = 'wifi'; else if (row >= 0 && row < 8) setChange(row, q3.x < 322 ? -1 : 1); }
+      else if (tap){ var row = Math.floor((q3.y - SET_Y0)/SET_H); if (row === 9) restart(true); else if (row === 8) scene = 'wifi'; else if (row >= 0 && row < 8) setChange(row, q3.x < 322 ? -1 : 1); }
       redDown = false;
     }
     else if (scene === 'wifi'){
