@@ -1,5 +1,14 @@
 [
  {
+  "version": "0.2.3",
+  "date": "2026-11-27",
+  "notes": "Diagnostic: repeats a status report over USB every 3 seconds (stage, memory, I2C devices, power chip) so the Monitor button always shows something.",
+  "app": "0.2.3/app.bin",
+  "full": "0.2.3/full.bin",
+  "sha256_app": "ed9e0403ee311f1249a1ea5e78c288e40746cb842d5c263866cda1b8ae144d2a",
+  "sha256_full": "5abf69f6c93fd09b3e0bba8bb250ca43a2c98575ad84bb2efba55a83464af6de"
+ },
+ {
   "version": "0.2.2",
   "date": "2026-11-27",
   "notes": "Diagnostic build: colour test on start, power chip report over USB serial. Flasher page has a Monitor button.",
