@@ -69,12 +69,15 @@ export default function Tribe() {
     };
   }, []);
 
+  // A fresh query string per visit skips the CDN's cached copy, so new firmware shows up at once.
+  const [frameSrc] = useState(() => `/tribe-app/?t=${Date.now()}`);
+
   return (
     <div className="w-full" style={{ backgroundColor: '#efeeea' }}>
       <h1 className="sr-only">TriBe: signs for every tribe</h1>
       <iframe
         ref={frameRef}
-        src="/tribe-app/"
+        src={frameSrc}
         title="TriBe — signs for every tribe"
         allow="serial"
         className="w-full border-0 block"
