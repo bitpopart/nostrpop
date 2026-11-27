@@ -79,4 +79,4 @@ jobs:
           git commit -m "MiniBit firmware build result"
           git pull --rebase --autostash
           git push
-          [ "$PUB" -gt 0 ] && gh workflow run deploy.yml || true
+          [ "$PUB" -gt 0 ] && { gh workflow run deploy.yml; gh workflow run deploy-transip.yml; } || true
