@@ -39,6 +39,19 @@ jobs:
           mkdir -p ../../docs
           set -o pipefail
           pio run 2>&1 | tee ../../docs/tribe-build-full.txt
+      - name: Library info
+        if: always()
+        run: |
+          mkdir -p docs
+          {
+            echo "=== LIB INFO ==="
+            D=$(find firmware/tribe/.pio/libdeps -maxdepth 2 -type d -name 'Arduino_GFX*' | head -1)
+            echo "dir: $D"
+            grep -n -B1 -A6 "Arduino_CO5300(" "$D/src/display/Arduino_CO5300.h" || true
+            grep -n -A3 "Arduino_Canvas(" "$D/src/canvas/Arduino_Canvas.h" || true
+            grep -n "bool begin" "$D/src/canvas/Arduino_Canvas.h" || true
+            grep -rn "GFX_SKIP_OUTPUT_BEGIN" "$D/src/Arduino_GFX.h" "$D/src/databus/Arduino_DataBus.h" | head -3 || true
+          } >> docs/tribe-build-full.txt
       - name: Publish
         run: |
           set -e
