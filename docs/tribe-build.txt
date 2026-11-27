@@ -19,11 +19,11 @@ Compiling .pio/build/powout/lib1ce/WebServer/middleware/MiddlewareChain.cpp.o
 Compiling .pio/build/powout/src/main.cpp.o
 Building .pio/build/powout/bootloader.bin
 Generating partitions .pio/build/powout/partitions.bin
+Compiling .pio/build/powout/FrameworkArduino/ColorFormat.c.o
 esptool.py v5.0.0-dev1
 Creating ESP32S3 image...
 Merged 2 ELF sections.
 Successfully created ESP32S3 image.
-Compiling .pio/build/powout/FrameworkArduino/ColorFormat.c.o
 Compiling .pio/build/powout/FrameworkArduino/Esp.cpp.o
 Compiling .pio/build/powout/FrameworkArduino/FirmwareMSC.cpp.o
 Compiling .pio/build/powout/FrameworkArduino/FunctionalInterrupt.cpp.o
@@ -92,8 +92,8 @@ Warning: esp-idf-size exited with code 2
 Retrieving maximum program size .pio/build/powout/firmware.elf
 Checking size .pio/build/powout/firmware.elf
 Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
-RAM:   [=         ]  14.5% (used 47420 bytes from 327680 bytes)
-Flash: [==        ]  17.1% (used 1120490 bytes from 6553600 bytes)
+RAM:   [=         ]  14.5% (used 47452 bytes from 327680 bytes)
+Flash: [==        ]  17.1% (used 1121302 bytes from 6553600 bytes)
 Building .pio/build/powout/firmware.bin with action:
   "$PYTHONEXE" "$OBJCOPY" --chip esp32s3 elf2image --flash-mode ${__get_board_flash_mode(__env__)} --flash-freq ${__get_board_f_image(__env__)} --flash-size 32MB --elf-sha256-offset 0xb0 -o $TARGET $SOURCES
 Building .pio/build/powout/firmware.bin
@@ -101,7 +101,7 @@ esptool.py v5.0.0-dev1
 Creating ESP32S3 image...
 Merged 2 ELF sections.
 Successfully created ESP32S3 image.
-======================== [SUCCESS] Took 105.97 seconds ========================
+========================= [SUCCESS] Took 91.76 seconds =========================
 === LIB INFO ===
 dir: firmware/tribe/.pio/libdeps/powout/GFX Library for Arduino
 157-public:
