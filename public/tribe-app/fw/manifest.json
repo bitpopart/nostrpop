@@ -1,5 +1,14 @@
 [
  {
+  "version": "0.3.1",
+  "date": "2026-11-27",
+  "notes": "Colour test removed. Layout shrunk with a safe margin so rounded corners and edges do not cut off content.",
+  "app": "0.3.1/app.bin",
+  "full": "0.3.1/full.bin",
+  "sha256_app": "3255ae2f669b427b68fb92ade91fed928be462c026d4e236e3004857a8bda709",
+  "sha256_full": "2ad603ed066175f84ed737ee337fd360f7c35f944ca9387997bd403b04131343"
+ },
+ {
   "version": "0.3.0",
   "date": "2026-11-27",
   "notes": "All design screens: Home, Menu, workouts (reps, intervals, timers), Weather, Breathe, Food, Voice, Proof, Share, Setup and the mood faces. Touch and swipe to navigate, BOOT = back.",
