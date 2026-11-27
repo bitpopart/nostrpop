@@ -30,9 +30,11 @@ Arduino_DataBus *bus = new Arduino_ESP32QSPI(LCD_CS, LCD_SCLK, LCD_SDIO0, LCD_SD
 Arduino_CO5300 *gfx = new Arduino_CO5300(bus, LCD_RESET, 0, false /* ips */, LCD_W, LCD_H, 22, 0, 0, 0);
 
 // The design is 368x448. The panel is 410 wide, so everything is scaled by S.
-static const float S = 410.0f / 368.0f;
+static const float S = 1.0f;  // smaller than the full panel width so rounded corners do not clip
 static const int OFFY = (LCD_H - (int)(448 * S)) / 2;
-static inline int X(float v) { return (int)(v * S + 0.5f); }
+static const int OFFX = (LCD_W - (int)(368 * S)) / 2;
+#define DW ((int)(368 * S))
+static inline int X(float v) { return (int)(v * S + 0.5f) + OFFX; }
 static inline int Y(float v) { return (int)(v * S + 0.5f) + OFFY; }
 static inline int D(float v) { return (int)(v * S + 0.5f); }
 
@@ -186,12 +188,12 @@ static void clockUpdate() {
 static void statusBar() {
   char t[8]; snprintf(t, sizeof t, "%02d:%02d", clkH, clkM);
   float cell = 2.9f * S;
-  dotTextLeft(gfx, t, D(22), Y(12), cell, C_GREY);
+  dotTextLeft(gfx, t, OFFX + D(22), Y(12), cell, C_GREY);
   if (batt >= 0) {
     char b[6]; snprintf(b, sizeof b, "%d", batt);
     int w = (int)((strlen(b) * 6 - 1) * cell);
-    dotTextLeft(gfx, b, LCD_W - D(22) - w - D(14), Y(12), cell, C_GREY);
-    gfx->setTextSize(2); gfx->setTextColor(C_GREY); gfx->setCursor(LCD_W - D(22) - 11, Y(12) + 4); gfx->print("%");
+    dotTextLeft(gfx, b, LCD_W - OFFX - D(22) - w - D(14), Y(12), cell, C_GREY);
+    gfx->setTextSize(2); gfx->setTextColor(C_GREY); gfx->setCursor(LCD_W - OFFX - D(22) - 11, Y(12) + 4); gfx->print("%");
   }
 }
 static void menuIcon(bool mic) {
@@ -228,7 +230,7 @@ static void backPill(Screen to) {
   addBtn(LCD_W / 2 - w, y - 10, LCD_W / 2 + w, LCD_H, to);
 }
 static void rowAt(float dy, float dh, const char *tag, const char *name, const char *desc, bool on, Screen go) {
-  int y = Y(dy), x = D(22), w = LCD_W - 2 * D(22), h = D(dh);
+  int y = Y(dy), x = OFFX + D(22), w = DW - 2 * D(22), h = D(dh);
   gfx->fillRoundRect(x, y, w, h, D(12), C_PANEL);
   if (on) { gfx->drawRoundRect(x, y, w, h, D(12), C_FG); gfx->drawRoundRect(x + 1, y + 1, w - 2, h - 2, D(12) - 1, C_FG); }
   gfx->fillRoundRect(x + D(10), y + (h - D(30)) / 2, D(44), D(30), D(8), C_TILE);
@@ -264,7 +266,7 @@ static void drawRays(bool large, int ox, int oy, uint16_t col) {
 // ---- Faces ----
 static void faceEyes(Screen s, bool open) {
   // Clear and redraw only the eye band so a blink does not flicker the whole screen.
-  gfx->fillRect(X(70), Y(40), X(230), Y(200) - Y(40), C_BG);
+  gfx->fillRect(X(70), Y(40), D(230), Y(200) - Y(40), C_BG);
   if (s == READY || s == PUMPED || s == SAD || s == STREAK) {
     float y = s == READY ? 74 : s == PUMPED ? 60 : 107, h = s == READY ? 96 : s == PUMPED ? 118 : 72;
     float eh = open ? h : 8;
@@ -316,9 +318,9 @@ static void drawMenu() {
     {"WEATHER", WEATHER}, {"WORKOUTS", PICK}, {"BREATHE", BMODE},
     {"FOOD", FOOD}, {"PROOF", PROOF}, {"MOODS", READY},
     {"REST", REST}, {"SETUP", SETUP1}, {"HOME", HOME}};
-  int gap = D(10), tw = (LCD_W - 2 * D(22) - 2 * gap) / 3, th = D(96);
+  int gap = D(10), tw = (DW - 2 * D(22) - 2 * gap) / 3, th = D(96);
   for (int i = 0; i < 9; i++) {
-    int x = D(22) + (i % 3) * (tw + gap), y = Y(100) + (i / 3) * (th + gap);
+    int x = OFFX + D(22) + (i % 3) * (tw + gap), y = Y(100) + (i / 3) * (th + gap);
     gfx->fillRoundRect(x, y, tw, th, D(12), C_PANEL);
     gfx->drawRoundRect(x, y, tw, th, D(12), C_LINE);
     smallText(gfx, t[i].n, x + tw / 2, y + th / 2 - 3, 1, C_FG);
@@ -355,7 +357,7 @@ static void repsBody(bool full) {
   line("REPS", 262, 2, C_GREY);
   snprintf(b, sizeof b, "SET %d / %d", setNo, setsTotal); chip(X(135), 324, b);
   char t[8]; fmtTime(t, sizeof t, (millis() - wkStart) / 1000); chip(X(262), 324, t);
-  int bw = LCD_W - 2 * D(25.8f), bh = D(11), bx = D(25.8f), by = Y(448 - 25.8f - 11 - 26);
+  int bw = DW - 2 * D(25.8f), bh = D(11), bx = OFFX + D(25.8f), by = Y(448 - 25.8f - 11 - 26);
   gfx->fillRoundRect(bx, by, bw, bh, bh / 2, C_LINE);
   int fw = bw * min(reps, wk.target) / wk.target; if (fw > bh) gfx->fillRoundRect(bx, by, fw, bh, bh / 2, C_FG);
   line("Tap to count a rep", 358, 1, C_GREY);
@@ -434,7 +436,7 @@ static void drawWeather() {
   line("Cloudy", 252, 2, C_FG);
   const char *tn[3] = {"RAIN", "WIND", "FEELS"}, *tv[3] = {"10%", "18 km/h", "12 C"};
   for (int i = 0; i < 3; i++) {
-    int x = D(22.1f + i * 112.2f), y = Y(272.3f), w = D(99.4f), h = D(62.6f);
+    int x = OFFX + D(22.1f + i * 112.2f), y = Y(272.3f), w = D(99.4f), h = D(62.6f);
     gfx->fillRoundRect(x, y, w, h, D(13), C_PANEL);
     smallText(gfx, tn[i], x + w / 2, y + D(10), 1, C_GREY);
     smallText(gfx, tv[i], x + w / 2, y + D(32), 2, C_FG);
@@ -835,8 +837,6 @@ void setup() {
   if (!gfx->begin()) { Serial.println("Display init failed"); while (true) { stageName = "display-FAILED"; report(); delay(3000); } }
   stageName = "display-up";
   gfx->setBrightness(255);
-  { uint16_t col[4] = {gfx->color565(255, 0, 0), gfx->color565(0, 255, 0), gfx->color565(0, 0, 255), gfx->color565(255, 255, 255)};
-    for (int i = 0; i < 4; i++) { gfx->fillScreen(col[i]); delay(400); } }
   gfx->setBrightness(200);
   C_BG = gfx->color565(0, 0, 0); C_FG = gfx->color565(242, 241, 236); C_GREY = gfx->color565(138, 138, 138);
   C_PANEL = gfx->color565(21, 21, 21); C_LINE = gfx->color565(58, 58, 58); C_TILE = gfx->color565(38, 38, 38);
