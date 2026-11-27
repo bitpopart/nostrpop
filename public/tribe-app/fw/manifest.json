@@ -2,7 +2,7 @@
  {
   "version": "0.2.0",
   "date": "2026-11-27",
-  "notes": "First test build: boots and prints its version over USB. No screen UI yet.",
+  "notes": "POWout UI on the AMOLED: Home, Menu, Breathe picker, Calm 4-6, Box 4-4-4-4, 4-7-8. Touch plus BOOT button as back.",
   "app": "0.2.0/app.bin",
   "full": "0.2.0/full.bin",
   "sha256_app": "e1ba95ce8cfcb72b60dfd711e04c8344b91534646976e9af81c6d9082207a7b4",
@@ -11,7 +11,7 @@
  {
   "version": "0.1.0",
   "date": "2026-11-27",
-  "notes": "First test build: boots and prints its version over USB. No screen UI yet.",
+  "notes": "First test build: boots and prints its version over USB. No screen UI.",
   "app": "0.1.0/app.bin",
   "full": "0.1.0/full.bin",
   "sha256_app": "28d058dc90c383d13e85ebdef97734bdccb41c564274dd958b99df81c83cc537",

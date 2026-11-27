@@ -59,7 +59,7 @@ jobs:
           lst=json.load(open(m)) if os.path.exists(m) else []
           lst=[x for x in lst if x["version"]!=v]
           lst.insert(0,{"version":v,"date":datetime.date.today().isoformat(),
-            "notes":"First test build: boots and prints its version over USB. No screen UI yet.",
+            "notes":open("firmware/tribe/NOTES").read().strip(),
             "app":v+"/app.bin","full":v+"/full.bin",
             "sha256_app":sha(d+"/app.bin"),"sha256_full":sha(d+"/full.bin")})
           json.dump(lst,open(m,"w"),indent=1)
