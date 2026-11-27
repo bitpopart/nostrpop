@@ -34,12 +34,12 @@ Compiling .pio/build/minibit/libb24/GFX Library for Arduino/display/Arduino_ST77
 Compiling .pio/build/minibit/libb24/GFX Library for Arduino/display/Arduino_WEA2012.cpp.o
 Compiling .pio/build/minibit/src/main.cpp.o
 Building .pio/build/minibit/bootloader.bin
+Generating partitions .pio/build/minibit/partitions.bin
+Compiling .pio/build/minibit/FrameworkArduino/ColorFormat.c.o
 esptool.py v5.0.0-dev1
 Creating ESP32S3 image...
 Merged 2 ELF sections.
 Successfully created ESP32S3 image.
-Generating partitions .pio/build/minibit/partitions.bin
-Compiling .pio/build/minibit/FrameworkArduino/ColorFormat.c.o
 Compiling .pio/build/minibit/FrameworkArduino/Esp.cpp.o
 Compiling .pio/build/minibit/FrameworkArduino/FirmwareMSC.cpp.o
 Compiling .pio/build/minibit/FrameworkArduino/FunctionalInterrupt.cpp.o
@@ -108,8 +108,8 @@ Warning: esp-idf-size exited with code 2
 Retrieving maximum program size .pio/build/minibit/firmware.elf
 Checking size .pio/build/minibit/firmware.elf
 Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
-RAM:   [=         ]   6.8% (used 22372 bytes from 327680 bytes)
-Flash: [=         ]   5.2% (used 439594 bytes from 8388608 bytes)
+RAM:   [=         ]   6.8% (used 22380 bytes from 327680 bytes)
+Flash: [=         ]   5.3% (used 441678 bytes from 8388608 bytes)
 Building .pio/build/minibit/firmware.bin with action:
   "$PYTHONEXE" "$OBJCOPY" --chip esp32s3 elf2image --flash-mode ${__get_board_flash_mode(__env__)} --flash-freq ${__get_board_f_image(__env__)} --flash-size 16MB --elf-sha256-offset 0xb0 -o $TARGET $SOURCES
 Building .pio/build/minibit/firmware.bin
@@ -117,4 +117,4 @@ esptool.py v5.0.0-dev1
 Creating ESP32S3 image...
 Merged 2 ELF sections.
 Successfully created ESP32S3 image.
-========================= [SUCCESS] Took 75.10 seconds =========================
+========================= [SUCCESS] Took 56.04 seconds =========================
