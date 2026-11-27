@@ -1,5 +1,14 @@
 [
  {
+  "version": "0.3.0",
+  "date": "2026-11-27",
+  "notes": "All design screens: Home, Menu, workouts (reps, intervals, timers), Weather, Breathe, Food, Voice, Proof, Share, Setup and the mood faces. Touch and swipe to navigate, BOOT = back.",
+  "app": "0.3.0/app.bin",
+  "full": "0.3.0/full.bin",
+  "sha256_app": "f280b2d5381c785cf7e8ece387449a3cb63f07800cb880cd8e21ab94adc740af",
+  "sha256_full": "e3d29512e03eef12c868e47dbaab483501bbf89a2946d6634a6429eec834b5f5"
+ },
+ {
   "version": "0.2.4",
   "date": "2026-11-27",
   "notes": "Safer boot settings (no PSRAM, DIO flash) in case the chip failed to start. Same status report over USB every 3 seconds.",
