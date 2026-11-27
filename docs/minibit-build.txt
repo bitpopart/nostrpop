@@ -109,7 +109,7 @@ Retrieving maximum program size .pio/build/minibit/firmware.elf
 Checking size .pio/build/minibit/firmware.elf
 Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
 RAM:   [=         ]   6.8% (used 22380 bytes from 327680 bytes)
-Flash: [=         ]   5.3% (used 441678 bytes from 8388608 bytes)
+Flash: [=         ]   5.3% (used 441850 bytes from 8388608 bytes)
 Building .pio/build/minibit/firmware.bin with action:
   "$PYTHONEXE" "$OBJCOPY" --chip esp32s3 elf2image --flash-mode ${__get_board_flash_mode(__env__)} --flash-freq ${__get_board_f_image(__env__)} --flash-size 16MB --elf-sha256-offset 0xb0 -o $TARGET $SOURCES
 Building .pio/build/minibit/firmware.bin
@@ -117,4 +117,4 @@ esptool.py v5.0.0-dev1
 Creating ESP32S3 image...
 Merged 2 ELF sections.
 Successfully created ESP32S3 image.
-========================= [SUCCESS] Took 56.04 seconds =========================
+========================= [SUCCESS] Took 84.17 seconds =========================

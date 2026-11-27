@@ -1,26 +1,26 @@
 {
- "version": "0.1.1",
+ "version": "0.1.2",
  "date": "2026-11-27",
- "notes": "Hidden calibration mode: hold a finger 3 seconds on any screen to see panel borders and touch values.",
+ "notes": "Screen image now centred in a larger drawing area, touch offset to match, calibration grid with numbered ticks.",
  "board": "Waveshare ESP32-S3-Touch-AMOLED-1.8",
  "parts": [
   {
-   "path": "0.1.1/bootloader.bin",
+   "path": "0.1.2/bootloader.bin",
    "offset": 0,
    "sha256": "84a8e89c7bcc88d766c22a21181d6e64a3800d32bfb2608cc1897ac009cd415d"
   },
   {
-   "path": "0.1.1/partitions.bin",
+   "path": "0.1.2/partitions.bin",
    "offset": 32768,
    "sha256": "f0aace020bc11e957d509f4d746191b303d55270ebc6e79f2879a9007894b5d4"
   },
   {
-   "path": "0.1.1/app.bin",
+   "path": "0.1.2/app.bin",
    "offset": 65536,
-   "sha256": "69e9ea325eef39c1d36af83e4308f460fb508cf813c13e992fbf70b2e7af819b"
+   "sha256": "be96c1bc75fca07eb5bb3b5870030c6ac00e4749bf4abd8be1fc27b43c8a21f9"
   },
   {
-   "path": "0.1.1/screens.bin.gz",
+   "path": "0.1.2/screens.bin.gz",
    "offset": 3211264,
    "sha256": "abdbc48d6d9a74892848198f965f674c097985951c94da21f70266c59d561007",
    "gz": true,
