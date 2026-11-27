@@ -1,5 +1,3 @@
-Compiling .pio/build/powout/libbc3/GFX Library for Arduino/display/Arduino_ILI9341.cpp.o
-Compiling .pio/build/powout/libbc3/GFX Library for Arduino/display/Arduino_ILI9342.cpp.o
 Compiling .pio/build/powout/libbc3/GFX Library for Arduino/display/Arduino_ILI9481_18bit.cpp.o
 Compiling .pio/build/powout/libbc3/GFX Library for Arduino/display/Arduino_ILI9486.cpp.o
 Compiling .pio/build/powout/libbc3/GFX Library for Arduino/display/Arduino_ILI9486_18bit.cpp.o
@@ -117,4 +115,6 @@ esptool.py v5.0.0-dev1
 Creating ESP32S3 image...
 Merged 2 ELF sections.
 Successfully created ESP32S3 image.
-========================= [SUCCESS] Took 57.12 seconds =========================
+========================= [SUCCESS] Took 81.33 seconds =========================
+=== LIB INFO ===
+dir: 
