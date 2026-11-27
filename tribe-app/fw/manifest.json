@@ -1,5 +1,14 @@
 [
  {
+  "version": "0.3.2",
+  "date": "2026-11-27",
+  "notes": "Brighter, thicker menu and microphone icons.",
+  "app": "0.3.2/app.bin",
+  "full": "0.3.2/full.bin",
+  "sha256_app": "8713e642db05638d5ad57bfcc4c04e2d3fdba1abe38eeaf024bd38d9861c2da8",
+  "sha256_full": "3dd996b6872f746eef4a62239425fe67c823781ea7417218f416143b50f39e6f"
+ },
+ {
   "version": "0.3.1",
   "date": "2026-11-27",
   "notes": "Colour test removed. Layout shrunk with a safe margin so rounded corners and edges do not cut off content.",
