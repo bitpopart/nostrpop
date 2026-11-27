@@ -197,15 +197,17 @@ static void statusBar() {
   }
 }
 static void menuIcon(bool mic) {
-  int hx = X(184) - D(10) - (mic ? D(22) : 0);
-  for (int i = 0; i < 3; i++) gfx->fillRect(hx, Y(14 + i * 6), D(20), max(2, D(2.2f)), mic ? C_FG : C_GREY);
-  addBtn(hx - D(12), Y(0), hx + D(32), Y(50), MENU);
+  // Bright, thick icons at the top centre: hamburger (menu) and, on Home, a microphone.
+  int hx = LCD_W / 2 - D(12) - (mic ? D(26) : 0), hy = Y(14);
+  for (int i = 0; i < 3; i++) gfx->fillRoundRect(hx, hy + i * D(8), D(24), max(3, D(3)), 2, C_FG);
+  addBtn(hx - D(14), Y(0), hx + D(38), Y(54), MENU);
   if (mic) {
-    int mx = X(184) + D(22), top = Y(13);
-    gfx->fillRoundRect(mx - D(4), top, D(8), D(13), D(4), C_GREY);
-    gfx->drawFastVLine(mx, top + D(16), D(5), C_GREY);
-    gfx->drawFastHLine(mx - D(4), top + D(21), D(8), C_GREY);
-    addBtn(mx - D(20), Y(0), mx + D(24), Y(50), LISTEN);
+    int mx = LCD_W / 2 + D(26), top = Y(10);
+    gfx->fillRoundRect(mx - D(5), top, D(10), D(18), D(5), C_FG);
+    gfx->drawRoundRect(mx - D(9), top + D(8), D(18), D(14), D(7), C_FG);
+    gfx->fillRect(mx - 1, top + D(22), 3, D(6), C_FG);
+    gfx->fillRect(mx - D(7), top + D(28), D(14), 3, C_FG);
+    addBtn(mx - D(24), Y(0), mx + D(28), Y(54), LISTEN);
   }
 }
 
