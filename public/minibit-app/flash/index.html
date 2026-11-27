@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MiniBit USB flasher</title>
+<style>
+  :root { --bg:#050608; --card:#101218; --line:#2a2e38; --cyan:#46e6ff; --orange:#f26a1d; --ink:#f2f4f8; --dim:#9aa3b2; }
+  * { box-sizing:border-box; }
+  body { margin:0; min-height:100vh; background:var(--bg); color:var(--ink); font:16px/1.5 system-ui, sans-serif; display:flex; flex-direction:column; align-items:center; padding:28px 16px 56px; }
+  h1 { margin:0 0 4px; font-size:clamp(30px,8vw,44px); letter-spacing:.02em; }
+  .tag { color:var(--dim); margin:0 0 22px; text-align:center; }
+  .card { width:100%; max-width:640px; background:var(--card); border:2px solid var(--line); border-radius:16px; padding:18px 20px; margin-bottom:16px; }
+  .card h2 { margin:0 0 10px; font-size:18px; color:var(--cyan); }
+  .choice { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+  .choice label { border:2px solid var(--line); border-radius:12px; padding:10px 12px; cursor:pointer; }
+  .choice label.on { border-color:var(--orange); background:#1a130f; }
+  .choice input { display:none; }
+  .choice b { display:block; }
+  .choice span { font-size:13px; color:var(--dim); }
+  select { width:100%; font:inherit; padding:10px 12px; background:#0b0d12; color:var(--ink); border:2px solid var(--line); border-radius:10px; }
+  button.go { width:100%; font:700 20px system-ui; padding:14px; border:0; border-radius:12px; background:var(--orange); color:#fff; cursor:pointer; }
+  button.go:disabled { background:#2a2e38; color:#7d8696; cursor:not-allowed; }
+  .bar { height:16px; border-radius:99px; background:#0b0d12; border:2px solid var(--line); overflow:hidden; margin-top:14px; }
+  .bar i { display:block; height:100%; width:0; background:var(--cyan); transition:width .15s; }
+  #status { margin-top:10px; font-weight:600; min-height:22px; }
+  #log { display:none; margin-top:10px; background:#000; color:#8ff0a8; font:12px/1.5 ui-monospace, monospace; border-radius:10px; padding:10px 12px; max-height:180px; overflow:auto; white-space:pre-wrap; }
+  .warn { width:100%; max-width:640px; border:2px dashed #ff6b6b; border-radius:12px; padding:12px 16px; margin-bottom:16px; color:#ffb3b3; }
+  .small { font-size:13px; color:var(--dim); margin:8px 0 0; }
+  @media(max-width:560px){ .choice { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+  <h1>MiniBit USB flasher</h1>
+  <p class="tag">Install or update the MiniBit firmware from your browser</p>
+
+  <div class="warn" id="nosupport" hidden>Flashing over USB needs Web Serial. Open this page in Chrome or Edge on a computer. Safari, Firefox and phones cannot do this. Inside a preview frame it may also be blocked, so open the page on its own.</div>
+  <div class="warn" id="nover" hidden>No firmware published yet. The build runs on GitHub after each release, check back in a few minutes.</div>
+
+  <div class="card">
+    <h2>1. What do you want to do?</h2>
+    <div class="choice" id="mode">
+      <label class="on"><input type="radio" name="m" value="update" checked><b>Update</b><span>New program only. Settings stay.</span></label>
+      <label><input type="radio" name="m" value="new"><b>New install</b><span>Erases everything, installs program and screens.</span></label>
+      <label><input type="radio" name="m" value="screens"><b>Screens only</b><span>Replaces the screen images.</span></label>
+    </div>
+  </div>
+  <div class="card">
+    <h2>2. Version</h2>
+    <select id="ver"></select>
+    <p class="small" id="notes"></p>
+  </div>
+  <div class="card">
+    <h2>3. Connect and flash</h2>
+    <p class="small" style="margin:0 0 12px">Plug the MiniBit in with a USB-C data cable, press the button and choose its port. Not listed? Hold <b>BOOT</b> while you plug in the cable, then try again. A first install on a new board needs <b>New install</b>.</p>
+    <button class="go" id="go" disabled>Connect and flash</button>
+    <div class="bar"><i id="fill"></i></div>
+    <div id="status"></div>
+    <div id="log"></div>
+  </div>
+
+<script type="module">
+import { ESPLoader, Transport } from './esptool/bundle.js';
+const $ = id => document.getElementById(id);
+let list = [], busy = false;
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const log = m => { const l = $('log'); l.style.display = 'block'; l.textContent += m + '\n'; l.scrollTop = l.scrollHeight; };
+const status = (m, bad) => { $('status').textContent = m; $('status').style.color = bad ? '#ff6b6b' : ''; };
+const hex = buf => [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+const mode = () => document.querySelector('input[name=m]:checked').value;
+const supported = 'serial' in navigator;
+$('nosupport').hidden = supported;
+
+document.querySelectorAll('#mode label').forEach(l => l.addEventListener('click', () => {
+  document.querySelectorAll('#mode label').forEach(x => x.classList.remove('on')); l.classList.add('on'); }));
+const showNotes = () => { const v = list[$('ver').selectedIndex]; $('notes').textContent = v ? (v.notes || '') : ''; };
+$('ver').addEventListener('change', showNotes);
+
+fetch('../fw/manifest.json', { cache: 'no-store' }).then(r => r.json()).then(l => { list = Array.isArray(l) ? l : []; }).catch(() => { list = []; }).then(() => {
+  $('nover').hidden = list.length > 0;
+  $('ver').innerHTML = list.map((v, i) => `<option>${esc(v.version)} (${esc(v.date)})${i === 0 ? ' - newest' : ''}</option>`).join('');
+  showNotes(); $('go').disabled = !supported || !list.length;
+});
+
+async function fetchPart(p, checkRaw) {
+  const r = await fetch(new URL('../fw/' + p.file, location.href), { cache: 'no-store' });
+  if (!r.ok) throw new Error('Could not download ' + p.file + ' (' + r.status + ')');
+  let data = new Uint8Array(await r.arrayBuffer());
+  if (hex(await crypto.subtle.digest('SHA-256', data)) !== p.sha256) throw new Error('Checksum does not match for ' + p.file + '. Nothing was written.');
+  if (checkRaw) {   // screens.bin.gz: unpack in the browser, then check the unpacked image too
+    const ds = new DecompressionStream('gzip');
+    data = new Uint8Array(await new Response(new Blob([data]).stream().pipeThrough(ds)).arrayBuffer());
+    if (data.length !== p.rawSize || hex(await crypto.subtle.digest('SHA-256', data)) !== p.rawSha256) throw new Error('Screen image check failed. Nothing was written.');
+  }
+  return { data, address: p.offset, name: p.file };
+}
+
+$('go').addEventListener('click', async () => {
+  if (busy) return; busy = true; $('go').disabled = true; $('fill').style.width = '0'; $('log').textContent = '';
+  let transport = null;
+  try {
+    const v = list[$('ver').selectedIndex], m = mode();
+    status('Downloading and checking the firmware...');
+    const files = [];
+    if (m === 'new') files.push(await fetchPart(v.bootloader), await fetchPart(v.partitions));
+    if (m !== 'screens') files.push(await fetchPart(v.app));
+    if (m !== 'update') files.push(await fetchPart(v.screens, true));
+    files.forEach(f => log(f.name + ' (' + f.data.length + ' bytes) checked'));
+
+    status('Choose the device in the pop-up...');
+    const port = await navigator.serial.requestPort({ filters: [{ usbVendorId: 0x303a }] });
+    transport = new Transport(port, true);
+    const loader = new ESPLoader({ transport, baudrate: 921600, romBaudrate: 115200, terminal: { clean(){}, writeLine: s => log(s), write: s => log(s) } });
+    status('Connecting...');
+    const chip = await loader.main(); log('Chip: ' + chip);
+    if (!/ESP32-S3/i.test(chip)) throw new Error('This is not an ESP32-S3. Nothing was written.');
+
+    status((m === 'new' ? 'Erasing and installing' : 'Writing') + '... do not unplug.');
+    const total = files.reduce((a, f) => a + f.data.length, 0), done = new Array(files.length).fill(0);
+    await loader.writeFlash({
+      fileArray: files.map(f => ({ data: f.data, address: f.address })),
+      flashSize: 'keep', flashMode: 'keep', flashFreq: 'keep', eraseAll: m === 'new', compress: true,
+      reportProgress: (i, written, tot) => { done[i] = files[i].data.length * written / tot; $('fill').style.width = Math.round(100 * done.reduce((a, b) => a + b, 0) / total) + '%'; }
+    });
+    $('fill').style.width = '100%'; status('Restarting the device...');
+    await loader.after('hard_reset');
+    status('Done. MiniBit restarts by itself. If the screen stays dark, press the reset button once.');
+  } catch (e) {
+    console.error(e); status(String(e && e.message || e), true); log('Error: ' + (e && e.message || e));
+    if (/No port selected|NotFoundError/i.test(String(e))) status('No port chosen. Hold BOOT while you plug in the cable and try again.', true);
+  } finally {
+    try { if (transport) await transport.disconnect(); } catch (_) {}
+    busy = false; $('go').disabled = !supported || !list.length;
+  }
+});
+</script>
+</body>
+</html>

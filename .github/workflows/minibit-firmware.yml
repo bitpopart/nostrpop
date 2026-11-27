@@ -1,0 +1,86 @@
+name: MiniBit firmware
+
+# Builds firmware/minibit and publishes app.bin (update, 0x10000), bootloader.bin (0x0), partitions.bin (0x8000)
+# and screens.bin.gz (0x310000) to public/minibit-app/fw/<version>/, then lists the version in manifest.json.
+# The /minibit-app/flash/ page reads that manifest. Bump firmware/minibit/VERSION to release.
+on:
+  push:
+    branches: [main, minibit-firmware]
+    paths: ["firmware/minibit/**", "public/minibit-app/fw/assets/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: minibit-firmware
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install PlatformIO
+        run: |
+          pip install platformio
+          pio --version
+      - name: Build
+        working-directory: firmware/minibit
+        run: |
+          V=$(tr -d '[:space:]' < VERSION)
+          echo "#define FW_VERSION \"$V\"" > src/version.h
+          mkdir -p ../../docs
+          set -o pipefail
+          pio run 2>&1 | tee ../../docs/minibit-build-full.txt
+      - name: Publish
+        run: |
+          set -e
+          V=$(tr -d '[:space:]' < firmware/minibit/VERSION)
+          B=firmware/minibit/.pio/build/minibit
+          OUT=public/minibit-app/fw/$V
+          mkdir -p "$OUT"
+          cp "$B/firmware.bin" "$OUT/app.bin"
+          cp "$B/bootloader.bin" "$OUT/bootloader.bin"
+          cp "$B/partitions.bin" "$OUT/partitions.bin"
+          cp public/minibit-app/fw/assets/screens.bin.gz "$OUT/screens.bin.gz"
+          python - <<PY
+          import json,hashlib,os,datetime,gzip
+          v="$V"; d="public/minibit-app/fw/"+v
+          sha=lambda p:hashlib.sha256(open(p,'rb').read()).hexdigest()
+          raw=gzip.open(d+"/screens.bin.gz").read()
+          part=lambda f,off:{"file":v+"/"+f,"offset":off,"sha256":sha(d+"/"+f)}
+          m="public/minibit-app/fw/manifest.json"
+          lst=json.load(open(m)) if os.path.exists(m) else []
+          lst=[x for x in lst if x["version"]!=v]
+          lst.insert(0,{"version":v,"date":datetime.date.today().isoformat(),
+            "notes":open("firmware/minibit/NOTES").read().strip(),
+            "board":"Waveshare ESP32-S3-Touch-AMOLED-1.8",
+            "app":part("app.bin",0x10000),
+            "bootloader":part("bootloader.bin",0x0),
+            "partitions":part("partitions.bin",0x8000),
+            "screens":dict(part("screens.bin.gz",0x310000),rawSize=len(raw),rawSha256=hashlib.sha256(raw).hexdigest())})
+          json.dump(lst,open(m,"w"),indent=1)
+          print(json.dumps(lst[0],indent=1))
+          PY
+          ls -l "$OUT"
+      - name: Commit and redeploy
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          [ -f docs/minibit-build-full.txt ] && tail -n 120 docs/minibit-build-full.txt > docs/minibit-build.txt
+          rm -f docs/minibit-build-full.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/minibit-app/fw docs/minibit-build.txt
+          git diff --cached --quiet && exit 0
+          PUB=$(git diff --cached --name-only | grep -c '^public/minibit-app/fw' || true)
+          git commit -m "MiniBit firmware build result"
+          git pull --rebase --autostash
+          git push
+          [ "$PUB" -gt 0 ] && gh workflow run deploy.yml || true
