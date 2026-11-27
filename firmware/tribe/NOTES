@@ -1,1 +1,1 @@
-Brighter, thicker menu and microphone icons.
+Fix: the display chip needs even-aligned writes, so small text, icons and the heart were missing. All screens now draw into a frame buffer and are sent aligned.

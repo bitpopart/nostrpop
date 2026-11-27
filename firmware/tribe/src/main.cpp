@@ -27,7 +27,16 @@
 #define FT_ADDR 0x38
 
 Arduino_DataBus *bus = new Arduino_ESP32QSPI(LCD_CS, LCD_SCLK, LCD_SDIO0, LCD_SDIO1, LCD_SDIO2, LCD_SDIO3);
-Arduino_CO5300 *gfx = new Arduino_CO5300(bus, LCD_RESET, 0, false /* ips */, LCD_W, LCD_H, 22, 0, 0, 0);
+Arduino_CO5300 *panel = new Arduino_CO5300(bus, LCD_RESET, 0, false /* ips */, LCD_W, LCD_H, 22, 0, 0, 0);
+// The CO5300 only accepts even-aligned windows, so every screen is drawn into an 8-bit indexed
+// frame buffer in RAM and sent to the panel in whole aligned blocks.
+Arduino_Canvas_Indexed *gfx = new Arduino_Canvas_Indexed(LCD_W, LCD_H, panel, 0, 0);
+static bool dirty = true;
+static void flushRegion(int x, int y, int w, int h) {
+  x &= ~1; y &= ~1; w = (w + 1) & ~1; h = (h + 1) & ~1;
+  if (x + w > LCD_W) w = LCD_W - x; if (y + h > LCD_H) h = LCD_H - y;
+  panel->drawIndexedBitmap(x, y, gfx->getFramebuffer() + y * LCD_W + x, gfx->getColorIndex(), w, h, LCD_W - w);
+}
 
 // The design is 368x448. The panel is 410 wide, so everything is scaled by S.
 static const float S = 1.0f;  // smaller than the full panel width so rounded corners do not clip
@@ -43,7 +52,6 @@ uint16_t C_BG, C_FG, C_GREY, C_PANEL, C_LINE, C_TILE;
 // A region canvas for flicker-free animation (only this rectangle is sent to the panel).
 static const int AW = 260, AH = 260;
 static int AX0, AY0;
-Arduino_Canvas *anim = nullptr;
 
 // ---- Dot font ----
 static const uint8_t *glyphFor(char c) {
@@ -259,6 +267,7 @@ static void drawHeart(bool large, int ox, int oy) {
   for (int i = 0; i < n; i++) { HRun h; memcpy_P(&h, &r[i], sizeof h); gfx->drawFastHLine(ox + h.x, oy + h.y, h.n, C_FG); }
 }
 static void drawRays(bool large, int ox, int oy, uint16_t col) {
+  dirty = true;
   float k = (large ? HEART_L_W : HEART_S_W) / 172.4f;
   for (int i = 0; i < 12; i++)
     thickLine(gfx, ox + (int)((HEART_RAYS[i][0] + 6) * k), oy + (int)((HEART_RAYS[i][1] + 6) * k),
@@ -267,6 +276,7 @@ static void drawRays(bool large, int ox, int oy, uint16_t col) {
 
 // ---- Faces ----
 static void faceEyes(Screen s, bool open) {
+  dirty = true;
   // Clear and redraw only the eye band so a blink does not flicker the whole screen.
   gfx->fillRect(X(70), Y(40), D(230), Y(200) - Y(40), C_BG);
   if (s == READY || s == PUMPED || s == SAD || s == STREAK) {
@@ -352,6 +362,7 @@ static void drawPick(bool more) {
   backPill(HOME);
 }
 static void repsBody(bool full) {
+  dirty = true;
   char b[24];
   if (full) gfx->fillRect(0, Y(100), LCD_W, Y(420) - Y(100), C_BG);
   snprintf(b, sizeof b, "%d", reps);
@@ -374,12 +385,14 @@ static void drawReps() {
 static const int WORK_S = 30, REST_S = 10, ROUNDS = 8;
 static bool ivWork = true; static int ivRound = 1, ivLeft = WORK_S, ivDrawn = 0;
 static const int RING_CX = 0;  // set at draw time
-static void ringStep(int idx, int total, uint16_t col) {  // draw one ring segment (idx of total)
+static void ringStep(int idx, int total, uint16_t col) {
+  dirty = true;  // draw one ring segment (idx of total)
   float a = -1.5708f + 6.28318f * idx / total;
   int cx = LCD_W / 2, cy = Y(58.9f + 121.4f), R = D(115);
   gfx->fillCircle(cx + (int)(cosf(a) * R), cy + (int)(sinf(a) * R), D(7), col);
 }
 static void ivInfo() {
+  dirty = true;
   gfx->fillRect(D(70), Y(120), LCD_W - 2 * D(70), D(120), C_BG);
   line(ivWork ? "WORK" : "REST", 140, 2, C_FG);
   char b[8]; snprintf(b, sizeof b, "%d", ivLeft);
@@ -422,6 +435,7 @@ static void drawTimer() {
 }
 static void timerTick() {
   static uint32_t last = 0; if (millis() - last < 500) return; last = millis();
+  dirty = true;
   char t[8]; fmtTime(t, sizeof t, (millis() - wkStart) / 1000);
   gfx->fillRect(0, Y(140), LCD_W, D(110), C_BG);
   dotText(t, 9.0f, 150, C_FG);
@@ -503,6 +517,7 @@ static void drawListen() {
 }
 static void tickListen() {
   static uint32_t last = 0; if (millis() - last < 90) return; last = millis();
+  dirty = true;
   gfx->fillRect(D(40), Y(120), LCD_W - D(80), D(100), C_BG);
   float t = millis() / 1000.0f;
   for (int i = 0; i < 9; i++) {
@@ -689,25 +704,26 @@ void go(Screen s) {
     Screen nx = tour ? (s == REST ? HOME : (Screen)(s + 1)) : (s == PUMPED ? REPS : s == PROUD ? PROOF : HOME);
     addBtn(0, Y(60), LCD_W, Y(420), nx);
   } else tour = false;
+  dirty = true;
   if (s == CALM || s == BOX || s == B478) { sessionKind = s; sessionStart = millis(); sessionRounds = 0; }
 }
 
 // ---- Breathing animation ----
 static void renderAnim(float scale, const char *word) {
-  anim->fillScreen(C_BG);
-  int cx = AW / 2, cy = AH / 2;
+  gfx->fillRect(AX0, AY0, AW, AH, C_BG);
+  int cx = AX0 + AW / 2, cy = AY0 + AH / 2;
   int R = (int)(D(85) * scale);
-  anim->fillCircle(cx, cy, R, C_FG);
-  anim->fillCircle(cx, cy, max(1, R - max(2, D(3.7f))), C_PANEL);
-  if (R > D(28)) dotTextPx(anim, word, cx, cy - (int)(2.5f * S * 7 / 2 * 1.4f), 2.6f * S, C_FG);
-  anim->flush();
+  gfx->fillCircle(cx, cy, R, C_FG);
+  gfx->fillCircle(cx, cy, max(1, R - max(2, D(3.7f))), C_PANEL);
+  if (R > D(28)) dotTextPx(gfx, word, cx, cy - (int)(2.5f * S * 7 / 2 * 1.4f), 2.6f * S, C_FG);
+  flushRegion(AX0, AY0, AW, AH);
 }
 static void renderBox(float t16, const char *word) {
-  anim->fillScreen(C_BG);
-  int side = D(150), x0 = AW / 2 - side / 2, y0 = AH / 2 - side / 2;
-  anim->fillRect(x0, y0, side, side, C_FG);
+  gfx->fillRect(AX0, AY0, AW, AH, C_BG);
+  int side = D(150), x0 = AX0 + AW / 2 - side / 2, y0 = AY0 + AH / 2 - side / 2;
+  gfx->fillRect(x0, y0, side, side, C_FG);
   int bw = max(2, D(3.7f));
-  anim->fillRect(x0 + bw, y0 + bw, side - 2 * bw, side - 2 * bw, C_PANEL);
+  gfx->fillRect(x0 + bw, y0 + bw, side - 2 * bw, side - 2 * bw, C_PANEL);
   float p = t16 * 4.0f; int seg = (int)p; float f = p - seg;
   int px, py;
   switch (seg & 3) {
@@ -716,12 +732,13 @@ static void renderBox(float t16, const char *word) {
     case 2: px = x0 + side; py = y0 + (int)(f * side); break;
     default: px = x0 + side - (int)(f * side); py = y0 + side; break;
   }
-  anim->fillCircle(px, py, D(9), C_FG);
-  anim->drawCircle(px, py, D(9), C_BG);
-  dotTextPx(anim, word, AW / 2, AH / 2 - (int)(2.8f * S * 7 / 2), 2.8f * S, C_FG);
-  anim->flush();
+  gfx->fillCircle(px, py, D(9), C_FG);
+  gfx->drawCircle(px, py, D(9), C_BG);
+  dotTextPx(gfx, word, AX0 + AW / 2, AY0 + AH / 2 - (int)(2.8f * S * 7 / 2), 2.8f * S, C_FG);
+  flushRegion(AX0, AY0, AW, AH);
 }
 static void sessionInfo(int round, int total, const char *ln) {
+  dirty = true;
   gfx->fillRect(0, Y(300), LCD_W, D(60), C_BG);
   char b[32]; snprintf(b, sizeof b, "Round %d of %d", round, total);
   line(b, 312, 2, C_FG);
@@ -836,15 +853,13 @@ void setup() {
   Serial.printf("TriBe POWout firmware %s\n", FW_VERSION);
   Wire.begin(I2C_SDA, I2C_SCL); Wire.setClock(400000);
   pinMode(BTN_BOOT, INPUT_PULLUP);
-  if (!gfx->begin()) { Serial.println("Display init failed"); while (true) { stageName = "display-FAILED"; report(); delay(3000); } }
+  if (!gfx->begin()) {  // also starts the panel Serial.println("Display init failed"); while (true) { stageName = "display-FAILED"; report(); delay(3000); } }
   stageName = "display-up";
-  gfx->setBrightness(255);
-  gfx->setBrightness(200);
+  Serial.printf("Frame buffer ready, heap %u\n", (unsigned)ESP.getFreeHeap());
+  panel->setBrightness(200);
   C_BG = gfx->color565(0, 0, 0); C_FG = gfx->color565(242, 241, 236); C_GREY = gfx->color565(138, 138, 138);
   C_PANEL = gfx->color565(21, 21, 21); C_LINE = gfx->color565(58, 58, 58); C_TILE = gfx->color565(38, 38, 38);
-  AX0 = (LCD_W - AW) / 2; AY0 = Y(122) - D(20);
-  anim = new Arduino_Canvas(AW, AH, gfx, AX0, AY0);
-  if (!anim->begin(GFX_SKIP_OUTPUT_BEGIN)) Serial.println("Canvas init failed"); else Serial.println("Canvas ready");
+  AX0 = ((LCD_W - AW) / 2) & ~1; AY0 = (Y(122) - D(20)) & ~1;
   pinMode(TP_RESET, OUTPUT); digitalWrite(TP_RESET, LOW); delay(20); digitalWrite(TP_RESET, HIGH); delay(60);
   pinMode(TP_INT, INPUT);
   clockInit(); clockUpdate();
@@ -897,5 +912,7 @@ void loop() {
     Serial.println("BOOT pressed: back");
     go(parentOf(cur));
   }
+  static uint32_t lastFlush = 0;
+  if (dirty && millis() - lastFlush > 30) { dirty = false; lastFlush = millis(); flushRegion(0, 0, LCD_W, LCD_H); }
   delay(5);
 }
