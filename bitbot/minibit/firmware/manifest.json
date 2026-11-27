@@ -1,26 +1,26 @@
 {
- "version": "0.1.0",
+ "version": "0.1.1",
  "date": "2026-11-27",
- "notes": "First build: all 26 MiniBit screens pixel-exact, tap and swipe navigation. Numbers and animations are static.",
+ "notes": "Hidden calibration mode: hold a finger 3 seconds on any screen to see panel borders and touch values.",
  "board": "Waveshare ESP32-S3-Touch-AMOLED-1.8",
  "parts": [
   {
-   "path": "0.1.0/bootloader.bin",
+   "path": "0.1.1/bootloader.bin",
    "offset": 0,
    "sha256": "84a8e89c7bcc88d766c22a21181d6e64a3800d32bfb2608cc1897ac009cd415d"
   },
   {
-   "path": "0.1.0/partitions.bin",
+   "path": "0.1.1/partitions.bin",
    "offset": 32768,
    "sha256": "f0aace020bc11e957d509f4d746191b303d55270ebc6e79f2879a9007894b5d4"
   },
   {
-   "path": "0.1.0/app.bin",
+   "path": "0.1.1/app.bin",
    "offset": 65536,
-   "sha256": "eee5c7e9d46b3daaa338e961f65c810f0859d1d0d70e34600c02ecd212b51d64"
+   "sha256": "69e9ea325eef39c1d36af83e4308f460fb508cf813c13e992fbf70b2e7af819b"
   },
   {
-   "path": "0.1.0/screens.bin.gz",
+   "path": "0.1.1/screens.bin.gz",
    "offset": 3211264,
    "sha256": "abdbc48d6d9a74892848198f965f674c097985951c94da21f70266c59d561007",
    "gz": true,
