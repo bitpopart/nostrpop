@@ -75,6 +75,6 @@ jobs:
           git diff --cached --quiet && exit 0
           PUB=$(git diff --cached --name-only | grep -c '^public/tribe-app/fw' || true)
           git commit -m "TriBe firmware build result"
-          git pull --rebase
+          git pull --rebase --autostash
           git push
           [ "$PUB" -gt 0 ] && gh workflow run deploy.yml || true
