@@ -3,6 +3,10 @@
 // 0.3.x: every design screen. Touch to navigate, BOOT button = back.
 #include <Arduino.h>
 #include <Wire.h>
+#include <WiFi.h>
+#include <WebServer.h>
+#include <DNSServer.h>
+#include <time.h>
 #include <Arduino_GFX_Library.h>
 #include "version.h"
 #include "dotfont.h"
@@ -191,6 +195,12 @@ static void clockInit() {
   swMin0 = bh * 60 + bm; swBase = millis();
 }
 static void clockUpdate() {
+  time_t nowT = time(nullptr);
+  if (nowT > 1700000000L) {
+    struct tm ti; localtime_r(&nowT, &ti); clkH = ti.tm_hour; clkM = ti.tm_min;
+    uint8_t bb; if (i2cRead(0x34, 0xA4, &bb, 1) && bb <= 100) batt = bb;
+    return;
+  }
   uint8_t r[3];
   if (rtcOk && i2cRead(0x51, 0x04, r, 3) && !(r[0] & 0x80)) { clkM = bcd2(r[1] & 0x7F); clkH = bcd2(r[2] & 0x3F); }
   else { int m = (swMin0 + (millis() - swBase) / 60000) % 1440; clkH = m / 60; clkM = m % 60; }
@@ -644,6 +654,60 @@ static void qr(const uint32_t *rows, int n, float dtop, float dsize) {
   for (int y = 0; y < n; y++) for (int x = 0; x < n; x++)
     if (rows[y] & (1u << x)) gfx->fillRect(x0 + (x + 2) * m, y0 + (y + 2) * m, m, m, C_BG);
 }
+// ---- Wi-Fi setup: the board opens "POWout-setup", the phone enters the password on a web page ----
+static char selSsid[33] = "", selPass[65] = "";
+static volatile bool credsIn = false;
+static int nNets = 0, netRssi[3]; static char netName[3][33]; static bool netOpen[3];
+static char netDesc[3][28];
+static WebServer web(80); static DNSServer dns; static bool apOn = false;
+static int wifiState = 0;  // 0 idle, 1 connecting, 2 connected, 3 failed
+static uint32_t connT0 = 0;
+
+static void scanNets() {
+  WiFi.mode(WIFI_STA); WiFi.disconnect();
+  int n = WiFi.scanNetworks();
+  nNets = 0;
+  for (int i = 0; i < n && nNets < 3; i++) {
+    String id = WiFi.SSID(i);
+    if (id.length() == 0) continue;
+    bool dup = false; for (int j = 0; j < nNets; j++) if (id == netName[j]) dup = true;
+    if (dup) continue;
+    id.toCharArray(netName[nNets], 33);
+    netRssi[nNets] = WiFi.RSSI(i); netOpen[nNets] = WiFi.encryptionType(i) == WIFI_AUTH_OPEN;
+    snprintf(netDesc[nNets], sizeof netDesc[0], "%s - %s", netOpen[nNets] ? "Open" : "Secured", netRssi[nNets] > -60 ? "strong" : netRssi[nNets] > -75 ? "good" : "fair");
+    nNets++;
+  }
+  WiFi.scanDelete();
+}
+static String esc(const char *t) { String o; for (; *t; t++) { if (*t == '&') o += "&amp;"; else if (*t == '<') o += "&lt;"; else if (*t == '"') o += "&quot;"; else o += *t; } return o; }
+static void handleRoot() {
+  String h = F("<!doctype html><meta name=viewport content='width=device-width,initial-scale=1'><body style='font-family:sans-serif;background:#000;color:#f2f1ec;padding:24px;max-width:420px;margin:auto'>"
+               "<h2>POWout Wi-Fi</h2><form method=POST action=/save>"
+               "<p>Network name<br><input name=ssid style='width:100%;font-size:18px;padding:8px' value=\"");
+  h += esc(selSsid);
+  h += F("\"></p><p>Password<br><input name=pass type=password style='width:100%;font-size:18px;padding:8px'></p>"
+         "<button style='width:100%;font-size:20px;padding:12px;border-radius:24px;border:0;background:#f2f1ec'>Connect</button></form></body>");
+  web.send(200, "text/html", h);
+}
+static void handleSave() {
+  strncpy(selSsid, web.arg("ssid").c_str(), 32); selSsid[32] = 0;
+  strncpy(selPass, web.arg("pass").c_str(), 64); selPass[64] = 0;
+  web.send(200, "text/html", F("<!doctype html><meta name=viewport content='width=device-width,initial-scale=1'><body style='font-family:sans-serif;background:#000;color:#f2f1ec;padding:24px'><h2>Connecting...</h2><p>Look at your POWout.</p></body>"));
+  credsIn = true;
+}
+static void startPortal() {
+  if (apOn) return;
+  WiFi.mode(WIFI_AP_STA); WiFi.softAP("POWout-setup");
+  dns.start(53, "*", WiFi.softAPIP());
+  web.on("/", HTTP_GET, handleRoot); web.on("/save", HTTP_POST, handleSave); web.onNotFound(handleRoot);
+  web.begin(); apOn = true; credsIn = false;
+  Serial.printf("Setup portal on, ip %s\n", WiFi.softAPIP().toString().c_str());
+}
+static void stopPortal() {
+  if (!apOn) return;
+  web.stop(); dns.stop(); WiFi.softAPdisconnect(true); WiFi.mode(WIFI_STA); apOn = false;
+}
+
 static void drawSetup(Screen s) {
   statusBar();
   switch (s) {
@@ -655,33 +719,50 @@ static void drawSetup(Screen s) {
       bigButton("BEGIN", true, SETUP2);
       backPill(HOME);
       break;
-    case SETUP2:
+    case SETUP2: {
       dotText("WI-FI", 5.0f, 46, C_FG);
       line("Step 1 / 3 - Pick a network", 88, 1, C_GREY);
-      rowAt(112, 50, "W1", "Home Wi-Fi", "Secured - strong", true, SETUP3);
-      rowAt(170, 50, "W2", "Phone hotspot", "Hotspot - good", false, SETUP3);
-      rowAt(228, 50, "W3", "Gym guest", "Secured - fair", false, SETUP3);
-      rowAt(286, 50, "W4", "Other network", "Hidden - type on phone", false, SETUP3);
-      line("Side button to rescan", 410, 1, C_GREY);
+      line("Looking for networks...", 200, 2, C_GREY);
+      flushRegion(0, 0, LCD_W, LCD_H);
+      scanNets();
+      gfx->fillRect(0, Y(100), LCD_W, Y(420) - Y(100), C_BG);
+      for (int i = 0; i < nNets; i++) rowAt(112 + 58 * i, 50, "WiFi", netName[i], netDesc[i], i == 0, SETUP3);
+      if (nNets == 0) line("No networks found", 150, 2, C_FG);
+      rowAt(112 + 58 * (nNets > 0 ? nNets : 1), 50, "...", "Other network", "Hidden - type on phone", false, SETUP3);
+      line("Hotspot: switch it on first", 410, 1, C_GREY);
       backPill(SETUP1);
-      break;
+      break; }
     case SETUP3:
       dotText("PASSWORD", 4.5f, 46, C_FG);
       line("Step 1 / 3 - Wi-Fi", 88, 1, C_GREY);
-      qr(QR_WIFI, QR_WIFI_N, 110, 150);
-      line("Scan with your phone.", 280, 2, C_FG);
-      line("Type the Wi-Fi password there,", 302, 1, C_GREY);
-      line("not on this tiny screen.", 316, 1, C_GREY);
-      bigBtnAt("NEXT", true, SETUP4, 448 - 26 - 48);
+      startPortal();
+      qr(QR_WIFI, QR_WIFI_N, 104, 150);
+      line("Scan with your phone.", 262, 2, C_FG);
+      line("It joins POWout-setup. Then type the", 288, 1, C_GREY);
+      line("Wi-Fi password on the page that opens.", 304, 1, C_GREY);
+      if (selSsid[0]) { char b[48]; snprintf(b, sizeof b, "Network: %s", selSsid); line(b, 326, 1, C_FG); }
+      chip(LCD_W / 2, 350, "WAITING FOR YOUR PHONE");
+      backPill(SETUP2);
       break;
     case SETUP4:
       dotText("WI-FI", 5.0f, 46, C_FG);
       line("Step 1 / 3 - Wi-Fi", 88, 1, C_GREY);
-      check(LCD_W / 2, Y(170), D(110), C_FG);
-      dotText("CONNECTED", 4.4f, 240, C_FG);
-      line("Home Wi-Fi", 292, 2, C_FG);
-      line("Signal good", 316, 1, C_GREY);
-      bigButton("CONTINUE", true, SETUP5);
+      if (wifiState == 2) {
+        check(LCD_W / 2, Y(170), D(110), C_FG);
+        dotText("CONNECTED", 4.4f, 240, C_FG);
+        line(selSsid, 292, 2, C_FG);
+        char b[24]; snprintf(b, sizeof b, "Signal %d dBm", WiFi.RSSI()); line(b, 316, 1, C_GREY);
+        bigButton("CONTINUE", true, SETUP5);
+      } else if (wifiState == 3) {
+        dotText("FAILED", 5.0f, 170, C_FG);
+        line("Could not connect to", 250, 2, C_FG); line(selSsid, 276, 2, C_GREY);
+        line("Check the password and try again.", 306, 1, C_GREY);
+        bigButton("TRY AGAIN", true, SETUP2);
+      } else {
+        dotText("CONNECTING", 4.0f, 170, C_FG);
+        line(selSsid, 250, 2, C_GREY);
+        line("This takes a few seconds.", 280, 1, C_GREY);
+      }
       break;
     case SETUP5:
       dotText("ADD NOSTR", 4.5f, 46, C_FG);
@@ -710,6 +791,7 @@ static void startWorkout(const char *name, bool counts, int target) {
   wk = {name, counts, target}; reps = 0; setNo = 1; totalReps = 0; wkStart = millis();
 }
 void go(Screen s) {
+  if (s != SETUP3 && s != SETUP4) stopPortal();
   cur = s; nbtn = 0; screenAt = millis();
   clockUpdate();
   gfx->fillScreen(C_BG);
@@ -852,6 +934,9 @@ static void handleTap(int x, int y) {
       } else if (cur == FOOD && t == LOGGED) {
         int row = (y - Y(112)) / D(60);
         if (row == 2) waterMl += 250; else if (row == 3) foodItems++, lastFood = "Shake"; else foodItems++;
+      } else if (cur == SETUP2 && t == SETUP3) {
+        int row = (y - Y(112)) / D(58);
+        if (row < nNets) { strncpy(selSsid, netName[row], 32); selSsid[32] = 0; } else selSsid[0] = 0;
       } else if (cur == HEARD && t == REPS) {
         startWorkout("PUSH-UPS", true, 20);
       }
@@ -937,6 +1022,18 @@ void loop() {
     if (cur == PROUD) want = 0;
     if (!tour && (cur == PROUD || cur == PUMPED) && millis() - screenAt > 2500) { go(cur == PROUD ? PROOF : REPS); return; }
     if (want != bs) { bs = want; faceEyes(cur, !bs); }
+  }
+  if (apOn) { dns.processNextRequest(); web.handleClient(); }
+  if (credsIn) {
+    credsIn = false; Serial.printf("Connecting to %s\n", selSsid);
+    WiFi.begin(selSsid, selPass); wifiState = 1; connT0 = millis(); go(SETUP4);
+  }
+  if (cur == SETUP4 && wifiState == 1) {
+    if (WiFi.status() == WL_CONNECTED) {
+      wifiState = 2; delay(1200); stopPortal();
+      configTzTime("CET-1CEST,M3.5.0,M10.5.0/3", "pool.ntp.org", "time.google.com");
+      go(SETUP4);
+    } else if (millis() - connT0 > 20000) { wifiState = 3; WiFi.disconnect(); go(SETUP4); }
   }
   if (millis() - lastClk > 30000) { lastClk = millis(); clockUpdate(); }
   (void)lastFace;
