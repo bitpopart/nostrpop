@@ -45,7 +45,7 @@ jobs:
           mkdir -p docs
           {
             echo "=== LIB INFO ==="
-            D=$(find firmware/tribe/.pio/libdeps -maxdepth 2 -type d -name 'Arduino_GFX*' | head -1)
+            D=$(find firmware/tribe/.pio/libdeps -maxdepth 2 -mindepth 2 -type d -iname '*gfx*' | head -1)
             echo "dir: $D"
             grep -n -B1 -A6 "Arduino_CO5300(" "$D/src/display/Arduino_CO5300.h" || true
             grep -n -A3 "Arduino_Canvas(" "$D/src/canvas/Arduino_Canvas.h" || true
