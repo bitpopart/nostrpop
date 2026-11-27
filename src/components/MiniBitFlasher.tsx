@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 
 const MANIFEST_URL = '/bitbot/minibit/firmware/manifest.json';
 
-type Part = { path: string; offset: number };
+type Part = { path: string; offset: number; sha256?: string; gz?: boolean; rawSha256?: string };
 type Manifest = { version: string; parts: Part[] };
 type Phase = 'idle' | 'connecting' | 'flashing' | 'done' | 'error';
 
@@ -18,6 +18,16 @@ function isManifest(v: unknown): v is Manifest {
       return typeof q.path === 'string' && typeof q.offset === 'number';
     })
   );
+}
+
+async function sha256Hex(data: Uint8Array<ArrayBuffer>): Promise<string> {
+  const buf = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(buf), (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function gunzip(data: Uint8Array<ArrayBuffer>): Promise<Uint8Array<ArrayBuffer>> {
+  const stream = new Blob([data]).stream().pipeThrough(new DecompressionStream('gzip'));
+  return new Uint8Array(await new Response(stream).arrayBuffer());
 }
 
 function parseOffset(text: string): number | null {
@@ -133,7 +143,17 @@ export function MiniBitFlasher() {
         manifest.parts.map(async (p) => {
           const r = await fetch(`/bitbot/minibit/firmware/${p.path}`);
           if (!r.ok) throw new Error(`Could not download ${p.path}.`);
-          return { data: new Uint8Array(await r.arrayBuffer()), address: p.offset };
+          let data: Uint8Array<ArrayBuffer> = new Uint8Array(await r.arrayBuffer());
+          if (p.sha256 && (await sha256Hex(data)) !== p.sha256) {
+            throw new Error(`Checksum does not match for ${p.path}. Nothing was written.`);
+          }
+          if (p.gz) {
+            data = await gunzip(data);
+            if (p.rawSha256 && (await sha256Hex(data)) !== p.rawSha256) {
+              throw new Error(`Unpacked ${p.path} does not match its checksum. Nothing was written.`);
+            }
+          }
+          return { data, address: p.offset };
         }),
       );
       await flash(parts, `official firmware ${manifest.version}`);
