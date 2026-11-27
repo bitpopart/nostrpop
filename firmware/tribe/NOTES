@@ -1,1 +1,1 @@
-Diagnostic: repeats a status report over USB every 3 seconds (stage, memory, I2C devices, power chip) so the Monitor button always shows something.
+Safer boot settings (no PSRAM, DIO flash) in case the chip failed to start. Same status report over USB every 3 seconds.

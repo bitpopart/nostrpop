@@ -62,7 +62,7 @@ jobs:
           mkdir -p "$OUT"
           cp "$B/firmware.bin" "$OUT/app.bin"
           python -m esptool --chip esp32s3 merge_bin -o "$OUT/full.bin" \
-            --flash_mode qio --flash_size 32MB \
+            --flash_mode dio --flash_size 32MB \
             0x0 "$B/bootloader.bin" 0x8000 "$B/partitions.bin" 0xe000 "$BOOT" 0x10000 "$B/firmware.bin"
           python - <<PY
           import json,hashlib,os,datetime
