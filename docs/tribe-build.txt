@@ -117,4 +117,4 @@ esptool.py v5.0.0-dev1
 Creating ESP32S3 image...
 Merged 2 ELF sections.
 Successfully created ESP32S3 image.
-========================= [SUCCESS] Took 63.51 seconds =========================
+========================= [SUCCESS] Took 57.12 seconds =========================
