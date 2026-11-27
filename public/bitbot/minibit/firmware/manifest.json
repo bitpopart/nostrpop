@@ -17,7 +17,7 @@
   {
    "path": "0.1.0/app.bin",
    "offset": 65536,
-   "sha256": "e264ec30dd5bdb105b847530b84b1247b4eb762d3fa57127cd4d55afb831776b"
+   "sha256": "eee5c7e9d46b3daaa338e961f65c810f0859d1d0d70e34600c02ecd212b51d64"
   },
   {
    "path": "0.1.0/screens.bin.gz",
