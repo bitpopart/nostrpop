@@ -2281,6 +2281,7 @@
   }
   var SET_Y0 = 102, SET_H = 25, redDown = false, wifiDown = false;
   function redHit(x, y){ return Math.hypot(x - 233, y - 36) < 46; }
+  function setBtnHit(x, y){ return Math.abs(x - 233) < 80 && y > 388 && y < 428; }
   function wrapI(v, lo, hi){ return v < lo ? hi : (v > hi ? lo : v); }
   function setChange(row, d){
     if (row === 0) SETS.quietOn = !SETS.quietOn;
@@ -2632,7 +2633,7 @@
   function drawPick(now){
     pickStep(now);
     ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, S, S);
-    if (PK.txa > 0.02){ ctx.globalAlpha = PK.txa; bang('KEEP AN EYE ON YOUR TOON', C, 383, 38); ctx.globalAlpha = 1; }
+    if (PK.txa > 0.02){ ctx.globalAlpha = PK.txa; bang('KEEP AN EYE ON YOUR TOON', C, 383, 38); bang('SETTINGS', C, 418, 30); ctx.globalAlpha = 1; }
     if (TOONS.length === 1 && PK.txa > 0.1 && PK.items[0] && PK.items[0].al > 0.5 && PK.items[0].ta < 0.2){      // its health around the eye
       var hs = 0.6*PK.txa, ex = PK.items[0].x, ey = PK.items[0].y, hn = NEED[0], hc = CARE[0];
       nvButton(0, hs, hn[0], ex - 100, ey - 62); nvButton(1, hs, hn[1], ex, ey - 122); nvButton(2, hs, hn[2], ex + 100, ey - 62);
@@ -2815,7 +2816,7 @@
     if (flashMode){ flashMode = false; restart(false); return; }
     pointer.down = true; pointer.t0 = performance.now(); pointer.x0 = e.clientX; pointer.y0 = e.clientY; pointer.moved = 0; holdFired = false;
     try { cv.setPointerCapture(e.pointerId); } catch(_){}
-    redDown = false; wifiDown = false; restDown = false; if (scene === 'set' || scene === 'pick' || scene === 'wifi'){ var qr = canvasXY(e); wifiDown = scene === 'pick' && wifiHit(qr.x, qr.y); restDown = scene === 'pick' && !wifiDown && restHit(qr.x, qr.y); redDown = !wifiDown && !restDown && redHit(qr.x, qr.y); }
+    redDown = false; wifiDown = false; restDown = false; if (scene === 'set' || scene === 'pick' || scene === 'wifi'){ var qr = canvasXY(e); wifiDown = scene === 'pick' && wifiHit(qr.x, qr.y); restDown = scene === 'pick' && !wifiDown && restHit(qr.x, qr.y); redDown = !wifiDown && !restDown && (redHit(qr.x, qr.y) || (scene === 'pick' && setBtnHit(qr.x, qr.y))); }
     if (awake && scene === 'eye' && !redDown) toLook(e);
     pickPoint(e, true);
     if (scene === 'toon'){ var now0 = performance.now()/1000, q0 = canvasXY(e); sad.fx = q0.x; sad.fy = q0.y; sad.down = true; sad.eyeDown = eyeHit(q0.x, q0.y); NV.homeDown = sad.eyeDown || now0 - T.enterAt < 0.5 ? 0 : homeHit(q0.x, q0.y); NV.dotsDown = !sad.eyeDown && !NV.homeDown && dotsHit(q0.x, q0.y); NV.careDown = !sad.eyeDown && !NV.homeDown && !NV.dotsDown && careHit(q0.x, q0.y) > 0; sad.on = sad.eyeDown && !NV.open; }
@@ -2841,7 +2842,7 @@
       var q5 = canvasXY(e);
       if (restDown && restHit(q5.x, q5.y)){ restDown = false; redDown = false; PK.down = false; scene = 'rest'; restAt = now/1000; autoToon = false; }          // the zzz button: good night, then the screen goes off
       else if (wifiDown && wifiHit(q5.x, q5.y)){ wifiDown = false; redDown = false; PK.down = false; scene = 'wifi'; autoToon = false; }       // the WiFi icon: the WiFi screen
-      else if (redDown && redHit(q5.x, q5.y)){ redDown = false; PK.down = false; scene = 'set'; autoToon = false; }          // the little red eye: settings
+      else if (redDown && (redHit(q5.x, q5.y) || setBtnHit(q5.x, q5.y))){ redDown = false; PK.down = false; scene = 'set'; autoToon = false; }          // the little red eye: settings
       else { redDown = false; pickPoint(e); if (!holdFired) pickSelect(now/1000, PK.tx, PK.ty); if (e.pointerType !== 'mouse') PK.down = false; }
     }
     else if (scene === 'toon'){
