@@ -1,5 +1,14 @@
 [
  {
+  "version": "0.4.0",
+  "date": "2026-11-27",
+  "notes": "Fix: the display chip needs even-aligned writes, so small text, icons and the heart were missing. All screens now draw into a frame buffer and are sent aligned.",
+  "app": "0.4.0/app.bin",
+  "full": "0.4.0/full.bin",
+  "sha256_app": "6690755c6c83d76ce00856ee3a74667d8495cfe357738a505f7ff35c5202b7da",
+  "sha256_full": "5109dbb10c8894bff4cc53d271a7091659d2513b3148bd4195a48b5a82c75c86"
+ },
+ {
   "version": "0.3.2",
   "date": "2026-11-27",
   "notes": "Brighter, thicker menu and microphone icons.",
