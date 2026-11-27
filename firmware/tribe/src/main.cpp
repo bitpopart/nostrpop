@@ -286,6 +286,19 @@ static void probePower() {
   for (uint8_t r : regs) { v = axpRead(r, ok); Serial.printf("AXP2101 reg 0x%02X = 0x%02X\n", r, v); }
 }
 
+static void i2cScan() {
+  Serial.print("I2C devices:");
+  for (uint8_t a = 1; a < 127; a++) { Wire.beginTransmission(a); if (Wire.endTransmission() == 0) Serial.printf(" 0x%02X", a); }
+  Serial.println();
+}
+static const char *stageName = "boot";
+static void report() {
+  Serial.printf("TriBe %s | stage %s | up %lu s | heap %u | psram %u | display %dx%d\n", FW_VERSION, stageName,
+                (unsigned long)(millis() / 1000), (unsigned)ESP.getFreeHeap(), (unsigned)ESP.getFreePsram(), gfx->width(), gfx->height());
+  i2cScan();
+  probePower();
+}
+
 void setup() {
   Serial.begin(115200);
   delay(2500);  // time for the USB serial monitor to attach
@@ -294,7 +307,8 @@ void setup() {
   Wire.begin(I2C_SDA, I2C_SCL); Wire.setClock(400000);
   probePower();
   pinMode(BTN_BOOT, INPUT_PULLUP);
-  if (!gfx->begin()) { Serial.println("Display init failed"); while (true) { Serial.println("Display init failed"); delay(2000); } }
+  if (!gfx->begin()) { Serial.println("Display init failed"); while (true) { stageName = "display-FAILED"; report(); delay(3000); } }
+  stageName = "display-up";
   Serial.printf("Display ready %dx%d\n", gfx->width(), gfx->height());
   gfx->setBrightness(255);
   { const char *nm[4] = {"red", "green", "blue", "white"};
@@ -308,10 +322,13 @@ void setup() {
   if (!anim->begin(GFX_SKIP_OUTPUT_BEGIN)) Serial.println("Canvas init failed (PSRAM?)"); else Serial.println("Canvas ready");
   pinMode(TP_RESET, OUTPUT); digitalWrite(TP_RESET, LOW); delay(20); digitalWrite(TP_RESET, HIGH); delay(60);
   pinMode(TP_INT, INPUT);
+  stageName = "ui";
   go(HOME);
 }
 
 void loop() {
+  static uint32_t lastRep = 0;
+  if (millis() - lastRep > 3000) { lastRep = millis(); report(); }
   if (cur == CALM || cur == BOX || cur == B478) tickSession();
   int x, y;
   bool down = ftRead(x, y);
