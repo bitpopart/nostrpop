@@ -1,5 +1,14 @@
 [
  {
+  "version": "0.4.3",
+  "date": "2026-11-27",
+  "notes": "Pick one scrolls by dragging, with momentum (12 workouts in one list). Bigger Wi-Fi QR plus setup network status and manual steps.",
+  "app": "0.4.3/app.bin",
+  "full": "0.4.3/full.bin",
+  "sha256_app": "7228764d144293a0d9b6d1f8a1baa1f92ecd233fa54f2da8580ffee94516b409",
+  "sha256_full": "fc71a94703620bbdf46451c5367b1fcb268b912eef0a258830c9e355bc58c19d"
+ },
+ {
   "version": "0.4.2",
   "date": "2026-11-27",
   "notes": "Real Wi-Fi setup: scans networks, QR joins the board setup network, phone types the password, board connects and sets its clock from the internet.",
