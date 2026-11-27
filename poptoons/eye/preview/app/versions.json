@@ -11,9 +11,9 @@
     "set": "PeepPops",
     "thumb": "thumbs/fizz.png",
     "app": "fw/0.6.2/fizz/app.bin",
-    "appSha256": "7150f46fd0e0ce61fbd2c1e879a1a2cb9840f26d4a0a137109c7f983e21e6aa7",
+    "appSha256": "929c4258323697535461cb09ec1c43b656f89ed442469f2b54f849e5fc7dd9f6",
     "full": "fw/0.6.2/fizz/full.bin",
-    "fullSha256": "a16f611d57303425b7ec0c3cfade873f5a19a30ae7f5dd2aa442a0743eead1bc"
+    "fullSha256": "c4217a2b7dd67d8eaf77e05c2bb04eddbf4e00bab7f1e2049708e21e41abe530"
    },
    "uno": {
     "name": "Uno",
@@ -29,9 +29,9 @@
     "set": "PeepPops",
     "thumb": "thumbs/zig.png",
     "app": "fw/0.6.2/zig/app.bin",
-    "appSha256": "6510c51b786d30d435c28d4f2d9fadc1b57d3abc0c2525a0d851a66b6e69cc1a",
+    "appSha256": "bf96bd9aafd8c7d826b7e7b2c33cd0d7f3892bab066765fdfaf93dff1ea44faa",
     "full": "fw/0.6.2/zig/full.bin",
-    "fullSha256": "da6c10ea0e8af127c999dffc0b5c5a57da1761926ae39b4f2bf0739f055b6d80"
+    "fullSha256": "4828b200a0fccba77120d9caf480b5b152b573024522f2571e3ac29538060056"
    },
    "buck": {
     "name": "Buck",
