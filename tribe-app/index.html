@@ -269,7 +269,7 @@ function renderVersions(){var v=$('fl-vtab');
  v.innerHTML='<table><tr><th>Version</th><th>Date</th><th>What is new</th></tr>'+list.map(function(x,i){return '<tr><td>'+esc(x.version)+(i===0?' (newest)':'')+'</td><td>'+esc(x.date)+'</td><td>'+esc(x.notes)+'</td></tr>'}).join('')+'</table>'}
 function loadManifest(){
  if(!FW_BASE){list=[];renderVersions();pick();return Promise.resolve()}
- return fetch(FW_BASE+'manifest.json',{cache:'no-store'}).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(l){list=l;renderVersions();pick()}).catch(function(){list=[];renderVersions();pick()})}
+ return fetch(FW_BASE+'manifest.json?t='+Date.now(),{cache:'no-store'}).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(l){list=l;renderVersions();pick()}).catch(function(){list=[];renderVersions();pick()})}
 function showFw(){var e=$('fl-fw');e.textContent=fw?(fw.name+' · '+(fw.data.length/1024).toFixed(0)+' KB · sha256 '+fw.sha.slice(0,16)+'…'):'No firmware selected.';refresh()}
 async function pick(){fw=null;showFw();
  var kind=kindNow();$('fl-addr').value=hexs(offNow());
@@ -279,7 +279,7 @@ async function pick(){fw=null;showFw();
  if(!list.length){$('fl-fw').textContent='No TriBe firmware is published yet. Open Advanced and choose a .bin file yourself.';return}
  var x=list[0],f=x[kind]||(kind==='app'?x.file:null);
  if(!f){$('fl-fw').textContent='This version has no '+(kind==='full'?'full.bin':'app.bin')+'. Pick the other mode or choose a file.';return}
- try{var r=await fetch(FW_BASE+f,{cache:'no-store'});if(!r.ok)throw 0;var buf=await r.arrayBuffer();var sha=hex(await crypto.subtle.digest('SHA-256',buf));
+ try{var r=await fetch(FW_BASE+f+'?v='+encodeURIComponent(x.version),{cache:'no-store'});if(!r.ok)throw 0;var buf=await r.arrayBuffer();var sha=hex(await crypto.subtle.digest('SHA-256',buf));
   var want=x['sha256_'+kind]||(kind==='app'?x.sha256:'');
   if(want&&want.toLowerCase()!==sha){fw=null;$('fl-fw').textContent='Checksum does not match the manifest. Flashing is blocked.';log('Checksum mismatch for '+f);return}
   fw={name:f+' ('+x.version+')',data:new Uint8Array(buf),sha:sha,kind:kind};showFw()
