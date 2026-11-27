@@ -1,17 +1,3 @@
-Compiling .pio/build/powout/libbc3/GFX Library for Arduino/display/Arduino_ILI9481_18bit.cpp.o
-Compiling .pio/build/powout/libbc3/GFX Library for Arduino/display/Arduino_ILI9486.cpp.o
-Compiling .pio/build/powout/libbc3/GFX Library for Arduino/display/Arduino_ILI9486_18bit.cpp.o
-Compiling .pio/build/powout/libbc3/GFX Library for Arduino/display/Arduino_ILI9488.cpp.o
-Compiling .pio/build/powout/libbc3/GFX Library for Arduino/display/Arduino_ILI9488_18bit.cpp.o
-Compiling .pio/build/powout/libbc3/GFX Library for Arduino/display/Arduino_ILI9488_3bit.cpp.o
-Compiling .pio/build/powout/libbc3/GFX Library for Arduino/display/Arduino_ILI9806.cpp.o
-Compiling .pio/build/powout/libbc3/GFX Library for Arduino/display/Arduino_JBT6K71.cpp.o
-Compiling .pio/build/powout/libbc3/GFX Library for Arduino/display/Arduino_JD9613.cpp.o
-Compiling .pio/build/powout/libbc3/GFX Library for Arduino/display/Arduino_NT35310.cpp.o
-Compiling .pio/build/powout/libbc3/GFX Library for Arduino/display/Arduino_NT35510.cpp.o
-Compiling .pio/build/powout/libbc3/GFX Library for Arduino/display/Arduino_NT39125.cpp.o
-Compiling .pio/build/powout/libbc3/GFX Library for Arduino/display/Arduino_NV3007.cpp.o
-Compiling .pio/build/powout/libbc3/GFX Library for Arduino/display/Arduino_NV3023.cpp.o
 Compiling .pio/build/powout/libbc3/GFX Library for Arduino/display/Arduino_NV3041A.cpp.o
 Compiling .pio/build/powout/libbc3/GFX Library for Arduino/display/Arduino_OTM8009A.cpp.o
 Compiling .pio/build/powout/libbc3/GFX Library for Arduino/display/Arduino_R61529.cpp.o
@@ -115,6 +101,20 @@ esptool.py v5.0.0-dev1
 Creating ESP32S3 image...
 Merged 2 ELF sections.
 Successfully created ESP32S3 image.
-========================= [SUCCESS] Took 81.33 seconds =========================
+========================= [SUCCESS] Took 59.28 seconds =========================
 === LIB INFO ===
-dir: 
+dir: firmware/tribe/.pio/libdeps/powout/GFX Library for Arduino
+157-public:
+158:  Arduino_CO5300(
+159-      Arduino_DataBus *bus, int8_t rst = GFX_NOT_DEFINED, uint8_t r = 0,
+160-      bool ips = false, int16_t w = CO5300_MAXWIDTH, int16_t h = CO5300_MAXHEIGHT,
+161-      uint8_t col_offset1 = 0, uint8_t row_offset1 = 0, uint8_t col_offset2 = 0, uint8_t row_offset2 = 0);
+162-
+163-  bool begin(int32_t speed = GFX_NOT_DEFINED) override;
+164-
+12:  Arduino_Canvas(int16_t w, int16_t h, Arduino_G *output, int16_t output_x = 0, int16_t output_y = 0, uint8_t rotation = 0);
+13:  ~Arduino_Canvas();
+14-
+15-  bool begin(int32_t speed = GFX_NOT_DEFINED) override;
+16-  void writePixelPreclipped(int16_t x, int16_t y, uint16_t color) override;
+15:  bool begin(int32_t speed = GFX_NOT_DEFINED) override;
