@@ -68,3 +68,27 @@
 .mbp a.tlink{display:block;text-decoration:none;color:#141414;transition:transform .12s cubic-bezier(.34,1.56,.64,1),box-shadow .12s}
 .mbp a.tlink:hover{transform:translate(-2px,-2px);box-shadow:5px 5px 0 #f7931a}
 .mbp a.tlink:focus-visible{outline:3px solid #141414;outline-offset:3px}
+
+.mbp .flashsec{margin:46px 0 0}
+.mbp .flashsec h2{font:500 14px/1 'MBP JBM',monospace;letter-spacing:.24em;text-transform:uppercase;color:#6e6d68;margin:0 0 16px}
+.mbp .flash{background:#fbfaf7;border:2px solid #141414;border-radius:14px;padding:22px;box-shadow:6px 6px 0 #f7931a;display:flex;flex-direction:column;gap:16px}
+.mbp .fsteps{margin:0;padding-left:22px;font:400 14px/1.7 'MBP JBM',monospace;color:#141414}
+.mbp .fnote{margin:0;font:400 14px/1.6 'MBP JBM',monospace}
+.mbp .fbox{border:2px solid #141414;border-radius:12px;padding:16px 18px;background:#efeeea}
+.mbp .fh{font:500 20px/1.1 'MBP Inter',sans-serif;letter-spacing:-.01em}
+.mbp .fd{font:400 13px/1.6 'MBP JBM',monospace;color:#6e6d68;margin:8px 0 12px}
+.mbp .frow{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center}
+.mbp .frow input[type=file]{font:400 13px 'MBP JBM',monospace;max-width:100%}
+.mbp .foff{display:flex;align-items:center;gap:8px;font:400 13px 'MBP JBM',monospace;text-transform:uppercase;letter-spacing:.06em}
+.mbp .foff input{width:96px;font:400 14px 'MBP JBM',monospace;border:2px solid #141414;border-radius:8px;padding:6px 8px;background:#fff}
+.mbp .fbtn{font:500 13px/1 'MBP JBM',monospace;letter-spacing:.08em;text-transform:uppercase;color:#141414;background:#f7931a;border:2px solid #141414;border-radius:8px;padding:10px 16px;cursor:pointer;box-shadow:3px 3px 0 #141414;transition:transform .12s,box-shadow .12s}
+.mbp .fbtn:hover:not(:disabled){transform:translate(-1px,-1px);box-shadow:4px 4px 0 #141414}
+.mbp .fbtn:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
+.mbp .fchk{display:flex;align-items:center;gap:8px;font:400 13px 'MBP JBM',monospace}
+.mbp .fstat{display:flex;flex-direction:column;gap:10px}
+.mbp .fbar{height:14px;border:2px solid #141414;border-radius:8px;background:#fff;overflow:hidden}
+.mbp .fbar span{display:block;height:100%;background:#f7931a;transition:width .15s}
+.mbp .fmsg{font:500 14px/1.5 'MBP JBM',monospace}
+.mbp .fmsg.error{color:#b3261e}
+.mbp .fmsg.done{color:#1a7f37}
+.mbp .fstat pre{margin:0;max-height:180px;overflow:auto;background:#141414;color:#dce9ff;border-radius:8px;padding:10px 12px;font:400 12px/1.5 'MBP JBM',monospace;white-space:pre-wrap}
