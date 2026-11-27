@@ -1,8 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { MouseEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSeoMeta } from '@unhead/react';
 import { BotSwitch } from '@/components/BotSwitch';
+import { MiniBitFlasher } from '@/components/MiniBitFlasher';
 import html from './minibit.html?raw';
 import './minibit.css';
 
@@ -22,6 +24,13 @@ const VIEWER_SRC = '/bitbot/minibit/viewer.js';
  */
 export default function MiniBit() {
   const navigate = useNavigate();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [flasherMount, setFlasherMount] = useState<HTMLElement | null>(null);
+
+  // The flasher is a React component placed into a slot inside the static markup.
+  useEffect(() => {
+    setFlasherMount(rootRef.current?.querySelector<HTMLElement>('#flasher-root') ?? null);
+  }, []);
 
   useSeoMeta({
     title: 'MiniBit — BitBot series | BitPopArt',
@@ -67,7 +76,8 @@ export default function MiniBit() {
   return (
     <>
       <BotSwitch active="minibit" />
-      <div className="mbp" onClick={onClick} dangerouslySetInnerHTML={{ __html: html }} />
+      <div className="mbp" ref={rootRef} onClick={onClick} dangerouslySetInnerHTML={{ __html: html }} />
+      {flasherMount && createPortal(<MiniBitFlasher />, flasherMount)}
     </>
   );
 }
