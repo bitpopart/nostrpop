@@ -7,6 +7,8 @@
 #include <WebServer.h>
 #include <DNSServer.h>
 #include <time.h>
+#include <ESPmDNS.h>
+#include <Preferences.h>
 #include <Arduino_GFX_Library.h>
 #include "version.h"
 #include "dotfont.h"
@@ -167,6 +169,12 @@ int reps = 0, setNo = 1, setsTotal = 4, totalReps = 0;
 uint32_t wkStart = 0;
 int foodItems = 0, waterMl = 0, streakDays = 5;
 const char *lastFood = "Meal";
+static char userNpub[70] = "";
+static Preferences prefs;
+static void shortNpub(char *out, size_t n) {
+  if (!userNpub[0]) { snprintf(out, n, "not set"); return; }
+  snprintf(out, n, "%.9s...%s", userNpub, userNpub + strlen(userNpub) - 5);
+}
 
 // ---- Clock and battery (status bar) ----
 static uint8_t bcd2(uint8_t v) { return (v >> 4) * 10 + (v & 15); }
@@ -208,7 +216,16 @@ static void clockUpdate() {
   uint8_t b;
   if (i2cRead(0x34, 0xA4, &b, 1) && b <= 100) batt = b;
 }
+static void wifiIcon(bool on) {
+  int cx = LCD_W - OFFX - D(22) - 90, cy = Y(12) + 24;
+  gfx->fillRect(cx - 22, Y(8), 44, 34, C_BG);
+  if (!on) return;
+  gfx->fillCircle(cx, cy, 3, C_FG);
+  for (int r = 9; r <= 21; r += 6)
+    for (int a = 228; a <= 312; a += 4) gfx->fillCircle(cx + (int)(cosf(a * 0.0174533f) * r), cy + (int)(sinf(a * 0.0174533f) * r), 1, C_FG);
+}
 static void statusBar() {
+  wifiIcon(WiFi.status() == WL_CONNECTED);
   char t[8]; snprintf(t, sizeof t, "%02d:%02d", clkH, clkM);
   float cell = 2.9f * S;
   dotTextLeft(gfx, t, OFFX + D(22), Y(12), cell, C_GREY);
@@ -641,7 +658,7 @@ static void drawProof() {
     smallText(gfx, l[i], cx, Y(212), 1, C_GREY);
     dotTextPx(gfx, v[i], cx, Y(232), 3.6f * S, C_FG);
   }
-  line("Signed npub1gwa2...ta2sz", 331, 1, C_GREY);
+  { char sb[48], np[28]; shortNpub(np, sizeof np); snprintf(sb, sizeof sb, "%s - not signed yet", np); line(sb, 331, 1, C_GREY); }
   bigBtnAt("SHARE", true, SHARE, 448 - 28 - 44.2f);
   backPill(HOME);
 }
@@ -711,12 +728,43 @@ static void handleSave() {
   web.send(200, "text/html", F("<!doctype html><meta name=viewport content='width=device-width,initial-scale=1'><body style='font-family:sans-serif;background:#000;color:#f2f1ec;padding:24px'><h2>Connecting...</h2><p>Look at your POWout.</p></body>"));
   credsIn = true;
 }
+static bool nostrOn = false, routesSet = false;
+static volatile bool npubIn = false;
+static void handleNostr() {
+  web.send(200, "text/html", F("<!doctype html><meta name=viewport content='width=device-width,initial-scale=1'><body style='font-family:sans-serif;background:#000;color:#f2f1ec;padding:24px;max-width:420px;margin:auto'>"
+    "<h2>POWout Nostr</h2><p>Paste your public key (npub). Never paste your nsec.</p><form method=POST action=/nostrsave>"
+    "<p><input name=npub placeholder=npub1... style='width:100%;font-size:16px;padding:8px'></p>"
+    "<button style='width:100%;font-size:20px;padding:12px;border-radius:24px;border:0;background:#f2f1ec'>Save</button></form></body>"));
+}
+static void handleNostrSave() {
+  String v = web.arg("npub"); v.trim();
+  if (v.startsWith("npub1") && v.length() == 63) {
+    v.toCharArray(userNpub, 70);
+    prefs.begin("powout", false); prefs.putString("npub", v); prefs.end();
+    web.send(200, "text/html", F("<!doctype html><meta name=viewport content='width=device-width,initial-scale=1'><body style='font-family:sans-serif;background:#000;color:#f2f1ec;padding:24px'><h2>Saved</h2><p>Look at your POWout.</p></body>"));
+    npubIn = true;
+  } else {
+    web.send(400, "text/html", F("<!doctype html><meta name=viewport content='width=device-width,initial-scale=1'><body style='font-family:sans-serif;background:#000;color:#f2f1ec;padding:24px'><h2>That is not an npub</h2><p>It starts with npub1 and is 63 characters. <a style='color:#f2f1ec' href=/nostr>Try again</a></p></body>"));
+  }
+}
+static void setupRoutes() {
+  if (routesSet) return;
+  web.on("/", HTTP_GET, handleRoot); web.on("/save", HTTP_POST, handleSave);
+  web.on("/nostr", HTTP_GET, handleNostr); web.on("/nostrsave", HTTP_POST, handleNostrSave);
+  web.onNotFound(handleRoot); routesSet = true;
+}
+static void startNostr() {
+  if (nostrOn || apOn || WiFi.status() != WL_CONNECTED) return;
+  setupRoutes(); MDNS.begin("powout"); MDNS.addService("http", "tcp", 80);
+  web.begin(); nostrOn = true; npubIn = false;
+}
+static void stopNostr() { if (!nostrOn) return; web.stop(); MDNS.end(); nostrOn = false; }
 static bool apOk = false;
 static void startPortal() {
   if (apOn) return;
   WiFi.mode(WIFI_AP_STA); apOk = WiFi.softAP("POWout-setup");
   dns.start(53, "*", WiFi.softAPIP());
-  web.on("/", HTTP_GET, handleRoot); web.on("/save", HTTP_POST, handleSave); web.onNotFound(handleRoot);
+  setupRoutes();
   web.begin(); apOn = true; credsIn = false;
   Serial.printf("Setup portal on, ip %s\n", WiFi.softAPIP().toString().c_str());
 }
@@ -784,20 +832,36 @@ static void drawSetup(Screen s) {
     case SETUP5:
       dotText("ADD NOSTR", 4.5f, 46, C_FG);
       line("Step 2 / 3 - Nostr", 88, 1, C_GREY);
-      qr(QR_NOSTR, QR_NOSTR_N, 106, 140);
-      line("Scan with your signer app.", 272, 2, C_FG);
-      line("Your nsec stays in the signer.", 293, 1, C_GREY);
-      chip(LCD_W / 2, 318, "NO NSEC ON THE DEVICE");
-      bigBtnAt("NEXT", true, SETUP6, 448 - 26 - 48);
+      if (WiFi.status() == WL_CONNECTED) {
+        startNostr();
+        qr(QR_NOSTR, QR_NOSTR_N, 100, 198);
+        line("Scan with your phone camera.", 304, 2, C_FG);
+        line("Paste your npub on the page that opens.", 330, 1, C_GREY);
+        char b[56]; snprintf(b, sizeof b, "or open http://%s/nostr", WiFi.localIP().toString().c_str());
+        line(b, 346, 1, C_GREY);
+        chip(LCD_W / 2, 364, "PUBLIC KEY ONLY. NO NSEC.");
+        bigBtnAt("SKIP", false, SETUP6, 396);
+      } else {
+        line("Connect to Wi-Fi first.", 180, 2, C_FG);
+        line("Your phone and POWout need the same network.", 210, 1, C_GREY);
+        bigBtnAt("WI-FI", true, SETUP2, 448 - 28 - 44.2f - 12);
+      }
       break;
-    default:
+    default: {
       dotText("ALL SET", 5.0f, 46, C_FG);
       line("Step 3 / 3 - Done", 88, 1, C_GREY);
-      check(LCD_W / 2, Y(170), D(110), C_FG);
-      dotText("SIGNER LINKED", 3.6f, 240, C_FG);
-      line("npub1gwa2...ta2sz", 292, 2, C_FG);
-      line("Proofs are signed in your app.", 316, 1, C_GREY);
+      char b[40]; shortNpub(b, sizeof b);
+      if (userNpub[0]) {
+        check(LCD_W / 2, Y(170), D(110), C_FG);
+        dotText("NPUB ADDED", 4.4f, 240, C_FG);
+        line(b, 292, 2, C_FG);
+        line("Signing with your app comes next.", 316, 1, C_GREY);
+      } else {
+        dotText("SKIPPED", 5.0f, 170, C_FG);
+        line("No npub yet. Add it in Setup later.", 250, 1, C_GREY);
+      }
       bigButton("FINISH", true, HOME);
+    }
   }
 }
 
@@ -809,6 +873,7 @@ static void startWorkout(const char *name, bool counts, int target) {
 }
 void go(Screen s) {
   if (s != SETUP3 && s != SETUP4) stopPortal();
+  if (s != SETUP5 && s != SETUP6) stopNostr();
   cur = s; nbtn = 0; screenAt = millis();
   clockUpdate();
   gfx->fillScreen(C_BG);
@@ -1012,6 +1077,7 @@ void setup() {
   AX0 = ((LCD_W - AW) / 2) & ~1; AY0 = (Y(122) - D(20)) & ~1;
   pinMode(TP_RESET, OUTPUT); digitalWrite(TP_RESET, LOW); delay(20); digitalWrite(TP_RESET, HIGH); delay(60);
   pinMode(TP_INT, INPUT);
+  { prefs.begin("powout", true); String n = prefs.getString("npub", ""); prefs.end(); n.toCharArray(userNpub, 70); }
   clockInit(); clockUpdate();
   probePower(); i2cScan();
   stageName = "ui";
@@ -1042,7 +1108,14 @@ void loop() {
     if (!tour && (cur == PROUD || cur == PUMPED) && millis() - screenAt > 2500) { go(cur == PROUD ? PROOF : REPS); return; }
     if (want != bs) { bs = want; faceEyes(cur, !bs); }
   }
-  if (apOn) { dns.processNextRequest(); web.handleClient(); }
+  if (apOn) dns.processNextRequest();
+  if (apOn || nostrOn) web.handleClient();
+  if (npubIn) { npubIn = false; go(SETUP6); }
+  static uint32_t lastWc = 0; static bool wasWifi = false;
+  if (millis() - lastWc > 2000) {
+    lastWc = millis(); bool c = WiFi.status() == WL_CONNECTED;
+    if (c != wasWifi) { wasWifi = c; if (cur != LOADING && !(cur >= READY && cur <= REST)) { wifiIcon(c); dirty = true; } }
+  }
   if (credsIn) {
     credsIn = false; Serial.printf("Connecting to %s\n", selSsid);
     WiFi.begin(selSsid, selPass); wifiState = 1; connT0 = millis(); go(SETUP4);
