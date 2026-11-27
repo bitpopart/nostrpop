@@ -34,7 +34,7 @@ jobs:
           echo "#define FW_VERSION \"$V\"" > src/version.h
           mkdir -p ../../docs
           set -o pipefail
-          pio run 2>&1 | tee ../../docs/tribe-build-full.log
+          pio run 2>&1 | tee ../../docs/tribe-build-full.txt
       - name: Publish
         run: |
           set -e
@@ -67,11 +67,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          [ -f docs/tribe-build-full.log ] && tail -n 120 docs/tribe-build-full.log > docs/tribe-build.log
-          rm -f docs/tribe-build-full.log
+          [ -f docs/tribe-build-full.txt ] && tail -n 120 docs/tribe-build-full.txt > docs/tribe-build.txt
+          rm -f docs/tribe-build-full.txt
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/tribe-app/fw docs/tribe-build.log
+          git add public/tribe-app/fw docs/tribe-build.txt
           git diff --cached --quiet && exit 0
           PUB=$(git diff --cached --name-only | grep -c '^public/tribe-app/fw' || true)
           git commit -m "TriBe firmware build result"
