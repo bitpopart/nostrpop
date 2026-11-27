@@ -1,5 +1,14 @@
 [
  {
+  "version": "0.2.4",
+  "date": "2026-11-27",
+  "notes": "Safer boot settings (no PSRAM, DIO flash) in case the chip failed to start. Same status report over USB every 3 seconds.",
+  "app": "0.2.4/app.bin",
+  "full": "0.2.4/full.bin",
+  "sha256_app": "a43f46eb39e9bcb023a91cdbe7e1c80800477adbcb8562480593eaad3afe0361",
+  "sha256_full": "617932dd9a2b26bf6c23d2f981ea6591fac1ee58d97c01fe23d20789ea4a3689"
+ },
+ {
   "version": "0.2.3",
   "date": "2026-11-27",
   "notes": "Diagnostic: repeats a status report over USB every 3 seconds (stage, memory, I2C devices, power chip) so the Monitor button always shows something.",
