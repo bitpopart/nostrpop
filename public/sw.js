@@ -10,7 +10,7 @@
  * precache navigation URLs (their response is NOT ok and addAll would abort).
  * We precache only static files that return HTTP 200.
  */
-const VERSION = 'v2';
+const VERSION = 'v3';
 const CACHE = 'bitpopart-fanapp-' + VERSION;
 const SHELL = [
   '/index.html',
@@ -49,6 +49,8 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(req.url);
   // Only own-origin requests are intercepted.
   if (url.origin !== self.location.origin) return;
+  // Firmware files and manifests change without a new filename: always go to the network.
+  if (url.pathname.includes('/firmware/')) return;
 
   // Navigations (any route, incl. the /app PWA view): network-first.
   if (req.mode === 'navigate') {
