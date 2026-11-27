@@ -185,10 +185,10 @@ html,body{background-color:#efeeea;background-image:var(--p1)}
 <div class="fl-warn" id="fl-warn" hidden></div>
 <div class="fl-row"><span class="fl-l">Device</span><select id="fl-dev"><option value="powout">POWout</option></select></div>
 <div class="fl-modes"><label class="fl-m"><input type="radio" name="fl-mode" value="update" checked><b>Update</b><span>Keeps your settings. Most people pick this.</span></label><label class="fl-m"><input type="radio" name="fl-mode" value="new"><b>New device</b><span>Erases the device first. For a fresh or stuck device.</span></label></div>
-<details class="fl-adv"><summary>Advanced: firmware file and offset</summary><div class="fl-row"><span class="fl-l">Firmware</span>
-<select id="fl-src"><option value="latest">Latest published version</option><option value="file">Choose a .bin file</option></select>
+<details class="fl-adv"><summary>Advanced: choose your own firmware file</summary><div class="fl-row"><span class="fl-l">Firmware</span>
+<select id="fl-src"><option value="latest">Latest published version</option><option value="file">Choose a .bin file myself</option></select>
 <input type="file" id="fl-file" accept=".bin" hidden>
-<span class="fl-l" style="margin-left:6px">Offset</span><input id="fl-addr" value="0x0" size="8" spellcheck="false"></div></details>
+<span class="fl-l" style="margin-left:6px">Offset</span><input id="fl-addr" value="0x10000" size="8" spellcheck="false" readonly title="Set by the mode: Update 0x10000, New device 0x0"></div></details>
 <div class="fl-row"><span id="fl-fw" class="fl-mute">No firmware selected.</span></div>
 <div class="fl-row fl-btns"><button id="fl-connect">Connect</button><button id="fl-flash" disabled>Flash</button><button id="fl-disc" disabled>Disconnect</button><span id="fl-state" class="fl-mute">Not connected</span></div>
 <div class="fl-info" id="fl-info" hidden></div>
@@ -249,7 +249,12 @@ pako/dist/pako.esm.mjs:
 // Where published firmware lives. Needs a manifest.json and .bin files, served with CORS. Empty means "choose a .bin yourself".
 var FW_BASE='';
 var $=function(i){return document.getElementById(i)};
+var OFF_APP=0x10000,OFF_FULL=0x0;
 var port=null,transport=null,loader=null,fw=null,list=[],busy=false;
+function modeNow(){return document.querySelector('input[name=fl-mode]:checked').value}
+function kindNow(){return modeNow()==='new'?'full':'app'}
+function offNow(){return kindNow()==='full'?OFF_FULL:OFF_APP}
+function hexs(n){return '0x'+n.toString(16)}
 function log(m){var l=$('fl-log');l.textContent+=m+'\n';l.scrollTop=l.scrollHeight}
 var term={clean:function(){},writeLine:function(d){log(d)},write:function(d){var l=$('fl-log');l.textContent+=d;l.scrollTop=l.scrollHeight}};
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
@@ -266,16 +271,21 @@ function loadManifest(){
  return fetch(FW_BASE+'manifest.json',{cache:'no-store'}).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(l){list=l;renderVersions();pick()}).catch(function(){list=[];renderVersions();pick()})}
 function showFw(){var e=$('fl-fw');e.textContent=fw?(fw.name+' · '+(fw.data.length/1024).toFixed(0)+' KB · sha256 '+fw.sha.slice(0,16)+'…'):'No firmware selected.';refresh()}
 async function pick(){fw=null;showFw();
- if($('fl-src').value==='file'){$('fl-file').hidden=false;return}
+ var kind=kindNow();$('fl-addr').value=hexs(offNow());
+ var need=kind==='full'?'the complete image (full.bin)':'the app image (app.bin)';
+ if($('fl-src').value==='file'){$('fl-file').hidden=false;$('fl-fw').textContent='Choose '+need+'.';return}
  $('fl-file').hidden=true;
- if(!list.length){$('fl-fw').textContent='No published version yet. Choose a .bin file instead.';return}
- var x=list[0];
- try{var r=await fetch(FW_BASE+x.file,{cache:'no-store'});if(!r.ok)throw 0;var buf=await r.arrayBuffer();var sha=hex(await crypto.subtle.digest('SHA-256',buf));
-  if(x.sha256&&x.sha256.toLowerCase()!==sha){fw=null;$('fl-fw').textContent='Checksum does not match the manifest. Flashing is blocked.';log('Checksum mismatch for '+x.file);return}
-  fw={name:x.file+' ('+x.version+')',data:new Uint8Array(buf),sha:sha};if(x.address)$('fl-addr').value=x.address;showFw()
+ if(!list.length){$('fl-fw').textContent='No TriBe firmware is published yet. Open Advanced and choose a .bin file yourself.';return}
+ var x=list[0],f=x[kind]||(kind==='app'?x.file:null);
+ if(!f){$('fl-fw').textContent='This version has no '+(kind==='full'?'full.bin':'app.bin')+'. Pick the other mode or choose a file.';return}
+ try{var r=await fetch(FW_BASE+f,{cache:'no-store'});if(!r.ok)throw 0;var buf=await r.arrayBuffer();var sha=hex(await crypto.subtle.digest('SHA-256',buf));
+  var want=x['sha256_'+kind]||(kind==='app'?x.sha256:'');
+  if(want&&want.toLowerCase()!==sha){fw=null;$('fl-fw').textContent='Checksum does not match the manifest. Flashing is blocked.';log('Checksum mismatch for '+f);return}
+  fw={name:f+' ('+x.version+')',data:new Uint8Array(buf),sha:sha,kind:kind};showFw()
  }catch(e){$('fl-fw').textContent='Could not load the firmware file.'}}
+document.querySelectorAll('input[name=fl-mode]').forEach(function(r){r.onchange=pick});
 $('fl-src').onchange=pick;
-$('fl-file').onchange=async function(){var f=this.files[0];if(!f)return;var buf=await f.arrayBuffer();var sha=hex(await crypto.subtle.digest('SHA-256',buf));fw={name:f.name,data:new Uint8Array(buf),sha:sha};showFw();log('Loaded '+f.name+'. sha256 '+sha)};
+$('fl-file').onchange=async function(){var f=this.files[0];if(!f)return;var buf=await f.arrayBuffer();var sha=hex(await crypto.subtle.digest('SHA-256',buf));fw={name:f.name,data:new Uint8Array(buf),sha:sha,kind:kindNow()};showFw();log('Loaded '+f.name+' for '+(kindNow()==='full'?'New device (0x0)':'Update (0x10000)')+'. sha256 '+sha)};
 $('fl-connect').onclick=async function(){
  try{busy=true;refresh();setState('Choose the port…');
   port=await navigator.serial.requestPort();
@@ -290,11 +300,11 @@ $('fl-connect').onclick=async function(){
 $('fl-disc').onclick=async function(){try{if(transport)await transport.disconnect()}catch(e){}loader=null;transport=null;port=null;setState('Not connected');$('fl-info').hidden=true;$('fl-bar').value=0;refresh()};
 $('fl-flash').onclick=async function(){
  if(!loader||!fw)return;
- var addr=parseInt($('fl-addr').value,16);if(isNaN(addr)||addr<0){log('Offset is not valid. Use a hex value like 0x0.');return}
- var d=fw.data;
+ var mode=modeNow(),addr=offNow(),d=fw.data;
  if(d.length<4096){log('This file is too small to be a firmware image.');return}
- if(addr===0&&d[0]!==0xE9){log('This file does not start like an ESP image at offset 0x0. Flashing is blocked.');return}
- var mode=document.querySelector('input[name=fl-mode]:checked').value;
+ if(d[0]!==0xE9){log('This file does not start like an ESP image. Flashing is blocked.');return}
+ if(fw.kind&&fw.kind!==kindNow()){log('This file was chosen for the other mode. Choose it again for '+(mode==='new'?'New device':'Update')+'.');return}
+ if(mode==='new'&&d.length<200*1024){log('New device needs the complete image (full.bin: bootloader, partitions and app). This file is too small, it looks like an app-only file. Flashing is blocked, because the device would not start.');return}
  if(mode==='new'&&!confirm('New device erases the whole device first. Wi-Fi, npub and settings will be gone. Continue?'))return;
  busy=true;refresh();$('fl-bar').value=0;setState('Flashing…');
  try{
