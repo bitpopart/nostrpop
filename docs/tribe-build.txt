@@ -93,7 +93,7 @@ Retrieving maximum program size .pio/build/powout/firmware.elf
 Checking size .pio/build/powout/firmware.elf
 Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
 RAM:   [=         ]   7.0% (used 22852 bytes from 327680 bytes)
-Flash: [=         ]   7.2% (used 468682 bytes from 6553600 bytes)
+Flash: [=         ]   7.3% (used 479566 bytes from 6553600 bytes)
 Building .pio/build/powout/firmware.bin with action:
   "$PYTHONEXE" "$OBJCOPY" --chip esp32s3 elf2image --flash-mode ${__get_board_flash_mode(__env__)} --flash-freq ${__get_board_f_image(__env__)} --flash-size 32MB --elf-sha256-offset 0xb0 -o $TARGET $SOURCES
 Building .pio/build/powout/firmware.bin
@@ -101,7 +101,7 @@ esptool.py v5.0.0-dev1
 Creating ESP32S3 image...
 Merged 2 ELF sections.
 Successfully created ESP32S3 image.
-========================= [SUCCESS] Took 78.23 seconds =========================
+========================= [SUCCESS] Took 75.37 seconds =========================
 === LIB INFO ===
 dir: firmware/tribe/.pio/libdeps/powout/GFX Library for Arduino
 157-public:

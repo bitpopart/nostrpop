@@ -1,5 +1,14 @@
 [
  {
+  "version": "0.4.1",
+  "date": "2026-11-27",
+  "notes": "Menu icons drawn, text uses sharper Inter fonts.",
+  "app": "0.4.1/app.bin",
+  "full": "0.4.1/full.bin",
+  "sha256_app": "115cd5f119fa2f654972af9d5e7a033554a4cb16bfb33c0bb47df562c4b6cd12",
+  "sha256_full": "40f2c576683b61000dd56b59b32733a68c0fe4b863f5a2d1b3315bfabeb54499"
+ },
+ {
   "version": "0.4.0",
   "date": "2026-11-27",
   "notes": "Fix: the display chip needs even-aligned writes, so small text, icons and the heart were missing. All screens now draw into a frame buffer and are sent aligned.",
