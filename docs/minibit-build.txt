@@ -1,0 +1,120 @@
+Compiling .pio/build/minibit/libb24/GFX Library for Arduino/display/Arduino_ILI9341.cpp.o
+Compiling .pio/build/minibit/libb24/GFX Library for Arduino/display/Arduino_ILI9342.cpp.o
+Compiling .pio/build/minibit/libb24/GFX Library for Arduino/display/Arduino_ILI9481_18bit.cpp.o
+Compiling .pio/build/minibit/libb24/GFX Library for Arduino/display/Arduino_ILI9486.cpp.o
+Compiling .pio/build/minibit/libb24/GFX Library for Arduino/display/Arduino_ILI9486_18bit.cpp.o
+Compiling .pio/build/minibit/libb24/GFX Library for Arduino/display/Arduino_ILI9488.cpp.o
+Compiling .pio/build/minibit/libb24/GFX Library for Arduino/display/Arduino_ILI9488_18bit.cpp.o
+Compiling .pio/build/minibit/libb24/GFX Library for Arduino/display/Arduino_ILI9488_3bit.cpp.o
+Compiling .pio/build/minibit/libb24/GFX Library for Arduino/display/Arduino_ILI9806.cpp.o
+Compiling .pio/build/minibit/libb24/GFX Library for Arduino/display/Arduino_JBT6K71.cpp.o
+Compiling .pio/build/minibit/libb24/GFX Library for Arduino/display/Arduino_JD9613.cpp.o
+Compiling .pio/build/minibit/libb24/GFX Library for Arduino/display/Arduino_NT35310.cpp.o
+Compiling .pio/build/minibit/libb24/GFX Library for Arduino/display/Arduino_NT35510.cpp.o
+Compiling .pio/build/minibit/libb24/GFX Library for Arduino/display/Arduino_NT39125.cpp.o
+Compiling .pio/build/minibit/libb24/GFX Library for Arduino/display/Arduino_NV3007.cpp.o
+Compiling .pio/build/minibit/libb24/GFX Library for Arduino/display/Arduino_NV3023.cpp.o
+Compiling .pio/build/minibit/libb24/GFX Library for Arduino/display/Arduino_NV3041A.cpp.o
+Compiling .pio/build/minibit/libb24/GFX Library for Arduino/display/Arduino_OTM8009A.cpp.o
+Compiling .pio/build/minibit/libb24/GFX Library for Arduino/display/Arduino_R61529.cpp.o
+Compiling .pio/build/minibit/libb24/GFX Library for Arduino/display/Arduino_RGB_Display.cpp.o
+Compiling .pio/build/minibit/libb24/GFX Library for Arduino/display/Arduino_RM67162.cpp.o
+Compiling .pio/build/minibit/libb24/GFX Library for Arduino/display/Arduino_RM690B0.cpp.o
+Compiling .pio/build/minibit/libb24/GFX Library for Arduino/display/Arduino_SEPS525.cpp.o
+Compiling .pio/build/minibit/libb24/GFX Library for Arduino/display/Arduino_SH1106.cpp.o
+Compiling .pio/build/minibit/libb24/GFX Library for Arduino/display/Arduino_SPD2010.cpp.o
+Compiling .pio/build/minibit/libb24/GFX Library for Arduino/display/Arduino_SSD1283A.cpp.o
+Compiling .pio/build/minibit/libb24/GFX Library for Arduino/display/Arduino_SSD1306.cpp.o
+Compiling .pio/build/minibit/libb24/GFX Library for Arduino/display/Arduino_SSD1331.cpp.o
+Compiling .pio/build/minibit/libb24/GFX Library for Arduino/display/Arduino_SSD1351.cpp.o
+Compiling .pio/build/minibit/libb24/GFX Library for Arduino/display/Arduino_ST7735.cpp.o
+Compiling .pio/build/minibit/libb24/GFX Library for Arduino/display/Arduino_ST7789.cpp.o
+Compiling .pio/build/minibit/libb24/GFX Library for Arduino/display/Arduino_ST77916.cpp.o
+Compiling .pio/build/minibit/libb24/GFX Library for Arduino/display/Arduino_ST7796.cpp.o
+Compiling .pio/build/minibit/libb24/GFX Library for Arduino/display/Arduino_WEA2012.cpp.o
+Compiling .pio/build/minibit/src/main.cpp.o
+Building .pio/build/minibit/bootloader.bin
+esptool.py v5.0.0-dev1
+Creating ESP32S3 image...
+Merged 2 ELF sections.
+Successfully created ESP32S3 image.
+Generating partitions .pio/build/minibit/partitions.bin
+Compiling .pio/build/minibit/FrameworkArduino/ColorFormat.c.o
+Compiling .pio/build/minibit/FrameworkArduino/Esp.cpp.o
+Compiling .pio/build/minibit/FrameworkArduino/FirmwareMSC.cpp.o
+Compiling .pio/build/minibit/FrameworkArduino/FunctionalInterrupt.cpp.o
+Compiling .pio/build/minibit/FrameworkArduino/HEXBuilder.cpp.o
+Compiling .pio/build/minibit/FrameworkArduino/HWCDC.cpp.o
+Compiling .pio/build/minibit/FrameworkArduino/HardwareSerial.cpp.o
+Compiling .pio/build/minibit/FrameworkArduino/IPAddress.cpp.o
+Compiling .pio/build/minibit/FrameworkArduino/MD5Builder.cpp.o
+Compiling .pio/build/minibit/FrameworkArduino/MacAddress.cpp.o
+Compiling .pio/build/minibit/FrameworkArduino/Print.cpp.o
+Compiling .pio/build/minibit/FrameworkArduino/SHA1Builder.cpp.o
+Compiling .pio/build/minibit/FrameworkArduino/Stream.cpp.o
+Compiling .pio/build/minibit/FrameworkArduino/StreamString.cpp.o
+Compiling .pio/build/minibit/FrameworkArduino/Tone.cpp.o
+Compiling .pio/build/minibit/FrameworkArduino/USB.cpp.o
+Compiling .pio/build/minibit/FrameworkArduino/USBCDC.cpp.o
+Compiling .pio/build/minibit/FrameworkArduino/USBMSC.cpp.o
+Compiling .pio/build/minibit/FrameworkArduino/WMath.cpp.o
+Compiling .pio/build/minibit/FrameworkArduino/WString.cpp.o
+Compiling .pio/build/minibit/FrameworkArduino/base64.cpp.o
+Compiling .pio/build/minibit/FrameworkArduino/cbuf.cpp.o
+Compiling .pio/build/minibit/FrameworkArduino/chip-debug-report.cpp.o
+Compiling .pio/build/minibit/FrameworkArduino/esp32-hal-adc.c.o
+Compiling .pio/build/minibit/FrameworkArduino/esp32-hal-bt.c.o
+Compiling .pio/build/minibit/FrameworkArduino/esp32-hal-cpu.c.o
+Compiling .pio/build/minibit/FrameworkArduino/esp32-hal-dac.c.o
+Compiling .pio/build/minibit/FrameworkArduino/esp32-hal-gpio.c.o
+Compiling .pio/build/minibit/FrameworkArduino/esp32-hal-i2c-ng.c.o
+Compiling .pio/build/minibit/FrameworkArduino/esp32-hal-i2c-slave.c.o
+Compiling .pio/build/minibit/FrameworkArduino/esp32-hal-i2c.c.o
+Compiling .pio/build/minibit/FrameworkArduino/esp32-hal-ledc.c.o
+Compiling .pio/build/minibit/FrameworkArduino/esp32-hal-matrix.c.o
+Compiling .pio/build/minibit/FrameworkArduino/esp32-hal-misc.c.o
+Compiling .pio/build/minibit/FrameworkArduino/esp32-hal-periman.c.o
+Compiling .pio/build/minibit/FrameworkArduino/esp32-hal-psram.c.o
+Compiling .pio/build/minibit/FrameworkArduino/esp32-hal-rgb-led.c.o
+Compiling .pio/build/minibit/FrameworkArduino/esp32-hal-rmt.c.o
+Compiling .pio/build/minibit/FrameworkArduino/esp32-hal-sigmadelta.c.o
+Compiling .pio/build/minibit/FrameworkArduino/esp32-hal-spi.c.o
+Compiling .pio/build/minibit/FrameworkArduino/esp32-hal-time.c.o
+Compiling .pio/build/minibit/FrameworkArduino/esp32-hal-timer.c.o
+Compiling .pio/build/minibit/FrameworkArduino/esp32-hal-tinyusb.c.o
+Compiling .pio/build/minibit/FrameworkArduino/esp32-hal-touch-ng.c.o
+Compiling .pio/build/minibit/FrameworkArduino/esp32-hal-touch.c.o
+Compiling .pio/build/minibit/FrameworkArduino/esp32-hal-uart.c.o
+Compiling .pio/build/minibit/FrameworkArduino/firmware_msc_fat.c.o
+Compiling .pio/build/minibit/FrameworkArduino/freertos_stats.cpp.o
+Compiling .pio/build/minibit/FrameworkArduino/libb64/cdecode.c.o
+Compiling .pio/build/minibit/FrameworkArduino/libb64/cencode.c.o
+Compiling .pio/build/minibit/FrameworkArduino/main.cpp.o
+Compiling .pio/build/minibit/FrameworkArduino/stdlib_noniso.c.o
+Compiling .pio/build/minibit/FrameworkArduino/wiring_pulse.c.o
+Compiling .pio/build/minibit/FrameworkArduino/wiring_shift.c.o
+Archiving .pio/build/minibit/libFrameworkArduino.a
+Indexing .pio/build/minibit/libFrameworkArduino.a
+Linking .pio/build/minibit/firmware.elf
+                                                                                
+ Usage: python -m esp_idf_size [OPTIONS] MAP_FILE                               
+                                                                                
+ Try 'python -m esp_idf_size -h' for help                                       
+╭─ Error ──────────────────────────────────────────────────────────────────────╮
+│ No such option: --ng                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+                                                                                
+Warning: esp-idf-size exited with code 2
+Retrieving maximum program size .pio/build/minibit/firmware.elf
+Checking size .pio/build/minibit/firmware.elf
+Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
+RAM:   [=         ]   6.8% (used 22372 bytes from 327680 bytes)
+Flash: [=         ]   5.2% (used 439594 bytes from 8388608 bytes)
+Building .pio/build/minibit/firmware.bin with action:
+  "$PYTHONEXE" "$OBJCOPY" --chip esp32s3 elf2image --flash-mode ${__get_board_flash_mode(__env__)} --flash-freq ${__get_board_f_image(__env__)} --flash-size 16MB --elf-sha256-offset 0xb0 -o $TARGET $SOURCES
+Building .pio/build/minibit/firmware.bin
+esptool.py v5.0.0-dev1
+Creating ESP32S3 image...
+Merged 2 ELF sections.
+Successfully created ESP32S3 image.
+======================== [SUCCESS] Took 109.89 seconds ========================
