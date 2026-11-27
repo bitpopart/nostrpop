@@ -32,7 +32,9 @@ jobs:
         run: |
           V=$(tr -d '[:space:]' < VERSION)
           echo "#define FW_VERSION \"$V\"" > src/version.h
-          pio run
+          mkdir -p ../../docs
+          set -o pipefail
+          pio run 2>&1 | tee ../../docs/tribe-build-full.log
       - name: Publish
         run: |
           set -e
@@ -43,7 +45,7 @@ jobs:
           mkdir -p "$OUT"
           cp "$B/firmware.bin" "$OUT/app.bin"
           python -m esptool --chip esp32s3 merge_bin -o "$OUT/full.bin" \
-            --flash_mode dio --flash_size 16MB \
+            --flash_mode qio --flash_size 32MB \
             0x0 "$B/bootloader.bin" 0x8000 "$B/partitions.bin" 0xe000 "$BOOT" 0x10000 "$B/firmware.bin"
           python - <<PY
           import json,hashlib,os,datetime
@@ -61,14 +63,18 @@ jobs:
           PY
           ls -l "$OUT"
       - name: Commit and redeploy
+        if: always()
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          [ -f docs/tribe-build-full.log ] && tail -n 120 docs/tribe-build-full.log > docs/tribe-build.log
+          rm -f docs/tribe-build-full.log
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/tribe-app/fw
+          git add public/tribe-app/fw docs/tribe-build.log
           git diff --cached --quiet && exit 0
-          git commit -m "Publish TriBe firmware"
+          PUB=$(git diff --cached --name-only | grep -c '^public/tribe-app/fw' || true)
+          git commit -m "TriBe firmware build result"
           git pull --rebase
           git push
-          gh workflow run deploy.yml
+          [ "$PUB" -gt 0 ] && gh workflow run deploy.yml || true
