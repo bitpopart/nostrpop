@@ -5,6 +5,10 @@
 #include <Wire.h>
 #include <Arduino_GFX_Library.h>
 #include <esp_partition.h>
+#include <WiFi.h>
+#include <WebServer.h>
+#include <DNSServer.h>
+#include <Preferences.h>
 #include "hits.h"
 #include "version.h"
 
@@ -53,7 +57,84 @@ static void drawScreen(int i) {
     gfx->draw16bitRGBBitmap(OX, OY + y, stripe, PW, STRIPE);
   }
 }
-static void show(int i) { cur = i; drawScreen(i); Serial.printf("screen %s\n", SCR_NAMES[i]); }
+
+static void show(int i);
+// ---- Wi-Fi setup, the same way as POWout: MiniBit opens its own hotspot, the phone joins it by QR code and the
+// ---- password is typed on a web page on the phone (not on the tiny screen).
+#define AP_NAME "MiniBit-setup"
+static Preferences prefs;
+static WebServer web(80); static DNSServer dns;
+static bool apOn = false, routesSet = false;
+static volatile bool credsIn = false;
+static char selSsid[33] = "", selPass[65] = "";
+static int wifiState = 0;                 // 0 idle, 1 connecting, 2 connected, 3 failed
+static uint32_t connT0 = 0;
+static String netOptions;                 // <option> list of networks seen before the hotspot opened
+
+static String esc(const char *t) { String o; for (; *t; t++) { if (*t == '&') o += "&amp;"; else if (*t == '<') o += "&lt;"; else if (*t == '"') o += "&quot;"; else o += *t; } return o; }
+static void scanForForm() {
+  netOptions = "";
+  int n = WiFi.scanNetworks(), shown = 0;
+  for (int i = 0; i < n && shown < 12; i++) {
+    String id = WiFi.SSID(i); if (id.length() == 0) continue;
+    String e = esc(id.c_str());
+    if (netOptions.indexOf("\"" + e + "\"") >= 0) continue;
+    netOptions += "<option value=\"" + e + "\">"; shown++;
+  }
+  WiFi.scanDelete();
+}
+static void handleRoot() {
+  String h = F("<!doctype html><meta name=viewport content='width=device-width,initial-scale=1'><body style='font-family:sans-serif;background:#050608;color:#dce9ff;padding:24px;max-width:420px;margin:auto'>"
+               "<h2>MiniBit Wi-Fi</h2><form method=POST action=/save>"
+               "<p>Network name<br><input name=ssid list=nets autocapitalize=none autocorrect=off style='width:100%;font-size:18px;padding:8px'><datalist id=nets>");
+  h += netOptions;
+  h += F("</datalist></p><p>Password<br><input name=pass type=password style='width:100%;font-size:18px;padding:8px'></p>"
+         "<button style='width:100%;font-size:20px;padding:12px;border-radius:24px;border:0;background:#46e6ff'>Connect</button></form></body>");
+  web.send(200, "text/html", h);
+}
+static void handleSave() {
+  strncpy(selSsid, web.arg("ssid").c_str(), 32); selSsid[32] = 0;
+  strncpy(selPass, web.arg("pass").c_str(), 64); selPass[64] = 0;
+  web.send(200, "text/html", F("<!doctype html><meta name=viewport content='width=device-width,initial-scale=1'><body style='font-family:sans-serif;background:#050608;color:#dce9ff;padding:24px'><h2>Connecting...</h2><p>Look at your MiniBit.</p></body>"));
+  credsIn = true;
+}
+static void startPortal() {
+  if (apOn) return;
+  WiFi.mode(WIFI_AP_STA); WiFi.disconnect();
+  scanForForm();
+  WiFi.softAP(AP_NAME);
+  dns.start(53, "*", WiFi.softAPIP());
+  if (!routesSet) { web.on("/", HTTP_GET, handleRoot); web.on("/save", HTTP_POST, handleSave); web.onNotFound(handleRoot); routesSet = true; }
+  web.begin(); apOn = true; credsIn = false; wifiState = 0;
+  Serial.printf("Setup portal on, ip %s\n", WiFi.softAPIP().toString().c_str());
+}
+static void stopPortal() {
+  if (!apOn) return;
+  web.stop(); dns.stop(); WiFi.softAPdisconnect(true); WiFi.mode(WIFI_STA); apOn = false;
+}
+static void wifiLoop() {
+  if (apOn) { dns.processNextRequest(); web.handleClient(); }
+  if (credsIn) {
+    credsIn = false; Serial.printf("Connecting to %s\n", selSsid);
+    WiFi.begin(selSsid, selPass); wifiState = 1; connT0 = millis(); show(SCR_WIFIWAIT);
+  }
+  if (wifiState == 1) {
+    if (WiFi.status() == WL_CONNECTED) {
+      wifiState = 2; prefs.begin("minibit", false); prefs.putString("ssid", selSsid); prefs.putString("pass", selPass); prefs.end();
+      delay(800); stopPortal(); show(SCR_WIFIOK);
+    } else if (millis() - connT0 > 20000) { wifiState = 3; WiFi.disconnect(); show(SCR_WIFIFAIL); }
+  }
+}
+static void wifiBoot() {                  // reconnect with the saved network, in the background
+  prefs.begin("minibit", true); String a = prefs.getString("ssid", ""), b = prefs.getString("pass", ""); prefs.end();
+  if (a.length()) { WiFi.mode(WIFI_STA); WiFi.begin(a.c_str(), b.c_str()); Serial.printf("Wi-Fi: reconnecting to %s\n", a.c_str()); }
+}
+
+static void show(int i) {
+  cur = i; drawScreen(i); Serial.printf("screen %s\n", SCR_NAMES[i]);
+  if (i == SCR_WIFIJOIN) startPortal();
+  else if (i != SCR_WIFIWAIT && i != SCR_WIFIOK && apOn) stopPortal();
+}
 static void go(int i) { if (i == cur) return; if (sp < 16) stack_[sp++] = cur; show(i); }
 static void goBack() {
   int t = BACKS[cur];
@@ -93,7 +174,17 @@ static bool hitAt(int dx, int dy, int pad) {
   return false;
 }
 static void tap(int dx, int dy) {
-  if (!hitAt(dx, dy, 0)) hitAt(dx, dy, 10);             // small buttons: accept a near miss
+  if (hitAt(dx, dy, 0)) return;
+  // near miss: take the closest button within reach (a little more room along the top bar)
+  int reach = dy < 48 ? 18 : 12, best = -1, bd = 1 << 30;
+  for (int k = 0; k < NHITS[cur]; k++) {
+    const Hit &h = HITS[cur][k];
+    int ex = dx < h.x ? h.x - dx : (dx > h.x + h.w - 1 ? dx - (h.x + h.w - 1) : 0);
+    int ey = dy < h.y ? h.y - dy : (dy > h.y + h.h - 1 ? dy - (h.y + h.h - 1) : 0);
+    int d = ex * ex + ey * ey;
+    if (d <= reach * reach && d < bd) { bd = d; best = k; }
+  }
+  if (best >= 0) { int to = HITS[cur][best].to; if (to == S_BACK) goBack(); else if (to == S_HOME) goHome(); else if (to >= 0) go(to); }
 }
 
 static void message(const char *l1, const char *l2) {
@@ -129,6 +220,7 @@ void setup() {
     while (true) delay(1000);
   }
   screens = (const uint8_t *)ptr;
+  wifiBoot();
   show(SCR_BOOT); delay(2500); show(SCR_HOME);
 }
 
@@ -165,6 +257,7 @@ static void calibrate() {
 static bool down = false; static int sx, sy, lx, ly; static uint32_t t0; static bool longDone = false;
 
 void loop() {
+  wifiLoop();
   int px, py;
   bool t = tpAddr && touchRead(px, py);
   if (t) {
