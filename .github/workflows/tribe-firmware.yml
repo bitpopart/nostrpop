@@ -1,0 +1,74 @@
+name: TriBe firmware
+
+# Builds firmware/tribe, publishes app.bin (update, 0x10000) and full.bin (new
+# device, 0x0) to public/tribe-app/fw/<version>/ and lists it in manifest.json.
+# The /tribe flasher reads that manifest. Bump firmware/tribe/VERSION to release.
+on:
+  push:
+    branches: [main]
+    paths: ["firmware/tribe/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: tribe-firmware
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install PlatformIO and esptool
+        run: pip install platformio esptool
+      - name: Build
+        working-directory: firmware/tribe
+        run: |
+          V=$(tr -d '[:space:]' < VERSION)
+          echo "#define FW_VERSION \"$V\"" > src/version.h
+          pio run
+      - name: Publish
+        run: |
+          set -e
+          V=$(tr -d '[:space:]' < firmware/tribe/VERSION)
+          B=firmware/tribe/.pio/build/powout
+          BOOT=$(find ~/.platformio/packages -name boot_app0.bin | head -1)
+          OUT=public/tribe-app/fw/$V
+          mkdir -p "$OUT"
+          cp "$B/firmware.bin" "$OUT/app.bin"
+          python -m esptool --chip esp32s3 merge_bin -o "$OUT/full.bin" \
+            --flash_mode dio --flash_size 16MB \
+            0x0 "$B/bootloader.bin" 0x8000 "$B/partitions.bin" 0xe000 "$BOOT" 0x10000 "$B/firmware.bin"
+          python - <<PY
+          import json,hashlib,os,datetime
+          v="$V"; d="public/tribe-app/fw/"+v
+          sha=lambda p:hashlib.sha256(open(p,'rb').read()).hexdigest()
+          m="public/tribe-app/fw/manifest.json"
+          lst=json.load(open(m)) if os.path.exists(m) else []
+          lst=[x for x in lst if x["version"]!=v]
+          lst.insert(0,{"version":v,"date":datetime.date.today().isoformat(),
+            "notes":"First test build: boots and prints its version over USB. No screen UI yet.",
+            "app":v+"/app.bin","full":v+"/full.bin",
+            "sha256_app":sha(d+"/app.bin"),"sha256_full":sha(d+"/full.bin")})
+          json.dump(lst,open(m,"w"),indent=1)
+          print(json.dumps(lst[0],indent=1))
+          PY
+          ls -l "$OUT"
+      - name: Commit and redeploy
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/tribe-app/fw
+          git diff --cached --quiet && exit 0
+          git commit -m "Publish TriBe firmware"
+          git pull --rebase
+          git push
+          gh workflow run deploy.yml
