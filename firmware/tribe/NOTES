@@ -1,1 +1,1 @@
-Fixes the black screen: the display was set up with the wrong arguments. POWout UI: Home, Menu, Breathe picker, Calm, Box, 4-7-8.
+Diagnostic build: colour test on start, power chip report over USB serial. Flasher page has a Monitor button.

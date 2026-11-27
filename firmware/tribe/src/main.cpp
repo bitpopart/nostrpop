@@ -271,20 +271,41 @@ static bool ftRead(int &x, int &y) {
 }
 bool wasDown = false; uint32_t lastBtn = 0;
 
+// Read-only probe of the AXP2101 power chip (I2C 0x34), printed over serial for diagnosis.
+static uint8_t axpRead(uint8_t reg, bool &ok) {
+  Wire.beginTransmission(0x34); Wire.write(reg);
+  if (Wire.endTransmission(false) != 0) { ok = false; return 0; }
+  if (Wire.requestFrom(0x34, 1) != 1) { ok = false; return 0; }
+  ok = true; return Wire.read();
+}
+static void probePower() {
+  bool ok; uint8_t v = axpRead(0x03, ok);
+  if (!ok) { Serial.println("AXP2101: no answer at 0x34"); return; }
+  Serial.printf("AXP2101 chip id reg 0x03 = 0x%02X\n", v);
+  static const uint8_t regs[] = {0x90, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97, 0x98, 0x99};
+  for (uint8_t r : regs) { v = axpRead(r, ok); Serial.printf("AXP2101 reg 0x%02X = 0x%02X\n", r, v); }
+}
+
 void setup() {
   Serial.begin(115200);
-  delay(300);
+  delay(2500);  // time for the USB serial monitor to attach
   Serial.printf("TriBe POWout firmware %s\n", FW_VERSION);
+  Serial.printf("Heap %u, PSRAM %u bytes\n", (unsigned)ESP.getFreeHeap(), (unsigned)ESP.getPsramSize());
+  Wire.begin(I2C_SDA, I2C_SCL); Wire.setClock(400000);
+  probePower();
   pinMode(BTN_BOOT, INPUT_PULLUP);
   if (!gfx->begin()) { Serial.println("Display init failed"); while (true) { Serial.println("Display init failed"); delay(2000); } }
-  Serial.println("Display ready");
+  Serial.printf("Display ready %dx%d\n", gfx->width(), gfx->height());
+  gfx->setBrightness(255);
+  { const char *nm[4] = {"red", "green", "blue", "white"};
+    uint16_t col[4] = {gfx->color565(255, 0, 0), gfx->color565(0, 255, 0), gfx->color565(0, 0, 255), gfx->color565(255, 255, 255)};
+    for (int i = 0; i < 4; i++) { Serial.printf("test fill %s\n", nm[i]); gfx->fillScreen(col[i]); delay(700); } }
   gfx->setBrightness(200);
   C_BG = gfx->color565(0, 0, 0); C_FG = gfx->color565(242, 241, 236); C_GREY = gfx->color565(138, 138, 138);
   C_PANEL = gfx->color565(21, 21, 21); C_LINE = gfx->color565(58, 58, 58);
   AX0 = (LCD_W - AW) / 2; AY0 = Y(122) - D(20) + 0;
   anim = new Arduino_Canvas(AW, AH, gfx, AX0, AY0);
   if (!anim->begin(GFX_SKIP_OUTPUT_BEGIN)) Serial.println("Canvas init failed (PSRAM?)"); else Serial.println("Canvas ready");
-  Wire.begin(I2C_SDA, I2C_SCL); Wire.setClock(400000);
   pinMode(TP_RESET, OUTPUT); digitalWrite(TP_RESET, LOW); delay(20); digitalWrite(TP_RESET, HIGH); delay(60);
   pinMode(TP_INT, INPUT);
   go(HOME);
