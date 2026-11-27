@@ -82,14 +82,18 @@ static void toDesign(int px, int py, int &dx, int &dy) {
 #endif
 }
 
-static void tap(int dx, int dy) {
+static bool hitAt(int dx, int dy, int pad) {
   for (int k = NHITS[cur] - 1; k >= 0; k--) {          // last one drawn wins
     const Hit &h = HITS[cur][k];
-    if (dx >= h.x && dx < h.x + h.w && dy >= h.y && dy < h.y + h.h) {
+    if (dx >= h.x - pad && dx < h.x + h.w + pad && dy >= h.y - pad && dy < h.y + h.h + pad) {
       if (h.to == S_BACK) goBack(); else if (h.to == S_HOME) goHome(); else if (h.to >= 0) go(h.to);
-      return;
+      return true;
     }
   }
+  return false;
+}
+static void tap(int dx, int dy) {
+  if (!hitAt(dx, dy, 0)) hitAt(dx, dy, 10);             // small buttons: accept a near miss
 }
 
 static void message(const char *l1, const char *l2) {
@@ -176,11 +180,11 @@ void loop() {
     int mx = lx - sx, my = ly - sy;
     if (!longDone) {
       if (cur == SCR_HOME || cur == SCR_HOME2) {
-        if (abs(mx) > 40 && abs(mx) > abs(my)) show(cur == SCR_HOME ? SCR_HOME2 : SCR_HOME);
+        if (abs(mx) > 35 && abs(mx) > abs(my)) show(cur == SCR_HOME ? SCR_HOME2 : SCR_HOME);
         else if (my < -40) go(SCR_MENU);
-        else if (abs(mx) < 20 && abs(my) < 20) tap(sx, sy);
-      } else if (mx > 60 && abs(mx) > abs(my) * 2) goBack();
-      else if (abs(mx) < 20 && abs(my) < 20) tap(sx, sy);
+        else if (abs(mx) < 24 && abs(my) < 24) tap(sx, sy);
+      } else if (mx > 45 && abs(mx) > abs(my)) goBack();
+      else if (abs(mx) < 24 && abs(my) < 24) tap(sx, sy);
     }
   }
   delay(8);
