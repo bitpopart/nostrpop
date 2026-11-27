@@ -26,7 +26,7 @@
 #define FT_ADDR 0x38
 
 Arduino_DataBus *bus = new Arduino_ESP32QSPI(LCD_CS, LCD_SCLK, LCD_SDIO0, LCD_SDIO1, LCD_SDIO2, LCD_SDIO3);
-Arduino_CO5300 *gfx = new Arduino_CO5300(bus, LCD_RESET, 0, LCD_W, LCD_H, 22, 0, 0, 0);
+Arduino_CO5300 *gfx = new Arduino_CO5300(bus, LCD_RESET, 0, false /* ips */, LCD_W, LCD_H, 22, 0, 0, 0);
 
 // The design is 368x448. The panel is 410 wide, so everything is scaled by S.
 static const float S = 410.0f / 368.0f;
@@ -276,13 +276,14 @@ void setup() {
   delay(300);
   Serial.printf("TriBe POWout firmware %s\n", FW_VERSION);
   pinMode(BTN_BOOT, INPUT_PULLUP);
-  if (!gfx->begin()) { Serial.println("Display init failed"); while (true) delay(1000); }
+  if (!gfx->begin()) { Serial.println("Display init failed"); while (true) { Serial.println("Display init failed"); delay(2000); } }
+  Serial.println("Display ready");
   gfx->setBrightness(200);
   C_BG = gfx->color565(0, 0, 0); C_FG = gfx->color565(242, 241, 236); C_GREY = gfx->color565(138, 138, 138);
   C_PANEL = gfx->color565(21, 21, 21); C_LINE = gfx->color565(58, 58, 58);
   AX0 = (LCD_W - AW) / 2; AY0 = Y(122) - D(20) + 0;
   anim = new Arduino_Canvas(AW, AH, gfx, AX0, AY0);
-  if (!anim->begin(GFX_SKIP_OUTPUT_BEGIN)) Serial.println("Canvas init failed (PSRAM?)");
+  if (!anim->begin(GFX_SKIP_OUTPUT_BEGIN)) Serial.println("Canvas init failed (PSRAM?)"); else Serial.println("Canvas ready");
   Wire.begin(I2C_SDA, I2C_SCL); Wire.setClock(400000);
   pinMode(TP_RESET, OUTPUT); digitalWrite(TP_RESET, LOW); delay(20); digitalWrite(TP_RESET, HIGH); delay(60);
   pinMode(TP_INT, INPUT);
@@ -306,4 +307,3 @@ void loop() {
   }
   delay(5);
 }
-// build 1795800379
