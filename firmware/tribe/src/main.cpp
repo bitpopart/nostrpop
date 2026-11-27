@@ -853,7 +853,7 @@ void setup() {
   Serial.printf("TriBe POWout firmware %s\n", FW_VERSION);
   Wire.begin(I2C_SDA, I2C_SCL); Wire.setClock(400000);
   pinMode(BTN_BOOT, INPUT_PULLUP);
-  if (!gfx->begin()) {  // also starts the panel Serial.println("Display init failed"); while (true) { stageName = "display-FAILED"; report(); delay(3000); } }
+  if (!gfx->begin()) { Serial.println("Display init failed"); while (true) { stageName = "display-FAILED"; report(); delay(3000); } }
   stageName = "display-up";
   Serial.printf("Frame buffer ready, heap %u\n", (unsigned)ESP.getFreeHeap());
   panel->setBrightness(200);
