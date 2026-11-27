@@ -1,5 +1,14 @@
 [
  {
+  "version": "0.4.2",
+  "date": "2026-11-27",
+  "notes": "Real Wi-Fi setup: scans networks, QR joins the board setup network, phone types the password, board connects and sets its clock from the internet.",
+  "app": "0.4.2/app.bin",
+  "full": "0.4.2/full.bin",
+  "sha256_app": "2388fcc50ccf3cd68231718812d5b3ce45d5d356477b932e36f98be8edaca478",
+  "sha256_full": "979c5b18f023408cd2d9e3a5afa8f4ef624a88d5a9ab181cb1e9afc30a04460e"
+ },
+ {
   "version": "0.4.1",
   "date": "2026-11-27",
   "notes": "Menu icons drawn, text uses sharper Inter fonts.",

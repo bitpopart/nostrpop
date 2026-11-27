@@ -1,29 +1,29 @@
-Compiling .pio/build/powout/libbc3/GFX Library for Arduino/display/Arduino_NV3041A.cpp.o
-Compiling .pio/build/powout/libbc3/GFX Library for Arduino/display/Arduino_OTM8009A.cpp.o
-Compiling .pio/build/powout/libbc3/GFX Library for Arduino/display/Arduino_R61529.cpp.o
-Compiling .pio/build/powout/libbc3/GFX Library for Arduino/display/Arduino_RGB_Display.cpp.o
-Compiling .pio/build/powout/libbc3/GFX Library for Arduino/display/Arduino_RM67162.cpp.o
-Compiling .pio/build/powout/libbc3/GFX Library for Arduino/display/Arduino_RM690B0.cpp.o
-Compiling .pio/build/powout/libbc3/GFX Library for Arduino/display/Arduino_SEPS525.cpp.o
-Compiling .pio/build/powout/libbc3/GFX Library for Arduino/display/Arduino_SH1106.cpp.o
-Compiling .pio/build/powout/libbc3/GFX Library for Arduino/display/Arduino_SPD2010.cpp.o
-Compiling .pio/build/powout/libbc3/GFX Library for Arduino/display/Arduino_SSD1283A.cpp.o
-Compiling .pio/build/powout/libbc3/GFX Library for Arduino/display/Arduino_SSD1306.cpp.o
-Compiling .pio/build/powout/libbc3/GFX Library for Arduino/display/Arduino_SSD1331.cpp.o
-Compiling .pio/build/powout/libbc3/GFX Library for Arduino/display/Arduino_SSD1351.cpp.o
-Compiling .pio/build/powout/libbc3/GFX Library for Arduino/display/Arduino_ST7735.cpp.o
-Compiling .pio/build/powout/libbc3/GFX Library for Arduino/display/Arduino_ST7789.cpp.o
-Compiling .pio/build/powout/libbc3/GFX Library for Arduino/display/Arduino_ST77916.cpp.o
-Compiling .pio/build/powout/libbc3/GFX Library for Arduino/display/Arduino_ST7796.cpp.o
-Compiling .pio/build/powout/libbc3/GFX Library for Arduino/display/Arduino_WEA2012.cpp.o
+Compiling .pio/build/powout/lib989/WiFi/AP.cpp.o
+Compiling .pio/build/powout/lib989/WiFi/STA.cpp.o
+Compiling .pio/build/powout/lib989/WiFi/WiFi.cpp.o
+Compiling .pio/build/powout/lib989/WiFi/WiFiAP.cpp.o
+Compiling .pio/build/powout/lib989/WiFi/WiFiGeneric.cpp.o
+Compiling .pio/build/powout/lib989/WiFi/WiFiMulti.cpp.o
+Compiling .pio/build/powout/lib989/WiFi/WiFiSTA.cpp.o
+Compiling .pio/build/powout/lib989/WiFi/WiFiScan.cpp.o
+Compiling .pio/build/powout/lib147/DNSServer/DNSServer.cpp.o
+Compiling .pio/build/powout/lib7aa/FS/FS.cpp.o
+Compiling .pio/build/powout/lib7aa/FS/vfs_api.cpp.o
+Compiling .pio/build/powout/lib1ce/WebServer/Parsing.cpp.o
+Compiling .pio/build/powout/lib1ce/WebServer/WebServer.cpp.o
+Compiling .pio/build/powout/lib1ce/WebServer/detail/mimetable.cpp.o
+Compiling .pio/build/powout/lib1ce/WebServer/middleware/AuthenticationMiddleware.cpp.o
+Compiling .pio/build/powout/lib1ce/WebServer/middleware/CorsMiddleware.cpp.o
+Compiling .pio/build/powout/lib1ce/WebServer/middleware/LoggingMiddleware.cpp.o
+Compiling .pio/build/powout/lib1ce/WebServer/middleware/MiddlewareChain.cpp.o
 Compiling .pio/build/powout/src/main.cpp.o
 Building .pio/build/powout/bootloader.bin
 Generating partitions .pio/build/powout/partitions.bin
-Compiling .pio/build/powout/FrameworkArduino/ColorFormat.c.o
 esptool.py v5.0.0-dev1
 Creating ESP32S3 image...
 Merged 2 ELF sections.
 Successfully created ESP32S3 image.
+Compiling .pio/build/powout/FrameworkArduino/ColorFormat.c.o
 Compiling .pio/build/powout/FrameworkArduino/Esp.cpp.o
 Compiling .pio/build/powout/FrameworkArduino/FirmwareMSC.cpp.o
 Compiling .pio/build/powout/FrameworkArduino/FunctionalInterrupt.cpp.o
@@ -92,8 +92,8 @@ Warning: esp-idf-size exited with code 2
 Retrieving maximum program size .pio/build/powout/firmware.elf
 Checking size .pio/build/powout/firmware.elf
 Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
-RAM:   [=         ]   7.0% (used 22852 bytes from 327680 bytes)
-Flash: [=         ]   7.3% (used 479566 bytes from 6553600 bytes)
+RAM:   [=         ]  14.5% (used 47420 bytes from 327680 bytes)
+Flash: [==        ]  17.1% (used 1120490 bytes from 6553600 bytes)
 Building .pio/build/powout/firmware.bin with action:
   "$PYTHONEXE" "$OBJCOPY" --chip esp32s3 elf2image --flash-mode ${__get_board_flash_mode(__env__)} --flash-freq ${__get_board_f_image(__env__)} --flash-size 32MB --elf-sha256-offset 0xb0 -o $TARGET $SOURCES
 Building .pio/build/powout/firmware.bin
@@ -101,7 +101,7 @@ esptool.py v5.0.0-dev1
 Creating ESP32S3 image...
 Merged 2 ELF sections.
 Successfully created ESP32S3 image.
-========================= [SUCCESS] Took 75.37 seconds =========================
+======================== [SUCCESS] Took 105.97 seconds ========================
 === LIB INFO ===
 dir: firmware/tribe/.pio/libdeps/powout/GFX Library for Arduino
 157-public:
