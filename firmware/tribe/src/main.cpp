@@ -157,7 +157,8 @@ static Screen parentOf(Screen s) {
 // ---- Touch zones ----
 struct Btn { int x0, y0, x1, y1; Screen go; };
 Btn btns[16]; int nbtn = 0;
-static void addBtn(int x0, int y0, int x1, int y1, Screen go) { if (nbtn < 16) btns[nbtn++] = {x0, y0, x1, y1, go}; }
+static bool noBtn = false;
+static void addBtn(int x0, int y0, int x1, int y1, Screen go) { if (!noBtn && nbtn < 16) btns[nbtn++] = {x0, y0, x1, y1, go}; }
 
 // ---- Session state ----
 struct Workout { const char *name; bool counts; int target; };
@@ -396,27 +397,42 @@ static void drawMenu() {
   }
   backPill(HOME);
 }
-static int pickPage = 0;
-static void drawPick(bool more) {
+struct PItem { const char *tag, *name, *desc; Screen go; const char *wname; int reps; };
+static const PItem PICKS[12] = {
+  {"12", "Reps", "count with motion", REPS, "PUSH-UPS", 20}, {"0:30", "Intervals", "work and rest rounds", INTERVALS, "INTERVALS", 1},
+  {"5K", "Run or walk", "steps and distance", TIMER, "RUN", 1}, {"SQ", "Squats", "count each dip", REPS, "SQUATS", 25},
+  {"1:00", "Plank", "hold and count seconds", TIMER, "PLANK", 1}, {"~", "Breathing", "in for 4, out for 6", BMODE, "BREATHE", 1},
+  {"JJ", "Jumping jacks", "up, out, repeat", REPS, "JACKS", 25}, {"JR", "Jump rope", "count the skips", REPS, "JUMP ROPE", 25},
+  {"BK", "Cycle", "ride time and distance", TIMER, "CYCLE", 1}, {"SW", "Swim", "laps and time", TIMER, "SWIM", 1},
+  {"YG", "Yoga", "breathe and hold", TIMER, "YOGA", 1}, {"inf", "Free", "just a timer", TIMER, "FREE", 1}};
+static const int PICK_ROW = 48, PICK_TOP = 100, PICK_BOT = 384;
+static float pickScroll = 0, pickVel = 0;
+static float pickMax() { return 12 * PICK_ROW - (PICK_BOT - PICK_TOP) + 4; }
+static void renderPick() {
+  bool old = noBtn; noBtn = true;
+  gfx->fillScreen(C_BG);
+  for (int i = 0; i < 12; i++) {
+    float dy = PICK_TOP + PICK_ROW * i - pickScroll;
+    if (dy < PICK_TOP - 44 || dy > PICK_BOT) continue;
+    rowAt(dy, 42, PICKS[i].tag, PICKS[i].name, PICKS[i].desc, i == 0, PICKS[i].go);
+  }
+  gfx->fillRect(0, 0, LCD_W, Y(PICK_TOP - 2), C_BG);
+  gfx->fillRect(0, Y(PICK_BOT), LCD_W, LCD_H - Y(PICK_BOT), C_BG);
   header("PICK ONE", nullptr);
-  struct P { const char *tag, *name, *desc; Screen go; };
-  static const P a[6] = {
-    {"12", "Reps", "count with motion", REPS}, {"0:30", "Intervals", "work and rest rounds", INTERVALS},
-    {"5K", "Run or walk", "steps and distance", TIMER}, {"SQ", "Squats", "count each dip", REPS},
-    {"1:00", "Plank", "hold and count seconds", TIMER}, {"~", "Breathing", "in for 4, out for 6", BMODE}};
-  static const P b[6] = {
-    {"JJ", "Jumping jacks", "up, out, repeat", REPS}, {"JR", "Jump rope", "count the skips", REPS},
-    {"BK", "Cycle", "ride time and distance", TIMER}, {"SW", "Swim", "laps and time", TIMER},
-    {"YG", "Yoga", "breathe and hold", TIMER}, {"inf", "Free", "just a timer", TIMER}};
-  const P *p = more ? b : a;
-  for (int i = 0; i < 6; i++) rowAt(100 + 48 * i, 42, p[i].tag, p[i].name, p[i].desc, i == 0 && !more, p[i].go);
-  int cx = LCD_W / 2;
-  gfx->fillCircle(cx - D(8), Y(392), D(4), more ? C_LINE : C_FG);
-  gfx->fillCircle(cx + D(8), Y(392), D(4), more ? C_FG : C_LINE);
-  line("Swipe for more", 412, 1, C_GREY);
-  addBtn(cx - D(30), Y(380), cx + D(30), Y(404), more ? PICK : PICKMORE);
-  backPill(HOME);
+  line("Drag to scroll", 410, 1, C_GREY);
+  smallText(gfx, "<", LCD_W / 2, Y(428) + 1, 2, C_GREY);
+  // scroll bar
+  float th = (PICK_BOT - PICK_TOP) * (PICK_BOT - PICK_TOP) / (12.0f * PICK_ROW), ty = PICK_TOP + (PICK_BOT - PICK_TOP - th) * (pickScroll / pickMax());
+  gfx->fillRoundRect(LCD_W - OFFX - 7, Y(ty), 4, D(th), 2, C_LINE);
+  noBtn = old;
 }
+static void drawPick() {
+  noBtn = false;
+  header("PICK ONE", nullptr);
+  backPill(HOME);
+  renderPick();
+}
+static void pickFlush() { flushRegion(0, Y(PICK_TOP - 2), LCD_W, Y(PICK_BOT) - Y(PICK_TOP - 2)); }
 static void repsBody(bool full) {
   dirty = true;
   char b[24];
@@ -695,9 +711,10 @@ static void handleSave() {
   web.send(200, "text/html", F("<!doctype html><meta name=viewport content='width=device-width,initial-scale=1'><body style='font-family:sans-serif;background:#000;color:#f2f1ec;padding:24px'><h2>Connecting...</h2><p>Look at your POWout.</p></body>"));
   credsIn = true;
 }
+static bool apOk = false;
 static void startPortal() {
   if (apOn) return;
-  WiFi.mode(WIFI_AP_STA); WiFi.softAP("POWout-setup");
+  WiFi.mode(WIFI_AP_STA); apOk = WiFi.softAP("POWout-setup");
   dns.start(53, "*", WiFi.softAPIP());
   web.on("/", HTTP_GET, handleRoot); web.on("/save", HTTP_POST, handleSave); web.onNotFound(handleRoot);
   web.begin(); apOn = true; credsIn = false;
@@ -736,12 +753,12 @@ static void drawSetup(Screen s) {
       dotText("PASSWORD", 4.5f, 46, C_FG);
       line("Step 1 / 3 - Wi-Fi", 88, 1, C_GREY);
       startPortal();
-      qr(QR_WIFI, QR_WIFI_N, 104, 150);
-      line("Scan with your phone.", 262, 2, C_FG);
-      line("It joins POWout-setup. Then type the", 288, 1, C_GREY);
-      line("Wi-Fi password on the page that opens.", 304, 1, C_GREY);
-      if (selSsid[0]) { char b[48]; snprintf(b, sizeof b, "Network: %s", selSsid); line(b, 326, 1, C_FG); }
-      chip(LCD_W / 2, 350, "WAITING FOR YOUR PHONE");
+      qr(QR_WIFI, QR_WIFI_N, 100, 238);
+      line("Scan it, or join POWout-setup", 336, 1, C_FG);
+      line("in Wi-Fi settings, then open 192.168.4.1", 352, 1, C_GREY);
+      { char b[56]; if (selSsid[0]) snprintf(b, sizeof b, "Network: %s", selSsid); else snprintf(b, sizeof b, "Type the network name on the page");
+        line(b, 370, 1, C_GREY); }
+      line(apOk ? "Setup network is ON" : "Setup network FAILED to start", 390, 1, apOk ? C_FG : C_GREY);
       backPill(SETUP2);
       break;
     case SETUP4:
@@ -798,8 +815,8 @@ void go(Screen s) {
   switch (s) {
     case HOME: drawHome(); break;
     case MENU: drawMenu(); break;
-    case PICK: drawPick(false); pickPage = 0; break;
-    case PICKMORE: drawPick(true); pickPage = 1; break;
+    case PICK: pickScroll = 0; pickVel = 0; drawPick(); break;
+    case PICKMORE: pickScroll = pickMax(); pickVel = 0; drawPick(); break;
     case REPS: drawReps(); break;
     case INTERVALS: ivT0 = millis(); wkStart = millis(); wk = {"INTERVALS", false, 1}; drawIntervals(); break;
     case TIMER: drawTimer(); break;
@@ -922,15 +939,7 @@ static void handleTap(int x, int y) {
     if (x >= btns[i].x0 && x <= btns[i].x1 && y >= btns[i].y0 && y <= btns[i].y1) {
       Screen t = btns[i].go;
       // Entering a screen from a tap may need state set up first.
-      if (cur == PICK || cur == PICKMORE) {
-        // Which row was tapped decides the workout.
-        int row = (y - Y(100)) / D(48);
-        static const char *na[6] = {"PUSH-UPS", "INTERVALS", "RUN", "SQUATS", "PLANK", "BREATHE"};
-        static const char *nb[6] = {"JACKS", "JUMP ROPE", "CYCLE", "SWIM", "YOGA", "FREE"};
-        if (t == REPS || t == TIMER) {
-          const char *nm = (cur == PICK ? na : nb)[constrain(row, 0, 5)];
-          startWorkout(nm, t == REPS, t == REPS ? (row == 0 && cur == PICK ? 20 : 25) : 1);
-        }
+      if (false) {
       } else if (cur == FOOD && t == LOGGED) {
         int row = (y - Y(112)) / D(60);
         if (row == 2) waterMl += 250; else if (row == 3) foodItems++, lastFood = "Shake"; else foodItems++;
@@ -945,6 +954,17 @@ static void handleTap(int x, int y) {
       return;
     }
   // Taps with no button
+  if (cur == PICK || cur == PICKMORE) {
+    if (y >= Y(PICK_TOP) && y < Y(PICK_BOT)) {
+      int i = (int)((y - Y(PICK_TOP) + pickScroll * S) / D(PICK_ROW));
+      if (i >= 0 && i < 12) {
+        const PItem &it = PICKS[i];
+        if (it.go == REPS || it.go == TIMER) startWorkout(it.wname, it.go == REPS, it.reps);
+        go(it.go);
+      }
+    }
+    return;
+  }
   if (cur == REPS) {
     reps++; totalReps++;
     if (reps >= wk.target) { reps = 0; setNo++; if (setNo > setsTotal) { go(PROUD); return; } }
@@ -953,9 +973,8 @@ static void handleTap(int x, int y) {
   }
 }
 static void handleSwipe(int dx) {
-  if (cur == PICK && dx < -70) go(PICKMORE);
-  else if (cur == PICKMORE && dx > 70) go(PICK);
-  else if (abs(dx) > 120) go(parentOf(cur));
+  if ((cur == PICK || cur == PICKMORE) && true) return;
+  if (abs(dx) > 120) go(parentOf(cur));
 }
 
 // ---- Diagnostics over USB serial ----
@@ -1039,14 +1058,30 @@ void loop() {
   (void)lastFace;
   int x, y;
   bool down = ftRead(x, y);
+  static float scrollStart = 0; static bool pickMoved = false; static uint32_t lastMv = 0; static int lastMvY = 0;
   if (down) {
-    if (!wasDown) { downX = x; downY = y; }
+    if (!wasDown) { downX = x; downY = y; scrollStart = pickScroll; pickMoved = false; pickVel = 0; lastMv = millis(); lastMvY = y; }
     lastX = x; lastY = y;
+    if (cur == PICK || cur == PICKMORE) {
+      if (abs(y - downY) > 8) pickMoved = true;
+      if (pickMoved) {
+        float ns = constrain(scrollStart - (y - downY) / S, 0.0f, pickMax());
+        uint32_t nw = millis();
+        if (nw > lastMv) { pickVel = 0.7f * pickVel + 0.3f * (-(y - lastMvY) / S) / (float)(nw - lastMv); lastMv = nw; lastMvY = y; }
+        if (fabsf(ns - pickScroll) >= 1.0f) { pickScroll = ns; renderPick(); pickFlush(); }
+      }
+    }
+  }
+  if (!down && (cur == PICK || cur == PICKMORE) && fabsf(pickVel) > 0.03f) {  // momentum after letting go
+    pickScroll = constrain(pickScroll + pickVel * 16.0f, 0.0f, pickMax()); pickVel *= 0.93f;
+    if (pickScroll <= 0 || pickScroll >= pickMax()) pickVel = 0;
+    renderPick(); pickFlush();
   }
   if (!down && wasDown) {  // finger lifted: tap or swipe
     int dx = lastX - downX, dy = lastY - downY;
     Serial.printf("touch %d,%d d=%d,%d\n", downX, downY, dx, dy);
-    if (abs(dx) > 70 && abs(dx) > abs(dy)) handleSwipe(dx);
+    if ((cur == PICK || cur == PICKMORE) && pickMoved) { /* was a scroll drag */ }
+    else if (abs(dx) > 70 && abs(dx) > abs(dy)) handleSwipe(dx);
     else handleTap(downX, downY);
   }
   wasDown = down;
