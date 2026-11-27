@@ -1,1 +1,1 @@
-Safer boot settings (no PSRAM, DIO flash) in case the chip failed to start. Same status report over USB every 3 seconds.
+All design screens: Home, Menu, workouts (reps, intervals, timers), Weather, Breathe, Food, Voice, Proof, Share, Setup and the mood faces. Touch and swipe to navigate, BOOT = back.
