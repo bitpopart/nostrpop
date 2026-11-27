@@ -1,5 +1,14 @@
 [
  {
+  "version": "0.4.4",
+  "date": "2026-11-27",
+  "notes": "Wi-Fi icon in the status bar when connected. Nostr step: QR opens a page on the board where you paste your npub (public key only), saved on the device.",
+  "app": "0.4.4/app.bin",
+  "full": "0.4.4/full.bin",
+  "sha256_app": "7aa0a6ac678c48970cde18f31ec18b370b1088e0d1388101cc417c631d40fa23",
+  "sha256_full": "23a5007c90090310238a9be6d146286afdb92bbbbb3fb78bba57a7a7b99da590"
+ },
+ {
   "version": "0.4.3",
   "date": "2026-11-27",
   "notes": "Pick one scrolls by dragging, with momentum (12 workouts in one list). Bigger Wi-Fi QR plus setup network status and manual steps.",
