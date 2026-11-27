@@ -190,7 +190,7 @@ html,body{background-color:#efeeea;background-image:var(--p1)}
 <input type="file" id="fl-file" accept=".bin" hidden>
 <span class="fl-l" style="margin-left:6px">Offset</span><input id="fl-addr" value="0x10000" size="8" spellcheck="false" readonly title="Set by the mode: Update 0x10000, New device 0x0"></div></details>
 <div class="fl-row"><span id="fl-fw" class="fl-mute">No firmware selected.</span></div>
-<div class="fl-row fl-btns"><button id="fl-connect">Connect</button><button id="fl-flash" disabled>Flash</button><button id="fl-disc" disabled>Disconnect</button><span id="fl-state" class="fl-mute">Not connected</span></div>
+<div class="fl-row fl-btns"><button id="fl-connect">Connect</button><button id="fl-flash" disabled>Flash</button><button id="fl-disc" disabled>Disconnect</button><button id="fl-mon">Monitor</button><span id="fl-state" class="fl-mute">Not connected</span></div>
 <div class="fl-row"><span id="fl-why" class="fl-mute"></span></div>
 <div class="fl-info" id="fl-info" hidden></div>
 <progress id="fl-bar" max="100" value="0"></progress>
@@ -300,6 +300,20 @@ $('fl-connect').onclick=async function(){
   if(e&&/permissions policy|disallowed|SecurityError/i.test(String(e.message||e)))warn('This page is not allowed to use USB here. Open it in its own browser tab in Chrome or Edge.')}
  busy=false;refresh()};
 if('serial' in navigator)navigator.serial.addEventListener('disconnect',function(){if(loader){log('The USB port disconnected. Unplug, plug in and press Connect again.');loader=null;transport=null;port=null;setState('Not connected');refresh()}});
+var monRun=false,monRd=null,monPort=null;
+$('fl-mon').onclick=async function(){
+ if(monRun){monRun=false;try{await monRd.cancel()}catch(e){}return}
+ if(!('serial' in navigator)){log('This browser has no Web Serial. Use Chrome or Edge on a computer.');return}
+ try{
+  if(loader){try{await transport.disconnect()}catch(e){}loader=null;transport=null;port=null;setState('Not connected');$('fl-info').hidden=true;refresh()}
+  monPort=await navigator.serial.requestPort();await monPort.open({baudRate:115200});
+  try{await monPort.setSignals({dataTerminalReady:true,requestToSend:false})}catch(e){}
+  monRun=true;$('fl-mon').textContent='Stop monitor';log('--- serial monitor, 115200 baud. Unplug and replug the device to see its start-up. ---');
+  monRd=monPort.readable.getReader();var dec=new TextDecoder(),buf='';
+  while(monRun){var r=await monRd.read();if(r.done)break;buf+=dec.decode(r.value,{stream:true});var i;while((i=buf.indexOf('\n'))>=0){log(buf.slice(0,i).replace(/\r$/,''));buf=buf.slice(i+1)}}
+ }catch(e){log('Monitor: '+(e&&e.message?e.message:e))}
+ monRun=false;try{monRd&&monRd.releaseLock()}catch(e){}try{monPort&&await monPort.close()}catch(e){}
+ monRd=null;monPort=null;$('fl-mon').textContent='Monitor';log('--- monitor stopped ---')};
 $('fl-disc').onclick=async function(){try{if(transport)await transport.disconnect()}catch(e){}loader=null;transport=null;port=null;setState('Not connected');$('fl-info').hidden=true;$('fl-bar').value=0;refresh()};
 $('fl-flash').onclick=async function(){
  if(!loader||!fw)return;
