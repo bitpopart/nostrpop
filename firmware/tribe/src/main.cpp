@@ -8,6 +8,8 @@
 #include <DNSServer.h>
 #include <time.h>
 #include <ESPmDNS.h>
+#include <HTTPClient.h>
+#include <WiFiClientSecure.h>
 #include <Preferences.h>
 #include <Arduino_GFX_Library.h>
 #include "version.h"
@@ -157,6 +159,7 @@ static Screen parentOf(Screen s) {
 }
 
 // ---- Touch zones ----
+static bool wxForce = false;
 struct Btn { int x0, y0, x1, y1; Screen go; };
 Btn btns[16]; int nbtn = 0;
 static bool noBtn = false;
@@ -529,26 +532,90 @@ static void timerTick() {
   gfx->fillRect(0, Y(140), LCD_W, D(110), C_BG);
   dotText(t, 9.0f, 150, C_FG);
 }
-static void drawWeather() {
+// ---- Weather (Open-Meteo, no key needed). Location is fixed to Sneek until a location setting exists. ----
+struct Wx { bool ok; float temp, feels, wind; int rain, code; uint32_t at; int h, m; };
+static Wx wx = {false, 0, 0, 0, 0, 0, 0, 0, 0};
+static float jnum(const String &b, const char *section, const char *key, float def) {
+  int sIdx = b.indexOf(section); if (sIdx < 0) return def;
+  String k = String("\"") + key + "\":"; int i = b.indexOf(k, sIdx); if (i < 0) return def;
+  i += k.length(); if (b[i] == '[') i++;
+  return b.substring(i, i + 12).toFloat();
+}
+static bool fetchWeather() {
+  if (ESP.getFreeHeap() < 60000) { Serial.printf("weather: low heap %u\n", (unsigned)ESP.getFreeHeap()); return false; }
+  WiFiClientSecure cl; cl.setInsecure(); cl.setTimeout(8);
+  HTTPClient http; http.setConnectTimeout(8000); http.setTimeout(8000);
+  String url = "https://api.open-meteo.com/v1/forecast?latitude=53.03&longitude=5.66&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m&hourly=precipitation_probability&forecast_hours=1&wind_speed_unit=kmh&timezone=auto";
+  if (!http.begin(cl, url)) return false;
+  int code = http.GET();
+  if (code != 200) { Serial.printf("weather http %d\n", code); http.end(); return false; }
+  String b = http.getString(); http.end();
+  wx.temp = jnum(b, "\"current\":{", "temperature_2m", 0); wx.feels = jnum(b, "\"current\":{", "apparent_temperature", 0);
+  wx.wind = jnum(b, "\"current\":{", "wind_speed_10m", 0); wx.code = (int)jnum(b, "\"current\":{", "weather_code", 0);
+  wx.rain = (int)jnum(b, "\"hourly\":{", "precipitation_probability", 0);
+  wx.ok = true; wx.at = millis(); wx.h = clkH; wx.m = clkM;
+  Serial.printf("weather: %.1f C feels %.1f wind %.0f rain %d%% code %d\n", wx.temp, wx.feels, wx.wind, wx.rain, wx.code);
+  return true;
+}
+static const char *wxName(int c) {
+  if (c == 0) return "Clear"; if (c <= 2) return "Partly cloudy"; if (c == 3) return "Cloudy"; if (c == 45 || c == 48) return "Fog";
+  if (c >= 51 && c <= 57) return "Drizzle"; if (c >= 61 && c <= 67) return "Rain"; if (c >= 71 && c <= 77) return "Snow";
+  if (c >= 80 && c <= 82) return "Showers"; if (c >= 95) return "Storm"; return "Cloudy";
+}
+static void wxIcon(int c, int ix, int iy) {
+  bool sun = c <= 2, cloud = c >= 1, rain = (c >= 51 && c <= 67) || (c >= 80 && c <= 99), snow = c >= 71 && c <= 77;
+  if (sun) {
+    int sx = cloud ? ix - D(10) : ix, sy = cloud ? iy - D(8) : iy;
+    gfx->drawCircle(sx, sy, D(12), C_FG); gfx->drawCircle(sx, sy, D(11), C_FG); gfx->drawCircle(sx, sy, D(10), C_FG);
+    for (int a = 0; a < 8; a++) { float r = a * 0.7854f; thickLine(gfx, sx + (int)(cosf(r) * D(17)), sy + (int)(sinf(r) * D(17)), sx + (int)(cosf(r) * D(23)), sy + (int)(sinf(r) * D(23)), 3, C_FG); }
+  }
+  if (cloud) {
+    int cy = iy + (sun ? D(6) : 0);
+    gfx->fillRoundRect(ix - D(22), cy + D(4), D(48), D(20), D(10), C_FG);
+    gfx->fillCircle(ix - D(6), cy + D(2), D(12), C_FG); gfx->fillCircle(ix + D(10), cy + D(6), D(9), C_FG);
+    if (rain) for (int i = 0; i < 3; i++) thickLine(gfx, ix - D(12) + i * D(12), cy + D(30), ix - D(16) + i * D(12), cy + D(38), 3, C_FG);
+    if (snow) for (int i = 0; i < 3; i++) gfx->fillCircle(ix - D(12) + i * D(12), cy + D(34), 3, C_FG);
+  }
+}
+static void drawWeatherBody() {
   header("OUTDOOR RUN", nullptr);
-  line("Your city", 98, 1, C_GREY);
-  dotText("14", 17.0f, 120, C_FG);
-  // sun and cloud icon
-  int ix = LCD_W / 2 + D(100), iy = Y(150);
-  gfx->drawCircle(ix - D(8), iy - D(6), D(11), C_FG); gfx->drawCircle(ix - D(8), iy - D(6), D(10), C_FG);
-  gfx->fillRoundRect(ix - D(18), iy + D(2), D(40), D(18), D(9), C_FG);
-  gfx->fillRoundRect(ix - D(11), iy - D(4), D(22), D(18), D(9), C_FG);
-  line("Cloudy", 252, 2, C_FG);
-  const char *tn[3] = {"RAIN", "WIND", "FEELS"}, *tv[3] = {"10%", "18 km/h", "12 C"};
+  line("Sneek", 98, 1, C_GREY);
+  char b[12];
+  if (wx.ok) snprintf(b, sizeof b, "%d", (int)lroundf(wx.temp)); else snprintf(b, sizeof b, "--");
+  dotText(b, 17.0f, 120, C_FG);
+  if (wx.ok) wxIcon(wx.code, LCD_W / 2 + D(110), Y(150));
+  line(wx.ok ? wxName(wx.code) : "No data yet", 252, 2, C_FG);
+  char v[3][12];
+  if (wx.ok) { snprintf(v[0], 12, "%d%%", wx.rain); snprintf(v[1], 12, "%d km/h", (int)lroundf(wx.wind)); snprintf(v[2], 12, "%d C", (int)lroundf(wx.feels)); }
+  else for (int i = 0; i < 3; i++) snprintf(v[i], 12, "--");
+  const char *tn[3] = {"RAIN", "WIND", "FEELS"};
   for (int i = 0; i < 3; i++) {
     int x = OFFX + D(22.1f + i * 112.2f), y = Y(272.3f), w = D(99.4f), h = D(62.6f);
     gfx->fillRoundRect(x, y, w, h, D(13), C_PANEL);
     smallText(gfx, tn[i], x + w / 2, y + D(10), 1, C_GREY);
-    smallText(gfx, tv[i], x + w / 2, y + D(32), 2, C_FG);
+    smallText(gfx, v[i], x + w / 2, y + D(30), 2, C_FG);
   }
-  bigBtnAt("GOOD TO GO", true, PICK, 448 - 28 - 44.2f - 22);
-  line("Sample data. No Wi-Fi yet.", 412, 1, C_GREY);
+  const char *verdict = "NO DATA";
+  if (wx.ok) { bool good = wx.rain < 40 && wx.wind < 30 && wx.feels > -2 && wx.feels < 30 && wx.code < 61; verdict = good ? "GOOD TO GO" : "MAYBE INDOORS"; }
+  bigBtnAt(verdict, true, PICK, 448 - 28 - 44.2f - 22);
+  char u[40];
+  if (wx.ok) snprintf(u, sizeof u, "Updated %02d:%02d - tap to refresh", wx.h, wx.m);
+  else snprintf(u, sizeof u, WiFi.status() == WL_CONNECTED ? "Tap to load the weather" : "Connect Wi-Fi in Setup to load");
+  line(u, 412, 1, C_GREY);
+  addBtn(0, Y(398), LCD_W, Y(426), WEATHER);
   backPill(HOME);
+}
+static void drawWeather() {
+  bool online = WiFi.status() == WL_CONNECTED;
+  if (online && (!wx.ok || millis() - wx.at > 600000UL || wxForce)) {
+    wxForce = false;
+    header("OUTDOOR RUN", nullptr);
+    line("Updating weather...", 220, 2, C_GREY);
+    flushRegion(0, 0, LCD_W, LCD_H);
+    fetchWeather();
+    nbtn = 0; gfx->fillScreen(C_BG);
+  }
+  drawWeatherBody();
 }
 static void drawBMode() {
   header("BREATHE", "PICK A RHYTHM");
@@ -1014,6 +1081,7 @@ static void handleTap(int x, int y) {
       } else if (cur == HEARD && t == REPS) {
         startWorkout("PUSH-UPS", true, 20);
       }
+      if (cur == WEATHER && t == WEATHER) wxForce = true;
       if (cur == MENU && t == READY) { go(t); tour = true; return; }
       go(t);
       return;
