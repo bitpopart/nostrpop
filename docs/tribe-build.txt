@@ -1,11 +1,11 @@
-Compiling .pio/build/powout/lib989/WiFi/WiFi.cpp.o
-Compiling .pio/build/powout/lib989/WiFi/WiFiAP.cpp.o
-Compiling .pio/build/powout/lib989/WiFi/WiFiGeneric.cpp.o
 Compiling .pio/build/powout/lib989/WiFi/WiFiMulti.cpp.o
 Compiling .pio/build/powout/lib989/WiFi/WiFiSTA.cpp.o
 Compiling .pio/build/powout/lib989/WiFi/WiFiScan.cpp.o
 Compiling .pio/build/powout/lib147/DNSServer/DNSServer.cpp.o
 Compiling .pio/build/powout/lib4b6/ESPmDNS/ESPmDNS.cpp.o
+Compiling .pio/build/powout/libf0e/NetworkClientSecure/NetworkClientSecure.cpp.o
+Compiling .pio/build/powout/libf0e/NetworkClientSecure/ssl_client.cpp.o
+Compiling .pio/build/powout/lib67b/HTTPClient/HTTPClient.cpp.o
 Compiling .pio/build/powout/libe70/Preferences/Preferences.cpp.o
 Compiling .pio/build/powout/lib7aa/FS/FS.cpp.o
 Compiling .pio/build/powout/lib7aa/FS/vfs_api.cpp.o
@@ -19,11 +19,11 @@ Compiling .pio/build/powout/lib1ce/WebServer/middleware/MiddlewareChain.cpp.o
 Compiling .pio/build/powout/src/main.cpp.o
 Building .pio/build/powout/bootloader.bin
 Generating partitions .pio/build/powout/partitions.bin
-Compiling .pio/build/powout/FrameworkArduino/ColorFormat.c.o
 esptool.py v5.0.0-dev1
 Creating ESP32S3 image...
 Merged 2 ELF sections.
 Successfully created ESP32S3 image.
+Compiling .pio/build/powout/FrameworkArduino/ColorFormat.c.o
 Compiling .pio/build/powout/FrameworkArduino/Esp.cpp.o
 Compiling .pio/build/powout/FrameworkArduino/FirmwareMSC.cpp.o
 Compiling .pio/build/powout/FrameworkArduino/FunctionalInterrupt.cpp.o
@@ -92,8 +92,8 @@ Warning: esp-idf-size exited with code 2
 Retrieving maximum program size .pio/build/powout/firmware.elf
 Checking size .pio/build/powout/firmware.elf
 Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
-RAM:   [==        ]  15.2% (used 49932 bytes from 327680 bytes)
-Flash: [==        ]  17.7% (used 1157026 bytes from 6553600 bytes)
+RAM:   [==        ]  15.4% (used 50500 bytes from 327680 bytes)
+Flash: [==        ]  19.4% (used 1274418 bytes from 6553600 bytes)
 Building .pio/build/powout/firmware.bin with action:
   "$PYTHONEXE" "$OBJCOPY" --chip esp32s3 elf2image --flash-mode ${__get_board_flash_mode(__env__)} --flash-freq ${__get_board_f_image(__env__)} --flash-size 32MB --elf-sha256-offset 0xb0 -o $TARGET $SOURCES
 Building .pio/build/powout/firmware.bin
@@ -101,7 +101,7 @@ esptool.py v5.0.0-dev1
 Creating ESP32S3 image...
 Merged 2 ELF sections.
 Successfully created ESP32S3 image.
-======================== [SUCCESS] Took 104.14 seconds ========================
+======================== [SUCCESS] Took 110.18 seconds ========================
 === LIB INFO ===
 dir: firmware/tribe/.pio/libdeps/powout/GFX Library for Arduino
 157-public:

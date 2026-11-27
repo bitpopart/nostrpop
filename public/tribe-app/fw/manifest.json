@@ -1,5 +1,14 @@
 [
  {
+  "version": "0.4.5",
+  "date": "2026-11-27",
+  "notes": "Real weather for Sneek over Wi-Fi (Open-Meteo): temperature, conditions, rain chance, wind, feels like. Tap the Updated line to refresh.",
+  "app": "0.4.5/app.bin",
+  "full": "0.4.5/full.bin",
+  "sha256_app": "602ca68325c99c14b3fc6c24b6c76249fe78b59dfdd8574e2d86122a2acf5346",
+  "sha256_full": "b3ab8128260640d4315b11ab24c4633424d34cf5ad871a170897d9e371e89a64"
+ },
+ {
   "version": "0.4.4",
   "date": "2026-11-27",
   "notes": "Wi-Fi icon in the status bar when connected. Nostr step: QR opens a page on the board where you paste your npub (public key only), saved on the device.",
