@@ -1,5 +1,14 @@
 [
  {
+  "version": "0.2.1",
+  "date": "2026-11-27",
+  "notes": "Fixes the black screen: the display was set up with the wrong arguments. POWout UI: Home, Menu, Breathe picker, Calm, Box, 4-7-8.",
+  "app": "0.2.1/app.bin",
+  "full": "0.2.1/full.bin",
+  "sha256_app": "dd77f53c07dfc9c18c7f6e5596a5330398986c555b9318e7a2efb0ee86587361",
+  "sha256_full": "13021f41085455daa8638f3c91ffc9cae01e1f6b764f5224655833f02c1903df"
+ },
+ {
   "version": "0.2.0",
   "date": "2026-11-27",
   "notes": "POWout UI on the AMOLED: Home, Menu, Breathe picker, Calm 4-6, Box 4-4-4-4, 4-7-8. Touch plus BOOT button as back.",
