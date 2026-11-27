@@ -34,12 +34,12 @@ Compiling .pio/build/minibit/libb24/GFX Library for Arduino/display/Arduino_ST77
 Compiling .pio/build/minibit/libb24/GFX Library for Arduino/display/Arduino_WEA2012.cpp.o
 Compiling .pio/build/minibit/src/main.cpp.o
 Building .pio/build/minibit/bootloader.bin
+Generating partitions .pio/build/minibit/partitions.bin
+Compiling .pio/build/minibit/FrameworkArduino/ColorFormat.c.o
 esptool.py v5.0.0-dev1
 Creating ESP32S3 image...
 Merged 2 ELF sections.
 Successfully created ESP32S3 image.
-Generating partitions .pio/build/minibit/partitions.bin
-Compiling .pio/build/minibit/FrameworkArduino/ColorFormat.c.o
 Compiling .pio/build/minibit/FrameworkArduino/Esp.cpp.o
 Compiling .pio/build/minibit/FrameworkArduino/FirmwareMSC.cpp.o
 Compiling .pio/build/minibit/FrameworkArduino/FunctionalInterrupt.cpp.o
@@ -117,4 +117,4 @@ esptool.py v5.0.0-dev1
 Creating ESP32S3 image...
 Merged 2 ELF sections.
 Successfully created ESP32S3 image.
-======================== [SUCCESS] Took 109.89 seconds ========================
+========================= [SUCCESS] Took 76.00 seconds =========================
