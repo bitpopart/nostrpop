@@ -1,5 +1,14 @@
 [
  {
+  "version": "0.2.2",
+  "date": "2026-11-27",
+  "notes": "Diagnostic build: colour test on start, power chip report over USB serial. Flasher page has a Monitor button.",
+  "app": "0.2.2/app.bin",
+  "full": "0.2.2/full.bin",
+  "sha256_app": "a4acd033fb5494da9fde20ce9d6b701999b021ca25268d82ff5efc1e9320d63a",
+  "sha256_full": "034665e1e5b8a11950cce378883190d16e2cdeb9c740895198b5dad56115045f"
+ },
+ {
   "version": "0.2.1",
   "date": "2026-11-27",
   "notes": "Fixes the black screen: the display was set up with the wrong arguments. POWout UI: Home, Menu, Breathe picker, Calm, Box, 4-7-8.",
