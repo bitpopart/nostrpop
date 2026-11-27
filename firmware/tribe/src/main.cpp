@@ -6,6 +6,7 @@
 #include <Arduino_GFX_Library.h>
 #include "version.h"
 #include "dotfont.h"
+#include "fonts.h"
 #include "heart.h"
 #include "qrdata.h"
 
@@ -82,14 +83,17 @@ static void dotTextPx(Arduino_GFX *g, const char *s, int cxPx, int topPx, float 
 static void dotText(const char *s, float designCell, float designTop, uint16_t col) {
   dotTextPx(gfx, s, LCD_W / 2, Y(designTop), designCell * S, col);
 }
-static void smallText(Arduino_GFX *g, const char *s, int cxPx, int topPx, uint8_t size, uint16_t col) {
+static const GFXfont *fontFor(uint8_t size) { return size <= 1 ? &F_SMALL : size == 2 ? &F_MAIN : &F_BIG; }
+// Text with the Inter-based fonts. top = top of the letters; align 0 = left edge at x, 1 = centred on x.
+static void textAt(Arduino_GFX *g, const char *s, int x, int top, uint8_t size, uint16_t col, int align) {
   int16_t x1, y1; uint16_t w, h;
-  g->setTextSize(size);
+  g->setFont(fontFor(size)); g->setTextSize(1);
   g->getTextBounds(s, 0, 0, &x1, &y1, &w, &h);
   g->setTextColor(col);
-  g->setCursor(cxPx - w / 2, topPx);
+  g->setCursor((align ? x - (int)w / 2 : x) - x1, top - y1);
   g->print(s);
 }
+static void smallText(Arduino_GFX *g, const char *s, int cxPx, int topPx, uint8_t size, uint16_t col) { textAt(g, s, cxPx, topPx, size, col, 1); }
 // Centred text line at a design y. size 2 = main line, size 1 = small grey line.
 static void line(const char *s, float dy, uint8_t size, uint16_t col) { smallText(gfx, s, LCD_W / 2, Y(dy), size, col); }
 
@@ -201,7 +205,7 @@ static void statusBar() {
     char b[6]; snprintf(b, sizeof b, "%d", batt);
     int w = (int)((strlen(b) * 6 - 1) * cell);
     dotTextLeft(gfx, b, LCD_W - OFFX - D(22) - w - D(14), Y(12), cell, C_GREY);
-    gfx->setTextSize(2); gfx->setTextColor(C_GREY); gfx->setCursor(LCD_W - OFFX - D(22) - 11, Y(12) + 4); gfx->print("%");
+    textAt(gfx, "%", LCD_W - OFFX - D(22) - 14, Y(12) + 2, 2, C_GREY, 0);
   }
 }
 static void menuIcon(bool mic) {
@@ -236,7 +240,7 @@ static void bigButton(const char *label, bool filled, Screen go) { bigBtnAt(labe
 static void backPill(Screen to) {
   int w = D(44), h = D(18), y = Y(428);
   pill(LCD_W / 2 - w / 2, y, w, h, C_PANEL, C_PANEL);
-  gfx->setTextColor(C_GREY); gfx->setTextSize(1); gfx->setCursor(LCD_W / 2 - 3, y + h / 2 - 3); gfx->print("<");
+  smallText(gfx, "<", LCD_W / 2, y + 1, 2, C_GREY);
   addBtn(LCD_W / 2 - w, y - 10, LCD_W / 2 + w, LCD_H, to);
 }
 static void rowAt(float dy, float dh, const char *tag, const char *name, const char *desc, bool on, Screen go) {
@@ -245,15 +249,15 @@ static void rowAt(float dy, float dh, const char *tag, const char *name, const c
   if (on) { gfx->drawRoundRect(x, y, w, h, D(12), C_FG); gfx->drawRoundRect(x + 1, y + 1, w - 2, h - 2, D(12) - 1, C_FG); }
   gfx->fillRoundRect(x + D(10), y + (h - D(30)) / 2, D(44), D(30), D(8), C_TILE);
   smallText(gfx, tag, x + D(10) + D(22), y + h / 2 - 3, 1, C_FG);
-  gfx->setTextSize(2); gfx->setTextColor(C_FG); gfx->setCursor(x + D(66), y + h / 2 - D(14)); gfx->print(name);
-  gfx->setTextSize(1); gfx->setTextColor(C_GREY); gfx->setCursor(x + D(66), y + h / 2 + D(6)); gfx->print(desc);
+  textAt(gfx, name, x + D(66), y + h / 2 - D(17), 2, C_FG, 0);
+  textAt(gfx, desc, x + D(66), y + h / 2 + D(5), 1, C_GREY, 0);
   addBtn(x, y, x + w, y + h, go);
 }
 static void chip(int cxPx, float dy, const char *s) {
-  int16_t x1, y1; uint16_t w, h; gfx->setTextSize(1); gfx->getTextBounds(s, 0, 0, &x1, &y1, &w, &h);
+  int16_t x1, y1; uint16_t w, h; gfx->setFont(&F_SMALL); gfx->setTextSize(1); gfx->getTextBounds(s, 0, 0, &x1, &y1, &w, &h);
   int cw = w + D(24), ch = D(26);
   gfx->fillRoundRect(cxPx - cw / 2, Y(dy), cw, ch, ch / 2, C_PANEL);
-  smallText(gfx, s, cxPx, Y(dy) + ch / 2 - 4, 1, C_FG);
+  smallText(gfx, s, cxPx, Y(dy) + (ch - 10) / 2, 1, C_FG);
 }
 static void check(int cx, int cy, int sz, uint16_t col) {
   thickLine(gfx, cx - sz * 4 / 10, cy, cx - sz / 10, cy + sz * 3 / 10, max(3, sz / 8), col);
@@ -293,7 +297,7 @@ static void drawFace(Screen s) {
   if (s == REST) {
     thickLine(gfx, X(88), Y(160), X(152), Y(160), D(36), C_FG); thickLine(gfx, X(216), Y(160), X(280), Y(160), D(36), C_FG);
     thickLine(gfx, X(154), Y(282), X(214), Y(282), D(15), C_FG);
-    smallText(gfx, "Z", X(296), Y(150), 3, C_GREY); smallText(gfx, "z", X(318), Y(128), 2, C_GREY);
+    smallText(gfx, "Z", X(300), Y(130), 3, C_GREY); smallText(gfx, "z", X(326), Y(104), 2, C_GREY);
     return;
   }
   faceEyes(s, true);
@@ -323,19 +327,61 @@ static void drawHome() {
   chip(LCD_W / 2, 283, "STREAK 5 DAYS");
   bigButton("START", true, PICK);
 }
+// Line icons from the design (24 unit grid), drawn with thick strokes. cx,cy = centre in px, sz = size in px.
+struct Ico { int cx, cy; float k; int w; };
+static inline int iX(const Ico &o, float u) { return o.cx + (int)((u - 12) * o.k); }
+static inline int iY(const Ico &o, float v) { return o.cy + (int)((v - 12) * o.k); }
+static void iLn(const Ico &o, float x0, float y0, float x1, float y1) { thickLine(gfx, iX(o, x0), iY(o, y0), iX(o, x1), iY(o, y1), o.w, C_FG); }
+static void iArc(const Ico &o, float cx, float cy, float r, float a0, float a1) {
+  int n = 24, px = 0, py = 0;
+  for (int i = 0; i <= n; i++) {
+    float a = (a0 + (a1 - a0) * i / n) * 0.0174533f;
+    int x = iX(o, cx + r * cosf(a)), y = iY(o, cy + r * sinf(a));
+    if (i) thickLine(gfx, px, py, x, y, o.w, C_FG);
+    px = x; py = y;
+  }
+}
+static void iRing(const Ico &o, float cx, float cy, float r) { iArc(o, cx, cy, r, 0, 360); }
+static void iDot(const Ico &o, float x, float y) { gfx->fillCircle(iX(o, x), iY(o, y), max(2, o.w / 2 + 1), C_FG); }
+static void drawIcon(int id, int cx, int cy, int sz) {
+  Ico o = {cx, cy, sz / 24.0f, max(2, (int)(sz / 24.0f * 1.9f + 0.5f))};
+  switch (id) {
+    case 0:  // weather
+      iRing(o, 8, 8, 2.8f); iLn(o, 8, 2, 8, 3.2f); iLn(o, 2, 8, 3.2f, 8); iLn(o, 3.8f, 3.8f, 4.7f, 4.7f); iLn(o, 12.2f, 3.8f, 11.3f, 4.7f);
+      iLn(o, 8.5f, 20, 17.3f, 20); iArc(o, 17.3f, 16.4f, 3.6f, -90, 90); iArc(o, 13.2f, 13.8f, 5.2f, 190, 340); iArc(o, 8.6f, 16.6f, 3.4f, 90, 250);
+      break;
+    case 1:  // workouts (dumbbell)
+      iLn(o, 3, 12, 21, 12); iLn(o, 6, 6.5f, 6, 17.5f); iLn(o, 3, 9, 3, 15); iLn(o, 18, 6.5f, 18, 17.5f); iLn(o, 21, 9, 21, 15);
+      break;
+    case 2: iRing(o, 12, 12, 3.5f); iRing(o, 12, 12, 8); break;  // breathe
+    case 3:  // food
+      iLn(o, 7, 3, 7, 10); iLn(o, 11, 3, 11, 10); iLn(o, 9, 3, 9, 9); iArc(o, 9, 10, 2, 0, 180); iLn(o, 9, 12, 9, 21);
+      iLn(o, 17, 21, 17, 3); iLn(o, 17, 3, 14, 7.5f); iLn(o, 14, 7.5f, 13.5f, 10.5f); iLn(o, 13.5f, 10.5f, 17, 13);
+      break;
+    case 4: iRing(o, 12, 12, 9); iLn(o, 7.5f, 12.5f, 10.5f, 15.5f); iLn(o, 10.5f, 15.5f, 16.5f, 9); break;  // proof
+    case 5: iRing(o, 12, 12, 9); iArc(o, 12, 8.5f, 6, 40, 140); iDot(o, 9, 9.5f); iDot(o, 15, 9.5f); break;  // moods
+    case 6: iArc(o, 11.5f, 12.5f, 8.5f, 13, 257); iArc(o, 17, 8, 7, 150, 215); break;  // rest (moon)
+    case 7:  // setup (sliders)
+      iLn(o, 4, 7, 14, 7); iLn(o, 18, 7, 20, 7); iLn(o, 4, 17, 6, 17); iLn(o, 10, 17, 20, 17); iRing(o, 16, 7, 2); iRing(o, 8, 17, 2);
+      break;
+    default:  // home
+      iLn(o, 4, 11, 12, 4); iLn(o, 12, 4, 20, 11); iLn(o, 20, 11, 20, 20); iLn(o, 20, 20, 4, 20); iLn(o, 4, 20, 4, 11);
+      iLn(o, 10, 20, 10, 14); iLn(o, 10, 14, 14, 14); iLn(o, 14, 14, 14, 20);
+  }
+}
 static void drawMenu() {
   statusBar();
   dotText("MENU", 5.0f, 46, C_FG);
   struct T { const char *n; Screen go; } t[9] = {
-    {"WEATHER", WEATHER}, {"WORKOUTS", PICK}, {"BREATHE", BMODE},
-    {"FOOD", FOOD}, {"PROOF", PROOF}, {"MOODS", READY},
-    {"REST", REST}, {"SETUP", SETUP1}, {"HOME", HOME}};
+    {"Weather", WEATHER}, {"Workouts", PICK}, {"Breathe", BMODE},
+    {"Food", FOOD}, {"Proof", PROOF}, {"Moods", READY},
+    {"Rest", REST}, {"Setup", SETUP1}, {"Home", HOME}};
   int gap = D(10), tw = (DW - 2 * D(22) - 2 * gap) / 3, th = D(96);
   for (int i = 0; i < 9; i++) {
     int x = OFFX + D(22) + (i % 3) * (tw + gap), y = Y(100) + (i / 3) * (th + gap);
     gfx->fillRoundRect(x, y, tw, th, D(12), C_PANEL);
-    gfx->drawRoundRect(x, y, tw, th, D(12), C_LINE);
-    smallText(gfx, t[i].n, x + tw / 2, y + th / 2 - 3, 1, C_FG);
+    drawIcon(i, x + tw / 2, y + D(34), D(36));
+    smallText(gfx, t[i].n, x + tw / 2, y + th - D(26), 1, C_FG);
     addBtn(x, y, x + tw, y + th, t[i].go);
   }
   backPill(HOME);

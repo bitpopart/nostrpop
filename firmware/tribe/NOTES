@@ -1,1 +1,1 @@
-Fix: the display chip needs even-aligned writes, so small text, icons and the heart were missing. All screens now draw into a frame buffer and are sent aligned.
+Menu icons drawn, text uses sharper Inter fonts.
