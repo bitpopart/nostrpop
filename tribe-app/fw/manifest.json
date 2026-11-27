@@ -5,8 +5,8 @@
   "notes": "POWout UI on the AMOLED: Home, Menu, Breathe picker, Calm 4-6, Box 4-4-4-4, 4-7-8. Touch plus BOOT button as back.",
   "app": "0.2.0/app.bin",
   "full": "0.2.0/full.bin",
-  "sha256_app": "111c26682b29bb7eee5efdedfc9bd35e49e742cc7a9abf1afc55010678b7840e",
-  "sha256_full": "ac9bc90b96aa47dab72b4a4606fb11c27790243d9d144ae4a0e74f8a3d2decf8"
+  "sha256_app": "54383c08f9b9a726d0cfa2f1cc0fcf9408a5f8a1c81708b9ff03b9707df063e4",
+  "sha256_full": "19b16965d67d46c52a4d8d4d9b7fc7e25c3432a8d14f591ebcff52f33513e10c"
  },
  {
   "version": "0.1.0",
