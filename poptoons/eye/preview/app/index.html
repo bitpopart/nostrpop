@@ -53,6 +53,7 @@
     background:#000; touch-action:none; cursor:pointer; }
   .state { margin-top:22px; font-family:Bangers, Impact, sans-serif; font-size:22px; letter-spacing:1.5px; }
   .controls { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-top:14px; }
+  #toonsel { display:block; margin:12px auto 0; padding:8px 14px; font:inherit; font-weight:700; border:3px solid #111; border-radius:12px; background:#fff; }
   .colls { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin:12px auto 0; max-width:560px; }
   .colls button { padding:7px 12px; font-size:14px; }
   .colls button.on { background:var(--ink,#111); color:#fff; }
@@ -165,7 +166,7 @@
     <button id="bg">Screen: Black</button>
   </div>
   <div class="state" id="today" style="font-size:18px"></div>
-  <div class="hint">Eye: tap to blink, drag and it follows your finger. Tap the little eye at the top of a toon to go back to the menu (the toon begs you to stay). When the eye opens, roll your finger (or mouse) over the small black eyes: the one you touch swells into its toon, lift your finger on it to choose. Tap the little red eye at the top of the Choose your toon screen (where all the eyes are) for settings: quiet time (no tricks, no talking, but it still needs daily care), talking, brightness, how long until the eye sleeps and how fast needs run down. Toon: tap and it does a random trick, ignore it or forget to feed it and it gets bored, then angry. The three little dots on the right open its mood: tap EAT, PLAY or SLEEP to look after it (tap the little eye to close), double tap or Shake it gives a new toon, hold the screen to go back to the eye.</div>
+  <div class="hint">Eye: tap to blink, drag and it follows your finger. When the eye opens you see your toon with three eyes around it. Age shows when it was born and how many days old it is. Facts shows fun facts, tap for the next one. Care opens EAT, PLAY and SLEEP to look after it. Tap the little eye at the top to go back (the toon begs you to stay). Toon: tap and it does a random trick, ignore it or forget to feed it and it gets bored, then angry. Hold the screen to go back to the eye. Every device holds one toon: pick it above, and pick the same one in the flasher.</div>
   <div class="spec">Preview at 466 x 466, round, for the Waveshare ESP32-S3 1.75" AMOLED</div>
 
   <div class="site" id="update">
@@ -2748,11 +2749,15 @@
   }
   (function(){
     var box = document.getElementById('colls'), sel = document.createElement('select'); sel.id = 'toonsel'; sel.setAttribute('aria-label', 'Toon');
-    var o0 = document.createElement('option'); o0.value = ''; o0.textContent = 'One toon per device...'; sel.appendChild(o0);
-    TOONS_ALL.forEach(function(t){ var o = document.createElement('option'); o.value = t.name; o.textContent = t.name + ' (' + t.set + ')'; sel.appendChild(o); });
-    sel.addEventListener('change', function(){ if (sel.value) setToon(sel.value); else setCollection(collNow); });
-    box.parentNode.insertBefore(sel, box.nextSibling);
-    var m = /[?&]toon=([^&]+)/.exec(location.search); if (m) setToon(decodeURIComponent(m[1]), true);
+    box.style.display = 'none';                                   // a device holds one toon, so there is no collection switch any more
+    var sets = []; TOONS_ALL.forEach(function(t){ if (sets.indexOf(t.set) < 0) sets.push(t.set); });
+    sets.forEach(function(st){ var g = document.createElement('optgroup'); g.label = st; TOONS_ALL.filter(function(t){ return t.set === st; }).forEach(function(t){ var o = document.createElement('option'); o.value = t.name; o.textContent = t.name; g.appendChild(o); }); sel.appendChild(g); });
+    sel.addEventListener('change', function(){ if (sel.value){ try { localStorage.setItem('poptoons_toon', sel.value); } catch(_){} setToon(sel.value); } });
+    box.parentNode.insertBefore(sel, box);
+    var m = /[?&]toon=([^&]+)/.exec(location.search), first = m ? decodeURIComponent(m[1]) : null;
+    if (!first) { try { first = localStorage.getItem('poptoons_toon'); } catch(_){} }
+    if (!first || !TOONS_ALL.some(function(t){ return t.name === first; })) first = TOONS_ALL[dayNo % TOONS_ALL.length].name;
+    setToon(first, true);
   })();
 
   function toLook(e){
