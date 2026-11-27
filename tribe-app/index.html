@@ -191,6 +191,7 @@ html,body{background-color:#efeeea;background-image:var(--p1)}
 <span class="fl-l" style="margin-left:6px">Offset</span><input id="fl-addr" value="0x10000" size="8" spellcheck="false" readonly title="Set by the mode: Update 0x10000, New device 0x0"></div></details>
 <div class="fl-row"><span id="fl-fw" class="fl-mute">No firmware selected.</span></div>
 <div class="fl-row fl-btns"><button id="fl-connect">Connect</button><button id="fl-flash" disabled>Flash</button><button id="fl-disc" disabled>Disconnect</button><span id="fl-state" class="fl-mute">Not connected</span></div>
+<div class="fl-row"><span id="fl-why" class="fl-mute"></span></div>
 <div class="fl-info" id="fl-info" hidden></div>
 <progress id="fl-bar" max="100" value="0"></progress>
 <pre id="fl-log" aria-live="polite"></pre>
@@ -260,7 +261,7 @@ var term={clean:function(){},writeLine:function(d){log(d)},write:function(d){var
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 function hex(b){return Array.prototype.map.call(new Uint8Array(b),function(x){return ('0'+x.toString(16)).slice(-2)}).join('')}
 function setState(s){$('fl-state').textContent=s}
-function refresh(){$('fl-flash').disabled=busy||!loader||!fw;$('fl-connect').disabled=busy||!!loader;$('fl-disc').disabled=busy||!loader}
+function refresh(){var why=$('fl-why');if(why)why.textContent=(!busy&&!fw)?(loader?'Flash is off until a firmware file is chosen (see Advanced above).':''):'';$('fl-flash').disabled=busy||!loader||!fw;$('fl-connect').disabled=busy||!!loader;$('fl-disc').disabled=busy||!loader}
 function warn(m){var w=$('fl-warn');w.hidden=false;w.innerHTML=m}
 if(!('serial' in navigator)){warn('This browser cannot flash over USB. Open this page in <b>Chrome or Edge on a computer</b>. If you are viewing it inside another app or a preview, open the page in its own tab first.');}
 function renderVersions(){var v=$('fl-vtab');
@@ -294,9 +295,11 @@ $('fl-connect').onclick=async function(){
   setState('Connecting…');var chip=await loader.main();log('Connected: '+chip);setState('Connected: '+chip);
   var inf=$('fl-info');inf.hidden=false;inf.textContent='Chip: '+chip;
   try{var mac=await loader.chip.readMac(loader);inf.textContent='Chip: '+chip+' · MAC '+mac;log('MAC '+mac)}catch(e2){}
+  setState('Connected: '+chip);log('Ready. Choose a firmware file, then press Flash.');
  }catch(e){log('Could not connect: '+(e&&e.message||e));setState('Not connected');loader=null;transport=null;port=null;
   if(e&&/permissions policy|disallowed|SecurityError/i.test(String(e.message||e)))warn('This page is not allowed to use USB here. Open it in its own browser tab in Chrome or Edge.')}
  busy=false;refresh()};
+if('serial' in navigator)navigator.serial.addEventListener('disconnect',function(){if(loader){log('The USB port disconnected. Unplug, plug in and press Connect again.');loader=null;transport=null;port=null;setState('Not connected');refresh()}});
 $('fl-disc').onclick=async function(){try{if(transport)await transport.disconnect()}catch(e){}loader=null;transport=null;port=null;setState('Not connected');$('fl-info').hidden=true;$('fl-bar').value=0;refresh()};
 $('fl-flash').onclick=async function(){
  if(!loader||!fw)return;
@@ -313,6 +316,7 @@ $('fl-flash').onclick=async function(){
   $('fl-bar').value=100;log('Done. sha256 '+fw.sha);await loader.after('hard_reset');setState('Done. The device restarts by itself. Unplug and use it.');
  }catch(e){log('Flashing failed: '+(e&&e.message||e));setState('Failed. Unplug, hold BOOT, plug in, run New device.')}
  busy=false;refresh()};
+if(!FW_BASE){var adv=document.querySelector('.fl-adv');if(adv)adv.open=true;$('fl-src').value='file';$('fl-file').hidden=false}
 renderVersions();loadManifest();refresh();
 })();
 </script>
