@@ -115,6 +115,38 @@ void setup() {
   show(SCR_BOOT); delay(2500); show(SCR_HOME);
 }
 
+
+// Hidden calibration mode (hold a finger 3 s on any screen): panel border, grid, corner markers and raw touch values.
+static void calibrate() {
+  gfx->fillScreen(0xF800); delay(1500);                       // solid red: any area that stays green/black is not covered by the window
+  gfx->fillScreen(0x0000);
+  for (int x = 0; x < PW; x += 50) gfx->drawFastVLine(x, 0, PH, 0x4208);
+  for (int y = 0; y < PH; y += 50) gfx->drawFastHLine(0, y, PW, 0x4208);
+  gfx->drawRect(0, 0, PW, PH, 0xFFFF); gfx->drawRect(1, 1, PW - 2, PH - 2, 0xFFFF);
+  gfx->fillRect(2, 2, 24, 24, 0xF800); gfx->fillRect(PW - 26, 2, 24, 24, 0x07E0);
+  gfx->fillRect(2, PH - 26, 24, 24, 0x001F); gfx->fillRect(PW - 26, PH - 26, 24, 24, 0xFFE0);
+  gfx->setTextSize(2); gfx->setTextColor(0xFFFF, 0x0000);
+  gfx->setCursor(40, 40); gfx->printf("%dx%d", PW, PH);
+  gfx->setCursor(40, 64); gfx->print("red=TL grn=TR");
+  gfx->setCursor(40, 88); gfx->print("blu=BL yel=BR");
+  gfx->setCursor(40, 112); gfx->print("touch the screen");
+  uint32_t idle = millis();
+  while (true) {
+    int px, py;
+    if (tpAddr && touchRead(px, py)) {
+      idle = millis();
+      int dx, dy; toDesign(px, py, dx, dy);
+      gfx->fillRect(40, 200, 300, 70, 0x0000);
+      gfx->setCursor(40, 204); gfx->printf("raw  %d,%d", px, py);
+      gfx->setCursor(40, 228); gfx->printf("map  %d,%d", dx, dy);
+      gfx->drawFastHLine(px - 12, py, 25, 0xFFFF); gfx->drawFastVLine(px, py - 12, 25, 0xFFFF);
+      Serial.printf("cal raw %d,%d map %d,%d\n", px, py, dx, dy);
+    }
+    if (millis() - idle > 30000) ESP.restart();
+    delay(20);
+  }
+}
+
 static bool down = false; static int sx, sy, lx, ly; static uint32_t t0; static bool longDone = false;
 
 void loop() {
@@ -124,6 +156,7 @@ void loop() {
     int dx, dy; toDesign(px, py, dx, dy);
     if (!down) { down = true; sx = lx = dx; sy = ly = dy; t0 = millis(); longDone = false; }
     lx = dx; ly = dy;
+    if (millis() - t0 > 3000 && abs(lx - sx) < 20 && abs(ly - sy) < 20) calibrate();
     if (!longDone && cur == SCR_HOME && millis() - t0 > 700 && abs(lx - sx) < 20 && abs(ly - sy) < 20) { longDone = true; go(SCR_MENU); }
   } else if (down) {
     down = false;
