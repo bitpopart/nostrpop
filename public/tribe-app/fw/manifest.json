@@ -1,5 +1,14 @@
 [
  {
+  "version": "0.2.0",
+  "date": "2026-11-27",
+  "notes": "First test build: boots and prints its version over USB. No screen UI yet.",
+  "app": "0.2.0/app.bin",
+  "full": "0.2.0/full.bin",
+  "sha256_app": "e1ba95ce8cfcb72b60dfd711e04c8344b91534646976e9af81c6d9082207a7b4",
+  "sha256_full": "546cb070c6584fcc3e9a11a2f25d5f86b2052041aafe50e89f37ccefb5303929"
+ },
+ {
   "version": "0.1.0",
   "date": "2026-11-27",
   "notes": "First test build: boots and prints its version over USB. No screen UI yet.",
