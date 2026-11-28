@@ -9,6 +9,7 @@
 #include <WebServer.h>
 #include <DNSServer.h>
 #include <Preferences.h>
+#include <ESPmDNS.h>
 #include "hits.h"
 #include "version.h"
 
@@ -67,7 +68,7 @@ static void go(int i);
 #define AP_NAME "MiniBit-setup"
 static Preferences prefs;
 static WebServer web(80); static DNSServer dns;
-static bool apOn = false, routesSet = false;
+static bool apOn = false, routesSet = false, webOn = false;
 static volatile bool credsIn = false;
 static char selSsid[33] = "", selPass[65] = "";
 static int wifiState = 0;                 // 0 idle, 1 connecting, 2 connected, 3 failed
@@ -86,7 +87,22 @@ static void scanForForm() {
   }
   WiFi.scanDelete();
 }
+static void handleKeyPage() {
+  prefs.begin("minibit", true); bool has = prefs.getString("gkey", "").length() > 10; prefs.end();
+  String h = F("<!doctype html><meta name=viewport content='width=device-width,initial-scale=1'><body style='font-family:sans-serif;background:#050608;color:#dce9ff;padding:24px;max-width:420px;margin:auto'><h2>MiniBit voice</h2>");
+  h += has ? F("<p>Gemini key: saved.</p>") : F("<p>Gemini key: not set yet.</p>");
+  h += F("<form method=POST action=/setkey><p>Paste your free Gemini API key<br><input name=key type=password autocapitalize=none autocorrect=off style='width:100%;font-size:18px;padding:8px'></p>"
+         "<button style='width:100%;font-size:20px;padding:12px;border-radius:24px;border:0;background:#46e6ff'>Save</button></form>"
+         "<p style='color:#7c8ba5'>Get a free key at aistudio.google.com/apikey</p></body>");
+  web.send(200, "text/html", h);
+}
+static void handleSetKey() {
+  String k = web.arg("key"); k.trim();
+  if (k.length() > 10 && k.length() < 120) { prefs.begin("minibit", false); prefs.putString("gkey", k); prefs.end(); }
+  web.send(200, "text/html", F("<!doctype html><meta name=viewport content='width=device-width,initial-scale=1'><body style='font-family:sans-serif;background:#050608;color:#dce9ff;padding:24px'><h2>Saved</h2><p>Now hold the button on MiniBit and ask.</p></body>"));
+}
 static void handleRoot() {
+  if (!apOn) { handleKeyPage(); return; }
   String h = F("<!doctype html><meta name=viewport content='width=device-width,initial-scale=1'><body style='font-family:sans-serif;background:#050608;color:#dce9ff;padding:24px;max-width:420px;margin:auto'>"
                "<h2>MiniBit Wi-Fi</h2><form method=POST action=/save>"
                "<p>Network name<br><input name=ssid list=nets autocapitalize=none autocorrect=off style='width:100%;font-size:18px;padding:8px'><datalist id=nets>");
@@ -101,13 +117,18 @@ static void handleSave() {
   web.send(200, "text/html", F("<!doctype html><meta name=viewport content='width=device-width,initial-scale=1'><body style='font-family:sans-serif;background:#050608;color:#dce9ff;padding:24px'><h2>Connecting...</h2><p>Look at your MiniBit.</p></body>"));
   credsIn = true;
 }
+static void setRoutes() {
+  if (routesSet) return;
+  web.on("/", HTTP_GET, handleRoot); web.on("/save", HTTP_POST, handleSave); web.on("/setkey", HTTP_POST, handleSetKey); web.onNotFound(handleRoot); routesSet = true;
+}
 static void startPortal() {
   if (apOn) return;
   WiFi.mode(WIFI_AP_STA); WiFi.disconnect();
   scanForForm();
   WiFi.softAP(AP_NAME);
   dns.start(53, "*", WiFi.softAPIP());
-  if (!routesSet) { web.on("/", HTTP_GET, handleRoot); web.on("/save", HTTP_POST, handleSave); web.onNotFound(handleRoot); routesSet = true; }
+  if (webOn) { web.stop(); webOn = false; }
+  setRoutes();
   web.begin(); apOn = true; credsIn = false; wifiState = 0;
   Serial.printf("Setup portal on, ip %s\n", WiFi.softAPIP().toString().c_str());
 }
@@ -122,6 +143,9 @@ static void wifiLoop() {
     if (a.length()) { WiFi.mode(WIFI_STA); WiFi.begin(a.c_str(), b.c_str()); }
   }
   if (apOn) { dns.processNextRequest(); web.handleClient(); }
+  if (!apOn && WiFi.status() == WL_CONNECTED && !webOn) { setRoutes(); web.begin(); MDNS.begin("minibit"); webOn = true; }
+  if (webOn && WiFi.status() != WL_CONNECTED) { web.stop(); webOn = false; }
+  if (webOn) web.handleClient();
   if (credsIn) {
     credsIn = false; Serial.printf("Connecting to %s\n", selSsid);
     WiFi.begin(selSsid, selPass); wifiState = 1; connT0 = millis(); show(SCR_WIFIWAIT);
@@ -170,11 +194,13 @@ static void menuTap(int dx, int dy) {
 }
 
 #include "zap.h"
+#include "voice.h"
 static void show(int i) {
   cur = i;
   if (i == SCR_MENU) { menuS = 0; drawMenuHeader(); drawMenuList(); } else drawScreen(i);
   liveOnShow(i);
   if (i == SCR_ZAP) drawZapNum();
+  if (i == SCR_VOICE) voiceEnter(); else if (vBuf) { free(vBuf); vBuf = nullptr; vMode = 0; }
   if (i == SCR_FACE) faceDraw(); else if (i == SCR_GAME || i == SCR_GAME2) gameEnter();
   Serial.printf("screen %s\n", SCR_NAMES[i]);
   if (i == SCR_WIFIJOIN) startPortal();
@@ -315,14 +341,19 @@ void loop() {
   liveLoop(cur);
   gameTick();
   zapLoop();
+  voiceTick();
   int px, py;
   bool t = tpAddr && touchRead(px, py);
   if (t) {
     px -= OX; py -= OY;
     if (px < 0) px = 0; if (py < 0) py = 0; if (px >= PW) px = PW - 1; if (py >= PH) py = PH - 1;
     int dx, dy; toDesign(px, py, dx, dy);
-    if (!down) { down = true; sx = lx = dx; sy = ly = dy; t0 = millis(); longDone = false; dragging = false; menuS0 = menuS; }
+    if (!down) { down = true; sx = lx = dx; sy = ly = dy; t0 = millis(); longDone = false; dragging = false; menuS0 = menuS; vArm = true; }
     lx = dx; ly = dy;
+    if (cur == SCR_VOICE) {                                // hold to ask
+      if (vArm && !vHolding && sy >= 262 && millis() - t0 > 120) { vArm = false; vHolding = true; voiceStart(); }
+      if (vHolding && vFull) { vHolding = false; voiceStop(); }
+    }
     if (cur == SCR_MENU && sy >= MENU_HDR_H) {            // drag the list
       if (!dragging && abs(ly - sy) > 12 && abs(ly - sy) > abs(lx - sx)) dragging = true;
       if (dragging) {
@@ -331,13 +362,14 @@ void loop() {
         if (ns != menuS) { menuS = ns; drawMenuList(); }
       }
     }
-    if (!dragging && millis() - t0 > 3000 && abs(lx - sx) < 20 && abs(ly - sy) < 20) calibrate();
+    if (!dragging && cur != SCR_VOICE && millis() - t0 > 3000 && abs(lx - sx) < 20 && abs(ly - sy) < 20) calibrate();
     if (!longDone && cur == SCR_WIFIOK && millis() - t0 > 900 && abs(lx - sx) < 20 && abs(ly - sy) < 20) { longDone = true; wantJoin = true; go(SCR_WIFIJOIN); wantJoin = false; }
     if (!longDone && cur == SCR_HOME && millis() - t0 > 700 && abs(lx - sx) < 20 && abs(ly - sy) < 20) { longDone = true; go(SCR_MENU); }
   } else if (down) {
     down = false;
     int mx = lx - sx, my = ly - sy;
-    if (dragging) dragging = false;
+    if (vHolding) { vHolding = false; voiceStop(); }
+    else if (dragging) dragging = false;
     else if (!longDone) {
       if (cur == SCR_HOME || cur == SCR_HOME2) {
         if (abs(mx) > 35 && abs(mx) > abs(my)) show(cur == SCR_HOME ? SCR_HOME2 : SCR_HOME);
