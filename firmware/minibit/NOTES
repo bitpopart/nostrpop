@@ -1,1 +1,1 @@
-Voice fixes: less memory use while recording (4 s max, network paused), and if the device restarts it now tells you why and at which step on screen.
+The phone pages (minibit.local and the Wi-Fi setup) now look like the MiniBit screens: dark, cyan, rounded cards, blinking eyes, status of Wi-Fi and voice.

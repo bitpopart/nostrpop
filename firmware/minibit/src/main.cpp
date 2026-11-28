@@ -87,34 +87,75 @@ static void scanForForm() {
   }
   WiFi.scanDelete();
 }
+// ---- phone pages, styled like the MiniBit screens (dark, cyan, rounded cards)
+static String pgHead(const String &sub) {
+  String h = F("<!doctype html><html><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><meta name=theme-color content='#050608'><title>MiniBit</title><style>"
+    "*{box-sizing:border-box}body{margin:0;background:#050608;color:#dce9ff;font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}"
+    ".w{max-width:440px;margin:0 auto;padding:30px 20px 40px}.top{display:flex;align-items:center;gap:16px}"
+    ".eyes{display:flex;gap:10px;background:#11161f;border:1px solid #28344a;border-radius:22px;padding:14px 18px}"
+    ".eyes i{display:block;width:12px;height:34px;border-radius:7px;background:#46e6ff;box-shadow:0 0 14px #46e6ff88;animation:b 5s infinite}"
+    "@keyframes b{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.08)}}"
+    "h1{margin:0;font-size:28px;letter-spacing:.2px}.sub{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;color:#7c8ba5;margin:4px 0 0}"
+    ".card{background:#11161f;border:1px solid #28344a;border-radius:22px;padding:18px;margin:22px 0 0}"
+    ".card h2{margin:0 0 12px;font:500 12px ui-monospace,Menlo,Consolas,monospace;letter-spacing:.12em;text-transform:uppercase;color:#7c8ba5}"
+    ".row{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid #1d2635;font-size:15px}.row:first-of-type{border:0}.row span:first-child{color:#7c8ba5}.row span:last-child{text-align:right;word-break:break-all}"
+    "label{display:block;font-size:13px;color:#7c8ba5;margin:0 0 6px}"
+    "input{width:100%;background:#0a0e14;border:1px solid #28344a;border-radius:14px;color:#dce9ff;font-size:17px;padding:14px;margin:0 0 14px;outline:0}input:focus{border-color:#46e6ff}"
+    "button,.btn{display:block;width:100%;text-align:center;text-decoration:none;border:0;border-radius:999px;background:#46e6ff;color:#050608;font-weight:700;font-size:17px;padding:15px;cursor:pointer}"
+    ".ok{color:#5be584}.warn{color:#f9e94e}.hint{font-size:13px;line-height:1.5;color:#7c8ba5;margin:14px 0 0}.hint a{color:#46e6ff}"
+    ".big{font-size:44px;text-align:center;margin:4px 0 8px}.c{text-align:center}.foot{margin-top:28px;text-align:center;font:12px ui-monospace,Menlo,Consolas,monospace;color:#3d4a62}"
+    ".dots span{display:inline-block;width:10px;height:10px;margin:0 4px;border-radius:50%;background:#f7931a;animation:p 1.2s infinite}.dots span:nth-child(2){animation-delay:.2s}.dots span:nth-child(3){animation-delay:.4s}"
+    "@keyframes p{0%,80%,100%{opacity:.25}40%{opacity:1}}</style></head><body><div class=w><div class=top><div class=eyes><i></i><i></i></div><div><h1>MiniBit</h1><div class=sub>");
+  h += sub; h += F("</div></div></div>");
+  return h;
+}
+static String pgTail() { return F("<div class=foot>BitPopArt &middot; MiniBit</div></div></body></html>"); }
+
 static void handleKeyPage() {
   prefs.begin("minibit", true); bool has = prefs.getString("gkey", "").length() > 10; prefs.end();
-  String h = F("<!doctype html><meta name=viewport content='width=device-width,initial-scale=1'><body style='font-family:sans-serif;background:#050608;color:#dce9ff;padding:24px;max-width:420px;margin:auto'><h2>MiniBit voice</h2>");
-  h += has ? F("<p>Gemini key: saved.</p>") : F("<p>Gemini key: not set yet.</p>");
-  h += F("<form method=POST action=/setkey><p>Paste your free Gemini API key<br><input name=key type=password autocapitalize=none autocorrect=off style='width:100%;font-size:18px;padding:8px'></p>"
-         "<button style='width:100%;font-size:20px;padding:12px;border-radius:24px;border:0;background:#46e6ff'>Save</button></form>"
-         "<p style='color:#7c8ba5'>Get a free key at aistudio.google.com/apikey</p></body>");
+  int rssi = WiFi.RSSI();
+  String h = pgHead(String("firmware ") + FW_VERSION + " &middot; minibit.local");
+  h += F("<div class=card><h2>Status</h2><div class=row><span>Wi-Fi</span><span>"); h += esc(WiFi.SSID().c_str());
+  h += F("</span></div><div class=row><span>Signal</span><span>"); h += rssi > -60 ? "strong" : (rssi > -75 ? "good" : "weak");
+  h += F("</span></div><div class=row><span>Address</span><span>"); h += WiFi.localIP().toString();
+  h += F("</span></div><div class=row><span>Voice (Gemini)</span><span>"); h += has ? F("<b class=ok>key saved</b>") : F("<b class=warn>key needed</b>");
+  h += F("</span></div></div><div class=card><h2>Voice setup</h2><form method=POST action=/setkey><label>Gemini API key</label>"
+         "<input name=key type=password autocapitalize=none autocorrect=off autocomplete=off placeholder='paste your key'>"
+         "<button>Save key</button></form><p class=hint>Free key: <a href='https://aistudio.google.com/apikey'>aistudio.google.com/apikey</a>. "
+         "Then hold the button on the MiniBit voice screen and ask.</p></div>");
+  h += pgTail();
   web.send(200, "text/html", h);
 }
 static void handleSetKey() {
   String k = web.arg("key"); k.trim();
-  if (k.length() > 10 && k.length() < 120) { prefs.begin("minibit", false); prefs.putString("gkey", k); prefs.end(); }
-  web.send(200, "text/html", F("<!doctype html><meta name=viewport content='width=device-width,initial-scale=1'><body style='font-family:sans-serif;background:#050608;color:#dce9ff;padding:24px'><h2>Saved</h2><p>Now hold the button on MiniBit and ask.</p></body>"));
+  bool ok = k.length() > 10 && k.length() < 120;
+  if (ok) { prefs.begin("minibit", false); prefs.putString("gkey", k); prefs.end(); }
+  String h = pgHead("voice setup");
+  h += F("<div class=card><div class=big>"); h += ok ? F("<span class=ok>&#10003;</span>") : F("<span class=warn>!</span>"); h += F("</div><div class=c><b>");
+  h += ok ? F("Key saved") : F("That does not look like a key");
+  h += F("</b></div><p class='hint c'>"); h += ok ? F("Now hold the button on your MiniBit and ask a question.") : F("Copy the whole key from Google AI Studio and try again.");
+  h += F("</p><p style='margin:18px 0 0'><a class=btn href='/'>Back</a></p></div>"); h += pgTail();
+  web.send(200, "text/html", h);
 }
 static void handleRoot() {
   if (!apOn) { handleKeyPage(); return; }
-  String h = F("<!doctype html><meta name=viewport content='width=device-width,initial-scale=1'><body style='font-family:sans-serif;background:#050608;color:#dce9ff;padding:24px;max-width:420px;margin:auto'>"
-               "<h2>MiniBit Wi-Fi</h2><form method=POST action=/save>"
-               "<p>Network name<br><input name=ssid list=nets autocapitalize=none autocorrect=off style='width:100%;font-size:18px;padding:8px'><datalist id=nets>");
+  String h = pgHead("Wi-Fi setup");
+  h += F("<div class=card><h2>Connect to Wi-Fi</h2><form method=POST action=/save><label>Network name</label>"
+         "<input name=ssid list=nets autocapitalize=none autocorrect=off placeholder='your Wi-Fi'><datalist id=nets>");
   h += netOptions;
-  h += F("</datalist></p><p>Password<br><input name=pass type=password style='width:100%;font-size:18px;padding:8px'></p>"
-         "<button style='width:100%;font-size:20px;padding:12px;border-radius:24px;border:0;background:#46e6ff'>Connect</button></form></body>");
+  h += F("</datalist><label>Password</label><input name=pass type=password placeholder='Wi-Fi password'><button>Connect MiniBit</button></form>"
+         "<p class=hint>Your password only goes to the MiniBit, nowhere else.</p></div>");
+  h += pgTail();
   web.send(200, "text/html", h);
 }
 static void handleSave() {
   strncpy(selSsid, web.arg("ssid").c_str(), 32); selSsid[32] = 0;
   strncpy(selPass, web.arg("pass").c_str(), 64); selPass[64] = 0;
-  web.send(200, "text/html", F("<!doctype html><meta name=viewport content='width=device-width,initial-scale=1'><body style='font-family:sans-serif;background:#050608;color:#dce9ff;padding:24px'><h2>Connecting...</h2><p>Look at your MiniBit.</p></body>"));
+  String h = pgHead("Wi-Fi setup");
+  h += F("<div class=card><div class='dots c' style='margin:10px 0 18px'><span></span><span></span><span></span></div><div class=c><b>Connecting ...</b></div>"
+         "<p class='hint c'>Look at your MiniBit. When it says connected, open <b>minibit.local</b> on this phone (same Wi-Fi) to set up voice.</p></div>");
+  h += pgTail();
+  web.send(200, "text/html", h);
   credsIn = true;
 }
 static void setRoutes() {
