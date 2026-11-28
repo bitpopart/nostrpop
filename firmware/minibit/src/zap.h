@@ -62,7 +62,7 @@ static void zapHandle(uint8_t *payload, size_t len) {
 static void zapTask(void *) {
   bool started = false;
   for (;;) {
-    if (WiFi.status() == WL_CONNECTED) {
+    if (WiFi.status() == WL_CONNECTED && !netPause) {
       if (!started) {
         started = true;
         for (int i = 0; i < 2; i++) {
