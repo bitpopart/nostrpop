@@ -1,11 +1,3 @@
-Compiling .pio/build/minibit/libb24/GFX Library for Arduino/display/Arduino_SSD1306.cpp.o
-Compiling .pio/build/minibit/libb24/GFX Library for Arduino/display/Arduino_SSD1331.cpp.o
-Compiling .pio/build/minibit/libb24/GFX Library for Arduino/display/Arduino_SSD1351.cpp.o
-Compiling .pio/build/minibit/libb24/GFX Library for Arduino/display/Arduino_ST7735.cpp.o
-Compiling .pio/build/minibit/libb24/GFX Library for Arduino/display/Arduino_ST7789.cpp.o
-Compiling .pio/build/minibit/libb24/GFX Library for Arduino/display/Arduino_ST77916.cpp.o
-Compiling .pio/build/minibit/libb24/GFX Library for Arduino/display/Arduino_ST7796.cpp.o
-Compiling .pio/build/minibit/libb24/GFX Library for Arduino/display/Arduino_WEA2012.cpp.o
 Compiling .pio/build/minibit/lib59e/AsyncUDP/AsyncUDP.cpp.o
 Compiling .pio/build/minibit/lib487/Network/NetworkClient.cpp.o
 Compiling .pio/build/minibit/lib487/Network/NetworkEvents.cpp.o
@@ -32,6 +24,9 @@ Compiling .pio/build/minibit/lib1ce/WebServer/middleware/AuthenticationMiddlewar
 Compiling .pio/build/minibit/lib1ce/WebServer/middleware/CorsMiddleware.cpp.o
 Compiling .pio/build/minibit/lib1ce/WebServer/middleware/LoggingMiddleware.cpp.o
 Compiling .pio/build/minibit/lib1ce/WebServer/middleware/MiddlewareChain.cpp.o
+Compiling .pio/build/minibit/libf0e/NetworkClientSecure/NetworkClientSecure.cpp.o
+Compiling .pio/build/minibit/libf0e/NetworkClientSecure/ssl_client.cpp.o
+Compiling .pio/build/minibit/lib67b/HTTPClient/HTTPClient.cpp.o
 Compiling .pio/build/minibit/src/main.cpp.o
 Building .pio/build/minibit/bootloader.bin
 Generating partitions .pio/build/minibit/partitions.bin
@@ -44,6 +39,11 @@ Compiling .pio/build/minibit/FrameworkArduino/Esp.cpp.o
 Compiling .pio/build/minibit/FrameworkArduino/FirmwareMSC.cpp.o
 Compiling .pio/build/minibit/FrameworkArduino/FunctionalInterrupt.cpp.o
 Compiling .pio/build/minibit/FrameworkArduino/HEXBuilder.cpp.o
+In file included from src/main.cpp:62:
+src/live.h: In function 'void liveLoop(int)':
+src/live.h:365:54: warning: using value of assignment with 'volatile'-qualified left operand is deprecated [-Wvolatile]
+  365 |   bool b = dirtyBtc, w = dirtyWx; dirtyBtc = dirtyWx = false;
+      |                                              ~~~~~~~~^~~~~~~
 Compiling .pio/build/minibit/FrameworkArduino/HWCDC.cpp.o
 Compiling .pio/build/minibit/FrameworkArduino/HardwareSerial.cpp.o
 Compiling .pio/build/minibit/FrameworkArduino/IPAddress.cpp.o
@@ -108,8 +108,8 @@ Warning: esp-idf-size exited with code 2
 Retrieving maximum program size .pio/build/minibit/firmware.elf
 Checking size .pio/build/minibit/firmware.elf
 Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
-RAM:   [=         ]  14.2% (used 46652 bytes from 327680 bytes)
-Flash: [=         ]  12.8% (used 1070030 bytes from 8388608 bytes)
+RAM:   [=         ]  14.6% (used 47700 bytes from 327680 bytes)
+Flash: [=         ]  14.6% (used 1222982 bytes from 8388608 bytes)
 Building .pio/build/minibit/firmware.bin with action:
   "$PYTHONEXE" "$OBJCOPY" --chip esp32s3 elf2image --flash-mode ${__get_board_flash_mode(__env__)} --flash-freq ${__get_board_f_image(__env__)} --flash-size 16MB --elf-sha256-offset 0xb0 -o $TARGET $SOURCES
 Building .pio/build/minibit/firmware.bin
@@ -117,4 +117,4 @@ esptool.py v5.0.0-dev1
 Creating ESP32S3 image...
 Merged 2 ELF sections.
 Successfully created ESP32S3 image.
-========================= [SUCCESS] Took 99.89 seconds =========================
+======================== [SUCCESS] Took 104.33 seconds ========================
