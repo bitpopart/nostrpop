@@ -60,6 +60,8 @@ static void drawScreen(int i) {
 
 static void show(int i);
 #include "live.h"
+static void go(int i);
+#include "games.h"
 // ---- Wi-Fi setup, the same way as POWout: MiniBit opens its own hotspot, the phone joins it by QR code and the
 // ---- password is typed on a web page on the phone (not on the tiny screen).
 #define AP_NAME "MiniBit-setup"
@@ -114,6 +116,11 @@ static void stopPortal() {
   web.stop(); dns.stop(); WiFi.softAPdisconnect(true); WiFi.mode(WIFI_STA); apOn = false;
 }
 static void wifiLoop() {
+  static uint32_t lastTry = 0;
+  if (!apOn && wifiState != 1 && WiFi.status() != WL_CONNECTED && millis() - lastTry > 30000) {      // saved network: keep trying to reconnect
+    lastTry = millis(); prefs.begin("minibit", true); String a = prefs.getString("ssid", ""), b = prefs.getString("pass", ""); prefs.end();
+    if (a.length()) { WiFi.mode(WIFI_STA); WiFi.begin(a.c_str(), b.c_str()); }
+  }
   if (apOn) { dns.processNextRequest(); web.handleClient(); }
   if (credsIn) {
     credsIn = false; Serial.printf("Connecting to %s\n", selSsid);
@@ -166,11 +173,13 @@ static void show(int i) {
   cur = i;
   if (i == SCR_MENU) { menuS = 0; drawMenuHeader(); drawMenuList(); } else drawScreen(i);
   liveOnShow(i);
+  if (i == SCR_FACE) faceDraw(); else if (i == SCR_GAME || i == SCR_GAME2) gameEnter();
   Serial.printf("screen %s\n", SCR_NAMES[i]);
   if (i == SCR_WIFIJOIN) startPortal();
   else if (i != SCR_WIFIWAIT && i != SCR_WIFIOK && apOn) stopPortal();
 }
-static void go(int i) { if (i == cur) return; if (sp < 16) stack_[sp++] = cur; show(i); }
+static bool wantJoin = false;
+static void go(int i) { if (i == SCR_WIFIJOIN && !wantJoin && WiFi.status() == WL_CONNECTED) i = SCR_WIFIOK; if (i == cur) return; if (sp < 16) stack_[sp++] = cur; show(i); }
 static void goBack() {
   int t = BACKS[cur];
   if (t >= 0) { sp = 0; show(t); return; }
@@ -209,6 +218,8 @@ static bool hitAt(int dx, int dy, int pad) {
   return false;
 }
 static void tap(int dx, int dy) {
+  if ((cur == SCR_GAME || cur == SCR_GAME2) && dy >= 44) { gameTap(dx, dy); return; }
+  if (cur == SCR_MOODS && dy >= 44) { moodTap(dx, dy); return; }
   if (cur == SCR_MENU && dy >= MENU_HDR_H) { menuTap(dx, dy); return; }
   if (hitAt(dx, dy, 0)) return;
   // near miss: take the closest button within reach (a little more room along the top bar)
@@ -299,6 +310,7 @@ static bool dragging = false; static int menuS0 = 0;
 void loop() {
   wifiLoop();
   liveLoop(cur);
+  gameTick();
   int px, py;
   bool t = tpAddr && touchRead(px, py);
   if (t) {
@@ -316,6 +328,7 @@ void loop() {
       }
     }
     if (!dragging && millis() - t0 > 3000 && abs(lx - sx) < 20 && abs(ly - sy) < 20) calibrate();
+    if (!longDone && cur == SCR_WIFIOK && millis() - t0 > 900 && abs(lx - sx) < 20 && abs(ly - sy) < 20) { longDone = true; wantJoin = true; go(SCR_WIFIJOIN); wantJoin = false; }
     if (!longDone && cur == SCR_HOME && millis() - t0 > 700 && abs(lx - sx) < 20 && abs(ly - sy) < 20) { longDone = true; go(SCR_MENU); }
   } else if (down) {
     down = false;
