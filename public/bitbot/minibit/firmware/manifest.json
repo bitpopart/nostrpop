@@ -1,31 +1,31 @@
 {
- "version": "0.4.0",
+ "version": "0.5.0",
  "date": "2026-11-28",
- "notes": "Zap alerts: MiniBit listens on Nostr relays for zaps sent to bitpopart and plays an animation with the amount, and the zap screen counts sats today. (Voice questions are not in yet.)",
+ "notes": "Voice: hold the button on the Listening screen, ask a question, let go and Google Gemini answers on the screen. One-time setup: open minibit.local on your phone (same Wi-Fi) and paste a free Gemini key. Zap alerts from 0.4.0 included.",
  "board": "Waveshare ESP32-S3-Touch-AMOLED-1.8",
  "parts": [
   {
-   "path": "0.4.0/bootloader.bin",
+   "path": "0.5.0/bootloader.bin",
    "offset": 0,
    "sha256": "84a8e89c7bcc88d766c22a21181d6e64a3800d32bfb2608cc1897ac009cd415d"
   },
   {
-   "path": "0.4.0/partitions.bin",
+   "path": "0.5.0/partitions.bin",
    "offset": 32768,
    "sha256": "ca69f4431cdf34802ebe8553e99bb3782f393d80d5d65ee98fc0dacc411963e4"
   },
   {
-   "path": "0.4.0/app.bin",
+   "path": "0.5.0/app.bin",
    "offset": 65536,
-   "sha256": "6309c46134efc8d9481d3c8121e2574e802adf582850ad0aaf4f3f164a4a705d"
+   "sha256": "735d78370f4fb5224f101e5d61ed02b066bfc040cde0f22dda9b652f9e88e21f"
   },
   {
-   "path": "0.4.0/screens.bin.gz",
+   "path": "0.5.0/screens.bin.gz",
    "offset": 3211264,
-   "sha256": "2aaccf34ddb7f1aa1743a4447a46326bad0af587463fd561cc15579cffeb9c8c",
+   "sha256": "d531089196bfe69542c577ad1f3f2fd6a8a09c718a7bfe8975e9357131090ae9",
    "gz": true,
    "rawSize": 11509580,
-   "rawSha256": "33aa0fff1f6961e802607e761a4287cb5da5a3470437ccfc469522a28be150be"
+   "rawSha256": "1b954739ecc98d36031af48c0728f8657e46c4ae7115d76b45067d071da4763a"
   }
  ]
 }

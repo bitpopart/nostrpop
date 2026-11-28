@@ -1,6 +1,3 @@
-Compiling .pio/build/minibit/lib7f0/WebSockets/libb64/cdecode.c.o
-Compiling .pio/build/minibit/lib7f0/WebSockets/libb64/cencode.c.o
-Compiling .pio/build/minibit/lib7f0/WebSockets/libsha1/libsha1.c.o
 Compiling .pio/build/minibit/lib59e/AsyncUDP/AsyncUDP.cpp.o
 Compiling .pio/build/minibit/lib147/DNSServer/DNSServer.cpp.o
 .pio/libdeps/minibit/WebSockets/src/WebSocketsClient.cpp: In member function 'void WebSocketsClient::clientDisconnect(WSclient_t*, const char*)':
@@ -16,6 +13,7 @@ In file included from /home/runner/.platformio/packages/framework-arduinoespress
 /home/runner/.platformio/packages/framework-arduinoespressif32/libraries/Network/src/NetworkClient.h:61:8: note: declared here
    61 |   void flush();  // Print::flush tx
       |        ^~~~~
+Compiling .pio/build/minibit/lib4b6/ESPmDNS/ESPmDNS.cpp.o
 Compiling .pio/build/minibit/libe70/Preferences/Preferences.cpp.o
 Compiling .pio/build/minibit/lib7aa/FS/FS.cpp.o
 Compiling .pio/build/minibit/lib7aa/FS/vfs_api.cpp.o
@@ -27,25 +25,27 @@ Compiling .pio/build/minibit/lib1ce/WebServer/middleware/CorsMiddleware.cpp.o
 Compiling .pio/build/minibit/lib1ce/WebServer/middleware/LoggingMiddleware.cpp.o
 Compiling .pio/build/minibit/lib1ce/WebServer/middleware/MiddlewareChain.cpp.o
 Compiling .pio/build/minibit/lib67b/HTTPClient/HTTPClient.cpp.o
+Compiling .pio/build/minibit/lib4b3/ESP_I2S/ESP_I2S.cpp.o
+Compiling .pio/build/minibit/src/es8311.c.o
 Compiling .pio/build/minibit/src/main.cpp.o
 Building .pio/build/minibit/bootloader.bin
-Generating partitions .pio/build/minibit/partitions.bin
-Compiling .pio/build/minibit/FrameworkArduino/ColorFormat.c.o
 esptool.py v5.0.0-dev1
 Creating ESP32S3 image...
 Merged 2 ELF sections.
 Successfully created ESP32S3 image.
+Generating partitions .pio/build/minibit/partitions.bin
+Compiling .pio/build/minibit/FrameworkArduino/ColorFormat.c.o
 Compiling .pio/build/minibit/FrameworkArduino/Esp.cpp.o
 Compiling .pio/build/minibit/FrameworkArduino/FirmwareMSC.cpp.o
 Compiling .pio/build/minibit/FrameworkArduino/FunctionalInterrupt.cpp.o
 Compiling .pio/build/minibit/FrameworkArduino/HEXBuilder.cpp.o
-Compiling .pio/build/minibit/FrameworkArduino/HWCDC.cpp.o
-Compiling .pio/build/minibit/FrameworkArduino/HardwareSerial.cpp.o
-In file included from src/main.cpp:62:
+In file included from src/main.cpp:63:
 src/live.h: In function 'void liveLoop(int)':
 src/live.h:366:54: warning: using value of assignment with 'volatile'-qualified left operand is deprecated [-Wvolatile]
   366 |   bool b = dirtyBtc, w = dirtyWx; dirtyBtc = dirtyWx = false;
       |                                              ~~~~~~~~^~~~~~~
+Compiling .pio/build/minibit/FrameworkArduino/HWCDC.cpp.o
+Compiling .pio/build/minibit/FrameworkArduino/HardwareSerial.cpp.o
 Compiling .pio/build/minibit/FrameworkArduino/IPAddress.cpp.o
 Compiling .pio/build/minibit/FrameworkArduino/MD5Builder.cpp.o
 Compiling .pio/build/minibit/FrameworkArduino/MacAddress.cpp.o
@@ -108,8 +108,8 @@ Warning: esp-idf-size exited with code 2
 Retrieving maximum program size .pio/build/minibit/firmware.elf
 Checking size .pio/build/minibit/firmware.elf
 Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
-RAM:   [=         ]  14.9% (used 48716 bytes from 327680 bytes)
-Flash: [==        ]  16.0% (used 1338726 bytes from 8388608 bytes)
+RAM:   [==        ]  15.8% (used 51668 bytes from 327680 bytes)
+Flash: [==        ]  16.8% (used 1406542 bytes from 8388608 bytes)
 Building .pio/build/minibit/firmware.bin with action:
   "$PYTHONEXE" "$OBJCOPY" --chip esp32s3 elf2image --flash-mode ${__get_board_flash_mode(__env__)} --flash-freq ${__get_board_f_image(__env__)} --flash-size 16MB --elf-sha256-offset 0xb0 -o $TARGET $SOURCES
 Building .pio/build/minibit/firmware.bin
@@ -117,4 +117,4 @@ esptool.py v5.0.0-dev1
 Creating ESP32S3 image...
 Merged 2 ELF sections.
 Successfully created ESP32S3 image.
-========================= [SUCCESS] Took 73.40 seconds =========================
+======================== [SUCCESS] Took 104.49 seconds ========================
