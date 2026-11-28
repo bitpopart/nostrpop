@@ -41,8 +41,8 @@ Compiling .pio/build/minibit/FrameworkArduino/FunctionalInterrupt.cpp.o
 Compiling .pio/build/minibit/FrameworkArduino/HEXBuilder.cpp.o
 In file included from src/main.cpp:63:
 src/live.h: In function 'void liveLoop(int)':
-src/live.h:366:54: warning: using value of assignment with 'volatile'-qualified left operand is deprecated [-Wvolatile]
-  366 |   bool b = dirtyBtc, w = dirtyWx; dirtyBtc = dirtyWx = false;
+src/live.h:369:54: warning: using value of assignment with 'volatile'-qualified left operand is deprecated [-Wvolatile]
+  369 |   bool b = dirtyBtc, w = dirtyWx; dirtyBtc = dirtyWx = false;
       |                                              ~~~~~~~~^~~~~~~
 Compiling .pio/build/minibit/FrameworkArduino/HWCDC.cpp.o
 Compiling .pio/build/minibit/FrameworkArduino/HardwareSerial.cpp.o
@@ -109,7 +109,7 @@ Retrieving maximum program size .pio/build/minibit/firmware.elf
 Checking size .pio/build/minibit/firmware.elf
 Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
 RAM:   [==        ]  15.8% (used 51668 bytes from 327680 bytes)
-Flash: [==        ]  16.8% (used 1406542 bytes from 8388608 bytes)
+Flash: [==        ]  16.8% (used 1407270 bytes from 8388608 bytes)
 Building .pio/build/minibit/firmware.bin with action:
   "$PYTHONEXE" "$OBJCOPY" --chip esp32s3 elf2image --flash-mode ${__get_board_flash_mode(__env__)} --flash-freq ${__get_board_f_image(__env__)} --flash-size 16MB --elf-sha256-offset 0xb0 -o $TARGET $SOURCES
 Building .pio/build/minibit/firmware.bin
@@ -117,4 +117,4 @@ esptool.py v5.0.0-dev1
 Creating ESP32S3 image...
 Merged 2 ELF sections.
 Successfully created ESP32S3 image.
-======================== [SUCCESS] Took 104.49 seconds ========================
+========================= [SUCCESS] Took 98.18 seconds =========================
