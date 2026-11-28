@@ -1,19 +1,21 @@
+Compiling .pio/build/minibit/lib7f0/WebSockets/libb64/cdecode.c.o
+Compiling .pio/build/minibit/lib7f0/WebSockets/libb64/cencode.c.o
+Compiling .pio/build/minibit/lib7f0/WebSockets/libsha1/libsha1.c.o
 Compiling .pio/build/minibit/lib59e/AsyncUDP/AsyncUDP.cpp.o
-Compiling .pio/build/minibit/lib487/Network/NetworkClient.cpp.o
-Compiling .pio/build/minibit/lib487/Network/NetworkEvents.cpp.o
-Compiling .pio/build/minibit/lib487/Network/NetworkInterface.cpp.o
-Compiling .pio/build/minibit/lib487/Network/NetworkManager.cpp.o
-Compiling .pio/build/minibit/lib487/Network/NetworkServer.cpp.o
-Compiling .pio/build/minibit/lib487/Network/NetworkUdp.cpp.o
-Compiling .pio/build/minibit/lib989/WiFi/AP.cpp.o
-Compiling .pio/build/minibit/lib989/WiFi/STA.cpp.o
-Compiling .pio/build/minibit/lib989/WiFi/WiFi.cpp.o
-Compiling .pio/build/minibit/lib989/WiFi/WiFiAP.cpp.o
-Compiling .pio/build/minibit/lib989/WiFi/WiFiGeneric.cpp.o
-Compiling .pio/build/minibit/lib989/WiFi/WiFiMulti.cpp.o
-Compiling .pio/build/minibit/lib989/WiFi/WiFiSTA.cpp.o
-Compiling .pio/build/minibit/lib989/WiFi/WiFiScan.cpp.o
 Compiling .pio/build/minibit/lib147/DNSServer/DNSServer.cpp.o
+.pio/libdeps/minibit/WebSockets/src/WebSocketsClient.cpp: In member function 'void WebSocketsClient::clientDisconnect(WSclient_t*, const char*)':
+.pio/libdeps/minibit/WebSockets/src/WebSocketsClient.cpp:573:31: warning: 'virtual void NetworkClient::flush()' is deprecated: Use clear() instead. [-Wdeprecated-declarations]
+  573 |             client->tcp->flush();
+      |             ~~~~~~~~~~~~~~~~~~^~
+In file included from /home/runner/.platformio/packages/framework-arduinoespressif32/libraries/Network/src/Network.h:12,
+                 from /home/runner/.platformio/packages/framework-arduinoespressif32/libraries/WiFi/src/WiFiGeneric.h:44,
+                 from /home/runner/.platformio/packages/framework-arduinoespressif32/libraries/WiFi/src/WiFiSTA.h:30,
+                 from /home/runner/.platformio/packages/framework-arduinoespressif32/libraries/WiFi/src/WiFi.h:34,
+                 from .pio/libdeps/minibit/WebSockets/src/WebSockets.h:236,
+                 from .pio/libdeps/minibit/WebSockets/src/WebSocketsClient.cpp:25:
+/home/runner/.platformio/packages/framework-arduinoespressif32/libraries/Network/src/NetworkClient.h:61:8: note: declared here
+   61 |   void flush();  // Print::flush tx
+      |        ^~~~~
 Compiling .pio/build/minibit/libe70/Preferences/Preferences.cpp.o
 Compiling .pio/build/minibit/lib7aa/FS/FS.cpp.o
 Compiling .pio/build/minibit/lib7aa/FS/vfs_api.cpp.o
@@ -24,8 +26,6 @@ Compiling .pio/build/minibit/lib1ce/WebServer/middleware/AuthenticationMiddlewar
 Compiling .pio/build/minibit/lib1ce/WebServer/middleware/CorsMiddleware.cpp.o
 Compiling .pio/build/minibit/lib1ce/WebServer/middleware/LoggingMiddleware.cpp.o
 Compiling .pio/build/minibit/lib1ce/WebServer/middleware/MiddlewareChain.cpp.o
-Compiling .pio/build/minibit/libf0e/NetworkClientSecure/NetworkClientSecure.cpp.o
-Compiling .pio/build/minibit/libf0e/NetworkClientSecure/ssl_client.cpp.o
 Compiling .pio/build/minibit/lib67b/HTTPClient/HTTPClient.cpp.o
 Compiling .pio/build/minibit/src/main.cpp.o
 Building .pio/build/minibit/bootloader.bin
@@ -39,13 +39,13 @@ Compiling .pio/build/minibit/FrameworkArduino/Esp.cpp.o
 Compiling .pio/build/minibit/FrameworkArduino/FirmwareMSC.cpp.o
 Compiling .pio/build/minibit/FrameworkArduino/FunctionalInterrupt.cpp.o
 Compiling .pio/build/minibit/FrameworkArduino/HEXBuilder.cpp.o
-In file included from src/main.cpp:62:
-src/live.h: In function 'void liveLoop(int)':
-src/live.h:365:54: warning: using value of assignment with 'volatile'-qualified left operand is deprecated [-Wvolatile]
-  365 |   bool b = dirtyBtc, w = dirtyWx; dirtyBtc = dirtyWx = false;
-      |                                              ~~~~~~~~^~~~~~~
 Compiling .pio/build/minibit/FrameworkArduino/HWCDC.cpp.o
 Compiling .pio/build/minibit/FrameworkArduino/HardwareSerial.cpp.o
+In file included from src/main.cpp:62:
+src/live.h: In function 'void liveLoop(int)':
+src/live.h:366:54: warning: using value of assignment with 'volatile'-qualified left operand is deprecated [-Wvolatile]
+  366 |   bool b = dirtyBtc, w = dirtyWx; dirtyBtc = dirtyWx = false;
+      |                                              ~~~~~~~~^~~~~~~
 Compiling .pio/build/minibit/FrameworkArduino/IPAddress.cpp.o
 Compiling .pio/build/minibit/FrameworkArduino/MD5Builder.cpp.o
 Compiling .pio/build/minibit/FrameworkArduino/MacAddress.cpp.o
@@ -108,8 +108,8 @@ Warning: esp-idf-size exited with code 2
 Retrieving maximum program size .pio/build/minibit/firmware.elf
 Checking size .pio/build/minibit/firmware.elf
 Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
-RAM:   [=         ]  14.6% (used 47772 bytes from 327680 bytes)
-Flash: [=         ]  14.7% (used 1233190 bytes from 8388608 bytes)
+RAM:   [=         ]  14.9% (used 48716 bytes from 327680 bytes)
+Flash: [==        ]  16.0% (used 1338726 bytes from 8388608 bytes)
 Building .pio/build/minibit/firmware.bin with action:
   "$PYTHONEXE" "$OBJCOPY" --chip esp32s3 elf2image --flash-mode ${__get_board_flash_mode(__env__)} --flash-freq ${__get_board_f_image(__env__)} --flash-size 16MB --elf-sha256-offset 0xb0 -o $TARGET $SOURCES
 Building .pio/build/minibit/firmware.bin
@@ -117,4 +117,4 @@ esptool.py v5.0.0-dev1
 Creating ESP32S3 image...
 Merged 2 ELF sections.
 Successfully created ESP32S3 image.
-========================= [SUCCESS] Took 94.53 seconds =========================
+========================= [SUCCESS] Took 73.40 seconds =========================
