@@ -9,7 +9,10 @@
 #include "live_assets.h"
 
 static const uint8_t *extrasBase = nullptr;     // set in setup(): the extras blob that follows the screens in the partition
-static uint16_t *fbuf = nullptr;                // 128 x 16 x 2 bytes, DMA capable
+static uint16_t *fbuf = nullptr;
+static volatile bool netPause = false;          // set while recording: no background network use
+RTC_NOINIT_ATTR static uint32_t dbgMagic, dbgStep;
+static void dbg(uint32_t n) { dbgMagic = 0xB17B17u; dbgStep = n; }                // 128 x 16 x 2 bytes, DMA capable
 
 #define CHUNK 16
 
@@ -225,7 +228,7 @@ static void liveTask(void *) {
     bool up = WiFi.status() == WL_CONNECTED;
     if (up && !wasUp) { tLoc = tBtc = tOhlc = tChain = tWx = 0; if (!ntp) { configTime(0, 0, "pool.ntp.org", "time.google.com"); ntp = true; } }
     wasUp = up;
-    if (up) {
+    if (up && !netPause) {
       uint32_t n = millis();
       bool haveLoc; lock(); haveLoc = LD.haveLoc; unlock();
       if (!tBtc || n - tBtc > 60000) { tBtc = fetchPrice() ? n : n - 45000; if (!tBtc) tBtc = 1; }

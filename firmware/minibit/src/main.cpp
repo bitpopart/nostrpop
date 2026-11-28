@@ -300,6 +300,19 @@ void setup() {
   liveBegin();
   zapBegin();
   wifiBoot();
+  {                                          // after a crash or brown-out, say so (with the last step) before the boot screen
+    esp_reset_reason_t rr = esp_reset_reason();
+    if (dbgMagic == 0xB17B17u && (rr == ESP_RST_PANIC || rr == ESP_RST_INT_WDT || rr == ESP_RST_TASK_WDT || rr == ESP_RST_WDT || rr == ESP_RST_BROWNOUT)) {
+      drawShapes(0, 0, 448, 184, C_BG, nullptr, 0); drawShapes(0, 184, 448, 184, C_BG, nullptr, 0);
+      char a[40], b[40];
+      snprintf(a, sizeof(a), "last step %u", (unsigned)dbgStep); snprintf(b, sizeof(b), "reset reason %d (4 crash, 9 power)", (int)rr);
+      Txt t0 = {FN_GMSG, "Restarted after a problem", COL_WHITE, 1, 224, 74}; drawField(FLD_VOICE_T, &t0, 1);
+      Txt t1 = {FN_COND, a, COL_GREY, 1, 224, 130}; drawField(FLD_VOICE_L0, &t1, 1);
+      Txt t2 = {FN_COND, b, COL_GREY, 1, 224, 158}; drawField(FLD_VOICE_L1, &t2, 1);
+      delay(6000);
+    }
+    dbgMagic = 0;
+  }
   show(SCR_BOOT); delay(2500); show(SCR_HOME);
 }
 

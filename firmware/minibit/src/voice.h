@@ -7,7 +7,7 @@
 
 #define V_PA 46
 #define V_RATE 8000                       // what is sent (the codec runs at 16 kHz and is halved)
-#define V_MAXSEC 6
+#define V_MAXSEC 4
 #define V_MAXBYTES (V_RATE * 2 * V_MAXSEC)
 
 static I2SClass vi2s;
@@ -22,18 +22,23 @@ static char vTitle[24] = "Hold to ask", vText[420] = "";
 
 static bool voiceAudioInit() {
   if (vAudioOk) return true;
+  dbg(20);
   vi2s.setPins(9, 45, 8, 10, 16);         // BCLK, WS, DOUT, DIN, MCLK
   if (!vi2s.begin(I2S_MODE_STD, 16000, I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO, I2S_STD_SLOT_BOTH)) return false;
+  dbg(21);
   es8311_handle_t h = es8311_create(0, ES8311_ADDRESS_0);
   if (!h) return false;
+  dbg(22);
   es8311_clock_config_t clk; clk.mclk_inverted = false; clk.sclk_inverted = false; clk.mclk_from_mclk_pin = true;
   clk.mclk_frequency = 16000 * 256; clk.sample_frequency = 16000;
   if (es8311_init(h, &clk, ES8311_RESOLUTION_16, ES8311_RESOLUTION_16) != ESP_OK) return false;
+  dbg(23);
   es8311_sample_frequency_config(h, clk.mclk_frequency, clk.sample_frequency);
   es8311_microphone_config(h, false);
   es8311_microphone_gain_set(h, ES8311_MIC_GAIN_24DB);
+  dbg(24);
   pinMode(V_PA, OUTPUT); digitalWrite(V_PA, LOW);        // speaker amplifier stays off
-  vAudioOk = true; return true;
+  vAudioOk = true; dbg(25); return true;
 }
 
 // ---- text helpers
@@ -113,7 +118,7 @@ static void voiceEnter() {
   else {
     prefs.begin("minibit", true); bool has = prefs.getString("gkey", "").length() > 10; prefs.end();
     if (!has) { char b[200]; snprintf(b, sizeof(b), "Add your free Gemini key: on your phone (same Wi-Fi) open http://minibit.local or http://%s", WiFi.localIP().toString().c_str()); vSet(4, "One time setup", b); }
-    else vSet(0, "Hold to ask", "Hold the button, ask your question, let go and I will answer.");
+    else { char b[120]; snprintf(b, sizeof(b), "Hold the button, ask your question, let go and I will answer. (free memory %uK)", (unsigned)(ESP.getMaxAllocHeap() / 1024)); vSet(0, "Hold to ask", b); }
   }
 }
 
@@ -154,16 +159,22 @@ static bool geminiAsk(const uint8_t *wav, size_t n, String &answer, String &err)
 
 // ---- recording
 static void voiceStart() {
+  dbg(10); netPause = true;
   if (!voiceAudioInit()) { vSet(4, "Microphone", "The microphone did not start."); return; }
   if (!vBuf) vBuf = (uint8_t *)malloc(44 + V_MAXBYTES);
-  if (!vBuf) { vSet(4, "Memory", "Not enough free memory for recording."); return; }
+  dbg(11);
+  if (!vBuf) { netPause = false; vSet(4, "Memory", "Not enough free memory for recording."); return; }
   vLen = 0; vFull = false; vPeakNow = 0; memset(vHist, 0, sizeof(vHist)); vBarT = millis();
+  dbg(12);
   vSet(1, "Listening", "");
+  dbg(13);
 }
 static void voiceTick() {
   if (vMode != 1 || !vBuf) return;
   int16_t tmp[512];
+  dbg(14);
   size_t got = vi2s.readBytes((char *)tmp, sizeof(tmp));
+  dbg(15);
   int frames = got / 4, peak = 0;
   int16_t *pcm = (int16_t *)(vBuf + 44);
   for (int f = 0; f + 1 < frames; f += 2) {
@@ -181,7 +192,9 @@ static void voiceTick() {
   }
 }
 static void voiceStop() {
+  netPause = false;
   if (vMode != 1) return;
+  dbg(30);
   if (vLen < V_RATE) { vSet(4, "Too short", "Hold the button while you speak."); return; }          // under half a second
   int16_t *pcm = (int16_t *)(vBuf + 44); size_t ns = vLen / 2; int peak = 1;
   for (size_t i = 0; i < ns; i++) { int a = pcm[i] < 0 ? -pcm[i] : pcm[i]; if (a > peak) peak = a; }
@@ -195,7 +208,9 @@ static void voiceStop() {
   memcpy(h + 32, &ba, 2); memcpy(h + 34, &bits, 2); memcpy(h + 36, "data", 4); memcpy(h + 40, &dl, 4);
   vSet(2, "Thinking", "");
   String ans, err;
+  dbg(31); netPause = true;
   bool ok = geminiAsk(vBuf, 44 + vLen, ans, err);
+  netPause = false; dbg(32);
   free(vBuf); vBuf = nullptr;
   if (ok) vSet(3, "Bit says", ans.c_str()); else vSet(4, "Oops", err.c_str());
 }

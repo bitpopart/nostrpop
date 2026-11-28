@@ -1,1 +1,1 @@
-Voice: hold the button on the Listening screen, ask a question, let go and Google Gemini answers on the screen. One-time setup: open minibit.local on your phone (same Wi-Fi) and paste a free Gemini key. Zap alerts from 0.4.0 included.
+Voice fixes: less memory use while recording (4 s max, network paused), and if the device restarts it now tells you why and at which step on screen.
