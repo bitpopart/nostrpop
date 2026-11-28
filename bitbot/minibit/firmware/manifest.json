@@ -1,26 +1,26 @@
 {
- "version": "0.5.1",
+ "version": "0.5.2",
  "date": "2026-11-28",
- "notes": "Voice fixes: less memory use while recording (4 s max, network paused), and if the device restarts it now tells you why and at which step on screen.",
+ "notes": "The phone pages (minibit.local and the Wi-Fi setup) now look like the MiniBit screens: dark, cyan, rounded cards, blinking eyes, status of Wi-Fi and voice.",
  "board": "Waveshare ESP32-S3-Touch-AMOLED-1.8",
  "parts": [
   {
-   "path": "0.5.1/bootloader.bin",
+   "path": "0.5.2/bootloader.bin",
    "offset": 0,
    "sha256": "84a8e89c7bcc88d766c22a21181d6e64a3800d32bfb2608cc1897ac009cd415d"
   },
   {
-   "path": "0.5.1/partitions.bin",
+   "path": "0.5.2/partitions.bin",
    "offset": 32768,
    "sha256": "ca69f4431cdf34802ebe8553e99bb3782f393d80d5d65ee98fc0dacc411963e4"
   },
   {
-   "path": "0.5.1/app.bin",
+   "path": "0.5.2/app.bin",
    "offset": 65536,
-   "sha256": "60ecb80e06d96da1a5e44f096ed44c9d456bbcd776ed2f21ceccd2e54f930727"
+   "sha256": "6b207f6c4c6bfbdd87ee8d028df2f77d6464290b2266b6883bf9f8ea19eab69b"
   },
   {
-   "path": "0.5.1/screens.bin.gz",
+   "path": "0.5.2/screens.bin.gz",
    "offset": 3211264,
    "sha256": "d531089196bfe69542c577ad1f3f2fd6a8a09c718a7bfe8975e9357131090ae9",
    "gz": true,
