@@ -1,31 +1,31 @@
 {
- "version": "0.2.0",
- "date": "2026-11-27",
- "notes": "Wi-Fi setup like POWout: menu tile, join the MiniBit-setup hotspot by QR, type the password on your phone, saved and reconnected on boot. Better top bar taps (menu, back). Screen partition enlarged.",
+ "version": "0.3.0",
+ "date": "2026-11-28",
+ "notes": "Live data over Wi-Fi: Bitcoin price, 24h change, sparkline, block height and fees; weather with your location (from the Wi-Fi connection); clock from the internet. Wi-Fi icon in the top bar next to the mic. Bigger menu buttons and a menu you can scroll by dragging.",
  "board": "Waveshare ESP32-S3-Touch-AMOLED-1.8",
  "parts": [
   {
-   "path": "0.2.0/bootloader.bin",
+   "path": "0.3.0/bootloader.bin",
    "offset": 0,
    "sha256": "84a8e89c7bcc88d766c22a21181d6e64a3800d32bfb2608cc1897ac009cd415d"
   },
   {
-   "path": "0.2.0/partitions.bin",
+   "path": "0.3.0/partitions.bin",
    "offset": 32768,
    "sha256": "ca69f4431cdf34802ebe8553e99bb3782f393d80d5d65ee98fc0dacc411963e4"
   },
   {
-   "path": "0.2.0/app.bin",
+   "path": "0.3.0/app.bin",
    "offset": 65536,
-   "sha256": "49d91cc5f17989b57ec3bb5ce6d161e2d2b1f0bd223cc70b32790c64fedc45a7"
+   "sha256": "0203e196d2379195b932c3b76a70bc432eeb40cd00f8d24bdaf1a3bba2bb5d8b"
   },
   {
-   "path": "0.2.0/screens.bin.gz",
+   "path": "0.3.0/screens.bin.gz",
    "offset": 3211264,
-   "sha256": "56698768c2af66de76c6a26ad08c8b1836cc66337f31d457740a230b0a589cbe",
+   "sha256": "b732c489462c14af69e5a91baa76ed9a0bb565a63bccab602cce032c4291e2fd",
    "gz": true,
-   "rawSize": 10221568,
-   "rawSha256": "acedd636ce67cd4f43844fbc608639e059349636026966617685eb68bba4b2d2"
+   "rawSize": 11412994,
+   "rawSha256": "134a6558cf8c4e1dec45f52fd05a597417eb4c71238a71e1f2840e7ec978b912"
   }
  ]
 }
