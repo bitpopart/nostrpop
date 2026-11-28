@@ -3,9 +3,16 @@
 #include <Preferences.h>
 #include <math.h>
 
-struct Shp { uint8_t t; float x, y, w, h; uint16_t col; float k; };   // t: 0 pill/bar, 1 ring (k = thickness), 2 heart, 3 ellipse, 4 bolt
+struct Shp { uint8_t t; float x, y, w, h; uint16_t col; float k; };   // t: 0 pill/bar, 1 ring (k = thickness), 2 heart, 3 ellipse, 4 bolt, 5 speaker, 6 sound wave arc
 static const float BOLT[7][2] = {{0.50f, 0}, {0.12f, 0.56f}, {0.44f, 0.56f}, {0.30f, 1}, {0.90f, 0.38f}, {0.56f, 0.38f}, {0.76f, 0}};
 
+static const float SPK[6][2] = {{0, 0.33f}, {0.32f, 0.33f}, {0.72f, 0}, {0.72f, 1}, {0.32f, 0.67f}, {0, 0.67f}};
+static bool inSpk(const Shp &s, float px, float py) {
+  float u = (px - s.x) / s.w, v = (py - s.y) / s.h; bool in = false;
+  for (int i = 0, j = 5; i < 6; j = i++)
+    if (((SPK[i][1] > v) != (SPK[j][1] > v)) && (u < (SPK[j][0] - SPK[i][0]) * (v - SPK[i][1]) / (SPK[j][1] - SPK[i][1]) + SPK[i][0])) in = !in;
+  return in;
+}
 static float clamp01(float v) { return v < 0 ? 0 : (v > 1 ? 1 : v); }
 static float covSD(float d) { return clamp01(0.5f - d); }
 static bool inBolt(const Shp &s, float px, float py) {
@@ -29,9 +36,15 @@ static float coverage(const Shp &s, float px, float py) {
     }
     case 1: { float d = sqrtf((px - cx) * (px - cx) + (py - cy) * (py - cy)); return covSD(fabsf(d - (s.w / 2 - s.k / 2)) - s.k / 2); }
     case 3: { float ex = (px - cx) / (s.w / 2), ey = (py - cy) / (s.h / 2); float m = s.w < s.h ? s.w : s.h; return covSD((sqrtf(ex * ex + ey * ey) - 1) * m / 2); }
+    case 6: {                                            // arc on the right side of a ring (sound wave)
+      float ddx = px - cx, ddy = py - cy;
+      if (ddx <= 0) return 0;
+      if (fabsf(atan2f(ddy, ddx)) > 0.85f) return 0;
+      float d = sqrtf(ddx * ddx + ddy * ddy); return covSD(fabsf(d - (s.w / 2 - s.k / 2)) - s.k / 2);
+    }
     default: {
       int n = 0;
-      for (int i = 0; i < 4; i++) { float sx = px + (i & 1 ? 0.25f : -0.25f), sy = py + (i & 2 ? 0.25f : -0.25f); if (s.t == 2 ? inHeart(s, sx, sy) : inBolt(s, sx, sy)) n++; }
+      for (int i = 0; i < 4; i++) { float sx = px + (i & 1 ? 0.25f : -0.25f), sy = py + (i & 2 ? 0.25f : -0.25f); if (s.t == 2 ? inHeart(s, sx, sy) : (s.t == 5 ? inSpk(s, sx, sy) : inBolt(s, sx, sy))) n++; }
       return n / 4.0f;
     }
   }
