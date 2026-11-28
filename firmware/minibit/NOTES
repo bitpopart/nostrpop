@@ -1,1 +1,1 @@
-Zap alerts: MiniBit listens on Nostr relays for zaps sent to bitpopart and plays an animation with the amount, and the zap screen counts sats today. (Voice questions are not in yet.)
+Voice: hold the button on the Listening screen, ask a question, let go and Google Gemini answers on the screen. One-time setup: open minibit.local on your phone (same Wi-Fi) and paste a free Gemini key. Zap alerts from 0.4.0 included.
