@@ -374,6 +374,6 @@ static void liveLoop(int scr) {
 static void liveBegin() {
   lmx = xSemaphoreCreateMutex();
   memset(&LD, 0, sizeof(LD));
-  fbuf = (uint16_t *)heap_caps_malloc(128 * CHUNK * 2, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+  fbuf = (uint16_t *)heap_caps_malloc(256 * CHUNK * 2, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
   xTaskCreatePinnedToCore(liveTask, "live", 16384, nullptr, 1, nullptr, 0);
 }

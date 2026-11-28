@@ -57,6 +57,8 @@ FONTS = [
     ('HILO', JBM4, None, '13° / 7°', 'weather', (244, 187, 400, 208), BG, '0123456789-°/ '),
     ('HOUR', JBM4, None, 'now', 'weather', (40, 246, 100, 262), CARD, 'now0123456789h'),
     ('HOURT', JBM5, None, '11°', 'weather', (40, 266, 100, 292), CARD, '0123456789-°'),
+    ('GMSG', INTER, 600, 26, None, None, None, LATIN),
+    ('GSCORE', JBM5, None, 32, None, None, None, '0123456789'),
     ('TIME', INTER, 300, '23:41', 'clock', (40, 90, 420, 215), BG, '0123456789:-'),
     ('DATE', INTER, 400, 'Thursday 12 November', 'clock', (60, 218, 400, 252), BG, LATIN),
 ]
@@ -71,12 +73,13 @@ FIELDS = [
     ('HILO', 'weather', 250, 188, 190, 20, BG), ('FOOT', 'weather', 34, 316, 330, 24, BG),
 ] + [('HL%d' % i, 'weather', 38 + 80 * i, 244, 62, 16, CARD) for i in range(5)] \
   + [('HT%d' % i, 'weather', 38 + 80 * i, 264, 62, 26, CARD) for i in range(5)] \
-  + [('TIME', 'clock', 24, 100, 400, 110, BG), ('DATE', 'clock', 60, 218, 328, 34, BG)]
+  + [('TIME', 'clock', 24, 100, 400, 110, BG), ('DATE', 'clock', 60, 218, 328, 34, BG)] \
+  + [('LABEL', 'face', 140, 310, 168, 22, BG), ('MSG', 'game', 24, 52, 400, 40, BG), ('SC', 'game', 24, 278, 150, 58, BG), ('BE', 'game', 274, 278, 150, 58, BG)]
 for f in FIELDS:
     assert all(v % 2 == 0 for v in f[2:6]), f
 
 # originals -> tools/src once (shots/ gets the blanked versions)
-for n in ('btc', 'weather', 'clock', 'menu'):
+for n in ('btc', 'weather', 'clock', 'menu', 'face', 'game', 'game2'):
     if not os.path.exists(os.path.join(SRC, n + '.png')):
         Image.open(os.path.join(SH, n + '.png')).save(os.path.join(SRC, n + '.png'))
 
@@ -90,17 +93,22 @@ for scr in ('btc', 'weather', 'clock'):
         pass
     im.save(os.path.join(SH, scr + '.png'))
 
+for scr, box in (('face', (140, 310, 308, 332)), ('game', (0, 44, 448, 368)), ('game2', (0, 44, 448, 368))):
+    im = src(scr); ImageDraw.Draw(im).rectangle(box, fill=BG); im.save(os.path.join(SH, scr + '.png'))
 # ---------------------------------------------------------------- font atlases
 atlas = bytearray()           # alpha bitmaps, 1 byte per pixel
 glyph_rows = []               # per font list of (code, off, adv16, w, h, xo, yo)
 font_meta = []                # per font: (ink-left offset, ink-top offset) of the sample to align with the original
 for (fid, path, wght, sample, scr, reg, bg, chars) in FONTS:
-    orig = measure(src(scr), reg, bg)
-    tw = orig[2] - orig[0]
-    size = fit(path, wght, sample, tw)
-    f = mkfont(path, size, wght)
-    b = ink(f, sample)
-    font_meta.append((orig[0] - b[0], orig[1] - b[1], size, orig))   # pen x and baseline y that reproduce the original
+    if reg is None:                      # fixed size font, positions are given when drawing
+        size = sample; f = mkfont(path, size, wght); font_meta.append((0, 0, size, None))
+    else:
+        orig = measure(src(scr), reg, bg)
+        tw = orig[2] - orig[0]
+        size = fit(path, wght, sample, tw)
+        f = mkfont(path, size, wght)
+        b = ink(f, sample)
+        font_meta.append((orig[0] - b[0], orig[1] - b[1], size, orig))   # pen x and baseline y that reproduce the original
     rows = []
     for ch in sorted(set(chars)):
         code = ord(ch)
