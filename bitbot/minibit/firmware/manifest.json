@@ -1,31 +1,31 @@
 {
- "version": "0.3.1",
+ "version": "0.4.0",
  "date": "2026-11-28",
- "notes": "Moods now work (tap a mood to see that face). Both Bit games work (Tap the eye, Catch the bolt) with best scores saved. Saved Wi-Fi is recognised: it reconnects by itself, and the Wi-Fi tile shows connected instead of the setup hotspot (hold the connected screen to change network).",
+ "notes": "Zap alerts: MiniBit listens on Nostr relays for zaps sent to bitpopart and plays an animation with the amount, and the zap screen counts sats today. (Voice questions are not in yet.)",
  "board": "Waveshare ESP32-S3-Touch-AMOLED-1.8",
  "parts": [
   {
-   "path": "0.3.1/bootloader.bin",
+   "path": "0.4.0/bootloader.bin",
    "offset": 0,
    "sha256": "84a8e89c7bcc88d766c22a21181d6e64a3800d32bfb2608cc1897ac009cd415d"
   },
   {
-   "path": "0.3.1/partitions.bin",
+   "path": "0.4.0/partitions.bin",
    "offset": 32768,
    "sha256": "ca69f4431cdf34802ebe8553e99bb3782f393d80d5d65ee98fc0dacc411963e4"
   },
   {
-   "path": "0.3.1/app.bin",
+   "path": "0.4.0/app.bin",
    "offset": 65536,
-   "sha256": "10b6fba95095d118eafb1b789294937dd671cff1c6b68e5cee8754412f29b2a9"
+   "sha256": "6309c46134efc8d9481d3c8121e2574e802adf582850ad0aaf4f3f164a4a705d"
   },
   {
-   "path": "0.3.1/screens.bin.gz",
+   "path": "0.4.0/screens.bin.gz",
    "offset": 3211264,
-   "sha256": "e0da7a278921e1995d1f04a0c33b803d5abcdc5dc39d2767d7506490a862ef75",
+   "sha256": "2aaccf34ddb7f1aa1743a4447a46326bad0af587463fd561cc15579cffeb9c8c",
    "gz": true,
-   "rawSize": 11466101,
-   "rawSha256": "3450e6f91321deb5b82b0dbfa0d0a8a886a12ee11320423fa32c0513eba758d1"
+   "rawSize": 11509580,
+   "rawSha256": "33aa0fff1f6961e802607e761a4287cb5da5a3470437ccfc469522a28be150be"
   }
  ]
 }
