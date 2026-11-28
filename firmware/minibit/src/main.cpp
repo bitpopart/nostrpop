@@ -169,10 +169,12 @@ static void menuTap(int dx, int dy) {
   if (best >= 0 && bd <= 64 && MENU_ITEMS[best].to >= 0) go(MENU_ITEMS[best].to);
 }
 
+#include "zap.h"
 static void show(int i) {
   cur = i;
   if (i == SCR_MENU) { menuS = 0; drawMenuHeader(); drawMenuList(); } else drawScreen(i);
   liveOnShow(i);
+  if (i == SCR_ZAP) drawZapNum();
   if (i == SCR_FACE) faceDraw(); else if (i == SCR_GAME || i == SCR_GAME2) gameEnter();
   Serial.printf("screen %s\n", SCR_NAMES[i]);
   if (i == SCR_WIFIJOIN) startPortal();
@@ -270,6 +272,7 @@ void setup() {
   screens = (const uint8_t *)ptr;
   extrasBase = screens + (size_t)SCR_COUNT * PW * PH * 2;
   liveBegin();
+  zapBegin();
   wifiBoot();
   show(SCR_BOOT); delay(2500); show(SCR_HOME);
 }
@@ -311,6 +314,7 @@ void loop() {
   wifiLoop();
   liveLoop(cur);
   gameTick();
+  zapLoop();
   int px, py;
   bool t = tpAddr && touchRead(px, py);
   if (t) {

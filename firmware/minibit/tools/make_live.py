@@ -57,6 +57,8 @@ FONTS = [
     ('HILO', JBM4, None, '13° / 7°', 'weather', (244, 187, 400, 208), BG, '0123456789-°/ '),
     ('HOUR', JBM4, None, 'now', 'weather', (40, 246, 100, 262), CARD, 'now0123456789h'),
     ('HOURT', JBM5, None, '11°', 'weather', (40, 266, 100, 292), CARD, '0123456789-°'),
+    ('ZBIG', JBM5, None, '2,100', 'zap', (140, 100, 440, 210), BG, '0123456789,'),
+    ('ZAMT', JBM5, None, 56, None, None, None, '+0123456789, sat'),
     ('GMSG', INTER, 600, 26, None, None, None, LATIN),
     ('GSCORE', JBM5, None, 32, None, None, None, '0123456789'),
     ('TIME', INTER, 300, '23:41', 'clock', (40, 90, 420, 215), BG, '0123456789:-'),
@@ -74,12 +76,12 @@ FIELDS = [
 ] + [('HL%d' % i, 'weather', 38 + 80 * i, 244, 62, 16, CARD) for i in range(5)] \
   + [('HT%d' % i, 'weather', 38 + 80 * i, 264, 62, 26, CARD) for i in range(5)] \
   + [('TIME', 'clock', 24, 100, 400, 110, BG), ('DATE', 'clock', 60, 218, 328, 34, BG)] \
-  + [('LABEL', 'face', 140, 310, 168, 22, BG), ('MSG', 'game', 24, 52, 400, 40, BG), ('SC', 'game', 24, 278, 150, 58, BG), ('BE', 'game', 274, 278, 150, 58, BG)]
+  + [('NUM', 'zap', 140, 100, 300, 110, BG), ('TITLE', 'zapa', 24, 44, 400, 40, BG), ('AMT', 'zapa', 24, 262, 400, 64, BG), ('MSG', 'zapa', 24, 330, 400, 32, BG), ('LABEL', 'face', 140, 310, 168, 22, BG), ('MSG', 'game', 24, 52, 400, 40, BG), ('SC', 'game', 24, 278, 150, 58, BG), ('BE', 'game', 274, 278, 150, 58, BG)]
 for f in FIELDS:
     assert all(v % 2 == 0 for v in f[2:6]), f
 
 # originals -> tools/src once (shots/ gets the blanked versions)
-for n in ('btc', 'weather', 'clock', 'menu', 'face', 'game', 'game2'):
+for n in ('btc', 'weather', 'clock', 'menu', 'face', 'game', 'game2', 'zap'):
     if not os.path.exists(os.path.join(SRC, n + '.png')):
         Image.open(os.path.join(SH, n + '.png')).save(os.path.join(SRC, n + '.png'))
 
@@ -93,7 +95,7 @@ for scr in ('btc', 'weather', 'clock'):
         pass
     im.save(os.path.join(SH, scr + '.png'))
 
-for scr, box in (('face', (140, 310, 308, 332)), ('game', (0, 44, 448, 368)), ('game2', (0, 44, 448, 368))):
+for scr, box in (('zap', (140, 100, 440, 210)), ('face', (140, 310, 308, 332)), ('game', (0, 44, 448, 368)), ('game2', (0, 44, 448, 368))):
     im = src(scr); ImageDraw.Draw(im).rectangle(box, fill=BG); im.save(os.path.join(SH, scr + '.png'))
 # ---------------------------------------------------------------- font atlases
 atlas = bytearray()           # alpha bitmaps, 1 byte per pixel

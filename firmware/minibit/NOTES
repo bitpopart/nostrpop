@@ -1,1 +1,1 @@
-Moods now work (tap a mood to see that face). Both Bit games work (Tap the eye, Catch the bolt) with best scores saved. Saved Wi-Fi is recognised: it reconnects by itself, and the Wi-Fi tile shows connected instead of the setup hotspot (hold the connected screen to change network).
+Zap alerts: MiniBit listens on Nostr relays for zaps sent to bitpopart and plays an animation with the amount, and the zap screen counts sats today. (Voice questions are not in yet.)

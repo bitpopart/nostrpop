@@ -142,6 +142,7 @@ static SemaphoreHandle_t lmx = nullptr;
 static volatile bool dirtyBtc = false, dirtyWx = false;
 
 static bool httpGet(const char *url, String &out) {
+  if (ESP.getMaxAllocHeap() < 50000) return false;      // keep room for the zap listener's connections
   WiFiClientSecure sc; sc.setInsecure();
   WiFiClient pc;
   HTTPClient h; h.setTimeout(9000); h.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS); h.setUserAgent("MiniBit");
