@@ -59,6 +59,7 @@ static void drawScreen(int i) {
 }
 
 static void show(int i);
+#include "live.h"
 // ---- Wi-Fi setup, the same way as POWout: MiniBit opens its own hotspot, the phone joins it by QR code and the
 // ---- password is typed on a web page on the phone (not on the tiny screen).
 #define AP_NAME "MiniBit-setup"
@@ -130,8 +131,42 @@ static void wifiBoot() {                  // reconnect with the saved network, i
   if (a.length()) { WiFi.mode(WIFI_STA); WiFi.begin(a.c_str(), b.c_str()); Serial.printf("Wi-Fi: reconnecting to %s\n", a.c_str()); }
 }
 
+// ---- scrolling menu: fixed header from the menu screen image, the list is a tall bitmap in the extras blob.
+static int menuS = 0;                      // scroll offset in design pixels, 0 .. MENU_LIST_H - 320
+#define MENU_VIEW 320
+static void drawMenuHeader() {
+  const uint16_t *src = (const uint16_t *)(screens + (size_t)SCR_MENU * PW * PH * 2);
+  for (int y = 0; y < PH; y += STRIPE) {
+    for (int r = 0; r < STRIPE; r++) memcpy(stripe + r * 48, src + (size_t)(y + r) * PW + MENU_VIEW, 48 * 2);
+    gfx->draw16bitRGBBitmap(OX + MENU_VIEW, OY + y, stripe, 48, STRIPE);
+  }
+}
+static void drawMenuList() {
+  const uint16_t *lst = (const uint16_t *)(extrasBase + MENU_LIST_OFF);
+  int start = MENU_LIST_H - MENU_VIEW - menuS;
+  for (int y = 0; y < PH; y += STRIPE) {
+    for (int r = 0; r < STRIPE; r++) memcpy(stripe + r * MENU_VIEW, lst + (size_t)(y + r) * MENU_LIST_H + start, MENU_VIEW * 2);
+    gfx->draw16bitRGBBitmap(OX, OY + y, stripe, MENU_VIEW, STRIPE);
+  }
+}
+static void go(int i);
+static void menuTap(int dx, int dy) {
+  int yc = dy - MENU_HDR_H + menuS, best = -1, bd = 1 << 30;
+  for (int k = 0; k < N_MENU_ITEMS; k++) {
+    const MItem &it = MENU_ITEMS[k];
+    int ex = dx < it.x ? it.x - dx : (dx > it.x + it.w - 1 ? dx - (it.x + it.w - 1) : 0);
+    int ey = yc < it.y ? it.y - yc : (yc > it.y + it.h - 1 ? yc - (it.y + it.h - 1) : 0);
+    int d = ex * ex + ey * ey;
+    if (d < bd) { bd = d; best = k; }
+  }
+  if (best >= 0 && bd <= 64 && MENU_ITEMS[best].to >= 0) go(MENU_ITEMS[best].to);
+}
+
 static void show(int i) {
-  cur = i; drawScreen(i); Serial.printf("screen %s\n", SCR_NAMES[i]);
+  cur = i;
+  if (i == SCR_MENU) { menuS = 0; drawMenuHeader(); drawMenuList(); } else drawScreen(i);
+  liveOnShow(i);
+  Serial.printf("screen %s\n", SCR_NAMES[i]);
   if (i == SCR_WIFIJOIN) startPortal();
   else if (i != SCR_WIFIWAIT && i != SCR_WIFIOK && apOn) stopPortal();
 }
@@ -174,6 +209,7 @@ static bool hitAt(int dx, int dy, int pad) {
   return false;
 }
 static void tap(int dx, int dy) {
+  if (cur == SCR_MENU && dy >= MENU_HDR_H) { menuTap(dx, dy); return; }
   if (hitAt(dx, dy, 0)) return;
   // near miss: take the closest button within reach (a little more room along the top bar)
   int reach = dy < 48 ? 18 : 12, best = -1, bd = 1 << 30;
@@ -215,11 +251,14 @@ void setup() {
   stripe = (uint16_t *)heap_caps_malloc(PW * STRIPE * 2, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
   const esp_partition_t *p = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, (esp_partition_subtype_t)0x40, "screens");
   const void *ptr = nullptr; esp_partition_mmap_handle_t hnd;
-  if (!p || (size_t)SCR_COUNT * PW * PH * 2 > p->size || esp_partition_mmap(p, 0, (size_t)SCR_COUNT * PW * PH * 2, ESP_PARTITION_MMAP_DATA, &ptr, &hnd) != ESP_OK) {
+  size_t need = (size_t)SCR_COUNT * PW * PH * 2 + EXTRAS_SIZE;
+  if (!p || need > p->size || esp_partition_mmap(p, 0, need, ESP_PARTITION_MMAP_DATA, &ptr, &hnd) != ESP_OK) {
     message("Screens missing.", "Flash with New install.");
     while (true) delay(1000);
   }
   screens = (const uint8_t *)ptr;
+  extrasBase = screens + (size_t)SCR_COUNT * PW * PH * 2;
+  liveBegin();
   wifiBoot();
   show(SCR_BOOT); delay(2500); show(SCR_HOME);
 }
@@ -255,23 +294,34 @@ static void calibrate() {
 }
 
 static bool down = false; static int sx, sy, lx, ly; static uint32_t t0; static bool longDone = false;
+static bool dragging = false; static int menuS0 = 0;
 
 void loop() {
   wifiLoop();
+  liveLoop(cur);
   int px, py;
   bool t = tpAddr && touchRead(px, py);
   if (t) {
     px -= OX; py -= OY;
     if (px < 0) px = 0; if (py < 0) py = 0; if (px >= PW) px = PW - 1; if (py >= PH) py = PH - 1;
     int dx, dy; toDesign(px, py, dx, dy);
-    if (!down) { down = true; sx = lx = dx; sy = ly = dy; t0 = millis(); longDone = false; }
+    if (!down) { down = true; sx = lx = dx; sy = ly = dy; t0 = millis(); longDone = false; dragging = false; menuS0 = menuS; }
     lx = dx; ly = dy;
-    if (millis() - t0 > 3000 && abs(lx - sx) < 20 && abs(ly - sy) < 20) calibrate();
+    if (cur == SCR_MENU && sy >= MENU_HDR_H) {            // drag the list
+      if (!dragging && abs(ly - sy) > 12 && abs(ly - sy) > abs(lx - sx)) dragging = true;
+      if (dragging) {
+        int ns = menuS0 + (sy - ly);
+        if (ns < 0) ns = 0; if (ns > MENU_LIST_H - MENU_VIEW) ns = MENU_LIST_H - MENU_VIEW;
+        if (ns != menuS) { menuS = ns; drawMenuList(); }
+      }
+    }
+    if (!dragging && millis() - t0 > 3000 && abs(lx - sx) < 20 && abs(ly - sy) < 20) calibrate();
     if (!longDone && cur == SCR_HOME && millis() - t0 > 700 && abs(lx - sx) < 20 && abs(ly - sy) < 20) { longDone = true; go(SCR_MENU); }
   } else if (down) {
     down = false;
     int mx = lx - sx, my = ly - sy;
-    if (!longDone) {
+    if (dragging) dragging = false;
+    else if (!longDone) {
       if (cur == SCR_HOME || cur == SCR_HOME2) {
         if (abs(mx) > 35 && abs(mx) > abs(my)) show(cur == SCR_HOME ? SCR_HOME2 : SCR_HOME);
         else if (my < -40) go(SCR_MENU);

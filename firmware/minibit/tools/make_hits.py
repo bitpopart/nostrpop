@@ -24,7 +24,7 @@ for n in names: L.append('#define SCR_%s %d' % (n.upper(), idx[n]))
 L.append('#define SCR_COUNT %d' % len(names))
 L.append('static const char* const SCR_NAMES[SCR_COUNT] = {%s};' % ','.join('"%s"' % n for n in names))
 for i, s in enumerate(d['screens']):
-    hs = [(e['x'], e['y'], e['w'], e['h'], target(e)) for e in s['hits'] if target(e) != NONE]
+    hs = [(e['x'], e['y'], e['w'], e['h'], target(e)) for e in s['hits'] if target(e) != NONE and not (s['name'] == 'menu' and e['y'] >= 48)]   # the menu list is scrolled, see MENU_ITEMS
     L.append('static const Hit HITS_%d[] = {%s};' % (i, ','.join('{%d,%d,%d,%d,%d}' % tuple(round(v) for v in h) for h in hs) or '{0,0,0,0,S_NONE}'))
     L.append('#define NHITS_%d %d' % (i, len(hs)))
 L.append('static const Hit* const HITS[SCR_COUNT] = {%s};' % ','.join('HITS_%d' % i for i in range(len(names))))

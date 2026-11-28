@@ -12,6 +12,8 @@ for n in names:
     a = np.asarray(im).astype(np.uint16)
     v = ((a[...,0] & 0xF8) << 8) | ((a[...,1] & 0xFC) << 3) | (a[...,2] >> 3)
     blob += v.astype('<u2').tobytes()
+ex = os.path.join(HERE, 'extras.bin')               # menu list, weather icons and glyphs from make_live.py
+if os.path.exists(ex): blob += open(ex, 'rb').read()
 out = os.path.join(HERE, '..', 'assets'); os.makedirs(out, exist_ok=True)
 open(os.path.join(out, 'screens.bin.gz'), 'wb').write(gzip.compress(bytes(blob), 9, mtime=0))
 print(len(names), 'screens', len(blob), 'bytes')
