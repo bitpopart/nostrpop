@@ -13,6 +13,7 @@
 static I2SClass vi2s;
 static bool vAudioOk = false;
 static uint8_t vMode = 0;                 // 0 idle, 1 recording, 2 thinking, 3 answer, 4 message
+static size_t vCap = V_MAXBYTES;
 static uint8_t *vBuf = nullptr;           // 44 byte WAV header + 16 bit mono samples
 static size_t vLen = 0;
 static volatile bool vFull = false;
@@ -84,9 +85,10 @@ static int wrapLines(const char *t, char lines[6][72]) {              // returns
 }
 
 // ---- drawing
-static void vButton(uint16_t col) {
-  Shp s[1] = {{0, 104, 296, 240, 56, col, 0}};
-  drawShapes(0, 262, 448, 106, C_BG, s, 1);
+static void vButton(uint16_t col) {          // round button with a speaker icon
+  uint16_t ic = col == C_TRK ? COL_GREY : C_BG;
+  Shp s[4] = {{3, 182, 273, 84, 84, col, 0}, {5, 203, 302, 22, 26, ic, 0}, {6, 225 - 9, 315 - 9, 18, 18, ic, 3}, {6, 225 - 16, 315 - 16, 32, 32, ic, 3}};
+  drawShapes(0, 262, 448, 106, C_BG, s, 4);
 }
 static void vBars(bool active) {
   Shp s[9];
@@ -125,8 +127,10 @@ static void voiceEnter() {
 // ---- Gemini
 static bool geminiAsk(const uint8_t *wav, size_t n, String &answer, String &err) {
   prefs.begin("minibit", true); String key = prefs.getString("gkey", ""); String model = prefs.getString("gmodel", "gemini-flash-latest"); prefs.end();
-  WiFiClientSecure c; c.setInsecure(); c.setTimeout(30);
+  WiFiClientSecure c; c.setInsecure(); c.setTimeout(15);
+  esp_task_wdt_reset();
   if (!c.connect("generativelanguage.googleapis.com", 443)) { err = "Could not reach Google."; return false; }
+  esp_task_wdt_reset();
   static const char PRE[] = "{\"system_instruction\":{\"parts\":[{\"text\":\"You are Bit, a tiny pocket bot with a small screen. Answer the question you hear in one to three short plain sentences. No markdown, no emoji. Reply in the language spoken.\"}]},"
                             "\"contents\":[{\"parts\":[{\"text\":\"Answer the question in this audio.\"},{\"inline_data\":{\"mime_type\":\"audio/wav\",\"data\":\"";
   static const char SUF[] = "\"}}]}],\"generationConfig\":{\"maxOutputTokens\":1024}}";
@@ -141,10 +145,13 @@ static bool geminiAsk(const uint8_t *wav, size_t n, String &answer, String &err)
     c.write(out, ol);
   }
   c.print(SUF);
+  esp_task_wdt_reset();
   String status = c.readStringUntil('\n');
   int code = status.length() > 12 ? status.substring(9, 12).toInt() : 0;
   while (c.connected() || c.available()) { String l = c.readStringUntil('\n'); if (l.length() <= 1) break; }
+  esp_task_wdt_reset();
   String body = c.readString(); c.stop();
+  esp_task_wdt_reset();
   JsonDocument d; DeserializationError pe = deserializeJson(d, body);
   if (code != 200 || pe) {
     const char *m = pe ? "" : (d["error"]["message"] | "");
@@ -159,11 +166,15 @@ static bool geminiAsk(const uint8_t *wav, size_t n, String &answer, String &err)
 
 // ---- recording
 static void voiceStart() {
-  dbg(10); netPause = true;
-  if (!voiceAudioInit()) { vSet(4, "Microphone", "The microphone did not start."); return; }
-  if (!vBuf) vBuf = (uint8_t *)malloc(44 + V_MAXBYTES);
+  dbg(10); netPause = true; delay(900);                    // wait until the zap listener has let go of its memory
+  if (!voiceAudioInit()) { netPause = false; vSet(4, "Microphone", "The microphone did not start."); return; }
+  size_t room = ESP.getMaxAllocHeap();
+  vCap = room > 60000 + 16000 ? room - 60000 : 0;           // keep 60K for the Gemini connection
+  if (vCap > V_MAXBYTES) vCap = V_MAXBYTES;
+  vCap &= ~(size_t)1;
+  if (vCap >= 16000 && !vBuf) vBuf = (uint8_t *)malloc(44 + vCap);
   dbg(11);
-  if (!vBuf) { netPause = false; vSet(4, "Memory", "Not enough free memory for recording."); return; }
+  if (!vBuf) { netPause = false; char b[60]; snprintf(b, sizeof(b), "Not enough free memory (%uK).", (unsigned)(room / 1024)); vSet(4, "Memory", b); return; }
   vLen = 0; vFull = false; vPeakNow = 0; memset(vHist, 0, sizeof(vHist)); vBarT = millis();
   dbg(12);
   vSet(1, "Listening", "");
@@ -180,11 +191,11 @@ static void voiceTick() {
   for (int f = 0; f + 1 < frames; f += 2) {
     int m0 = (tmp[2 * f] >> 1) + (tmp[2 * f + 1] >> 1), m1 = (tmp[2 * f + 2] >> 1) + (tmp[2 * f + 3] >> 1);
     int v = (m0 + m1) / 2;
-    if (vLen + 2 <= V_MAXBYTES) { pcm[vLen / 2] = (int16_t)v; vLen += 2; }
+    if (vLen + 2 <= vCap) { pcm[vLen / 2] = (int16_t)v; vLen += 2; }
     int a = v < 0 ? -v : v; if (a > peak) peak = a;
   }
   if (peak > vPeakNow) vPeakNow = peak;
-  if (vLen + 2 > V_MAXBYTES) vFull = true;
+  if (vLen + 2 > vCap) vFull = true;
   static int chunkPeak = 0; if (peak > chunkPeak) chunkPeak = peak;
   if (millis() - vBarT > 110) {
     vBarT = millis(); for (int i = 0; i < 8; i++) vHist[i] = vHist[i + 1];
@@ -192,13 +203,12 @@ static void voiceTick() {
   }
 }
 static void voiceStop() {
-  netPause = false;
-  if (vMode != 1) return;
+  if (vMode != 1) { netPause = false; return; }
   dbg(30);
-  if (vLen < V_RATE) { vSet(4, "Too short", "Hold the button while you speak."); return; }          // under half a second
+  if (vLen < V_RATE) { netPause = false; free(vBuf); vBuf = nullptr; vSet(4, "Too short", "Hold the button while you speak."); return; }          // under half a second
   int16_t *pcm = (int16_t *)(vBuf + 44); size_t ns = vLen / 2; int peak = 1;
   for (size_t i = 0; i < ns; i++) { int a = pcm[i] < 0 ? -pcm[i] : pcm[i]; if (a > peak) peak = a; }
-  if (peak < 250) { vSet(4, "Silence", "I did not hear anything. Hold closer and try again."); return; }
+  if (peak < 250) { netPause = false; free(vBuf); vBuf = nullptr; vSet(4, "Silence", "I did not hear anything. Hold closer and try again."); return; }
   float g = 24000.0f / peak; if (g > 12) g = 12;
   for (size_t i = 0; i < ns; i++) { int v = (int)(pcm[i] * g); pcm[i] = (int16_t)(v > 32767 ? 32767 : (v < -32768 ? -32768 : v)); }
   uint8_t *h = vBuf; uint32_t dl = vLen, rate = V_RATE, br = V_RATE * 2, rl = 36 + vLen;

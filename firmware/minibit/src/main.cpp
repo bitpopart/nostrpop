@@ -10,6 +10,7 @@
 #include <DNSServer.h>
 #include <Preferences.h>
 #include <ESPmDNS.h>
+#include <esp_task_wdt.h>
 #include "hits.h"
 #include "version.h"
 
@@ -311,6 +312,7 @@ static void message(const char *l1, const char *l2) {
 void setup() {
   Serial.begin(115200);
   delay(1500);
+  { esp_task_wdt_config_t wc; wc.timeout_ms = 20000; wc.idle_core_mask = 0; wc.trigger_panic = true; esp_task_wdt_reconfigure(&wc); esp_task_wdt_add(NULL); }   // a hang restarts the device and the reason is shown
   Serial.printf("MiniBit firmware %s\n", FW_VERSION);
   Wire.begin(I2C_SDA, I2C_SCL); Wire.setClock(400000);
   if (i2cProbe(EXP_ADDR)) {                 // V2: pulse display and touch reset through the expander
@@ -383,6 +385,7 @@ static void calibrate() {
       Serial.printf("cal raw %d,%d\n", px, py);
     }
     if (millis() - idle > 30000) ESP.restart();
+    esp_task_wdt_reset();
     delay(20);
   }
 }
@@ -391,6 +394,7 @@ static bool down = false; static int sx, sy, lx, ly; static uint32_t t0; static 
 static bool dragging = false; static int menuS0 = 0;
 
 void loop() {
+  esp_task_wdt_reset();
   wifiLoop();
   liveLoop(cur);
   gameTick();

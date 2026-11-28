@@ -60,8 +60,13 @@ static void zapHandle(uint8_t *payload, size_t len) {
 }
 
 static void zapTask(void *) {
-  bool started = false;
+  bool started = false, paused = false;
   for (;;) {
+    if (started && netPause) {                        // recording: give the memory back
+      if (!paused) { zws[0].disconnect(); zws[1].disconnect(); paused = true; }
+      vTaskDelay(pdMS_TO_TICKS(50)); continue;
+    }
+    paused = false;
     if (WiFi.status() == WL_CONNECTED && !netPause) {
       if (!started) {
         started = true;
